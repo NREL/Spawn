@@ -1,0 +1,12 @@
+[submodule "EnergyPlus"]
+	path = submodules/EnergyPlus
+	url = https://github.com/NREL/EnergyPlus.git
+	branch = nohvac-noalpine-fmu
+[submodule "submodules/ModelicaStandardLibrary"]
+	path = submodules/ModelicaStandardLibrary
+	url = https://github.com/kbenne/ModelicaStandardLibrary.git
+	branch = cmake-build
+[submodule "submodules/modelica-buildings"]
+	path = submodules/modelica-buildings
+	url = https://github.com/kbenne/modelica-buildings.git
+	branch = cmake-build
