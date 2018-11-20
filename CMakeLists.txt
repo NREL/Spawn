@@ -21,6 +21,13 @@ set( TEST_SRC
 )
 
 add_executable( test_runner ${TEST_SRC} )
-
 target_link_libraries( test_runner modelica-buildings )
+
+set( TEST2_SRC
+  test/main2.c
+)
+
+add_executable( test2_runner ${TEST2_SRC} )
+target_link_libraries( test2_runner modelica-buildings )
+
 
