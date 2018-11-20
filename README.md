@@ -1,6 +1,7 @@
 
 # Build
 
+`git submodule init`
 `mkdir build`
 `cd build`
 `cmake ../`
