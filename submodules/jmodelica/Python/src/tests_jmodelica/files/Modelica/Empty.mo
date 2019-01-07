@@ -1,3 +1,0 @@
-model Empty
-
-end Empty;

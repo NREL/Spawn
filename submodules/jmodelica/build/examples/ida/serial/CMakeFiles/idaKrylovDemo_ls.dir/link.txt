@@ -1,1 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc  -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/idaKrylovDemo_ls.dir/idaKrylovDemo_ls.c.o  -o idaKrylovDemo_ls ../../../src/ida/libsundials_ida.2.9.0.dylib -lm ../../../src/nvec_ser/libsundials_nvecserial.2.7.0.dylib -lm 

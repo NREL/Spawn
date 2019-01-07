@@ -1,33 +1,72 @@
-
 project( Spawn )
+cmake_minimum_required(VERSION 3.8)
+include(ExternalProject)
 
-add_subdirectory( submodules/EnergyPlus EnergyPlus )
-
-add_subdirectory( submodules/ModelicaStandardLibrary ModelicaStandardLibrary )
-
-add_subdirectory( submodules/modelica-buildings modelica-buildings )
-
-#add_subdirectory( submodules/jmodelica/ThirdParty/Sundials/sundials-2.7.0 sundials )
-
-add_subdirectory( submodules/jmodelica/RuntimeLibrary/src/jmi jmi )
-
-configure_file( test/config.h.in "${CMAKE_CURRENT_BINARY_DIR}/test-config.h.in2" )
-file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test-config.h" INPUT "${CMAKE_CURRENT_BINARY_DIR}/test-config.h.in2")
-
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-
-set( TEST_SRC
-  test/main.c
+ExternalProject_Add(Ipopt
+  GIT_REPOSITORY https://github.com/kbenne/Ipopt-3.12.4.git
+  UPDATE_COMMAND ""
+  CONFIGURE_COMMAND "../Ipopt/configure"
 )
 
-add_executable( test_runner ${TEST_SRC} )
-target_link_libraries( test_runner modelica-buildings )
+# On Apple JModelica needs to be compiled with GCC,
+# because apples clang does not support openmp
+# brew install gcc
+# Note that /usr/bin/gcc provided by apple is just a link to clang and that will not work
+if( APPLE )
+  find_program( CC gcc-8 )
+  if( NOT CC )
+    message(FATAL_ERROR "gcc compiler is required but not found")
+  endif()
+  set( CC "CC=${CC}" )
+endif()
 
-set( TEST2_SRC
-  test/main2.c
+find_library( BLAS blas )
+if( NOT BLAS )
+  message(FATAL_ERROR "blas is required but not found")
+else()
+  get_filename_component( BLAS ${BLAS} NAME )
+  set( BLASLIB "BLASLIB=${BLAS}" )
+endif()
+
+ExternalProject_Add(JModelica
+  DEPENDS Ipopt
+  GIT_REPOSITORY https://github.com/kbenne/JModelica.git
+  UPDATE_COMMAND ""
+  CONFIGURE_COMMAND ../JModelica/configure ${CC} --with-ipopt=${PROJECT_BINARY_DIR}/Ipopt-prefix/src/Ipopt-build --prefix=${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install
+  BUILD_COMMAND $(MAKE) ${CC} ${BLASLIB}
+  INSTALL_COMMAND $(MAKE) ${CC} ${BLASLIB} install
 )
 
-add_executable( test2_runner ${TEST2_SRC} )
-target_link_libraries( test2_runner modelica-buildings )
+ExternalProject_Add(modelica-buildings
+  DEPENDS JModelica
+  GIT_REPOSITORY https://github.com/kbenne/modelica-buildings.git
+  GIT_TAG cmake
+  CMAKE_CACHE_ARGS
+    -DMODELICA_HOME:PATH=${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install
+    -DCMAKE_INSTALL_PREFIX:PATH=${PROJECT_BINARY_DIR}/modelica-buildings-prefix/src/modelica-buildings-install
+)
+
+#add_subdirectory( submodules/EnergyPlus EnergyPlus )
+#
+#add_subdirectory( submodules/modelica-buildings modelica-buildings )
+#
+#configure_file( test/config.h.in "${CMAKE_CURRENT_BINARY_DIR}/test-config.h.in2" )
+#file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test-config.h" INPUT "${CMAKE_CURRENT_BINARY_DIR}/test-config.h.in2")
+#
+#include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+#
+#set( TEST_SRC
+#  test/main.c
+#)
+#
+#add_executable( test_runner ${TEST_SRC} )
+#target_link_libraries( test_runner modelica-buildings )
+#
+#set( TEST2_SRC
+#  test/main2.c
+#)
+#
+#add_executable( test2_runner ${TEST2_SRC} )
+#target_link_libraries( test2_runner modelica-buildings )
 
 

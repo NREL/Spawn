@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libsundials_nvecserial.a  CMakeFiles/sundials_nvecserial_static.dir/nvector_serial.c.o CMakeFiles/sundials_nvecserial_static.dir/__/sundials/sundials_math.c.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libsundials_nvecserial.a
