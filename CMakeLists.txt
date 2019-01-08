@@ -2,6 +2,22 @@ project( Spawn )
 cmake_minimum_required(VERSION 3.8)
 include(ExternalProject)
 
+if( APPLE ) 
+  set( PLATFORM_INSTALL_PREFIX darwin64 )
+elseif( WIN32 )
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386")
+    set( PLATFORM_INSTALL_PREFIX win32 )
+  else()
+    set( PLATFORM_INSTALL_PREFIX win64 )
+  endif()
+elseif( LINUX )
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386")
+    set( PLATFORM_INSTALL_PREFIX linux32 )
+  else()
+    set( PLATFORM_INSTALL_PREFIX linux64 )
+  endif()
+endif()
+
 ExternalProject_Add(Ipopt
   GIT_REPOSITORY https://github.com/kbenne/Ipopt-3.12.4.git
   UPDATE_COMMAND ""
@@ -46,7 +62,17 @@ ExternalProject_Add(modelica-buildings
     -DCMAKE_INSTALL_PREFIX:PATH=${PROJECT_BINARY_DIR}/modelica-buildings-prefix/src/modelica-buildings-install
 )
 
-#add_subdirectory( submodules/EnergyPlus EnergyPlus )
+add_subdirectory( submodules/EnergyPlus EnergyPlus )
+include( ${PROJECT_BINARY_DIR}/EnergyPlus/energyplus-exports.cmake )
+
+set(BUILDINGS_EPFMI_PATH ${PROJECT_BINARY_DIR}/modelica-buildings-prefix/src/modelica-buildings-install/Buildings/Resources/Data/Experimental/EnergyPlus/EnergyPlus-9-0-0/lib/)
+add_custom_target(
+  BuildingsEPFMI ALL
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          ${BUILDINGS_EPFMI_PATH}
+)
+
 #
 #add_subdirectory( submodules/modelica-buildings modelica-buildings )
 #
