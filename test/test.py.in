@@ -1,0 +1,42 @@
+import os
+import sys
+import re
+import subprocess
+
+os.environ["IPOPT_HOME"]="${PROJECT_BINARY_DIR}/Ipopt-prefix/src/Ipopt-build/"
+
+if sys.platform == "darwin":
+    os.environ["JAVA_HOME"] = subprocess.check_output("/usr/libexec/java_home").rstrip()
+else:
+    settings = subprocess.Popen(["java", "-XshowSettings:properties", "-version"], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[1]
+    os.environ["JAVA_HOME"] = re.search("java.home = (.*)", settings, re.MULTILINE).group(1)
+
+os.environ["JMODELICA_HOME"]="${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/"
+os.environ["LD_LIBRARY_PATH"]="/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/"
+os.environ["LIBRARY_PATH"]="/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/"
+os.environ["MODELICAPATH"]="${PROJECT_BINARY_DIR}/modelica-buildings-prefix/src/modelica-buildings-install/:${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/"
+os.environ["SUNDIALS_HOME"]="${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/Sundials/"
+
+sys.path.append("${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/Python")
+
+from pymodelica import compile_fmu
+from pyfmi import load_fmu
+
+#model = 'Buildings.Controls.OBC.CDL.Continuous.Validation.LimPID'
+model = 'Buildings.Experimental.EnergyPlus.Validation.OneZone'
+
+fmu_name = compile_fmu(model,
+                       version="2.0",
+                       compiler_log_level='info',
+                       compiler_options = {"generate_html_diagnostics" : True})
+
+mod = load_fmu(fmu_name, log_level=1)
+
+opts = mod.simulate_options() #Retrieve the default options
+opts['logging'] = False
+opts['solver'] = 'CVode'
+opts['ncp'] = 500
+opts['CVode_options']['atol'] = 1.0e-6 #Options specific for CVode
+opts['CVode_options']['rtol'] = 1.0e-6 #Options specific for CVode
+
+res = mod.simulate(options=opts)

@@ -73,6 +73,8 @@ add_custom_target(
           ${BUILDINGS_EPFMI_PATH}
 )
 
+configure_file(test/test.py.in test.py)
+
 #
 #add_subdirectory( submodules/modelica-buildings modelica-buildings )
 #
