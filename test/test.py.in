@@ -12,9 +12,9 @@ else:
     os.environ["JAVA_HOME"] = re.search("java.home = (.*)", settings, re.MULTILINE).group(1)
 
 os.environ["JMODELICA_HOME"]="${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/"
-os.environ["LD_LIBRARY_PATH"]="/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/"
+os.environ["EXT_LIB_DIRS"]="/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/ ${PROJECT_BINARY_DIR}/modelica-buildings/ ${PROJECT_BINARY_DIR}/EnergyPlus/Products/"
 os.environ["LIBRARY_PATH"]="/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/"
-os.environ["MODELICAPATH"]="${PROJECT_BINARY_DIR}/modelica-buildings-prefix/src/modelica-buildings-install/:${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/"
+os.environ["MODELICAPATH"]="${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/:${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/"
 os.environ["SUNDIALS_HOME"]="${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/Sundials/"
 
 sys.path.append("${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/Python")
@@ -26,8 +26,10 @@ from pyfmi import load_fmu
 model = 'Buildings.Experimental.EnergyPlus.Validation.OneZone'
 
 fmu_name = compile_fmu(model,
+                       file_name="/Users/kbenne/Development/spawn/build/Setup.mo",
                        version="2.0",
                        compiler_log_level='info',
+                       compile_to='/Users/kbenne/Development/spawn/build/testmodel/',
                        compiler_options = {"generate_html_diagnostics" : True})
 
 mod = load_fmu(fmu_name, log_level=1)

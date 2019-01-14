@@ -2,3 +2,7 @@
 	path = submodules/EnergyPlus
 	url = https://github.com/kbenne/EnergyPlus.git
 	branch = spawn
+[submodule "submodules/modelica-buildings"]
+	path = submodules/modelica-buildings
+	url = https://github.com/lbl-srg/modelica-buildings.git
+	branch = issue1129_energyPlus_zone_cmake
