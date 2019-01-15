@@ -12,7 +12,7 @@ build:ubuntu:
   script:
     - mkdir build
     - cd build
-    - cmake -DBUILD_PACKAGE=OFF  ..
+    - cmake -DBUILD_PACKAGE=OFF -DCMAKE_BUILD_TYPE=Release  ..
     - cmake ..
     - make -j2
   artifacts:
@@ -24,12 +24,12 @@ build:windows:
   stage: build
   tags:
     - windows
-  before_script:
-    - set PATH=%PATH:C:\Program Files\Git\bin;=%
+  #before_script:
+  #  - set PATH=%PATH:C:\Program Files\Git\bin;=%
   script:
     - mkdir build
     - cd build
-    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64"'
+    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" ..'
     - '"C:\Program Files\CMake\bin\cmake.exe" ..'
     - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD'
   artifacts:
