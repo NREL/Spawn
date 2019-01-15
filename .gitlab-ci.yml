@@ -1,0 +1,36 @@
+stages:
+  - build
+  - package
+
+build:ubuntu:
+  stage: build
+  tags:
+    - clang
+    - ubuntu
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DBUILD_PACKAGE=ON  ..
+    - cmake ..
+    - make -j
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+# Ubuntu 16.04 EnergyPlus packages are currently failing
+package:ubuntu:
+  stage: package
+  tags:
+    - clang
+    - ubuntu
+  dependencies:
+    - build:ubuntu
+  script:
+    - cd build
+    - make package -j
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - build/EnergyPlus-*.sh
+
