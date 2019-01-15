@@ -3,7 +3,7 @@ variables:
 
 stages:
   - build
-#  - package
+  - package
 
 build:ubuntu:
   stage: build
@@ -12,13 +12,27 @@ build:ubuntu:
   script:
     - mkdir build
     - cd build
-    - cmake -DBUILD_PACKAGE=OFF -DCMAKE_BUILD_TYPE=Release  ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON CPACK_BINARY_STGZ=OFF  ..
     - cmake ..
     - make -j2
   artifacts:
     expire_in: 6 hrs
     paths:
       - build/
+
+package:ubuntu:
+  stage: package
+  tags:
+    - ubuntu
+  dependencies:
+    - build:ubuntu
+  script:
+    - cd build
+    - make package
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.tar.gz
 
 build:windows:
   stage: build
@@ -29,13 +43,27 @@ build:windows:
   script:
     - mkdir build
     - cd build
-    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" ..'
+    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_PACKAGE=ON CPACK_BINARY_ZIP=ON CPACK_BINARY_NSIS=OFF ..'
     - '"C:\Program Files\CMake\bin\cmake.exe" ..'
     - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD'
   artifacts:
     expire_in: 6 hrs
     paths:
       - build/
+
+build:windows:
+  stage: package
+  tags:
+    - windows
+  dependencies:
+    - build:windows
+  script:
+    - cd build
+    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target Package'
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.zip
 
 build:mac:
   stage: build
@@ -44,7 +72,7 @@ build:mac:
   script:
     - mkdir build
     - cd build
-    - cmake -DBUILD_PACKAGE=OFF -DCMAKE_BUILD_TYPE=Release  ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON CPACK_BINARY_STGZ=OFF  ..
     - cmake ..
     - make -j4 Ipopt || true
     - make -j4 Ipopt
@@ -53,6 +81,20 @@ build:mac:
     expire_in: 6 hrs
     paths:
       - build/
+
+package:mac:
+  stage: package
+  tags:
+    - mac
+  dependencies:
+    - build:mac
+  script:
+    - cd build
+    - make package
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.tar.gz
 
 ## Ubuntu 16.04 EnergyPlus packages are currently failing
 #package:ubuntu:
