@@ -18,12 +18,6 @@ elseif( LINUX )
   endif()
 endif()
 
-ExternalProject_Add(Ipopt
-  GIT_REPOSITORY https://github.com/kbenne/Ipopt-3.12.4.git
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND "../Ipopt/configure"
-)
-
 # On Apple JModelica needs to be compiled with GCC,
 # because apples clang does not support openmp
 # brew install gcc
@@ -36,44 +30,53 @@ if( APPLE )
   set( CC "CC=${CC}" )
 endif()
 
-find_library( BLAS blas )
-if( NOT BLAS )
-  message(FATAL_ERROR "blas is required but not found")
-else()
-  get_filename_component( BLAS ${BLAS} NAME )
-  set( BLASLIB "BLASLIB=${BLAS}" )
-endif()
-
-ExternalProject_Add(JModelica
-  DEPENDS Ipopt
-  GIT_REPOSITORY https://github.com/kbenne/JModelica.git
-  UPDATE_COMMAND ""
-  CONFIGURE_COMMAND ../JModelica/configure ${CC} --with-ipopt=${PROJECT_BINARY_DIR}/Ipopt-prefix/src/Ipopt-build --prefix=${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install
-  BUILD_COMMAND make ${CC} ${BLASLIB}
-  INSTALL_COMMAND make ${CC} ${BLASLIB} install
-)
-set(MODELICA_HOME ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install)
-
 add_subdirectory( submodules/EnergyPlus EnergyPlus )
 
-add_subdirectory( submodules/modelica-buildings modelica-buildings )
-#/Users/kbenne/Development/spawn/build/JModelica-prefix/src/JModelica-install/lib/RuntimeLibrary
+if( UNIX )
 
-set(EPFMI_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
-add_custom_target(
-  CopyEPFMI ALL
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:epfmi>
-          ${EPFMI_PATH}
-)
+  ExternalProject_Add(Ipopt
+    GIT_REPOSITORY https://github.com/kbenne/Ipopt-3.12.4.git
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND "../Ipopt/configure"
+  )
+  
+  find_library( BLAS blas )
+  if( NOT BLAS )
+    message(FATAL_ERROR "blas is required but not found")
+  else()
+    get_filename_component( BLAS ${BLAS} NAME )
+    set( BLASLIB "BLASLIB=${BLAS}" )
+  endif()
+  
+  ExternalProject_Add(JModelica
+    DEPENDS Ipopt
+    GIT_REPOSITORY https://github.com/kbenne/JModelica.git
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ../JModelica/configure ${CC} --with-ipopt=${PROJECT_BINARY_DIR}/Ipopt-prefix/src/Ipopt-build --prefix=${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install
+    BUILD_COMMAND make ${CC} ${BLASLIB}
+    INSTALL_COMMAND make ${CC} ${BLASLIB} install
+  )
+  set(MODELICA_HOME ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install)
+  
+  add_subdirectory( submodules/modelica-buildings modelica-buildings )
+  
+  set(EPFMI_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
+  add_custom_target(
+    CopyEPFMI ALL
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:epfmi>
+            ${EPFMI_PATH}
+  )
+  
+  set(BUILDINGS_LIB_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
+  add_custom_target(
+    CopyModelicaBuildingsEnergyPlus ALL
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:ModelicaBuildingsEnergyPlus>
+            ${BUILDINGS_LIB_PATH}
+  )
+  
+  configure_file(test/test.py.in test.py)
 
-set(BUILDINGS_LIB_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
-add_custom_target(
-  CopyModelicaBuildingsEnergyPlus ALL
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:ModelicaBuildingsEnergyPlus>
-          ${BUILDINGS_LIB_PATH}
-)
-
-configure_file(test/test.py.in test.py)
+endif()
 

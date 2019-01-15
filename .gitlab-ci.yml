@@ -20,6 +20,23 @@ build:ubuntu:
     paths:
       - build/
 
+build:windows:
+  stage: build
+  tags:
+    - windows
+  #before_script:
+  #  - set PATH=%PATH:C:\Program Files\Git\bin;=%
+  script:
+    - mkdir build
+    - cd build
+    - 'cmake.exe -G "Visual Studio 15 2017 Win64"'
+    - 'cmake.exe ..'
+    - 'cmake.exe --build . --config Release --target ALL_BUILD'
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
 ## Ubuntu 16.04 EnergyPlus packages are currently failing
 #package:ubuntu:
 #  stage: package
