@@ -3,7 +3,7 @@ variables:
 
 stages:
   - build
-  - package
+#  - package
 
 build:ubuntu:
   stage: build
@@ -20,18 +20,18 @@ build:ubuntu:
     paths:
       - build/
 
-# Ubuntu 16.04 EnergyPlus packages are currently failing
-package:ubuntu:
-  stage: package
-  tags:
-    - ubuntu
-  dependencies:
-    - build:ubuntu
-  script:
-    - cd build
-    - make package -j
-  artifacts:
-    expire_in: 1 week
-    paths:
-      - build/EnergyPlus-*.sh
+## Ubuntu 16.04 EnergyPlus packages are currently failing
+#package:ubuntu:
+#  stage: package
+#  tags:
+#    - ubuntu
+#  dependencies:
+#    - build:ubuntu
+#  script:
+#    - cd build
+#    - make package -j
+#  artifacts:
+#    expire_in: 1 week
+#    paths:
+#      - build/EnergyPlus-*.sh
 
