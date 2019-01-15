@@ -51,7 +51,7 @@ build:windows:
     paths:
       - build/
 
-build:windows:
+package:windows:
   stage: package
   tags:
     - windows
