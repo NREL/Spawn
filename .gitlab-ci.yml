@@ -37,6 +37,23 @@ build:windows:
     paths:
       - build/
 
+build:mac:
+  stage: build
+  tags:
+    - mac
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DBUILD_PACKAGE=OFF -DCMAKE_BUILD_TYPE=Release  ..
+    - cmake ..
+    - make -j4 Ipopt || true
+    - make -j4 Ipopt
+    - make -j4
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
 ## Ubuntu 16.04 EnergyPlus packages are currently failing
 #package:ubuntu:
 #  stage: package
