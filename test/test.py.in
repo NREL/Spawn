@@ -26,10 +26,8 @@ from pyfmi import load_fmu
 model = 'Buildings.Experimental.EnergyPlus.Validation.OneZone'
 
 fmu_name = compile_fmu(model,
-                       file_name="/Users/kbenne/Development/spawn/build/Setup.mo",
                        version="2.0",
                        compiler_log_level='info',
-                       compile_to='/Users/kbenne/Development/spawn/build/testmodel/',
                        compiler_options = {"generate_html_diagnostics" : True})
 
 mod = load_fmu(fmu_name, log_level=1)
