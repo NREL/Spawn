@@ -66,6 +66,7 @@ if( UNIX )
     COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_FILE:epfmi>
             ${EPFMI_PATH}
+    DEPENDS JModelica
   )
   
   set(BUILDINGS_LIB_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
@@ -74,6 +75,7 @@ if( UNIX )
     COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_FILE:ModelicaBuildingsEnergyPlus>
             ${BUILDINGS_LIB_PATH}
+    DEPENDS JModelica
   )
   
   configure_file(test/test.py.in test.py)
