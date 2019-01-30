@@ -34,10 +34,9 @@ mod = load_fmu(fmu_name, log_level=1)
 
 opts = mod.simulate_options() #Retrieve the default options
 opts['logging'] = True
-opts['solver'] = 'kinsol'
-#opts['solver'] = 'CVode'
-#opts['ncp'] = 500
-#opts['CVode_options']['atol'] = 1.0e-6 #Options specific for CVode
-#opts['CVode_options']['rtol'] = 1.0e-6 #Options specific for CVode
+opts['solver'] = 'CVode'
+opts['ncp'] = 500
+opts['CVode_options']['atol'] = 1.0e-6 #Options specific for CVode
+opts['CVode_options']['rtol'] = 1.0e-6 #Options specific for CVode
 
 res = mod.simulate(options=opts)
