@@ -1,6 +1,6 @@
 [submodule "submodules/EnergyPlus"]
 	path = submodules/EnergyPlus
-	url = https://github.com/kbenne/EnergyPlus.git
+	url = https://github.com/NREL/EnergyPlus.git
 	branch = spawn
 [submodule "submodules/modelica-buildings"]
 	path = submodules/modelica-buildings
