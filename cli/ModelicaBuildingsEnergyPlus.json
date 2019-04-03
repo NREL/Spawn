@@ -1,0 +1,29 @@
+{
+  "version": "0.1",
+  "EnergyPlus": {
+    "idf": "/tmp/JModelica.org/jm_tmpXtaoj4/resources/0/RefBldgSmallOfficeNew2004_Chicago.idf",
+    "idd": "/tmp/JModelica.org/jm_tmpXtaoj4/resources/2/Energy+.idd",
+    "weather": "/tmp/JModelica.org/jm_tmpXtaoj4/resources/1/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
+  },
+  "fmu": {
+      "name": "/tmp/JModelica.org/jm_tmpXtaoj4/resources/1/MyBuilding.fmu",
+      "version": "2.0",
+      "kind"   : "ME"
+  },
+  "zones": [
+    {
+      "name": "Core_ZN",
+      "parameters": [
+        { "name": "V" },
+        { "name": "AFlo" },
+        { "name": "mSenFac" }
+      ],
+      "inputs": [
+        { "name": "T" }
+      ],
+      "outputs": [
+        { "name": "QConSen_flow" }
+      ]
+    }
+  ]
+}

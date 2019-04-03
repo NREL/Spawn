@@ -1,84 +1,36 @@
-project( Spawn )
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0025 NEW)
+
+project( Spawn VERSION 0.0.1 )
 cmake_minimum_required(VERSION 3.8)
-include(ExternalProject)
 
-if( APPLE ) 
-  set( PLATFORM_INSTALL_PREFIX darwin64 )
-elseif( WIN32 )
-  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386")
-    set( PLATFORM_INSTALL_PREFIX win32 )
-  else()
-    set( PLATFORM_INSTALL_PREFIX win64 )
-  endif()
-else()
-  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386")
-    set( PLATFORM_INSTALL_PREFIX linux32 )
-  else()
-    set( PLATFORM_INSTALL_PREFIX linux64 )
-  endif()
+set (CMAKE_CXX_STANDARD 11)
+
+# Download automatically, you can also just copy the conan.cmake file
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.13/conan.cmake"
+    "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 
-# On Apple JModelica needs to be compiled with GCC,
-# because apples clang does not support openmp
-# brew install gcc
-# Note that /usr/bin/gcc provided by apple is just a link to clang and that will not work
-if( APPLE )
-  find_program( CC gcc-8 )
-  if( NOT CC )
-    message(FATAL_ERROR "gcc compiler is required but not found")
-  endif()
-  set( CC "CC=${CC}" )
-endif()
+include(${CMAKE_BINARY_DIR}/conan.cmake)
 
+conan_check(VERSION 1.0.0 REQUIRED)
+
+conan_add_remote(NAME bincrafters
+  URL https://api.bintray.com/conan/bincrafters/public-conan)
+
+conan_cmake_run(REQUIRES 
+  boost_filesystem/1.69.0@bincrafters/stable
+  jsonformoderncpp/3.6.1@vthiery/stable
+  pugixml/1.9@bincrafters/stable
+  CLI11/1.7.1@cliutils/stable
+  BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
+  BUILD missing
+)
+
+include( cmake/build-jmodelica.cmake )
 add_subdirectory( submodules/EnergyPlus EnergyPlus )
+add_subdirectory( cli )
 
-if( UNIX )
-
-  ExternalProject_Add(Ipopt
-    GIT_REPOSITORY https://github.com/kbenne/Ipopt-3.12.4.git
-    UPDATE_COMMAND ""
-    CONFIGURE_COMMAND "../Ipopt/configure"
-  )
-  
-  find_library( BLAS blas )
-  if( NOT BLAS )
-    message(FATAL_ERROR "blas is required but not found")
-  else()
-    get_filename_component( BLAS ${BLAS} NAME )
-    set( BLASLIB "BLASLIB=${BLAS}" )
-  endif()
-  
-  ExternalProject_Add(JModelica
-    DEPENDS Ipopt
-    GIT_REPOSITORY https://github.com/kbenne/JModelica.git
-    UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ../JModelica/configure ${CC} --with-ipopt=${PROJECT_BINARY_DIR}/Ipopt-prefix/src/Ipopt-build --prefix=${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install
-    BUILD_COMMAND make ${CC} ${BLASLIB}
-    INSTALL_COMMAND make ${CC} ${BLASLIB} install
-  )
-  set(MODELICA_HOME ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install)
-  
-  add_subdirectory( submodules/modelica-buildings modelica-buildings )
-  
-  set(EPFMI_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
-  add_custom_target(
-    CopyEPFMI ALL
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:epfmi>
-            ${EPFMI_PATH}
-    DEPENDS JModelica epfmi
-  )
-  
-  set(BUILDINGS_LIB_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
-  add_custom_target(
-    CopyModelicaBuildingsEnergyPlus ALL
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:ModelicaBuildingsEnergyPlus>
-            ${BUILDINGS_LIB_PATH}
-    DEPENDS JModelica ModelicaBuildingsEnergyPlus
-  )
-  
-  configure_file(test/test.py.in test.py)
-
-endif()
 
