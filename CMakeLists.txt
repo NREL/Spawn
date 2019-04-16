@@ -25,6 +25,7 @@ conan_cmake_run(REQUIRES
   jsonformoderncpp/3.6.1@vthiery/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
+  libzip/1.5.1@bincrafters/stable
   BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
   BUILD missing
 )
@@ -33,4 +34,10 @@ include( cmake/build-jmodelica.cmake )
 add_subdirectory( submodules/EnergyPlus EnergyPlus )
 add_subdirectory( cli )
 
+add_custom_target(
+  CopyEPFMI ALL
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          $<TARGET_FILE_DIR:spawn>
+)
 

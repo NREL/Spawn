@@ -57,13 +57,13 @@ if( UNIX )
   #add_subdirectory( submodules/modelica-buildings modelica-buildings )
   
   set(EPFMI_PATH ${PROJECT_BINARY_DIR}/JModelica-prefix/src/JModelica-install/ThirdParty/MSL/Modelica/Resources/Library/${PLATFORM_INSTALL_PREFIX}/)
-  add_custom_target(
-    CopyEPFMI ALL
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:epfmi>
-            ${EPFMI_PATH}
-    DEPENDS JModelica epfmi
-  )
+  #add_custom_target(
+  #  CopyEPFMI ALL
+  #  COMMAND ${CMAKE_COMMAND} -E copy
+  #          $<TARGET_FILE:epfmi>
+  #          ${EPFMI_PATH}
+  #  DEPENDS JModelica epfmi
+  #)
   
   configure_file(test/test.py.in test.py)
 

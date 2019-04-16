@@ -1,0 +1,7 @@
+
+namespace spawn {
+
+const char * fmulib = "$<TARGET_FILE:epfmi>";
+
+}
+
