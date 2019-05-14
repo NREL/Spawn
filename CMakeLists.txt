@@ -1,8 +1,12 @@
 cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0025 NEW)
 
 project( Spawn VERSION 0.0.1 )
 cmake_minimum_required(VERSION 3.8)
+
+add_subdirectory( submodules/EnergyPlus EnergyPlus )
+
+cmake_policy(SET CMP0025 NEW)
+set (CMAKE_CXX_STANDARD 11)
 
 if(NOT GIT_FOUND)
   find_program(GIT_EXECUTABLE git HINTS "$ENV{LOCALAPPDATA}/Programs/git/bin")
@@ -54,21 +58,17 @@ conan_cmake_run(REQUIRES
   BUILD missing
 )
 
-#add_subdirectory( submodules/EnergyPlus EnergyPlus )
-
-set (CMAKE_CXX_STANDARD 11)
-
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 add_subdirectory( cli )
 
-#add_custom_target(
-#  CopyEPFMI ALL
-#  COMMAND ${CMAKE_COMMAND} -E copy
-#          $<TARGET_FILE:epfmi>
-#          $<TARGET_FILE_DIR:spawn>
-#)
+add_custom_target(
+  CopyEPFMI ALL
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          $<TARGET_FILE_DIR:spawn>
+)
 
 INCLUDE(CPack)
 
