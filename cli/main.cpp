@@ -5,6 +5,7 @@
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
+#include <config.hxx>
 
 #if defined _WIN32
 #include <windows.h>
@@ -214,10 +215,17 @@ int main(int argc, const char *argv[]) {
       app.add_option("-c,--create", jsoninput,
                      "Create a standalone FMU based on json input", true);
 
+  auto versionOption =
+    app.add_flag("-v,--version", "Print version info and exit");
+
   CLI11_PARSE(app, argc, argv);
 
   if (*createOption) {
     createFMU(jsoninput);
+  }
+
+  if (*versionOption) {
+    std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
   }
 
   return 0;

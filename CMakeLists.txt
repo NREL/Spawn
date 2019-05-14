@@ -58,6 +58,9 @@ conan_cmake_run(REQUIRES
 
 set (CMAKE_CXX_STANDARD 11)
 
+configure_file(README.md README.md)
+install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
+
 add_subdirectory( cli )
 
 #add_custom_target(
