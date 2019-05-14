@@ -43,7 +43,7 @@ publish:ubuntu:
   dependencies:
     - package:ubuntu
   script:
-    - python3 cmake/publish.py
+    - python3 cmake/publish.py publish
   when: manual
 
 release:ubuntu:
