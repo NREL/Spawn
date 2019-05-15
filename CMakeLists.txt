@@ -70,5 +70,7 @@ add_custom_target(
           $<TARGET_FILE_DIR:spawn>
 )
 
+install(DIRECTORY examples DESTINATION .)
+
 INCLUDE(CPack)
 

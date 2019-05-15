@@ -6,7 +6,7 @@
     "weather": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
   },
   "fmu": {
-      "name": "foo/bar/MyBuilding.fmu",
+      "name": "MyBuilding.fmu",
       "version": "2.0",
       "kind"   : "ME"
   },

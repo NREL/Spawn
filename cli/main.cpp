@@ -83,7 +83,10 @@ void createFMU(const std::string &jsoninput) {
     Dl_info info;
     dladdr("main", &info);
     auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "libepfmi.dylib";
+    epFMISourcePath = exedir / "../lib/libepfmi.dylib";
+    if (! boost::filesystem::exists(epFMISourcePath)) {
+      epFMISourcePath = exedir / "libepfmi.dylib";
+    }
     epFMIDestPath = fmuStaggingPath / "binaries/darwin64/libepfmi.dylib";
   #elif _WIN32
     TCHAR szPath[MAX_PATH];
@@ -95,7 +98,10 @@ void createFMU(const std::string &jsoninput) {
     Dl_info info;
     dladdr("main", &info);
     auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "libepfmi.so";
+    epFMISourcePath = exedir / "../lib/libepfmi.so";
+    if (! boost::filesystem::exists(epFMISourcePath)) {
+      epFMISourcePath = exedir / "libepfmi.so";
+    }
     epFMIDestPath = fmuStaggingPath / "binaries/linux64/libepfmi.so";
   #endif
 
