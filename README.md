@@ -18,5 +18,8 @@ The latest development builds are available at the following locations.
 
 Create a fmu
 
-  spawn -c examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn
+```shell
+spawn -c examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn
+
+```
 

@@ -6,6 +6,7 @@
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
 #include <config.hxx>
+#include <FMI/Variables.hpp>
 
 #if defined _WIN32
 #include <windows.h>
@@ -50,7 +51,7 @@ void createFMU(const std::string &jsoninput) {
   }
 
   // Input paths
-  auto basepath = boost::filesystem::path(jsoninput).parent_path();
+  auto basepath = boost::filesystem::canonical(boost::filesystem::path(jsoninput).parent_path());
   auto fmupath = boost::filesystem::path(fmuname.get<std::string>());
   if (! fmupath.is_absolute()) {
     fmupath = basepath / fmupath;
@@ -117,99 +118,32 @@ void createFMU(const std::string &jsoninput) {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 
-  auto variables = doc.child("fmiModelDescription").child("ModelVariables");
+  auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
 
-  int vr = 1;
-  for (const auto &z : zones) {
-    auto zoneName = z.at("name").get<std::string>();
+  const auto epvariables = EnergyPlus::FMI::parseVariables(idfPath.string());
 
-    auto afloName = zoneName + "_AFlo";
-    auto aflo = variables.append_child("ScalarVariable");
-    aflo.append_attribute("name") = afloName.c_str();
-    aflo.append_attribute("valueReference") = vr;
-    aflo.append_attribute("description") = "Floor area";
-    aflo.append_attribute("causality") = "parameter";
-    aflo.append_attribute("variability") = "fixed";
-    aflo.append_attribute("initial") = "exact";
+  for (const auto & varpair : epvariables) {
+    const auto valueReference = varpair.first;
+    const auto var = varpair.second;
 
-    auto real = aflo.append_child("Real");
-    real.append_attribute("quantity") = "area";
-    real.append_attribute("unit") = "m2";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("start") = 12.0;
+    auto scalarVar = xmlvariables.append_child("ScalarVariable");
+    const auto xmlVarName = var.zoneName + "_" + var.varName;
+    scalarVar.append_attribute("name") = xmlVarName.c_str();
+    scalarVar.append_attribute("valueReference") = std::to_string(valueReference).c_str();
+    scalarVar.append_attribute("causality") = var.causality().c_str();
+    if (! var.description.empty()) scalarVar.append_attribute("description") = var.description.c_str();
+    if (! var.variability.empty()) scalarVar.append_attribute("variability") = var.variability.c_str();
+    if (! var.initial.empty()) scalarVar.append_attribute("initial") = var.initial.c_str();
 
-    ++vr;
-
-    auto vName = zoneName + "_V";
-    auto v = variables.append_child("ScalarVariable");
-    v.append_attribute("name") = vName.c_str();
-    v.append_attribute("valueReference") = "Volume";
-    v.append_attribute("description") = vr;
-    v.append_attribute("causality") = "parameter";
-    v.append_attribute("variability") = "fixed";
-    v.append_attribute("initial") = "exact";
-
-    real = v.append_child("Real");
-    real.append_attribute("quantity") = "volume";
-    real.append_attribute("unit") = "m3";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("start") = 36.0;
-
-    ++vr;
-
-    auto mSenFacName = zoneName + "_mSenFac";
-    auto mSenFac = variables.append_child("ScalarVariable");
-    mSenFac.append_attribute("name") = mSenFacName.c_str();
-    mSenFac.append_attribute("valueReference") = vr;
-    mSenFac.append_attribute("description") = "Factor for scaling sensible thermal mass of volume";
-    mSenFac.append_attribute("causality") = "parameter";
-    mSenFac.append_attribute("variability") = "fixed";
-    mSenFac.append_attribute("initial") = "exact";
-
-    real = mSenFac.append_child("Real");
-    real.append_attribute("quantity") = "valume";
-    real.append_attribute("unit") = "m3";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("start") = 1.0;
-
-    ++vr;
-
-    auto tName = zoneName + "_T";
-    auto t = variables.append_child("ScalarVariable");
-    t.append_attribute("name") = tName.c_str();
-    t.append_attribute("valueReference") = vr;
-    t.append_attribute("description") = "Temperature of the zone air";
-    t.append_attribute("causality") = "input";
-    t.append_attribute("variability") = "continuous";
-
-    real = t.append_child("Real");
-    real.append_attribute("quantity") = "ThermodynamicTemperature";
-    real.append_attribute("unit") = "degC";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("start") = 0.0;
-
-    ++vr;
-
-    auto qConSen_flowName = zoneName + "_QConSen_flow";
-    auto qConSen_flow = variables.append_child("ScalarVariable");
-    qConSen_flow.append_attribute("name") = qConSen_flowName.c_str();
-    qConSen_flow.append_attribute("valueReference") = vr;
-    qConSen_flow.append_attribute("description") = "Convective sensible heat added to the zone";
-    qConSen_flow.append_attribute("causality") = "output";
-    qConSen_flow.append_attribute("variability") = "discrete";
-    qConSen_flow.append_attribute("initial") = "calculated";
-
-    real = qConSen_flow.append_child("Real");
-    real.append_attribute("quantity") = "Power";
-    real.append_attribute("unit") = "W";
-    real.append_attribute("relativeQuantity") = "false";
-
-    ++vr;
+    auto real = scalarVar.append_child("Real");
+    real.append_attribute("relativeQuantity") = var.relativeQuantity ? "true" : "false";
+    if (! var.quantity.empty()) real.append_attribute("quantity") = var.quantity.c_str();
+    if (! var.unit.empty()) real.append_attribute("unit") = var.unit.c_str();
+    if (var.type != EnergyPlus::FMI::VariableType::OUTPUT) real.append_attribute("start") = std::to_string(var.start).c_str();
   }
 
   doc.save_file(modelDescriptionPath.c_str());
 
-  //void zip_directory(const std::string& inputdir, const std::string& output_filename);
   zip_directory(fmuStaggingPath.string(), fmupath.string());
 }
 
