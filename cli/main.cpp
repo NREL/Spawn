@@ -80,6 +80,8 @@ void createFMU(const std::string &jsoninput) {
   boost::filesystem::path epFMIDestPath;
   boost::filesystem::path epFMISourcePath;
 
+  boost::filesystem::remove(fmupath);
+
   #ifdef __APPLE__
     Dl_info info;
     dladdr("main", &info);
