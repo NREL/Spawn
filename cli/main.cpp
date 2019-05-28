@@ -17,7 +17,7 @@
 
 using json = nlohmann::json;
 
-void createFMU(const std::string &jsoninput) {
+int createFMU(const std::string &jsoninput) {
   json j;
 
   std::ifstream fileinput(jsoninput);
@@ -42,11 +42,11 @@ void createFMU(const std::string &jsoninput) {
       idf = j.at("EnergyPlus").at("idf");
       idd = j.at("EnergyPlus").at("idd");
       weather = j.at("EnergyPlus").at("weather");
-      zones = j.at("zones");
+      zones = j.at("model").at("zones");
       fmuname = j.at("fmu").at("name");
     } catch (...) {
       std::cout << "Invalid json input: '" << jsoninput << "'" << std::endl;
-      return;
+      return 1;
     }
   }
 
@@ -67,6 +67,25 @@ void createFMU(const std::string &jsoninput) {
   auto iddInputPath = boost::filesystem::path(idd.get<std::string>());
   if (! iddInputPath.is_absolute()) {
     iddInputPath = basepath / iddInputPath;
+  }
+
+  // Do the input paths exist?
+  bool missingFile = false;
+  if (! boost::filesystem::exists(idfInputPath)) {
+    std::cout << "The specified idf input file does not exist, " << idfInputPath << "." << std::endl;
+    missingFile = true;
+  }
+  if (! boost::filesystem::exists(epwInputPath)) {
+    std::cout << "The specified epw input file does not exist, " << epwInputPath << "." << std::endl;
+    missingFile = true;
+  }
+  if (! boost::filesystem::exists(iddInputPath)) {
+    std::cout << "The specified idd input file does not exist, " << iddInputPath << "." << std::endl;
+    missingFile = true;
+  }
+
+  if (missingFile) {
+    return 1;
   }
 
   // Output paths
@@ -163,7 +182,10 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   if (*createOption) {
-    createFMU(jsoninput);
+    auto result = createFMU(jsoninput);
+    if (result) {
+      return result;
+    }
   }
 
   if (*versionOption) {

@@ -11,20 +11,7 @@
       "kind"   : "ME"
   },
   "zones": [
-    {
-      "name": "Core_ZN",
-      "parameters": [
-        { "name": "V" },
-        { "name": "AFlo" },
-        { "name": "mSenFac" }
-      ],
-      "inputs": [
-        { "name": "T" }
-      ],
-      "outputs": [
-        { "name": "QConSen_flow" }
-      ]
-    }
+    { "name": "Core_ZN" }
   ]
 } 
  
