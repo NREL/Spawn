@@ -10,8 +10,10 @@
       "version": "2.0",
       "kind"   : "ME"
   },
-  "zones": [
-    { "name": "Core_ZN" }
-  ]
+  "model": {
+    "zones": [
+      { "name": "Core_ZN" }
+    ]
+  }
 } 
  

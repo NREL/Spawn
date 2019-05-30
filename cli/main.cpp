@@ -148,19 +148,14 @@ int createFMU(const std::string &jsoninput) {
     const auto var = varpair.second;
 
     auto scalarVar = xmlvariables.append_child("ScalarVariable");
-    const auto xmlVarName = var.zoneName + "_" + var.varName;
-    scalarVar.append_attribute("name") = xmlVarName.c_str();
-    scalarVar.append_attribute("valueReference") = std::to_string(valueReference).c_str();
-    scalarVar.append_attribute("causality") = var.causality().c_str();
-    if (! var.description.empty()) scalarVar.append_attribute("description") = var.description.c_str();
-    if (! var.variability.empty()) scalarVar.append_attribute("variability") = var.variability.c_str();
-    if (! var.initial.empty()) scalarVar.append_attribute("initial") = var.initial.c_str();
+		for (const auto & attribute : var.scalar_attributes) {
+    	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+		}
 
     auto real = scalarVar.append_child("Real");
-    real.append_attribute("relativeQuantity") = var.relativeQuantity ? "true" : "false";
-    if (! var.quantity.empty()) real.append_attribute("quantity") = var.quantity.c_str();
-    if (! var.unit.empty()) real.append_attribute("unit") = var.unit.c_str();
-    if (var.type != EnergyPlus::FMI::VariableType::OUTPUT) real.append_attribute("start") = std::to_string(var.start).c_str();
+		for (const auto & attribute : var.real_attributes) {
+    	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+		}
   }
 
   doc.save_file(modelDescriptionPath.c_str());
