@@ -16,6 +16,15 @@ The latest development builds are available at the following locations.
 
 ## Compiling from source
 
+Dependencies are the same as for EnergyPlus https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus.
+Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with one addition,
+
+```shell
+pip install conan
+```
+
+Then follow the normal cmake build process.
+
 ```shell
 git clone --recurse-submodules https://gitlab.com/kylebenne/spawn.git 
 mkdir build
