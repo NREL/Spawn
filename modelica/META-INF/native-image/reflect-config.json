@@ -1,0 +1,773 @@
+[
+{
+  "name":"beaver.Symbol",
+  "fields":[{"name":"value", "allowWrite": true}],
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.AbstractGenerator",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.AbstractGenerator$Mode",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_dae_add_blocks_residual_functions",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_dae_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_dae_init_add_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_dae_init_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_function_headers",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_CAD_ode_derivatives",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_DAE_INIT_homotopy_block",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_add_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_init_add_blocks_residual_functions",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_init_blocks_residual_functions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_init_n_blocks",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dae_n_blocks",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_delay_init",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_delay_sample",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_destruct_external_object",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dynamic_state_add_call",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_dynamic_state_coefficients",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_enums_strings",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_equationResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_eventIndicatorResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_export_functions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_export_wrappers",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_externalFuncIncludes",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_function_headers",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_functions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_global_temps",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_guid",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_initialDependentParameterResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_initialEquationResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_initialEventIndicatorResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_initialGuessEquationResiduals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_initial_relations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_jmodelica_version",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_model_id",
+  "allDeclaredConstructors":true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_model_init_eval_independent_globals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_nominals",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_derivatives",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_guards",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_guards_init",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_initialization",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_outputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_ode_time_events",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_outputVrefs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_records",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_relations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_runtime_option_map",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_scalingMethod",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_variableAliases",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_variableAliases$Visitor",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_z_stringOffsets",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_model_init_eval_dependent",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_model_init_eval_dependent_variables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_model_init_eval_independent_start",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_n_delays",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_n_spatialdists",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_numDelaySwitchingFunctions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_numSpatialDistSwitchingFunctions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_calc",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_calc_decl",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_calc_free",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_calc_init",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_decl",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_external_includes",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_free",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_record_definitions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_setup_decl",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_setup_free",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ECETag_setup_init",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.CGenerator$ZOffsets",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_capabilities",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_coSimulation_StandAlone",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_fmiModelDescription",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_implementation",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_boolean",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_directDependency",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_enumeration",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_integer",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_real",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_string",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_modelVariables$XMLTag_variables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_typeDefinitions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_typeDefinitions$XMLTag_enumerationType",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_typeDefinitions$XMLTag_enumerationType$XMLTag_item",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_typeDefinitions$XMLTag_type",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_unitDefinitions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_unitDefinitions$XMLTag_baseUnit",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.Fmi1XMLGenerator$XMLTag_unitDefinitions$XMLTag_baseUnit$XMLTag_displayUnitDefinition",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.FmiXMLGenerator$CompilerVersionAnnotation",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.FmiXMLGenerator$XMLTag_defaultExperiment",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations_annotations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations_tool",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_dynamic_state_n_sets",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_fmu_type_define",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numAlgebraicContinousRealVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numBooleanInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentBooleanConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentBooleanParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentEnumConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentEnumParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentIntegerConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentIntegerParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentRealConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentRealParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentStringConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDependentStringParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDifferentiatedRealVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteBooleanVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteEnumVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteIntegerVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteRealVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteStringVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numDiscreteVariables",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEnumInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEquations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEvalIndependentBooleanParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEvalIndependentEnumParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEvalIndependentIntegerParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEvalIndependentRealParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEvalIndependentStringParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numEventIndicators",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numExternalObjects",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numFinalIndependentBooleanParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numFinalIndependentEnumParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numFinalIndependentIntegerParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numFinalIndependentRealParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numFinalIndependentStringParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numGuards",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentBooleanConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentBooleanParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentEnumConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentEnumParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentIntegerConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentIntegerParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentRealConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentRealParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentStringConstants",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIndependentStringParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInitialEquations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInitialEventIndicators",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInitialGuards",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInitialGuessEquations",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInitialSwitchingFunctions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numIntegerInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numOutputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numRealInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStateSwitchingFunctions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStringInputs",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStructuralIndependentBooleanParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStructuralIndependentEnumParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStructuralIndependentIntegerParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStructuralIndependentRealParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numStructuralIndependentStringParameters",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.GenericGenerator$DAETag_numTimeSwitchingFunctions",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.modelica.compiler.StepInfo$MemoryChangeItem",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.jmodelica.modelica.compiler.StepInfo$TimeItem",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+}
+]

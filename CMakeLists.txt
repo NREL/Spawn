@@ -62,6 +62,7 @@ configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 add_subdirectory( cli )
+add_subdirectory( modelica )
 
 add_custom_target(
   CopyEPFMI ALL
