@@ -38,11 +38,26 @@ add_custom_command( OUTPUT ${PROJECT_BINARY_DIR}/Modelica.class
   DEPENDS JModelica ${PROJECT_SOURCE_DIR}/Modelica.java
 )
 
-add_custom_command( OUTPUT ${PROJECT_BINARY_DIR}/Modelica
+set(modelica_lib_path ${PROJECT_BINARY_DIR}/modelica${CMAKE_SHARED_LIBRARY_SUFFIX})
+add_custom_command( OUTPUT ${modelica_lib_path}
   COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} --shared Modelica
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   DEPENDS JModelica ${PROJECT_BINARY_DIR}/Modelica.class
 )
 
-add_custom_target(modelica DEPENDS ${PROJECT_BINARY_DIR}/Modelica)
+add_custom_target(modelica-lib DEPENDS ${modelica_lib_path})
+
+add_library(modelica SHARED IMPORTED GLOBAL)
+set_target_properties(modelica PROPERTIES IMPORTED_LOCATION ${modelica_lib_path})
+# Need cmake 3.11 or greater to do this
+#target_include_directories(modelica INTERFACE
+#  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+#  #$<INSTALL_INTERFACE:include/mylib>  # <prefix>/include/mylib
+#)
+
+add_dependencies(
+  modelica
+  modelica-lib
+)
+
 

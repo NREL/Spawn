@@ -61,8 +61,9 @@ conan_cmake_run(REQUIRES
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
-add_subdirectory( cli )
 add_subdirectory( modelica )
+add_subdirectory( compiler )
+add_subdirectory( cli )
 
 add_custom_target(
   CopyEPFMI ALL

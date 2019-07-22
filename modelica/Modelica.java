@@ -1,3 +1,4 @@
+import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.jmodelica.modelica.compiler.ModelicaCompiler;
 import org.jmodelica.modelica.compiler.SourceRoot;
 import org.jmodelica.modelica.compiler.InstClassDecl;
@@ -14,6 +15,10 @@ import java.nio.charset.Charset;
 import java.io.File;
 
 public class Modelica { 
+  @CEntryPoint
+  public static void foo() {
+  }
+
   public static void main(String[] args) { 
     OptionRegistry options = ModelicaCompiler.createOptions();
     ////options.setOption("debug_duplicate_generated","true");
@@ -24,6 +29,7 @@ public class Modelica {
     //mc.setLogger("d:out.log");
     ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "1.0");
 		String[] files = new String[1];
+    System.out.println(args);
     files[0] = args[0];
 
 		try {

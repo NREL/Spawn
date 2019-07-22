@@ -7,6 +7,8 @@
 #include "ziputil.hpp"
 #include <config.hxx>
 #include <FMI/Variables.hpp>
+#include <modelica.h>
+#include <stdlib.h>  
 
 #if defined _WIN32
 #include <windows.h>
@@ -16,6 +18,19 @@
 #endif
 
 using json = nlohmann::json;
+
+int compileModel(const std::string &moinput) {
+  try {
+    setenv("JMODELICA_HOME", "/home/kbenne/Development/spawn/build/modelica/JModelica-prefix/src/JModelica", 1);
+    char* params[2];
+    params[0] = (char *)"modelica";
+    params[1] = (char *)moinput.c_str();
+    run_main(2, params);
+    return 0;
+  } catch(...) {
+    return 1;
+  }
+}
 
 int createFMU(const std::string &jsoninput) {
   json j;
@@ -166,10 +181,15 @@ int createFMU(const std::string &jsoninput) {
 int main(int argc, const char *argv[]) {
   CLI::App app{"Spawn of EnergyPlus"};
 
-  std::string jsoninput = "spawn.json";
+  std::string moinput = "";
   auto createOption =
-      app.add_option("-c,--create", jsoninput,
-                     "Create a standalone FMU based on json input", true);
+      app.add_option("-c,--compile", moinput,
+                     "Compile Modelica model to FMU format", true);
+
+  std::string jsoninput = "spawn.json";
+  auto exportOption =
+      app.add_option("-e,--export", jsoninput,
+                     "Export a standalone EnergyPlus based FMU", true);
 
   auto versionOption =
     app.add_flag("-v,--version", "Print version info and exit");
@@ -177,10 +197,11 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   if (*createOption) {
-    auto result = createFMU(jsoninput);
-    if (result) {
-      return result;
-    }
+    return compileModel(moinput);
+  }
+
+  if (*exportOption) {
+    return createFMU(jsoninput);
   }
 
   if (*versionOption) {
