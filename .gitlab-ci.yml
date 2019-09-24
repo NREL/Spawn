@@ -67,9 +67,9 @@ build:windows:
   script:
     - mkdir build
     - cd build
-    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DBUILD_TESTING=ON ..'
-    - '"C:\Program Files\CMake\bin\cmake.exe" ..'
-    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD'
+    - "C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DBUILD_TESTING=ON ..
+    - "C:\Program Files\CMake\bin\cmake.exe" ..
+    - "C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD
   artifacts:
     expire_in: 6 hrs
     paths:
