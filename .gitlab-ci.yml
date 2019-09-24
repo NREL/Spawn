@@ -58,37 +58,59 @@ release:ubuntu:
   only:
     - tags
 
-#build:windows:
-#  stage: build
-#  tags:
-#    - windows
-#  #before_script:
-#  #  - set PATH=%PATH:C:\Program Files\Git\bin;=%
-#  script:
-#    - mkdir build
-#    - cd build
-#    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DBUILD_TESTING=ON ..'
-#    - '"C:\Program Files\CMake\bin\cmake.exe" ..'
-#    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD'
-#  artifacts:
-#    expire_in: 6 hrs
-#    paths:
-#      - build/
-#
-#package:windows:
-#  stage: package
-#  tags:
-#    - windows
-#  dependencies:
-#    - build:windows
-#  script:
-#    - cd build
-#    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target Package'
-#  artifacts:
-#    expire_in: 6 hrs
-#    paths:
-#      - build/Spawn*.zip
-#
+build:windows:
+  stage: build
+  tags:
+    - windows
+  #before_script:
+  #  - set PATH=%PATH:C:\Program Files\Git\bin;=%
+  script:
+    - mkdir build
+    - cd build
+    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DBUILD_TESTING=ON ..'
+    - '"C:\Program Files\CMake\bin\cmake.exe" ..'
+    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target ALL_BUILD'
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+package:windows:
+  stage: package
+  tags:
+    - windows
+  dependencies:
+    - build:windows
+  script:
+    - cd build
+    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target Package'
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.zip
+
+publish:windows:
+  stage: publish
+  tags:
+    - windows
+  dependencies:
+    - package:windows
+  script:
+    - python3 cmake/publish.py publish
+  when: manual
+
+release:windows:
+  stage: release
+  tags:
+    - windows
+  dependencies:
+    - package:windows
+  script:
+    - python3 cmake/publish.py release
+  when: manual
+  only:
+    - tags
+
 #build:mac:
 #  stage: build
 #  tags:
