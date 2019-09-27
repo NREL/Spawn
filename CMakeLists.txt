@@ -73,6 +73,8 @@ install( TARGETS epfmi
   ARCHIVE DESTINATION ./lib
 )
 
+add_custom_target( epfmi-trigger ALL DEPENDS epfmi )
+
 if( NOT WIN32 )
   add_subdirectory( cli )
   
