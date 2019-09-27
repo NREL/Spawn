@@ -83,7 +83,7 @@ package:windows:
     - build:windows
   script:
     - cd build
-    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target Package'
+    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target Package
   artifacts:
     expire_in: 6 hrs
     paths:
