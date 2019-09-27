@@ -13,6 +13,8 @@ The primary purpose is currently to create an FMU given an EnergyPlus idf file.
 The latest development builds are available at the following locations.
 
 * [Linux](https://spawn.s3.amazonaws.com/latest/Spawn-latest-Linux.tar.gz).
+* [Mac](https://spawn.s3.amazonaws.com/latest/Spawn-latest-Darwin.tar.gz).
+* [Windows](https://spawn.s3.amazonaws.com/latest/Spawn-latest-Windows.tar.gz).
 
 ## Compiling from source
 
