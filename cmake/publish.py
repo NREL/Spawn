@@ -17,11 +17,11 @@ latest_package_name = re.sub(r'[0-9]\.[0-9]\.[0-9]-[a-zA-Z_0-9]*','latest',packa
 latest_package_path = 'build/' + latest_package_name
 shutil.copyfile(package_path, latest_package_path)
 if os.name == 'nt':
-    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', latest_package_path, 's3://spawn/latest/'])
-    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
-else:
     subprocess.run(['C:/Users/Administrator/AppData/Local/Programs/Python/Python37-32/Scripts/aws', 's3', 'cp', '--acl', 'public-read', latest_package_path, 's3://spawn/latest/'])
     subprocess.run(['C:/Users/Administrator/AppData/Local/Programs/Python/Python37-32/Scripts/aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
+else:
+    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', latest_package_path, 's3://spawn/latest/'])
+    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
 
 if sys.argv[1] == 'release':
     project_id = '10361647'
