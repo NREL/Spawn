@@ -51,7 +51,7 @@ conan_add_remote(NAME bincrafters
   URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 conan_cmake_run(REQUIRES 
-  boost_filesystem/1.69.0@bincrafters/stable
+  boost/1.69.0@conan/stable
   jsonformoderncpp/3.6.1@vthiery/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
