@@ -4,13 +4,14 @@ cmake_policy(SET CMP0025 NEW)
 project( Spawn VERSION 0.0.1 )
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_CXX_STANDARD 11)
+if(APPLE)
+  set(CMAKE_CXX_STANDARD 11)
+endif()
 
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 
 add_subdirectory( submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL )
 
-cmake_policy(SET CMP0025 NEW)
 set (CMAKE_CXX_STANDARD 11)
 
 if(NOT GIT_FOUND)
@@ -65,38 +66,39 @@ conan_cmake_run(REQUIRES
 
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
-
-add_subdirectory( cli )
-
-if( UNIX AND NOT APPLE ) 
-  set(os_prefix spawn-linux64)
-endif()
-
-set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-
-add_custom_target(
-  Stage ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-          "${PROJECT_BINARY_DIR}/modelica-buildings"
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:spawn>
-          $<TARGET_FILE:epfmi>
-          "${modelica_bin_path}"
-)
-
-
+  
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
   LIBRARY DESTINATION ./lib
   ARCHIVE DESTINATION ./lib
 )
-install( FILES ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/FMI/EPFMI.hpp DESTINATION ./include )
-install(DIRECTORY examples DESTINATION .)
-if( INSTALL_BUILDINGS_LIBRARY )
-  install(DIRECTORY submodules/modelica-buildings DESTINATION .)
-  install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
+
+if( not WIN32 )
+  add_subdirectory( cli )
+  
+  if( UNIX AND NOT APPLE ) 
+    set(os_prefix spawn-linux64)
+  endif()
+  
+  set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+  
+  add_custom_target(
+    Stage ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+            "${PROJECT_BINARY_DIR}/modelica-buildings"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:spawn>
+            $<TARGET_FILE:epfmi>
+            "${modelica_bin_path}"
+  )
+  install( FILES ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/FMI/EPFMI.hpp DESTINATION ./include )
+  install(DIRECTORY examples DESTINATION .)
+  if( INSTALL_BUILDINGS_LIBRARY )
+    install(DIRECTORY submodules/modelica-buildings DESTINATION .)
+    install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
+  endif()
 endif()
 
 INCLUDE(CPack)
