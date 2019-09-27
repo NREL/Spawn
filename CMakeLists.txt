@@ -73,7 +73,7 @@ install( TARGETS epfmi
   ARCHIVE DESTINATION ./lib
 )
 
-if( not WIN32 )
+if( NOT WIN32 )
   add_subdirectory( cli )
   
   if( UNIX AND NOT APPLE ) 
