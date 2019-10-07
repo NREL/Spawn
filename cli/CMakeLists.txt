@@ -19,7 +19,7 @@ target_link_libraries(spawn
   CONAN_PKG::CLI11 
   CONAN_PKG::jsonformoderncpp 
   CONAN_PKG::pugixml 
-  CONAN_PKG::boost_filesystem 
+  CONAN_PKG::boost 
   CONAN_PKG::libzip
   epvariables
   modelica
