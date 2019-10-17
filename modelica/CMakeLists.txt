@@ -8,11 +8,9 @@ find_program(NATIVE_IMAGE_EXECUTABLE native-image ${java_bin})
 
 ExternalProject_Add(
   JModelica
-  GIT_REPOSITORY https://github.com/kbenne/JModelica.git 
-  GIT_TAG 29f323e1081574b823862a6bd6200568a630be6d
-  BUILD_IN_SOURCE 1
-  CONFIGURE_COMMAND ./configure
-  BUILD_COMMAND make build-compiler
+  URL https://modelica.s3.amazonaws.com/latest/Modelica-latest.tar.gz 
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
   INSTALL_COMMAND ""
   TEST_COMMAND ""
 )
@@ -22,9 +20,9 @@ set( jars
   JModelica-prefix/src/JModelica/java/bin/OptimicaCompiler.jar
   JModelica-prefix/src/JModelica/java/bin/ModelicaCompiler.jar
   JModelica-prefix/src/JModelica/java/bin/util.jar
-  JModelica-prefix/src/JModelica/ThirdParty/Beaver/beaver-0.9.6.1/lib/beaver-rt-src.jar
-  JModelica-prefix/src/JModelica/ThirdParty/Beaver/beaver-0.9.6.1/lib/beaver-rt.jar
-  JModelica-prefix/src/JModelica/ThirdParty/Beaver/beaver-0.9.6.1/lib/beaver.jar
+  JModelica-prefix/src/JModelica/java/bin/beaver-rt-src.jar
+  JModelica-prefix/src/JModelica/java/bin/beaver-rt.jar
+  JModelica-prefix/src/JModelica/java/bin/beaver.jar
 )
 
 foreach(jar IN LISTS jars)
@@ -49,6 +47,7 @@ add_custom_target(modelica-lib DEPENDS ${modelica_lib_path})
 
 add_library(modelica SHARED IMPORTED GLOBAL)
 set_target_properties(modelica PROPERTIES IMPORTED_LOCATION ${modelica_lib_path})
+
 # Need cmake 3.11 or greater to do this
 #target_include_directories(modelica INTERFACE
 #  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>

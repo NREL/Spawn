@@ -1,6 +1,7 @@
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+#include <vector>
 #include <boost/filesystem.hpp>
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
@@ -19,13 +20,45 @@
 
 using json = nlohmann::json;
 
+boost::filesystem::path exeDir() {
+  #ifdef __APPLE__
+    Dl_info info;
+    dladdr("main", &info);
+    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path())
+  #elif _WIN32
+    TCHAR szPath[MAX_PATH];
+    GetModuleFileName(nullptr, szPath, MAX_PATH);
+    return boost::filesystem::canonical(boost::filesystem::path(szPath).parent_path());
+  #else
+    Dl_info info;
+    dladdr("main", &info);
+    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path());
+  #endif
+}
+
+bool isInstalled() {
+  return exeDir().stem() == "bin";
+}
+
 int compileModel(const std::string &moinput) {
   try {
-    setenv("JMODELICA_HOME", "/home/kbenne/Development/spawn/build/modelica/JModelica-prefix/src/JModelica", 1);
-    char* params[2];
+    //auto modelicapath = "/home/kbenne/Development/JModelica/modelon/ThirdParty/MSL/"; // binary_dir / "modelica-buildings/Buildings/:";
+    std::vector<boost::filesystem::path> modelicapath;
+    if (isInstalled()) {
+      auto jmodelica_home = exeDir() / "../JModelica/";
+      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+    } else {
+      boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+      auto jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+      modelicapath.append(binary_dir / "modelica/JModelica-prefix/src/JModelica/MSL/");
+      modelicapath.append(binary_dir / "modelica-buildings/Buildings/");
+    }
+    char* params[3];
     params[0] = (char *)"modelica";
-    params[1] = (char *)moinput.c_str();
-    run_main(2, params);
+    params[1] = (char *)modelicapath.string().c_str();
+    params[2] = (char *)moinput.c_str();
+    run_main(3, params);
     return 0;
   } catch(...) {
     return 1;
@@ -117,24 +150,18 @@ int createFMU(const std::string &jsoninput) {
   boost::filesystem::remove(fmupath);
 
   #ifdef __APPLE__
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "../lib/libepfmi.dylib";
     if (! boost::filesystem::exists(epFMISourcePath)) {
       epFMISourcePath = exedir / "libepfmi.dylib";
     }
     epFMIDestPath = fmuStaggingPath / "binaries/darwin64/libepfmi.dylib";
   #elif _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    auto exedir = boost::filesystem::path(szPath).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "epfmi.dll";
     epFMIDestPath = fmuStaggingPath / "binaries/win64/epfmi.dll";
   #else
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "../lib/libepfmi.so";
     if (! boost::filesystem::exists(epFMISourcePath)) {
       epFMISourcePath = exedir / "libepfmi.so";

@@ -71,7 +71,9 @@ add_custom_target(
   CopyEPFMI ALL
   COMMAND ${CMAKE_COMMAND} -E copy
           $<TARGET_FILE:epfmi>
+          $<TARGET_FILE:modelica>
           $<TARGET_FILE_DIR:spawn>
+)
   
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
@@ -82,7 +84,7 @@ install( TARGETS epfmi
 add_custom_target( epfmi-trigger ALL DEPENDS epfmi )
 
 if( NOT WIN32 )
-  add_subdirectory( compiler )
+  add_subdirectory( modelica )
   add_subdirectory( cli )
   
   if( UNIX AND NOT APPLE ) 
