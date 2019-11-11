@@ -86,6 +86,7 @@ if( NOT WIN32 )
   
   add_custom_target(
     Stage ALL
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
             "${PROJECT_BINARY_DIR}/modelica-buildings"
@@ -102,6 +103,7 @@ if( NOT WIN32 )
     install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
   endif()
 endif()
+
 
 INCLUDE(CPack)
 
