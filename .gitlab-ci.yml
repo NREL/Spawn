@@ -75,41 +75,41 @@ build:windows:
     paths:
       - build/
 
-package:windows:
-  stage: package
-  tags:
-    - windows
-  dependencies:
-    - build:windows
-  script:
-    - cd build
-    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target Package
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/Spawn*.zip
-
-publish:windows:
-  stage: publish
-  tags:
-    - windows
-  dependencies:
-    - package:windows
-  script:
-    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py publish
-  when: manual
-
-release:windows:
-  stage: release
-  tags:
-    - windows
-  dependencies:
-    - package:windows
-  script:
-    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py release
-  when: manual
-  only:
-    - tags
+#package:windows:
+#  stage: package
+#  tags:
+#    - windows
+#  dependencies:
+#    - build:windows
+#  script:
+#    - cd build
+#    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target Package
+#  artifacts:
+#    expire_in: 6 hrs
+#    paths:
+#      - build/Spawn*.zip
+#
+#publish:windows:
+#  stage: publish
+#  tags:
+#    - windows
+#  dependencies:
+#    - package:windows
+#  script:
+#    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py publish
+#  when: manual
+#
+#release:windows:
+#  stage: release
+#  tags:
+#    - windows
+#  dependencies:
+#    - package:windows
+#  script:
+#    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py release
+#  when: manual
+#  only:
+#    - tags
 
 build:mac:
   stage: build
@@ -126,39 +126,39 @@ build:mac:
     paths:
       - build/
 
-package:mac:
-  stage: package
-  tags:
-    - mac
-  dependencies:
-    - build:mac
-  script:
-    - cd build
-    - make package
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/Spawn*.tar.gz
-
-publish:mac:
-  stage: publish
-  tags:
-    - mac
-  dependencies:
-    - package:mac
-  script:
-    - python3 cmake/publish.py publish
-  when: manual
-
-release:mac:
-  stage: release
-  tags:
-    - mac
-  dependencies:
-    - package:mac
-  script:
-    - python3 cmake/publish.py release
-  when: manual
-  only:
-    - tags
+#package:mac:
+#  stage: package
+#  tags:
+#    - mac
+#  dependencies:
+#    - build:mac
+#  script:
+#    - cd build
+#    - make package
+#  artifacts:
+#    expire_in: 6 hrs
+#    paths:
+#      - build/Spawn*.tar.gz
+#
+#publish:mac:
+#  stage: publish
+#  tags:
+#    - mac
+#  dependencies:
+#    - package:mac
+#  script:
+#    - python3 cmake/publish.py publish
+#  when: manual
+#
+#release:mac:
+#  stage: release
+#  tags:
+#    - mac
+#  dependencies:
+#    - package:mac
+#  script:
+#    - python3 cmake/publish.py release
+#  when: manual
+#  only:
+#    - tags
 
