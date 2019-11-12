@@ -5,8 +5,8 @@
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
+#include "../epfmi/Variables.hpp"
 #include <config.hxx>
-#include <FMI/Variables.hpp>
 
 #if defined _WIN32
 #include <windows.h>
