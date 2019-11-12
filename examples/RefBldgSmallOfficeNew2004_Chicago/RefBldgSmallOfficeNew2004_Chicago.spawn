@@ -13,19 +13,19 @@
   "model": {
     "zones": [
       { "name": "Core_ZN" }
+    ],
+    "outputVariables": [
+      {
+        "name":    "Zone Mean Air Temperature",
+        "key":     "Attic",
+        "fmiName": "Zone_Temperature"
+      },
+      {
+        "name":    "Site Outdoor Air Drybulb Temperature",
+        "key":     "Environment",
+        "fmiName": "Outside_Temperature"
+      }
     ]
-  },
-  "outputVariables": [
-    {
-      "name":    "Zone Mean Air Temperature",
-      "key":     "Attic",
-      "fmiName": "Zone_Temperature"
-    },
-    {
-      "name":    "Site Outdoor Air Drybulb Temperature",
-      "key":     "Environment",
-      "fmiName": "Outside_Temperature"
-    }
-  ]
+  }
 } 
  
