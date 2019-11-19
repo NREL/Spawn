@@ -104,6 +104,5 @@ if( NOT WIN32 )
   endif()
 endif()
 
-
 INCLUDE(CPack)
 
