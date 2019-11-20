@@ -16,32 +16,32 @@ build:ubuntu:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
     - cmake ..
-    - make -j2
+    - make -j2 package
   artifacts:
     expire_in: 6 hrs
     paths:
       - build/
 
-package:ubuntu:
-  stage: package
-  tags:
-    - ubuntu
-  dependencies:
-    - build:ubuntu
-  script:
-    - cd build
-    - make package
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/Spawn*.tar.gz
+#package:ubuntu:
+#  stage: package
+#  tags:
+#    - ubuntu
+#  dependencies:
+#    - build:ubuntu
+#  script:
+#    - cd build
+#    - make package
+#  artifacts:
+#    expire_in: 6 hrs
+#    paths:
+#      - build/Spawn*.tar.gz
 
 publish:ubuntu:
   stage: publish
   tags:
     - ubuntu
   dependencies:
-    - package:ubuntu
+    - build:ubuntu
   script:
     - python3 cmake/publish.py publish
   when: manual
@@ -51,7 +51,7 @@ release:ubuntu:
   tags:
     - ubuntu
   dependencies:
-    - package:ubuntu
+    - build:ubuntu
   script:
     - python3 cmake/publish.py release
   when: manual
@@ -69,7 +69,7 @@ build:windows:
     - cd build
     - C:\Program` Files\CMake\bin\cmake.exe -G 'Visual Studio 15 2017 Win64' -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DBUILD_TESTING=ON ..
     - C:\Program` Files\CMake\bin\cmake.exe ..
-    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target ALL_BUILD
+    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target Package
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -88,28 +88,28 @@ build:windows:
 #    expire_in: 6 hrs
 #    paths:
 #      - build/Spawn*.zip
-#
-#publish:windows:
-#  stage: publish
-#  tags:
-#    - windows
-#  dependencies:
-#    - package:windows
-#  script:
-#    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py publish
-#  when: manual
-#
-#release:windows:
-#  stage: release
-#  tags:
-#    - windows
-#  dependencies:
-#    - package:windows
-#  script:
-#    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py release
-#  when: manual
-#  only:
-#    - tags
+
+publish:windows:
+  stage: publish
+  tags:
+    - windows
+  dependencies:
+    - build:windows
+  script:
+    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py publish
+  when: manual
+
+release:windows:
+  stage: release
+  tags:
+    - windows
+  dependencies:
+    - build:windows
+  script:
+    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py release
+  when: manual
+  only:
+    - tags
 
 build:mac:
   stage: build
@@ -120,7 +120,7 @@ build:mac:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
     - cmake ..
-    - make -j2
+    - make -j2 package
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -139,26 +139,26 @@ build:mac:
 #    expire_in: 6 hrs
 #    paths:
 #      - build/Spawn*.tar.gz
-#
-#publish:mac:
-#  stage: publish
-#  tags:
-#    - mac
-#  dependencies:
-#    - package:mac
-#  script:
-#    - python3 cmake/publish.py publish
-#  when: manual
-#
-#release:mac:
-#  stage: release
-#  tags:
-#    - mac
-#  dependencies:
-#    - package:mac
-#  script:
-#    - python3 cmake/publish.py release
-#  when: manual
-#  only:
-#    - tags
+
+publish:mac:
+  stage: publish
+  tags:
+    - mac
+  dependencies:
+    - build:mac
+  script:
+    - python3 cmake/publish.py publish
+  when: manual
+
+release:mac:
+  stage: release
+  tags:
+    - mac
+  dependencies:
+    - build:mac
+  script:
+    - python3 cmake/publish.py release
+  when: manual
+  only:
+    - tags
 
