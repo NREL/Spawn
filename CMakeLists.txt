@@ -69,13 +69,15 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 add_subdirectory( modelica )
 add_subdirectory( compiler )
+add_subdirectory( test )
 
 add_custom_target(
   CopyEPFMI ALL
   COMMAND ${CMAKE_COMMAND} -E copy
           $<TARGET_FILE:epfmi>
           $<TARGET_FILE_DIR:spawn>
-  
+)
+
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
   LIBRARY DESTINATION ./lib
