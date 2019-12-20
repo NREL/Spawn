@@ -61,15 +61,13 @@ namespace nrel {
 void Compiler::compile_and_link(const boost::filesystem::path &source) {
 
   auto do_compile = [&]() {
-    return compile(source, m_include_paths, m_flags);
+    return compile(source, *m_context.getContext(), m_include_paths, m_flags);
   };
 
   if (!m_currentCompilation) {
-    auto result = do_compile();
-    m_currentCompilation = std::move(result.first);
-    m_currentContext = std::move(result.second);
+    m_currentCompilation = do_compile();
   } else {
-    llvm::Linker::linkModules(*m_currentCompilation, do_compile().first);
+    llvm::Linker::linkModules(*m_currentCompilation, do_compile());
   }
 }
 
@@ -125,8 +123,9 @@ void Compiler::write_object_file(const boost::filesystem::path &loc) {
   dest.flush();
 }
 
-std::pair<std::unique_ptr<llvm::Module>, std::unique_ptr<llvm::LLVMContext>>
+std::unique_ptr<llvm::Module>
 Compiler::compile(const boost::filesystem::path &source,
+                  llvm::LLVMContext &ctx,
                   const std::vector<boost::filesystem::path> &include_paths,
                   const std::vector<std::string> &flags) {
   void *MainAddr = (void *)(intptr_t)getExecutablePath;
@@ -223,12 +222,12 @@ Compiler::compile(const boost::filesystem::path &source,
                                            MainAddr);
 
   // Create and execute the frontend to generate an LLVM bitcode module.
-  std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction());
+  std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction(&ctx));
   if (!Clang.ExecuteAction(*Act)) {
     return {};
   }
 
-  return std::pair{Act->takeModule(), std::unique_ptr<llvm::LLVMContext>{Act->takeLLVMContext()}};
+  return Act->takeModule();
 }
 
 } // namespace nrel

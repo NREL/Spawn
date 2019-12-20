@@ -44,7 +44,7 @@ int main(int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  jit.get()->addModule(llvm::orc::ThreadSafeModule(compiler.take_compilation(), compiler.take_context()));
+  jit.get()->addModule(compiler.take_compilation(), compiler.context());
 
   auto go = (int (*)())jit.get()->getSymbolAddress("go").get();
   go();

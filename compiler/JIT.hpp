@@ -74,8 +74,8 @@ public:
 
   const TargetMachine &getTargetMachine() const { return *TM; }
 
-  Error addModule(ThreadSafeModule M) {
-    return CompileLayer.add(ES.getMainJITDylib(), std::move(M));
+  Error addModule(std::unique_ptr<llvm::Module> module, llvm::orc::ThreadSafeContext ctx) {
+    return CompileLayer.add(ES.getMainJITDylib(), ThreadSafeModule(std::move(module), std::move(ctx)));
   }
 
   Expected<JITEvaluatedSymbol> findSymbol(const StringRef &Name) {
