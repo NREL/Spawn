@@ -23,21 +23,3 @@ target_link_libraries(
   CONAN_PKG::boost)
 
 
-add_executable(jit_compiler compiler2.cpp)
-
-target_link_libraries(
-  jit_compiler
-  LLVMMCJIT
-  LLVMMIRParser
-  LLVMX86AsmParser
-  # LLVMX86AsmPrinter
-  LLVMX86CodeGen
-  LLVMOrcJIT
-  libclang
-  clangBasic
-  clangLex
-  clangParse
-  clangCodeGen
-  CONAN_PKG::boost)
-
-

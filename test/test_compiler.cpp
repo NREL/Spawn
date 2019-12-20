@@ -8,9 +8,6 @@
 
 int main(int argc, const char *argv[])
 {
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-
   if (argc < 2) {
     std::cerr << "missing file name to compile\n";
     return EXIT_FAILURE;
@@ -29,25 +26,18 @@ int main(int argc, const char *argv[])
   include_paths.push_back("/usr/include");
   include_paths.push_back("/usr/local/lib/clang/9.0.0/include");
 
-  nrel::Compiler compiler(include_paths, {"-v"});
+  nrel::Compiler compiler(include_paths, {});
 
   std::for_each(std::next(argv), std::next(argv, argc), [&](const auto &path) { compiler.compile_and_link(path); });
 
-  //compiler.write_bitcode("a.out.bc");
-//  compiler.write_object_file("a.out");
+  // compiler.write_bitcode("a.out.bc");
+  //  compiler.write_object_file("a.out");
 
-  llvm::raw_os_ostream cerr(std::cerr);
-  auto jit = llvm::orc::SimpleJIT::Create();
-  if (!jit) {
-    std::cerr << "Error creating JIT\n";
-    cerr << jit.takeError();
-    return EXIT_FAILURE;
-  }
-
-  jit.get()->addModule(compiler.take_compilation(), compiler.context());
-
-  auto go = (int (*)())jit.get()->getSymbolAddress("go").get();
+  auto jit = compiler.move_to_jit();
+  auto go = jit->get_function<int()>("go");
   go();
+
+  llvm::llvm_shutdown();
 
   return EXIT_SUCCESS;
 }

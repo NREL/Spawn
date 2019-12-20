@@ -74,12 +74,25 @@ public:
 
   const TargetMachine &getTargetMachine() const { return *TM; }
 
-  Error addModule(std::unique_ptr<llvm::Module> module, llvm::orc::ThreadSafeContext ctx) {
-    return CompileLayer.add(ES.getMainJITDylib(), ThreadSafeModule(std::move(module), std::move(ctx)));
+  void addModule(std::unique_ptr<llvm::Module> module, llvm::orc::ThreadSafeContext ctx) {
+    auto err = CompileLayer.add(ES.getMainJITDylib(), ThreadSafeModule(std::move(module), std::move(ctx)));
+    if (err) {
+      throw err;
+    }
   }
 
   Expected<JITEvaluatedSymbol> findSymbol(const StringRef &Name) {
     return ES.lookup({&ES.getMainJITDylib()}, Mangle(Name));
+  }
+
+  template<typename FunctionSig>
+  auto get_function(const StringRef &name) {
+    auto sa = getSymbolAddress(name);
+    if (sa) {
+      return reinterpret_cast<std::add_pointer_t<FunctionSig>>(sa.get());
+    } else {
+      throw std::runtime_error(std::string("Unable to find symbol: ") + std::string(name));
+    }
   }
 
   Expected<JITTargetAddress> getSymbolAddress(const StringRef &Name) {
