@@ -99,6 +99,8 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 add_subdirectory(modelica)
 add_subdirectory(compiler)
+
+include(CTest)
 add_subdirectory(test)
 
 add_custom_target(

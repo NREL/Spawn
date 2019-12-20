@@ -21,5 +21,3 @@ target_link_libraries(
   clangParse
   clangCodeGen
   CONAN_PKG::boost)
-
-
