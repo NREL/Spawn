@@ -8,6 +8,9 @@
 
 int main(int argc, const char *argv[])
 {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+
   if (argc < 2) {
     std::cerr << "missing file name to compile\n";
     return EXIT_FAILURE;
@@ -30,7 +33,7 @@ int main(int argc, const char *argv[])
 
   std::for_each(std::next(argv), std::next(argv, argc), [&](const auto &path) { compiler.compile_and_link(path); });
 
-  compiler.write_bitcode("a.out.bc");
+  //compiler.write_bitcode("a.out.bc");
 //  compiler.write_object_file("a.out");
 
   llvm::raw_os_ostream cerr(std::cerr);
@@ -43,7 +46,7 @@ int main(int argc, const char *argv[])
 
   jit.get()->addModule(llvm::orc::ThreadSafeModule(compiler.take_compilation(), compiler.take_context()));
 
-  auto go = (int (*)())jit.get()->getSymbolAddress("get_value").get();
+  auto go = (int (*)())jit.get()->getSymbolAddress("go").get();
   go();
 
   return EXIT_SUCCESS;

@@ -1,7 +1,8 @@
 #include <stdio.h>
 
-void func()
+int func()
 {
   puts("Hello World");
+  return 42;
 }
 
