@@ -42,9 +42,6 @@
 
 #include "compiler.hpp"
 
-using namespace clang;
-using namespace clang::driver;
-
 std::string getExecutablePath()
 {
 #if defined _WIN32
@@ -116,18 +113,18 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
 {
   void *MainAddr = (void *)(intptr_t)getExecutablePath;
   std::string Path = getExecutablePath();
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter *DiagClient = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  clang::IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts{new clang::DiagnosticOptions()};
+  clang::TextDiagnosticPrinter *DiagClient{new clang::TextDiagnosticPrinter(llvm::errs(), &*DiagOpts)};
 
-  IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
-  DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
+  clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
+  clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
 
   // Use ELF on windows for now.
   std::string TripleStr = llvm::sys::getProcessTriple();
   llvm::Triple T(TripleStr);
   if (T.isOSBinFormatCOFF()) T.setObjectFormat(llvm::Triple::ELF);
 
-  Driver TheDriver(Path, T.str(), Diags);
+  clang::driver::Driver TheDriver(Path, T.str(), Diags);
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
@@ -135,7 +132,6 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   for (const auto &file : spawn::embedded_files::fileNames()) {
     spawn::embedded_files::extractFile(file, td.dir().native());
   }
-
 
   // a place for the strings to live
   std::vector<std::string> str_args;
@@ -149,10 +145,10 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   str_args.push_back(source.native());
 
   // the strings to pass to the compiler driver
-  SmallVector<const char *, 64> Args; //(argv, argv + argc);
+  clang::SmallVector<const char *, 64> Args; //(argv, argv + argc);
   std::transform(str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
-  std::unique_ptr<Compilation> C(TheDriver.BuildCompilation(Args));
+  std::unique_ptr<clang::driver::Compilation> C(TheDriver.BuildCompilation(Args));
 
   if (!C) {
     return {};
@@ -163,24 +159,24 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   // We expect to get back exactly one command job, if we didn't something
   // failed. Extract that job from the compilation.
   const auto &Jobs = C->getJobs();
-  if (Jobs.size() != 1 || !isa<driver::Command>(*Jobs.begin())) {
-    SmallString<256> Msg;
+  if (Jobs.size() != 1 || !clang::isa<clang::driver::Command>(*Jobs.begin())) {
+    clang::SmallString<256> Msg;
     llvm::raw_svector_ostream OS(Msg);
     Jobs.Print(OS, "; ", true);
-    Diags.Report(diag::err_fe_expected_compiler_job) << OS.str();
+    Diags.Report(clang::diag::err_fe_expected_compiler_job) << OS.str();
     return {};
   }
 
-  const auto &Cmd = cast<driver::Command>(*Jobs.begin());
+  const auto &Cmd = clang::cast<clang::driver::Command>(*Jobs.begin());
   if (llvm::StringRef(Cmd.getCreator().getName()) != "clang") {
-    Diags.Report(diag::err_fe_expected_clang_command);
+    Diags.Report(clang::diag::err_fe_expected_clang_command);
     return {};
   }
 
   // Initialize a compiler invocation object from the clang (-cc1) arguments.
   const auto &CCArgs = Cmd.getArguments();
-  std::unique_ptr<CompilerInvocation> CI(new CompilerInvocation);
-  CompilerInvocation::CreateFromArgs(*CI, const_cast<const char **>(CCArgs.data()), const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
+  std::unique_ptr<clang::CompilerInvocation> CI{new clang::CompilerInvocation};
+  clang::CompilerInvocation::CreateFromArgs(*CI, const_cast<const char **>(CCArgs.data()), const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
 
   // Show the invocation, with -v.
   if (CI->getHeaderSearchOpts().Verbose) {
@@ -192,7 +188,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   // FIXME: This is copied from cc1_main.cpp; simplify and eliminate.
 
   // Create a compiler instance to handle the actual work.
-  CompilerInstance Clang;
+  clang::CompilerInstance Clang;
   Clang.setInvocation(std::move(CI));
 
   // Create the compilers actual diagnostics engine.
@@ -202,10 +198,10 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   // Infer the builtin include path if unspecified.
   // if (Clang.getHeaderSearchOpts().UseBuiltinIncludes &&
   //    Clang.getHeaderSearchOpts().ResourceDir.empty())
-  Clang.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(getExecutablePath().c_str(), MainAddr);
+  Clang.getHeaderSearchOpts().ResourceDir = clang::CompilerInvocation::GetResourcesPath(getExecutablePath().c_str(), MainAddr);
 
   // Create and execute the frontend to generate an LLVM bitcode module.
-  std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction(&ctx));
+  std::unique_ptr<clang::CodeGenAction> Act(new clang::EmitLLVMOnlyAction(&ctx));
   if (!Clang.ExecuteAction(*Act)) {
     return {};
   }

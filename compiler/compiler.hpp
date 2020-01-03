@@ -16,11 +16,9 @@ class Compiler
 public:
   static std::string get_target_triple()
   {
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmParser();
+    llvm::InitializeNativeTargetAsmPrinter();
 
     return llvm::sys::getDefaultTargetTriple();
   }
@@ -60,7 +58,7 @@ public:
 
   static llvm::Optional<llvm::Reloc::Model> get_reloc_model()
   {
-    return {};
+    return {llvm::Reloc::Model::PIC_};
   }
 
   static llvm::TargetMachine *get_target_machine(const llvm::Target *target,
