@@ -27,6 +27,9 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "compiler/embedded_files.hxx"
+#include "utility.hpp"
+
 #include <iostream>
 #if defined _WIN32
 #include <windows.h>
@@ -42,7 +45,8 @@
 using namespace clang;
 using namespace clang::driver;
 
-std::string getExecutablePath() {
+std::string getExecutablePath()
+{
 #if defined _WIN32
   TCHAR szPath[MAX_PATH];
   if (GetModuleFileName(nullptr, szPath, MAX_PATH)) {
@@ -58,11 +62,10 @@ std::string getExecutablePath() {
 }
 
 namespace nrel {
-void Compiler::compile_and_link(const boost::filesystem::path &source) {
+void Compiler::compile_and_link(const boost::filesystem::path &source)
+{
 
-  auto do_compile = [&]() {
-    return compile(source, *m_context.getContext(), m_include_paths, m_flags);
-  };
+  auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
   if (!m_currentCompilation) {
     m_currentCompilation = do_compile();
@@ -71,7 +74,8 @@ void Compiler::compile_and_link(const boost::filesystem::path &source) {
   }
 }
 
-void Compiler::write_bitcode(const boost::filesystem::path &loc) {
+void Compiler::write_bitcode(const boost::filesystem::path &loc)
+{
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
   }
@@ -81,25 +85,22 @@ void Compiler::write_bitcode(const boost::filesystem::path &loc) {
   llvm::WriteBitcodeToFile(*m_currentCompilation, ros);
 }
 
-void Compiler::write_object_file(const boost::filesystem::path &loc) {
+void Compiler::write_object_file(const boost::filesystem::path &loc)
+{
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
   }
 
   std::string err;
-  auto *TheTarget =
-      llvm::TargetRegistry::lookupTarget(llvm::sys::getProcessTriple(), err);
-  auto *TM = TheTarget->createTargetMachine(llvm::sys::getProcessTriple(),
-                                            llvm::sys::getHostCPUName(), {}, {},
-                                            {}, {}, {}, {});
+  auto *TheTarget = llvm::TargetRegistry::lookupTarget(llvm::sys::getProcessTriple(), err);
+  auto *TM = TheTarget->createTargetMachine(llvm::sys::getProcessTriple(), llvm::sys::getHostCPUName(), {}, {}, {}, {}, {}, {});
 
   llvm::legacy::PassManager pass;
   std::string error;
 
   m_currentCompilation->setDataLayout(TM->createDataLayout());
 
-  llvm::TargetMachine::CodeGenFileType ft =
-      llvm::TargetMachine::CGFT_AssemblyFile;
+  llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_AssemblyFile;
 
   /*
   switch (codegen) {
@@ -123,16 +124,15 @@ void Compiler::write_object_file(const boost::filesystem::path &loc) {
   dest.flush();
 }
 
-std::unique_ptr<llvm::Module>
-Compiler::compile(const boost::filesystem::path &source,
-                  llvm::LLVMContext &ctx,
-                  const std::vector<boost::filesystem::path> &include_paths,
-                  const std::vector<std::string> &flags) {
+std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &source,
+                                                llvm::LLVMContext &ctx,
+                                                const std::vector<boost::filesystem::path> &include_paths,
+                                                const std::vector<std::string> &flags)
+{
   void *MainAddr = (void *)(intptr_t)getExecutablePath;
   std::string Path = getExecutablePath();
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter *DiagClient =
-      new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  TextDiagnosticPrinter *DiagClient = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
 
   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
   DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
@@ -140,19 +140,23 @@ Compiler::compile(const boost::filesystem::path &source,
   // Use ELF on windows for now.
   std::string TripleStr = llvm::sys::getProcessTriple();
   llvm::Triple T(TripleStr);
-  if (T.isOSBinFormatCOFF())
-    T.setObjectFormat(llvm::Triple::ELF);
+  if (T.isOSBinFormatCOFF()) T.setObjectFormat(llvm::Triple::ELF);
 
   Driver TheDriver(Path, T.str(), Diags);
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
+  spawn::Temp_Directory td;
+  for (const auto &file : spawn::embedded_files::fileNames()) {
+    spawn::embedded_files::extractFile(file, td.dir().native());
+  }
+
+
   // a place for the strings to live
   std::vector<std::string> str_args;
   str_args.push_back(source.native());
-  std::transform(include_paths.begin(), include_paths.end(),
-                 std::back_inserter(str_args),
-                 [](const auto &str) { return "-I" + str.native(); });
+  str_args.push_back("-I" + (td.dir() / "include").native());
+  std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) { return "-I" + str.native(); });
   str_args.push_back("-fsyntax-only");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
@@ -161,8 +165,7 @@ Compiler::compile(const boost::filesystem::path &source,
 
   // the strings to pass to the compiler driver
   SmallVector<const char *, 64> Args; //(argv, argv + argc);
-  std::transform(str_args.begin(), str_args.end(), std::back_inserter(Args),
-                 [](const auto &str) { return str.c_str(); });
+  std::transform(str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
   std::unique_ptr<Compilation> C(TheDriver.BuildCompilation(Args));
 
@@ -192,9 +195,7 @@ Compiler::compile(const boost::filesystem::path &source,
   // Initialize a compiler invocation object from the clang (-cc1) arguments.
   const auto &CCArgs = Cmd.getArguments();
   std::unique_ptr<CompilerInvocation> CI(new CompilerInvocation);
-  CompilerInvocation::CreateFromArgs(
-      *CI, const_cast<const char **>(CCArgs.data()),
-      const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
+  CompilerInvocation::CreateFromArgs(*CI, const_cast<const char **>(CCArgs.data()), const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
 
   // Show the invocation, with -v.
   if (CI->getHeaderSearchOpts().Verbose) {
@@ -211,15 +212,12 @@ Compiler::compile(const boost::filesystem::path &source,
 
   // Create the compilers actual diagnostics engine.
   Clang.createDiagnostics();
-  if (!Clang.hasDiagnostics())
-    return {};
+  if (!Clang.hasDiagnostics()) return {};
 
   // Infer the builtin include path if unspecified.
   // if (Clang.getHeaderSearchOpts().UseBuiltinIncludes &&
   //    Clang.getHeaderSearchOpts().ResourceDir.empty())
-  Clang.getHeaderSearchOpts().ResourceDir =
-      CompilerInvocation::GetResourcesPath(getExecutablePath().c_str(),
-                                           MainAddr);
+  Clang.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(getExecutablePath().c_str(), MainAddr);
 
   // Create and execute the frontend to generate an LLVM bitcode module.
   std::unique_ptr<CodeGenAction> Act(new EmitLLVMOnlyAction(&ctx));

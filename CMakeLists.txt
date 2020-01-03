@@ -4,10 +4,6 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
-if(APPLE)
-  set(CMAKE_CXX_STANDARD 11)
-endif()
-
 option(INSTALL_BUILDINGS_LIBRARY
        "Include the Modelica Buildings Library in the installer package" FALSE)
 
@@ -97,6 +93,8 @@ conan_cmake_run(
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
+include("embedded/EmbedFiles.cmake")
+add_subdirectory(embedded)
 add_subdirectory(modelica)
 add_subdirectory(compiler)
 

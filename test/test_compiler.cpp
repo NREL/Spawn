@@ -20,13 +20,13 @@ int main(int argc, const char *argv[])
   //  include_paths.push_back("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/7.0.2/include");
   //  include_paths.push_back("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/8.1.0/include");
   //  include_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/5/include");
-  include_paths.push_back("/usr/local/include");
+//  include_paths.push_back("/usr/local/include");
   //  include_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed");
   //  include_paths.push_back("/usr/include/x86_64-linux-gnu");
-  include_paths.push_back("/usr/include");
-  include_paths.push_back("/usr/local/lib/clang/9.0.0/include");
+//  include_paths.push_back("/usr/include");
+//  include_paths.push_back("/usr/local/lib/clang/9.0.0/include");
 
-  nrel::Compiler compiler(include_paths, {});
+  nrel::Compiler compiler(include_paths, {"-v"});
 
   std::for_each(std::next(argv), std::next(argv, argc), [&](const auto &path) { compiler.compile_and_link(path); });
 
