@@ -92,31 +92,16 @@ void Compiler::write_object_file(const boost::filesystem::path &loc)
   }
 
   std::string err;
-  auto *TheTarget = llvm::TargetRegistry::lookupTarget(llvm::sys::getProcessTriple(), err);
-  auto *TM = TheTarget->createTargetMachine(llvm::sys::getProcessTriple(), llvm::sys::getHostCPUName(), {}, {}, {}, {}, {}, {});
 
   llvm::legacy::PassManager pass;
   std::string error;
 
-  m_currentCompilation->setDataLayout(TM->createDataLayout());
-
-  llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_AssemblyFile;
-
-  /*
-  switch (codegen) {
-  case LLVMAssemblyFile:
-    ft = TargetMachine::CGFT_AssemblyFile;
-    break;
-  default:
-    ft = TargetMachine::CGFT_ObjectFile;
-    break;
-  }
-  */
+  llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_ObjectFile;
 
   std::error_code EC;
   llvm::raw_fd_ostream dest(loc.c_str(), EC, llvm::sys::fs::OF_None);
 
-  if (TM->addPassesToEmitFile(pass, dest, nullptr, ft)) {
+  if (m_target_machine->addPassesToEmitFile(pass, dest, nullptr, ft)) {
     throw std::runtime_error("TargetMachine can't emit a file of this type");
   }
 

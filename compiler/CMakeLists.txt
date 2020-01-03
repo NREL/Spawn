@@ -28,7 +28,9 @@ target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
 
 target_link_libraries(
   compiler
-  PUBLIC LLVMMCJIT
+  PUBLIC 
+         ${LLVM_AVAILABLE_LIBS}
+        LLVMMCJIT
          LLVMMIRParser
          LLVMX86AsmParser
          # LLVMX86AsmPrinter
