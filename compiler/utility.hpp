@@ -1,8 +1,8 @@
 #ifndef NREL_SPAWN_UTILITY_HPP
 #define NREL_SPAWN_UTILITY_HPP
 
-#include <cstdint>
 #include <boost/filesystem.hpp>
+#include <cstdint>
 #include <fstream>
 #include <vector>
 
@@ -13,7 +13,7 @@ struct Temp_Directory
   explicit Temp_Directory(const std::string_view t_prefix = "spawn");
   ~Temp_Directory();
 
-  const boost::filesystem::path &dir()
+  [[nodiscard]] const boost::filesystem::path &dir() const noexcept
   {
     return m_dir;
   }

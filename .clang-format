@@ -3,7 +3,7 @@
 
 IndentWidth: 2
 AccessModifierOffset: -2
-ColumnLimit: 150
+ColumnLimit: 120
 CommentPragmas: '^ IWYU pragma:'
 UseTab: Never
 SpacesInParentheses: false

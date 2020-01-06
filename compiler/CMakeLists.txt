@@ -38,4 +38,6 @@ target_link_libraries(
          clangLex
          clangParse
          clangCodeGen
+         clangFrontend
+         clangFrontendTool
          CONAN_PKG::boost)
