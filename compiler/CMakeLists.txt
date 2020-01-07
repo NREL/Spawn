@@ -1,13 +1,11 @@
 find_package(LLVM REQUIRED CONFIG)
 find_package(Clang REQUIRED CONFIG)
 
-# include_directories(${LLVM_INCLUDE_DIRS})
-# include_directories(${CLANG_INCLUDE_DIRS})
+# include_directories(${LLVM_INCLUDE_DIRS}) include_directories(${CLANG_INCLUDE_DIRS})
 
 message("LLVM VERISION: ${LLVM_PACKAGE_VERSION}")
 message("LLVM INSTALL PREFIX: ${LLVM_INSTALL_PREFIX}")
-set(CLANG_C_HEADERS_ROOT
-    "${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_PACKAGE_VERSION}")
+set(CLANG_C_HEADERS_ROOT "${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_PACKAGE_VERSION}")
 set(CLANG_C_HEADERS_DIR "${CLANG_C_HEADERS_ROOT}/include")
 message("Possible header dir: ${CLANG_C_HEADERS_DIR}")
 
@@ -21,8 +19,7 @@ endforeach()
 
 embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawn)
 
-add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp
-                     ${EMBEDDED_OUTPUT})
+add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp ${EMBEDDED_OUTPUT})
 
 target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
 
@@ -40,4 +37,10 @@ target_link_libraries(
          clangCodeGen
          clangFrontend
          clangFrontendTool
-         CONAN_PKG::boost)
+         CONAN_PKG::boost
+         CONAN_PKG::fmt)
+
+if(NOT MSVC)
+  # necessary for making local symbols available to JIT
+  target_link_libraries(compiler PUBLIC -rdynamic)
+endif()

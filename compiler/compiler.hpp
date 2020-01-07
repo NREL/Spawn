@@ -40,7 +40,7 @@ public:
 
   auto move_to_jit()
   {
-    auto jit = llvm::orc::SimpleJIT::Create();
+    auto jit = JIT::Create();
     if (!jit) {
       throw std::runtime_error("Some error happened, but it's too much of a pain to get it out of the Expected object");
     }
@@ -48,20 +48,22 @@ public:
     return std::move(*jit);
   }
 
-  void move_to_jit(llvm::orc::SimpleJIT &jit)
+  void move_to_jit(JIT &jit)
+
   {
     jit.addModule(take_compilation(), context());
   }
 
   void write_bitcode(const boost::filesystem::path &loc);
   void write_object_file(const boost::filesystem::path &loc);
+  void write_shared_object_file(const boost::filesystem::path &loc);
 
-  static int invoke_compiler(const std::vector<std::string> &args);
 
 private:
   std::string m_target_triple{get_target_triple()};
   const llvm::Target *m_target{get_target(m_target_triple)};
-  llvm::TargetMachine *m_target_machine{get_target_machine(m_target, m_target_triple, get_CPU(), get_features(), get_OPT(), get_reloc_model())};
+  llvm::TargetMachine *m_target_machine{
+      get_target_machine(m_target, m_target_triple, get_CPU(), get_features(), get_OPT(), get_reloc_model())};
   std::vector<boost::filesystem::path> m_include_paths;
   std::vector<std::string> m_flags;
   llvm::orc::ThreadSafeContext m_context{std::make_unique<llvm::LLVMContext>()};
@@ -77,6 +79,8 @@ private:
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
 
+
+
     return llvm::sys::getDefaultTargetTriple();
   }
 
@@ -90,7 +94,8 @@ private:
     return target;
   }
 
-  static std::unique_ptr<llvm::Module> initialize_module(llvm::orc::ThreadSafeContext ctx, llvm::TargetMachine *target_machine)
+  static std::unique_ptr<llvm::Module> initialize_module(llvm::orc::ThreadSafeContext ctx,
+                                                         llvm::TargetMachine *target_machine)
   {
     assert(ctx.getContext());
     auto module = llvm::make_unique<llvm::Module>("Module", *ctx.getContext());

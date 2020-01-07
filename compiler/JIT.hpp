@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
-#define LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+#ifndef NREL_SPAWN_HIT_HPP
+#define NREL_SPAWN_HIT_HPP
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
@@ -26,85 +26,84 @@
 #include "llvm/IR/LLVMContext.h"
 #include <memory>
 
-namespace llvm {
-namespace orc {
+namespace spawn {
 
-class SimpleJIT {
-private:
-  ExecutionSession ES;
-  std::unique_ptr<TargetMachine> TM;
-  const DataLayout DL;
-  MangleAndInterner Mangle{ES, DL};
-  RTDyldObjectLinkingLayer ObjectLayer{ES, createMemMgr};
-  IRCompileLayer CompileLayer{ES, ObjectLayer, SimpleCompiler(*TM)};
+  class JIT
+  {
+  private:
+    llvm::orc::ExecutionSession ES;
+    std::unique_ptr<llvm::TargetMachine> TM;
+    const llvm::DataLayout DL;
+    llvm::orc::MangleAndInterner Mangle{ES, DL};
+    llvm::orc::RTDyldObjectLinkingLayer ObjectLayer{ES, createMemMgr};
+    llvm::orc::IRCompileLayer CompileLayer{ES, ObjectLayer, llvm::orc::SimpleCompiler(*TM)};
 
-  static std::unique_ptr<SectionMemoryManager> createMemMgr() {
-    return llvm::make_unique<SectionMemoryManager>();
-  }
-
-  SimpleJIT(std::unique_ptr<TargetMachine> TM, DataLayout DL,
-            DynamicLibrarySearchGenerator ProcessSymbolsGenerator)
-      : TM(std::move(TM)), DL(std::move(DL)) {
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-    ES.getMainJITDylib().setGenerator(std::move(ProcessSymbolsGenerator));
-  }
-
-public:
-  static Expected<std::unique_ptr<SimpleJIT>> Create() {
-    auto JTMB = JITTargetMachineBuilder::detectHost();
-    if (!JTMB)
-      return JTMB.takeError();
-
-    auto TM = JTMB->createTargetMachine();
-    if (!TM)
-      return TM.takeError();
-
-    auto DL = (*TM)->createDataLayout();
-
-    auto ProcessSymbolsGenerator =
-        DynamicLibrarySearchGenerator::GetForCurrentProcess(
-            DL.getGlobalPrefix());
-
-    if (!ProcessSymbolsGenerator)
-      return ProcessSymbolsGenerator.takeError();
-
-    return std::unique_ptr<SimpleJIT>(new SimpleJIT(
-        std::move(*TM), std::move(DL), std::move(*ProcessSymbolsGenerator)));
-  }
-
-  const TargetMachine &getTargetMachine() const { return *TM; }
-
-  void addModule(std::unique_ptr<llvm::Module> module, llvm::orc::ThreadSafeContext ctx) {
-    auto err = CompileLayer.add(ES.getMainJITDylib(), ThreadSafeModule(std::move(module), std::move(ctx)));
-    if (err) {
-      throw err;
+    static std::unique_ptr<llvm::SectionMemoryManager> createMemMgr()
+    {
+      return llvm::make_unique<llvm::SectionMemoryManager>();
     }
-  }
 
-  Expected<JITEvaluatedSymbol> findSymbol(const StringRef &Name) {
-    return ES.lookup({&ES.getMainJITDylib()}, Mangle(Name));
-  }
-
-  template<typename FunctionSig>
-  auto get_function(const StringRef &name) {
-    auto sa = getSymbolAddress(name);
-    if (sa) {
-      return reinterpret_cast<std::add_pointer_t<FunctionSig>>(sa.get());
-    } else {
-      throw std::runtime_error(std::string("Unable to find symbol: ") + std::string(name));
+    JIT(std::unique_ptr<llvm::TargetMachine> TM, llvm::DataLayout DL, llvm::orc::DynamicLibrarySearchGenerator ProcessSymbolsGenerator)
+        : TM(std::move(TM)), DL(std::move(DL))
+    {
+      llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+      ES.getMainJITDylib().setGenerator(std::move(ProcessSymbolsGenerator));
     }
-  }
 
-  Expected<JITTargetAddress> getSymbolAddress(const StringRef &Name) {
-    auto Sym = findSymbol(Name);
-    if (!Sym)
-      return Sym.takeError();
-    return Sym->getAddress();
-  }
-};
+  public:
+    static llvm::Expected<std::unique_ptr<JIT>> Create()
+    {
+      auto JTMB = llvm::orc::JITTargetMachineBuilder::detectHost();
+      if (!JTMB) return JTMB.takeError();
 
+      auto TM = JTMB->createTargetMachine();
+      if (!TM) return TM.takeError();
 
-} // end namespace orc
-} // end namespace llvm
+      auto DL = (*TM)->createDataLayout();
 
-#endif // LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+      auto ProcessSymbolsGenerator = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(DL.getGlobalPrefix());
+
+      if (!ProcessSymbolsGenerator) return ProcessSymbolsGenerator.takeError();
+      llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+      return std::unique_ptr<JIT>(new JIT(std::move(*TM), std::move(DL), std::move(*ProcessSymbolsGenerator)));
+    }
+
+    const llvm::TargetMachine &getTargetMachine() const
+    {
+      return *TM;
+    }
+
+    void addModule(std::unique_ptr<llvm::Module> module, llvm::orc::ThreadSafeContext ctx)
+    {
+      auto err = CompileLayer.add(ES.getMainJITDylib(), llvm::orc::ThreadSafeModule(std::move(module), std::move(ctx)));
+      if (err) {
+        throw err;
+      }
+    }
+
+    llvm::Expected<llvm::JITEvaluatedSymbol> findSymbol(const llvm::StringRef &Name)
+    {
+      return ES.lookup({&ES.getMainJITDylib()}, Mangle(Name));
+    }
+
+    template <typename FunctionSig> auto get_function(const llvm::StringRef &name)
+    {
+      auto sa = getSymbolAddress(name);
+      if (sa) {
+        return reinterpret_cast<std::add_pointer_t<FunctionSig>>(sa.get());
+      } else {
+        throw std::runtime_error(std::string("Unable to find symbol: ") + std::string(name));
+      }
+    }
+
+    llvm::Expected<llvm::JITTargetAddress> getSymbolAddress(const llvm::StringRef &Name)
+    {
+      auto Sym = findSymbol(Name);
+      if (!Sym) return Sym.takeError();
+      return Sym->getAddress();
+    }
+  };
+
+} // end namespace spawn
+
+#endif // NREL_SPAWN_HIT_HPP

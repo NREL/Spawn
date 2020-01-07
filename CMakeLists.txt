@@ -4,8 +4,8 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
-option(INSTALL_BUILDINGS_LIBRARY
-       "Include the Modelica Buildings Library in the installer package" FALSE)
+option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package"
+       FALSE)
 
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 
@@ -45,8 +45,7 @@ if(GIT_FOUND)
     RESULT_VARIABLE RESULT
     OUTPUT_VARIABLE GIT_VERSION
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL
-                           "${CMAKE_PROJECT_VERSION_BUILD}")
+  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL "${CMAKE_PROJECT_VERSION_BUILD}")
     set(CMAKE_PROJECT_VERSION_BUILD
         ${GIT_VERSION}
         CACHE STRING "Build number" FORCE) # git sha
@@ -63,9 +62,7 @@ set(CPACK_PACKAGE_VERSION
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(
-    STATUS
-      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
   file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.13/conan.cmake"
        "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
@@ -74,8 +71,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 conan_check(VERSION 1.0.0 REQUIRED)
 
-conan_add_remote(NAME bincrafters URL
-                 https://api.bintray.com/conan/bincrafters/public-conan)
+conan_add_remote(NAME bincrafters URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 conan_cmake_run(
   REQUIRES
@@ -84,6 +80,7 @@ conan_cmake_run(
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   libzip/1.5.1@bincrafters/stable
+  fmt/6.0.0@bincrafters/stable
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
@@ -101,9 +98,8 @@ add_subdirectory(compiler)
 include(CTest)
 add_subdirectory(test)
 
-add_custom_target(
-  CopyEPFMI ALL COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi>
-                        $<TARGET_FILE_DIR:spawn>)
+add_custom_target(CopyEPFMI ALL COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi>
+                                        $<TARGET_FILE_DIR:spawn>)
 
 install(
   TARGETS epfmi
@@ -120,20 +116,16 @@ if(NOT WIN32)
     set(os_prefix spawn-linux64)
   endif()
 
-  set(modelica_bin_path
-      "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+  set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
 
   add_custom_target(
     Stage ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
             "${PROJECT_BINARY_DIR}/modelica-buildings"
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> $<TARGET_FILE:epfmi>
             "${modelica_bin_path}")
-  install(FILES ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/FMI/EPFMI.hpp
-          DESTINATION ./include)
+  install(FILES ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/FMI/EPFMI.hpp DESTINATION ./include)
   install(DIRECTORY examples DESTINATION .)
   if(INSTALL_BUILDINGS_LIBRARY)
     install(DIRECTORY submodules/modelica-buildings DESTINATION .)
