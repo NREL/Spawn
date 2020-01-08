@@ -1,10 +1,5 @@
-#include <iostream>
-#include <string>
-#include <dirent.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
-
 #include <zip.h>
 
 bool is_dir(const std::string& dir);

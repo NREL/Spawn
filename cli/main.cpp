@@ -1,12 +1,17 @@
 #include <CLI/CLI.hpp>
-#include <nlohmann/json.hpp>
+#include "third_party/nlohmann/json.hpp"
 #include <stdio.h>
 #include <boost/filesystem.hpp>
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
+#include "EnergyPlus/api/runtime.hpp"
 #include "../epfmi/Variables.hpp"
 #include <config.hxx>
+
+
+#include "EnergyPlus/InputProcessing/IdfParser.hh"
+#include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 
 #if defined _WIN32
 #include <windows.h>
@@ -144,28 +149,33 @@ int createFMU(const std::string &jsoninput, bool nozip) {
 
   auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
 
-  const auto epvariables = EnergyPlus::FMI::parseVariables(idfPath.string(),spawnInputPath.string());
+    ::IdfParser parser;
+    const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
+    ::nlohmann::json schema;// = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
+    auto jsonidf = parser.mydecode("path/to/file", schema);
 
-  for (const auto & varpair : epvariables) {
-    const auto valueReference = varpair.first;
-    const auto var = varpair.second;
+  //const auto epvariables = parseVariables(idfPath.string(),spawnInputPath.string());
 
-    auto scalarVar = xmlvariables.append_child("ScalarVariable");
-		for (const auto & attribute : var.scalar_attributes) {
-    	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-		}
+  //for (const auto & varpair : epvariables) {
+  //  const auto valueReference = varpair.first;
+  //  const auto var = varpair.second;
 
-    auto real = scalarVar.append_child("Real");
-		for (const auto & attribute : var.real_attributes) {
-    	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-		}
-  }
+  //  auto scalarVar = xmlvariables.append_child("ScalarVariable");
+	//	for (const auto & attribute : var.scalar_attributes) {
+  //  	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+	//	}
 
-  doc.save_file(modelDescriptionPath.c_str());
+  //  auto real = scalarVar.append_child("Real");
+	//	for (const auto & attribute : var.real_attributes) {
+  //  	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+	//	}
+  //}
 
-  if (! nozip) {
-    zip_directory(fmuStaggingPath.string(), fmupath.string());
-  }
+  //doc.save_file(modelDescriptionPath.c_str());
+
+  //if (! nozip) {
+  //  zip_directory(fmuStaggingPath.string(), fmupath.string());
+  //}
 }
 
 int main(int argc, const char *argv[]) {
