@@ -75,17 +75,24 @@ conan_add_remote(NAME bincrafters URL https://api.bintray.com/conan/bincrafters/
 
 conan_cmake_run(
   REQUIRES
+  bzip2/1.0.8@conan/stable
+  zlib/1.2.11@conan/stable
+  libzip/1.5.1@bincrafters/stable
   boost/1.69.0@conan/stable
   jsonformoderncpp/3.6.1@vthiery/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
-  libzip/1.5.1@bincrafters/stable
   fmt/6.0.0@bincrafters/stable
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
   BUILD
   missing)
+
+find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+include_directories(${CLANG_INCLUDE_DIRS})
 
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
