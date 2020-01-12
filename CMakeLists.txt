@@ -69,7 +69,7 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_check(VERSION 1.0.0 REQUIRED)
+#conan_check(VERSION 1.0.0 REQUIRED)
 
 conan_add_remote(NAME bincrafters URL https://api.bintray.com/conan/bincrafters/public-conan)
 
@@ -101,25 +101,27 @@ include("embedded/EmbedFiles.cmake")
 add_subdirectory(embedded)
 add_subdirectory(modelica)
 add_subdirectory(compiler)
-
+add_subdirectory(cli)
 include(CTest)
 add_subdirectory(test)
 
-add_custom_target(CopyEPFMI ALL COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi>
-                                        $<TARGET_FILE_DIR:spawn>)
-
-install(
-  TARGETS epfmi
+add_custom_target(
+  CopyEPFMI ALL
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          $<TARGET_FILE:modelica>
+          $<TARGET_FILE_DIR:spawn>
+)
+  
+install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
   LIBRARY DESTINATION ./lib
   ARCHIVE DESTINATION ./lib)
 
 add_custom_target(epfmi-trigger ALL DEPENDS epfmi)
 
-if(NOT WIN32)
-  add_subdirectory(cli)
-
-  if(UNIX AND NOT APPLE)
+if( NOT WIN32 )
+  if( UNIX AND NOT APPLE ) 
     set(os_prefix spawn-linux64)
   endif()
 

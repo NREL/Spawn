@@ -21,6 +21,8 @@ target_link_libraries(spawn
   CONAN_PKG::pugixml 
   CONAN_PKG::boost 
   CONAN_PKG::libzip
+  LLVMOrcJIT
+  compiler
   epvariables
   modelica
 )

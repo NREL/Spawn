@@ -1,6 +1,9 @@
+#include "../compiler/compiler.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+#include <vector>
+#include <iterator>
 #include <boost/filesystem.hpp>
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
@@ -19,17 +22,110 @@
 
 using json = nlohmann::json;
 
-int compileModel(const std::string &moinput) {
+boost::filesystem::path exeDir() {
+  #ifdef __APPLE__
+    Dl_info info;
+    dladdr("main", &info);
+    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path())
+  #elif _WIN32
+    TCHAR szPath[MAX_PATH];
+    GetModuleFileName(nullptr, szPath, MAX_PATH);
+    return boost::filesystem::canonical(boost::filesystem::path(szPath).parent_path());
+  #else
+    Dl_info info;
+    dladdr("main", &info);
+    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path());
+  #endif
+}
+
+bool isInstalled() {
+  return exeDir().stem() == "bin";
+}
+
+int compileMO(const std::string &moinput) {
   try {
-    setenv("JMODELICA_HOME", "/home/kbenne/Development/spawn/build/modelica/JModelica-prefix/src/JModelica", 1);
-    char* params[2];
-    params[0] = (char *)"modelica";
-    params[1] = (char *)moinput.c_str();
-    run_main(2, params);
+    std::vector<boost::filesystem::path> paths;
+    if (isInstalled()) {
+      auto jmodelica_home = exeDir() / "../JModelica/";
+      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+    } else {
+      boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+      auto jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+      paths.push_back(binary_dir / "modelica/JModelica-prefix/src/JModelica/MSL/");
+      paths.push_back(binary_dir / "modelica-buildings/Buildings/");
+    }
+    std::vector<std::string> params{"modelica", moinput};
+    std::transform(std::begin(paths), std::end(paths), std::inserter(params, std::next(std::begin(params))), [](const auto & path) {return path.string();});
+    std::vector<const char *> cparams(params.size());
+    std::transform(std::begin(params), std::end(params), std::begin(cparams), [](const auto & p) {return p.c_str();});
+
+    run_main(cparams.size(), (char **)cparams.data());
     return 0;
   } catch(...) {
     return 1;
   }
+}
+
+int compileC() {
+	boost::filesystem::path output_dir("mo-build");
+  const auto & sourcesdir = output_dir / "sources";
+  std::vector<boost::filesystem::path> sourcefiles;
+
+  if( ! boost::filesystem::is_directory(sourcesdir) ) {
+    return 1;
+  }
+
+  for( const auto & p : boost::filesystem::directory_iterator(sourcesdir) ) {
+  	sourcefiles.push_back(p.path());
+  }
+
+	// Exclude files that are not C source files
+	sourcefiles.erase(
+		std::remove_if(begin(sourcefiles), end(sourcefiles), [](const auto & p) {return (p.extension() != ".c");}),
+		end(sourcefiles)
+	);
+
+	// Exclude ModelicaStrings_skipWhiteSpace.c
+	sourcefiles.erase(
+		std::remove_if(begin(sourcefiles), end(sourcefiles), [](const auto & p) {return (p.filename().string() == "ModelicaStrings_skipWhiteSpace.c");}),
+		end(sourcefiles)
+	);
+
+  std::vector<boost::filesystem::path> include_paths;
+
+  if (isInstalled()) {
+		// TODO this
+	} else {
+    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+		const auto & jmodelica_dir = binary_dir / "modelica/JModelica-prefix/src/JModelica";
+  	include_paths = std::vector<boost::filesystem::path>{
+  	  jmodelica_dir / "RuntimeLibrary/src/jmi/",
+  	  jmodelica_dir / "MSL/Modelica/Resources/C-Sources/",
+  	  jmodelica_dir / "RuntimeLibrary/src/fmi1_me/",
+  	  jmodelica_dir / "RuntimeLibrary/src/fmi2/",
+			jmodelica_dir / "FMI/include/FMI2/"
+  	};
+	}
+		
+  const std::vector<std::string> flags{"-v", "-fPIC"};
+  spawn::Compiler compiler(include_paths, flags);
+
+  std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
+
+	// TODO: This is not the name specified by the FMU standard
+	compiler.write_shared_object_file(output_dir / "model.so");
+
+  return 0;
+}
+
+int compileModel(const std::string &moinput) {
+  int result = compileMO(moinput);
+  if(result == 0)
+  {
+    result = compileC();
+  }
+  return result;
 }
 
 int createFMU(const std::string &jsoninput) {
@@ -117,24 +213,18 @@ int createFMU(const std::string &jsoninput) {
   boost::filesystem::remove(fmupath);
 
   #ifdef __APPLE__
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "../lib/libepfmi.dylib";
     if (! boost::filesystem::exists(epFMISourcePath)) {
       epFMISourcePath = exedir / "libepfmi.dylib";
     }
     epFMIDestPath = fmuStaggingPath / "binaries/darwin64/libepfmi.dylib";
   #elif _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    auto exedir = boost::filesystem::path(szPath).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "epfmi.dll";
     epFMIDestPath = fmuStaggingPath / "binaries/win64/epfmi.dll";
   #else
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
+    auto exedir = exeDir();
     epFMISourcePath = exedir / "../lib/libepfmi.so";
     if (! boost::filesystem::exists(epFMISourcePath)) {
       epFMISourcePath = exedir / "libepfmi.so";

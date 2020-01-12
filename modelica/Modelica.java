@@ -15,30 +15,30 @@ import java.nio.charset.Charset;
 import java.io.File;
 
 public class Modelica { 
-  @CEntryPoint
-  public static void foo() {
-  }
+  //@CEntryPoint
+  //public static void foo() {
+  //}
 
   public static void main(String[] args) { 
     OptionRegistry options = ModelicaCompiler.createOptions();
-    ////options.setOption("debug_duplicate_generated","true");
     ModelicaCompiler mc = new ModelicaCompiler(options);
     mc.setDebugSrcIsHome(true);
-    //mc.setJModelicaHome("/home/kbenne/Development/JModelica/ThirdParty/MSL/Modelica/");
     mc.setOutDir(new File("mo-build/"));
-    //mc.setLogger("d:out.log");
-    ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "1.0");
+    mc.setLogger("d:mo-build/out.log");
+    // arg 0 is the MODELICAPATH
+    mc.setModelicapath(args[0]);
+    ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
+    // arg 1 is the path to the files to compile
 		String[] files = new String[1];
-    System.out.println(args);
-    files[0] = args[0];
+    files[0] = args[1];
 
 		try {
     	System.out.println("Parse Model");
 			SourceRoot sr = mc.parseModel(files);
     	System.out.println("Instantiate Model");
-		  InstClassDecl mo = mc.instantiateModel(sr,"Vdp",to);
+		  InstClassDecl mo = mc.instantiateModel(sr,"Buildings.Examples.Tutorial.Boiler.System3",to);
     	System.out.println("Flatten Model");
-			FClass flatMO = mc.flattenModel(mo,to,"Vdp");
+			FClass flatMO = mc.flattenModel(mo,to,"Buildings.Examples.Tutorial.Boiler.System3");
     	System.out.println("Generate Code");
 			mc.generateCode(flatMO,to);
     	System.out.println("Done generating code");
@@ -53,6 +53,7 @@ public class Modelica {
     	System.out.println("IO Exception");
 		} catch (ModelicaClassNotFoundException e) {
     	System.out.println("Class not found");
+    	System.out.println(e.getMessage());
 		} catch (java.lang.Exception e) {
     	System.out.println("Trouble during Modelica Compiling");
     	System.out.println(e.getMessage());
