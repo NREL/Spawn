@@ -21,6 +21,11 @@ public class Modelica {
 
   public static void main(String[] args) { 
     OptionRegistry options = ModelicaCompiler.createOptions();
+    // Why do we need this in addition to the arguments passed to createTargetObject ?
+    // All I know is that without it the C code generator does not have option "fmu_type"
+    // that it is dependent on
+    options.setStringOption("fmu_type", "FMUME20");
+
     ModelicaCompiler mc = new ModelicaCompiler(options);
     mc.setDebugSrcIsHome(true);
     mc.setOutDir(new File("mo-build/"));

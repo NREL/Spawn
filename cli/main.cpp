@@ -128,7 +128,7 @@ int compileC() {
   	};
 	}
 
-  const std::vector<std::string> flags{"-v", "-fPIC"};
+  const std::vector<std::string> flags{"-fPIC"};
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
