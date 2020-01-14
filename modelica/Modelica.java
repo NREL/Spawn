@@ -3,7 +3,8 @@ import org.jmodelica.modelica.compiler.ModelicaCompiler;
 import org.jmodelica.modelica.compiler.SourceRoot;
 import org.jmodelica.modelica.compiler.InstClassDecl;
 import org.jmodelica.modelica.compiler.FClass;
-import org.jmodelica.common.options.OptionRegistry;
+import org.jmodelica.modelica.compiler.generated.OptionRegistry;
+import org.jmodelica.common.options.AbstractOptionRegistry;
 import org.jmodelica.util.exceptions.CompilerException;
 import org.jmodelica.util.exceptions.ModelicaClassNotFoundException;
 import java.io.FileNotFoundException;
@@ -20,6 +21,15 @@ public class Modelica {
   //}
 
   public static void main(String[] args) { 
+    // ie /path/to/JModelica/ThirdParty/MSL/
+    String mslPath = args[0];
+    // ie /path/to/modelica-buildings/Buildings/
+    String[] modelpaths = new String[args.length - 2];
+    System.arraycopy(args, 1, modelpaths, 0, args.length - 2);
+    // ie "Buildings.Examples.Tutorial.Boiler.System3"
+    String modelid = args[args.length - 1];
+
+
     OptionRegistry options = ModelicaCompiler.createOptions();
     // Why do we need this in addition to the arguments passed to createTargetObject ?
     // All I know is that without it the C code generator does not have option "fmu_type"
@@ -30,20 +40,16 @@ public class Modelica {
     mc.setDebugSrcIsHome(true);
     mc.setOutDir(new File("mo-build/"));
     mc.setLogger("d:mo-build/out.log");
-    // arg 0 is the MODELICAPATH
-    mc.setModelicapath(args[0]);
+    mc.setModelicapath(mslPath);
     ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
-    // arg 1 is the path to the files to compile
-		String[] files = new String[1];
-    files[0] = args[1];
 
 		try {
     	System.out.println("Parse Model");
-			SourceRoot sr = mc.parseModel(files);
+			SourceRoot sr = mc.parseModel(modelpaths);
     	System.out.println("Instantiate Model");
-		  InstClassDecl mo = mc.instantiateModel(sr,"Buildings.Examples.Tutorial.Boiler.System3",to);
+		  InstClassDecl mo = mc.instantiateModel(sr,modelid,to);
     	System.out.println("Flatten Model");
-			FClass flatMO = mc.flattenModel(mo,to,"Buildings.Examples.Tutorial.Boiler.System3");
+			FClass flatMO = mc.flattenModel(mo,to,modelid);
     	System.out.println("Generate Code");
 			mc.generateCode(flatMO,to);
     	System.out.println("Done generating code");

@@ -8,7 +8,7 @@ find_program(NATIVE_IMAGE_EXECUTABLE native-image ${java_bin})
 
 ExternalProject_Add(
   JModelica
-  URL https://modelica.s3.amazonaws.com/latest/Modelica-latest.tar.gz 
+  URL https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz 
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""
@@ -16,13 +16,11 @@ ExternalProject_Add(
 )
 
 set( jars
-  JModelica-prefix/src/JModelica/java/bin/separateProcess.jar
-  JModelica-prefix/src/JModelica/java/bin/OptimicaCompiler.jar
-  JModelica-prefix/src/JModelica/java/bin/ModelicaCompiler.jar
-  JModelica-prefix/src/JModelica/java/bin/util.jar
-  JModelica-prefix/src/JModelica/java/bin/beaver-rt-src.jar
-  JModelica-prefix/src/JModelica/java/bin/beaver-rt.jar
-  JModelica-prefix/src/JModelica/java/bin/beaver.jar
+  JModelica-prefix/src/JModelica/lib/separateProcess.jar
+  JModelica-prefix/src/JModelica/lib/OptimicaCompiler.jar
+  JModelica-prefix/src/JModelica/lib/ModelicaCompiler.jar
+  JModelica-prefix/src/JModelica/lib/util.jar
+  JModelica-prefix/src/JModelica/ThirdParty/Beaver/lib/beaver-rt.jar
 )
 
 foreach(jar IN LISTS jars)

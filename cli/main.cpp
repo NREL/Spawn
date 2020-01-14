@@ -12,6 +12,7 @@
 #include <FMI/Variables.hpp>
 #include <modelica.h>
 #include <stdlib.h>  
+#include "pugixml.hpp"
 
 #if defined _WIN32
 #include <windows.h>
@@ -52,7 +53,7 @@ int compileMO(const std::string &moinput) {
       boost::filesystem::path binary_dir(spawn::BINARY_DIR);
       auto jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
       setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
-      paths.push_back(binary_dir / "modelica/JModelica-prefix/src/JModelica/MSL/");
+      paths.push_back(binary_dir / "modelica/JModelica-prefix/src/JModelica/ThirdParty/MSL/");
       paths.push_back(binary_dir / "modelica-buildings/Buildings/");
     }
     std::vector<std::string> params{"modelica", moinput};
@@ -87,54 +88,89 @@ int compileC() {
 	);
 
 	// Exclude ModelicaStrings_skipWhiteSpace.c
+  // These symbols seem to be already defined within the runtime libraries
+  // Excluding to avoid duplicate symbol error from compiler
 	sourcefiles.erase(
 		std::remove_if(begin(sourcefiles), end(sourcefiles), [](const auto & p) {return (p.filename().string() == "ModelicaStrings_skipWhiteSpace.c");}),
 		end(sourcefiles)
 	);
 
-  // Include some runtime libs that we need
+	sourcefiles.erase(
+		std::remove_if(begin(sourcefiles), end(sourcefiles), [](const auto & p) {return (p.filename().string() == "ModelicaStrings_compare.c");}),
+		end(sourcefiles)
+	);
+
+  // src/JModelica/Makefiles/MakeFile
+  // Setup link libs and include paths
+  // This could be improved, by referring to the MakeFile that JModelica normally uses
+  // Refer to JModelica/Makefiles/MakeFile
+  //
+  // Also need a way to handle external C code that may be referred to and contained within
+  // some Modelica models
+
+  // Libs to link
   std::vector<boost::filesystem::path> runtime_libs; 
   if(isInstalled()) {
     // TODO this
   } else {
     boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-		const auto & runtime_dir = binary_dir / "modelica/JModelica-prefix/src/JModelica/RuntimeLibrary/lib";
-    for( const auto & p : boost::filesystem::directory_iterator(runtime_dir) ) {
-      if( p.path().extension() == ".a" ) {
-    	  runtime_libs.push_back(p.path());
-      }
-    }
+		const auto & jmodelica_dir = binary_dir / "modelica/JModelica-prefix/src/JModelica";
+    runtime_libs = {
+      jmodelica_dir / "/lib/RuntimeLibrary/liblapack.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libModelicaIO.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libModelicaExternalC.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_cs.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libjmi_get_set_default.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libfmi2.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libblas.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libjmi_block_solver.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libjmi_evaluator_util.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libjmi.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libModelicaStandardTables.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libModelicaMatIO.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libzlib.a",
+      jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_me.a",
+      jmodelica_dir / "/ThirdParty/Minpack/lib/libcminpack.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecserial.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_idas.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvodes.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_ida.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_arkode.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvode.a",
+      jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_kinsol.a"
+    };
   }
 
-	// Exclude libModelicaExternalC.a from runtime_libs
-	runtime_libs.erase(
-		std::remove_if(begin(runtime_libs), end(runtime_libs), [](const auto & p) {return (p.filename().string() == "libModelicaExternalC.a");}),
-		end(runtime_libs)
-	);
-
+  // include paths
   std::vector<boost::filesystem::path> include_paths;
-
   if (isInstalled()) {
 		// TODO this
 	} else {
     boost::filesystem::path binary_dir(spawn::BINARY_DIR);
 		const auto & jmodelica_dir = binary_dir / "modelica/JModelica-prefix/src/JModelica";
   	include_paths = std::vector<boost::filesystem::path>{
-  	  jmodelica_dir / "RuntimeLibrary/src/jmi/",
-  	  jmodelica_dir / "MSL/Modelica/Resources/C-Sources/",
-  	  jmodelica_dir / "RuntimeLibrary/src/fmi1_me/",
-  	  jmodelica_dir / "RuntimeLibrary/src/fmi2/",
-			jmodelica_dir / "FMI/include/FMI2/"
+      jmodelica_dir / "include/RuntimeLibrary/",
+      jmodelica_dir / "include/RuntimeLibrary/module_include",
+      jmodelica_dir / "include/RuntimeLibrary/zlib",
+      jmodelica_dir / "ThirdParty/FMI/2.0"
   	};
 	}
 
-  const std::vector<std::string> flags{"-fPIC"};
+  const auto model_description_path = output_dir / "modelDescription.xml";
+
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_file(model_description_path.native().c_str());
+  if(! result) { return 1;}
+  std::string model_identifier = doc.child("fmiModelDescription").child("ModelExchange").attribute("modelIdentifier").as_string();
+
+  const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
 
-	// TODO: This is not the name specified by the FMU standard
-	compiler.write_shared_object_file(output_dir / "model.so", runtime_libs);
+  const auto model_lib_path = output_dir / "binaries" / (model_identifier + ".so");
+	compiler.write_shared_object_file(model_lib_path, runtime_libs);
 
   return 0;
 }

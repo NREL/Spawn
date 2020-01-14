@@ -119,6 +119,11 @@
   "allPublicConstructors" : true
 }  ,
 {
+  "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_defines",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true
+}  ,
+{
   "name":"org.jmodelica.modelica.compiler.CGenerator$DAETag_C_delay_init",
   "allDeclaredConstructors" : true,
   "allPublicConstructors" : true
