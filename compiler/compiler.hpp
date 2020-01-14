@@ -56,7 +56,7 @@ public:
 
   void write_bitcode(const boost::filesystem::path &loc);
   void write_object_file(const boost::filesystem::path &loc);
-  void write_shared_object_file(const boost::filesystem::path &loc);
+  void write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs = {});
 
 
 private:

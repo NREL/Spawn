@@ -92,6 +92,26 @@ int compileC() {
 		end(sourcefiles)
 	);
 
+  // Include some runtime libs that we need
+  std::vector<boost::filesystem::path> runtime_libs; 
+  if(isInstalled()) {
+    // TODO this
+  } else {
+    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+		const auto & runtime_dir = binary_dir / "modelica/JModelica-prefix/src/JModelica/RuntimeLibrary/lib";
+    for( const auto & p : boost::filesystem::directory_iterator(runtime_dir) ) {
+      if( p.path().extension() == ".a" ) {
+    	  runtime_libs.push_back(p.path());
+      }
+    }
+  }
+
+	// Exclude libModelicaExternalC.a from runtime_libs
+	runtime_libs.erase(
+		std::remove_if(begin(runtime_libs), end(runtime_libs), [](const auto & p) {return (p.filename().string() == "libModelicaExternalC.a");}),
+		end(runtime_libs)
+	);
+
   std::vector<boost::filesystem::path> include_paths;
 
   if (isInstalled()) {
@@ -107,14 +127,14 @@ int compileC() {
 			jmodelica_dir / "FMI/include/FMI2/"
   	};
 	}
-		
+
   const std::vector<std::string> flags{"-v", "-fPIC"};
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
 
 	// TODO: This is not the name specified by the FMU standard
-	compiler.write_shared_object_file(output_dir / "model.so");
+	compiler.write_shared_object_file(output_dir / "model.so", runtime_libs);
 
   return 0;
 }

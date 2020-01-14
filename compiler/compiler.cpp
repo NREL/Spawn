@@ -66,12 +66,22 @@ std::string getExecutablePath()
 }
 
 namespace spawn {
-void Compiler::write_shared_object_file(const boost::filesystem::path &loc)
+void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
 {
   Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
-  system(fmt::format("ld -shared {} -o {} -shared", temporary_object_file_location.native(), loc.native()).c_str());
+
+  std::string libargs;
+  std::for_each(
+      std::begin(additional_libs),
+      std::end(additional_libs),
+      [&libargs](const auto & p) {
+        return libargs.append(p.native() + " ");
+      }
+  );
+
+  system(fmt::format("ld -shared {} {} -o {} -shared", temporary_object_file_location.native(), libargs, loc.native()).c_str());
 }
 
 void Compiler::compile_and_link(const boost::filesystem::path &source)
