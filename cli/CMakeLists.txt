@@ -1,7 +1,10 @@
+SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
+
 set(jmodelica_path "${CMAKE_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica")
 
 find_library(liblapack NAMES liblapack.a liblapack.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaMatIO NAMES libModelicaMatIO.a libModelicaMatIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
+find_library(libModelicaIO NAMES libModelicaIO.a libModelicaIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaExternalC NAMES libModelicaExternalC.a libModelicaExternalC.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libfmi1_cs NAMES libfmi1_cs.a libfmi1_cs.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libjmi_get_set_default NAMES libjmi_get_set_default.a libjmi_get_set_default.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
@@ -26,6 +29,7 @@ find_library(libsundials_kinsol NAMES libsundials_kinsol.a libsundials_kinsol.li
 list(APPEND modelica_libs
   ${liblapack}
   ${libModelicaMatIO}
+  ${libModelicaIO}
   ${libModelicaExternalC}
   ${libfmi1_cs}
   ${libjmi_get_set_default}
@@ -61,6 +65,7 @@ endforeach()
 file(GLOB_RECURSE header_files FOLLOW_SYMLINKS 
   "${jmodelica_path}/include/**/*.h"
   "${jmodelica_path}/ThirdParty/FMI/2.0/**/*.h"
+  "${jmodelica_path}/ThirdParty/FMI/2.0/*.h"
 )
 
 foreach(filepath ${header_files})

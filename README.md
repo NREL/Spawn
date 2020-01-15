@@ -18,17 +18,26 @@ The latest development builds are available at the following locations.
 
 ## Compiling from source
 
-Dependencies are the same as for EnergyPlus https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus.
-Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with one addition,
+* Install EnergyPlus dependencies according to https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus
+
+* Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with one addition,
 
 ```shell
 pip install conan
 ```
 
-Then follow the normal cmake build process.
+* Build and install version 9.0 of llvm and clang from source, https://gist.github.com/lefticus/d2069c0284d12a5882d85c78a890f5b8
+
+* Export environment variables to help locate llvm and clang
+```shell
+export LLVM_DIR=/home/username/llvm/
+export Clang_DIR=/home/username/llvm/
+```
+
+* Then follow the normal cmake build process.
 
 ```shell
-git clone --recurse-submodules https://gitlab.com/kylebenne/spawn.git 
+git clone --recurse-submodules https://github.com/NREL/spawn.git 
 mkdir build
 cd build
 cmake ../
@@ -37,17 +46,39 @@ make -j
 
 ## Example Usage
 
-Create a fmu. The .spawn file defines the resources that will be compiled into an EnergyPlus based FMU. 
+* Create a fmu. The .spawn file defines the resources that will be compiled into an EnergyPlus based FMU. 
 The most important items are epw and idf files.
 
 
 ```shell
-./build/cli/spawn -c examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn
+./spawn --export examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn
 
 ```
 
 The resulting fmu will be located in examples/RefBldgSmallOfficeNew2004_Chicago/MyBuilding.fmu,
 and may be tested with pyfmi or other fmu simulation tools.
+
+* Compile a Modelica model to FMU format. Models contained with the Modelica Buildings Library and
+the Modelica Standard Library are included and available to the compiler by default
+
+```shell
+./spawn --compile Buildings.Examples.Tutorial.Boiler.System1
+
+```
+
+* List available options
+
+```shell
+$ ./spawn -h
+Spawn of EnergyPlus
+Usage: ./spawn [OPTIONS]
+
+Options:
+  -h,--help                   Print this help message and exit
+  -c,--compile TEXT           Compile Modelica model to FMU format
+  -e,--export TEXT=spawn.json Export a standalone EnergyPlus based FMU
+  -v,--version                Print version info and exit
+```
 
 ## Data Exchange Variables
 

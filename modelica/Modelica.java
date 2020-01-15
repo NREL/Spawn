@@ -51,9 +51,8 @@ public class Modelica {
 		  InstClassDecl mo = mc.instantiateModel(sr,modelid,to);
     	System.out.println("Flatten Model");
 			FClass flatMO = mc.flattenModel(mo,to,modelid);
-    	System.out.println("Generate Code");
+    	System.out.println("Generate C Code");
 			mc.generateCode(flatMO,to);
-    	System.out.println("Done generating code");
 		} catch (beaver.Parser.Exception e) {
     	System.out.println("Beaver parser Exception");
 		} catch (CompilerException e) {

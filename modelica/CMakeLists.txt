@@ -46,7 +46,7 @@ add_custom_target(modelica-lib DEPENDS ${modelica_lib_path})
 add_library(modelica SHARED IMPORTED GLOBAL)
 set_target_properties(modelica PROPERTIES IMPORTED_LOCATION ${modelica_lib_path})
 
-# Need cmake 3.11 or greater to do this
+## Need cmake 3.11 or greater to do this
 #target_include_directories(modelica INTERFACE
 #  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
 #  #$<INSTALL_INTERFACE:include/mylib>  # <prefix>/include/mylib
@@ -57,6 +57,6 @@ add_dependencies(
   modelica-lib
 )
 
-install(PROGRAMS ${modelica_lib_path} DESTINATION lib)
+install(PROGRAMS ${modelica_lib_path} DESTINATION modelica)
 
 
