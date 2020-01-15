@@ -14,7 +14,7 @@ foreach(_FILE ${HEADER_FILES})
   list(APPEND EMBEDDED_PATHS ${LOCATION})
 endforeach()
 
-embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawn)
+embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawnclang)
 
 add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp ${EMBEDDED_OUTPUT})
 

@@ -24,10 +24,11 @@ public class Modelica {
     // ie /path/to/JModelica/ThirdParty/MSL/
     String mslPath = args[0];
     // ie /path/to/modelica-buildings/Buildings/
-    String[] modelpaths = new String[args.length - 2];
-    System.arraycopy(args, 1, modelpaths, 0, args.length - 2);
+    String[] modelpaths = new String[args.length - 3];
+    System.arraycopy(args, 1, modelpaths, 0, args.length - 3);
     // ie "Buildings.Examples.Tutorial.Boiler.System3"
-    String modelid = args[args.length - 1];
+    String modelid = args[args.length - 2];
+    String output_dir = args[args.length - 1];
 
 
     OptionRegistry options = ModelicaCompiler.createOptions();
@@ -38,8 +39,8 @@ public class Modelica {
 
     ModelicaCompiler mc = new ModelicaCompiler(options);
     mc.setDebugSrcIsHome(true);
-    mc.setOutDir(new File("mo-build/"));
-    mc.setLogger("d:mo-build/out.log");
+    mc.setOutDir(new File(output_dir));
+    mc.setLogger("d:" + output_dir + "/out.log");
     mc.setModelicapath(mslPath);
     ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
 

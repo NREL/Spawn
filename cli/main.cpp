@@ -1,4 +1,5 @@
 #include "../compiler/compiler.hpp"
+#include "cli/embedded_files.hxx"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
@@ -12,7 +13,7 @@
 #include <FMI/Variables.hpp>
 #include <modelica.h>
 #include <stdlib.h>  
-#include "pugixml.hpp"
+#include <pugixml.hpp>
 
 #if defined _WIN32
 #include <windows.h>
@@ -43,20 +44,27 @@ bool isInstalled() {
   return exeDir().stem() == "bin";
 }
 
-int compileMO(const std::string &moinput) {
+int compileMO(const std::string &moinput, const boost::filesystem::path & output_dir) {
   try {
     std::vector<boost::filesystem::path> paths;
+    boost::filesystem::path jmodelica_home;
+    boost::filesystem::path mbl_path;
     if (isInstalled()) {
-      auto jmodelica_home = exeDir() / "../JModelica/";
-      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+      jmodelica_home = exeDir() / "../JModelica/";
+      mbl_path = exeDir() / "../modelica-buildings/Buildings/";
     } else {
       boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-      auto jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
-      setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
-      paths.push_back(binary_dir / "modelica/JModelica-prefix/src/JModelica/ThirdParty/MSL/");
-      paths.push_back(binary_dir / "modelica-buildings/Buildings/");
+      jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+      mbl_path = binary_dir / "modelica-buildings/Buildings/";
     }
-    std::vector<std::string> params{"modelica", moinput};
+
+    setenv("JMODELICA_HOME", jmodelica_home.string().c_str(), 1);
+    const auto msl_path = jmodelica_home / "ThirdParty/MSL/";
+
+    paths.push_back(msl_path);
+    paths.push_back(mbl_path);
+
+    std::vector<std::string> params{"modelica", moinput, output_dir.native()};
     std::transform(std::begin(paths), std::end(paths), std::inserter(params, std::next(std::begin(params))), [](const auto & path) {return path.string();});
     std::vector<const char *> cparams(params.size());
     std::transform(std::begin(params), std::end(params), std::begin(cparams), [](const auto & p) {return p.c_str();});
@@ -68,8 +76,7 @@ int compileMO(const std::string &moinput) {
   }
 }
 
-int compileC() {
-	boost::filesystem::path output_dir("mo-build");
+int compileC(const boost::filesystem::path & output_dir) {
   const auto & sourcesdir = output_dir / "sources";
   std::vector<boost::filesystem::path> sourcefiles;
 
@@ -176,10 +183,30 @@ int compileC() {
 }
 
 int compileModel(const std::string &moinput) {
-  int result = compileMO(moinput);
+  // output_dir_name is moinput with "." replaced by "_"
+  std::string output_dir_name;
+  std::transform(begin(moinput), end(moinput), std::back_inserter(output_dir_name),
+    [](const auto & c) {
+      if(c == '.') {
+        return '_';
+      } else {
+        return c;
+      }
+    }
+  );
+	const auto output_dir = boost::filesystem::current_path() / output_dir_name;
+  // tmp is where we extract embedded files
+  const auto & temp_dir = output_dir / "tmp";
+  boost::filesystem::create_directories(temp_dir);
+
+  for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
+    spawnmodelica::embedded_files::extractFile(file, temp_dir.native());
+  }
+
+  int result = compileMO(moinput, output_dir.native());
   if(result == 0)
   {
-    result = compileC();
+    result = compileC(output_dir);
   }
   return result;
 }

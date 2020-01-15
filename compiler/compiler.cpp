@@ -136,8 +136,8 @@ class Embedded_Headers
 public:
   Embedded_Headers()
   {
-    for (const auto &file : spawn::embedded_files::fileNames()) {
-      spawn::embedded_files::extractFile(file, td.dir().native());
+    for (const auto &file : spawnclang::embedded_files::fileNames()) {
+      spawnclang::embedded_files::extractFile(file, td.dir().native());
     }
   }
   boost::filesystem::path include_path() const

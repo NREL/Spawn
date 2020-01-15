@@ -94,6 +94,9 @@ find_package(Clang REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
 
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
@@ -118,13 +121,19 @@ install( TARGETS epfmi
   LIBRARY DESTINATION ./lib
   ARCHIVE DESTINATION ./lib)
 
+install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica-buildings" DESTINATION .)
+# install select parts of JModelica
+# These might be bit backed in the future
+install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica/CodeGenTemplates" DESTINATION JModelica/)
+install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica/XML" DESTINATION JModelica/)
+install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica/ThirdParty/MSL" DESTINATION JModelica/ThirdParty/)
+
+#modelica/JModelica-prefix/src/JModelica/ThirdParty/MSL/
+
 add_custom_target(epfmi-trigger ALL DEPENDS epfmi)
 
-if( NOT WIN32 )
-  if( UNIX AND NOT APPLE ) 
-    set(os_prefix spawn-linux64)
-  endif()
-
+if(UNIX AND NOT APPLE)
+  set(os_prefix spawn-linux64)
   set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
 
   add_custom_target(

@@ -57,4 +57,6 @@ add_dependencies(
   modelica-lib
 )
 
+install(PROGRAMS ${modelica_lib_path} DESTINATION lib)
+
 
