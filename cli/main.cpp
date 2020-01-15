@@ -216,7 +216,7 @@ int compileModel(const std::string &moinput) {
   return result;
 }
 
-int createFMU(const std::string &jsoninput) {
+int createFMU(const std::string &jsoninput, bool nozip) {
   json j;
 
   std::ifstream fileinput(jsoninput);
@@ -250,7 +250,8 @@ int createFMU(const std::string &jsoninput) {
   }
 
   // Input paths
-  auto basepath = boost::filesystem::canonical(boost::filesystem::path(jsoninput).parent_path());
+  auto spawnInputPath = boost::filesystem::canonical(boost::filesystem::path(jsoninput));
+  auto basepath = spawnInputPath.parent_path();
   auto fmupath = boost::filesystem::path(fmuname.get<std::string>());
   if (! fmupath.is_absolute()) {
     fmupath = basepath / fmupath;
@@ -294,6 +295,7 @@ int createFMU(const std::string &jsoninput) {
   auto idfPath = resourcesPath / idfInputPath.filename();
   auto epwPath = resourcesPath / epwInputPath.filename();
   auto iddPath = resourcesPath / iddInputPath.filename();
+  auto spawnPath = resourcesPath / spawnInputPath.filename();
 
   boost::filesystem::path epFMIDestPath;
   boost::filesystem::path epFMISourcePath;
@@ -328,13 +330,14 @@ int createFMU(const std::string &jsoninput) {
   boost::filesystem::copy_file(idfInputPath, idfPath, boost::filesystem::copy_option::overwrite_if_exists);
   boost::filesystem::copy_file(iddInputPath, iddPath, boost::filesystem::copy_option::overwrite_if_exists);
   boost::filesystem::copy_file(epwInputPath, epwPath, boost::filesystem::copy_option::overwrite_if_exists);
+  boost::filesystem::copy_file(spawnInputPath, spawnPath, boost::filesystem::copy_option::overwrite_if_exists);
 
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 
   auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
 
-  const auto epvariables = EnergyPlus::FMI::parseVariables(idfPath.string());
+  const auto epvariables = EnergyPlus::FMI::parseVariables(idfPath.string(),spawnInputPath.string());
 
   for (const auto & varpair : epvariables) {
     const auto valueReference = varpair.first;
@@ -353,7 +356,9 @@ int createFMU(const std::string &jsoninput) {
 
   doc.save_file(modelDescriptionPath.c_str());
 
-  zip_directory(fmuStaggingPath.string(), fmupath.string());
+  if (! nozip) {
+    zip_directory(fmuStaggingPath.string(), fmupath.string());
+  }
 }
 
 int main(int argc, const char *argv[]) {
@@ -368,6 +373,10 @@ int main(int argc, const char *argv[]) {
   auto exportOption =
       app.add_option("-e,--export", jsoninput,
                      "Export a standalone EnergyPlus based FMU", true);
+  bool nozip = false;
+
+  auto zipOption = app.add_flag("--no-zip", nozip, "Skip compressing the contents of the fmu into a zip archive");
+  zipOption->needs(exportOption);
 
   auto versionOption =
     app.add_flag("-v,--version", "Print version info and exit");
@@ -379,7 +388,10 @@ int main(int argc, const char *argv[]) {
   }
 
   if (*exportOption) {
-    return createFMU(jsoninput);
+    auto result = createFMU(jsoninput, nozip);
+    if (result) {
+      return result;
+    }
   }
 
   if (*versionOption) {

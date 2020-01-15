@@ -66,6 +66,42 @@ the Modelica Standard Library are included and available to the compiler by defa
 
 ```
 
+The output of the above command is expected as the following.
+
+```shell
+$ ./spawn -c Buildings.Examples.Tutorial.Boiler.System1
+Parse Model
+Instantiate Model
+Flatten Model
+Generate C Code
+Compile C Code
+Model Compiled
+```
+
+Resulting in the FMU directory, which includes a fully linked shared library, 
+`Buildings_Examples_Tutorial_Boiler_System1.so` corresponding to the compiled version
+of the given Modelica model
+
+
+```shell
+$ find Buildings_Examples_Tutorial_Boiler_System1/
+Buildings_Examples_Tutorial_Boiler_System1/
+Buildings_Examples_Tutorial_Boiler_System1/sources
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_init_independent.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_base.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_funcs.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_base.h
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_equ_init.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_init_dependent.c
+Buildings_Examples_Tutorial_Boiler_System1/sources/Buildings_Examples_Tutorial_Boiler_System1_equ.c
+Buildings_Examples_Tutorial_Boiler_System1/resources
+Buildings_Examples_Tutorial_Boiler_System1/binaries
+Buildings_Examples_Tutorial_Boiler_System1/binaries/Buildings_Examples_Tutorial_Boiler_System1.so
+Buildings_Examples_Tutorial_Boiler_System1/out.log
+Buildings_Examples_Tutorial_Boiler_System1/modelDescription.xml
+```
+
 * List available options
 
 ```shell
@@ -77,6 +113,7 @@ Options:
   -h,--help                   Print this help message and exit
   -c,--compile TEXT           Compile Modelica model to FMU format
   -e,--export TEXT=spawn.json Export a standalone EnergyPlus based FMU
+  --no-zip Needs: --export    Skip compressing the contents of the fmu into a zip archive
   -v,--version                Print version info and exit
 ```
 
