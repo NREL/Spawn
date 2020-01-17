@@ -40,4 +40,6 @@ target_link_libraries(
 if(NOT MSVC)
   # necessary for making local symbols available to JIT
   target_link_libraries(compiler PUBLIC -rdynamic)
+else()
+  target_compile_definitions(compiler PUBLIC -DNOMINMAX)
 endif()

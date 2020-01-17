@@ -99,7 +99,7 @@ private:
   {
     assert(ctx.getContext());
     auto module = llvm::make_unique<llvm::Module>("Module", *ctx.getContext());
-    module->setDataLayout(target_machine->createDataLayout());
+    //module->setDataLayout(target_machine->createDataLayout());
     return module;
   }
 

@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.13)
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package"
        FALSE)
 
+option(BUILD_CLI "Build the main CLI executable" ON)
+mark_as_advanced(BUILD_CLI)
+
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -101,18 +104,22 @@ include("embedded/EmbedFiles.cmake")
 add_subdirectory(embedded)
 add_subdirectory(modelica)
 add_subdirectory(compiler)
-add_subdirectory(cli)
+
+if (BUILD_CLI)
+  add_subdirectory(cli)
+  add_custom_target(
+    CopyEPFMI ALL
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:epfmi>
+            $<TARGET_FILE:modelica>
+            $<TARGET_FILE_DIR:spawn>
+  )
+endif()
+
 include(CTest)
 add_subdirectory(test)
 
-add_custom_target(
-  CopyEPFMI ALL
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:epfmi>
-          $<TARGET_FILE:modelica>
-          $<TARGET_FILE_DIR:spawn>
-)
-  
+ 
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
   LIBRARY DESTINATION ./lib
