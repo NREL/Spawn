@@ -69,6 +69,8 @@ private:
   llvm::orc::ThreadSafeContext m_context{std::make_unique<llvm::LLVMContext>()};
   std::unique_ptr<llvm::Module> m_currentCompilation{initialize_module(m_context, m_target_machine)};
 
+  // we package and -I our own set of headers provided by the embedded clang
+  // system -I headers are found automatically by the embedded clang
   static std::unique_ptr<llvm::Module> compile(const boost::filesystem::path &source,
                                                llvm::LLVMContext &ctx,
                                                const std::vector<boost::filesystem::path> &include_paths,
@@ -88,9 +90,11 @@ private:
   {
     std::string error;
     const llvm::Target *target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+
     if (!target) {
       throw std::runtime_error("Unable to get target: " + error);
     }
+
     return target;
   }
 
@@ -99,7 +103,7 @@ private:
   {
     assert(ctx.getContext());
     auto module = llvm::make_unique<llvm::Module>("Module", *ctx.getContext());
-    //module->setDataLayout(target_machine->createDataLayout());
+    module->setDataLayout(target_machine->createDataLayout());
     return module;
   }
 

@@ -111,7 +111,6 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
 
 void Compiler::compile_and_link(const boost::filesystem::path &source)
 {
-
   auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
   if (!m_currentCompilation) {
@@ -188,12 +187,8 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
 
-  // Use ELF on windows for now.
-  std::string TripleStr = llvm::sys::getProcessTriple();
-  llvm::Triple T(TripleStr);
-  if (T.isOSBinFormatCOFF()) T.setObjectFormat(llvm::Triple::ELF);
-
-  clang::driver::Driver TheDriver(Path, T.str(), Diags);
+  // Examples say to use ELF on Windows, but that doesn't actually work, so we are not
+  clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
