@@ -17,7 +17,7 @@
     "outputVariables": [
       {
         "name":    "Zone Mean Air Temperature",
-        "key":     "Attic",
+        "key":     "Core_ZN",
         "fmiName": "Zone_Temperature"
       },
       {
