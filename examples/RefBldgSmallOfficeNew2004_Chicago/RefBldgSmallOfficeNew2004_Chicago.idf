@@ -4658,25 +4658,25 @@
 
   Output:Meter,Water Heater:WaterSystems:Gas,HOURLY;
 
-  !Output:Variable,*,Site Outdoor Air Drybulb Temperature,HOURLY;
+  Output:Variable,*,Site Outdoor Air Drybulb Temperature,HOURLY;
 
-  !Output:Variable,*,Site Outdoor Air Humidity Ratio,HOURLY;
+  Output:Variable,*,Site Outdoor Air Humidity Ratio,HOURLY;
 
-  !Output:Variable,*,Site Outdoor Air Relative Humidity,HOURLY;
+  Output:Variable,*,Site Outdoor Air Relative Humidity,HOURLY;
 
-  !Output:Variable,*,Air System Outdoor Air Flow Fraction,HOURLY;
+  Output:Variable,*,Air System Outdoor Air Flow Fraction,HOURLY;
 
-  !Output:Variable,*,Air System Simulation Cycle On Off Status,HOURLY;
+  Output:Variable,*,Air System Simulation Cycle On Off Status,HOURLY;
 
-  !Output:Variable,*,Air System Outdoor Air Economizer Status,HOURLY;
+  Output:Variable,*,Air System Outdoor Air Economizer Status,HOURLY;
 
-  !Output:Variable,*,Air System Total Heating Energy,HOURLY;
+  Output:Variable,*,Air System Total Heating Energy,HOURLY;
 
-  !Output:Variable,*,Air System Total Cooling Energy,HOURLY;
+  Output:Variable,*,Air System Total Cooling Energy,HOURLY;
 
-  !Output:Variable,*,Air System Fan Electric Energy,HOURLY;
+  Output:Variable,*,Air System Fan Electric Energy,HOURLY;
 
-  !Output:Variable,*,Zone Mean Air Temperature,hourly;
+  Output:Variable,*,Zone Mean Air Temperature,hourly;
 
 ! ***REPORT TABLES***
 
