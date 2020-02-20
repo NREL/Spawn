@@ -58,7 +58,7 @@ conan_check(VERSION 1.0.0 REQUIRED)
 conan_add_remote(NAME bincrafters
   URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-conan_cmake_run(REQUIRES 
+conan_cmake_run(REQUIRES
   #jsonformoderncpp/3.6.1@vthiery/stable
   boost_filesystem/1.69.0@bincrafters/stable
   pugixml/1.9@bincrafters/stable
@@ -68,19 +68,26 @@ conan_cmake_run(REQUIRES
   BUILD missing
 )
 
+###############################################################################
+# RPATH settings
+# Conan set this to true, which is not the cmake default and not what we want
+# for the openstudio targets
+set(CMAKE_SKIP_RPATH FALSE)
+###############################################################################
+
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
-  
+
 if( NOT WIN32 )
   add_subdirectory( cli )
   add_subdirectory( epfmi )
-  
-  if( UNIX AND NOT APPLE ) 
+
+  if( UNIX AND NOT APPLE )
     set(os_prefix spawn-linux64)
   endif()
-  
+
   set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-  
+
   add_custom_target(
     Stage ALL
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
