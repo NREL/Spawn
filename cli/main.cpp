@@ -5,10 +5,8 @@
 #include <pugixml.hpp>
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
-#include "EnergyPlus/api/runtime.hpp"
 #include "../epfmi/Variables.hpp"
 #include <config.hxx>
-
 
 #include "EnergyPlus/InputProcessing/IdfParser.hh"
 #include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
@@ -149,33 +147,28 @@ int createFMU(const std::string &jsoninput, bool nozip) {
 
   auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
 
-    ::IdfParser parser;
-    const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
-    ::nlohmann::json schema;// = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
-    auto jsonidf = parser.mydecode("path/to/file", schema);
+  const auto epvariables = parseVariables(idfPath.string(),spawnInputPath.string());
 
-  //const auto epvariables = parseVariables(idfPath.string(),spawnInputPath.string());
+  for (const auto & varpair : epvariables) {
+    const auto valueReference = varpair.first;
+    const auto var = varpair.second;
 
-  //for (const auto & varpair : epvariables) {
-  //  const auto valueReference = varpair.first;
-  //  const auto var = varpair.second;
+    auto scalarVar = xmlvariables.append_child("ScalarVariable");
+		for (const auto & attribute : var.scalar_attributes) {
+    	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+		}
 
-  //  auto scalarVar = xmlvariables.append_child("ScalarVariable");
-	//	for (const auto & attribute : var.scalar_attributes) {
-  //  	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-	//	}
+    auto real = scalarVar.append_child("Real");
+		for (const auto & attribute : var.real_attributes) {
+    	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+		}
+  }
 
-  //  auto real = scalarVar.append_child("Real");
-	//	for (const auto & attribute : var.real_attributes) {
-  //  	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-	//	}
-  //}
+  doc.save_file(modelDescriptionPath.c_str());
 
-  //doc.save_file(modelDescriptionPath.c_str());
-
-  //if (! nozip) {
-  //  zip_directory(fmuStaggingPath.string(), fmupath.string());
-  //}
+  if (! nozip) {
+    zip_directory(fmuStaggingPath.string(), fmupath.string());
+  }
 }
 
 int main(int argc, const char *argv[]) {
@@ -187,7 +180,7 @@ int main(int argc, const char *argv[]) {
   auto createOption =
       app.add_option("-c,--create", jsoninput,
                      "Create a standalone FMU based on json input", true);
-  
+
   auto zipOption = app.add_flag("--no-zip", nozip, "Skip compressing the contents of the fmu into a zip archive");
   zipOption->needs(createOption);
 
