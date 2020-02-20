@@ -23,7 +23,7 @@ struct FMUInfo {
     while (std::getline(input_stream, line)) {
       input_file.append(line + EnergyPlus::DataStringGlobals::NL);
     }
-    
+
     ::IdfParser parser;
     const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
     ::nlohmann::json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
@@ -83,7 +83,7 @@ struct FMUInfo {
 };
 
 std::map<unsigned int, Variable> parseVariables(const std::string & idf,
-    const std::string & jsonInput) 
+    const std::string & jsonInput)
 {
   std::map<unsigned int, Variable> result;
 
