@@ -16,7 +16,7 @@
 #include "EnergyPlus/UtilityRoutines.hh"
 #include "EnergyPlus/InputProcessing/IdfParser.hh"
 #include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-#include "EnergyPlus/api/runtime.hpp"
+#include "EnergyPlus/api/runtime.h"
 #include <boost/filesystem.hpp>
 #include <functional>
 #include <map>
@@ -31,54 +31,34 @@ using namespace std::placeholders;
 
 #define UNUSED(expr) do { (void)(expr); } while (0);
 
-//ENERGYPLUSLIB_API void callbackBeginNewEnvironment(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackAfterNewEnvironmentWarmupComplete(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackBeginZoneTimeStepBeforeInitHeatBalance(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackBeginZoneTimeStepAfterInitHeatBalance(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackBeginTimeStepBeforePredictor(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackAfterPredictorBeforeHVACManagers(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackAfterPredictorAfterHVACManagers(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackInsideSystemIterationLoop(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfZoneTimeStepBeforeZoneReporting(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfZoneTimeStepAfterZoneReporting(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfSystemTimeStepBeforeHVACReporting(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfSystemTimeStepAfterHVACReporting(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfZoneSizing(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfSystemSizing(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackEndOfAfterComponentGetInput(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackUserDefinedComponentModel(std::function<void ()> f);
-//ENERGYPLUSLIB_API void callbackUnitarySystemSizing(std::function<void ()> f);
-
 void doEndOfSystemTimeStepAfterHVACReporting(EPComponent * epcomp) {
+  // At this time, there is no data exchange or any other
+  // interaction with the FMU during wramup and sizing.
+  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
+    return;
+  }
+
   // Signal the end of the step
-  std::cout << "doEndOfSystemTimeStepAfterHVACReporting" << std::endl;
   {
+    if (epcomp->epstatus != EPStatus::TERMINATE)
+    {
       std::unique_lock<std::mutex> lk(epcomp->control_mutex);
       epcomp->epstatus = EPStatus::NONE;
+    }
   }
-  std::cout << "notify step is done" << std::endl;
   epcomp->control_cv.notify_one();
 
   // Wait for the epstatus to advance again
   std::unique_lock<std::mutex> lk(epcomp->control_mutex);
-  std::cout << "check for advance" << std::endl;
-  epcomp->control_cv.wait(lk, [&epcomp]() { 
+  epcomp->control_cv.wait(lk, [&epcomp]() {
     return (
-      (epcomp->epstatus == EPStatus::ADVANCE) || 
+      (epcomp->epstatus == EPStatus::ADVANCE) ||
       (epcomp->epstatus == EPStatus::TERMINATE)
-    ); 
+    );
   });
-
-  if (epcomp->epstatus == EPStatus::TERMINATE) {
-    stopSimulation();
-  }
-
-  std::cout << "done doEndOfSystemTimeStepAfterHVACReporting" << std::endl;
 }
 
 std::list<EPComponent> epComponents;
-
-//using json = nlohmann::json;
 
 void exchange(EPComponent * epcomp)
 {
@@ -89,7 +69,7 @@ void exchange(EPComponent * epcomp)
         return i + 1;
       }
     }
-  
+
     return 0;
   };
 
@@ -105,7 +85,7 @@ void exchange(EPComponent * epcomp)
     std::transform(actuatorName.begin(), actuatorName.end(), actuatorName.begin(), ::toupper);
 
     for ( int i = 0; i < EnergyPlus::DataRuntimeLanguage::numActuatorsUsed; ++i ) {
-      auto & used = EnergyPlus::DataRuntimeLanguage::EMSActuatorUsed[i]; 
+      auto & used = EnergyPlus::DataRuntimeLanguage::EMSActuatorUsed[i];
       if (used.Name == actuatorName) {
         auto & actuator = EnergyPlus::DataRuntimeLanguage::EMSActuatorAvailable(used.ActuatorVariableNum);
         actuator.RealValue = value;
@@ -115,13 +95,13 @@ void exchange(EPComponent * epcomp)
   };
 
   for( auto & varmap : epcomp->variables ) {
-    auto & var = varmap.second; 
+    auto & var = varmap.second;
     auto varZoneNum = zoneNum(var.key);
     switch ( var.type ) {
-      case VariableType::T:
-        EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
-        EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
-        break;
+      //case VariableType::T:
+      //  EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
+      //  EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
+      //  break;
       case VariableType::V:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume;
         break;
@@ -196,9 +176,6 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   fmi2Boolean stopTimeDefined,
   fmi2Real stopTime)
 {
-  Foo f;
-  f.bar(1);
-
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
   epcomp->toleranceDefined = toleranceDefined;
@@ -248,29 +225,23 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
-  std::cout << "fmi2SetTime" << std::endl;
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
   exchange(epcomp);
 
-  std::cout << "get lock to avance" << std::endl;
   {
     std::unique_lock<std::mutex> lk(epcomp->control_mutex);
     epcomp->currentTime = time;
     epcomp->epstatus = EPStatus::ADVANCE;
   }
-  std::cout << "notify to advance" << std::endl;
   // Notify E+ to advance
   epcomp->control_cv.notify_one();
-  std::cout << "wait for E+ to advance" << std::endl;
   {
     // Wait for E+ to advance and go back to IDLE before returning
     std::unique_lock<std::mutex> lk( epcomp->control_mutex );
-    std::cout << "got lock for none check" << std::endl;
     epcomp->control_cv.wait( lk, [&epcomp](){ return epcomp->epstatus == EPStatus::NONE; } );
   }
-  std::cout << "done set time" << std::endl;
-  
+
   return fmi2OK;
 }
 
@@ -325,32 +296,21 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* even
   return fmi2OK;
 }
 
-void stopEnergyPlus(fmi2Component c) {
+EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
+{
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
   {
     std::unique_lock<std::mutex> lk(epcomp->control_mutex);
     epcomp->epstatus = EPStatus::TERMINATE;
   }
-  std::cout << "stop notify" << std::endl;
+
+  stopSimulation();
   epcomp->control_cv.notify_one();
-
-  std::cout << "thread join" << std::endl;
   epcomp->simthread.join();
-  std::cout << "stop complete" << std::endl;
-}
-
-EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
-{
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
-
-  std::cout << "fmi2Terminate" << std::endl;
-  stopEnergyPlus(c);
 
   auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
   epComponents.erase(it);
-
-  std::cout << "after stopSimulation" << std::endl;
 
   return fmi2OK;
 }
@@ -372,9 +332,7 @@ EPFMI_API fmi2Status fmi2SetDebugLogging(fmi2Component, fmi2Boolean, size_t, con
 
 EPFMI_API fmi2Status fmi2Reset(fmi2Component c)
 {
-  std::cout << "fmi2Reset" << std::endl;
   EPComponent * epcomp = static_cast<EPComponent*>(c);
-  stopEnergyPlus(c);
   epcomp->variables = parseVariables(epcomp->idfInputPath,epcomp->spawnInputPath);
 
   return fmi2OK;
@@ -382,7 +340,6 @@ EPFMI_API fmi2Status fmi2Reset(fmi2Component c)
 
 EPFMI_API void fmi2FreeInstance(fmi2Component c)
 {
-  std::cout << "fmi2FreeInstance" << std::endl;
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
   auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
@@ -448,7 +405,7 @@ EPFMI_API fmi2Status fmi2CompletedIntegratorStep(fmi2Component, fmi2Boolean, fmi
   // Consider setting terminateSimulation to true
   *terminateSimulation = fmi2False;
   *enterEventMode = fmi2False;
-  
+
   return fmi2OK;
 }
 
