@@ -9,10 +9,10 @@ model = load_fmu(sys.argv[1])
 start_time = 0
 final_time = 24 * 60 * 60
 
-#instantiate fmu
+print("instantiate")
 model.instantiate(name='Model', visible=True)
 
-# initialize the simulation
+print("setup_experiment")
 model.setup_experiment(start_time=start_time, stop_time=final_time)
 
 # get information for the model
@@ -37,56 +37,26 @@ print ("model generation-date-time: ", model.get_generation_date_and_time() )
 platform = model.get_model_types_platform()
 print ("model platform: ", platform)
 
-
 # get all the model variables
 # This one is not working: outputs = model.get_output_list()
 outputs = model.get_model_variables(causality=3)
 for x in outputs.keys():
     print("outputs: " + x + ": value ==> ", model.get(x))
-    
-
-# get input vars
-#inputs = model.get_input_list()
-#for x in inputs.keys():
-#    print("inputs: " + x + ": value ==>", model.get(x) )
-    
-
-## get ode sizes
-#print("model ode sizes: ", model.get_ode_sizes())
-#
-#
-#default_start_time = model.get_default_experiment_start_time()
-#print ("default-start-time:", default_start_time)
-#
-#default_stop_time = model.get_default_experiment_stop_time()
-#print ("default-stop-time:", default_stop_time)
-#
-#default_step = model.get_default_experiment_step()
-#print ("default-step:", default_step)
-#
-#fmu_author = model.get_author()
-#print ("fmu-author:", fmu_author)
-
 
 # perform siulations
-t = 0
-while t < 10: 
+t = start_time
+while t <= final_time:
     print("t = " + str(t))
+    print("zone temperature: " , model.get('Zone_Temperature')[0])
+    print("outside temperature: " , model.get('Outside_Temperature')[0])
 
-    model.event_update()
-
-    event_info = model.get_event_info()
-    #get the time step
-    lastTime = t
-    #t = event_info.nextEventTime
-    t = t + 1
-    
-    print("update time")
     model.time = t
 
-    for x in outputs.keys():
-        print("outputs: " + x + ": value ==> ", model.get(x))
+    model.event_update()
+    event_info = model.get_event_info()
+    t = event_info.nextEventTime
+
 
 model.terminate()
-   
+
 
