@@ -18,19 +18,21 @@ add_library( epvariables STATIC
 )
 
 #target_link_libraries( epvariables energypluslib CONAN_PKG::boost)
-target_link_libraries( epvariables energypluslib)
+#target_link_libraries( epvariables energypluslib)
 
 set(src
   EPFMI.hpp
   EPFMI.cpp
   EPFMI_Export.hpp
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh 
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc 
+  Variables.hpp
+  Variables.cpp
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
 )
 
 add_library( epfmi SHARED ${src} )
 set_target_properties( epfmi PROPERTIES OUTPUT_NAME "epfmi" )
-target_link_libraries( epfmi epvariables energypluslib CONAN_PKG::boost_filesystem)
+target_link_libraries( epfmi energyplusapi CONAN_PKG::boost_filesystem)
 
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin
@@ -52,9 +54,9 @@ CREATE_TEST_TARGETS( epfmi "${test_src}" "epfmi" )
 
 set(MY_FMU_RESOURCES "${CMAKE_CURRENT_BINARY_DIR}/MyFMU/resources/")
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${MY_FMU_RESOURCES}")
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.spawn" 
-  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.idf" 
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.spawn"
+  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.idf"
   "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
   "${PROJECT_BINARY_DIR}/Products/Energy+.idd"
   "${MY_FMU_RESOURCES}/"
