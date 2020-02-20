@@ -69,6 +69,9 @@ struct EPComponent {
     return (this == &other);
   }
 
+  fmi2Real currentSimTime() const;
+  fmi2Real nextSimTime() const;
+
   std::string instanceName;
 
   std::string weatherFilePath;
@@ -81,8 +84,8 @@ struct EPComponent {
   fmi2Real startTime;
   fmi2Boolean stopTimeDefined;
   fmi2Real stopTime;
-  fmi2Real currentTime;
-  fmi2Real nextSimTime;
+  // The time currently requested by the client
+  fmi2Real requestedTime;
   fmi2CallbackLogger logger;
   fmi2Boolean loggingOn;
 

@@ -38,6 +38,14 @@ void doEndOfSystemTimeStepAfterHVACReporting(EPComponent * epcomp) {
     return;
   }
 
+  // Only signal and wait for input if the current sim time is greather than or equal
+  // to the requested time
+  if( epcomp->currentSimTime() < epcomp->requestedTime ) {
+    // Might want to exchange data here, so that EnergyPlus
+    // does not overrite any fmu inputs
+    return;
+  }
+
   // Signal the end of the step
   {
     if (epcomp->epstatus != EPStatus::TERMINATE)
@@ -208,7 +216,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
   {
     std::unique_lock<std::mutex> lk(epcomp->control_mutex);
-    epcomp->currentTime = 0.0;
+    epcomp->requestedTime = 0.0;
     epcomp->epstatus = EPStatus::ADVANCE;
   }
 
@@ -226,12 +234,12 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
   EPComponent * epcomp = static_cast<EPComponent*>(c);
+  epcomp->requestedTime = time;
 
   exchange(epcomp);
 
   {
     std::unique_lock<std::mutex> lk(epcomp->control_mutex);
-    epcomp->currentTime = time;
     epcomp->epstatus = EPStatus::ADVANCE;
   }
   // Notify E+ to advance
@@ -289,7 +297,7 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* even
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
   eventInfo->newDiscreteStatesNeeded = fmi2False;
-  eventInfo->nextEventTime = epcomp->nextSimTime;
+  eventInfo->nextEventTime = epcomp->nextSimTime();
   eventInfo->nextEventTimeDefined = fmi2True;
   eventInfo->terminateSimulation = fmi2False;
 

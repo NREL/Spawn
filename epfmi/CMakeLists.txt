@@ -12,18 +12,18 @@ INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/Obj
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/ )
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/ )
 
-add_library( epvariables STATIC
+add_library(
+  epvariables
   Variables.hpp
   Variables.cpp
 )
-
-#target_link_libraries( epvariables energypluslib CONAN_PKG::boost)
-#target_link_libraries( epvariables energypluslib)
 
 set(src
   EPFMI.hpp
   EPFMI.cpp
   EPFMI_Export.hpp
+  EPComponent.hpp
+  EPComponent.cpp
   Variables.hpp
   Variables.cpp
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
@@ -40,11 +40,8 @@ install( TARGETS epfmi
   ARCHIVE DESTINATION ./lib
 )
 
-#target_link_libraries(epvariables energypluslib energyplusapi)
-
 set(test_src
   Test/Single_Model_Test.cpp
-  #Test/Two_Model_Test.cpp
   Test/main.cc
 )
 
