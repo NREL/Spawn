@@ -4,19 +4,10 @@ cmake_policy(SET CMP0025 NEW)
 project( Spawn VERSION 0.0.1 )
 cmake_minimum_required(VERSION 3.13)
 
-if(APPLE)
-  set(CMAKE_CXX_STANDARD 11)
-endif()
-
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 
-set (CMAKE_CXX_STANDARD 11)
-
 add_subdirectory( submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL )
-
-if (UNIX)
-  ADD_DEFINITIONS("-fPIC")
-endif()
+include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 
 if(NOT GIT_FOUND)
   find_program(GIT_EXECUTABLE git HINTS "$ENV{LOCALAPPDATA}/Programs/git/bin")

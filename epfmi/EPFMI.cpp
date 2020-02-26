@@ -31,6 +31,18 @@ using namespace std::placeholders;
 
 #define UNUSED(expr) do { (void)(expr); } while (0);
 
+
+bool done = false;
+void doAfterInitHeatBalance(EPComponent * epcomp) {
+  std::cout << "doAfterInitHeatBalance !!" << std::endl;
+  if (! done) {
+    std::cout << "doAfterInitHeatBalance" << std::endl;
+    EnergyPlus::DataHeatBalance::SNLoadHeatRate.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
+    done = true;
+    //EnergyPlus::DataHeatBalance::MaxHeatLoadZone.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
+  }
+}
+
 void doEndOfSystemTimeStepAfterHVACReporting(EPComponent * epcomp) {
   // At this time, there is no data exchange or any other
   // interaction with the FMU during wramup and sizing.
@@ -208,8 +220,15 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
     EnergyPlus::CommandLineInterface::ProcessArgs( argc, argv );
 
-    const auto & f = std::bind(doEndOfSystemTimeStepAfterHVACReporting, epcomp);
-    callbackEndOfSystemTimeStepAfterHVACReporting(f);
+    std::cout << "register callback" << std::endl;
+    //const auto & f = std::bind(doEndOfSystemTimeStepAfterHVACReporting, epcomp);
+    callbackEndOfSystemTimeStepAfterHVACReporting(std::bind(doEndOfSystemTimeStepAfterHVACReporting, epcomp));
+    //emsCallFromBeginZoneTimestepAfterInitHeatBalance
+    //      BeginZoneTimestepAfterInitHeatBalance
+    callbackBeginZoneTimeStepAfterInitHeatBalance(std::bind(doAfterInitHeatBalance, epcomp));
+    //callbackBeginNewEnvironment(doBeginNewEnvironment);
+    //std::cout << "numberofZones: " << EnergyPlus::DataGlobals::NumOfZones << std::endl;
+    //EnergyPlus::DataHeatBalance::SNLoadHeatRate.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
 
     RunEnergyPlus();
   };

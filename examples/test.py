@@ -7,7 +7,7 @@ print(sys.argv[1])
 
 model = load_fmu(sys.argv[1])
 start_time = 0
-final_time = 24 * 60 * 60
+final_time = 60 * 10 #24 * 60 * 60
 
 print("instantiate")
 model.instantiate(name='Model', visible=True)
