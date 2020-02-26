@@ -3,8 +3,8 @@ cmake_policy(SET CMP0025 NEW)
 
 project( Spawn VERSION 0.0.1 )
 cmake_minimum_required(VERSION 3.13)
-
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
+set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory( submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL )
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
@@ -50,11 +50,10 @@ conan_add_remote(NAME bincrafters
   URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 conan_cmake_run(REQUIRES
-  #jsonformoderncpp/3.6.1@vthiery/stable
-  boost_filesystem/1.69.0@bincrafters/stable
+  libzip/1.5.2@bincrafters/stable
+  boost/1.69.0
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
-  libzip/1.5.1@bincrafters/stable
   BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
   BUILD missing
 )

@@ -32,7 +32,7 @@ set(src
 
 add_library( epfmi SHARED ${src} )
 set_target_properties( epfmi PROPERTIES OUTPUT_NAME "epfmi" )
-target_link_libraries( epfmi energyplusapi CONAN_PKG::boost_filesystem)
+target_link_libraries( epfmi energyplusapi CONAN_PKG::boost)
 
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin

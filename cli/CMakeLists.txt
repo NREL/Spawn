@@ -29,7 +29,7 @@ target_link_libraries(spawn
   energypluslib
   CONAN_PKG::CLI11
   CONAN_PKG::pugixml
-  CONAN_PKG::boost_filesystem
+  CONAN_PKG::boost
 )
 
 install(TARGETS spawn DESTINATION bin)
