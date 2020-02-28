@@ -98,6 +98,7 @@ void exchange(EPComponent * epcomp)
     switch ( var.type ) {
       case VariableType::T:
         EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
+        EnergyPlus::DataHeatBalFanSys::ZTAV( varZoneNum ) = var.value;
         EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
         break;
       case VariableType::V:
