@@ -6,6 +6,7 @@
 #include "EnergyPlus/CommandLineInterface.hh"
 #include "EnergyPlus/ZoneTempPredictorCorrector.hh"
 #include "EnergyPlus/DataGlobals.hh"
+#include "EnergyPlus/DataZoneEnergyDemands.hh"
 #include "EnergyPlus/DataHeatBalFanSys.hh"
 #include "EnergyPlus/DataHeatBalance.hh"
 #include "EnergyPlus/DataEnvironment.hh"
@@ -31,54 +32,31 @@ using namespace std::placeholders;
 
 #define UNUSED(expr) do { (void)(expr); } while (0);
 
-
-bool done = false;
-void doAfterInitHeatBalance(EPComponent * epcomp) {
-  std::cout << "doAfterInitHeatBalance !!" << std::endl;
-  if (! done) {
-    std::cout << "doAfterInitHeatBalance" << std::endl;
-    EnergyPlus::DataHeatBalance::SNLoadHeatRate.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
-    done = true;
-    //EnergyPlus::DataHeatBalance::MaxHeatLoadZone.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
-  }
-}
-
-void doEndOfSystemTimeStepAfterHVACReporting(EPComponent * epcomp) {
-  // At this time, there is no data exchange or any other
-  // interaction with the FMU during wramup and sizing.
-  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
-    return;
-  }
-
-  // Only signal and wait for input if the current sim time is greather than or equal
-  // to the requested time
-  if( epcomp->currentSimTime() < epcomp->requestedTime ) {
-    // Might want to exchange data here, so that EnergyPlus
-    // does not overrite any fmu inputs
-    return;
-  }
-
-  // Signal the end of the step
-  {
-    if (epcomp->epstatus != EPStatus::TERMINATE)
-    {
-      std::unique_lock<std::mutex> lk(epcomp->control_mutex);
-      epcomp->epstatus = EPStatus::NONE;
-    }
-  }
-  epcomp->control_cv.notify_one();
-
-  // Wait for the epstatus to advance again
-  std::unique_lock<std::mutex> lk(epcomp->control_mutex);
-  epcomp->control_cv.wait(lk, [&epcomp]() {
-    return (
-      (epcomp->epstatus == EPStatus::ADVANCE) ||
-      (epcomp->epstatus == EPStatus::TERMINATE)
-    );
-  });
-}
-
 std::list<EPComponent> epComponents;
+
+Real64 zoneHeatTransfer(const int ZoneNum)
+{
+    static Real64 SumIntGain(0.0); // Zone sum of convective internal gains
+    static Real64 SumHA(0.0);      // Zone sum of Hc*Area
+    static Real64 SumHATsurf(0.0); // Zone sum of Hc*Area*Tsurf
+    static Real64 SumHATref(0.0);  // Zone sum of Hc*Area*Tref, for ceiling diffuser convection correlation
+    static Real64 SumMCp(0.0);     // Zone sum of MassFlowRate*Cp
+    static Real64 SumMCpT(0.0);    // Zone sum of MassFlowRate*Cp*T
+    static Real64 SumSysMCp(0.0);  // Zone sum of air system MassFlowRate*Cp
+    static Real64 SumSysMCpT(0.0); // Zone sum of air system MassFlowRate*Cp*T
+
+    EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(ZoneNum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
+
+    Real64 TempDepCoef = SumHA;                   // + SumMCp;
+    Real64 TempIndCoef = SumIntGain + SumHATsurf; // - SumHATref + SumMCpT;
+
+    // Refer to
+    // https://bigladdersoftware.com/epx/docs/8-8/engineering-reference/basis-for-the-zone-and-air-system-integration.html#basis-for-the-zone-and-air-system-integration
+    Real64 heatTransfer = TempIndCoef - (TempDepCoef * EnergyPlus::DataHeatBalFanSys::MAT(ZoneNum));
+
+    return heatTransfer;
+}
+
 
 void exchange(EPComponent * epcomp)
 {
@@ -118,10 +96,10 @@ void exchange(EPComponent * epcomp)
     auto & var = varmap.second;
     auto varZoneNum = zoneNum(var.key);
     switch ( var.type ) {
-      //case VariableType::T:
-      //  EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
-      //  EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
-      //  break;
+      case VariableType::T:
+        EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
+        EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
+        break;
       case VariableType::V:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume;
         break;
@@ -132,7 +110,7 @@ void exchange(EPComponent * epcomp)
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens;
         break;
       case VariableType::QCONSEN_FLOW:
-        //var.value = EnergyPlus::ZoneTempPredictorCorrector::HDot( varZoneNum );
+        var.value = zoneHeatTransfer( varZoneNum );
         break;
       case VariableType::SENSOR:
         var.value = getSensorValue(var);
@@ -144,6 +122,52 @@ void exchange(EPComponent * epcomp)
         break;
     }
   }
+}
+
+void externalHVACManager(EPComponent * epcomp) {
+  // Although we do not use the ZoneTempPredictorCorrector,
+  // some global variables need to be initialized by InitZoneAirSetPoints
+  // This is protected by a one time flag so that it will only happen once
+  // during the simulation
+  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints();
+
+  // At this time, there is no data exchange or any other
+  // interaction with the FMU during wramup and sizing.
+  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
+    return;
+  }
+
+  if( EnergyPlus::DataGlobals::KickOffSimulation ) {
+      return;
+  }
+
+  // Only signal and wait for input if the current sim time is greather than or equal
+  // to the requested time
+  if( epcomp->currentSimTime() < epcomp->requestedTime ) {
+    // Exchange data so that FMU inputs are retained,
+    // because EnergyPlus may have overwrote an input value
+    exchange(epcomp);
+    return;
+  }
+
+  // Signal the end of the step
+  {
+    if (epcomp->epstatus != EPStatus::TERMINATE)
+    {
+      std::unique_lock<std::mutex> lk(epcomp->control_mutex);
+      epcomp->epstatus = EPStatus::NONE;
+    }
+  }
+  epcomp->control_cv.notify_one();
+
+  // Wait for the epstatus to advance again
+  std::unique_lock<std::mutex> lk(epcomp->control_mutex);
+  epcomp->control_cv.wait(lk, [&epcomp]() {
+    return (
+      (epcomp->epstatus == EPStatus::ADVANCE) ||
+      (epcomp->epstatus == EPStatus::TERMINATE)
+    );
+  });
 }
 
 EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
@@ -219,17 +243,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
     argv[7] = epcomp->idfInputPath.c_str();
 
     EnergyPlus::CommandLineInterface::ProcessArgs( argc, argv );
-
-    std::cout << "register callback" << std::endl;
-    //const auto & f = std::bind(doEndOfSystemTimeStepAfterHVACReporting, epcomp);
-    callbackEndOfSystemTimeStepAfterHVACReporting(std::bind(doEndOfSystemTimeStepAfterHVACReporting, epcomp));
-    //emsCallFromBeginZoneTimestepAfterInitHeatBalance
-    //      BeginZoneTimestepAfterInitHeatBalance
-    callbackBeginZoneTimeStepAfterInitHeatBalance(std::bind(doAfterInitHeatBalance, epcomp));
-    //callbackBeginNewEnvironment(doBeginNewEnvironment);
-    //std::cout << "numberofZones: " << EnergyPlus::DataGlobals::NumOfZones << std::endl;
-    //EnergyPlus::DataHeatBalance::SNLoadHeatRate.dimension(EnergyPlus::DataGlobals::NumOfZones, 0.0);
-
+    EnergyPlus::DataGlobals::externalHVACManager = std::bind(externalHVACManager, epcomp);
     RunEnergyPlus();
   };
 

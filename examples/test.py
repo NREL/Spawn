@@ -45,15 +45,30 @@ for x in outputs.keys():
 
 # perform siulations
 t = start_time
+last_time = start_time
+temp = 23.0
 while t <= final_time:
     print("t = " + str(t))
     print("zone temperature: " , model.get('Zone_Temperature')[0])
     print("outside temperature: " , model.get('Outside_Temperature')[0])
+    print("Core_ZN_QConSen_flow: ", model.get('Core_ZN_QConSen_flow')[0])
 
+    dt = t - last_time
     model.time = t
+
+    densityAir = 1.276; # kg/m^3
+    heatCapacity = 1000.6; # J/kgK
+    volume = model.get('Core_ZN_V')[0]
+    tempDot = model.get('Core_ZN_QConSen_flow')[0] / ( volume * densityAir * heatCapacity );
+
+    temp = temp + (dt * tempDot);
+    print('temp: ', temp)
+
+    model.set('Core_ZN_T', temp);
 
     model.event_update()
     event_info = model.get_event_info()
+    last_time = t
     t = event_info.nextEventTime
 
 
