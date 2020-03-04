@@ -522,6 +522,8 @@ int createFMU(const std::string &jsoninput, bool nozip) {
   if (! nozip) {
     zip_directory(fmuStaggingPath.string(), fmupath.string());
   }
+
+  return 0;
 }
 
 int main(int argc, const char *argv[]) {

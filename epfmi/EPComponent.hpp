@@ -48,6 +48,10 @@
 #ifndef EPComponent_hh_INCLUDED
 #define EPComponent_hh_INCLUDED
 
+#include "EnergyPlus.hh"
+#include "Variables.hpp"
+#include <boost/filesystem.hpp>
+#include <fmi2FunctionTypes.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -55,22 +59,37 @@
 #include <mutex>
 #include <sstream>
 #include <condition_variable>
-#include <fmi2FunctionTypes.h>
-#include "EnergyPlus.hh"
-#include "Variables.hpp"
 
 enum class EPStatus { ADVANCE, NONE, TERMINATE, EXCHANGE };
 
-struct EPComponent {
-  EPComponent() {}
+class EPComponent {
+public:
+
+  EPComponent(const std::string & name, const boost::filesystem::path & resourcePath);
   EPComponent( const EPComponent& ) = delete;
-  EPComponent( EPComponent&& ) {}
+  EPComponent( EPComponent&& ) = delete;
   bool operator==(const EPComponent& other) const {
     return (this == &other);
   }
 
+  int start();
+  int stop();
+  int setTime(const double & time);
+
   fmi2Real currentSimTime() const;
   fmi2Real nextSimTime() const;
+  void exchange();
+  void externalHVACManager();
+
+  // Set a variable identified by ref to the given value
+  // Return true if the operation was successful
+  bool setValue(const unsigned int & ref, const double & value);
+
+  // Get the value of variable identified by ref
+  // if ok parameter is given then it will be set to true if the operation was successful
+  double getValue(const unsigned int & ref, bool & ok) const;
+
+  double getValue(const unsigned int & ref) const;
 
   std::string instanceName;
 
@@ -85,12 +104,16 @@ struct EPComponent {
   fmi2Boolean stopTimeDefined;
   fmi2Real stopTime;
   // The time currently requested by the client
-  fmi2Real requestedTime;
   fmi2CallbackLogger logger;
   fmi2Boolean loggingOn;
 
   std::map<unsigned int, Variable> variables;
 
+private:
+
+  Real64 zoneHeatTransfer(const int ZoneNum);
+
+  fmi2Real requestedTime;
   std::thread simthread;
   EPStatus epstatus;
   std::condition_variable control_cv;
