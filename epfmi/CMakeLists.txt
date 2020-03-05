@@ -26,13 +26,22 @@ set(src
   EPComponent.cpp
   Variables.hpp
   Variables.cpp
+  # EnergyPlus compiles these files into a DLL, but we would prefer to
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
 )
 
 add_library( epfmi SHARED ${src} )
 set_target_properties( epfmi PROPERTIES OUTPUT_NAME "epfmi" )
-target_link_libraries( epfmi energyplusapi CONAN_PKG::boost)
+target_link_libraries( epfmi energypluslib CONAN_PKG::boost)
 
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin

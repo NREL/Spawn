@@ -356,7 +356,7 @@ std::string removeUnusedObjects(const json &jsonidf) {
   return parser.encode(newjsonidf, schema);
 }
 
-int createFMU(const std::string &jsoninput, bool nozip) {
+int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   json j;
 
   std::ifstream fileinput(jsoninput);
@@ -520,7 +520,7 @@ int createFMU(const std::string &jsoninput, bool nozip) {
   doc.save_file(modelDescriptionPath.c_str());
 
   if (! nozip) {
-    zip_directory(fmuStaggingPath.string(), fmupath.string());
+    zip_directory(fmuStaggingPath.string(), fmupath.string(), nocompress);
   }
 
   return 0;
@@ -530,14 +530,18 @@ int main(int argc, const char *argv[]) {
   CLI::App app{"Spawn of EnergyPlus"};
 
   bool nozip = false;
+  bool nocompress = false;
 
   std::string jsoninput = "spawn.json";
   auto createOption =
       app.add_option("-c,--create", jsoninput,
                      "Create a standalone FMU based on json input", true);
 
-  auto zipOption = app.add_flag("--no-zip", nozip, "Skip compressing the contents of the fmu into a zip archive");
+  auto zipOption = app.add_flag("--no-zip", nozip, "Stage FMU files on disk without creating a zip archive");
   zipOption->needs(createOption);
+
+  auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
+  compressOption->needs(createOption);
 
   auto versionOption =
     app.add_flag("-v,--version", "Print version info and exit");
@@ -545,7 +549,7 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   if (*createOption) {
-    auto result = createFMU(jsoninput, nozip);
+    auto result = createFMU(jsoninput, nozip, nocompress);
     if (result) {
       return result;
     }

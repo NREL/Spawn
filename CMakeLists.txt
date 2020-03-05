@@ -90,7 +90,6 @@ if( NOT WIN32 )
             $<TARGET_FILE:epfmi>
             "${modelica_bin_path}"
   )
-  install( FILES ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/FMI/EPFMI.hpp DESTINATION ./include )
   install(DIRECTORY examples DESTINATION .)
   if( INSTALL_BUILDINGS_LIBRARY )
     install(DIRECTORY submodules/modelica-buildings DESTINATION .)

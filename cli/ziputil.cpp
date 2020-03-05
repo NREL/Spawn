@@ -13,7 +13,7 @@ bool is_dir(const std::string& dir)
   return S_ISDIR(st.st_mode);
 }
 
-void walk_directory(const std::string& startdir, const std::string& inputdir, zip_t *zipper)
+void walk_directory(const std::string& startdir, const std::string& inputdir, zip_t *zipper, bool no_compression)
 {
   DIR *dp = ::opendir(inputdir.c_str());
   if (dp == nullptr) {
@@ -28,15 +28,18 @@ void walk_directory(const std::string& startdir, const std::string& inputdir, zi
         if (zip_dir_add(zipper, fullname.substr(startdir.length() + 1).c_str(), ZIP_FL_ENC_UTF_8) < 0) {
           throw std::runtime_error("Failed to add directory to zip: " + std::string(zip_strerror(zipper)));
         }
-        walk_directory(startdir, fullname, zipper);
+        walk_directory(startdir, fullname, zipper, no_compression);
       } else {
         zip_source_t *source = zip_source_file(zipper, fullname.c_str(), 0, 0);
         if (source == nullptr) {
           throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
         }
-        if (zip_file_add(zipper, fullname.substr(startdir.length() + 1).c_str(), source, ZIP_FL_ENC_UTF_8) < 0) {
+        const auto & index = zip_file_add(zipper, fullname.substr(startdir.length() + 1).c_str(), source, ZIP_FL_ENC_UTF_8);
+        if ( index < 0) {
           zip_source_free(source);
           throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
+        } else if (no_compression) {
+          zip_set_file_compression(zipper, index, ZIP_CM_STORE, 0);
         }
       }
     }
@@ -44,7 +47,7 @@ void walk_directory(const std::string& startdir, const std::string& inputdir, zi
   ::closedir(dp);
 }
 
-void zip_directory(const std::string& inputdir, const std::string& output_filename)
+void zip_directory(const std::string& inputdir, const std::string& output_filename, bool no_compression)
 {
   int errorp;
   zip_t *zipper = zip_open(output_filename.c_str(), ZIP_CREATE | ZIP_EXCL, &errorp);
@@ -55,7 +58,7 @@ void zip_directory(const std::string& inputdir, const std::string& output_filena
   }
 
   try {
-    walk_directory(inputdir, inputdir, zipper);
+    walk_directory(inputdir, inputdir, zipper, no_compression);
   } catch(...) {
     zip_close(zipper);
     throw;
