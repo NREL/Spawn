@@ -1,6 +1,7 @@
 #include "EPComponent.hpp"
 #include "EnergyPlus/api/EnergyPlusPgm.hh"
 #include "EnergyPlus/api/runtime.h"
+#include "EnergyPlus/api/datatransfer.h"
 #include "EnergyPlus/CommandLineInterface.hh"
 #include "EnergyPlus/DataGlobals.hh"
 #include "EnergyPlus/DataHeatBalance.hh"
@@ -174,11 +175,8 @@ void EPComponent::exchange()
   };
 
   auto getSensorValue = [&](Variable & var) {
-    int varType;
-    int varIndex;
-
-    EnergyPlus::EMSManager::GetVariableTypeAndIndex(var.epname, var.epkey, varType, varIndex);
-    return EnergyPlus::GetInternalVariableValue(varType, varIndex);
+    const auto & h = getVariableHandle(var.epname.c_str(), var.epkey.c_str());
+    return getVariableValue(h);
   };
 
   auto setActuatorValue = [](std::string & actuatorName, const Real64 & value) {
