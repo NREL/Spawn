@@ -117,6 +117,7 @@ bool EPComponent::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
   if( var != variables.end() ) {
     var->second.value = value;
+    var->second.valueset = true;
     return true;
   }
 
@@ -126,8 +127,10 @@ bool EPComponent::setValue(const unsigned int & ref, const double & value) {
 double EPComponent::getValue(const unsigned int & ref, bool & ok) const {
   auto var = variables.find(ref);
   if( var != variables.end() ) {
-    ok = true;
-    return var->second.value;
+    if( var->second.valueset ) {
+      ok = true;
+      return var->second.value;
+    }
   }
   ok = false;
   return 0.0;
@@ -197,27 +200,36 @@ void EPComponent::exchange()
     auto varZoneNum = zoneNum(var.key);
     switch ( var.type ) {
       case VariableType::T:
-        EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
-        EnergyPlus::DataHeatBalFanSys::ZTAV( varZoneNum ) = var.value;
-        EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
+        if( var.valueset ) {
+          EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
+          EnergyPlus::DataHeatBalFanSys::ZTAV( varZoneNum ) = var.value;
+          EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
+        }
         break;
       case VariableType::V:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume;
+        var.valueset = true;
         break;
       case VariableType::AFLO:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).FloorArea;
+        var.valueset = true;
         break;
       case VariableType::MSENFAC:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens;
+        var.valueset = true;
         break;
       case VariableType::QCONSEN_FLOW:
         var.value = zoneHeatTransfer( varZoneNum );
+        var.valueset = true;
         break;
       case VariableType::SENSOR:
         var.value = getSensorValue(var);
+        var.valueset = true;
         break;
       case VariableType::EMS_ACTUATOR:
-        setActuatorValue(var.key, var.value);
+        if( var.valueset ) {
+          setActuatorValue(var.key, var.value);
+        }
         break;
       default:
         break;

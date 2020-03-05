@@ -124,23 +124,6 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     ++i;
   }
 
-  //const auto sensors = fmuInfo.sensorNames();
-  //for (const auto & sensor : sensors) {
-  //  Variable var;
-  //  var.type = VariableType::EMS_SENSOR;
-  //  var.key = sensor;
-
-  //  var.scalar_attributes.emplace_back(std::make_pair("name",sensor));
-  //  var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-  //  var.scalar_attributes.emplace_back(std::make_pair("description","Custom Sensor"));
-  //  var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-  //  var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-  //  var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
-
-  //  result.emplace(i,std::move(var));
-  //  ++i;
-  //}
-
   const auto actuators = fmuInfo.actuatorNames();
   for (const auto & actuator : actuators) {
     Variable var;

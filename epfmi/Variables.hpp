@@ -33,6 +33,7 @@ struct Variable {
   VariableType type;
   std::string key;
   Real64 value;
+  bool valueset; // This is true "value" member has been set to a value
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;
 

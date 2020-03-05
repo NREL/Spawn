@@ -53,9 +53,7 @@ heatCapacity = 1000.6; # J/kgK
 volume = model.get('Core_ZN_V')[0]
 
 while t <= final_time:
-    print("set time")
     model.time = t
-    print("set temp")
     model.set('Core_ZN_T', temp);
     print("t = " + str(t))
     print("temp = " + str(temp))

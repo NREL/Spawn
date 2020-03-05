@@ -27,19 +27,20 @@ using json = nlohmann::json;
 // Take json idf as input, strip unused objects
 // and return idf text as a string
 // This will remove objects related to HVAC and controls
-std::string removeUnusedObjects(const json &jsonidf) {
-  json newjsonidf;
-
-  for(const auto & type : supportedIDDTypes) {
-    if ( jsonidf.find(type) != jsonidf.end() ) {
-      newjsonidf[type] = jsonidf[type];
+json & removeUnusedObjects(json & jsonidf) {
+  for(auto typep = jsonidf.cbegin(); typep != jsonidf.cend();){
+    if(std::find(std::begin(supportedIDDTypes), std::end(supportedIDDTypes), typep.key()) == std::end(supportedIDDTypes)) {
+      typep = jsonidf.erase(typep);
+    } else {
+      ++typep;
     }
   }
 
-  IdfParser parser;
-  const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
-  json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
-  return parser.encode(newjsonidf, schema);
+  return jsonidf;
+}
+
+// Add output variables
+json & addOutputVariables(json & jsonidf) {
 }
 
 int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
@@ -174,10 +175,11 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   IdfParser parser;
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
-  const auto & jsonidf = parser.decode(input_file, schema);
-  const auto & newidftext = removeUnusedObjects(jsonidf);
+  auto jsonidf = parser.decode(input_file, schema);
+  removeUnusedObjects(jsonidf);
+
   std::ofstream newidfstream(idfPath.string(),  std::ofstream::out |  std::ofstream::trunc);
-  newidfstream << newidftext;
+  newidfstream << parser.encode(jsonidf, schema);
   newidfstream.close();
 
   // Create the modelDescription.xml file
