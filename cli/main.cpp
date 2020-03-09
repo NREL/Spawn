@@ -24,9 +24,7 @@
 
 using json = nlohmann::json;
 
-// Take json idf as input, strip unused objects
-// and return idf text as a string
-// This will remove objects related to HVAC and controls
+// Remove objects related to HVAC and controls
 json & removeUnusedObjects(json & jsonidf) {
   for(auto typep = jsonidf.cbegin(); typep != jsonidf.cend();){
     if(std::find(std::begin(supportedIDDTypes), std::end(supportedIDDTypes), typep.key()) == std::end(supportedIDDTypes)) {
@@ -39,8 +37,42 @@ json & removeUnusedObjects(json & jsonidf) {
   return jsonidf;
 }
 
-// Add output variables
-json & addOutputVariables(json & jsonidf) {
+// Add output variables requested in the spawn input file, but not in the idf
+json & addOutputVariables(json & jsonidf, const json & requestedvars) {
+  // A pair that holds an output variable name and key,
+  typedef std::pair<std::string, std::string> Varpair;
+
+  // Make a list of the requested outputs
+  std::vector<Varpair> requestedpairs;
+  for(const auto & var : requestedvars) {
+    requestedpairs.emplace_back(var.at("name").get<std::string>(), var.at("key").get<std::string>());
+  }
+
+  // And a list of the current output variables
+  auto & currentvars = jsonidf["Output:Variable"];
+  std::vector<Varpair> currentpairs;
+  for(const auto & var : currentvars) {
+    currentpairs.emplace_back(var.at("variable_name").get<std::string>(), var.at("key_value").get<std::string>());
+  }
+
+  // Identify any missing pairs. ie. those that are requested but not in the idf
+  std::vector<Varpair> missingpairs;
+  std::sort(requestedpairs.begin(), requestedpairs.end());
+  std::sort(currentpairs.begin(), currentpairs.end());
+
+  std::set_difference(requestedpairs.begin(), requestedpairs.end(),
+      currentpairs.begin(), currentpairs.end(),
+      std::back_inserter(missingpairs));
+
+  for( const auto & pair : missingpairs) {
+    json newvar;
+    newvar["variable_name"] = pair.first;
+    newvar["key_value"] = pair.second;
+    newvar["reporting_frequency"] = "Timestep";
+    currentvars[pair.first + pair.second] = newvar;
+  }
+
+  return jsonidf;
 }
 
 int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
@@ -60,6 +92,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   json weather;
   json zones;
   json fmuname;
+  json outputVariables;
 
   if (j.is_discarded()) {
     std::cout << "Cannot parse json: '" << jsoninput << "'" << std::endl;
@@ -70,6 +103,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
       weather = j.at("EnergyPlus").at("weather");
       zones = j.at("model").at("zones");
       fmuname = j.at("fmu").at("name");
+      outputVariables = j.at("model").at("outputVariables");
     } catch (...) {
       std::cout << "Invalid json input: '" << jsoninput << "'" << std::endl;
       return 1;
@@ -177,6 +211,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
   auto jsonidf = parser.decode(input_file, schema);
   removeUnusedObjects(jsonidf);
+  addOutputVariables(jsonidf, outputVariables);
 
   std::ofstream newidfstream(idfPath.string(),  std::ofstream::out |  std::ofstream::trunc);
   newidfstream << parser.encode(jsonidf, schema);
