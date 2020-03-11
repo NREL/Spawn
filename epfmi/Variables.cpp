@@ -47,38 +47,6 @@ struct FMUInfo {
     return result;
   }
 
-  //std::vector<std::string> sensorNames() const {
-  //  std::vector<std::string> result;
-  //  std::string type = "EnergyManagementSystem:Sensor";
-
-  //  if ( jsonidf.find(type) != jsonidf.end() ) {
-  //    const auto sensors = jsonidf[type];
-  //    for( const auto & sensor : sensors.items() ) {
-  //      result.push_back(sensor.key());
-  //    }
-  //  }
-
-  //  std::sort(result.begin(), result.end());
-
-  //  return result;
-  //}
-
-  std::vector<std::string> actuatorNames() const {
-    std::vector<std::string> result;
-    std::string type = "EnergyManagementSystem:Actuator";
-
-    if ( jsonidf.find(type) != jsonidf.end() ) {
-      const auto actuators = jsonidf[type];
-      for( const auto & actuator : actuators.items() ) {
-        result.push_back(actuator.key());
-      }
-    }
-
-    std::sort(result.begin(), result.end());
-
-    return result;
-  }
-
   nlohmann::json jsonidf;
 };
 

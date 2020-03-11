@@ -7,9 +7,6 @@
 #include <sstream>
 #include <EnergyPlus.hh>
 
-//namespace EnergyPlus {
-//namespace FMI {
-
 enum class VariableType {
   T,
   V,
@@ -52,9 +49,6 @@ struct Variable {
 std::map<unsigned int, Variable> parseVariables(const std::string & idf,
   const std::string & jsonInput
 );
-
-//}
-//}
 
 #endif // Variables_hh_INCLUDED
 
