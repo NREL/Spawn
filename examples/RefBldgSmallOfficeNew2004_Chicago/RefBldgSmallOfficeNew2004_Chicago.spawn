@@ -24,8 +24,21 @@
         "name":    "Site Outdoor Air Drybulb Temperature",
         "key":     "Environment",
         "fmiName": "Outside_Temperature"
+      },
+      {
+        "name":    "People Occupant Count",
+        "key":     "Core_ZN People",
+        "fmiName": "Core_Zone_People_Output"
+      }
+    ],
+    "emsActuators": [
+      {
+        "variableName"  : "Core_ZN People",
+        "componentType" : "People",
+        "controlType"   : "Number of People",
+        "unit"          : "1",
+        "fmiName"       : "Core_Zone_People"
       }
     ]
   }
 } 
- 

@@ -178,26 +178,23 @@ void EPComponent::exchange()
   };
 
   auto getSensorValue = [&](Variable & var) {
-    const auto & h = getVariableHandle(var.epname.c_str(), var.epkey.c_str());
+    const auto & h = getVariableHandle(var.outputvarname.c_str(), var.outputvarkey.c_str());
     return getVariableValue(h);
   };
 
-  auto setActuatorValue = [](std::string & actuatorName, const Real64 & value) {
-    std::transform(actuatorName.begin(), actuatorName.end(), actuatorName.begin(), ::toupper);
+  auto compSetActuatorValue = [](const std::string & key, const std::string & componenttype, const std::string & controltype, const Real64 & value) {
+    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    setActuatorValue(h, value);
+  };
 
-    for ( int i = 0; i < EnergyPlus::DataRuntimeLanguage::numActuatorsUsed; ++i ) {
-      auto & used = EnergyPlus::DataRuntimeLanguage::EMSActuatorUsed[i];
-      if (used.Name == actuatorName) {
-        auto & actuator = EnergyPlus::DataRuntimeLanguage::EMSActuatorAvailable(used.ActuatorVariableNum);
-        actuator.RealValue = value;
-        actuator.Actuated = true;
-      }
-    }
+  auto compResetActuator = [](const std::string & key, const std::string & componenttype, const std::string & controltype) {
+    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    resetActuator(h);
   };
 
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
-    auto varZoneNum = zoneNum(var.key);
+    auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
       case VariableType::T:
         if( var.valueset ) {
@@ -228,7 +225,18 @@ void EPComponent::exchange()
         break;
       case VariableType::EMS_ACTUATOR:
         if( var.valueset ) {
-          setActuatorValue(var.key, var.value);
+          compSetActuatorValue(
+            var.actuatorcomponentkey,
+            var.actuatorcomponenttype,
+            var.actuatorcontroltype,
+            var.value
+          );
+        } else {
+          compResetActuator(
+            var.actuatorcomponentkey,
+            var.actuatorcomponenttype,
+            var.actuatorcontroltype
+          );
         }
         break;
       default:

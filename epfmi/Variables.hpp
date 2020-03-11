@@ -31,15 +31,22 @@ using VariableAttribute = std::pair<std::string, std::string>;
 
 struct Variable {
   VariableType type;
-  std::string key;
+  std::string name;
+
   Real64 value;
   bool valueset; // This is true "value" member has been set to a value
+
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;
 
-  // This is used for VariableType::OUTPUT which corresponds to an E+ output var
-  std::string epname;
-  std::string epkey;
+  // This is used for VariableType::OUTPUT
+  std::string outputvarname;
+  std::string outputvarkey;
+
+  // This is used for VariableType::EMS_ACTUATOR
+  std::string actuatorcomponentkey;
+  std::string actuatorcomponenttype;
+  std::string actuatorcontroltype;
 };
 
 std::map<unsigned int, Variable> parseVariables(const std::string & idf,

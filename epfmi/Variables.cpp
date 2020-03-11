@@ -101,7 +101,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     j = json::parse(jsonInput, nullptr, false);
   }
 
-  auto outputVariables = j.value("model",json()).value("outputVariables", std::vector<json>(0));
+  const auto outputVariables = j.value("model",json()).value("outputVariables", std::vector<json>(0));
   for (const auto & outputVariable : outputVariables) {
     auto epname = outputVariable.at("name").get<std::string>();
     auto epkey = outputVariable.at("key").get<std::string>();
@@ -109,9 +109,9 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
 
     Variable var;
     var.type = VariableType::SENSOR;
-    var.key = fmiName;
-    var.epname = EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
-    var.epkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
+    var.name = fmiName;
+    var.outputvarname = EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
+    var.outputvarkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
 
     var.scalar_attributes.emplace_back(std::make_pair("name",fmiName));
     var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -124,15 +124,18 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     ++i;
   }
 
-  const auto actuators = fmuInfo.actuatorNames();
-  for (const auto & actuator : actuators) {
+  const auto actuators = j.value("model",json()).value("emsActuators", std::vector<json>(0));
+  for (const auto & act : actuators) {
     Variable var;
     var.type = VariableType::EMS_ACTUATOR;
-    var.key = actuator;
+    var.name = act.at("fmiName").get<std::string>();
+    var.actuatorcomponentkey = act.at("variableName").get<std::string>();
+    var.actuatorcomponenttype = act.at("componentType").get<std::string>();
+    var.actuatorcontroltype = act.at("controlType").get<std::string>();
 
-    var.scalar_attributes.emplace_back(std::make_pair("name",actuator));
+    var.scalar_attributes.emplace_back(std::make_pair("name",var.name));
     var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-    var.scalar_attributes.emplace_back(std::make_pair("description","Custom Acutor"));
+    var.scalar_attributes.emplace_back(std::make_pair("description","Custom Actuator"));
     var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
     var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
 
@@ -145,7 +148,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::T;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_T"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -164,7 +167,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::QCONSEN_FLOW;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QConSen_flow"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -183,7 +186,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::AFLO;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_AFlo"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -203,7 +206,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::V;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_V"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -223,7 +226,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::MSENFAC;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_mSenFac"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -241,7 +244,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::QGAIRAD_FLOW;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QGaiRad_flow"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -262,7 +265,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::QLAT_FLOW;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QLat_flow"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -284,7 +287,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::QPEO_FLOW;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QPeo_flow"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -306,7 +309,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::TAVEINLET;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_TAveInlet"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -327,7 +330,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::TRAD;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_TRad"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -349,7 +352,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::X;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_X"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
@@ -371,7 +374,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     {
       Variable var;
       var.type = VariableType::MINLETS_FLOW;
-      var.key = zone;
+      var.name = zone;
 
       var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_mInlets_flow"));
       var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));

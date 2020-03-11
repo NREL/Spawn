@@ -55,11 +55,21 @@ volume = model.get('Core_ZN_V')[0]
 while t <= final_time:
     model.time = t
     model.set('Core_ZN_T', temp);
+    people = 0
+    if t % 120 == 0:
+        people = 5
+    else:
+        people = 1
+
+    model.set('Core_Zone_People', people)
+
     print("t = " + str(t))
     print("temp = " + str(temp))
     print("zone temperature: " , model.get('Zone_Temperature')[0])
     print("outside temperature: " , model.get('Outside_Temperature')[0])
     print("Core_ZN_QConSen_flow: ", model.get('Core_ZN_QConSen_flow')[0])
+    print("people = " + str(people))
+    print("Core_Zone_People_Output: ", model.get('Core_Zone_People_Output')[0])
 
     dt = t - last_time
     tempDot = model.get('Core_ZN_QConSen_flow')[0] / ( volume * densityAir * heatCapacity );
