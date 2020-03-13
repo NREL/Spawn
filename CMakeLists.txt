@@ -90,13 +90,13 @@ if( NOT WIN32 )
             $<TARGET_FILE:epfmi>
             "${modelica_bin_path}"
   )
-  install(DIRECTORY examples DESTINATION .)
   if( INSTALL_BUILDINGS_LIBRARY )
     install(DIRECTORY submodules/modelica-buildings DESTINATION .)
     install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
   endif()
 endif()
 
+install(DIRECTORY examples DESTINATION .)
 
 INCLUDE(CPack)
 
