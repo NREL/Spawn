@@ -8,6 +8,8 @@
 #include "EnergyPlus/DataHeatBalFanSys.hh"
 #include "EnergyPlus/DataRuntimeLanguage.hh"
 #include "EnergyPlus/EMSManager.hh"
+#include "EnergyPlus/HeatBalanceAirManager.hh"
+#include "EnergyPlus/InternalHeatGains.hh"
 #include "EnergyPlus/OutputProcessor.hh"
 #include "EnergyPlus/ZoneTempPredictorCorrector.hh"
 
@@ -192,6 +194,7 @@ void EPComponent::exchange()
     resetActuator(h);
   };
 
+  // Update inputs first, then outputs so that we can do some updates within EnergyPlus
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
     auto varZoneNum = zoneNum(var.name);
@@ -203,6 +206,36 @@ void EPComponent::exchange()
           EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
         }
         break;
+      case VariableType::EMS_ACTUATOR:
+        if( var.valueset ) {
+          compSetActuatorValue(
+            var.actuatorcomponentkey,
+            var.actuatorcomponenttype,
+            var.actuatorcontroltype,
+            var.value
+          );
+        } else {
+          compResetActuator(
+            var.actuatorcomponentkey,
+            var.actuatorcomponenttype,
+            var.actuatorcontroltype
+          );
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Run some internal EnergyPlus functions to update outputs
+  EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp();
+  EnergyPlus::InternalHeatGains::InitInternalHeatGains();
+
+  // Now update the outputs
+  for( auto & varmap : variables ) {
+    auto & var = varmap.second;
+    auto varZoneNum = zoneNum(var.name);
+    switch ( var.type ) {
       case VariableType::V:
         var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume;
         var.valueset = true;
@@ -222,22 +255,6 @@ void EPComponent::exchange()
       case VariableType::SENSOR:
         var.value = getSensorValue(var);
         var.valueset = true;
-        break;
-      case VariableType::EMS_ACTUATOR:
-        if( var.valueset ) {
-          compSetActuatorValue(
-            var.actuatorcomponentkey,
-            var.actuatorcomponenttype,
-            var.actuatorcontroltype,
-            var.value
-          );
-        } else {
-          compResetActuator(
-            var.actuatorcomponentkey,
-            var.actuatorcomponenttype,
-            var.actuatorcontroltype
-          );
-        }
         break;
       default:
         break;
