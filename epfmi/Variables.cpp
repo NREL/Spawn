@@ -1,4 +1,5 @@
 #include "Variables.hpp"
+#include "../cli/iddtypes.hpp"
 #include "EnergyPlus/InputProcessing/IdfParser.hh"
 #include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "EnergyPlus/DataStringGlobals.hh"
@@ -13,7 +14,8 @@ using json = nlohmann::json;
 //namespace EnergyPlus {
 //namespace FMI {
 
-struct FMUInfo {
+class FMUInfo {
+public:
   FMUInfo(const std::string & idfPath)
   {
     std::ifstream input_stream(idfPath, std::ifstream::in);
@@ -29,24 +31,49 @@ struct FMUInfo {
     ::nlohmann::json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
     jsonidf = parser.decode(input_file, schema);
 
+		initZoneNames();
+		initSchedules();
   }
 
-  std::vector<std::string> zoneNames() const {
-    std::vector<std::string> result;
+	// Given the name of a schedule, return the idd type
+	// If multiple schedules of the same name, but different type
+	// are located in the idf, then the return value is ambiguous, and non determinant
+	std::string scheduleType(const std::string & name) const {
+		const auto & scheduleit = schedules.find(name);
+		if( scheduleit != std::end(schedules)) {
+			return scheduleit->second;
+		}
+
+		return "";
+	}
+
+  std::vector<std::string> zonenames;
+
+private:
+
+	void initSchedules() {
+		for(const auto & type : supportedScheduleTypes) {
+			for(const auto & schedule : jsonidf[type].items()) {
+				schedules[schedule.key()] = type;
+			}
+		}
+	}
+
+  void initZoneNames() {
     std::string type = "Zone";
 
     if ( jsonidf.find(type) != jsonidf.end() ) {
       const auto zones = jsonidf[type];
       for( const auto & zone : zones.items() ) {
-        result.push_back(zone.key());
+        zonenames.push_back(zone.key());
       }
     }
 
-    std::sort(result.begin(), result.end());
-
-    return result;
+    std::sort(zonenames.begin(), zonenames.end());
   }
 
+	// Key is a schedule name, value is the corresponding schedule type
+  std::map<std::string, std::string> schedules;
   nlohmann::json jsonidf;
 };
 
@@ -55,7 +82,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
 {
   std::map<unsigned int, Variable> result;
 
-  FMUInfo fmuInfo(idf);
+  FMUInfo fmuinfo(idf);
 
   unsigned int i = 0;
 
@@ -67,6 +94,26 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
   } else {
     // Try to parse command line input as json string
     j = json::parse(jsonInput, nullptr, false);
+  }
+
+  const auto schedules = j.value("model",json()).value("schedules", std::vector<json>(0));
+  for (const auto & schedule : schedules) {
+    Variable var;
+    var.type = VariableType::SCHEDULE;
+    var.name = schedule.at("fmiName").get<std::string>();
+		const auto & idfname = schedule.at("name").get<std::string>();
+    var.actuatorcomponentkey = idfname;
+    var.actuatorcomponenttype = fmuinfo.scheduleType(idfname);
+    var.actuatorcontroltype = "Schedule Value";
+
+    var.scalar_attributes.emplace_back(std::make_pair("name",var.name));
+    var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
+    var.scalar_attributes.emplace_back(std::make_pair("description","Schedule"));
+    var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
+    var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+
+    result.emplace(i,std::move(var));
+    ++i;
   }
 
   const auto outputVariables = j.value("model",json()).value("outputVariables", std::vector<json>(0));
@@ -111,7 +158,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     ++i;
   }
 
-  const auto zones = fmuInfo.zoneNames();
+  const auto zones = fmuinfo.zonenames;
   for (const auto & zone : zones) {
     {
       Variable var;

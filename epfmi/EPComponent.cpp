@@ -194,6 +194,23 @@ void EPComponent::exchange()
     resetActuator(h);
   };
 
+	auto actuateVar = [&](const Variable & var) {
+		if( var.valueset ) {
+		  compSetActuatorValue(
+		    var.actuatorcomponentkey,
+		    var.actuatorcomponenttype,
+		    var.actuatorcontroltype,
+		    var.value
+		  );
+		} else {
+		  compResetActuator(
+		    var.actuatorcomponentkey,
+		    var.actuatorcomponenttype,
+		    var.actuatorcontroltype
+		  );
+		}
+	};
+
   // Update inputs first, then outputs so that we can do some updates within EnergyPlus
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
@@ -207,21 +224,10 @@ void EPComponent::exchange()
         }
         break;
       case VariableType::EMS_ACTUATOR:
-        if( var.valueset ) {
-          compSetActuatorValue(
-            var.actuatorcomponentkey,
-            var.actuatorcomponenttype,
-            var.actuatorcontroltype,
-            var.value
-          );
-        } else {
-          compResetActuator(
-            var.actuatorcomponentkey,
-            var.actuatorcomponenttype,
-            var.actuatorcontroltype
-          );
-        }
+				actuateVar(var);
         break;
+      case VariableType::SCHEDULE:
+				actuateVar(var);
       default:
         break;
     }

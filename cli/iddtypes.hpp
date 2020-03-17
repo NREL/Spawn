@@ -1,5 +1,12 @@
 #include <array>
 
+constexpr std::array<const char *,4> supportedScheduleTypes = {
+	"Schedule:Year",
+	"Schedule:Compact",
+	"Schedule:Constant",
+	"Schedule:File"
+};
+
 constexpr std::array<const char *,312> supportedIDDTypes = {
   "Version",
   "SimulationControl",

@@ -56,12 +56,16 @@ while t <= final_time:
     model.time = t
     model.set('Core_ZN_T', temp);
     people = 0
+    lights = 0
     if t % 120 == 0:
         people = 5
+        lights = 1
     else:
         people = 1
+        lights = 0
 
     model.set('Core_Zone_People', people)
+    model.set('Lights_Schedule', lights)
 
     print("t = " + str(t))
     print("temp = " + str(temp))
@@ -70,6 +74,8 @@ while t <= final_time:
     print("Core_ZN_QConSen_flow: ", model.get('Core_ZN_QConSen_flow')[0])
     print("people = " + str(people))
     print("Core_Zone_People_Output: ", model.get('Core_Zone_People_Output')[0])
+    print("lights = " + str(lights))
+    print("Core_Zone_Lights_Output: ", model.get('Core_Zone_Lights_Output')[0])
 
     dt = t - last_time
     tempDot = model.get('Core_ZN_QConSen_flow')[0] / ( volume * densityAir * heatCapacity );

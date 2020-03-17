@@ -21,7 +21,8 @@ enum class VariableType {
   X,
   MINLETS_FLOW,
   SENSOR,
-  EMS_ACTUATOR
+  EMS_ACTUATOR,
+  SCHEDULE
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;

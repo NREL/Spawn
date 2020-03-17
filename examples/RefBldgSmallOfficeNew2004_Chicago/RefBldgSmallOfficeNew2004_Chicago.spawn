@@ -29,6 +29,11 @@
         "name":    "People Occupant Count",
         "key":     "Core_ZN People",
         "fmiName": "Core_Zone_People_Output"
+      },
+      {
+        "name":    "Lights Electric Power",
+        "key":     "Core_ZN_Lights",
+        "fmiName": "Core_Zone_Lights_Output"
       }
     ],
     "emsActuators": [
@@ -39,6 +44,13 @@
         "unit"          : "1",
         "fmiName"       : "Core_Zone_People"
       }
-    ]
-  }
+    ],
+ 		"schedules": [
+       {
+        	"name"    : "BLDG_LIGHT_SCH",
+        	"unit"    : "1",
+        	"fmiName" : "Lights_Schedule"
+        }
+     ]
+		}
 } 
