@@ -53,7 +53,14 @@ int EPComponent::start() {
 
     EnergyPlus::CommandLineInterface::ProcessArgs( argc, argv );
     EnergyPlus::DataGlobals::externalHVACManager = std::bind(&EPComponent::externalHVACManager, this);
-    RunEnergyPlus();
+		try {
+    	auto result = RunEnergyPlus();
+  		std::unique_lock<std::mutex> lk(control_mutex);
+			epstatus = result ? EPStatus::ERROR : EPStatus::DONE;
+		} catch(...) {
+			epstatus = EPStatus::ERROR;
+		}
+  	control_cv.notify_one();
   };
 
   {
@@ -64,13 +71,8 @@ int EPComponent::start() {
 
   simthread = std::thread(simulation);
 
-  {
-    // Wait for E+ to go back to IDLE
-    std::unique_lock<std::mutex> lk(control_mutex);
-    control_cv.wait( lk, [&](){ return epstatus == EPStatus::NONE; } );
-  }
-
-  return 0;
+	// Wait for EnergyPlus to go through startup/warmup etc
+  return controlWait();
 }
 
 int EPComponent::stop() {
@@ -79,11 +81,14 @@ int EPComponent::stop() {
     epstatus = EPStatus::TERMINATE;
   }
 
-  stopSimulation();
-  control_cv.notify_one();
-  simthread.join();
-
-  return 0;
+	try {
+  	stopSimulation();
+  	control_cv.notify_one();
+  	simthread.join();
+  	return 0;
+	} catch(...) {
+  	return 1;
+	}
 }
 
 int EPComponent::setTime(const double & time)
@@ -98,13 +103,9 @@ int EPComponent::setTime(const double & time)
   }
   // Notify E+ to advance
   control_cv.notify_one();
-  {
-    // Wait for E+ to advance and go back to IDLE before returning
-    std::unique_lock<std::mutex> lk( control_mutex );
-    control_cv.wait( lk, [&](){ return epstatus == EPStatus::NONE; } );
-  }
 
-  return 0;
+	// Wait for EnergyPlus to complete the step
+  return controlWait();
 }
 
 fmi2Real EPComponent::currentSimTime() const {
@@ -266,6 +267,18 @@ void EPComponent::exchange()
         break;
     }
   }
+}
+
+int EPComponent::controlWait() {
+	std::unique_lock<std::mutex> lk(control_mutex);
+	// Wait until EnergyPlus is not Advancing or Terminating (ie in the process of cleanup)
+	control_cv.wait( lk, [&](){
+		return
+			(epstatus == EPStatus::NONE) ||
+			(epstatus == EPStatus::ERROR) ||
+			(epstatus == EPStatus::DONE);
+	});
+	return epstatus == EPStatus::ERROR ? 1 : 0;
 }
 
 void EPComponent::externalHVACManager() {

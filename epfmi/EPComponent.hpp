@@ -60,7 +60,7 @@
 #include <sstream>
 #include <condition_variable>
 
-enum class EPStatus { ADVANCE, NONE, TERMINATE, EXCHANGE };
+enum class EPStatus { ADVANCE, NONE, TERMINATE, ERROR, DONE };
 
 class EPComponent {
 public:
@@ -111,6 +111,10 @@ public:
 
 private:
 
+	// Wait for the EnergyPlus thread from the control thread
+	// Return 0 on success
+	// This should be called from the control thread
+	int controlWait();
   Real64 zoneHeatTransfer(const int ZoneNum);
 
   fmi2Real requestedTime;

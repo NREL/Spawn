@@ -50,18 +50,14 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   UNUSED(stopTimeDefined);
   UNUSED(stopTime);
 
-  epcomp->start();
-
-  return fmi2OK;
+  return epcomp->start() ? fmi2Error : fmi2OK;
 }
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
-  epcomp->setTime(time);
-
-  return fmi2OK;
+  return epcomp->setTime(time) ? fmi2Error : fmi2OK;
 }
 
 EPFMI_API fmi2Status fmi2SetReal(fmi2Component c,
@@ -113,12 +109,12 @@ EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
 {
   EPComponent * epcomp = static_cast<EPComponent*>(c);
 
-  epcomp->stop();
+  auto result = epcomp->stop();
 
   auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
   epComponents.erase(it);
 
-  return fmi2OK;
+  return result ? fmi2Error : fmi2OK;
 }
 
 EPFMI_API const char* fmi2GetTypesPlatform(void)
