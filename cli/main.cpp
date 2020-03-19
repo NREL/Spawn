@@ -1,7 +1,8 @@
 #include "iddtypes.hpp"
 #include <CLI/CLI.hpp>
 #include <third_party/nlohmann/json.hpp>
-#include <stdio.h>
+#include <cstdio>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -33,7 +34,6 @@ json & removeUnusedObjects(json & jsonidf) {
       ++typep;
     }
   }
-
   return jsonidf;
 }
 
@@ -229,14 +229,14 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
     const auto var = varpair.second;
 
     auto scalarVar = xmlvariables.append_child("ScalarVariable");
-		for (const auto & attribute : var.scalar_attributes) {
-    	scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-		}
+    for (const auto & attribute : var.scalar_attributes) {
+      scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+    }
 
     auto real = scalarVar.append_child("Real");
-		for (const auto & attribute : var.real_attributes) {
-    	real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-		}
+    for (const auto & attribute : var.real_attributes) {
+      real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
+    }
   }
 
   doc.save_file(modelDescriptionPath.c_str());
