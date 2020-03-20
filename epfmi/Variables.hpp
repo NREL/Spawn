@@ -28,11 +28,11 @@ enum class VariableType {
 using VariableAttribute = std::pair<std::string, std::string>;
 
 struct Variable {
-  VariableType type;
+  VariableType type{};
   std::string name;
 
-  Real64 value;
-  bool valueset; // This is true "value" member has been set to a value
+  Real64 value{};
+  bool valueset{false}; // This is true "value" member has been set to a value
 
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;

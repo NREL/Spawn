@@ -24,7 +24,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   UNUSED(fmuGUID);
   UNUSED(visible);
 
-	const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
+  const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
   const auto resourcePath = boost::filesystem::path(resourcePathString);
 
   epComponents.emplace_back(instanceName,resourcePath);
@@ -42,7 +42,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   fmi2Boolean stopTimeDefined,
   fmi2Real stopTime)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
   UNUSED(toleranceDefined);
   UNUSED(tolerance);
@@ -55,7 +55,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
   return epcomp->setTime(time) ? fmi2Error : fmi2OK;
 }
@@ -65,7 +65,7 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c,
   size_t nvr,
   const fmi2Real values[])
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
   for ( size_t i = 0; i < nvr; ++i ) {
     auto valueRef = vr[i];
@@ -81,21 +81,18 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
   size_t nvr,
   fmi2Real values[])
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
   epcomp->exchange();
 
-  for ( size_t i = 0; i < nvr; ++i ) {
-    auto valueRef = vr[i];
-    values[i] = epcomp->getValue(valueRef);
-  }
+  std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return epcomp->getValue(valueRef); });
 
   return fmi2OK;
 }
 
 EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* eventInfo)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
   eventInfo->newDiscreteStatesNeeded = fmi2False;
   eventInfo->nextEventTime = epcomp->nextSimTime();
@@ -107,12 +104,14 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* even
 
 EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
-  auto result = epcomp->stop();
+  const auto result = epcomp->stop();
 
-  auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
-  epComponents.erase(it);
+  const auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
+  if (it != epComponents.end()) {
+    epComponents.erase(it);
+  }
 
   return result ? fmi2Error : fmi2OK;
 }
@@ -132,21 +131,21 @@ EPFMI_API fmi2Status fmi2SetDebugLogging(fmi2Component, fmi2Boolean, size_t, con
   return fmi2OK;
 }
 
-EPFMI_API fmi2Status fmi2Reset(fmi2Component c)
+EPFMI_API fmi2Status fmi2Reset(fmi2Component)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
-
   return fmi2OK;
 }
 
 EPFMI_API void fmi2FreeInstance(fmi2Component c)
 {
-  EPComponent * epcomp = static_cast<EPComponent*>(c);
+  auto * epcomp = static_cast<EPComponent*>(c);
 
-  auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
-  epComponents.erase(it);
+  const auto it = std::find(epComponents.begin(), epComponents.end(), *epcomp);
+  if (it != epComponents.end()) {
+    epComponents.erase(it);
+  }
 
-  c = nullptr;
+  c = nullptr; // this value can never be read, what is the aim?
 }
 
 EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component)

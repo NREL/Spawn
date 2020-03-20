@@ -31,33 +31,33 @@ public:
     ::nlohmann::json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
     jsonidf = parser.decode(input_file, schema);
 
-		initZoneNames();
-		initSchedules();
+    initZoneNames();
+    initSchedules();
   }
 
-	// Given the name of a schedule, return the idd type
-	// If multiple schedules of the same name, but different type
-	// are located in the idf, then the return value is ambiguous, and non determinant
-	std::string scheduleType(const std::string & name) const {
-		const auto & scheduleit = schedules.find(name);
-		if( scheduleit != std::end(schedules)) {
-			return scheduleit->second;
-		}
+  // Given the name of a schedule, return the idd type
+  // If multiple schedules of the same name, but different type
+  // are located in the idf, then the return value is ambiguous, and non determinant
+  std::string scheduleType(const std::string & name) const {
+    const auto & scheduleit = schedules.find(name);
+    if( scheduleit != std::end(schedules)) {
+      return scheduleit->second;
+    }
 
-		return "";
-	}
+    return "";
+  }
 
   std::vector<std::string> zonenames;
 
 private:
 
-	void initSchedules() {
-		for(const auto & type : supportedScheduleTypes) {
-			for(const auto & schedule : jsonidf[type].items()) {
-				schedules[schedule.key()] = type;
-			}
-		}
-	}
+  void initSchedules() {
+    for(const auto & type : supportedScheduleTypes) {
+      for(const auto & schedule : jsonidf[type].items()) {
+        schedules[schedule.key()] = type;
+      }
+    }
+  }
 
   void initZoneNames() {
     std::string type = "Zone";
@@ -72,7 +72,7 @@ private:
     std::sort(zonenames.begin(), zonenames.end());
   }
 
-	// Key is a schedule name, value is the corresponding schedule type
+  // Key is a schedule name, value is the corresponding schedule type
   std::map<std::string, std::string> schedules;
   nlohmann::json jsonidf;
 };
@@ -101,16 +101,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     Variable var;
     var.type = VariableType::SCHEDULE;
     var.name = schedule.at("fmiName").get<std::string>();
-		const auto & idfname = schedule.at("name").get<std::string>();
+    const auto & idfname = schedule.at("name").get<std::string>();
     var.actuatorcomponentkey = idfname;
     var.actuatorcomponenttype = fmuinfo.scheduleType(idfname);
     var.actuatorcontroltype = "Schedule Value";
 
-    var.scalar_attributes.emplace_back(std::make_pair("name",var.name));
-    var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-    var.scalar_attributes.emplace_back(std::make_pair("description","Schedule"));
-    var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-    var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+    var.scalar_attributes.emplace_back("name",var.name);
+    var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+    var.scalar_attributes.emplace_back("description","Schedule");
+    var.scalar_attributes.emplace_back("causality","input");
+    var.scalar_attributes.emplace_back("variability","continuous");
 
     result.emplace(i,std::move(var));
     ++i;
@@ -118,46 +118,54 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
 
   const auto outputVariables = j.value("model",json()).value("outputVariables", std::vector<json>(0));
   for (const auto & outputVariable : outputVariables) {
-    auto epname = outputVariable.at("name").get<std::string>();
-    auto epkey = outputVariable.at("key").get<std::string>();
-    auto fmiName = outputVariable.at("fmiName").get<std::string>();
+    const auto epname = outputVariable.at("name").get<std::string>();
+    const auto epkey = outputVariable.at("key").get<std::string>();
+    const auto fmiName = outputVariable.at("fmiName").get<std::string>();
 
-    Variable var;
-    var.type = VariableType::SENSOR;
-    var.name = fmiName;
-    var.outputvarname = EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
-    var.outputvarkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
+    const auto build_variable = [&]() {
+      Variable var;
+      var.type = VariableType::SENSOR;
+      var.name = fmiName;
+      var.outputvarname =
+          EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
+      var.outputvarkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
 
-    var.scalar_attributes.emplace_back(std::make_pair("name",fmiName));
-    var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-    var.scalar_attributes.emplace_back(std::make_pair("description","Custom Sensor"));
-    var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-    var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-    var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
+      var.scalar_attributes.emplace_back("name", fmiName);
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description", "Custom Sensor");
+      var.scalar_attributes.emplace_back("causality", "output");
+      var.scalar_attributes.emplace_back("variability", "continuous");
+      var.scalar_attributes.emplace_back("initial", "calculated");
+      return var;
+    };
 
-    result.emplace(i,std::move(var));
+    result.emplace(i, build_variable());
     ++i;
   }
 
   const auto actuators = j.value("model",json()).value("emsActuators", std::vector<json>(0));
   for (const auto & act : actuators) {
-    Variable var;
-    var.type = VariableType::EMS_ACTUATOR;
-    var.name = act.at("fmiName").get<std::string>();
-    var.actuatorcomponentkey = act.at("variableName").get<std::string>();
-    var.actuatorcomponenttype = act.at("componentType").get<std::string>();
-    var.actuatorcontroltype = act.at("controlType").get<std::string>();
+    const auto build_variable = [&]() {
+      Variable var;
+      var.type = VariableType::EMS_ACTUATOR;
+      var.name = act.at("fmiName").get<std::string>();
+      var.actuatorcomponentkey = act.at("variableName").get<std::string>();
+      var.actuatorcomponenttype = act.at("componentType").get<std::string>();
+      var.actuatorcontroltype = act.at("controlType").get<std::string>();
 
-    var.scalar_attributes.emplace_back(std::make_pair("name",var.name));
-    var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-    var.scalar_attributes.emplace_back(std::make_pair("description","Custom Actuator"));
-    var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-    var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-
-    result.emplace(i,std::move(var));
+      var.scalar_attributes.emplace_back("name", var.name);
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description", "Custom Actuator");
+      var.scalar_attributes.emplace_back("causality", "input");
+      var.scalar_attributes.emplace_back("variability", "continuous");
+      return var;
+    };
+    result.emplace(i, build_variable());
     ++i;
   }
 
+  // TODO: this variable initialization needs to be abstracted into a function or
+  // constructor. The same code is repeated many times.
   const auto zones = fmuinfo.zonenames;
   for (const auto & zone : zones) {
     {
@@ -165,16 +173,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::T;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_T"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Temperature of the zone air"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+      var.scalar_attributes.emplace_back("name",zone + "_T");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Temperature of the zone air");
+      var.scalar_attributes.emplace_back("causality","input");
+      var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","ThermodynamicTemperature"));
-      var.real_attributes.emplace_back(std::make_pair("unit","degC"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","0.0"));
+      var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+      var.real_attributes.emplace_back("unit","degC");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","0.0");
 
       result.emplace(i,std::move(var));
     }
@@ -184,16 +192,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::QCONSEN_FLOW;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QConSen_flow"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Convective sensible heat added to the zone"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
+      var.scalar_attributes.emplace_back("name",zone + "_QConSen_flow");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Convective sensible heat added to the zone");
+      var.scalar_attributes.emplace_back("causality","output");
+      var.scalar_attributes.emplace_back("variability","continuous");
+      var.scalar_attributes.emplace_back("initial","calculated");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Power"));
-      var.real_attributes.emplace_back(std::make_pair("unit","W"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
+      var.real_attributes.emplace_back("quantity","Power");
+      var.real_attributes.emplace_back("unit","W");
+      var.real_attributes.emplace_back("relativeQuantity","false");
 
       result.emplace(i,std::move(var));
     }
@@ -203,17 +211,17 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::AFLO;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_AFlo"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Floor area"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","local"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","constant"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","exact"));
+      var.scalar_attributes.emplace_back("name",zone + "_AFlo");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Floor area");
+      var.scalar_attributes.emplace_back("causality","local");
+      var.scalar_attributes.emplace_back("variability","constant");
+      var.scalar_attributes.emplace_back("initial","exact");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Area"));
-      var.real_attributes.emplace_back(std::make_pair("unit","m2"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","12.0"));
+      var.real_attributes.emplace_back("quantity","Area");
+      var.real_attributes.emplace_back("unit","m2");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","12.0");
 
       result.emplace(i,std::move(var));
     }
@@ -223,17 +231,17 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::V;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_V"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Volume"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","local"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","constant"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","exact"));
+      var.scalar_attributes.emplace_back("name",zone + "_V");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Volume");
+      var.scalar_attributes.emplace_back("causality","local");
+      var.scalar_attributes.emplace_back("variability","constant");
+      var.scalar_attributes.emplace_back("initial","exact");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Volume"));
-      var.real_attributes.emplace_back(std::make_pair("unit","m3"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","36.0"));
+      var.real_attributes.emplace_back("quantity","Volume");
+      var.real_attributes.emplace_back("unit","m3");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","36.0");
 
       result.emplace(i,std::move(var));
     }
@@ -243,15 +251,15 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::MSENFAC;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_mSenFac"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Factor for scaling sensible thermal mass of volume"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","local"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","constant"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","exact"));
+      var.scalar_attributes.emplace_back("name",zone + "_mSenFac");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Factor for scaling sensible thermal mass of volume");
+      var.scalar_attributes.emplace_back("causality","local");
+      var.scalar_attributes.emplace_back("variability","constant");
+      var.scalar_attributes.emplace_back("initial","exact");
 
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","1.0"));
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","1.0");
 
       result.emplace(i,std::move(var));
     }
@@ -261,16 +269,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::QGAIRAD_FLOW;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QGaiRad_flow"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Radiative sensible heat gain added to the zone"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+      var.scalar_attributes.emplace_back("name",zone + "_QGaiRad_flow");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Radiative sensible heat gain added to the zone");
+      var.scalar_attributes.emplace_back("causality","input");
+      var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Power"));
-      var.real_attributes.emplace_back(std::make_pair("unit","W"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","0.0"));
+      var.real_attributes.emplace_back("quantity","Power");
+      var.real_attributes.emplace_back("unit","W");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","0.0");
 
       var.value = 0.0;
 
@@ -282,16 +290,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::QLAT_FLOW;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QLat_flow"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Latent heat gain added to the zone"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
+      var.scalar_attributes.emplace_back("name",zone + "_QLat_flow");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Latent heat gain added to the zone");
+      var.scalar_attributes.emplace_back("causality","output");
+      var.scalar_attributes.emplace_back("variability","continuous");
+      var.scalar_attributes.emplace_back("initial","calculated");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Power"));
-      var.real_attributes.emplace_back(std::make_pair("unit","W"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
+      var.real_attributes.emplace_back("quantity","Power");
+      var.real_attributes.emplace_back("unit","W");
+      var.real_attributes.emplace_back("relativeQuantity","false");
 
       // TODO exchange this variable with real EnergyPlus data
       var.value = 0.0;
@@ -304,16 +312,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::QPEO_FLOW;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_QPeo_flow"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Heat gain due to people"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
+      var.scalar_attributes.emplace_back("name",zone + "_QPeo_flow");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Heat gain due to people");
+      var.scalar_attributes.emplace_back("causality","output");
+      var.scalar_attributes.emplace_back("variability","continuous");
+      var.scalar_attributes.emplace_back("initial","calculated");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","Power"));
-      var.real_attributes.emplace_back(std::make_pair("unit","W"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
+      var.real_attributes.emplace_back("quantity","Power");
+      var.real_attributes.emplace_back("unit","W");
+      var.real_attributes.emplace_back("relativeQuantity","false");
 
       // TODO exchange this variable with real EnergyPlus data
       var.value = 0.0;
@@ -326,16 +334,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::TAVEINLET;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_TAveInlet"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Average of inlets medium temperatures carried by the mass flow rates"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+      var.scalar_attributes.emplace_back("name",zone + "_TAveInlet");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Average of inlets medium temperatures carried by the mass flow rates");
+      var.scalar_attributes.emplace_back("causality","input");
+      var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","ThermodynamicTemperature"));
-      var.real_attributes.emplace_back(std::make_pair("unit","degC"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","21.0"));
+      var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+      var.real_attributes.emplace_back("unit","degC");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","21.0");
 
       var.value = 21.0;
 
@@ -347,16 +355,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::TRAD;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_TRad"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Average radiative temperature in the room"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","output"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","discrete"));
-      var.scalar_attributes.emplace_back(std::make_pair("initial","calculated"));
+      var.scalar_attributes.emplace_back("name",zone + "_TRad");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Average radiative temperature in the room");
+      var.scalar_attributes.emplace_back("causality","output");
+      var.scalar_attributes.emplace_back("variability","discrete");
+      var.scalar_attributes.emplace_back("initial","calculated");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","ThermodynamicTemperature"));
-      var.real_attributes.emplace_back(std::make_pair("unit","degC"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
+      var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+      var.real_attributes.emplace_back("unit","degC");
+      var.real_attributes.emplace_back("relativeQuantity","false");
 
       // TODO exchange this variable with real EnergyPlus data
       var.value = 21.0;
@@ -369,16 +377,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::X;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_X"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Water vapor mass fraction in kg water/kg dry air"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+      var.scalar_attributes.emplace_back("name",zone + "_X");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Water vapor mass fraction in kg water/kg dry air");
+      var.scalar_attributes.emplace_back("causality","input");
+      var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back(std::make_pair("unit","1"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("min","0"));
-      var.real_attributes.emplace_back(std::make_pair("start","0.0"));
+      var.real_attributes.emplace_back("unit","1");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("min","0");
+      var.real_attributes.emplace_back("start","0.0");
 
       // TODO exchange this variable with real EnergyPlus data
       var.value = 0.0;
@@ -391,16 +399,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.type = VariableType::MINLETS_FLOW;
       var.name = zone;
 
-      var.scalar_attributes.emplace_back(std::make_pair("name",zone + "_mInlets_flow"));
-      var.scalar_attributes.emplace_back(std::make_pair("valueReference", std::to_string(i)));
-      var.scalar_attributes.emplace_back(std::make_pair("description","Sum of positive mass flow rates into the zone for all air inlets (including infiltration)"));
-      var.scalar_attributes.emplace_back(std::make_pair("causality","input"));
-      var.scalar_attributes.emplace_back(std::make_pair("variability","continuous"));
+      var.scalar_attributes.emplace_back("name",zone + "_mInlets_flow");
+      var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+      var.scalar_attributes.emplace_back("description","Sum of positive mass flow rates into the zone for all air inlets (including infiltration)");
+      var.scalar_attributes.emplace_back("causality","input");
+      var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back(std::make_pair("quantity","MassFlowRate"));
-      var.real_attributes.emplace_back(std::make_pair("unit","kg/s"));
-      var.real_attributes.emplace_back(std::make_pair("relativeQuantity","false"));
-      var.real_attributes.emplace_back(std::make_pair("start","0.0"));
+      var.real_attributes.emplace_back("quantity","MassFlowRate");
+      var.real_attributes.emplace_back("unit","kg/s");
+      var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("start","0.0");
 
       // TODO exchange this variable with real EnergyPlus data
       var.value = 0.0;

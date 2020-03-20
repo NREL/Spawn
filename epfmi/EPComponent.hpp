@@ -110,11 +110,19 @@ public:
   std::map<unsigned int, Variable> variables;
 
 private:
+  Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
+  Real64 SumHA{0.0};      // Zone sum of Hc*Area
+  Real64 SumHATsurf{0.0}; // Zone sum of Hc*Area*Tsurf
+  Real64 SumHATref{0.0};  // Zone sum of Hc*Area*Tref, for ceiling diffuser convection correlation
+  Real64 SumMCp{0.0};     // Zone sum of MassFlowRate*Cp
+  Real64 SumMCpT{0.0};    // Zone sum of MassFlowRate*Cp*T
+  Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
+  Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
 
-	// Wait for the EnergyPlus thread from the control thread
-	// Return 0 on success
-	// This should be called from the control thread
-	int controlWait();
+  // Wait for the EnergyPlus thread from the control thread
+  // Return 0 on success
+  // This should be called from the control thread
+  int controlWait();
   Real64 zoneHeatTransfer(const int ZoneNum);
 
   fmi2Real requestedTime;
