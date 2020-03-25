@@ -1,47 +1,26 @@
 
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/fmi2/ )
-INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR} )
-INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
-INCLUDE_DIRECTORIES( ${PROJECT_BINARY_DIR}/submodules/EnergyPlus/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/ )
-
-add_library(
-  epvariables
-  Variables.hpp
-  Variables.cpp
-)
+#INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR} )
+#INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
+#INCLUDE_DIRECTORIES( ${PROJECT_BINARY_DIR}/submodules/EnergyPlus/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/ )
+#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/ )
 
 set(src
   EPFMI.hpp
   EPFMI.cpp
   EPFMI_Export.hpp
-  EPComponent.hpp
-  EPComponent.cpp
-  Variables.hpp
-  Variables.cpp
-  # EnergyPlus compiles these files into a DLL, but we would prefer to
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
 )
 
 add_library( epfmi SHARED ${src} )
 set_target_properties( epfmi PROPERTIES OUTPUT_NAME "epfmi" )
-target_link_libraries( epfmi energypluslib CONAN_PKG::boost)
+target_link_libraries( epfmi libspawn)
 
 install( TARGETS epfmi
   RUNTIME DESTINATION ./bin

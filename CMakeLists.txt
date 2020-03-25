@@ -69,6 +69,7 @@ configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 if( NOT WIN32 )
+	add_subdirectory( lib )
   add_subdirectory( cli )
   add_subdirectory( epfmi )
 

@@ -1,4 +1,8 @@
 #include "iddtypes.hpp"
+#include "../lib/outputtypes.hpp"
+#include "modelDescription.xml.hpp"
+#include "ziputil.hpp"
+#include "../lib/variables.hpp"
 #include <CLI/CLI.hpp>
 #include <third_party/nlohmann/json.hpp>
 #include <cstdio>
@@ -7,14 +11,12 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <pugixml.hpp>
-#include "modelDescription.xml.hpp"
-#include "ziputil.hpp"
-#include "../epfmi/Variables.hpp"
 #include <config.hxx>
+#include <boost/algorithm/string.hpp>
 
-#include "EnergyPlus/InputProcessing/IdfParser.hh"
-#include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-#include "EnergyPlus/DataStringGlobals.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 
 #if defined _WIN32
 #include <windows.h>
@@ -34,6 +36,23 @@ json & removeUnusedObjects(json & jsonidf) {
       ++typep;
     }
   }
+
+  // Remove unsupported output vars
+  auto & outputvars = jsonidf.at("Output:Variable");
+  for(auto var = outputvars.cbegin(); var != outputvars.cend();){
+    const auto & name = var.value().at("variable_name").get<std::string>();
+    const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
+      [&](const std::pair<const char *, OutputProperties> & v) {
+        return boost::iequals(v.first,name);
+      });
+
+    if(findit == std::end(outputtypes)) {
+      var = outputvars.erase(var);
+    } else {
+      ++var;
+    }
+  }
+
   return jsonidf;
 }
 

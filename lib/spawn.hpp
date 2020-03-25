@@ -45,13 +45,11 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef EPComponent_hh_INCLUDED
-#define EPComponent_hh_INCLUDED
+#ifndef Spawn_hh_INCLUDED
+#define Spawn_hh_INCLUDED
 
-#include "EnergyPlus.hh"
-#include "Variables.hpp"
+#include "variables.hpp"
 #include <boost/filesystem.hpp>
-#include <fmi2FunctionTypes.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -62,13 +60,13 @@
 
 enum class EPStatus { ADVANCE, NONE, TERMINATE, ERROR, DONE };
 
-class EPComponent {
+class Spawn {
 public:
 
-  EPComponent(const std::string & name, const boost::filesystem::path & resourcePath);
-  EPComponent( const EPComponent& ) = delete;
-  EPComponent( EPComponent&& ) = delete;
-  bool operator==(const EPComponent& other) const {
+  Spawn(const std::string & name, const boost::filesystem::path & resourcePath);
+  Spawn( const Spawn& ) = delete;
+  Spawn( Spawn&& ) = delete;
+  bool operator==(const Spawn& other) const {
     return (this == &other);
   }
 
@@ -76,8 +74,8 @@ public:
   int stop();
   int setTime(const double & time);
 
-  fmi2Real currentSimTime() const;
-  fmi2Real nextSimTime() const;
+  double currentSimTime() const;
+  double nextSimTime() const;
   void exchange();
   void externalHVACManager();
 
@@ -98,34 +96,22 @@ public:
   std::string idfInputPath;
   std::string spawnInputPath;
 
-  fmi2Boolean toleranceDefined;
-  fmi2Real tolerance;
-  fmi2Real startTime;
-  fmi2Boolean stopTimeDefined;
-  fmi2Real stopTime;
-  // The time currently requested by the client
-  fmi2CallbackLogger logger;
-  fmi2Boolean loggingOn;
+  bool toleranceDefined;
+  double tolerance;
+  double startTime;
+  bool stopTimeDefined;
+  double stopTime;
 
   std::map<unsigned int, Variable> variables;
 
 private:
-  Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
-  Real64 SumHA{0.0};      // Zone sum of Hc*Area
-  Real64 SumHATsurf{0.0}; // Zone sum of Hc*Area*Tsurf
-  Real64 SumHATref{0.0};  // Zone sum of Hc*Area*Tref, for ceiling diffuser convection correlation
-  Real64 SumMCp{0.0};     // Zone sum of MassFlowRate*Cp
-  Real64 SumMCpT{0.0};    // Zone sum of MassFlowRate*Cp*T
-  Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
-  Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
-
   // Wait for the EnergyPlus thread from the control thread
   // Return 0 on success
   // This should be called from the control thread
   int controlWait();
-  Real64 zoneHeatTransfer(const int ZoneNum);
+  double zoneHeatTransfer(const int ZoneNum);
 
-  fmi2Real requestedTime;
+  double requestedTime;
   std::thread simthread;
   EPStatus epstatus;
   std::condition_variable control_cv;

@@ -47,7 +47,7 @@ for x in outputs.keys():
 # perform siulations
 t = start_time
 last_time = start_time
-temp = 23.0
+temp = 296.15
 densityAir = 1.276; # kg/m^3
 heatCapacity = 1000.6; # J/kgK
 volume = model.get('Core_ZN_V')[0]

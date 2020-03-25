@@ -1,11 +1,11 @@
 #ifndef Variables_hh_INCLUDED
 #define Variables_hh_INCLUDED
 
+#include "units.hpp"
 #include <string>
 #include <vector>
 #include <map>
 #include <sstream>
-#include <EnergyPlus.hh>
 
 enum class VariableType {
   T,
@@ -27,12 +27,25 @@ enum class VariableType {
 
 using VariableAttribute = std::pair<std::string, std::string>;
 
-struct Variable {
-  VariableType type{};
-  std::string name;
+namespace spawn {
+namespace units {
+  enum class UnitSystem;
+}
+}
 
-  Real64 value{};
-  bool valueset{false}; // This is true "value" member has been set to a value
+class Variable {
+public:
+  VariableType type;
+	std::string name;
+	spawn::units::UnitType epunittype{spawn::units::UnitType::one};
+	spawn::units::UnitType mounittype{spawn::units::UnitType::one};
+
+	// This is true "value" member has been set to a value
+	// If valueset is false then value should not be used
+	void setValue(const double & value, const spawn::units::UnitSystem & system);
+	double getValue(const spawn::units::UnitSystem & unitsystem) const;
+  void resetValue();
+  bool isValueSet() const;
 
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;
@@ -45,6 +58,11 @@ struct Variable {
   std::string actuatorcomponentkey;
   std::string actuatorcomponenttype;
   std::string actuatorcontroltype;
+
+private:
+	// Value stored using the Modelica unit system
+  double value{};
+  bool valueset{false};
 };
 
 std::map<unsigned int, Variable> parseVariables(const std::string & idf,

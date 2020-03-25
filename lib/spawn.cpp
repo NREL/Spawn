@@ -1,19 +1,20 @@
-#include "EPComponent.hpp"
-#include "EnergyPlus/api/EnergyPlusPgm.hh"
-#include "EnergyPlus/api/runtime.h"
-#include "EnergyPlus/api/datatransfer.h"
-#include "EnergyPlus/CommandLineInterface.hh"
-#include "EnergyPlus/DataGlobals.hh"
-#include "EnergyPlus/DataHeatBalance.hh"
-#include "EnergyPlus/DataHeatBalFanSys.hh"
-#include "EnergyPlus/DataRuntimeLanguage.hh"
-#include "EnergyPlus/EMSManager.hh"
-#include "EnergyPlus/HeatBalanceAirManager.hh"
-#include "EnergyPlus/InternalHeatGains.hh"
-#include "EnergyPlus/OutputProcessor.hh"
-#include "EnergyPlus/ZoneTempPredictorCorrector.hh"
+#include "spawn.hpp"
+#include "outputtypes.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h"
+#include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataGlobals.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalFanSys.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataRuntimeLanguage.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/HeatBalanceAirManager.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InternalHeatGains.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/OutputProcessor.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/ZoneTempPredictorCorrector.hh"
 
-EPComponent::EPComponent(const std::string & name, const boost::filesystem::path & resourcePath)
+Spawn::Spawn(const std::string & name, const boost::filesystem::path & resourcePath)
   : instanceName(name)
 {
   boost::system::error_code ec;
@@ -38,7 +39,7 @@ EPComponent::EPComponent(const std::string & name, const boost::filesystem::path
   variables = parseVariables(idfInputPath, spawnInputPath);
 }
 
-int EPComponent::start() {
+int Spawn::start() {
   const auto & simulation = [&](){
     auto workingPath = boost::filesystem::path(instanceName).filename();
 
@@ -54,7 +55,7 @@ int EPComponent::start() {
     argv[7] = idfInputPath.c_str();
 
     EnergyPlus::CommandLineInterface::ProcessArgs( argc, argv );
-    EnergyPlus::DataGlobals::externalHVACManager = std::bind(&EPComponent::externalHVACManager, this);
+    EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
     try {
       auto result = RunEnergyPlus();
       std::unique_lock<std::mutex> lk(control_mutex);
@@ -77,7 +78,7 @@ int EPComponent::start() {
   return controlWait();
 }
 
-int EPComponent::stop() {
+int Spawn::stop() {
   {
     std::unique_lock<std::mutex> lk(control_mutex);
     epstatus = EPStatus::TERMINATE;
@@ -93,7 +94,7 @@ int EPComponent::stop() {
   }
 }
 
-int EPComponent::setTime(const double & time)
+int Spawn::setTime(const double & time)
 {
   requestedTime = time;
 
@@ -111,44 +112,52 @@ int EPComponent::setTime(const double & time)
   return controlWait();
 }
 
-fmi2Real EPComponent::currentSimTime() const {
+double Spawn::currentSimTime() const {
   return EnergyPlus::DataGlobals::SimTimeSteps * EnergyPlus::DataGlobals::TimeStepZoneSec;
 }
 
-fmi2Real EPComponent::nextSimTime() const {
+double Spawn::nextSimTime() const {
   return (EnergyPlus::DataGlobals::SimTimeSteps + 1) * EnergyPlus::DataGlobals::TimeStepZoneSec;
 }
 
-bool EPComponent::setValue(const unsigned int & ref, const double & value) {
+bool Spawn::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
   if( var != variables.end() ) {
-    var->second.value = value;
-    var->second.valueset = true;
+    var->second.setValue(value, spawn::units::UnitSystem::MO);
     return true;
   }
 
   return false;
 }
 
-double EPComponent::getValue(const unsigned int & ref, bool & ok) const {
+double Spawn::getValue(const unsigned int & ref, bool & ok) const {
   auto var = variables.find(ref);
   if( var != variables.end() ) {
-    if( var->second.valueset ) {
+    if( var->second.isValueSet() ) {
       ok = true;
-      return var->second.value;
+      return var->second.getValue(spawn::units::UnitSystem::MO);
     }
   }
   ok = false;
   return 0.0;
 }
 
-double EPComponent::getValue(const unsigned int & ref) const {
+double Spawn::getValue(const unsigned int & ref) const {
   bool ok = false;
   return getValue(ref, ok);
 }
 
-Real64 EPComponent::zoneHeatTransfer(const int ZoneNum)
+double Spawn::zoneHeatTransfer(const int ZoneNum)
 {
+  Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
+  Real64 SumHA{0.0};      // Zone sum of Hc*Area
+  Real64 SumHATsurf{0.0}; // Zone sum of Hc*Area*Tsurf
+  Real64 SumHATref{0.0};  // Zone sum of Hc*Area*Tref, for ceiling diffuser convection correlation
+  Real64 SumMCp{0.0};     // Zone sum of MassFlowRate*Cp
+  Real64 SumMCpT{0.0};    // Zone sum of MassFlowRate*Cp*T
+  Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
+  Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
+
   EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(ZoneNum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
 
   const auto TempDepCoef = SumHA;                   // + SumMCp;
@@ -161,7 +170,7 @@ Real64 EPComponent::zoneHeatTransfer(const int ZoneNum)
   return heatTransfer;
 }
 
-void EPComponent::exchange()
+void Spawn::exchange()
 {
   const auto zoneNum = [](std::string & zoneName) {
     std::transform(zoneName.begin(), zoneName.end(), zoneName.begin(), ::toupper);
@@ -190,12 +199,12 @@ void EPComponent::exchange()
   };
 
   const auto actuateVar = [&](const Variable & var) {
-    if( var.valueset ) {
+    if( var.isValueSet() ) {
       compSetActuatorValue(
           var.actuatorcomponentkey,
           var.actuatorcomponenttype,
           var.actuatorcontroltype,
-          var.value
+          var.getValue(spawn::units::UnitSystem::EP)
       );
     } else {
       compResetActuator(
@@ -212,10 +221,11 @@ void EPComponent::exchange()
     auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
       case VariableType::T:
-        if( var.valueset ) {
-          EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = var.value;
-          EnergyPlus::DataHeatBalFanSys::ZTAV( varZoneNum ) = var.value;
-          EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = var.value;
+        if( var.isValueSet() ) {
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          EnergyPlus::DataHeatBalFanSys::ZT( varZoneNum ) = v;
+          EnergyPlus::DataHeatBalFanSys::ZTAV( varZoneNum ) = v;
+          EnergyPlus::DataHeatBalFanSys::MAT( varZoneNum ) = v;
         }
         break;
       case VariableType::EMS_ACTUATOR:
@@ -238,24 +248,19 @@ void EPComponent::exchange()
     auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
       case VariableType::V:
-        var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume;
-        var.valueset = true;
+        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume, spawn::units::UnitSystem::EP);
         break;
       case VariableType::AFLO:
-        var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).FloorArea;
-        var.valueset = true;
+        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).FloorArea, spawn::units::UnitSystem::EP);
         break;
       case VariableType::MSENFAC:
-        var.value = EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens;
-        var.valueset = true;
+        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens, spawn::units::UnitSystem::EP);
         break;
       case VariableType::QCONSEN_FLOW:
-        var.value = zoneHeatTransfer( varZoneNum );
-        var.valueset = true;
+        var.setValue(zoneHeatTransfer( varZoneNum ), spawn::units::UnitSystem::EP);
         break;
       case VariableType::SENSOR:
-        var.value = getSensorValue(var);
-        var.valueset = true;
+        var.setValue(getSensorValue(var), spawn::units::UnitSystem::EP);
         break;
       default:
         break;
@@ -263,7 +268,7 @@ void EPComponent::exchange()
   }
 }
 
-int EPComponent::controlWait() {
+int Spawn::controlWait() {
   std::unique_lock<std::mutex> lk(control_mutex);
   // Wait until EnergyPlus is not Advancing or Terminating (ie in the process of cleanup)
   control_cv.wait( lk, [&](){
@@ -275,7 +280,7 @@ int EPComponent::controlWait() {
   return epstatus == EPStatus::ERROR ? 1 : 0;
 }
 
-void EPComponent::externalHVACManager() {
+void Spawn::externalHVACManager() {
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once

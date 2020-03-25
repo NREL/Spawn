@@ -1,18 +1,18 @@
-#include "Variables.hpp"
+#include "variables.hpp"
+#include "outputtypes.hpp"
 #include "../cli/iddtypes.hpp"
-#include "EnergyPlus/InputProcessing/IdfParser.hh"
-#include "EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-#include "EnergyPlus/DataStringGlobals.hh"
-#include "EnergyPlus/UtilityRoutines.hh"
-#include "third_party/nlohmann/json.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
 
 
 using json = nlohmann::json;
 
-//namespace EnergyPlus {
-//namespace FMI {
+using namespace spawn::units;
 
 class FMUInfo {
 public:
@@ -101,6 +101,9 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     Variable var;
     var.type = VariableType::SCHEDULE;
     var.name = schedule.at("fmiName").get<std::string>();
+    var.epunittype = spawn::units::UnitType::one;
+    var.mounittype = spawn::units::UnitType::one;
+
     const auto & idfname = schedule.at("name").get<std::string>();
     var.actuatorcomponentkey = idfname;
     var.actuatorcomponenttype = fmuinfo.scheduleType(idfname);
@@ -111,6 +114,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     var.scalar_attributes.emplace_back("description","Schedule");
     var.scalar_attributes.emplace_back("causality","input");
     var.scalar_attributes.emplace_back("variability","continuous");
+
+    var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
     result.emplace(i,std::move(var));
     ++i;
@@ -126,9 +131,22 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::SENSOR;
       var.name = fmiName;
-      var.outputvarname =
-          EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
+      var.outputvarname = EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
       var.outputvarkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
+
+      //const auto & output = outputtypes.find(var.outputvarname.c_str());
+      const auto & output = std::find_if(std::begin(outputtypes), std::end(outputtypes),
+        [&](const std::pair<const char *, OutputProperties> & v) {
+          return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.first) == var.outputvarname;
+        });
+
+      if(output != std::end(outputtypes)) {
+        var.epunittype = output->second.epUnitType;
+        var.mounittype = output->second.moUnitType;
+      } else {
+        var.epunittype = spawn::units::UnitType::one;
+        var.mounittype = spawn::units::UnitType::one;
+      }
 
       var.scalar_attributes.emplace_back("name", fmiName);
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -136,6 +154,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("causality", "output");
       var.scalar_attributes.emplace_back("variability", "continuous");
       var.scalar_attributes.emplace_back("initial", "calculated");
+
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
       return var;
     };
 
@@ -152,12 +172,16 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.actuatorcomponentkey = act.at("variableName").get<std::string>();
       var.actuatorcomponenttype = act.at("componentType").get<std::string>();
       var.actuatorcontroltype = act.at("controlType").get<std::string>();
+      var.epunittype = spawn::units::UnitType::one;
+      var.mounittype = spawn::units::UnitType::one;
 
       var.scalar_attributes.emplace_back("name", var.name);
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
       var.scalar_attributes.emplace_back("description", "Custom Actuator");
       var.scalar_attributes.emplace_back("causality", "input");
       var.scalar_attributes.emplace_back("variability", "continuous");
+
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
       return var;
     };
     result.emplace(i, build_variable());
@@ -172,6 +196,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::T;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::C;
+      var.mounittype = spawn::units::UnitType::K;
 
       var.scalar_attributes.emplace_back("name",zone + "_T");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -180,9 +206,9 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("variability","continuous");
 
       var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
-      var.real_attributes.emplace_back("unit","degC");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","0.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       result.emplace(i,std::move(var));
     }
@@ -191,6 +217,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::QCONSEN_FLOW;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::W;
+      var.mounittype = spawn::units::UnitType::W;
 
       var.scalar_attributes.emplace_back("name",zone + "_QConSen_flow");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -200,8 +228,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","calculated");
 
       var.real_attributes.emplace_back("quantity","Power");
-      var.real_attributes.emplace_back("unit","W");
       var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       result.emplace(i,std::move(var));
     }
@@ -210,6 +238,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::AFLO;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::m2;
+      var.mounittype = spawn::units::UnitType::m2;
 
       var.scalar_attributes.emplace_back("name",zone + "_AFlo");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -219,9 +249,9 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","exact");
 
       var.real_attributes.emplace_back("quantity","Area");
-      var.real_attributes.emplace_back("unit","m2");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","12.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       result.emplace(i,std::move(var));
     }
@@ -230,6 +260,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::V;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::m3;
+      var.mounittype = spawn::units::UnitType::m3;
 
       var.scalar_attributes.emplace_back("name",zone + "_V");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -239,9 +271,9 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","exact");
 
       var.real_attributes.emplace_back("quantity","Volume");
-      var.real_attributes.emplace_back("unit","m3");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","36.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       result.emplace(i,std::move(var));
     }
@@ -250,6 +282,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::MSENFAC;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::one;
+      var.mounittype = spawn::units::UnitType::one;
 
       var.scalar_attributes.emplace_back("name",zone + "_mSenFac");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -260,6 +294,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
 
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","1.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       result.emplace(i,std::move(var));
     }
@@ -268,6 +303,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::QGAIRAD_FLOW;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::W;
+      var.mounittype = spawn::units::UnitType::W;
 
       var.scalar_attributes.emplace_back("name",zone + "_QGaiRad_flow");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -276,11 +313,11 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("variability","continuous");
 
       var.real_attributes.emplace_back("quantity","Power");
-      var.real_attributes.emplace_back("unit","W");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","0.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
-      var.value = 0.0;
+      var.setValue(0.0, spawn::units::UnitSystem::MO);
 
       result.emplace(i,std::move(var));
     }
@@ -289,6 +326,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::QLAT_FLOW;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::W;
+      var.mounittype = spawn::units::UnitType::W;
 
       var.scalar_attributes.emplace_back("name",zone + "_QLat_flow");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -298,11 +337,11 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","calculated");
 
       var.real_attributes.emplace_back("quantity","Power");
-      var.real_attributes.emplace_back("unit","W");
       var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       // TODO exchange this variable with real EnergyPlus data
-      var.value = 0.0;
+      var.setValue(0.0, spawn::units::UnitSystem::MO);
 
       result.emplace(i,std::move(var));
     }
@@ -311,6 +350,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::QPEO_FLOW;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::W;
+      var.mounittype = spawn::units::UnitType::W;
 
       var.scalar_attributes.emplace_back("name",zone + "_QPeo_flow");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -320,11 +361,11 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","calculated");
 
       var.real_attributes.emplace_back("quantity","Power");
-      var.real_attributes.emplace_back("unit","W");
       var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       // TODO exchange this variable with real EnergyPlus data
-      var.value = 0.0;
+      var.setValue(0.0, spawn::units::UnitSystem::MO);
 
       result.emplace(i,std::move(var));
     }
@@ -333,6 +374,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::TAVEINLET;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::C;
+      var.mounittype = spawn::units::UnitType::K;
 
       var.scalar_attributes.emplace_back("name",zone + "_TAveInlet");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -341,11 +384,11 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("variability","continuous");
 
       var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
-      var.real_attributes.emplace_back("unit","degC");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","21.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
-      var.value = 21.0;
+      var.setValue(21.0, spawn::units::UnitSystem::EP);
 
       result.emplace(i,std::move(var));
     }
@@ -354,6 +397,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::TRAD;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::C;
+      var.mounittype = spawn::units::UnitType::K;
 
       var.scalar_attributes.emplace_back("name",zone + "_TRad");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -363,11 +408,11 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("initial","calculated");
 
       var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
-      var.real_attributes.emplace_back("unit","degC");
       var.real_attributes.emplace_back("relativeQuantity","false");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       // TODO exchange this variable with real EnergyPlus data
-      var.value = 21.0;
+      var.setValue(21.0, spawn::units::UnitSystem::EP);
 
       result.emplace(i,std::move(var));
     }
@@ -376,6 +421,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::X;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::one;
+      var.mounittype = spawn::units::UnitType::one;
 
       var.scalar_attributes.emplace_back("name",zone + "_X");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -383,13 +430,13 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("causality","input");
       var.scalar_attributes.emplace_back("variability","continuous");
 
-      var.real_attributes.emplace_back("unit","1");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("min","0");
       var.real_attributes.emplace_back("start","0.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       // TODO exchange this variable with real EnergyPlus data
-      var.value = 0.0;
+      var.setValue(0.0, spawn::units::UnitSystem::MO);
 
       result.emplace(i,std::move(var));
     }
@@ -398,6 +445,8 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       Variable var;
       var.type = VariableType::MINLETS_FLOW;
       var.name = zone;
+      var.epunittype = spawn::units::UnitType::kg_per_s;
+      var.mounittype = spawn::units::UnitType::kg_per_s;
 
       var.scalar_attributes.emplace_back("name",zone + "_mInlets_flow");
       var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
@@ -406,12 +455,12 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("variability","continuous");
 
       var.real_attributes.emplace_back("quantity","MassFlowRate");
-      var.real_attributes.emplace_back("unit","kg/s");
       var.real_attributes.emplace_back("relativeQuantity","false");
       var.real_attributes.emplace_back("start","0.0");
+      var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
       // TODO exchange this variable with real EnergyPlus data
-      var.value = 0.0;
+      var.setValue(0.0, spawn::units::UnitSystem::MO);
 
       result.emplace(i,std::move(var));
     }
@@ -421,6 +470,34 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
   return result;
 }
 
-//}
-//}
+void Variable::setValue(const double & value, const spawn::units::UnitSystem & system) {
+	valueset = true;
+	switch(system) {
+		case UnitSystem::MO:
+			this->value = value;
+      break;
+		case UnitSystem::EP:
+			this->value = convert({value,epunittype},mounittype).value;
+      break;
+	}
+}
+
+double Variable::getValue(const spawn::units::UnitSystem & system) const {
+	switch(system) {
+		case UnitSystem::MO:
+      return value;
+		case UnitSystem::EP:
+			return convert({value,mounittype},epunittype).value;
+	}
+
+  return 0.0;
+}
+
+void Variable::resetValue() {
+  valueset = false;
+}
+
+bool Variable::isValueSet() const {
+  return valueset;
+}
 
