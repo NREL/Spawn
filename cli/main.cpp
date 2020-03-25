@@ -27,6 +27,35 @@
 
 using json = nlohmann::json;
 
+json & addRunPeriod(json & jsonidf) {
+  constexpr auto runperiodtype = "RunPeriod";
+  // Remove the existing run periods first
+  jsonidf.erase(runperiodtype);
+
+  // Add a new run period just for spawn
+  // 200 years should be plenty
+  jsonidf[runperiodtype] = {
+    {
+      "Spawn-RunPeriod", {
+        {"apply_weekend_holiday_rule", "No"},
+        {"begin_day_of_month", 1},
+        {"begin_month", 1},
+        {"begin_year", 2017},
+        {"day_of_week_for_start_day", "Sunday"},
+        {"end_day_of_month", 31},
+        {"end_month", 12},
+        {"end_year", 2217},
+        {"use_weather_file_daylight_saving_period", "No"},
+        {"use_weather_file_holidays_and_special_days", "No"},
+        {"use_weather_file_rain_indicators", "Yes"},
+        {"use_weather_file_snow_indicators", "Yes"}
+      }
+    }
+  };
+
+  return jsonidf;
+}
+
 // Remove objects related to HVAC and controls
 json & removeUnusedObjects(json & jsonidf) {
   for(auto typep = jsonidf.cbegin(); typep != jsonidf.cend();){
@@ -229,6 +258,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
   auto jsonidf = parser.decode(input_file, schema);
+  addRunPeriod(jsonidf);
   removeUnusedObjects(jsonidf);
   addOutputVariables(jsonidf, outputVariables);
 

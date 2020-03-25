@@ -134,7 +134,6 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.outputvarname = EnergyPlus::UtilityRoutines::MakeUPPERCase(epname);
       var.outputvarkey = EnergyPlus::UtilityRoutines::MakeUPPERCase(epkey);
 
-      //const auto & output = outputtypes.find(var.outputvarname.c_str());
       const auto & output = std::find_if(std::begin(outputtypes), std::end(outputtypes),
         [&](const std::pair<const char *, OutputProperties> & v) {
           return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.first) == var.outputvarname;
