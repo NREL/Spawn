@@ -147,7 +147,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   } else {
     try {
       idf = j.at("EnergyPlus").at("idf");
-      idd = j.at("EnergyPlus").at("idd");
+      idd = "";
       weather = j.at("EnergyPlus").at("weather");
       zones = j.at("model").at("zones");
       fmuname = j.at("fmu").at("name");
@@ -173,9 +173,12 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   if (! epwInputPath.is_absolute()) {
     epwInputPath = basepath / epwInputPath;
   }
-  auto iddInputPath = boost::filesystem::path(idd.get<std::string>());
-  if (! iddInputPath.is_absolute()) {
-    iddInputPath = basepath / iddInputPath;
+  boost::filesystem::path iddInputPath;
+  if(! idd.get<std::string>().empty()) {
+    iddInputPath= boost::filesystem::path(idd.get<std::string>());
+    if (! iddInputPath.is_absolute()) {
+      iddInputPath = basepath / iddInputPath;
+    }
   }
 
   // Do the input paths exist?
@@ -188,29 +191,23 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
     std::cout << "The specified epw input file does not exist, " << epwInputPath << "." << std::endl;
     missingFile = true;
   }
-  if (! boost::filesystem::exists(iddInputPath)) {
-    std::cout << "The specified idd input file does not exist, " << iddInputPath << "." << std::endl;
-    missingFile = true;
-  }
 
   if (missingFile) {
     return 1;
   }
 
   // Output paths
+  constexpr auto iddfilename = "Energy+.idd";
   auto fmuStaggingPath = fmupath.parent_path() / fmupath.stem();
   auto modelDescriptionPath = fmuStaggingPath / "modelDescription.xml";
   auto resourcesPath = fmuStaggingPath / "resources";
   auto idfPath = resourcesPath / idfInputPath.filename();
   auto epwPath = resourcesPath / epwInputPath.filename();
-  auto iddPath = resourcesPath / iddInputPath.filename();
+  auto iddPath = resourcesPath / iddfilename;
   auto spawnPath = resourcesPath / spawnInputPath.filename();
 
   boost::filesystem::path epFMIDestPath;
   boost::filesystem::path epFMISourcePath;
-
-  boost::filesystem::remove(fmupath);
-
   #ifdef __APPLE__
     Dl_info info;
     dladdr("main", &info);
@@ -236,6 +233,18 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
     }
     epFMIDestPath = fmuStaggingPath / "binaries/linux64/libepfmi.so";
   #endif
+
+  // This would be the configuration in an install tree
+  if (! boost::filesystem::exists(iddInputPath)) {
+    iddInputPath = exedir / "../etc" / iddfilename;
+  }
+
+  // This would be the configuration in a developer tree
+  if (! boost::filesystem::exists(iddInputPath)) {
+    iddInputPath = exedir / iddfilename;
+  }
+
+  boost::filesystem::remove(fmupath);
 
   // Create fmu staging area and copy files into it
   boost::filesystem::create_directories(fmuStaggingPath);
