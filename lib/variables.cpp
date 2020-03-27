@@ -116,6 +116,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
     var.scalar_attributes.emplace_back("variability","continuous");
 
     var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+    var.real_attributes.emplace_back("start","0.0");
 
     result.emplace(i,std::move(var));
     ++i;
@@ -181,6 +182,7 @@ std::map<unsigned int, Variable> parseVariables(const std::string & idf,
       var.scalar_attributes.emplace_back("variability", "continuous");
 
       var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+      var.real_attributes.emplace_back("start","0.0");
       return var;
     };
     result.emplace(i, build_variable());

@@ -76,6 +76,7 @@ while t <= final_time:
     print("Core_Zone_People_Output: ", model.get('Core_Zone_People_Output')[0])
     print("lights = " + str(lights))
     print("Core_Zone_Lights_Output: ", model.get('Core_Zone_Lights_Output')[0])
+    print("Attic_TRad: ", model.get('Attic_TRad')[0])
 
     dt = t - last_time
     tempDot = model.get('Core_ZN_QConSen_flow')[0] / ( volume * densityAir * heatCapacity );
