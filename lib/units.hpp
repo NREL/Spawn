@@ -39,7 +39,7 @@ typedef std::pair<UnitType, const char *> UnitString;
 const std::array<UnitString, 28> unitstrings {{
 	{UnitType::C,"C"},
   {UnitType::K,"K"},
-  {UnitType::one,""},
+  {UnitType::one,"1"},
   {UnitType::kgWater_per_kgDryAir,"kgWater/kgDryAir"},
   {UnitType::percent,"%"},
   {UnitType::Pa,"Pa"},

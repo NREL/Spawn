@@ -78,19 +78,24 @@ if( NOT WIN32 )
   endif()
 
   set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+  set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+  set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 
   add_custom_target(
     Stage ALL
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-    COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd" $<TARGET_FILE_DIR:spawn>
+    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
             "${PROJECT_BINARY_DIR}/modelica-buildings"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
     COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_FILE:spawn>
-            $<TARGET_FILE:epfmi>
+            ${idd_path}
             "${modelica_bin_path}"
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    $<TARGET_FILE:epfmi>
+                    "${modelica_lib_path}"
   )
   if( INSTALL_BUILDINGS_LIBRARY )
     install(DIRECTORY submodules/modelica-buildings DESTINATION .)

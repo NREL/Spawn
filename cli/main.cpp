@@ -27,6 +27,28 @@
 
 using json = nlohmann::json;
 
+json & adjustSimulationControl(json & jsonidf) {
+  constexpr auto simulationcontroltype = "SimulationControl";
+
+  // Remove the existing control first
+  jsonidf.erase(simulationcontroltype);
+
+  // This is what we need for spawn
+  jsonidf[simulationcontroltype] = {
+    {
+      "Spawn-SimulationControl", {
+        {"do_plant_sizing_calculation", "Yes"},
+        {"do_system_sizing_calculation","Yes"},
+        {"do_zone_sizing_calculation", "Yes"},
+        {"run_simulation_for_sizing_periods", "No"},
+        {"run_simulation_for_weather_file_run_periods", "Yes"}
+      }
+    }
+  };
+
+  return jsonidf;
+}
+
 json & addRunPeriod(json & jsonidf) {
   constexpr auto runperiodtype = "RunPeriod";
   // Remove the existing run periods first
@@ -147,11 +169,11 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   } else {
     try {
       idf = j.at("EnergyPlus").at("idf");
-      idd = "";
+      idd = j.value("idd", "");
       weather = j.at("EnergyPlus").at("weather");
       zones = j.at("model").at("zones");
       fmuname = j.at("fmu").at("name");
-      outputVariables = j.at("model").at("outputVariables");
+      outputVariables = j.value("model",json::object()).value("outputVariables",json::array());
     } catch (...) {
       std::cout << "Invalid json input: '" << jsoninput << "'" << std::endl;
       return 1;
@@ -267,6 +289,7 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
   auto jsonidf = parser.decode(input_file, schema);
+  adjustSimulationControl(jsonidf);
   addRunPeriod(jsonidf);
   removeUnusedObjects(jsonidf);
   addOutputVariables(jsonidf, outputVariables);
