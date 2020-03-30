@@ -89,6 +89,7 @@ if( NOT WIN32 )
             "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
             "${PROJECT_BINARY_DIR}/modelica-buildings"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
     COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_FILE:spawn>
             ${idd_path}

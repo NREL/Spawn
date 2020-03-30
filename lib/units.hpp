@@ -2,6 +2,7 @@
 #define SPAWN_UNITS_INCLUDED
 
 #include <utility>
+#include <array>
 #include <map>
 #include <algorithm>
 #include <iostream>
