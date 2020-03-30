@@ -110,54 +110,54 @@ release:ubuntu:
 ##  when: manual
 ##  only:
 ##    - tags
-#
-#build:mac:
-#  stage: build
-#  tags:
-#    - mac
-#  script:
-#    - mkdir build
-#    - cd build
-#    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
-#    - cmake ..
-#    - make -j2
-#  artifacts:
-#    expire_in: 6 hrs
-#    paths:
-#      - build/
-#
-##package:mac:
-##  stage: package
-##  tags:
-##    - mac
-##  dependencies:
-##    - build:mac
-##  script:
-##    - cd build
-##    - make package
-##  artifacts:
-##    expire_in: 6 hrs
-##    paths:
-##      - build/Spawn*.tar.gz
-##
-##publish:mac:
-##  stage: publish
-##  tags:
-##    - mac
-##  dependencies:
-##    - package:mac
-##  script:
-##    - python3 cmake/publish.py publish
-##  when: manual
-##
-##release:mac:
-##  stage: release
-##  tags:
-##    - mac
-##  dependencies:
-##    - package:mac
-##  script:
-##    - python3 cmake/publish.py release
-##  when: manual
-##  only:
-##    - tags
+
+uild:mac:
+ stage: build
+ tags:
+   - mac
+ script:
+   - mkdir build
+   - cd build
+   - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
+   - cmake ..
+   - make -j2
+ artifacts:
+   expire_in: 6 hrs
+   paths:
+     - build/
+
+package:mac:
+  stage: package
+  tags:
+    - mac
+  dependencies:
+    - build:mac
+  script:
+    - cd build
+    - make package
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.tar.gz
+
+publish:mac:
+  stage: publish
+  tags:
+    - mac
+  dependencies:
+    - package:mac
+  script:
+    - python3 cmake/publish.py publish
+  when: manual
+
+release:mac:
+  stage: release
+  tags:
+    - mac
+  dependencies:
+    - package:mac
+  script:
+    - python3 cmake/publish.py release
+  when: manual
+  only:
+    - tags
