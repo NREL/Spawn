@@ -111,7 +111,7 @@ release:ubuntu:
 ##  only:
 ##    - tags
 
-uild:mac:
+build:mac:
  stage: build
  tags:
    - mac

@@ -50,8 +50,10 @@ conan_add_remote(NAME bincrafters
   URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 conan_cmake_run(REQUIRES
-  libzip/1.5.2@bincrafters/stable
+  bzip2/1.0.8@conan/stable
+  zlib/1.2.11@conan/stable
   boost/1.69.0
+  libzip/1.5.2@bincrafters/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
@@ -68,40 +70,42 @@ set(CMAKE_SKIP_RPATH FALSE)
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
-if( NOT WIN32 )
-	add_subdirectory( lib )
-  add_subdirectory( cli )
-  add_subdirectory( epfmi )
+add_subdirectory( lib )
+add_subdirectory( cli )
+add_subdirectory( epfmi )
 
-  if( UNIX AND NOT APPLE )
-    set(os_prefix spawn-linux64)
-  endif()
+if( APPLE )
+  set(os_prefix spawn-darwin64)
+elseif( WIN32 )
+  set(os_prefix spawn-win32)
+elseif( UNIX AND NOT APPLE )
+  set(os_prefix spawn-linux64)
+endif()
 
-  set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-  set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
-  set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
+set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 
-  add_custom_target(
-    Stage ALL
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-            "${PROJECT_BINARY_DIR}/modelica-buildings"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:spawn>
-            ${idd_path}
-            "${modelica_bin_path}"
-            COMMAND ${CMAKE_COMMAND} -E copy
-                    $<TARGET_FILE:epfmi>
-                    "${modelica_lib_path}"
-  )
-  if( INSTALL_BUILDINGS_LIBRARY )
-    install(DIRECTORY submodules/modelica-buildings DESTINATION .)
-    install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
-  endif()
+add_custom_target(
+  Stage ALL
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
+  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+          "${PROJECT_BINARY_DIR}/modelica-buildings"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:spawn>
+          ${idd_path}
+          "${modelica_bin_path}"
+          COMMAND ${CMAKE_COMMAND} -E copy
+                  $<TARGET_FILE:epfmi>
+                  "${modelica_lib_path}"
+)
+if( INSTALL_BUILDINGS_LIBRARY )
+  install(DIRECTORY submodules/modelica-buildings DESTINATION .)
+  install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
 endif()
 
 install(DIRECTORY examples DESTINATION .)
