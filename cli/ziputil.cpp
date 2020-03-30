@@ -5,9 +5,9 @@
 #include <string.h>
 #include "zip.h"
 #if _MSC_VER
-#include "./dirent.h"
+#include "./msvc/dirent.h"
 #else
-#include "dirent.h"
+#include <dirent.h>
 #endif
 
 bool is_dir(const std::string& dir)
