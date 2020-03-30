@@ -12,8 +12,31 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(test
   spawn.cpp
   testpaths.hpp
-  ${CMAKE_CURRENT_BINARY_DIR}/$<UPPER_CASE:$<CONFIG>>/testpaths.cpp
 )
 
-target_link_libraries(test CONAN_PKG::catch2)
+# Make this better
+if(WIN32)
+	add_library(testpaths-release
+	  ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/testpaths.cpp
+	)
+
+	add_library(testpaths-debug
+	  ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/testpaths.cpp
+	)
+
+	target_link_libraries(test
+		CONAN_PKG::catch2
+	  debug testpaths-debug
+	  general testpaths-release
+	)
+else()
+	add_library(testpaths
+	  ${CMAKE_CURRENT_BINARY_DIR}/testpaths.cpp
+	)
+
+	target_link_libraries(test
+		CONAN_PKG::catch2
+	  testpaths
+	)
+endif()
 
