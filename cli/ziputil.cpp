@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 #include "zip.h"
+#if _MSC_VER
+#include "./dirent.h"
+#else
+#include "dirent.h"
+#endif
 
 bool is_dir(const std::string& dir)
 {

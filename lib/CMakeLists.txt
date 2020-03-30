@@ -12,6 +12,8 @@ if (UNIX)
   ADD_DEFINITIONS("-fPIC")
 endif()
 
+ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
+
 add_library(libspawn
   spawn.hpp
   spawn.cpp
