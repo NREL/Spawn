@@ -1,7 +1,0 @@
-
-static const char * input = "${PROJECT_SOURCE_DIR}/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
-static const char * input2 = "${PROJECT_SOURCE_DIR}/testfiles/RefBldgSmallHotelNew2004_Chicago.idf";
-static const char * weather = "${PROJECT_SOURCE_DIR}/weather/USA_IL_Chicago-OHare_TMY2.epw";
-static const char * idd = "${PROJECT_BINARY_DIR}/Products/Energy+.idd";
-static const char * projectBinaryDir = "${PROJECT_BINARY_DIR}";
-

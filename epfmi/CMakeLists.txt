@@ -28,22 +28,3 @@ install( TARGETS epfmi
   ARCHIVE DESTINATION ./lib
 )
 
-set(test_src
-  #Test/Single_Model_Test.cpp
-  Test/main.cc
-)
-
-configure_file( Test/config.h.in "${CMAKE_CURRENT_BINARY_DIR}/test-config.h" )
-
-CREATE_TEST_TARGETS( epfmi "${test_src}" "epfmi" )
-
-#set(MY_FMU_RESOURCES "${CMAKE_CURRENT_BINARY_DIR}/MyFMU/resources/")
-#execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${MY_FMU_RESOURCES}")
-#execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.spawn"
-#  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/TwoIdenticalZones.idf"
-#  "${PROJECT_SOURCE_DIR}/examples/TwoIdenticalZones/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
-#  "${PROJECT_BINARY_DIR}/Products/Energy+.idd"
-#  "${MY_FMU_RESOURCES}/"
-#)
-

@@ -56,6 +56,7 @@ conan_cmake_run(REQUIRES
   libzip/1.5.2@bincrafters/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
+  catch2/2.11.3
   BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
   BUILD missing
 )
@@ -73,6 +74,7 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )
+add_subdirectory( test )
 
 if( APPLE )
   set(os_prefix spawn-darwin64)
@@ -99,9 +101,10 @@ add_custom_target(
           $<TARGET_FILE:spawn>
           ${idd_path}
           "${modelica_bin_path}"
-          COMMAND ${CMAKE_COMMAND} -E copy
-                  $<TARGET_FILE:epfmi>
-                  "${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          "${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
 )
 if( INSTALL_BUILDINGS_LIBRARY )
   install(DIRECTORY submodules/modelica-buildings DESTINATION .)
