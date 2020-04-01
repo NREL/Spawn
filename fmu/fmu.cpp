@@ -74,12 +74,6 @@ namespace fmu {
                           fmi2GetStringStatus);
   }
 
-  FMI::FMI(boost::filesystem::path fmi_file, bool require_all_symbols)
-      : m_fmi_file{std::move(fmi_file)}, m_loadResults{loadFunctions(m_dll)}
-  {
-    if (require_all_symbols && !m_loadResults.failures.empty()) {
-      throw std::runtime_error("Failed to load all functions");
-    }
-  }
+
 } // namespace fmu
 } // namespace spawn

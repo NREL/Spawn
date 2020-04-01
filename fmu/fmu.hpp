@@ -47,7 +47,12 @@ namespace fmu {
       std::vector<std::string> failures;
     };
 
-    explicit FMI(boost::filesystem::path fmi_file, bool require_all_symbols = true);
+    FMI(boost::filesystem::path fmi_file, bool require_all_symbols) : m_fmi_file{std::move(fmi_file)}
+    {
+      if (require_all_symbols && !m_loadResults.failures.empty()) {
+        throw std::runtime_error("Failed to load all functions");
+      }
+    }
 
     Function<fmi2GetTypesPlatformTYPE> fmi2GetTypesPlatform{"fmi2GetTypesPlatform"};
     Function<fmi2GetVersionTYPE> fmi2GetVersion{"fmi2GetVersion"};
@@ -104,7 +109,7 @@ namespace fmu {
 
     boost::filesystem::path m_fmi_file;
     util::Dynamic_Library m_dll{m_fmi_file};
-    Load_Results m_loadResults;
+    Load_Results m_loadResults{loadFunctions(m_dll)};
   };
 
   class FMU
