@@ -57,6 +57,7 @@ conan_cmake_run(REQUIRES
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
+  fmt/6.0.0
   BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
   BUILD missing
 )
@@ -71,10 +72,13 @@ set(CMAKE_SKIP_RPATH FALSE)
 configure_file(README.md README.md)
 install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
+add_subdirectory( util )
 add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )
+add_subdirectory( fmu )
 add_subdirectory( test )
+
 
 if( APPLE )
   set(os_prefix spawn-darwin64)

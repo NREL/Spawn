@@ -22,6 +22,7 @@ add_library(libspawn
   units.cpp
   variables.hpp
   variables.cpp
+
   # EnergyPlus compiles these files into a DLL, but we would prefer to
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
@@ -33,7 +34,7 @@ add_library(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
-)
+  )
 
-target_link_libraries(libspawn energypluslib CONAN_PKG::boost)
+target_link_libraries(libspawn PUBLIC energypluslib CONAN_PKG::boost)
 
