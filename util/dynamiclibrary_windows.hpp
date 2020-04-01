@@ -4,6 +4,8 @@
 #include <fmt/format.h>
 #include <string>
 
+#include <Windows.h>
+
 namespace spawn {
 namespace util {
 
@@ -87,7 +89,7 @@ struct Dynamic_Library
     other.m_handle = HMODULE{};
   }
   Dynamic_Library(const Dynamic_Library &) = delete;
-  Dynamic_Library &operator=(Dynamic_Library &&)
+  Dynamic_Library &operator=(Dynamic_Library &&other)
   {
     if (m_handle) {
       FreeLibrary(m_handle);

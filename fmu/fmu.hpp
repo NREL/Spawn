@@ -115,7 +115,8 @@ namespace fmu {
   class FMU
   {
   public:
-    FMU(boost::filesystem::path fmu_file) : m_fmu_file{std::move(fmu_file)}
+    FMU(boost::filesystem::path fmu_file, bool require_all_symbols = true)
+        : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols}
     {
     }
 
@@ -137,11 +138,12 @@ namespace fmu {
 
   private:
     boost::filesystem::path m_fmu_file;
+    bool m_require_all_symbols;
     util::Temp_Directory m_tempDirectory{};
     util::Unzipped_File m_unzipped_file{m_fmu_file, fmiBinaryFullPath(), m_tempDirectory.dir() / fmiBinaryFileName()};
 
   public:
-    FMI fmi{m_unzipped_file.unzippedFile()};
+    FMI fmi{m_unzipped_file.unzippedFile(), m_require_all_symbols};
   };
 
 } // namespace fmu

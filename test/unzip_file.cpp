@@ -3,6 +3,7 @@
 #include "../util/unzipped_file.hpp"
 #include "testpaths.hpp"
 #include <catch2/catch.hpp>
+#include <array>
 
 TEST_CASE("Test unzipped file")
 {
