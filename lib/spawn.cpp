@@ -39,7 +39,7 @@ Spawn::Spawn(const std::string & name, const boost::filesystem::path & resourceP
   variables = parseVariables(idfInputPath, spawnInputPath);
 }
 
-int Spawn::start() {
+int Spawn::start(const double & starttime) {
   const auto & simulation = [&](){
     auto workingPath = boost::filesystem::path(instanceName).filename();
 
@@ -75,7 +75,14 @@ int Spawn::start() {
   simthread = std::thread(simulation);
 
   // Wait for EnergyPlus to go through startup/warmup etc
-  return controlWait();
+  auto result = controlWait();
+
+  // Move to the requested start time
+	if(result == 0) {
+    result = setTime(starttime);
+  }
+
+  return result;
 }
 
 int Spawn::stop() {

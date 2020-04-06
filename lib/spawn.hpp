@@ -70,7 +70,7 @@ public:
     return (this == &other);
   }
 
-  int start();
+  int start(const double & starttime = 0.0);
   int stop();
   int setTime(const double & time);
 

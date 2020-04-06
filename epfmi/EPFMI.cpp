@@ -40,7 +40,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   fmi2Boolean toleranceDefined,
   fmi2Real tolerance,
-  fmi2Real startTime,
+  fmi2Real starttime,
   fmi2Boolean stopTimeDefined,
   fmi2Real stopTime)
 {
@@ -48,11 +48,10 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
   UNUSED(toleranceDefined);
   UNUSED(tolerance);
-  UNUSED(startTime);
   UNUSED(stopTimeDefined);
   UNUSED(stopTime);
 
-  return epcomp->start() ? fmi2Error : fmi2OK;
+  return epcomp->start(starttime) ? fmi2Error : fmi2OK;
 }
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
