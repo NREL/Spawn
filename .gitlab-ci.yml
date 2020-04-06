@@ -96,7 +96,7 @@ publish:windows:
   dependencies:
     - package:windows
   script:
-    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py publish
+    - python3 cmake/publish.py publish
   when: manual
 
 release:windows:
@@ -106,7 +106,7 @@ release:windows:
   dependencies:
     - package:windows
   script:
-    - C:\Users\Administrator\AppData\Local\Programs\Python\Python37-32\python.exe cmake/publish.py release
+    - python3 cmake/publish.py release
   when: manual
   only:
     - tags
