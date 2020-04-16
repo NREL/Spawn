@@ -25,8 +25,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(spawn
 	libspawn
-  CONAN_PKG::libzip
   energypluslib
+  CONAN_PKG::libzip
   CONAN_PKG::CLI11
   CONAN_PKG::pugixml
   CONAN_PKG::boost

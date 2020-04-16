@@ -1,8 +1,10 @@
-#include "iddtypes.hpp"
-#include "../lib/outputtypes.hpp"
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
+#include "../lib/iddtypes.hpp"
+#include "../lib/input.hpp"
+#include "../lib/outputtypes.hpp"
 #include "../lib/variables.hpp"
+#include "../util/idf_to_json.hpp"
 #include <CLI/CLI.hpp>
 #include <third_party/nlohmann/json.hpp>
 #include <cstdio>
@@ -108,14 +110,14 @@ json & removeUnusedObjects(json & jsonidf) {
 }
 
 // Add output variables requested in the spawn input file, but not in the idf
-json & addOutputVariables(json & jsonidf, const json & requestedvars) {
+json & addOutputVariables(json & jsonidf, const std::vector<spawn::OutputVariable> & requestedvars) {
   // A pair that holds an output variable name and key,
   typedef std::pair<std::string, std::string> Varpair;
 
   // Make a list of the requested outputs
   std::vector<Varpair> requestedpairs;
   for(const auto & var : requestedvars) {
-    requestedpairs.emplace_back(var.at("name").get<std::string>(), var.at("key").get<std::string>());
+    requestedpairs.emplace_back(var.idfname, var.idfkey);
   }
 
   // And a list of the current output variables
@@ -145,168 +147,70 @@ json & addOutputVariables(json & jsonidf, const json & requestedvars) {
   return jsonidf;
 }
 
-int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
-  json j;
-
-  std::ifstream fileinput(jsoninput);
-  if (!fileinput.fail()) {
-    // deserialize from file
-    fileinput >> j;
-  } else {
-    // Try to parse command line input as json string
-    j = json::parse(jsoninput, nullptr, false);
-  }
-
-  json idf;
-  json idd;
-  json weather;
-  json zones;
-  json fmuname;
-  json outputVariables;
-
-  if (j.is_discarded()) {
-    std::cout << "Cannot parse json: '" << jsoninput << "'" << std::endl;
-  } else {
-    try {
-      idf = j.at("EnergyPlus").at("idf");
-      idd = j.value("idd", "");
-      weather = j.at("EnergyPlus").at("weather");
-      zones = j.at("model").at("zones");
-      fmuname = j.at("fmu").at("name");
-      outputVariables = j.value("model",json::object()).value("outputVariables",json::array());
-    } catch (...) {
-      std::cout << "Invalid json input: '" << jsoninput << "'" << std::endl;
-      return 1;
-    }
-  }
-
-  // Input paths
-  auto spawnInputPath = boost::filesystem::canonical(boost::filesystem::path(jsoninput));
-  auto basepath = spawnInputPath.parent_path();
-  auto fmupath = boost::filesystem::path(fmuname.get<std::string>());
-  if (! fmupath.is_absolute()) {
-    fmupath = basepath / fmupath;
-  }
-  auto idfInputPath = boost::filesystem::path(idf.get<std::string>());
-  if (! idfInputPath.is_absolute()) {
-    idfInputPath = basepath / idfInputPath;
-  }
-  auto epwInputPath = boost::filesystem::path(weather.get<std::string>());
-  if (! epwInputPath.is_absolute()) {
-    epwInputPath = basepath / epwInputPath;
-  }
-  boost::filesystem::path iddInputPath;
-  if(! idd.get<std::string>().empty()) {
-    iddInputPath= boost::filesystem::path(idd.get<std::string>());
-    if (! iddInputPath.is_absolute()) {
-      iddInputPath = basepath / iddInputPath;
-    }
-  }
-
-  // Do the input paths exist?
-  bool missingFile = false;
-  if (! boost::filesystem::exists(idfInputPath)) {
-    std::cout << "The specified idf input file does not exist, " << idfInputPath << "." << std::endl;
-    missingFile = true;
-  }
-  if (! boost::filesystem::exists(epwInputPath)) {
-    std::cout << "The specified epw input file does not exist, " << epwInputPath << "." << std::endl;
-    missingFile = true;
-  }
-
-  if (missingFile) {
-    return 1;
-  }
-
-  // Output paths
-  constexpr auto iddfilename = "Energy+.idd";
-  auto fmuStaggingPath = fmupath.parent_path() / fmupath.stem();
-  auto modelDescriptionPath = fmuStaggingPath / "modelDescription.xml";
-  auto resourcesPath = fmuStaggingPath / "resources";
-  auto idfPath = resourcesPath / idfInputPath.filename();
-  auto epwPath = resourcesPath / epwInputPath.filename();
-  auto iddPath = resourcesPath / iddfilename;
-  auto spawnPath = resourcesPath / spawnInputPath.filename();
-
-  boost::filesystem::path epFMIDestPath;
-  boost::filesystem::path epFMISourcePath;
-  #ifdef __APPLE__
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "../lib/libepfmi.dylib";
-    if (! boost::filesystem::exists(epFMISourcePath)) {
-      epFMISourcePath = exedir / "libepfmi.dylib";
-    }
-    epFMIDestPath = fmuStaggingPath / "binaries/darwin64/libepfmi.dylib";
-  #elif _WIN32
+boost::filesystem::path exedir() {
+  #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    auto exedir = boost::filesystem::path(szPath).parent_path();
-    epFMISourcePath = exedir / "epfmi.dll";
-    epFMIDestPath = fmuStaggingPath / "binaries/win64/epfmi.dll";
+    return boost::filesystem::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "../lib/libepfmi.so";
-    if (! boost::filesystem::exists(epFMISourcePath)) {
-      epFMISourcePath = exedir / "libepfmi.so";
-    }
-    epFMIDestPath = fmuStaggingPath / "binaries/linux64/libepfmi.so";
+    return boost::filesystem::path(info.dli_fname).parent_path();
   #endif
+}
 
-  // This would be the configuration in an install tree
+boost::filesystem::path iddInstallPath() {
+  constexpr auto & iddfilename = "Energy+.idd";
+  // Configuration in install tree
+  auto iddInputPath = exedir() / "../etc" / iddfilename;
+
+  // Configuration in a developer tree
   if (! boost::filesystem::exists(iddInputPath)) {
-    iddInputPath = exedir / "../etc" / iddfilename;
+    iddInputPath = exedir() / iddfilename;
   }
 
-  // This would be the configuration in a developer tree
-  if (! boost::filesystem::exists(iddInputPath)) {
-    iddInputPath = exedir / iddfilename;
+  return iddInputPath;
+}
+
+std::string epfmiName() {
+  // Configure this using cmake
+  #ifdef __APPLE__
+    return "libepfmi.dylib";
+  #elif _WIN32
+    return "epfmi.dll";
+  #else
+    return "libepfmi.so";
+  #endif
+}
+
+std::string fmiplatform() {
+  #ifdef __APPLE__
+    return "darwin64";
+  #elif _WIN32
+    return "win64";
+  #else
+    return "linux64";
+  #endif
+}
+
+boost::filesystem::path epfmiInstallPath() {
+  const auto candidate = exedir() / ("../lib/" + epfmiName());
+  if (boost::filesystem::exists(candidate)) {
+    return candidate;
+  } else {
+    return exedir() / epfmiName();
   }
+}
 
-  boost::filesystem::remove(fmupath);
-
-  // Create fmu staging area and copy files into it
-  boost::filesystem::create_directories(fmuStaggingPath);
-  boost::filesystem::create_directories(resourcesPath);
-  boost::filesystem::create_directories(epFMIDestPath.parent_path());
-
-  boost::filesystem::copy_file(epFMISourcePath, epFMIDestPath, boost::filesystem::copy_option::overwrite_if_exists);
-  boost::filesystem::copy_file(iddInputPath, iddPath, boost::filesystem::copy_option::overwrite_if_exists);
-  boost::filesystem::copy_file(epwInputPath, epwPath, boost::filesystem::copy_option::overwrite_if_exists);
-  boost::filesystem::copy_file(spawnInputPath, spawnPath, boost::filesystem::copy_option::overwrite_if_exists);
-
-  // Make a copy of the idf input file, but remove unused objects
-  std::ifstream input_stream(idfInputPath.string(), std::ifstream::in);
-  std::string input_file;
-  std::string line;
-  while (std::getline(input_stream, line)) {
-    input_file.append(line + EnergyPlus::DataStringGlobals::NL);
-  }
-  IdfParser parser;
-  const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
-  json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
-  auto jsonidf = parser.decode(input_file, schema);
-  adjustSimulationControl(jsonidf);
-  addRunPeriod(jsonidf);
-  removeUnusedObjects(jsonidf);
-  addOutputVariables(jsonidf, outputVariables);
-
-  std::ofstream newidfstream(idfPath.string(),  std::ofstream::out |  std::ofstream::trunc);
-  newidfstream << parser.encode(jsonidf, schema);
-  newidfstream.close();
-
-  // Create the modelDescription.xml file
+void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath) {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 
   auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
 
-  const auto epvariables = parseVariables(idfPath.string(),spawnInputPath.string());
+  const auto variables = parseVariables(input);
 
-  for (const auto & varpair : epvariables) {
+  for (const auto & varpair : variables) {
     const auto var = varpair.second;
 
     auto scalarVar = xmlvariables.append_child("ScalarVariable");
@@ -320,10 +224,57 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
     }
   }
 
-  doc.save_file(modelDescriptionPath.c_str());
+  doc.save_file(savepath.c_str());
+}
+
+int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
+  spawn::Input input(jsoninput);
+
+  // We are going to copy the required files into an FMU staging directory,
+  // also copy the json input file into root of the fmu staging directory,
+  // and rewrite the json input file paths so that they reflect the new paths
+  // contained within the fmu layout.
+
+  // FMU staging paths
+  const auto fmuPath = input.basepath() / (input.fmuBaseName() + ".fmu");
+  const auto fmuStagingPath = input.basepath() / input.fmuBaseName();
+  const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
+  const auto fmuResourcesPath = fmuStagingPath / "resources";
+  const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();
+  const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
+  const auto fmuiddPath = fmuResourcesPath / iddInstallPath().filename();
+  const auto fmuspawnPath = fmuStagingPath / "model.spawn";
+  const auto fmuEPFMIPath = fmuStagingPath / ("binaries/" + fmiplatform() + "/" + epfmiName());
+
+  boost::filesystem::remove_all(fmuPath);
+  boost::filesystem::remove_all(fmuStagingPath);
+
+  // Create fmu staging area and copy files into it
+  boost::filesystem::create_directories(fmuStagingPath);
+  boost::filesystem::create_directories(fmuResourcesPath);
+  boost::filesystem::create_directories(fmuEPFMIPath.parent_path());
+
+  boost::filesystem::copy_file(epfmiInstallPath(), fmuEPFMIPath, boost::filesystem::copy_option::overwrite_if_exists);
+  boost::filesystem::copy_file(iddInstallPath(), fmuiddPath, boost::filesystem::copy_option::overwrite_if_exists);
+  boost::filesystem::copy_file(input.epwInputPath(), fmuepwPath, boost::filesystem::copy_option::overwrite_if_exists);
+
+  auto jsonidf = spawn::idfToJSON(input.idfInputPath());
+  adjustSimulationControl(jsonidf);
+  addRunPeriod(jsonidf);
+  removeUnusedObjects(jsonidf);
+  addOutputVariables(jsonidf, input.outputVariables);
+  spawn::jsonToIdf(jsonidf, fmuidfPath);
+
+  createModelDescription(input, modelDescriptionPath);
+
+  const auto relativeEPWPath = boost::filesystem::relative(fmuepwPath, fmuStagingPath);
+  input.setEPWInputPath(relativeEPWPath);
+  const auto relativeIdfPath = boost::filesystem::relative(fmuidfPath, fmuStagingPath);
+  input.setIdfInputPath(relativeIdfPath);
+  input.save(fmuspawnPath);
 
   if (! nozip) {
-    zip_directory(fmuStaggingPath.string(), fmupath.string(), nocompress);
+    zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
   }
 
   return 0;

@@ -1,3 +1,6 @@
+#ifndef IDDTYPES_HH_INCLUDED
+#define IDDTYPES_HH_INCLUDED
+
 #include <array>
 
 constexpr std::array<const char *,4> supportedScheduleTypes = {
@@ -321,4 +324,6 @@ constexpr std::array<const char *,312> supportedIDDTypes = {
   "Output:DebuggingData",
   "Output:PreprocessorMessage"
 };
+
+#endif // IDDTYPES_HH_INCLUDED
 

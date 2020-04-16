@@ -1,4 +1,11 @@
+
+if (UNIX)
+  ADD_DEFINITIONS("-fPIC")
+endif()
+
 add_library(spawn_utils
+        idf_to_json.hpp
+        idf_to_json.cpp
         temp_directory.cpp
         temp_directory.hpp
         unzipped_file.cpp
@@ -8,4 +15,17 @@ add_library(spawn_utils
         dynamiclibrary_posix.hpp
         )
 
-target_link_libraries(spawn_utils PUBLIC CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
+target_link_libraries(spawn_utils PUBLIC energypluslib CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
+
+target_include_directories(spawn_utils
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
+)
+

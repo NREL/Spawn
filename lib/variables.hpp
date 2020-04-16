@@ -2,6 +2,8 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
+#include "zone.hpp"
+#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -31,6 +33,8 @@ namespace spawn {
 namespace units {
   enum class UnitSystem;
 }
+
+class Input;
 }
 
 class Variable {
@@ -65,9 +69,7 @@ private:
   bool valueset{false};
 };
 
-std::map<unsigned int, Variable> parseVariables(const std::string & idf,
-  const std::string & jsonInput
-);
+std::map<unsigned int, Variable> parseVariables(const spawn::Input & input);
 
 #endif // Variables_hh_INCLUDED
 

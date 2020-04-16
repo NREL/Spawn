@@ -10,7 +10,7 @@ using namespace std::placeholders;
 
 #define UNUSED(expr) do { (void)(expr); } while (0);
 
-std::list<Spawn> spawns;
+std::list<spawn::Spawn> spawns;
 
 EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   fmi2Type fmuType,
@@ -28,8 +28,9 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 
   const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
   const auto resourcePath = boost::filesystem::path(resourcePathString);
+  const auto spawnJSONPath = resourcePath / "../model.spawn";
 
-  spawns.emplace_back(instanceName,resourcePath);
+  spawns.emplace_back(instanceName,spawnJSONPath.string());
   auto & comp = spawns.back();
   //comp.logger = functions->logger;
   //comp.loggingOn = loggingOn;
@@ -44,7 +45,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   fmi2Boolean stopTimeDefined,
   fmi2Real stopTime)
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   UNUSED(toleranceDefined);
   UNUSED(tolerance);
@@ -56,7 +57,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   return epcomp->setTime(time) ? fmi2Error : fmi2OK;
 }
@@ -66,7 +67,7 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c,
   size_t nvr,
   const fmi2Real values[])
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   for ( size_t i = 0; i < nvr; ++i ) {
     auto valueRef = vr[i];
@@ -82,7 +83,7 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
   size_t nvr,
   fmi2Real values[])
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   epcomp->exchange();
 
@@ -93,7 +94,7 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
 
 EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* eventInfo)
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   eventInfo->newDiscreteStatesNeeded = fmi2False;
   eventInfo->nextEventTime = epcomp->nextSimTime();
@@ -105,7 +106,7 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* even
 
 EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   const auto result = epcomp->stop();
 
@@ -139,7 +140,7 @@ EPFMI_API fmi2Status fmi2Reset(fmi2Component)
 
 EPFMI_API void fmi2FreeInstance(fmi2Component c)
 {
-  auto * epcomp = static_cast<Spawn*>(c);
+  auto * epcomp = static_cast<spawn::Spawn*>(c);
 
   const auto it = std::find(spawns.begin(), spawns.end(), *epcomp);
   if (it != spawns.end()) {

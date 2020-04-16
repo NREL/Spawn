@@ -48,7 +48,9 @@
 #ifndef Spawn_hh_INCLUDED
 #define Spawn_hh_INCLUDED
 
+#include "input.hpp"
 #include "variables.hpp"
+#include "zone.hpp"
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
@@ -58,12 +60,14 @@
 #include <sstream>
 #include <condition_variable>
 
+namespace spawn {
+
 enum class EPStatus { ADVANCE, NONE, TERMINATE, ERROR, DONE };
 
 class Spawn {
 public:
 
-  Spawn(const std::string & name, const boost::filesystem::path & resourcePath);
+  Spawn(const std::string & t_name, const std::string & t_input);
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
   bool operator==(const Spawn& other) const {
@@ -76,8 +80,8 @@ public:
 
   double currentSimTime() const;
   double nextSimTime() const;
+
   void exchange();
-  void externalHVACManager();
 
   // Set a variable identified by ref to the given value
   // Return true if the operation was successful
@@ -91,32 +95,56 @@ public:
 
   std::string instanceName;
 
-  std::string weatherFilePath;
-  std::string iddPath;
-  std::string idfInputPath;
-  std::string spawnInputPath;
-
   bool toleranceDefined;
   double tolerance;
   double startTime;
   bool stopTimeDefined;
   double stopTime;
 
-  std::map<unsigned int, Variable> variables;
-
 private:
   // Wait for the EnergyPlus thread from the control thread
   // Return 0 on success
   // This should be called from the control thread
   int controlWait();
-  double zoneHeatTransfer(const int ZoneNum);
+
+  struct ZoneSums {
+    double tempDepCoef;
+    double tempIndCoef;
+  };
+
+  // Given a zone name, return the index according to EnergyPlus
+  int zoneNum(const std::string & zoneName) const;
+  // These functions assume the EnergyPlus unit system
+  ZoneSums zoneSums(const int zonenum) const;
+  double zoneHeatTransfer(const int zonenum);
+  void setZoneTemperature(const int zonenum, const double & temp);
+  double zoneTemperature(const int zonenum);
+  void updateZoneTemperature(const int zonenum, const double & dt);
+  void updateZoneTemperatures(bool skipConnectedZones = false);
+
+  void externalHVACManager();
 
   double requestedTime;
   std::thread simthread;
   EPStatus epstatus;
   std::condition_variable control_cv;
   std::mutex control_mutex;
+
+  // Time in seconds of the last zone temperature update
+  // This is required for computing the dt in the
+  // updateZoneTemperature calculation
+  double prevZoneTempUpdate;
+  // State of the warmup flag during the previous zone temp update
+  bool prevWarmupFlag;
+
+  std::map<unsigned int, Variable> variables;
+  Input input;
 };
+
+boost::filesystem::path exedir();
+boost::filesystem::path iddpath();
+
+} // namespace spawn
 
 #endif
 

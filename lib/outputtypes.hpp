@@ -1,3 +1,6 @@
+#ifndef OUTPUTTYPES_HH_INCLUDED
+#define OUTPUTTYPES_HH_INCLUDED
+
 #include "units.hpp"
 #include <map>
 
@@ -371,3 +374,4 @@ const std::map<const char *, OutputProperties> outputtypes {
   {"Environmental Impact Total CO2 Emissions Carbon Equivalent Mass",{spawn::units::UnitType::kg, spawn::units::UnitType::kg}}
 };
 
+#endif // OUTPUTTYPES_HH_INCLUDED

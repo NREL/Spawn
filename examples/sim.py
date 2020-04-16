@@ -3,8 +3,6 @@ import random
 import os
 import sys
 
-print(sys.argv[1])
-
 model = load_fmu(sys.argv[1])
 start_time = 0.0
 final_time = 60 * 10
@@ -69,14 +67,17 @@ while t <= final_time:
 
     print("t = " + str(t))
     print("temp = " + str(temp))
-    print("zone temperature: " , model.get('Zone_Temperature')[0])
+    print("core zone temperature: " , model.get('Zone_Temperature')[0])
+    print("attic zone temperature: " , model.get('Attic_Zone_Temperature')[0])
     print("outside temperature: " , model.get('Outside_Temperature')[0])
     print("Core_ZN_QConSen_flow: ", model.get('Core_ZN_QConSen_flow')[0])
     print("people = " + str(people))
     print("Core_Zone_People_Output: ", model.get('Core_Zone_People_Output')[0])
     print("lights = " + str(lights))
     print("Core_Zone_Lights_Output: ", model.get('Core_Zone_Lights_Output')[0])
-    print("Attic_TRad: ", model.get('Attic_TRad')[0])
+
+    model.set('Lights_Schedule', lights * 2.0)
+    print("Core_Zone_Lights_Output: ", model.get('Core_Zone_Lights_Output')[0])
 
     dt = t - last_time
     tempDot = model.get('Core_ZN_QConSen_flow')[0] / ( volume * densityAir * heatCapacity );
@@ -85,7 +86,10 @@ while t <= final_time:
     model.event_update()
     event_info = model.get_event_info()
     last_time = t
-    t = event_info.nextEventTime
+    t = t + 7
+    nextEventTime = event_info.nextEventTime
+    if t > nextEventTime:
+        t = nextEventTime
 
 
 model.terminate()

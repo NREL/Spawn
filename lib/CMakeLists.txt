@@ -1,13 +1,4 @@
 
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/ )
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/ )
-
 if (UNIX)
   ADD_DEFINITIONS("-fPIC")
 endif()
@@ -15,13 +6,23 @@ endif()
 ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
 
 add_library(libspawn
+  emsactuator.hpp
+  emsactuator.cpp
+  input.hpp
+  input.cpp
+  outputtypes.hpp
+  outputvariable.hpp
+  outputvariable.cpp
   spawn.hpp
   spawn.cpp
-  outputtypes.hpp
   units.hpp
   units.cpp
   variables.hpp
   variables.cpp
+  schedule.hpp
+  schedule.cpp
+  zone.hpp
+  zone.cpp
 
   # EnergyPlus compiles these files into a DLL, but we would prefer to
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
@@ -34,7 +35,19 @@ add_library(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
-  )
+)
 
-target_link_libraries(libspawn PUBLIC energypluslib CONAN_PKG::boost)
+target_include_directories(libspawn
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
+)
+
+target_link_libraries(libspawn PUBLIC CONAN_PKG::boost spawn_utils)
 

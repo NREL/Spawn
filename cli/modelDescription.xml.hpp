@@ -1,3 +1,8 @@
+#ifndef modelDescription_hh_INCLUDED
+#define modelDescription_hh_INCLUDED
+
+#include <string>
+
 std::string modelDescriptionXMLText =
 R"END(
 <?xml version="1.0" encoding="UTF-8"?>
@@ -65,3 +70,4 @@ R"END(
 </fmiModelDescription>
 )END";
 
+#endif // modelDescription_hh_INCLUDED
