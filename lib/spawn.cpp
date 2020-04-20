@@ -56,9 +56,9 @@ int Spawn::start(const double & starttime) {
     try {
       auto result = RunEnergyPlus();
       std::unique_lock<std::mutex> lk(control_mutex);
-      epstatus = result ? EPStatus::ERROR : EPStatus::DONE;
+      epstatus = result ? ::spawn::EPStatus::ERROR : ::spawn::EPStatus::DONE;
     } catch(...) {
-      epstatus = EPStatus::ERROR;
+      epstatus = ::spawn::EPStatus::ERROR;
     }
     control_cv.notify_one();
   };
@@ -66,7 +66,7 @@ int Spawn::start(const double & starttime) {
   {
     std::unique_lock<std::mutex> lk(control_mutex);
     requestedTime = 0.0;
-    epstatus = EPStatus::ADVANCE;
+    epstatus = ::spawn::EPStatus::ADVANCE;
   }
 
   simthread = std::thread(simulation);
@@ -85,7 +85,7 @@ int Spawn::start(const double & starttime) {
 int Spawn::stop() {
   {
     std::unique_lock<std::mutex> lk(control_mutex);
-    epstatus = EPStatus::TERMINATE;
+    epstatus = ::spawn::EPStatus::TERMINATE;
   }
 
   try {
@@ -107,7 +107,7 @@ int Spawn::setTime(const double & time)
   if(requestedTime >= nextSimTime()) {
     {
       std::unique_lock<std::mutex> lk(control_mutex);
-      epstatus = EPStatus::ADVANCE;
+      epstatus = ::spawn::EPStatus::ADVANCE;
     }
 
     // Notify E+ to advance
@@ -348,11 +348,11 @@ int Spawn::controlWait() {
   // Wait until EnergyPlus is not Advancing or Terminating (ie in the process of cleanup)
   control_cv.wait( lk, [&](){
     return
-        (epstatus == EPStatus::NONE) ||
-        (epstatus == EPStatus::ERROR) ||
-        (epstatus == EPStatus::DONE);
+        (epstatus == ::spawn::EPStatus::NONE) ||
+        (epstatus == ::spawn::EPStatus::ERROR) ||
+        (epstatus == ::spawn::EPStatus::DONE);
   });
-  return epstatus == EPStatus::ERROR ? 1 : 0;
+  return epstatus == ::spawn::EPStatus::ERROR ? 1 : 0;
 }
 
 void Spawn::externalHVACManager() {
@@ -387,9 +387,9 @@ void Spawn::externalHVACManager() {
   // Signal the end of the step
   {
     std::unique_lock<std::mutex> lk(control_mutex);
-    if (epstatus != EPStatus::TERMINATE)
+    if (epstatus != ::spawn::EPStatus::TERMINATE)
     {
-     epstatus = EPStatus::NONE;
+     epstatus = ::spawn::EPStatus::NONE;
     }
   }
 
@@ -399,8 +399,8 @@ void Spawn::externalHVACManager() {
   std::unique_lock<std::mutex> lk(control_mutex);
   control_cv.wait(lk, [&]() {
     return (
-      (epstatus == EPStatus::ADVANCE) ||
-      (epstatus == EPStatus::TERMINATE)
+      (epstatus == ::spawn::EPStatus::ADVANCE) ||
+      (epstatus == ::spawn::EPStatus::TERMINATE)
     );
   });
 }
