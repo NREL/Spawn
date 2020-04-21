@@ -4,9 +4,11 @@
 #include "../util/dynamiclibrary.hpp"
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
+#include "../util/fmi_paths.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <fmi2FunctionTypes.h>
+#include <pugixml.hpp>
 
 namespace spawn {
 namespace fmu {
@@ -120,30 +122,58 @@ namespace fmu {
     {
     }
 
-    static boost::filesystem::path fmiBinaryFileName()
+    static boost::filesystem::path modelDescriptionPath()
     {
-      return "libepfmi.so";
+      return "modelDescription.xml";
     }
 
-    static boost::filesystem::path fmiBinaryPath()
-    {
-      return "linux64";
+    std::string modelIdentifier() const {
+      if (!m_model_description_parse_result) {
+        throw std::runtime_error(
+            fmt::format("Error parsing xml document: {}", m_model_description_parse_result.status));
+      }
+      const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
+      if (fmiModelDescription.empty()) {
+        throw std::runtime_error("fmiModelDescription not found");
+      }
+      const auto modelExchange = fmiModelDescription.child("ModelExchange");
+      if (modelExchange.empty()) {
+        throw std::runtime_error("ModelExchange not found");
+      }
+      const auto modelIdentifier = modelExchange.attribute("modelIdentifier");
+      if (modelIdentifier.empty()) {
+        throw std::runtime_error("attribute modelIdentifier not found");
+      }
+
+      return modelIdentifier.value();
     }
 
-    static boost::filesystem::path fmiBinaryFullPath()
+    boost::filesystem::path fmiBinaryFullPath() const
     {
-      return fmiBinaryPath() / fmiBinaryFileName();
+      return spawn::fmi_lib_path(modelIdentifier());
     }
+
+    const pugi::xml_document &modelDescription()
+    {
+      return m_model_description;
+    }
+
+
+
 
 
   private:
     boost::filesystem::path m_fmu_file;
     bool m_require_all_symbols;
     util::Temp_Directory m_tempDirectory{};
-    util::Unzipped_File m_unzipped_file{m_fmu_file, fmiBinaryFullPath(), m_tempDirectory.dir() / fmiBinaryFileName()};
+    util::Unzipped_File m_unzipped_xml{m_fmu_file, modelDescriptionPath(), m_tempDirectory.dir() / modelDescriptionPath()};
 
-  public:
-    FMI fmi{m_unzipped_file.unzippedFile(), m_require_all_symbols};
+    pugi::xml_document m_model_description;
+    pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file(m_unzipped_xml.unzippedFile().c_str())};
+    util::Unzipped_File m_unzipped_fmi{m_fmu_file, fmiBinaryFullPath(), m_tempDirectory.dir() / fmiBinaryFullPath()};
+
+ public:
+    FMI fmi{m_unzipped_fmi.unzippedFile(), m_require_all_symbols};
   };
 
 } // namespace fmu

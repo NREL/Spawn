@@ -1,5 +1,6 @@
 #include "../fmu/fmu.hpp"
 #include "testpaths.hpp"
+#include "spawn.hpp"
 #include <catch2/catch.hpp>
 
 TEST_CASE("Test loading of FMI")
@@ -26,4 +27,11 @@ TEST_CASE("Test loading of FMI missing symbols")
   REQUIRE(boost::filesystem::is_regular(fmi_file));
 
   REQUIRE_THROWS(spawn::fmu::FMI{fmi_load_test(), true});
+}
+
+TEST_CASE("Test loading of Spawn Generated FMU")
+{
+  const auto fmu_file = create_fmu();
+  spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
+  CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 }

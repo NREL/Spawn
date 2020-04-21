@@ -1,4 +1,5 @@
 add_library(spawn_utils
+        fmi_paths.hpp
         temp_directory.cpp
         temp_directory.hpp
         unzipped_file.cpp

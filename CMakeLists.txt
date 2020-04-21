@@ -77,6 +77,8 @@ add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )
 add_subdirectory( fmu )
+
+enable_testing()
 add_subdirectory( test )
 
 

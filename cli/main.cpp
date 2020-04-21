@@ -13,6 +13,7 @@
 #include <pugixml.hpp>
 #include <config.hxx>
 #include <boost/algorithm/string.hpp>
+#include "../util/fmi_paths.hpp"
 
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
@@ -220,41 +221,30 @@ int createFMU(const std::string &jsoninput, bool nozip, bool nocompress) {
 
   // Output paths
   constexpr auto iddfilename = "Energy+.idd";
-  auto fmuStaggingPath = fmupath.parent_path() / fmupath.stem();
-  auto modelDescriptionPath = fmuStaggingPath / "modelDescription.xml";
-  auto resourcesPath = fmuStaggingPath / "resources";
-  auto idfPath = resourcesPath / idfInputPath.filename();
-  auto epwPath = resourcesPath / epwInputPath.filename();
-  auto iddPath = resourcesPath / iddfilename;
-  auto spawnPath = resourcesPath / spawnInputPath.filename();
+  const auto fmuStaggingPath = fmupath.parent_path() / fmupath.stem();
+  const auto modelDescriptionPath = fmuStaggingPath / "modelDescription.xml";
+  const auto resourcesPath = fmuStaggingPath / "resources";
+  const auto idfPath = resourcesPath / idfInputPath.filename();
+  const auto epwPath = resourcesPath / epwInputPath.filename();
+  const auto iddPath = resourcesPath / iddfilename;
+  const auto spawnPath = resourcesPath / spawnInputPath.filename();
 
-  boost::filesystem::path epFMIDestPath;
-  boost::filesystem::path epFMISourcePath;
-  #ifdef __APPLE__
-    Dl_info info;
-    dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "../lib/libepfmi.dylib";
-    if (! boost::filesystem::exists(epFMISourcePath)) {
-      epFMISourcePath = exedir / "libepfmi.dylib";
-    }
-    epFMIDestPath = fmuStaggingPath / "binaries/darwin64/libepfmi.dylib";
-  #elif _WIN32
+  #ifdef _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    auto exedir = boost::filesystem::path(szPath).parent_path();
-    epFMISourcePath = exedir / "epfmi.dll";
-    epFMIDestPath = fmuStaggingPath / "binaries/win64/epfmi.dll";
+    const auto exedir = boost::filesystem::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
-    epFMISourcePath = exedir / "../lib/libepfmi.so";
-    if (! boost::filesystem::exists(epFMISourcePath)) {
-      epFMISourcePath = exedir / "libepfmi.so";
-    }
-    epFMIDestPath = fmuStaggingPath / "binaries/linux64/libepfmi.so";
+    const auto exedir = boost::filesystem::path(info.dli_fname).parent_path();
   #endif
+
+  auto epFMISourcePath = exedir / "../lib" / spawn::fmi_lib_filename("epfmi");
+  if (!boost::filesystem::exists(epFMISourcePath)) {
+    epFMISourcePath = exedir / spawn::fmi_lib_filename("epfmi");
+  }
+
+  const auto epFMIDestPath = fmuStaggingPath / spawn::fmi_lib_path("epfmi")  ;
 
   // This would be the configuration in an install tree
   if (! boost::filesystem::exists(iddInputPath)) {
