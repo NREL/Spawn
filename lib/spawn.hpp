@@ -62,7 +62,7 @@
 
 namespace spawn {
 
-enum class EPStatus { ADVANCE, NONE, TERMINATE, ERROR, DONE };
+enum class EPStatus { ADVANCE, NONE, TERMINATE, ERR, DONE };
 
 class Spawn {
 public:
