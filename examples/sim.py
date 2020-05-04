@@ -11,6 +11,11 @@ final_time = 60 * 10
 print("instantiate")
 model.instantiate(name='Model', visible=True)
 
+# It is important to set zone temperature before setup_experiment
+# in order for zones to be properly initialized during EnergyPlus warmup
+temp = 296.15
+model.set('Core_ZN_T', temp);
+
 print("setup_experiment")
 model.setup_experiment(start_time=start_time, stop_time=final_time)
 
@@ -45,7 +50,6 @@ for x in outputs.keys():
 # perform siulations
 t = start_time
 last_time = start_time
-temp = 296.15
 densityAir = 1.276; # kg/m^3
 heatCapacity = 1000.6; # J/kgK
 volume = model.get('Core_ZN_V')[0]

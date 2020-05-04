@@ -363,46 +363,37 @@ void Spawn::externalHVACManager() {
   EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints();
 
   // At this time, there is no data exchange or any other
-  // interaction with the FMU during wramup and sizing.
-  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
-    if(! EnergyPlus::DataGlobals::KickOffSimulation) {
-      updateZoneTemperatures(false); // false means don't skip connected zones, update all zones
-    }
-    return;
-  }
-
+  // interaction with the FMU while KickOffSimulation is true.
   if( EnergyPlus::DataGlobals::KickOffSimulation ) {
     return;
   }
 
+  // Exchange data with the FMU
+  exchange();
+
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
-  if( currentSimTime() < requestedTime ) {
-    // Exchange data so that FMU inputs are retained,
-    // because EnergyPlus may have overwrote an input value
-    exchange();
-    return;
-  }
-
-  // Signal the end of the step
-  {
-    std::unique_lock<std::mutex> lk(control_mutex);
-    if (epstatus != ::spawn::EPStatus::TERMINATE)
+  if( currentSimTime() >= requestedTime ) {
+    // Signal the end of the step
     {
-     epstatus = ::spawn::EPStatus::NONE;
+      std::unique_lock<std::mutex> lk(control_mutex);
+      if (epstatus != ::spawn::EPStatus::TERMINATE)
+      {
+       epstatus = ::spawn::EPStatus::NONE;
+      }
     }
+
+    control_cv.notify_one();
+
+    // Wait for the epstatus to advance again
+    std::unique_lock<std::mutex> lk(control_mutex);
+    control_cv.wait(lk, [&]() {
+      return (
+        (epstatus == ::spawn::EPStatus::ADVANCE) ||
+        (epstatus == ::spawn::EPStatus::TERMINATE)
+      );
+    });
   }
-
-  control_cv.notify_one();
-
-  // Wait for the epstatus to advance again
-  std::unique_lock<std::mutex> lk(control_mutex);
-  control_cv.wait(lk, [&]() {
-    return (
-      (epstatus == ::spawn::EPStatus::ADVANCE) ||
-      (epstatus == ::spawn::EPStatus::TERMINATE)
-    );
-  });
 }
 
 boost::filesystem::path exedir() {
