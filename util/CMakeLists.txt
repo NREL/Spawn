@@ -18,7 +18,7 @@ add_library(spawn_utils
 target_link_libraries(spawn_utils PUBLIC energypluslib CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
 
 target_include_directories(spawn_utils
-  PUBLIC
+  PRIVATE
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus

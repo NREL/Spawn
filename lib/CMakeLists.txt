@@ -38,7 +38,7 @@ add_library(libspawn
 )
 
 target_include_directories(libspawn
-  PUBLIC
+  PRIVATE
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
