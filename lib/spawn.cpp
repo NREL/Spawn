@@ -364,12 +364,20 @@ void Spawn::externalHVACManager() {
 
   // At this time, there is no data exchange or any other
   // interaction with the FMU while KickOffSimulation is true.
+  // Sensors and actuators may not be setup at this point, so exchange
+  // might trigger exceptions
   if( EnergyPlus::DataGlobals::KickOffSimulation ) {
     return;
   }
 
   // Exchange data with the FMU
   exchange();
+
+  // There is no interaction with the FMU during warmup,
+  // so return now before signaling
+  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
+    return;
+  }
 
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
