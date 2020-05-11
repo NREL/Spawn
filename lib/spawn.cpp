@@ -264,12 +264,12 @@ void Spawn::exchange()
   };
 
   const auto compSetActuatorValue = [](const std::string & key, const std::string & componenttype, const std::string & controltype, const Real64 & value) {
-    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    const auto & h = getActuatorHandle(componenttype.c_str(), controltype.c_str(), key.c_str());
     setActuatorValue(h, value);
   };
 
   const auto compResetActuator = [](const std::string & key, const std::string & componenttype, const std::string & controltype) {
-    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    const auto & h = getActuatorHandle(componenttype.c_str(), controltype.c_str(), key.c_str());
     resetActuator(h);
   };
 
