@@ -1,8 +1,8 @@
 {
   "version": "0.1",
   "EnergyPlus": {
-    "idf": "RefBldgSmallOfficeNew2004_Chicago.idf",
-    "weather": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
+    "idf": "../../submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf",
+    "weather": "../../submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
   },
   "fmu": {
       "name": "MyBuilding.fmu",
