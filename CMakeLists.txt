@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory( submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL )
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+# EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so reset to OFF
+set(CPACK_BINARY_IFW OFF)
 
 if(NOT GIT_FOUND)
   find_program(GIT_EXECUTABLE git HINTS "$ENV{LOCALAPPDATA}/Programs/git/bin")
