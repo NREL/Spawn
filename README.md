@@ -1,8 +1,8 @@
 # Spawn 
 
-_Version: ${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}_
+_Version: 0.0.1_
 
-_Build: ${CMAKE_PROJECT_VERSION_BUILD}_
+_Build: 316d0c8c19_
 
 
 This is the spawn executable. 

@@ -1,8 +1,6 @@
 set(CMAKE_CXX_STANDARD 17)
 
-SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
-
-set(jmodelica_path "${CMAKE_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica")
+#SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 
 find_library(liblapack NAMES liblapack.a liblapack.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaMatIO NAMES libModelicaMatIO.a libModelicaMatIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
@@ -115,20 +113,10 @@ embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelic
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/fmi2/ )
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR} )
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/ )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/ )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/ )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/ )
-#INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/ )
 
 set( src
   main.cpp
-  ziputil.hpp
-  ziputil.cpp
-  #${embedded_output}
+  ${embedded_output}
 )
 
 add_executable(spawn ${src})
@@ -141,9 +129,7 @@ target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
 target_link_libraries(spawn
 	libspawn
   energypluslib
-  CONAN_PKG::libzip
   CONAN_PKG::CLI11
-  CONAN_PKG::pugixml
   CONAN_PKG::boost
   CONAN_PKG::nlohmann_json
   LLVMOrcJIT

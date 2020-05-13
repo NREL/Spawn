@@ -122,6 +122,15 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 include(embedded/EmbedFiles.cmake)
 
+
+set(jmodelica_tar "Modelica-latest.tar.gz")
+file(DOWNLOAD https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
+execute_process(COMMAND ${CMAKE_COMMAND} -E
+  tar xz "${PROJECT_BINARY_DIR}/${jmodelica_tar}"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+)
+set(jmodelica_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux/")
+
 add_subdirectory( util )
 add_subdirectory( modelica )
 add_subdirectory( lib )
@@ -146,10 +155,11 @@ set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/b
 set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 
-#add_custom_target(
-#  Stage ALL
-#  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-#  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
+add_custom_target(
+  Stage ALL
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:modelica> $<TARGET_FILE_DIR:spawn>
+  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
 #  COMMAND ${CMAKE_COMMAND} -E copy_directory
 #          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
 #          "${PROJECT_BINARY_DIR}/modelica-buildings"
@@ -163,7 +173,7 @@ set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 #          $<TARGET_FILE:epfmi>
 #          "${modelica_lib_path}"
 #  COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
-#)
+)
 #if( INSTALL_BUILDINGS_LIBRARY )
 #  install(DIRECTORY submodules/modelica-buildings DESTINATION .)
 #  install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})

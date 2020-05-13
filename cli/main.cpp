@@ -1,14 +1,6 @@
-#include "modelDescription.xml.hpp"
-#include "ziputil.hpp"
-//#include "../lib/iddtypes.hpp"
-//#include "../lib/input.hpp"
-//#include "../lib/outputtypes.hpp"
-//#include "../lib/variables.hpp"
-//#include "../util/idf_to_json.hpp"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 #include "../compiler/compiler.hpp"
+#include "../util/platform.hpp"
+#include "../lib/fmugenerator.hpp"
 #include "cli/embedded_files.hxx"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
@@ -33,26 +25,6 @@
 #endif
 
 using json = nlohmann::json;
-
-json & adjustSimulationControl(json & jsonidf) {
-  constexpr auto simulationcontroltype = "SimulationControl";
-
-  // Remove the existing control first
-  jsonidf.erase(simulationcontroltype);
-
-  // This is what we need for spawn
-  jsonidf[simulationcontroltype] = {
-    {
-      "Spawn-SimulationControl", {
-        {"do_plant_sizing_calculation", "Yes"},
-        {"do_system_sizing_calculation","Yes"},
-        {"do_zone_sizing_calculation", "Yes"},
-        {"run_simulation_for_sizing_periods", "No"},
-        {"run_simulation_for_weather_file_run_periods", "Yes"}
-      }
-    }
-  };
-}
 
 boost::filesystem::path exeDir() {
   #ifdef __APPLE__
@@ -246,102 +218,6 @@ int compileModel(const std::string &moinput) {
   return result;
 }
 
-json & addRunPeriod(json & jsonidf) {
-  constexpr auto runperiodtype = "RunPeriod";
-  // Remove the existing run periods first
-  jsonidf.erase(runperiodtype);
-
-  // Add a new run period just for spawn
-  // 200 years should be plenty
-  jsonidf[runperiodtype] = {
-    {
-      "Spawn-RunPeriod", {
-        {"apply_weekend_holiday_rule", "No"},
-        {"begin_day_of_month", 1},
-        {"begin_month", 1},
-        {"begin_year", 2017},
-        {"day_of_week_for_start_day", "Sunday"},
-        {"end_day_of_month", 31},
-        {"end_month", 12},
-        {"end_year", 2217},
-        {"use_weather_file_daylight_saving_period", "No"},
-        {"use_weather_file_holidays_and_special_days", "No"},
-        {"use_weather_file_rain_indicators", "Yes"},
-        {"use_weather_file_snow_indicators", "Yes"}
-      }
-    }
-  };
-
-  return jsonidf;
-}
-
-//// Remove objects related to HVAC and controls
-//json & removeUnusedObjects(json & jsonidf) {
-//  for(auto typep = jsonidf.cbegin(); typep != jsonidf.cend();){
-//    if(std::find(std::begin(supportedIDDTypes), std::end(supportedIDDTypes), typep.key()) == std::end(supportedIDDTypes)) {
-//      typep = jsonidf.erase(typep);
-//    } else {
-//      ++typep;
-//    }
-//  }
-//
-//  // Remove unsupported output vars
-//  auto & outputvars = jsonidf.at("Output:Variable");
-//  for(auto var = outputvars.cbegin(); var != outputvars.cend();){
-//    const auto & name = var.value().at("variable_name").get<std::string>();
-//    const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
-//      [&](const std::pair<const char *, OutputProperties> & v) {
-//        return boost::iequals(v.first,name);
-//      });
-//
-//    if(findit == std::end(outputtypes)) {
-//      var = outputvars.erase(var);
-//    } else {
-//      ++var;
-//    }
-//  }
-//
-//  return jsonidf;
-//}
-//
-//// Add output variables requested in the spawn input file, but not in the idf
-//json & addOutputVariables(json & jsonidf, const std::vector<spawn::OutputVariable> & requestedvars) {
-//  // A pair that holds an output variable name and key,
-//  typedef std::pair<std::string, std::string> Varpair;
-//
-//  // Make a list of the requested outputs
-//  std::vector<Varpair> requestedpairs;
-//  for(const auto & var : requestedvars) {
-//    requestedpairs.emplace_back(var.idfname, var.idfkey);
-//  }
-//
-//  // And a list of the current output variables
-//  auto & currentvars = jsonidf["Output:Variable"];
-//  std::vector<Varpair> currentpairs;
-//  for(const auto & var : currentvars) {
-//    currentpairs.emplace_back(var.at("variable_name").get<std::string>(), var.at("key_value").get<std::string>());
-//  }
-//
-//  // Identify any missing pairs. ie. those that are requested but not in the idf
-//  std::vector<Varpair> missingpairs;
-//  std::sort(requestedpairs.begin(), requestedpairs.end());
-//  std::sort(currentpairs.begin(), currentpairs.end());
-//
-//  std::set_difference(requestedpairs.begin(), requestedpairs.end(),
-//      currentpairs.begin(), currentpairs.end(),
-//      std::back_inserter(missingpairs));
-//
-//  for( const auto & pair : missingpairs) {
-//    json newvar;
-//    newvar["variable_name"] = pair.first;
-//    newvar["key_value"] = pair.second;
-//    newvar["reporting_frequency"] = "Timestep";
-//    currentvars[pair.first + pair.second] = newvar;
-//  }
-//
-//  return jsonidf;
-//}
-
 boost::filesystem::path exedir() {
   #if _WIN32
     TCHAR szPath[MAX_PATH];
@@ -367,66 +243,17 @@ boost::filesystem::path iddInstallPath() {
   return iddInputPath;
 }
 
-std::string epfmiName() {
-  // Configure this using cmake
-  #ifdef __APPLE__
-    return "libepfmi.dylib";
-  #elif _WIN32
-    return "epfmi.dll";
-  #else
-    return "libepfmi.so";
-  #endif
-}
-
-std::string fmiplatform() {
-  #ifdef __APPLE__
-    return "darwin64";
-  #elif _WIN32
-    return "win64";
-  #else
-    return "linux64";
-  #endif
-}
-
 boost::filesystem::path epfmiInstallPath() {
-  const auto candidate = exedir() / ("../lib/" + epfmiName());
+  const auto candidate = exedir() / ("../lib/" + spawn::epfmiName());
   if (boost::filesystem::exists(candidate)) {
     return candidate;
   } else {
-    return exedir() / epfmiName();
+    return exedir() / spawn::epfmiName();
   }
-}
-
-void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath) {
-  pugi::xml_document doc;
-  doc.load_string(modelDescriptionXMLText.c_str());
-
-  auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
-
-  const auto variables = parseVariables(input);
-
-  for (const auto & varpair : variables) {
-    const auto var = varpair.second;
-
-    auto scalarVar = xmlvariables.append_child("ScalarVariable");
-    for (const auto & attribute : var.scalar_attributes) {
-      scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-    }
-
-    auto real = scalarVar.append_child("Real");
-    for (const auto & attribute : var.real_attributes) {
-      real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-    }
-  }
-
-  doc.save_file(savepath.c_str());
 }
 
 int main(int argc, const char *argv[]) {
   CLI::App app{"Spawn of EnergyPlus"};
-
-  bool nozip = false;
-  bool nocompress = false;
 
   std::string jsoninput = "spawn.json";
   auto createOption =
@@ -437,6 +264,7 @@ int main(int argc, const char *argv[]) {
   auto zipOption = app.add_flag("--no-zip", nozip, "Stage FMU files on disk without creating a zip archive");
   zipOption->needs(createOption);
 
+  bool nocompress = false;
   auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
   compressOption->needs(createOption);
 
@@ -449,15 +277,14 @@ int main(int argc, const char *argv[]) {
                      "Compile Modelica model to FMU format", true);
 
   CLI11_PARSE(app, argc, argv);
-    //return compileModel(moinput);
 
   if (*createOption) {
-    auto result = createFMU(jsoninput, nozip, nocompress);
+    auto result = spawn::generatefmu(jsoninput, nozip, nocompress, iddInstallPath(), epfmiInstallPath());
     if (result) {
       return result;
     }
   } else if (*compileOption) {
-    auto result = compileOption(moinput);
+    auto result = compileModel(moinput);
     if (result) {
       return result;
     }

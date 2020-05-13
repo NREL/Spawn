@@ -3,7 +3,6 @@
 
 #include "units.hpp"
 #include "zone.hpp"
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <string>
 #include <vector>
 #include <map>

@@ -1,6 +1,5 @@
 #include "EPFMI.hpp"
 #include "../lib/spawn.hpp"
-#include "../lib/variables.hpp"
 #include <fmi2Functions.h>
 #include <boost/filesystem.hpp>
 #include <list>

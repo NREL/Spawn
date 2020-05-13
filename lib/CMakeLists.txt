@@ -8,6 +8,8 @@ ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
 add_library(libspawn
   emsactuator.hpp
   emsactuator.cpp
+  fmugenerator.hpp
+  fmugenerator.cpp
   input.hpp
   input.cpp
   outputtypes.hpp
@@ -23,6 +25,8 @@ add_library(libspawn
   schedule.cpp
   zone.hpp
   zone.cpp
+  ziputil.hpp
+  ziputil.cpp
 
   # EnergyPlus compiles these files into a DLL, but we would prefer to
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
@@ -49,5 +53,12 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
 )
 
-target_link_libraries(libspawn PUBLIC CONAN_PKG::boost spawn_utils)
+target_link_libraries(libspawn
+  PUBLIC
+  CONAN_PKG::boost
+  spawn_utils
+  CONAN_PKG::libzip
+  CONAN_PKG::pugixml
+)
+
 

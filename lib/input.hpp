@@ -1,3 +1,6 @@
+#ifndef INPUT_HH_INCLUDED
+#define INPUT_HH_INCLUDED
+
 #include "emsactuator.hpp"
 #include "iddtypes.hpp"
 #include "outputtypes.hpp"
@@ -5,11 +8,6 @@
 #include "schedule.hpp"
 #include "variables.hpp"
 #include "zone.hpp"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
-//#include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
-//#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <boost/filesystem.hpp>
 #include <fstream>
 
@@ -52,4 +50,6 @@ private:
 };
 
 } // namespace spawn
+
+#endif // INPUT_HH_INCLUDED
 
