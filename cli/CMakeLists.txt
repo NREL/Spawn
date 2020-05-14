@@ -1,7 +1,5 @@
 set(CMAKE_CXX_STANDARD 17)
 
-#SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
-
 find_library(liblapack NAMES liblapack.a liblapack.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaMatIO NAMES libModelicaMatIO.a libModelicaMatIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaIO NAMES libModelicaIO.a libModelicaIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
@@ -132,7 +130,6 @@ target_link_libraries(spawn
   CONAN_PKG::CLI11
   CONAN_PKG::boost
   CONAN_PKG::nlohmann_json
-  LLVMOrcJIT
   compiler
   modelica
 )

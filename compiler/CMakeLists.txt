@@ -23,20 +23,16 @@ target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
 
 target_link_libraries(
   compiler
-  PUBLIC LLVMMCJIT
-         LLVMMIRParser
-         LLVMX86AsmParser
-         # LLVMX86AsmPrinter
-         LLVMX86CodeGen
-         libclang
-         clangBasic
-         clangLex
-         clangParse
-         clangCodeGen
-         clangFrontend
-         clangFrontendTool
-         CONAN_PKG::boost
-         CONAN_PKG::fmt)
+  PUBLIC
+  libclang
+  clangBasic
+  clangLex
+  clangParse
+  clangCodeGen
+  clangFrontend
+  clangFrontendTool
+  CONAN_PKG::boost
+  CONAN_PKG::fmt)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT

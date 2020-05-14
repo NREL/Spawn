@@ -74,19 +74,6 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 conan_add_remote(NAME bincrafters URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-#conan_cmake_run(REQUIRES
-#  bzip2/1.0.8@conan/stable
-#  zlib/1.2.11@conan/stable
-#  boost/1.69.0
-#  libzip/1.5.2@bincrafters/stable
-#  pugixml/1.9@bincrafters/stable
-#  CLI11/1.7.1@cliutils/stable
-#  catch2/2.11.3
-#  fmt/6.0.0
-#  BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
-#  BUILD missing
-#)
-
 conan_cmake_run(
   REQUIRES
   bzip2/1.0.8@conan/stable
@@ -158,7 +145,6 @@ set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 add_custom_target(
   Stage ALL
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:modelica> $<TARGET_FILE_DIR:spawn>
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
 #  COMMAND ${CMAKE_COMMAND} -E copy_directory
 #          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
