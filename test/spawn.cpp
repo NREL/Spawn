@@ -16,7 +16,7 @@ boost::filesystem::path create_fmu()
   if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
   }
-  return boost::filesystem::path{testcase1()}.parent_path() / boost::filesystem::path{"MyBuilding.fmu"};
+  return testdir() / "MyBuilding.fmu";
 }
 
 TEST_CASE( "Spawn shows help" ) {

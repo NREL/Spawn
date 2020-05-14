@@ -27,24 +27,36 @@
 
 using json = nlohmann::json;
 
-boost::filesystem::path exeDir() {
-  #ifdef __APPLE__
-    Dl_info info;
-    dladdr("main", &info);
-    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path())
-  #elif _WIN32
+boost::filesystem::path exedir() {
+  #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return boost::filesystem::canonical(boost::filesystem::path(szPath).parent_path());
+    return boost::filesystem::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path());
+    return boost::filesystem::path(info.dli_fname).parent_path();
   #endif
 }
 
+//boost::filesystem::path exedir() {
+//  #ifdef __APPLE__
+//    Dl_info info;
+//    dladdr("main", &info);
+//    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path())
+//  #elif _WIN32
+//    TCHAR szPath[MAX_PATH];
+//    GetModuleFileName(nullptr, szPath, MAX_PATH);
+//    return boost::filesystem::canonical(boost::filesystem::path(szPath).parent_path());
+//  #else
+//    Dl_info info;
+//    dladdr("main", &info);
+//    return boost::filesystem::canonical(boost::filesystem::path(info.dli_fname).parent_path());
+//  #endif
+//}
+
 bool isInstalled() {
-  return exeDir().stem() == "bin";
+  return exedir().stem() == "bin";
 }
 
 int compileMO(const std::string &moinput, const boost::filesystem::path & output_dir) {
@@ -53,8 +65,8 @@ int compileMO(const std::string &moinput, const boost::filesystem::path & output
     boost::filesystem::path jmodelica_home;
     boost::filesystem::path mbl_path;
     if (isInstalled()) {
-      jmodelica_home = exeDir() / "../JModelica/";
-      mbl_path = exeDir() / "../modelica-buildings/Buildings/";
+      jmodelica_home = exedir() / "../JModelica/";
+      mbl_path = exedir() / "../modelica-buildings/Buildings/";
     } else {
       boost::filesystem::path binary_dir(spawn::BINARY_DIR);
       jmodelica_home = binary_dir / "modelica/JModelica-prefix/src/JModelica/";
@@ -217,18 +229,6 @@ int compileModel(const std::string &moinput) {
   }
 
   return result;
-}
-
-boost::filesystem::path exedir() {
-  #if _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return boost::filesystem::path(szPath).parent_path();
-  #else
-    Dl_info info;
-    dladdr("main", &info);
-    return boost::filesystem::path(info.dli_fname).parent_path();
-  #endif
 }
 
 boost::filesystem::path iddInstallPath() {
