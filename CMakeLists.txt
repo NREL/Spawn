@@ -9,6 +9,8 @@ option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the 
 
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+# EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so reset to OFF
+set(CPACK_BINARY_IFW OFF)
 
 #set(CMAKE_CXX_STANDARD 17)
 

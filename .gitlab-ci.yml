@@ -14,7 +14,7 @@ build:ubuntu:
   script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
     - cmake ..
     - make -j2
   artifacts:

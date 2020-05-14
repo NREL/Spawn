@@ -265,12 +265,12 @@ void Spawn::exchange()
   };
 
   const auto compSetActuatorValue = [](const std::string & key, const std::string & componenttype, const std::string & controltype, const Real64 & value) {
-    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    const auto & h = getActuatorHandle(componenttype.c_str(), controltype.c_str(), key.c_str());
     setActuatorValue(h, value);
   };
 
   const auto compResetActuator = [](const std::string & key, const std::string & componenttype, const std::string & controltype) {
-    const auto & h = getActuatorHandle(key.c_str(), componenttype.c_str(), controltype.c_str());
+    const auto & h = getActuatorHandle(componenttype.c_str(), controltype.c_str(), key.c_str());
     resetActuator(h);
   };
 
@@ -365,12 +365,20 @@ void Spawn::externalHVACManager() {
 
   // At this time, there is no data exchange or any other
   // interaction with the FMU while KickOffSimulation is true.
+  // Sensors and actuators may not be setup at this point, so exchange
+  // might trigger exceptions
   if( EnergyPlus::DataGlobals::KickOffSimulation ) {
     return;
   }
 
   // Exchange data with the FMU
   exchange();
+
+  // There is no interaction with the FMU during warmup,
+  // so return now before signaling
+  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
+    return;
+  }
 
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
