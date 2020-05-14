@@ -261,6 +261,12 @@ int main(int argc, const char *argv[]) {
       app.add_option("-c,--create", jsoninput,
                      "Create a standalone FMU based on json input", true);
 
+  std::string outputpath;
+  auto outputPathOption =
+      app.add_option("-o,--output-path", outputpath,
+                     "Path where fmu should be placed", true);
+  outputPathOption->needs(createOption);
+
   bool nozip = false;
   auto zipOption = app.add_flag("--no-zip", nozip, "Stage FMU files on disk without creating a zip archive");
   zipOption->needs(createOption);
@@ -280,7 +286,7 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   if (*createOption) {
-    auto result = spawn::generatefmu(jsoninput, nozip, nocompress, iddInstallPath(), epfmiInstallPath());
+    auto result = spawn::generatefmu(jsoninput, nozip, nocompress, outputpath, iddInstallPath(), epfmiInstallPath());
     if (result) {
       return result;
     }

@@ -28,6 +28,7 @@ int generatefmu(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,
+  const std::string & outputpath,
   boost::filesystem::path iddpath,
   boost::filesystem::path epfmupath
 ) {
@@ -38,9 +39,16 @@ int generatefmu(
   // and rewrite the json input file paths so that they reflect the new paths
   // contained within the fmu layout.
 
+  auto outputroot = boost::filesystem::current_path();
+  if( ! outputpath.empty() ) {
+    if( boost::filesystem::exists(outputpath) ) {
+      outputroot = outputpath;
+    }
+  }
+
   // FMU staging paths
-  const auto fmuPath = input.basepath() / (input.fmuBaseName() + ".fmu");
-  const auto fmuStagingPath = input.basepath() / input.fmuBaseName();
+  const auto fmuPath = outputroot / (input.fmuBaseName() + ".fmu");
+  const auto fmuStagingPath = outputroot / input.fmuBaseName();
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
   const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();

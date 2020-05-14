@@ -1,6 +1,8 @@
 #include <string>
 #include <boost/filesystem/path.hpp>
 
+boost::filesystem::path testdir();
+
 std::string spawnexe();
 
 std::string testcase1();

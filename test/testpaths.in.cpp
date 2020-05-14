@@ -1,11 +1,15 @@
 #include "testpaths.hpp"
 
+boost::filesystem::path testdir() {
+  return "${CMAKE_CURRENT_BINARY_DIR}";
+}
+
 std::string spawnexe() {
   return "$<TARGET_FILE:spawn>";
 }
 
 std::string testcase1() {
-  return "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn";
+  return "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn";
 }
 
 boost::filesystem::path testzip() {
