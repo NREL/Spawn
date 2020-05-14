@@ -24,7 +24,7 @@ nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const std::vector<
 
 void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath);
 
-int generatefmu(
+int energyplusToFMU(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,

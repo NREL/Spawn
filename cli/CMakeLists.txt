@@ -114,6 +114,8 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
 
 set( src
   main.cpp
+  compilerchain.hpp
+  compilerchain.cpp
   ${embedded_output}
 )
 

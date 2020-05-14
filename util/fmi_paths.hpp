@@ -47,6 +47,7 @@ static boost::filesystem::path fmi_lib_path(const std::string &library_name)
 {
   return boost::filesystem::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
+
 }
 
 #endif // SPAWN_FMI_PATHS_HPP

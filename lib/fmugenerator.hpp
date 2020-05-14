@@ -6,7 +6,7 @@
 
 namespace spawn {
 
-int generatefmu(
+int energyplusToFMU(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,
