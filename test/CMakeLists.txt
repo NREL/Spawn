@@ -1,3 +1,11 @@
+# automatically enable catch2 to generate ctest targets
+if (CONAN_CATCH2_ROOT_DEBUG)
+  include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
+else ()
+  include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
+endif ()
+
+
 configure_file(testpaths.in.cpp testpaths.in2.cpp)
 
 
@@ -5,7 +13,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(fmi_load_test MODULE fmi_load_test.cpp)
 
-add_executable(test
+add_executable(tests
+        spawn.hpp
         spawn.cpp
         testpaths.hpp
         temp_directory.cpp
@@ -13,8 +22,10 @@ add_executable(test
         unzip_file.cpp
         fmi.cpp)
 
-add_dependencies(test fmi_load_test)
-target_link_libraries(test PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
+
+
+add_dependencies(tests fmi_load_test)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
 
 
 # Make this better
@@ -35,7 +46,7 @@ if(WIN32)
   target_link_libraries(testpaths-debug PUBLIC CONAN_PKG::boost)
   target_link_libraries(testpaths-release PUBLIC CONAN_PKG::boost)
 
-  target_link_libraries(test
+  target_link_libraries(tests
           PRIVATE
           debug testpaths-debug
           general testpaths-release
@@ -52,15 +63,14 @@ else()
 
   target_link_libraries(testpaths PUBLIC CONAN_PKG::boost)
 
-  target_link_libraries(test
+  target_link_libraries(tests
           PRIVATE
           testpaths
           )
 endif()
 
-add_executable(test_compiler test_compiler.cpp)
-target_link_libraries(test_compiler compiler LLVMOrcJIT)
-
-add_test(NAME test_compiler COMMAND test_compiler ${CMAKE_SOURCE_DIR}/test/go.c
-                                    ${CMAKE_SOURCE_DIR}/test/func.c)
+catch_discover_tests(
+        tests
+        TEST_PREFIX
+        "unittests.")
 

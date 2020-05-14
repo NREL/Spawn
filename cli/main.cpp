@@ -16,6 +16,7 @@
 #include <boost/algorithm/string.hpp>
 #include <modelica.h>
 #include <stdlib.h>
+#include "../util/fmi_paths.hpp"
 
 #if defined _WIN32
 #include <windows.h>

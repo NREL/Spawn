@@ -6,8 +6,8 @@
 std::string modelDescriptionXMLText =
 R"END(
 <?xml version="1.0" encoding="UTF-8"?>
-<fmiModelDescription fmiVersion="2.0" modelName="libepfmi" guid="7904aee5cf80e4c390084a983b3f5e1d">
-	<ModelExchange modelIdentifier="libepfmi" needsExecutionTool="false" completedIntegratorStepNotNeeded="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false" canGetAndSetFMUstate="false" canSerializeFMUstate="false" providesDirectionalDerivative="false" />
+<fmiModelDescription fmiVersion="2.0" modelName="epfmi" guid="7904aee5cf80e4c390084a983b3f5e1d">
+	<ModelExchange modelIdentifier="epfmi" needsExecutionTool="false" completedIntegratorStepNotNeeded="false" canBeInstantiatedOnlyOncePerProcess="true" canNotUseMemoryManagementFunctions="false" canGetAndSetFMUstate="false" canSerializeFMUstate="false" providesDirectionalDerivative="false" />
 	<UnitDefinitions>
 		<Unit name="1"/>
 		<Unit name="rad">

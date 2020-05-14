@@ -128,8 +128,8 @@ add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
 add_subdirectory( compiler )
-#add_subdirectory( test )
-#include(CTest)
+enable_testing()
+add_subdirectory( test )
 
 
 if( APPLE )
