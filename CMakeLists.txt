@@ -4,15 +4,16 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
-option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package"
-       FALSE)
+option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
+option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" TRUE)
+if(ENABLE_MODELICA_COMPILER)
+  add_definitions(-DENABLE_MODELICA_COMPILER)
+endif()
 
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so reset to OFF
 set(CPACK_BINARY_IFW OFF)
-
-#set(CMAKE_CXX_STANDARD 17)
 
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -120,8 +121,10 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E
 )
 set(jmodelica_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux/")
 
+if(ENABLE_MODELICA_COMPILER)
+  add_subdirectory( modelica )
+endif()
 add_subdirectory( util )
-add_subdirectory( modelica )
 add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )

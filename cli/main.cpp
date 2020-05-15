@@ -1,4 +1,3 @@
-#include "compilerchain.hpp"
 #include "../util/platform.hpp"
 #include "../lib/fmugenerator.hpp"
 #include <CLI/CLI.hpp>
@@ -20,6 +19,10 @@
 #else
 #include <stdio.h>
 #include <dlfcn.h>
+#endif
+
+#if defined ENABLE_MODELICA_COMPILER
+#include "compilerchain.hpp"
 #endif
 
 using json = nlohmann::json;
@@ -105,10 +108,12 @@ int main(int argc, const char *argv[]) {
   auto versionOption =
     app.add_flag("-v,--version", "Print version info and exit");
 
+#if defined ENABLE_MODELICA_COMPILER
   std::string moinput = "";
   auto compileOption =
       app.add_option("--compile", moinput,
                      "Compile Modelica model to FMU format", true);
+#endif
 
   CLI11_PARSE(app, argc, argv);
 
@@ -117,11 +122,13 @@ int main(int argc, const char *argv[]) {
     if (result) {
       return result;
     }
+#if defined ENABLE_MODELICA_COMPILER
   } else if (*compileOption) {
     auto result = spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
     if (result) {
       return result;
     }
+#endif
   } else if (*versionOption) {
     std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
   }

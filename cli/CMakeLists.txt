@@ -1,8 +1,6 @@
 set(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 
-set(jmodelica_path "${CMAKE_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica")
-
 find_library(liblapack NAMES liblapack.a liblapack.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaMatIO NAMES libModelicaMatIO.a libModelicaMatIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaIO NAMES libModelicaIO.a libModelicaIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
@@ -116,10 +114,15 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
 
 set( src
   main.cpp
-  compilerchain.hpp
-  compilerchain.cpp
   ${embedded_output}
 )
+
+if(ENABLE_MODELICA_COMPILER)
+  list(src APPEND
+    compilerchain.hpp
+    compilerchain.cpp
+  )
+endif()
 
 add_executable(spawn ${src})
 
@@ -134,9 +137,11 @@ target_link_libraries(spawn
   CONAN_PKG::CLI11
   CONAN_PKG::boost
   CONAN_PKG::nlohmann_json
-  compiler
-  modelica
 )
+
+if(ENABLE_MODELICA_COMPILER)
+  target_link_libraries(spawn compiler modelica)
+endif()
 
 install(TARGETS spawn DESTINATION bin)
 
