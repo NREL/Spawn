@@ -6,10 +6,15 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 
+#ifdef _MSC_VER
+#define EXPORT_SYMBOL __declspec(dllexport)
+#else
+#define EXPORT_SYMBOL
+#endif
 
 extern "C" {
 static int call_count = 0;
-void call() {
+EXPORT_SYMBOL void call() {
   ++call_count;
 }
 }

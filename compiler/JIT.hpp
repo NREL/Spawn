@@ -48,6 +48,8 @@ namespace spawn {
     {
       llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
       ES.getMainJITDylib().setGenerator(std::move(ProcessSymbolsGenerator));
+      // ignore different object layout warnings on MSVC
+      ObjectLayer.setOverrideObjectFlagsWithResponsibilityFlags(true);
     }
 
   public:

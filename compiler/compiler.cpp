@@ -45,9 +45,32 @@
 #include <stdio.h>
 #endif
 
+#include <codecvt>
 #include <iterator>
 
 #include "compiler.hpp"
+
+std::string toString(const std::wstring &utf16_string)
+{
+#if _MSC_VER >= 1900
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+  return convert.to_bytes(utf16_string.data(), utf16_string.data() + utf16_string.size());
+#else
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  const std::u16string u16string{utf16_string.begin(), utf16_string.end()};
+  return convert.to_bytes(u16string);
+#endif
+}
+
+std::string toString(const std::string &str)
+{
+  return str;
+}
+
+std::string toString(const boost::filesystem::path &path)
+{
+  return toString(path.native());
+}
 
 std::string getExecutablePath()
 {
@@ -77,16 +100,15 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
       std::begin(additional_libs),
       std::end(additional_libs),
       [&libargs](const auto & p) {
-        return libargs.append(p.native() + " ");
+        return libargs.append(toString(p) + " ");
       }
   );
 
-  system(fmt::format("ld -shared {} {} -o {} -shared", temporary_object_file_location.native(), libargs, loc.native()).c_str());
+  system(fmt::format("ld -shared {} {} -o {} -shared", toString(temporary_object_file_location), libargs, toString(loc)).c_str());
 }
 
 void Compiler::compile_and_link(const boost::filesystem::path &source)
 {
-
   auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
   if (!m_currentCompilation) {
@@ -121,7 +143,8 @@ void Compiler::write_object_file(const boost::filesystem::path &loc)
   llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_ObjectFile;
 
   std::error_code EC;
-  llvm::raw_fd_ostream destination(loc.c_str(), EC, llvm::sys::fs::OF_None);
+  std::string sloc = toString(loc);
+  llvm::raw_fd_ostream destination(sloc.c_str(), EC, llvm::sys::fs::OF_None);
 
   if (m_target_machine->addPassesToEmitFile(pass, destination, nullptr, ft)) {
     throw std::runtime_error("TargetMachine can't emit a file of this type");
@@ -137,7 +160,7 @@ public:
   Embedded_Headers()
   {
     for (const auto &file : spawnclang::embedded_files::fileNames()) {
-      spawnclang::embedded_files::extractFile(file, td.dir().native());
+      spawnclang::embedded_files::extractFile(file, toString(td.dir()));
     }
   }
   boost::filesystem::path include_path() const
@@ -162,28 +185,24 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
 
-  // Use ELF on windows for now.
-  std::string TripleStr = llvm::sys::getProcessTriple();
-  llvm::Triple T(TripleStr);
-  if (T.isOSBinFormatCOFF()) T.setObjectFormat(llvm::Triple::ELF);
-
-  clang::driver::Driver TheDriver(Path, T.str(), Diags);
+  // Examples say to use ELF on Windows, but that doesn't actually work, so we are not
+  clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
   Embedded_Headers embedded_headers;
   // a place for the strings to live
   std::vector<std::string> str_args;
-  str_args.push_back(source.native());
-  str_args.push_back("-I" + embedded_headers.include_path().native());
+  str_args.push_back(toString(source));
+  str_args.push_back("-I" + toString(embedded_headers.include_path()));
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
-    return "-I" + str.native();
+    return "-I" + toString(str);
   });
   str_args.push_back("-fsyntax-only");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));
-  str_args.push_back(source.native());
+  str_args.push_back(toString(source));
 
   // the strings to pass to the compiler driver
   clang::SmallVector<const char *, 64> Args; //(argv, argv + argc);

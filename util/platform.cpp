@@ -5,11 +5,11 @@ namespace spawn {
 std::string epfmiName() {
   // Configure this using cmake
   #ifdef __APPLE__
-    return "libepfmi.dylib";
+    return "epfmi.dylib";
   #elif _WIN32
     return "epfmi.dll";
   #else
-    return "libepfmi.so";
+    return "epfmi.so";
   #endif
 }
 

@@ -1,4 +1,7 @@
 set(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
+
+set(jmodelica_path "${CMAKE_BINARY_DIR}/modelica/JModelica-prefix/src/JModelica")
 
 find_library(liblapack NAMES liblapack.a liblapack.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
 find_library(libModelicaMatIO NAMES libModelicaMatIO.a libModelicaMatIO.lib PATHS "${jmodelica_path}/lib/RuntimeLibrary/")
@@ -83,7 +86,7 @@ foreach(filepath ${template_files})
   list(APPEND embedded_paths ${embedded_path})
 endforeach()
 
-## don't embed MSL for now
+# don't embed MSL for now
 #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
 #  "${jmodelica_path}/ThirdParty/MSL/**"
 #)
@@ -93,7 +96,6 @@ endforeach()
 #  list(APPEND embedded_files ${filepath})
 #  list(APPEND embedded_paths ${embedded_path})
 #endforeach()
-#
 # don't embed MBL for now
 #set(mbl_path "${CMAKE_BINARY_DIR}/modelica-buildings")
 #file(GLOB_RECURSE mbl_files FOLLOW_SYMLINKS
