@@ -27,16 +27,19 @@ The latest development builds are available at the following locations.
 
 * Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with one addition,
 
+* Install clang development libraries. One Linux this would be...
+```shell
+apt-get install libllvm8 llvm-8-dev clang-8 libclang-8-dev
+```
+
 ```shell
 pip install conan
 ```
 
-* Build and install version 9.0 of llvm and clang from source, https://gist.github.com/lefticus/d2069c0284d12a5882d85c78a890f5b8
-
-* Export environment variables to help locate llvm and clang
+* If neccessary add variables to locate llvm and clang. (not required for apt-get installed linux packages)
 ```shell
-export LLVM_DIR=/home/username/llvm/
-export Clang_DIR=/home/username/llvm/
+export LLVM_DIR=/path/to/llvm/
+export Clang_DIR=/path/to/clang/
 ```
 
 * Then follow the normal cmake build process.
