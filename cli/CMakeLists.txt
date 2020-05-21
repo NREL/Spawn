@@ -145,3 +145,16 @@ endif()
 
 install(TARGETS spawn DESTINATION bin)
 
+# This is only necessary if ENABLE_MODELICA_COMPILER, but shouldn't hurt in any case
+if(WIN32)
+  set(spawn_output_name "spawn.exe")
+else()
+  set(spawn_output_name "spawn")
+endif()
+install(CODE "
+    include(BundleUtilities)
+    set(install_path \"\${CMAKE_INSTALL_PREFIX}/bin/${spawn_output_name}\")
+    message(\"install_path: \${install_path}\")
+    fixup_bundle(\"\${install_path}\" \"\" \"\")
+")
+

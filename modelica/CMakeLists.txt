@@ -49,6 +49,13 @@ add_dependencies(
   modelica-lib
 )
 
-install(PROGRAMS ${modelica_lib_path} DESTINATION modelica)
+# can't install imported targets
+#install(TARGETS modelica RUNTIME DESTINATION bin)
+
+if(WIN32)
+  install(PROGRAMS ${modelica_lib_path} DESTINATION bin)
+else()
+  install(PROGRAMS ${modelica_lib_path} DESTINATION lib)
+endif()
 
 
