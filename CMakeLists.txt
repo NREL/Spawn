@@ -87,18 +87,15 @@ conan_cmake_run(
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
-  fmt/6.0.0@bincrafters/stable
+  fmt/6.2.1
   nlohmann_json/3.7.3
+  spdlog/1.6.0
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
   BUILD
   missing)
 
-find_package(LLVM REQUIRED CONFIG)
-find_package(Clang REQUIRED CONFIG)
-include_directories(${LLVM_INCLUDE_DIRS})
-include_directories(${CLANG_INCLUDE_DIRS})
 
 ###############################################################################
 # RPATH settings
@@ -131,6 +128,8 @@ add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
 add_subdirectory( compiler )
+add_subdirectory( examples )
+
 enable_testing()
 add_subdirectory( test )
 

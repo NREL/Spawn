@@ -1,9 +1,9 @@
 #include "unzipped_file.hpp"
+#include <boost/filesystem.hpp>
 #include <fmt/format.h>
 #include <fstream>
 #include <stdexcept>
 #include <zip.h>
-#include <boost/filesystem.hpp>
 
 namespace spawn {
 namespace util {
@@ -39,24 +39,53 @@ namespace util {
     return {f, zip_fclose};
   }
 
-  Unzipped_File::Unzipped_File(const boost::filesystem::path &zipFile,
-                               const boost::filesystem::path &fileToUnzip,
-                               boost::filesystem::path outputPath)
-      : m_unzippedFile{std::move(outputPath)}
+  std::vector<boost::filesystem::path> zipped_files(zip_t &zipFile)
   {
-    auto zip = open_zip(zipFile);
-    auto file = open_file(*zip, fileToUnzip);
+    std::vector<boost::filesystem::path> results;
 
-    constexpr auto buffer_size = 4096;
-    char buffer[buffer_size];
-    const auto read_bytes = [&]() { return zip_fread(file.get(), buffer, buffer_size); };
+    const auto file_count = zip_get_num_entries(&zipFile, 0);
 
-    boost::filesystem::create_directories(m_unzippedFile.parent_path());
-    std::ofstream ofs(m_unzippedFile.string(), std::ofstream::trunc | std::ofstream::binary);
-    for (zip_int64_t bytesread = read_bytes(); bytesread > 0; bytesread = read_bytes()) {
-      ofs.write(buffer, bytesread);
+    for (auto i = static_cast<decltype(file_count)>(0); i < file_count; ++i) {
+      const auto *name = zip_get_name(&zipFile, i, ZIP_FL_ENC_GUESS);
+      if (name != nullptr) {
+        results.emplace_back(name);
+      }
     }
+
+    return results;
   }
 
+  Unzipped_File::Unzipped_File(const boost::filesystem::path &zipFile,
+                               boost::filesystem::path outputDir,
+                               const std::vector<boost::filesystem::path> &filesToUnzip)
+      : m_outputDir{std::move(outputDir)}
+  {
+    auto zip = open_zip(zipFile);
+
+    const auto &files = [&]() {
+      if (!filesToUnzip.empty()) {
+        return filesToUnzip;
+      } else {
+        return zipped_files(*zip);
+      }
+    }();
+
+    for (const auto &fileToUnzip : files) {
+      auto file = open_file(*zip, fileToUnzip);
+      constexpr auto buffer_size = 4096;
+      char buffer[buffer_size];
+      const auto read_bytes = [&]() { return zip_fread(file.get(), buffer, buffer_size); };
+
+      const auto unzippedFile = m_outputDir / fileToUnzip;
+      boost::filesystem::create_directories(unzippedFile.parent_path());
+      std::ofstream ofs(unzippedFile.string(), std::ofstream::trunc | std::ofstream::binary);
+      for (zip_int64_t bytesread = read_bytes(); bytesread > 0; bytesread = read_bytes()) {
+        ofs.write(buffer, bytesread);
+      }
+
+      m_unzippedFiles.push_back(unzippedFile);
+    }
+
+  }
 } // namespace util
 } // namespace spawn

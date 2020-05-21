@@ -29,13 +29,13 @@ static std::string fmi_lib_ext()
 
 static std::string fmi_lib_prefix()
 {
-#ifdef __APPLE__
-  return "lib";
-#elif _WIN32
+// #ifdef __APPLE__
+//  return "lib";
+//#elif _WIN32
   return "";
-#else
-  return "lib";
-#endif
+//#else
+//  return "lib";
+//#endif
 }
 
 static std::string fmi_lib_filename(const std::string &library_name)
