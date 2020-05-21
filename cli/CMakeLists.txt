@@ -118,7 +118,7 @@ set( src
 )
 
 if(ENABLE_MODELICA_COMPILER)
-  list(src APPEND
+  list(APPEND src
     compilerchain.hpp
     compilerchain.cpp
   )
