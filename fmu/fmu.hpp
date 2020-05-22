@@ -16,7 +16,9 @@
 
 namespace spawn::fmu {
 
-  /// Represents an FMU file, with the associated FMI DynamicLibrary and all resources
+  /// Represents an FMU file, with the associated FMI2 DynamicLibrary and all resources
+  /// \todo Read project defaults from XML. Or maybe doe this in the ModelExchange?
+  ///       Whatever is comment between ModelExchange and CoSimulation should decide where it lives
   class FMU
   {
   public:
