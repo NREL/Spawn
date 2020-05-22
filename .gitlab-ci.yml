@@ -16,7 +16,7 @@ build:ubuntu:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON  ..
     - cmake ..
-    - make -j2
+    - make -j1
   artifacts:
     expire_in: 6 hrs
     paths:
