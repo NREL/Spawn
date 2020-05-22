@@ -1,10 +1,10 @@
-#include "fmi.hpp"
+#include "fmi2.hpp"
 
 namespace spawn {
 namespace fmu {
 
   template <typename Func>
-  bool load_function(util::Dynamic_Library &loader, FMI::Function<Func> &func, FMI::Load_Results &results)
+  bool load_function(util::Dynamic_Library &loader, FMI2::Function<Func> &func, FMI2::Load_Results &results)
   {
     try {
       const auto symbol = loader.load_symbol<Func>(func.name);
@@ -18,14 +18,14 @@ namespace fmu {
   }
 
   template <typename... Func>
-  [[nodiscard]] FMI::Load_Results load_functions(util::Dynamic_Library &loader, FMI::Function<Func> &... func)
+  [[nodiscard]] FMI2::Load_Results load_functions(util::Dynamic_Library &loader, FMI2::Function<Func> &... func)
   {
-    FMI::Load_Results results;
+    FMI2::Load_Results results;
     (void)std::initializer_list<bool>{(load_function(loader, func, results))...};
     return results;
   }
 
-  FMI::Load_Results FMI::loadFunctions(util::Dynamic_Library &loader) noexcept
+  FMI2::Load_Results FMI2::loadFunctions(util::Dynamic_Library &loader) noexcept
   {
     return load_functions(loader,
                           fmi2GetTypesPlatform,

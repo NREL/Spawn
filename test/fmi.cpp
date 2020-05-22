@@ -9,7 +9,7 @@ TEST_CASE("Test loading of FMI")
   REQUIRE(boost::filesystem::exists(fmi_file));
   REQUIRE(boost::filesystem::is_regular(fmi_file));
 
-  spawn::fmu::FMI fmi{fmi_load_test(), false};
+  spawn::fmu::FMI2 fmi{fmi_load_test(), false};
 
   REQUIRE(fmi.fmi2GetVersion.has_value());
 
@@ -26,7 +26,7 @@ TEST_CASE("Test loading of FMI missing symbols")
   REQUIRE(boost::filesystem::exists(fmi_file));
   REQUIRE(boost::filesystem::is_regular(fmi_file));
 
-  REQUIRE_THROWS(spawn::fmu::FMI{fmi_load_test(), true});
+  REQUIRE_THROWS(spawn::fmu::FMI2{fmi_load_test(), true});
 }
 
 TEST_CASE("Test loading of Spawn Generated FMU")

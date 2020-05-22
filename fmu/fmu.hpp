@@ -6,7 +6,7 @@
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
 
-#include "fmi.hpp"
+#include "fmi2.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <fmi2FunctionTypes.h>
@@ -14,12 +14,13 @@
 #include <optional>
 #include <pugixml.hpp>
 
-namespace spawn {
-namespace fmu {
+namespace spawn::fmu {
 
+  /// Represents an FMU file, with the associated FMI DynamicLibrary and all resources
   class FMU
   {
   public:
+    /// Represents a Variable in the modelDescription.xml contained in the FMU
     struct Variable
     {
       enum struct Type
@@ -37,7 +38,7 @@ namespace fmu {
         Local
       };
 
-      [[nodiscard]] constexpr std::string_view to_string(const Type type) const noexcept
+      [[nodiscard]] static constexpr std::string_view to_string(const Type type) noexcept
       {
         switch (type) {
         case Type::Real:
@@ -84,6 +85,7 @@ namespace fmu {
       return m_model_description;
     }
 
+    /// Loads all Variables in the given xml_document
     [[nodiscard]] static std::vector<Variable> variables(const pugi::xml_document &model_description);
 
     [[nodiscard]] const auto &getVariables() const noexcept
@@ -106,11 +108,10 @@ namespace fmu {
     std::vector<Variable> m_variables{variables(m_model_description)};
 
   public:
-    FMI fmi{m_unzipped_fmi.unzippedFiles().at(0), m_require_all_symbols};
+    FMI2 fmi{m_unzipped_fmi.unzippedFiles().at(0), m_require_all_symbols};
   };
 
 
-} // namespace fmu
 } // namespace spawn
 
 #endif
