@@ -6,6 +6,12 @@
 
 int main(const int argc, const char *argv[])
 {
+
+  // adapted from sim.py
+  // referenced:
+  //  * https://github.com/qtronic/fmusdk/blob/master/fmu20/src/model_exchange/main.c
+  //  * https://github.com/qtronic/fmusdk/blob/master/fmu20/src/co_simulation/main.c
+  //  * https://github.com/modelon-community/PyFMI/blob/9a737478b63b5c7d835eb1f9de4d5792108ca307/src/pyfmi/fmi.pyx
   spdlog::set_level(spdlog::level::trace);
   if (argc != 2) {
     spdlog::error("Usage: '{} <filename>'\n", argv[0]);
