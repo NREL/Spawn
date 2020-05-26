@@ -5,7 +5,7 @@ project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
-option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" TRUE)
+option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   add_definitions(-DENABLE_MODELICA_COMPILER)
 endif()
