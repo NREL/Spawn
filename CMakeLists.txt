@@ -12,6 +12,7 @@ endif()
 
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so reset to OFF
 set(CPACK_BINARY_IFW OFF)
 
@@ -95,10 +96,12 @@ conan_cmake_run(
   BUILD
   missing)
 
-find_package(LLVM REQUIRED CONFIG)
-find_package(Clang REQUIRED CONFIG)
-include_directories(${LLVM_INCLUDE_DIRS})
-include_directories(${CLANG_INCLUDE_DIRS})
+if(ENABLE_MODELICA_COMPILER)
+  find_package(LLVM REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  include_directories(${CLANG_INCLUDE_DIRS})
+endif()
 
 ###############################################################################
 # RPATH settings
@@ -121,16 +124,17 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E
 )
 set(jmodelica_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux/")
 
+add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory( modelica )
+  # The C compiler is unnecessary without modelica
+  add_subdirectory( compiler )
 endif()
-add_subdirectory( util )
 add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
-add_subdirectory( compiler )
 enable_testing()
 add_subdirectory( test )
 
