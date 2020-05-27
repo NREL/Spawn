@@ -34,7 +34,7 @@ static std::string fmi_lib_prefix()
 #elif _WIN32
   return "";
 #else
-  return "lib";
+  return "";
 #endif
 }
 
