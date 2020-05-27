@@ -30,7 +30,7 @@ static std::string fmi_lib_ext()
 static std::string fmi_lib_prefix()
 {
 #ifdef __APPLE__
-  return "lib";
+  return "";
 #elif _WIN32
   return "";
 #else
