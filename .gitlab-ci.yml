@@ -3,6 +3,7 @@ variables:
 
 stages:
   - build
+  - test
   - package
   - publish
   - release
@@ -22,12 +23,26 @@ build:ubuntu:
     paths:
       - build/
 
+test:ubuntu:
+  stage: test
+  tags:
+    - ubuntu
+  dependencies:
+    - build:ubuntu
+  script:
+    - cd build
+    - ctest -R  unittests
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
 package:ubuntu:
   stage: package
   tags:
     - ubuntu
   dependencies:
-    - build:ubuntu
+    - test:ubuntu
   script:
     - cd build
     - make package
@@ -75,12 +90,26 @@ build:windows:
    paths:
      - build/
 
+test:windows:
+  stage: test
+  tags:
+    - windows
+  dependencies:
+    - build:windows
+  script:
+    - cd build
+    - C:\Program` Files\CMake\bin\ctest.exe -R unittests
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
 package:windows:
   stage: package
   tags:
     - windows
   dependencies:
-    - build:windows
+    - test:windows
   script:
     - cd build
     - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target Package
@@ -126,12 +155,26 @@ build:mac:
    paths:
      - build/
 
+test:mac:
+  stage: test
+  tags:
+    - mac
+  dependencies:
+    - build:mac
+  script:
+    - cd build
+    - test -R unittests
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
 package:mac:
   stage: package
   tags:
     - mac
   dependencies:
-    - build:mac
+    - test:mac
   script:
     - cd build
     - make package
