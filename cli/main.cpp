@@ -70,7 +70,8 @@ boost::filesystem::path jmodelicaHome() {
     return exedir() / "../JModelica/";
   } else {
     boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-    return binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+    //return binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+    return binary_dir / "JModelica/";
   }
 }
 

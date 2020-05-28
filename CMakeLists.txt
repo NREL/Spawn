@@ -96,13 +96,6 @@ conan_cmake_run(
   BUILD
   missing)
 
-if(ENABLE_MODELICA_COMPILER)
-  find_package(LLVM REQUIRED CONFIG)
-  find_package(Clang REQUIRED CONFIG)
-  include_directories(${LLVM_INCLUDE_DIRS})
-  include_directories(${CLANG_INCLUDE_DIRS})
-endif()
-
 ###############################################################################
 # RPATH settings
 # Conan set this to true, which is not the cmake default and not what we want
@@ -115,14 +108,54 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 include(embedded/EmbedFiles.cmake)
 
+if(ENABLE_MODELICA_COMPILER)
+  find_package(LLVM REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  include_directories(${CLANG_INCLUDE_DIRS})
 
-set(jmodelica_tar "Modelica-latest.tar.gz")
-file(DOWNLOAD https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
-execute_process(COMMAND ${CMAKE_COMMAND} -E
-  tar xz "${PROJECT_BINARY_DIR}/${jmodelica_tar}"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-)
-set(jmodelica_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux/")
+  if(APPLE)
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  elseif(UNIX)
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  else()
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  endif()
+
+  set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/${jmodelica_tar}")
+  set(jmodelica_download_path "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
+  set(jmodelica_path "${PROJECT_BINARY_DIR}/JModelica/")
+
+  set(download_jmodelica TRUE)
+
+  if(EXISTS ${jmodelica_download_path})
+    file(MD5 ${jmodelica_download_path} jmodelica_current_md5)
+    if(${jmodelica_current_md5} EQUAL ${jmodelica_md5})
+      if(EXISTS ${jmodelica_path})
+        set(download_jmodelica FALSE)
+      endif()
+    endif()
+  endif()
+
+  if(download_jmodelica)
+    file(DOWNLOAD ${jmodelica_url} ${jmodelica_download_path})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+      tar xz ${jmodelica_download_path}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+      rename ${jmodelica_extracted_path} ${jmodelica_path}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+  endif()
+endif()
 
 add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)

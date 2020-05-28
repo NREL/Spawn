@@ -29,7 +29,7 @@ if(ENABLE_MODELICA_COMPILER)
   find_library(libsundials_arkode NAMES libsundials_arkode.a libsundials_arkode.lib PATHS "${jmodelica_path}/ThirdParty/Sundials/lib/")
   find_library(libsundials_cvode NAMES libsundials_cvode.a libsundials_cvode.lib PATHS "${jmodelica_path}/ThirdParty/Sundials/lib/")
   find_library(libsundials_kinsol NAMES libsundials_kinsol.a libsundials_kinsol.lib PATHS "${jmodelica_path}/ThirdParty/Sundials/lib/")
-  
+
   list(APPEND modelica_libs
     ${liblapack}
     ${libModelicaMatIO}
@@ -55,7 +55,7 @@ if(ENABLE_MODELICA_COMPILER)
     ${libsundials_cvode}
     ${libsundials_kinsol}
   )
-  
+
   foreach(filepath ${modelica_libs})
     if(filepath)
       file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
@@ -65,30 +65,30 @@ if(ENABLE_MODELICA_COMPILER)
       message(FATAL_ERROR ${filepath})
     endif()
   endforeach()
-  
+
   file(GLOB_RECURSE header_files FOLLOW_SYMLINKS
     "${jmodelica_path}/include/**/*.h"
     "${jmodelica_path}/ThirdParty/FMI/2.0/**/*.h"
     "${jmodelica_path}/ThirdParty/FMI/2.0/*.h"
   )
-  
+
   foreach(filepath ${header_files})
     file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
     list(APPEND embedded_files ${filepath})
     list(APPEND embedded_paths ${embedded_path})
   endforeach()
-  
+
   file(GLOB_RECURSE code_gen_files FOLLOW_SYMLINKS
     "${jmodelica_path}/CodeGenTemplates/**"
     "${jmodelica_path}/XML/**"
   )
-  
+
   foreach(filepath ${template_files})
     file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
     list(APPEND embedded_files ${filepath})
     list(APPEND embedded_paths ${embedded_path})
   endforeach()
-  
+
   # don't embed MSL for now
   #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
   #  "${jmodelica_path}/ThirdParty/MSL/**"
@@ -110,7 +110,7 @@ if(ENABLE_MODELICA_COMPILER)
   #  list(APPEND embedded_files ${filepath})
   #  list(APPEND embedded_paths ${embedded_path})
   #endforeach()
-  
+
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src
