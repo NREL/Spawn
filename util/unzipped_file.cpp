@@ -26,7 +26,7 @@ namespace util {
 
   std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, const boost::filesystem::path &path)
   {
-    auto *f = zip_fopen(&zipFile, path.string().c_str(), 0);
+    auto *f = zip_fopen(&zipFile, path.generic_string().c_str(), 0);
 
     if (f == nullptr) {
       auto *err = zip_get_error(&zipFile);
