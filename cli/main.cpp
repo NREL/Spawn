@@ -70,7 +70,6 @@ boost::filesystem::path jmodelicaHome() {
     return exedir() / "../JModelica/";
   } else {
     boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-    //return binary_dir / "modelica/JModelica-prefix/src/JModelica/";
     return binary_dir / "JModelica/";
   }
 }
@@ -79,8 +78,8 @@ boost::filesystem::path mblPath() {
   if (isInstalled()) {
     return exedir() / "../modelica-buildings/Buildings/";
   } else {
-    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-    return binary_dir / "modelica-buildings/Buildings/";
+    boost::filesystem::path source_dir(spawn::SOURCE_DIR);
+    return source_dir / "submodules/modelica-buildings/Buildings/";
   }
 }
 
