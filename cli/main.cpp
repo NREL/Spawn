@@ -83,6 +83,16 @@ boost::filesystem::path mblPath() {
   }
 }
 
+void handle_eptr(std::exception_ptr eptr) {
+  try {
+    if (eptr) {
+      std::rethrow_exception(eptr);
+    }
+  } catch(const std::exception& e) {
+    std::cout << "Spawn encountered an error: \n\"" << e.what() << "\"\n";
+  }
+}
+
 int main(int argc, const char *argv[]) {
   CLI::App app{"Spawn of EnergyPlus"};
 
@@ -93,9 +103,18 @@ int main(int argc, const char *argv[]) {
 
   std::string outputpath;
   auto outputPathOption =
-      app.add_option("-o,--output-path", outputpath,
-                     "Path where fmu should be placed", true);
+      app.add_option("--output-path", outputpath,
+                     "Full path including filename and extension where the fmu should be placed. Intermediate directories will be created if necessary", true);
   outputPathOption->needs(createOption);
+
+  std::string outputdir;
+  auto outputDirOption =
+      app.add_option("--output-dir", outputdir,
+                     "Directory where the fmu should be placed. This path will be created if necessary", true);
+  outputDirOption->needs(createOption);
+
+  outputDirOption->excludes(outputPathOption);
+  outputPathOption->excludes(outputDirOption);
 
   bool nozip = false;
   auto zipOption = app.add_flag("--no-zip", nozip, "Stage FMU files on disk without creating a zip archive");
@@ -117,22 +136,26 @@ int main(int argc, const char *argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  if (*createOption) {
-    auto result = spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, iddInstallPath(), epfmiInstallPath());
-    if (result) {
-      return result;
-    }
+  std::exception_ptr eptr;
+  try {
+    if (*createOption) {
+      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER
-  } else if (*compileOption) {
-    auto result = spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
-    if (result) {
-      return result;
-    }
+    } else if (*compileOption) {
+      spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
 #endif
-  } else if (*versionOption) {
-    std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*versionOption) {
+      std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    }
+  } catch(...) {
+    eptr = std::current_exception();
   }
 
-  return 0;
+  if (eptr) {
+    handle_eptr(eptr);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 

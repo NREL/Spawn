@@ -24,11 +24,12 @@ nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const std::vector<
 
 void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath);
 
-int energyplusToFMU(
+void energyplusToFMU(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,
   const std::string & outputpath,
+  const std::string & outputdir,
   boost::filesystem::path iddpath,
   boost::filesystem::path epfmupath
 ) {
@@ -39,16 +40,23 @@ int energyplusToFMU(
   // and rewrite the json input file paths so that they reflect the new paths
   // contained within the fmu layout.
 
-  auto outputroot = boost::filesystem::current_path();
+  // The default fmu output path
+  auto fmuPath = boost::filesystem::current_path() / (input.fmuBaseName() + ".fmu");
+
+  // These are options to override the default output path
   if( ! outputpath.empty() ) {
-    if( boost::filesystem::exists(outputpath) ) {
-      outputroot = outputpath;
-    }
+    fmuPath = boost::filesystem::path(outputpath);
+  } else if( ! outputdir.empty() ) {
+    fmuPath = boost::filesystem::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
-  // FMU staging paths
-  const auto fmuPath = outputroot / (input.fmuBaseName() + ".fmu");
-  const auto fmuStagingPath = outputroot / input.fmuBaseName();
+  const auto outputroot = fmuPath.parent_path();
+  const auto fmuStagingPath = outputroot / fmuPath.stem();
+
+  if( ! boost::filesystem::exists(outputroot) ) {
+    boost::filesystem::create_directories(outputroot);
+  }
+
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
   const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();
@@ -87,8 +95,6 @@ int energyplusToFMU(
   if (! nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
   }
-
-  return 0;
 }
 
 json idfToJSON(const boost::filesystem::path & idfpath) {

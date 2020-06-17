@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <list>
 #include <regex>
+#include <signal.h>
 
 using namespace std::placeholders;
 
@@ -20,19 +21,22 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   fmi2Boolean loggingOn)
 {
   UNUSED(fmuType);
-  UNUSED(fmuGUID);
   UNUSED(visible);
-  UNUSED(functions);
-  UNUSED(loggingOn);
 
   const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
   const auto resourcePath = boost::filesystem::path(resourcePathString);
   const auto spawnJSONPath = resourcePath / "../model.spawn";
 
-  spawns.emplace_back(instanceName,spawnJSONPath.string());
+  spawns.emplace_back(fmuGUID, spawnJSONPath.string());
   auto & comp = spawns.back();
-  //comp.logger = functions->logger;
-  //comp.loggingOn = loggingOn;
+
+	if (loggingOn) {
+		const auto & logger = [functions, instanceName](const std::string & message) {
+			const auto & env = functions->componentEnvironment;
+			functions->logger(env, instanceName, fmi2Error, "EnergyPlus Error", message.c_str());
+		};
+		comp.setLogCallback(logger);
+	}
 
   return &comp;
 }
