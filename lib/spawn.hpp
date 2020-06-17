@@ -51,6 +51,7 @@
 #include "input.hpp"
 #include "variables.hpp"
 #include "zone.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
@@ -59,6 +60,7 @@
 #include <mutex>
 #include <sstream>
 #include <condition_variable>
+#include <functional>
 
 namespace spawn {
 
@@ -101,6 +103,8 @@ public:
   bool stopTimeDefined;
   double stopTime;
 
+  void setLogCallback(std::function<void(const std::string &)> cb);
+
 private:
   // Wait for the EnergyPlus thread from the control thread
   // Return 0 on success
@@ -123,6 +127,7 @@ private:
   void updateZoneTemperatures(bool skipConnectedZones = false);
 
   void externalHVACManager();
+  void energyPlusErrorHandler(const char * errorMessage);
 
   double requestedTime;
   std::thread simthread;
@@ -139,6 +144,10 @@ private:
 
   std::map<unsigned int, Variable> variables;
   Input input;
+
+  std::function<void(const std::string &)> logCallback;
+
+  EnergyPlus::EnergyPlusData state;
 };
 
 boost::filesystem::path exedir();

@@ -42,6 +42,10 @@ add_library(libspawn
 )
 
 target_include_directories(libspawn
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
   PRIVATE
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/

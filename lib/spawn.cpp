@@ -51,11 +51,12 @@ int Spawn::start(const double & starttime) {
     argv[6] = iddPath.c_str();
     argv[7] = idfPath.c_str();
 
-    EnergyPlus::CommandLineInterface::ProcessArgs( argc, argv );
+    EnergyPlus::CommandLineInterface::ProcessArgs( state, argc, argv );
     EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
+    //EnergyPlus::DataGlobals::errorCallback = std::bind(&Spawn::energyPlusErrorHandler, this, std::placeholders::_1);
 
     try {
-      auto result = RunEnergyPlus();
+      auto result = RunEnergyPlus(state);
       std::unique_lock<std::mutex> lk(control_mutex);
       epstatus = result ? EPStatus::ERR : EPStatus::DONE;
     } catch(...) {
@@ -316,7 +317,7 @@ void Spawn::exchange()
 
   // Run some internal EnergyPlus functions to update outputs
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp();
-  EnergyPlus::InternalHeatGains::InitInternalHeatGains();
+  EnergyPlus::InternalHeatGains::InitInternalHeatGains(state);
 
   // Now update the outputs
   for( auto & varmap : variables ) {
@@ -403,6 +404,16 @@ void Spawn::externalHVACManager() {
       );
     });
   }
+}
+
+void Spawn::energyPlusErrorHandler(const char * errorMessage) {
+  if (logCallback) {
+    logCallback(errorMessage);
+  }
+}
+
+void Spawn::setLogCallback(std::function<void(const std::string &)> cb) {
+  logCallback = cb;
 }
 
 boost::filesystem::path exedir() {
