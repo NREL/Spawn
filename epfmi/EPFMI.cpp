@@ -31,9 +31,27 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   auto & comp = spawns.back();
 
 	if (loggingOn) {
-		const auto & logger = [functions, instanceName](const std::string & message) {
+		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+
+      static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
+
+      std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
+        {EnergyPlus::Error::Info, fmi2OK},
+        {EnergyPlus::Error::Warning, fmi2Warning},
+        {EnergyPlus::Error::Severe, fmi2Error},
+        {EnergyPlus::Error::Fatal, fmi2Fatal}
+      };
+
+      if (level == EnergyPlus::Error::Continue) {
+        level = lastError;
+      } else {
+        lastError = level;
+      }
+
+      const auto fmilevel = logLevelMap[level];
 			const auto & env = functions->componentEnvironment;
-			functions->logger(env, instanceName, fmi2Error, "EnergyPlus Error", message.c_str());
+
+			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
 		};
 		comp.setLogCallback(logger);
 	}

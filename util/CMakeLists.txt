@@ -18,7 +18,7 @@ add_library(spawn_utils
         dynamiclibrary_posix.hpp
         )
 
-target_link_libraries(spawn_utils PUBLIC energypluslib CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
+target_link_libraries(spawn_utils PUBLIC energyplusapi CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
 
 target_include_directories(spawn_utils
   PRIVATE

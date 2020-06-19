@@ -3,6 +3,7 @@
 #include "input.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/func.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataEnvironment.hh"
@@ -52,8 +53,8 @@ int Spawn::start(const double & starttime) {
     argv[7] = idfPath.c_str();
 
     EnergyPlus::CommandLineInterface::ProcessArgs( state, argc, argv );
+    registerErrorCallback(std::bind(&Spawn::energyPlusErrorHandler, this, std::placeholders::_1, std::placeholders::_2));
     EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
-    //EnergyPlus::DataGlobals::errorCallback = std::bind(&Spawn::energyPlusErrorHandler, this, std::placeholders::_1);
 
     try {
       auto result = RunEnergyPlus(state);
@@ -406,13 +407,13 @@ void Spawn::externalHVACManager() {
   }
 }
 
-void Spawn::energyPlusErrorHandler(const char * errorMessage) {
+void Spawn::energyPlusErrorHandler(EnergyPlus::Error level, const std::string & message) {
   if (logCallback) {
-    logCallback(errorMessage);
+    logCallback(level, message);
   }
 }
 
-void Spawn::setLogCallback(std::function<void(const std::string &)> cb) {
+void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb) {
   logCallback = cb;
 }
 

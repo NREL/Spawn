@@ -10,6 +10,7 @@ if(ENABLE_MODELICA_COMPILER)
   add_definitions(-DENABLE_MODELICA_COMPILER)
 endif()
 
+set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 

@@ -103,7 +103,7 @@ public:
   bool stopTimeDefined;
   double stopTime;
 
-  void setLogCallback(std::function<void(const std::string &)> cb);
+  void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
 
 private:
   // Wait for the EnergyPlus thread from the control thread
@@ -127,7 +127,7 @@ private:
   void updateZoneTemperatures(bool skipConnectedZones = false);
 
   void externalHVACManager();
-  void energyPlusErrorHandler(const char * errorMessage);
+  void energyPlusErrorHandler(EnergyPlus::Error, const std::string & message);
 
   double requestedTime;
   std::thread simthread;
@@ -145,7 +145,7 @@ private:
   std::map<unsigned int, Variable> variables;
   Input input;
 
-  std::function<void(const std::string &)> logCallback;
+  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
 
   EnergyPlus::EnergyPlusData state;
 };
