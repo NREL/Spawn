@@ -127,6 +127,7 @@ private:
   void updateZoneTemperatures(bool skipConnectedZones = false);
 
   void externalHVACManager();
+  void initZoneEquip();
   void energyPlusErrorHandler(EnergyPlus::Error, const std::string & message);
 
   double requestedTime;

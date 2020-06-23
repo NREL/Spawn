@@ -11,6 +11,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalFanSys.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataRuntimeLanguage.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataZoneEquipment.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/HeatBalanceAirManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InternalHeatGains.hh"
@@ -358,12 +359,22 @@ int Spawn::controlWait() {
   return epstatus == EPStatus::ERR ? 1 : 0;
 }
 
+void Spawn::initZoneEquip() {
+  if (!EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled) {
+    EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(state);
+    EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled = true;
+  }
+}
+
 void Spawn::externalHVACManager() {
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once
   // during the simulation
   EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints();
+
+  // Likewise init zone equipment one time
+  initZoneEquip();
 
   // At this time, there is no data exchange or any other
   // interaction with the FMU while KickOffSimulation is true.
