@@ -34,6 +34,7 @@ TEST_CASE( "Spawn creates an FMU" ) {
   CHECK(boost::filesystem::file_size(created_fmu) > 0);
 }
 
+#if defined ENABLE_MODELICA_COMPILER
 TEST_CASE( "Spawn is able to compile a simple Modelica model" ) {
   const auto cmd = spawnexe() + " --compile Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
   const auto result = system(cmd.c_str());
@@ -48,6 +49,7 @@ TEST_CASE( "Spawn is able to compile a Modelica model that uses external functio
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
+#endif
 
 /**
 TEST_CASE( "Spawn simulates an FMU" ) {
