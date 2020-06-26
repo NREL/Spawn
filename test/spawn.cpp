@@ -45,7 +45,7 @@ TEST_CASE( "Spawn is able to compile a simple Modelica model" ) {
 }
 
 TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions" ) {
-  const auto cmd = spawnexe() + " --compile Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZone";
+  const auto cmd = spawnexe() + " --compile Buildings.ThermalZones.EnergyPlus.Validation.OneZone";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }

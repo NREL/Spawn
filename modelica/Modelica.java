@@ -38,38 +38,41 @@ public class Modelica {
     options.setStringOption("fmu_type", "FMUME20");
 
     ModelicaCompiler mc = new ModelicaCompiler(options);
+
+    SpawnCompilerDelegator.register();
+
     mc.setDebugSrcIsHome(true);
     mc.setOutDir(new File(output_dir));
     mc.setLogger("d:" + output_dir + "/out.log");
     mc.setModelicapath(mslPath);
     ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
 
-		try {
-    	System.out.println("Parse Model");
-			SourceRoot sr = mc.parseModel(modelpaths);
-    	System.out.println("Instantiate Model");
-		  InstClassDecl mo = mc.instantiateModel(sr,modelid,to);
-    	System.out.println("Flatten Model");
-			FClass flatMO = mc.flattenModel(mo,to,modelid);
-    	System.out.println("Generate C Code");
-			mc.generateCode(flatMO,to);
-		} catch (beaver.Parser.Exception e) {
-    	System.out.println("Beaver parser Exception");
-		} catch (CompilerException e) {
-    	System.out.println("Compiler Exception");
-    	System.out.println(e.getMessage());
-		} catch (FileNotFoundException e) {
-    	System.out.println("File Not found Exception");
-		} catch (IOException e) {
-    	System.out.println("IO Exception");
-		} catch (ModelicaClassNotFoundException e) {
-    	System.out.println("Class not found");
-    	System.out.println(e.getMessage());
-		} catch (java.lang.Exception e) {
-    	System.out.println("Trouble during Modelica Compiling");
-    	System.out.println(e.getMessage());
-    	System.out.println("****");
-		}
+    try {
+      System.out.println("Parse Model");
+      SourceRoot sr = mc.parseModel(modelpaths);
+      System.out.println("Instantiate Model");
+      InstClassDecl mo = mc.instantiateModel(sr,modelid,to);
+      System.out.println("Flatten Model");
+      FClass flatMO = mc.flattenModel(mo,to,modelid);
+      System.out.println("Generate C Code");
+      mc.generateCode(flatMO,to);
+    } catch (beaver.Parser.Exception e) {
+      System.out.println("Beaver parser Exception");
+    } catch (CompilerException e) {
+      System.out.println("Compiler Exception");
+      System.out.println(e.getMessage());
+    } catch (FileNotFoundException e) {
+      System.out.println("File Not found Exception");
+    } catch (IOException e) {
+      System.out.println("IO Exception");
+    } catch (ModelicaClassNotFoundException e) {
+      System.out.println("Class not found");
+      System.out.println(e.getMessage());
+    } catch (java.lang.Exception e) {
+      System.out.println("Trouble during Modelica Compiling");
+      System.out.println(e.getMessage());
+      System.out.println("****");
+    }
   } 
 }
 
