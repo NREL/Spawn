@@ -134,6 +134,12 @@ int main(int argc, const char *argv[]) {
                      "Compile Modelica model to FMU format", true);
 #endif
 
+  auto cCompiler = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
+  auto makeExternal = app.add_subcommand("-f", "compile a Modelica external function, acting like 'make'");
+  makeExternal->prefix_command();
+
+
+
   CLI11_PARSE(app, argc, argv);
 
   std::exception_ptr eptr;
@@ -146,6 +152,8 @@ int main(int argc, const char *argv[]) {
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (makeExternal->parsed()) {
+      std::cout << "make-external-function subcommand called\n";
     }
   } catch(...) {
     eptr = std::current_exception();
