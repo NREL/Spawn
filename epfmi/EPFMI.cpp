@@ -37,6 +37,10 @@ spawn::Spawn & get_spawn(void * comp) {
     throw Bad_Spawn_Pointer();
   }
 
+  //if (auto ep = it->lastException()) {
+  //  std::rethrow_exception(ep);
+  //}
+
   return *it;
 }
 
@@ -45,7 +49,7 @@ void remove_spawn(spawn::Spawn & comp) {
   if (it != spawn::spawns.end()) {
     spawn::spawns.erase(it);
   } else {
-    throw std::runtime_error("fmi2Terminate encountered an error");
+    throw std::runtime_error("Error in \"remove_spawn\"");
   }
 }
 

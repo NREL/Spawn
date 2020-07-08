@@ -64,11 +64,10 @@
 
 namespace spawn {
 
-enum class EPStatus { ADVANCE, NONE, TERMINATE, ERR, DONE };
+//enum class EPStatus { ADVANCE, NONE, TERMINATE, ERR, DONE };
 
 class Spawn {
 public:
-
   Spawn(const std::string & t_name, const std::string & t_input);
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
@@ -76,9 +75,9 @@ public:
     return (this == &other);
   }
 
-  int start(const double & starttime = 0.0);
-  int stop();
-  int setTime(const double & time);
+  void start(const double & starttime = 0.0);
+  void stop();
+  void setTime(const double & time);
 
   double currentSimTime() const;
   double nextSimTime() const;
@@ -92,22 +91,39 @@ public:
   // Get the value of variable identified by ref
   double getValue(const unsigned int & ref) const;
 
-  std::string instanceName;
-
-  bool toleranceDefined;
-  double tolerance;
-  double startTime;
-  bool stopTimeDefined;
-  double stopTime;
-
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
 
 private:
-  // Wait for the EnergyPlus thread from the control thread
-  // Return 0 on success
-  // This should be called from the control thread
-  int controlWait();
+  std::string instanceName;
+  std::map<unsigned int, Variable> variables;
+  Input input;
+
+  double requestedTime;
+
+  // Signal EnergyPlus to move through the simulation loop
+  // Depending on the current simulation time, this may be an inner most hvac iteration,
+  // or big "outer" zone iteration
+  void iterate();
+  // Wait for EnergyPlus to complete any current iteration. ie. iterate_flag == false
+  void wait();
+  // iterate flag == true when EnergyPlus is working
+  bool iterate_flag{false};
+  std::condition_variable iterate_cv;
+
+  std::mutex sim_mutex;
+  std::thread sim_thread;
+  EnergyPlus::EnergyPlusData sim_state;
+
+  template <typename Function>
+  void doAction(Function action) {
+    std::unique_lock<std::mutex> lk(sim_mutex);
+    action();
+  }
+
+  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
+
+  void externalHVACManager();
 
   struct ZoneSums {
     double tempDepCoef;
@@ -123,15 +139,7 @@ private:
   double zoneTemperature(const int zonenum);
   void updateZoneTemperature(const int zonenum, const double & dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
-
-  void externalHVACManager();
   void initZoneEquip();
-
-  double requestedTime;
-  std::thread simthread;
-  EPStatus epstatus;
-  std::condition_variable control_cv;
-  std::mutex control_mutex;
 
   // Time in seconds of the last zone temperature update
   // This is required for computing the dt in the
@@ -139,13 +147,6 @@ private:
   double prevZoneTempUpdate;
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
-
-  std::map<unsigned int, Variable> variables;
-  Input input;
-
-  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
-
-  EnergyPlus::EnergyPlusData state;
 };
 
 boost::filesystem::path exedir();

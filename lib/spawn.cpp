@@ -35,7 +35,7 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input)
   variables = parseVariables(input);
 }
 
-int Spawn::start(const double & starttime) {
+void Spawn::start(const double & starttime) {
   const auto & simulation = [&](){
     auto workingPath = boost::filesystem::path(instanceName).filename().string();
     auto epwPath = input.epwInputPath().string();
@@ -53,74 +53,68 @@ int Spawn::start(const double & starttime) {
     argv[6] = iddPath.c_str();
     argv[7] = idfPath.c_str();
 
-    EnergyPlus::CommandLineInterface::ProcessArgs( state, argc, argv );
+    EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
     registerErrorCallback(std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
     EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
 
-    try {
-      auto result = RunEnergyPlus(state);
-      std::unique_lock<std::mutex> lk(control_mutex);
-      epstatus = result ? EPStatus::ERR : EPStatus::DONE;
-    } catch(...) {
-      epstatus = EPStatus::ERR;
+    RunEnergyPlus(sim_state);
+
+    {
+      std::unique_lock<std::mutex> lk(sim_mutex);
+      iterate_flag = false;
     }
-    control_cv.notify_one();
+    iterate_cv.notify_one();
   };
 
-  {
-    std::unique_lock<std::mutex> lk(control_mutex);
-    requestedTime = 0.0;
-    epstatus = EPStatus::ADVANCE;
-  }
+  sim_thread = std::thread(simulation);
 
-  simthread = std::thread(simulation);
-
-  // Wait for EnergyPlus to go through startup/warmup etc
-  auto result = controlWait();
+  requestedTime = 0.0;
+  // This will make the EnergyPlus simulation thread go through startup/warmup etc
+  // and then go back to waiting
+  iterate();
 
   // Move to the requested start time
-	if(result == 0) {
-    result = setTime(starttime);
-  }
-
-  return result;
+  setTime(starttime);
 }
 
-int Spawn::stop() {
+void Spawn::wait() {
+  std::unique_lock<std::mutex> lk(sim_mutex);
+  iterate_cv.wait( lk, [&](){
+    return ! iterate_flag;
+  });
+}
+
+void Spawn::iterate() {
+  // Wait for any current iteration to complete
+  wait();
+
+  // Signal next iteration
   {
-    std::unique_lock<std::mutex> lk(control_mutex);
-    epstatus = EPStatus::TERMINATE;
+    std::unique_lock<std::mutex> lk(sim_mutex);
+    iterate_flag = true;
   }
+  iterate_cv.notify_one();
 
-  try {
-    stopSimulation();
-    control_cv.notify_one();
-    simthread.join();
-    return 0;
-  } catch(...) {
-    return 1;
-  }
+  // Wait for EnergyPlus to complete the iteration
+  wait();
 }
 
-int Spawn::setTime(const double & time)
-{
-  requestedTime = time;
+void Spawn::stop() {
+  wait();
+  // This is an EnergyPlus API
+  stopSimulation();
+  // iterate the sim to allow EnergyPlus to go through shutdown;
+  iterate();
+}
 
+void Spawn::setTime(const double & time)
+{
+  wait();
+  requestedTime = time;
   exchange();
 
   if(requestedTime >= nextSimTime()) {
-    {
-      std::unique_lock<std::mutex> lk(control_mutex);
-      epstatus = EPStatus::ADVANCE;
-    }
-
-    // Notify E+ to advance
-    control_cv.notify_one();
-
-    // Wait for EnergyPlus to complete the step
-    return controlWait();
-  } else {
-    return 0;
+    iterate();
   }
 }
 
@@ -173,6 +167,7 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) const {
 
   return sums;
 }
+
 void Spawn::setZoneTemperature(const int zonenum, const double & temp) {
   // Is it necessary to update all of these or can we
   // simply update ZT and count on EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp()
@@ -314,7 +309,7 @@ void Spawn::exchange()
 
   // Run some internal EnergyPlus functions to update outputs
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp();
-  EnergyPlus::InternalHeatGains::InitInternalHeatGains(state);
+  EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
 
   // Now update the outputs
   for( auto & varmap : variables ) {
@@ -342,21 +337,9 @@ void Spawn::exchange()
   }
 }
 
-int Spawn::controlWait() {
-  std::unique_lock<std::mutex> lk(control_mutex);
-  // Wait until EnergyPlus is not Advancing or Terminating (ie in the process of cleanup)
-  control_cv.wait( lk, [&](){
-    return
-        (epstatus == EPStatus::NONE) ||
-        (epstatus == EPStatus::ERR) ||
-        (epstatus == EPStatus::DONE);
-  });
-  return epstatus == EPStatus::ERR ? 1 : 0;
-}
-
 void Spawn::initZoneEquip() {
   if (!EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled) {
-    EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(state);
+    EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(sim_state);
     EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled = true;
   }
 }
@@ -393,22 +376,16 @@ void Spawn::externalHVACManager() {
   if( currentSimTime() >= requestedTime ) {
     // Signal the end of the step
     {
-      std::unique_lock<std::mutex> lk(control_mutex);
-      if (epstatus != ::spawn::EPStatus::TERMINATE)
-      {
-       epstatus = ::spawn::EPStatus::NONE;
-      }
+      std::unique_lock<std::mutex> lk(sim_mutex);
+      iterate_flag = false;
     }
 
-    control_cv.notify_one();
+    iterate_cv.notify_one();
 
-    // Wait for the epstatus to advance again
-    std::unique_lock<std::mutex> lk(control_mutex);
-    control_cv.wait(lk, [&]() {
-      return (
-        (epstatus == ::spawn::EPStatus::ADVANCE) ||
-        (epstatus == ::spawn::EPStatus::TERMINATE)
-      );
+    // Wait for the iterate_flag to signal another iteration
+    std::unique_lock<std::mutex> lk(sim_mutex);
+    iterate_cv.wait(lk, [&]() {
+      return iterate_flag;
     });
   }
 }
