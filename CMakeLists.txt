@@ -89,7 +89,7 @@ conan_cmake_run(
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
-  fmt/6.0.0@bincrafters/stable
+  fmt/6.1.2
   nlohmann_json/3.7.3
   BASIC_SETUP
   CMAKE_TARGETS

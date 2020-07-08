@@ -33,6 +33,46 @@ int compileMO(
   }
 }
 
+std::vector<boost::filesystem::path> modelicaIncludePaths(const boost::filesystem::path &jmodelica_dir)
+{
+  return {
+    jmodelica_dir / "include/RuntimeLibrary/",
+    jmodelica_dir / "include/RuntimeLibrary/module_include",
+    jmodelica_dir / "include/RuntimeLibrary/zlib",
+    jmodelica_dir / "ThirdParty/FMI/2.0"
+  };
+}
+
+std::vector<boost::filesystem::path> modelicaLibs(const boost::filesystem::path &jmodelica_dir)
+{
+  return {
+    jmodelica_dir / "/lib/RuntimeLibrary/liblapack.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaIO.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaExternalC.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_cs.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_get_set_default.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libfmi2.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libblas.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_block_solver.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_evaluator_util.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libjmi.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaStandardTables.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaMatIO.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libzlib.a",
+    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_me.a",
+    jmodelica_dir / "/ThirdParty/Minpack/lib/libcminpack.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecserial.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_idas.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvodes.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_ida.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_arkode.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvode.a",
+    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_kinsol.a"
+  };
+
+}
+
 int compileC(const boost::filesystem::path & output_dir) {
   std::cout << "Compile C Code" << std::endl;
 
@@ -76,44 +116,12 @@ int compileC(const boost::filesystem::path & output_dir) {
 
   // Libs to link
 
-  const auto & temp_dir = output_dir / "tmp";
+  const auto temp_dir = output_dir / "tmp";
 
-  std::vector<boost::filesystem::path> runtime_libs;
-  const auto & jmodelica_dir = temp_dir / "JModelica";
-  runtime_libs = {
-    jmodelica_dir / "/lib/RuntimeLibrary/liblapack.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaIO.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaExternalC.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_cs.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_get_set_default.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi2.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libblas.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_block_solver.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_evaluator_util.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaStandardTables.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaMatIO.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libzlib.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_me.a",
-    jmodelica_dir / "/ThirdParty/Minpack/lib/libcminpack.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecserial.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_idas.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvodes.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_ida.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_arkode.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvode.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_kinsol.a"
-  };
-
+  const auto jmodelica_dir = temp_dir / "JModelica";
+  const auto runtime_libs = modelicaLibs(jmodelica_dir);
   // include paths
-  std::vector<boost::filesystem::path> include_paths;
-  include_paths = std::vector<boost::filesystem::path>{
-    jmodelica_dir / "include/RuntimeLibrary/",
-    jmodelica_dir / "include/RuntimeLibrary/module_include",
-    jmodelica_dir / "include/RuntimeLibrary/zlib",
-    jmodelica_dir / "ThirdParty/FMI/2.0"
-  };
+  const auto include_paths = modelicaIncludePaths(jmodelica_dir) ;
 
   const auto model_description_path = output_dir / "modelDescription.xml";
 
@@ -134,6 +142,55 @@ int compileC(const boost::filesystem::path & output_dir) {
 
   return 0;
 }
+
+
+void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
+{
+  for (const auto &param : parameters) {
+    std::cout << "makeModelicalExternalFunction '" << param << "'\n";
+  }
+
+  if (parameters.size() < 5) {
+    std::cout << " unable to determine build target \n";
+    return;
+  }
+
+  if (parameters[5] == "ceval") {
+    std::cout << " ceval: compiling executable from .c files\n";
+  } else {
+    std::cout << "Unknown build target: '" << parameters[5] << "' aborting\n"
+    return;
+  }
+
+  std::map<std::string, std::string> arguments;
+
+  for (const auto &param : parameters) {
+    const auto equals_pos = param.find('=');
+
+    if (equals_pos != std::string::npos) {
+      arguments[param.substr(0, equals_pos)] = param.substr(equals_pos + 1);
+    }
+  }
+
+  for (const auto &[lhs, rhs] : arguments) {
+    std::cout << "arg: '" << lhs << "' = '" << rhs << "'\n";
+  }
+
+  boost::filesystem::path fileToCompile = boost::filesystem::path{"sources"} / arguments["FILE_NAME"];
+  fileToCompile += ".c";
+
+  const auto jmodelica_dir = boost::filesystem::path{arguments["JMODELICA_HOME"]};
+  const auto include_paths = modelicaIncludePaths(jmodelica_dir);
+  const auto runtime_libs = modelicaLibs(jmodelica_dir);
+
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags);
+
+  compiler.compile_and_link(fileToCompile);
+  boost::filesystem::create_directories(boost::filesystem::path{"binaries"});
+  compiler.write_executable_file(boost::filesystem::path{"binaries"} / arguments["FILE_NAME"], runtime_libs);
+}
+
 
 int modelicaToFMU(
   const std::string &moinput,

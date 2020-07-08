@@ -21,6 +21,8 @@ int modelicaToFMU(
   const boost::filesystem::path & jmodelicaHome
 );
 
+void makeModelicaExternalFunction(const std::vector<std::string> &parameters);
+
 } // namespace spawn
 
 #endif // COMPILERCHAIN_HPP_INCLUDED

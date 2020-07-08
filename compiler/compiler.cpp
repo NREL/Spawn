@@ -91,6 +91,7 @@ std::string getExecutablePath()
 namespace spawn {
 void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
 {
+  std::clog << "writing shared object file, but using `ld` currently for linking\n";
   Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
@@ -106,6 +107,27 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
 
   system(fmt::format("ld -shared {} {} -o {} -shared", toString(temporary_object_file_location), libargs, toString(loc)).c_str());
 }
+
+void Compiler::write_executable_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
+{
+  std::clog << "writing executable file, but using `gcc` currently for linking\n";
+  Temp_Directory td;
+  const auto temporary_object_file_location = td.dir() / "temporary_object.o";
+  write_object_file(temporary_object_file_location);
+
+  std::string libargs;
+  std::for_each(
+      std::begin(additional_libs),
+      std::end(additional_libs),
+      [&libargs](const auto & p) {
+        return libargs.append(toString(p) + " ");
+      }
+  );
+
+  const auto link_command = fmt::format("gcc {} {} -o {}", toString(temporary_object_file_location), libargs, toString(loc));
+  system(link_command.c_str());
+}
+
 
 void Compiler::compile_and_link(const boost::filesystem::path &source)
 {
