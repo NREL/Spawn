@@ -54,7 +54,7 @@ int Spawn::start(const double & starttime) {
     argv[7] = idfPath.c_str();
 
     EnergyPlus::CommandLineInterface::ProcessArgs( state, argc, argv );
-    registerErrorCallback(std::bind(&Spawn::energyPlusErrorHandler, this, std::placeholders::_1, std::placeholders::_2));
+    registerErrorCallback(std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
     EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
 
     try {
@@ -132,31 +132,26 @@ double Spawn::nextSimTime() const {
   return EnergyPlus::DataGlobals::SimTimeSteps * EnergyPlus::DataGlobals::TimeStepZoneSec;
 }
 
-bool Spawn::setValue(const unsigned int & ref, const double & value) {
+void Spawn::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
   if( var != variables.end() ) {
     var->second.setValue(value, spawn::units::UnitSystem::MO);
-    return true;
+  } else {
+    throw std::runtime_error(fmt::format("Attempt to set a value using an invalid reference: {}", ref));
   }
-
-  return false;
-}
-
-double Spawn::getValue(const unsigned int & ref, bool & ok) const {
-  auto var = variables.find(ref);
-  if( var != variables.end() ) {
-    if( var->second.isValueSet() ) {
-      ok = true;
-      return var->second.getValue(spawn::units::UnitSystem::MO);
-    }
-  }
-  ok = false;
-  return 0.0;
 }
 
 double Spawn::getValue(const unsigned int & ref) const {
-  bool ok = false;
-  return getValue(ref, ok);
+  auto var = variables.find(ref);
+  if( var != variables.end() ) {
+    if( var->second.isValueSet() ) {
+      return var->second.getValue(spawn::units::UnitSystem::MO);
+    } else {
+      throw std::runtime_error(fmt::format("Attempt to get a value for ref {}, which has no value set", ref));
+    }
+  } else {
+    throw std::runtime_error(fmt::format("Attempt to get a value using an invalid reference: {}", ref));
+  }
 }
 
 Spawn::ZoneSums Spawn::zoneSums(const int zonenum) const {
@@ -418,14 +413,15 @@ void Spawn::externalHVACManager() {
   }
 }
 
-void Spawn::energyPlusErrorHandler(EnergyPlus::Error level, const std::string & message) {
-  if (logCallback) {
-    logCallback(level, message);
-  }
-}
-
 void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb) {
   logCallback = cb;
+}
+
+void Spawn::logMessage(EnergyPlus::Error level, const std::string & message) {
+  if (logCallback) {
+    logCallback(level, message);
+  } else {
+  }
 }
 
 boost::filesystem::path exedir() {

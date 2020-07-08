@@ -86,13 +86,10 @@ public:
   void exchange();
 
   // Set a variable identified by ref to the given value
-  // Return true if the operation was successful
-  bool setValue(const unsigned int & ref, const double & value);
+  // Throws a std::exception if ref is invalid
+  void setValue(const unsigned int & ref, const double & value);
 
   // Get the value of variable identified by ref
-  // if ok parameter is given then it will be set to true if the operation was successful
-  double getValue(const unsigned int & ref, bool & ok) const;
-
   double getValue(const unsigned int & ref) const;
 
   std::string instanceName;
@@ -104,6 +101,7 @@ public:
   double stopTime;
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
+  void logMessage(EnergyPlus::Error level, const std::string & message);
 
 private:
   // Wait for the EnergyPlus thread from the control thread
@@ -128,7 +126,6 @@ private:
 
   void externalHVACManager();
   void initZoneEquip();
-  void energyPlusErrorHandler(EnergyPlus::Error, const std::string & message);
 
   double requestedTime;
   std::thread simthread;

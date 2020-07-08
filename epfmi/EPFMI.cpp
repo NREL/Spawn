@@ -5,12 +5,85 @@
 #include <list>
 #include <regex>
 #include <signal.h>
+#include <iostream>
 
 using namespace std::placeholders;
 
 #define UNUSED(expr) do { (void)(expr); } while (0);
 
+namespace spawn {
+
 std::list<spawn::Spawn> spawns;
+
+struct Bad_Spawn_Pointer : public std::runtime_error {
+  Bad_Spawn_Pointer() : std::runtime_error("Invalid fmi2Component") {}
+};
+
+// FMI standard identifies components by void *. This function
+// is used to retrieve the spawn::Spawn instance corresponding to the
+// given pointer.
+// Throw an exception if comp does not identify an instance in the
+// spawn::spawns list
+spawn::Spawn & get_spawn(void * comp) {
+  const auto it = std::find_if(
+    std::begin(spawn::spawns),
+    std::end(spawn::spawns),
+    [comp](const spawn::Spawn & s) {
+      return comp == &s;
+    }
+  );
+
+  if (it == std::end(spawn::spawns)) {
+    throw Bad_Spawn_Pointer();
+  }
+
+  return *it;
+}
+
+void remove_spawn(spawn::Spawn & comp) {
+  const auto it = std::find(spawn::spawns.begin(), spawn::spawns.end(), comp);
+  if (it != spawn::spawns.end()) {
+    spawn::spawns.erase(it);
+  } else {
+    throw std::runtime_error("fmi2Terminate encountered an error");
+  }
+}
+
+fmi2Status handle_fmi_exception(spawn::Spawn & comp) {
+  try {
+    // rethrow the last exception
+    // This is the Lippincott pattern https://www.youtube.com/watch?v=-amJL3AyADI
+    throw;
+  } catch (const std::runtime_error & e) {
+    comp.logMessage(EnergyPlus::Error::Fatal, e.what());
+  } catch (...) {
+    std::clog << "Unknown Exception\n";
+  }
+
+  return fmi2Error;
+}
+
+template <typename Function>
+fmi2Status with_spawn(fmi2Component c, Function f) {
+  try {
+    // Will throw if c is invalid
+    auto & comp = spawn::get_spawn(c);
+    try {
+      f(comp);
+      return fmi2OK;
+    } catch (...) {
+      // comp is passed so that we can log back the error message
+      return spawn::handle_fmi_exception(comp);
+    }
+  } catch (const Bad_Spawn_Pointer & e) {
+    std::clog << e.what() << "\n";
+  } catch(...) {
+    std::clog << "Unknown Exception\n";
+  }
+  return fmi2Error;
+}
+
+} // namespace spawn
 
 EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   fmi2Type fmuType,
@@ -27,8 +100,8 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   const auto resourcePath = boost::filesystem::path(resourcePathString);
   const auto spawnJSONPath = resourcePath / "../model.spawn";
 
-  spawns.emplace_back(fmuGUID, spawnJSONPath.string());
-  auto & comp = spawns.back();
+  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string());
+  auto & comp = spawn::spawns.back();
 
 	if (loggingOn) {
 		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
@@ -66,21 +139,25 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   fmi2Boolean stopTimeDefined,
   fmi2Real stopTime)
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
-
   UNUSED(toleranceDefined);
   UNUSED(tolerance);
   UNUSED(stopTimeDefined);
   UNUSED(stopTime);
 
-  return epcomp->start(starttime) ? fmi2Error : fmi2OK;
+  auto action = [&](spawn::Spawn & comp) {
+    comp.start(starttime);
+  };
+
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    comp.setTime(time);
+  };
 
-  return epcomp->setTime(time) ? fmi2Error : fmi2OK;
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2SetReal(fmi2Component c,
@@ -88,15 +165,15 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c,
   size_t nvr,
   const fmi2Real values[])
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    for ( size_t i = 0; i < nvr; ++i ) {
+      auto valueRef = vr[i];
+      auto value = values[i];
+      comp.setValue(valueRef, value);
+    }
+  };
 
-  for ( size_t i = 0; i < nvr; ++i ) {
-    auto valueRef = vr[i];
-    auto value = values[i];
-    epcomp->setValue(valueRef, value);
-  }
-
-  return fmi2OK;
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
@@ -104,39 +181,34 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
   size_t nvr,
   fmi2Real values[])
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    comp.exchange();
+    std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return comp.getValue(valueRef); });
+  };
 
-  epcomp->exchange();
-
-  std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return epcomp->getValue(valueRef); });
-
-  return fmi2OK;
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component  c, fmi2EventInfo* eventInfo)
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    eventInfo->newDiscreteStatesNeeded = fmi2False;
+    eventInfo->nextEventTime = comp.nextSimTime();
+    eventInfo->nextEventTimeDefined = fmi2True;
+    eventInfo->terminateSimulation = fmi2False;
+  };
 
-  eventInfo->newDiscreteStatesNeeded = fmi2False;
-  eventInfo->nextEventTime = epcomp->nextSimTime();
-  eventInfo->nextEventTimeDefined = fmi2True;
-  eventInfo->terminateSimulation = fmi2False;
-
-  return fmi2OK;
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    comp.stop();
+    spawn::remove_spawn(comp);
+  };
 
-  const auto result = epcomp->stop();
-
-  const auto it = std::find(spawns.begin(), spawns.end(), *epcomp);
-  if (it != spawns.end()) {
-    spawns.erase(it);
-  }
-
-  return result ? fmi2Error : fmi2OK;
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API const char* fmi2GetTypesPlatform(void)
@@ -161,14 +233,11 @@ EPFMI_API fmi2Status fmi2Reset(fmi2Component)
 
 EPFMI_API void fmi2FreeInstance(fmi2Component c)
 {
-  auto * epcomp = static_cast<spawn::Spawn*>(c);
+  auto action = [&](spawn::Spawn & comp) {
+    spawn::remove_spawn(comp);
+  };
 
-  const auto it = std::find(spawns.begin(), spawns.end(), *epcomp);
-  if (it != spawns.end()) {
-    spawns.erase(it);
-  }
-
-  c = nullptr; // this value can never be read, what is the aim?
+  spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component)
