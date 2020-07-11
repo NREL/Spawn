@@ -64,8 +64,6 @@
 
 namespace spawn {
 
-//enum class EPStatus { ADVANCE, NONE, TERMINATE, ERR, DONE };
-
 class Spawn {
 public:
   Spawn(const std::string & t_name, const std::string & t_input);
@@ -77,18 +75,20 @@ public:
 
   void start(const double & starttime = 0.0);
   void stop();
+  bool isRunning() const;
   void setTime(const double & time);
 
-  double currentSimTime() const;
-  double nextSimTime() const;
+  double currentTime() const;
+  double nextEventTime() const;
 
   void exchange();
 
   // Set a variable identified by ref to the given value
-  // Throws a std::exception if ref is invalid
+  // Throws a std::exception if ref is invalid or the simulation is not running
   void setValue(const unsigned int & ref, const double & value);
 
   // Get the value of variable identified by ref
+  // Throws a std::exception if ref is invalid or the simulation is not running
   double getValue(const unsigned int & ref) const;
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
@@ -107,32 +107,34 @@ private:
   void iterate();
   // Wait for EnergyPlus to complete any current iteration. ie. iterate_flag == false
   void wait();
-  // iterate flag == true when EnergyPlus is working
+  // iterate flag == true when EnergyPlus is actively working
   bool iterate_flag{false};
   std::condition_variable iterate_cv;
+  // is_running is true for as long as the EnergyPlus process is running
+  // in contrast to iterate_flag which is only true when EnergyPlus is actively
+  // doing computation. In many cases the EnergyPlus process may be in wait mode,
+  // waiting for the condition_variable (iterate_flag) to signal an iteration
+  bool is_running{false};
+  // Throws if not is_running
+  void isRunningCheck() const;
 
   std::mutex sim_mutex;
   std::thread sim_thread;
   EnergyPlus::EnergyPlusData sim_state;
-
-  template <typename Function>
-  void doAction(Function action) {
-    std::unique_lock<std::mutex> lk(sim_mutex);
-    action();
-  }
+  std::exception_ptr sim_exception_ptr{nullptr};
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
 
   void externalHVACManager();
 
+  // Given a zone name, return the index according to EnergyPlus
+  int zoneNum(const std::string & zoneName) const;
+  // These functions assume the EnergyPlus unit system
+  // ZoneSums are the coefficients used in the zone heat transfer calculation
   struct ZoneSums {
     double tempDepCoef;
     double tempIndCoef;
   };
-
-  // Given a zone name, return the index according to EnergyPlus
-  int zoneNum(const std::string & zoneName) const;
-  // These functions assume the EnergyPlus unit system
   ZoneSums zoneSums(const int zonenum) const;
   double zoneHeatTransfer(const int zonenum);
   void setZoneTemperature(const int zonenum, const double & temp);
@@ -140,7 +142,6 @@ private:
   void updateZoneTemperature(const int zonenum, const double & dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
   void initZoneEquip();
-
   // Time in seconds of the last zone temperature update
   // This is required for computing the dt in the
   // updateZoneTemperature calculation
