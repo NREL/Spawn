@@ -158,7 +158,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   if (parameters[5] == "ceval") {
     std::cout << " ceval: compiling executable from .c files\n";
   } else {
-    std::cout << "Unknown build target: '" << parameters[5] << "' aborting\n"
+    std::cout << "Unknown build target: '" << parameters[5] << "' aborting\n";
     return;
   }
 

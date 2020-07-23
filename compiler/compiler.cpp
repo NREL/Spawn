@@ -32,6 +32,8 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "lld/Common/Driver.h"
+
 #include <fmt/format.h>
 
 #include "compiler/embedded_files.hxx"
@@ -47,6 +49,7 @@
 
 #include <codecvt>
 #include <iterator>
+#include <sstream>
 
 #include "compiler.hpp"
 
@@ -105,7 +108,24 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
       }
   );
 
-  system(fmt::format("ld -shared {} {} -o {} -shared", toString(temporary_object_file_location), libargs, toString(loc)).c_str());
+  std::stringstream err_ss;
+  llvm::raw_os_ostream err(err_ss);
+
+  const std::vector<std::string> str_args {
+    "-shared",
+      toString(temporary_object_file_location),
+      libargs,
+      "-o",
+      toString(loc)
+  };
+
+  clang::SmallVector<const char *, 64> Args;
+
+  std::transform(
+      str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
+
+
+  lld::elf::link(Args, false /*canExitEarly*/, err);
 }
 
 void Compiler::write_executable_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)

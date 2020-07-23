@@ -31,6 +31,10 @@ target_link_libraries(
   clangCodeGen
   clangFrontend
   clangFrontendTool
+  ${LLVM_LIBRARY_DIR}/liblldELF.a
+  ${LLVM_LIBRARY_DIR}/liblldCommon.a
+  ${LLVM_LIBRARY_DIR}/liblldCore.a
+  ${LLVM_LIBRARY_DIR}/liblldDriver.a
   CONAN_PKG::boost
   CONAN_PKG::fmt)
 
