@@ -4,7 +4,6 @@
 #include <boost/filesystem.hpp>
 #include <list>
 #include <regex>
-#include <signal.h>
 #include <iostream>
 
 using namespace std::placeholders;
@@ -99,7 +98,6 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 {
   UNUSED(fmuType);
   UNUSED(visible);
-  std::cout << "instantiate" << std::endl;
 
   const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
   const auto resourcePath = boost::filesystem::path(resourcePathString);
@@ -109,7 +107,6 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   auto & comp = spawn::spawns.back();
 
 	if (loggingOn) {
-    std::cout << "logging is on" << std::endl;
 		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
 
       static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
@@ -132,7 +129,6 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 
 			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
 		};
-    std::cout << "logger is: " << functions->logger << std::endl;
 		comp.setLogCallback(logger);
 	}
 
@@ -150,8 +146,6 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   UNUSED(tolerance);
   UNUSED(stopTimeDefined);
   UNUSED(stopTime);
-
-  std::cout << "setup experiment" << std::endl;
 
   auto action = [&](spawn::Spawn & comp) {
     comp.start(starttime);
