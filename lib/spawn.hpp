@@ -53,6 +53,7 @@
 #include "zone.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include <boost/filesystem.hpp>
+#include <deque>
 #include <string>
 #include <vector>
 #include <map>
@@ -123,9 +124,11 @@ private:
   EnergyPlus::EnergyPlusData sim_state;
   std::exception_ptr sim_exception_ptr{nullptr};
 
-  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
-
   void externalHVACManager();
+
+  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
+  std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
+  void emptyLogMessageQueue();
 
   // Given a zone name, return the index according to EnergyPlus
   int zoneNum(const std::string & zoneName) const;

@@ -110,6 +110,8 @@ void Spawn::iterate() {
 
   // Wait for EnergyPlus to complete the iteration
   wait();
+
+  emptyLogMessageQueue();
 }
 
 void Spawn::stop() {
@@ -451,7 +453,17 @@ void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::stri
 
 void Spawn::logMessage(EnergyPlus::Error level, const std::string & message) {
   if (logCallback) {
-    logCallback(level, message);
+    log_message_queue.push_back(std::make_pair(level, message));
+  }
+}
+
+void Spawn::emptyLogMessageQueue() {
+  if (logCallback) {
+    while(! log_message_queue.empty()) {
+      auto m = log_message_queue.front();
+      logCallback(m.first, m.second);
+      log_message_queue.pop_front();
+    }
   }
 }
 
