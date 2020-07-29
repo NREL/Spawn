@@ -15,6 +15,12 @@ foreach(_FILE ${HEADER_FILES})
   list(APPEND EMBEDDED_PATHS ${LOCATION})
 endforeach()
 
+add_executable(spawn_exe_launcher spawn_exe_launcher.c)
+target_link_libraries(spawn_exe_launcher ${CMAKE_DL_LIBS})
+
+list(APPEND FILES "${CMAKE_CURRENT_BINARY_DIR}/spawn_exe_launcher")
+list(APPEND EMBEDDED_PATHS "spawn_exe_launcher")
+
 embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawnclang)
 
 add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp ${EMBEDDED_OUTPUT})

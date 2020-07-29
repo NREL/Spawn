@@ -57,7 +57,6 @@ public:
   void write_bitcode(const boost::filesystem::path &loc);
   void write_object_file(const boost::filesystem::path &loc);
   void write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs = {});
-  void write_executable_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs = {});
 
 private:
   std::string m_target_triple{get_target_triple()};

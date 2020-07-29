@@ -15,7 +15,6 @@ public class SpawnCompilerDelegator extends GccCompilerDelegator {
   @Override
   protected void compileCCode(ModelicaLogger log, CCompilerArguments args, File workDir, String[] platforms) {
     System.out.println("Calling SpawnCompilerDelegator::compile()");
-    System.out.println("Delegating back to GccCompilerDelegator");
 
     try {
       System.out.println("Executing from: " + new File(SpawnCompilerDelegator.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath());

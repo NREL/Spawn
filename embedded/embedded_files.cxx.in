@@ -20,27 +20,32 @@ namespace embedded_files {
 @EMBEDDED_FILES@
   };
 
-  std::vector<std::string> fileNames() {
-    static std::vector<std::string> result;
-    if (result.empty()){
-      result.reserve(embedded_file_count);
+  const std::vector<std::string> &fileNames() {
+    static const auto result = [](){
+      std::vector<std::string> vals;
+      vals.reserve(embedded_file_count);
       for (size_t i = 0; i < embedded_file_count; ++i) {
-        result.push_back(std::string(embedded_file_names[i]));
+        vals.push_back(std::string(embedded_file_names[i]));
       }
-    }
+      return vals;
+    }();
+
     return result;
   }
 
-  std::map<std::string, std::pair<size_t, const uint8_t *>> files()
+  const std::map<std::string, std::pair<size_t, const uint8_t *>> &files()
   {
-    static std::map<std::string, std::pair<size_t, const uint8_t *>> fs;
-    if (fs.empty()){
-      for (size_t i = 0; i < embedded_file_count; ++i) {
-        fs.insert(std::make_pair(std::string(embedded_file_names[i]),
-                                 std::make_pair(embedded_file_lens[i],
-                                                embedded_files[i])));
+    static const auto fs = [](){
+      std::map<std::string, std::pair<size_t, const uint8_t *>> vals;
+      if (vals.empty()){
+        for (size_t i = 0; i < embedded_file_count; ++i) {
+          vals.insert(std::make_pair(std::string(embedded_file_names[i]),
+                std::make_pair(embedded_file_lens[i],
+                  embedded_files[i])));
+        }
       }
-    }
+      return vals;
+    }();
     return fs;
   }
 

@@ -1,5 +1,6 @@
 #include "../compiler/compiler.hpp"
 #include "cli/embedded_files.hxx"
+#include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
 #include <modelica.h>
 #include <iostream>
@@ -138,7 +139,7 @@ int compileC(const boost::filesystem::path & output_dir) {
   const auto model_lib_dir = output_dir / "binaries";
   const auto model_lib_path = model_lib_dir / (model_identifier + ".so");
   boost::filesystem::create_directories(model_lib_dir);
-	compiler.write_shared_object_file(model_lib_path, runtime_libs);
+  compiler.write_shared_object_file(model_lib_path, runtime_libs);
 
   return 0;
 }
@@ -188,7 +189,25 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
 
   compiler.compile_and_link(fileToCompile);
   boost::filesystem::create_directories(boost::filesystem::path{"binaries"});
-  compiler.write_executable_file(boost::filesystem::path{"binaries"} / arguments["FILE_NAME"], runtime_libs);
+
+  // we'll name it .so regardless of platform because it's only for our use anyhow
+
+  const auto launcherFileName = boost::filesystem::path{"binaries"} / "spawn_exe_launcher";
+  const auto exeFileName = boost::filesystem::path{"binaries"} / arguments["FILE_NAME"];
+  const auto soFileName = [&](){
+    auto result = exeFileName;
+    result.replace_extension(exeFileName.extension().string() + ".so");
+    return result;
+  }();
+
+  compiler.write_shared_object_file(soFileName, runtime_libs);
+  std::cout << "File: " << soFileName.string() << " exists: " << boost::filesystem::exists(soFileName) << '\n';
+
+  spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
+  boost::filesystem::rename(launcherFileName, exeFileName);
+  boost::filesystem::permissions(exeFileName, boost::filesystem::perms::owner_exe);
+
+  //boost::filesystem::copy_file(boost::filesystem::path{"binaries"} / arguments["FILE_NAME"], boost::filesystem::path(arguments["FILE_NAME"]));
 }
 
 

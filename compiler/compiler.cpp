@@ -94,30 +94,26 @@ std::string getExecutablePath()
 namespace spawn {
 void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
 {
-  std::clog << "writing shared object file, but using `ld` currently for linking\n";
   Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
 
-  std::string libargs;
-  std::for_each(
-      std::begin(additional_libs),
-      std::end(additional_libs),
-      [&libargs](const auto & p) {
-        return libargs.append(toString(p) + " ");
-      }
-  );
-
   std::stringstream err_ss;
   llvm::raw_os_ostream err(err_ss);
 
-  const std::vector<std::string> str_args {
+  std::vector<std::string> str_args {
     "-shared",
-      toString(temporary_object_file_location),
-      libargs,
+    toString(temporary_object_file_location)
+  };
+
+  for (const auto &lib : additional_libs) {
+    str_args.push_back(toString(lib));
+  }
+
+  str_args.insert(str_args.end(), {
       "-o",
       toString(loc)
-  };
+  });
 
   clang::SmallVector<const char *, 64> Args;
 
@@ -125,27 +121,8 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
       str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
 
+  std::cout << "Linking file: " << toString(loc) << '\n';
   lld::elf::link(Args, false /*canExitEarly*/, err);
-}
-
-void Compiler::write_executable_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
-{
-  std::clog << "writing executable file, but using `gcc` currently for linking\n";
-  Temp_Directory td;
-  const auto temporary_object_file_location = td.dir() / "temporary_object.o";
-  write_object_file(temporary_object_file_location);
-
-  std::string libargs;
-  std::for_each(
-      std::begin(additional_libs),
-      std::end(additional_libs),
-      [&libargs](const auto & p) {
-        return libargs.append(toString(p) + " ");
-      }
-  );
-
-  const auto link_command = fmt::format("gcc {} {} -o {}", toString(temporary_object_file_location), libargs, toString(loc));
-  system(link_command.c_str());
 }
 
 
