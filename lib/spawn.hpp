@@ -74,7 +74,7 @@ public:
     return (this == &other);
   }
 
-  void start(const double & starttime = 0.0);
+  void start(const double & starttime = 0.0, const boost::filesystem::path & workingdir = ".");
   void stop();
   bool isRunning() const;
   void setTime(const double & time);

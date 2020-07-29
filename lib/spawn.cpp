@@ -35,10 +35,9 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input)
   variables = parseVariables(input);
 }
 
-void Spawn::start(const double & starttime) {
+void Spawn::start(const double & starttime, const boost::filesystem::path & workingdir) {
   const auto & simulation = [&](){
     try {
-      auto workingPath = boost::filesystem::path(instanceName).filename().string();
       auto epwPath = input.epwInputPath().string();
       auto idfPath = input.idfInputPath().string();
       auto iddPath = iddpath().string();
@@ -47,7 +46,7 @@ void Spawn::start(const double & starttime) {
       const char * argv[argc];
       argv[0] = "energyplus";
       argv[1] = "-d";
-      argv[2] = workingPath.c_str();
+      argv[2] = workingdir.string().c_str();
       argv[3] = "-w";
       argv[4] = epwPath.c_str();
       argv[5] = "-i";
