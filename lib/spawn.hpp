@@ -67,14 +67,14 @@ namespace spawn {
 
 class Spawn {
 public:
-  Spawn(const std::string & t_name, const std::string & t_input);
+  Spawn(const std::string & t_name, const std::string & t_input, const boost::filesystem::path & workingdir = ".");
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
   bool operator==(const Spawn& other) const {
     return (this == &other);
   }
 
-  void start(const double & starttime = 0.0, const boost::filesystem::path & workingdir = ".");
+  void start(const double & starttime = 0.0);
   void stop();
   bool isRunning() const;
   void setTime(const double & time);
@@ -97,6 +97,7 @@ public:
 
 private:
   std::string instanceName;
+  boost::filesystem::path workingdir;
   std::map<unsigned int, Variable> variables;
   Input input;
 

@@ -28,14 +28,15 @@
 
 namespace spawn {
 
-Spawn::Spawn(const std::string & t_name, const std::string & t_input)
+Spawn::Spawn(const std::string & t_name, const std::string & t_input, const boost::filesystem::path & t_workingdir)
   : instanceName(t_name),
+    workingdir(t_workingdir),
     input(t_input)
 {
   variables = parseVariables(input);
 }
 
-void Spawn::start(const double & starttime, const boost::filesystem::path & workingdir) {
+void Spawn::start(const double & starttime) {
   const auto & simulation = [&](){
     try {
       auto epwPath = input.epwInputPath().string();

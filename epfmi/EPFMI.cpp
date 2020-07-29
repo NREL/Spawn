@@ -103,7 +103,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   const auto resourcePath = boost::filesystem::path(resourcePathString);
   const auto spawnJSONPath = resourcePath / "../model.spawn";
 
-  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string());
+  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), resourcePath.parent_path());
   auto & comp = spawn::spawns.back();
 
 	if (loggingOn) {
