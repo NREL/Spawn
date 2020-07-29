@@ -95,6 +95,8 @@ void energyplusToFMU(
   if (! nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
   }
+
+  boost::filesystem::remove_all(fmuStagingPath);
 }
 
 json idfToJSON(const boost::filesystem::path & idfpath) {
