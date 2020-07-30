@@ -4,6 +4,7 @@
 #include <pugixml.hpp>
 #include <modelica.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 namespace spawn {
 
@@ -148,18 +149,18 @@ int compileC(const boost::filesystem::path & output_dir) {
 void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
 {
   for (const auto &param : parameters) {
-    std::cout << "makeModelicalExternalFunction '" << param << "'\n";
+    spdlog::trace("makeModelicalExternalFunction parameter {}", param);
   }
 
   if (parameters.size() < 5) {
-    std::cout << " unable to determine build target \n";
+    spdlog::error("unable to determine build target");
     return;
   }
 
   if (parameters[5] == "ceval") {
-    std::cout << " ceval: compiling executable from .c files\n";
+    spdlog::info("ceval: compiling executable from .c files");
   } else {
-    std::cout << "Unknown build target: '" << parameters[5] << "' aborting\n";
+    spdlog::error("Unknown build target: '{}' aborting", parameters[5]);
     return;
   }
 
@@ -174,7 +175,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   }
 
   for (const auto &[lhs, rhs] : arguments) {
-    std::cout << "arg: '" << lhs << "' = '" << rhs << "'\n";
+    spdlog::trace("Parsed make modelica arg '{}'='{}'", lhs, rhs);
   }
 
   boost::filesystem::path fileToCompile = boost::filesystem::path{"sources"} / arguments["FILE_NAME"];
@@ -201,13 +202,11 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   }();
 
   compiler.write_shared_object_file(soFileName, runtime_libs);
-  std::cout << "File: " << soFileName.string() << " exists: " << boost::filesystem::exists(soFileName) << '\n';
+  spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), boost::filesystem::exists(soFileName));
 
   spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
   boost::filesystem::rename(launcherFileName, exeFileName);
   boost::filesystem::permissions(exeFileName, boost::filesystem::perms::owner_exe);
-
-  //boost::filesystem::copy_file(boost::filesystem::path{"binaries"} / arguments["FILE_NAME"], boost::filesystem::path(arguments["FILE_NAME"]));
 }
 
 
@@ -247,7 +246,7 @@ int modelicaToFMU(
 
   if(result == 0) {
     boost::filesystem::remove_all(temp_dir);
-    std::cout << "Model Compiled" << std::endl;
+    spdlog::info("Model Compiled");
   }
 
   return result;

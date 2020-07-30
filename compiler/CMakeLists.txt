@@ -42,7 +42,8 @@ target_link_libraries(
   ${LLVM_LIBRARY_DIR}/liblldCore.a
   ${LLVM_LIBRARY_DIR}/liblldDriver.a
   CONAN_PKG::boost
-  CONAN_PKG::fmt)
+  CONAN_PKG::fmt
+  CONAN_PKG::spdlog)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT

@@ -91,6 +91,7 @@ conan_cmake_run(
   catch2/2.11.3
   fmt/6.1.2
   nlohmann_json/3.7.3
+  spdlog/[>=1.4.1]
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
