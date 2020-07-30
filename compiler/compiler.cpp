@@ -33,6 +33,8 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "lld/Common/Driver.h"
+#include "lld/Common/ErrorHandler.h"
+
 
 #include <fmt/format.h>
 
@@ -99,21 +101,58 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
   write_object_file(temporary_object_file_location);
 
   std::stringstream err_ss;
+
+  {
   llvm::raw_os_ostream err(err_ss);
 
   std::vector<std::string> str_args {
     "-shared",
+  "/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o",
+  "/usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o",
+  "-L/usr/lib/gcc/x86_64-linux-gnu/7",
+  "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu",
+  "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib",
+  "-L/lib/x86_64-linux-gnu",
+  "-L/lib/../lib",
+  "-L/usr/lib/x86_64-linux-gnu",
+  "-L/usr/lib/../lib",
+  "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../..",
     toString(temporary_object_file_location)
   };
 
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));
   }
+ 
+//  str_args.push_back("/usr/lib/x86_64-linux-gnu/libgfortran.so.4");
+//  str_args.push_back("/lib/x86_64-linux-gnu/libc.so.6");
+//  str_args.push_back("/lib/x86_64-linux-gnu/libdl.so.2");
+//  str_args.push_back("/lib/x86_64-linux-gnu/libpthread.so.0");
+//  str_args.push_back("/lib/x86_64-linux-gnu/libm-2.27.so");
+//  str_args.push_back("/lib/x86_64-linux-gnu/libgcc_s.so.1");
+
+
+  // .o file here
+ 
 
   str_args.insert(str_args.end(), {
       "-o",
-      toString(loc)
+      toString(loc),
+ "-lm",
+  "-lgcc_s",
+  "-lc",
+  "-ldl",
+  "-lpthread",
+  "-lgcc_s",
+  "-lgfortran",
+  "/usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o",
+  "/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o"
+
   });
+
+  for (const auto &arg : str_args) {
+    std::cout << "lld arg: " << arg << std::endl;
+  }
 
   clang::SmallVector<const char *, 64> Args;
 
@@ -122,7 +161,16 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
 
 
   std::cout << "Linking file: " << toString(loc) << '\n';
-  lld::elf::link(Args, false /*canExitEarly*/, err);
+  const auto success = lld::elf::link(Args, false /*canExitEarly*/, err);
+  if (!success) {
+    std::cout << "Linking failed :(  " << lld::errorHandler().ErrorCount << std::endl;
+  }
+  }
+
+
+  std::cout << "Errors: " << err_ss.str() << std::endl;
+
+
 }
 
 
