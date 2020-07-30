@@ -102,8 +102,9 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
   const auto resourcePath = boost::filesystem::path(resourcePathString);
   const auto spawnJSONPath = resourcePath / "../model.spawn";
+  const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 
-  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), resourcePath.parent_path());
+  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
   auto & comp = spawn::spawns.back();
 
 	if (loggingOn) {
