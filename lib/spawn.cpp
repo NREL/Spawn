@@ -9,6 +9,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataEnvironment.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalFanSys.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataRuntimeLanguage.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataZoneEquipment.hh"
@@ -373,6 +374,9 @@ void Spawn::exchange()
     auto & var = varmap.second;
     auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
+      case VariableType::TRAD:
+        var.setValue(EnergyPlus::DataHeatBalSurface::ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
+        break;
       case VariableType::V:
         var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume, spawn::units::UnitSystem::EP);
         break;
