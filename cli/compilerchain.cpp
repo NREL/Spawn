@@ -123,7 +123,8 @@ int compileC(const boost::filesystem::path & output_dir) {
   const auto jmodelica_dir = temp_dir / "JModelica";
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
   // include paths
-  const auto include_paths = modelicaIncludePaths(jmodelica_dir) ;
+  auto include_paths = modelicaIncludePaths(jmodelica_dir);
+  include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
 
   const auto model_description_path = output_dir / "modelDescription.xml";
 
@@ -182,7 +183,9 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   fileToCompile += ".c";
 
   const auto jmodelica_dir = boost::filesystem::path{arguments["JMODELICA_HOME"]};
-  const auto include_paths = modelicaIncludePaths(jmodelica_dir);
+  auto include_paths = modelicaIncludePaths(jmodelica_dir);
+  include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
+
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   const std::vector<std::string> flags{};

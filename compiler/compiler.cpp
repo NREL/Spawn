@@ -267,6 +267,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
     return "-I" + toString(str);
   });
   str_args.push_back("-fsyntax-only");
+  str_args.push_back("-fPIC");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));
