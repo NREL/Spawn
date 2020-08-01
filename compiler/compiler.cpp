@@ -105,9 +105,8 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
   std::stringstream err_ss;
 
   std::vector<std::string> str_args {
+    "ld.lld-8",
     "-shared",
-    "/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crti.o",
-    "/usr/lib/gcc/x86_64-linux-gnu/7/crtbeginS.o",
     "-L/usr/lib/gcc/x86_64-linux-gnu/7",
     "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu",
     "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib",
@@ -122,17 +121,6 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));
   }
- 
-//  str_args.push_back("/usr/lib/x86_64-linux-gnu/libgfortran.so.4");
-//  str_args.push_back("/lib/x86_64-linux-gnu/libc.so.6");
-//  str_args.push_back("/lib/x86_64-linux-gnu/libdl.so.2");
-//  str_args.push_back("/lib/x86_64-linux-gnu/libpthread.so.0");
-//  str_args.push_back("/lib/x86_64-linux-gnu/libm-2.27.so");
-//  str_args.push_back("/lib/x86_64-linux-gnu/libgcc_s.so.1");
-
-
-  // .o file here
- 
 
   str_args.insert(str_args.end(), {
       "-o",
@@ -142,17 +130,17 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
       "-lc",
       "-ldl",
       "-lpthread",
-      "-lgcc_s",
       "-lgfortran",
-      "/usr/lib/gcc/x86_64-linux-gnu/7/crtendS.o",
-      "/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu/crtn.o"
     });
+
 
   for (const auto &arg : str_args) {
     spdlog::trace("embedded lld argument: {}", arg);
   }
 
-  clang::SmallVector<const char *, 64> Args;
+
+  
+  clang::SmallVector<const char *, 64> Args{};
 
   std::transform(
       str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });

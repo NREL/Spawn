@@ -12,6 +12,7 @@
 #include <config.hxx>
 #include <boost/algorithm/string.hpp>
 #include <stdlib.h>
+#include <spdlog/spdlog.h>
 #include "../util/fmi_paths.hpp"
 
 #if defined _WIN32
@@ -94,6 +95,7 @@ void handle_eptr(std::exception_ptr eptr) {
 }
 
 int main(int argc, const char *argv[]) {
+  spdlog::set_level(spdlog::level::trace);
   CLI::App app{"Spawn of EnergyPlus"};
 
   std::string jsoninput = "spawn.json";
