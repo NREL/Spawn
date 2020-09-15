@@ -2,7 +2,7 @@
 #include "input.hpp"
 #include "ziputil.hpp"
 #include "modelDescription.xml.hpp"
-#include "../util/platform.hpp"
+#include "../util/fmi_paths.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
@@ -63,7 +63,7 @@ void energyplusToFMU(
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuspawnPath = fmuStagingPath / "model.spawn";
-  const auto fmuEPFMIPath = fmuStagingPath / ("binaries/" + fmiplatform() + "/" + epfmiName());
+  const auto fmuEPFMIPath = fmuStagingPath / epfmi_filename();
 
   boost::filesystem::remove_all(fmuPath);
   boost::filesystem::remove_all(fmuStagingPath);

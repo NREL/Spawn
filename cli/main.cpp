@@ -1,4 +1,3 @@
-#include "../util/platform.hpp"
 #include "../lib/fmugenerator.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
@@ -57,11 +56,11 @@ boost::filesystem::path iddInstallPath() {
 }
 
 boost::filesystem::path epfmiInstallPath() {
-  const auto candidate = exedir() / ("../lib/" + spawn::epfmiName());
+  const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
   if (boost::filesystem::exists(candidate)) {
     return candidate;
   } else {
-    return exedir() / spawn::epfmiName();
+    return exedir() / spawn::epfmi_filename();
   }
 }
 

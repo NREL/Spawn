@@ -6,8 +6,6 @@ endif()
 add_library(spawn_utils
         idf_to_json.hpp
         idf_to_json.cpp
-        platform.hpp
-        platform.cpp
         fmi_paths.hpp
         temp_directory.cpp
         temp_directory.hpp

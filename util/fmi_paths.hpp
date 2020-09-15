@@ -48,6 +48,16 @@ static boost::filesystem::path fmi_lib_path(const std::string &library_name)
   return boost::filesystem::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
 
+static std::string epfmi_basename()
+{
+  return "epfmi";
+}
+
+static std::string epfmi_filename()
+{
+  return fmi_lib_filename(epfmi_basename());
+}
+
 }
 
 #endif // SPAWN_FMI_PATHS_HPP
