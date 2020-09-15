@@ -52,6 +52,8 @@
 #include "variables.hpp"
 #include "zone.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
 #include <boost/filesystem.hpp>
 #include <deque>
 #include <string>
@@ -122,7 +124,10 @@ private:
 
   std::mutex sim_mutex;
   std::thread sim_thread;
+
   EnergyPlus::EnergyPlusData sim_state;
+  EnergyPlusState simState();
+
   std::exception_ptr sim_exception_ptr{nullptr};
 
   void externalHVACManager();
@@ -139,7 +144,7 @@ private:
     double tempDepCoef;
     double tempIndCoef;
   };
-  ZoneSums zoneSums(const int zonenum) const;
+  ZoneSums zoneSums(const int zonenum);
   double zoneHeatTransfer(const int zonenum);
   void setZoneTemperature(const int zonenum, const double & temp);
   double zoneTemperature(const int zonenum);

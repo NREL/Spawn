@@ -1,6 +1,7 @@
 
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/fmi2/ )
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ )
+INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/ )
 
 set(src
   EPFMI.hpp

@@ -54,6 +54,7 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
 )
 

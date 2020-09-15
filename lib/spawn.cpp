@@ -56,7 +56,7 @@ void Spawn::start(const double & starttime) {
       argv[7] = idfPath.c_str();
 
       EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
-      registerErrorCallback(std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
+      registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
       EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
 
       RunEnergyPlus(sim_state);
@@ -117,7 +117,7 @@ void Spawn::iterate() {
 
 void Spawn::stop() {
   // This is an EnergyPlus API
-  stopSimulation();
+  stopSimulation(simState());
   // iterate the sim to allow EnergyPlus to go through shutdown;
   iterate();
   sim_thread.join();
@@ -179,7 +179,7 @@ double Spawn::getValue(const unsigned int & ref) const {
   }
 }
 
-Spawn::ZoneSums Spawn::zoneSums(const int zonenum) const {
+Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
   Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
   Real64 SumHA{0.0};      // Zone sum of Hc*Area
   Real64 SumHATsurf{0.0}; // Zone sum of Hc*Area*Tsurf
@@ -189,7 +189,7 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) const {
   Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
   Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
 
-  EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(zonenum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
+  EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(sim_state.dataZonePlenum, zonenum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
 
   Spawn::ZoneSums sums;
 
@@ -286,8 +286,8 @@ void Spawn::exchange()
   isRunningCheck();
 
   // Uses the EnergyPlus api getVariableHandle, but throws if the variable does not exist
-  auto spawnGetVariableHandle = [](const std::string & name, const std::string & key) {
-    const auto h = getVariableHandle(name.c_str(), key.c_str());
+  auto spawnGetVariableHandle = [this](const std::string & name, const std::string & key) {
+    const auto h = getVariableHandle(simState(), name.c_str(), key.c_str());
     if (h == -1) {
       throw std::runtime_error(fmt::format("Attempt to get invalid variable using name '{}', and key '{}'", name, key));
     }
@@ -295,8 +295,8 @@ void Spawn::exchange()
   };
 
   // Uses the EnergyPlus api getActuatorHandle, but throws if the actuator does not exist
-  auto spawnGetActuatorHandle = [](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
-    const auto h = getActuatorHandle(componenttype.c_str(), controltype.c_str(), componentname.c_str());
+  auto spawnGetActuatorHandle = [this](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
+    const auto h = getActuatorHandle(simState(), componenttype.c_str(), controltype.c_str(), componentname.c_str());
     if (h == -1) {
       throw std::runtime_error(
           fmt::format(
@@ -312,17 +312,17 @@ void Spawn::exchange()
 
   auto spawnGetSensorValue = [&](Variable & var) {
     const auto h = spawnGetVariableHandle(var.outputvarname, var.outputvarkey);
-    return getVariableValue(h);
+    return getVariableValue(simState(), h);
   };
 
   auto spawnSetActuatorValue = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
     const auto h = spawnGetActuatorHandle(componenttype, controltype, componentname);
-    setActuatorValue(h, value);
+    setActuatorValue(simState(), h, value);
   };
 
   auto spawnResetActuator = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
     const auto h = spawnGetActuatorHandle(componenttype, controltype, componentname);
-    resetActuator(h);
+    resetActuator(simState(), h);
   };
 
   auto actuateVar = [&](const Variable & var) {
@@ -410,7 +410,7 @@ void Spawn::externalHVACManager() {
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once
   // during the simulation
-  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints();
+  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints(sim_state.dataZoneTempPredictorCorrector);
 
   // Likewise init zone equipment one time
   initZoneEquip();
@@ -469,6 +469,10 @@ void Spawn::emptyLogMessageQueue() {
       log_message_queue.pop_front();
     }
   }
+}
+
+EnergyPlusState Spawn::simState() {
+  return reinterpret_cast<EnergyPlusState>(&sim_state);
 }
 
 boost::filesystem::path exedir() {
