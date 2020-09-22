@@ -63,7 +63,8 @@ void energyplusToFMU(
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuspawnPath = fmuStagingPath / "model.spawn";
-  const auto fmuEPFMIPath = fmuStagingPath / epfmi_filename();
+  const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
+
 
   boost::filesystem::remove_all(fmuPath);
   boost::filesystem::remove_all(fmuStagingPath);
