@@ -358,6 +358,10 @@ void Spawn::exchange()
         break;
       case VariableType::SCHEDULE:
         actuateVar(var);
+        break;
+      case VariableType::QGAIRAD_FLOW:
+        actuateVar(var);
+        break;
       default:
         break;
     }

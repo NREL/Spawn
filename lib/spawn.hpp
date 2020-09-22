@@ -50,7 +50,6 @@
 
 #include "input.hpp"
 #include "variables.hpp"
-#include "zone.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
