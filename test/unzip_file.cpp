@@ -12,8 +12,8 @@ TEST_CASE("Test unzipped file")
   REQUIRE(boost::filesystem::exists(testzip()));
   REQUIRE(boost::filesystem::is_regular(testzip()));
 
-  const auto out_file = td.dir() / "out_file.data";
-  spawn::util::Unzipped_File unzippedFile{testzip(), "a_dir/a_file.data", out_file};
+  const auto out_file = td.dir() / "a_dir/a_file.data";
+  spawn::util::Unzipped_File unzippedFile{testzip(), td.dir(), {"a_dir/a_file.data"}};
 
   REQUIRE(boost::filesystem::exists(out_file));
   REQUIRE(boost::filesystem::is_regular(out_file));
@@ -38,9 +38,9 @@ TEST_CASE("Test missing zip file")
 
   REQUIRE(!boost::filesystem::exists(missing_file));
 
-  const auto out_file = td.dir() / "out_file.data";
+  const auto out_file = td.dir() / "a_dir/a_file.data";
 
-  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{missing_file, "a_dir/a_file.data", out_file}),
+  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{missing_file, td.dir(), {"a_dir/a_file.data"}}),
                       Catch::Contains("Error opening zipfile") && Catch::Contains("missing_file.zip"));
 }
 
@@ -51,7 +51,7 @@ TEST_CASE("Test missing file in zip")
   REQUIRE(boost::filesystem::exists(testzip()));
   REQUIRE(boost::filesystem::is_regular(testzip()));
 
-  const auto out_file = td.dir() / "out_file.data";
-  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), "a_dir/b_file.data", out_file}),
+  const auto out_file = td.dir() / "a_dir/b_file.data";
+  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), td.dir(), {"a_dir/b_file.data"}}),
                       Catch::Contains("Error opening file in zip") && Catch::Contains("a_dir/b_file.data"));
 }

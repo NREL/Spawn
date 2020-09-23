@@ -168,14 +168,14 @@ namespace fmu {
     boost::filesystem::path m_fmu_file;
     bool m_require_all_symbols;
     util::Temp_Directory m_tempDirectory{};
-    util::Unzipped_File m_unzipped_xml{m_fmu_file, modelDescriptionPath(), m_tempDirectory.dir() / modelDescriptionPath()};
+    // unzip all files
+    util::Unzipped_File m_unzipped{m_fmu_file, m_tempDirectory.dir(), {}};
 
     pugi::xml_document m_model_description;
-    pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file(m_unzipped_xml.unzippedFile().c_str())};
-    util::Unzipped_File m_unzipped_fmi{m_fmu_file, fmiBinaryFullPath(), m_tempDirectory.dir() / fmiBinaryFullPath()};
+    pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file((m_unzipped.outputDir() / modelDescriptionPath()).c_str())};
 
  public:
-    FMI fmi{m_unzipped_fmi.unzippedFile(), m_require_all_symbols};
+    FMI fmi{m_unzipped.outputDir() / fmiBinaryFullPath(), m_require_all_symbols};
   };
 
 } // namespace fmu
