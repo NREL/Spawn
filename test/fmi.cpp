@@ -48,8 +48,8 @@ TEST_CASE("Test features of Spawn Generated FMU")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   //// This is not the correct resource_path
-  //auto resource_path = boost::filesystem::canonical((fmu.modelDescriptionPath().parent_path() / "resources")).string().c_str();
-  //fmi2CallbackFunctions callbacks = {fmuLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  //fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path, &callbacks, false, true);
+  const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
+  fmi2CallbackFunctions callbacks = {fmuLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 }
 

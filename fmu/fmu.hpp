@@ -159,7 +159,9 @@ namespace fmu {
     }
 
 
-
+    const boost::filesystem::path &extractedFilesPath() const {
+      return m_tempDirectory.dir();
+    }
 
 
   private:
