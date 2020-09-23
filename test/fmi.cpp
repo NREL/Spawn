@@ -35,3 +35,21 @@ TEST_CASE("Test loading of Spawn Generated FMU")
   spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 }
+
+// Do nothing logger
+void fmuLogger(fmi2ComponentEnvironment, fmi2String, fmi2Status, fmi2String, fmi2String, ...)
+{
+}
+
+TEST_CASE("Test features of Spawn Generated FMU")
+{
+  const auto fmu_file = create_fmu();
+  spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
+  CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
+
+  //// This is not the correct resource_path
+  //auto resource_path = boost::filesystem::canonical((fmu.modelDescriptionPath().parent_path() / "resources")).string().c_str();
+  //fmi2CallbackFunctions callbacks = {fmuLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  //fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path, &callbacks, false, true);
+}
+
