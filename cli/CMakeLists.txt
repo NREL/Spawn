@@ -132,7 +132,7 @@ target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
 
 target_link_libraries(spawn
-	libspawn
+  libspawn
   energypluslib
   CONAN_PKG::CLI11
   CONAN_PKG::boost

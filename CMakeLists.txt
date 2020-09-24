@@ -89,7 +89,6 @@ conan_cmake_run(
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
-  fmt/6.2.1
   nlohmann_json/3.7.3
   spdlog/1.6.0
   BASIC_SETUP
