@@ -1,4 +1,3 @@
-#include "../util/platform.hpp"
 #include "../lib/fmugenerator.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
@@ -57,11 +56,11 @@ boost::filesystem::path iddInstallPath() {
 }
 
 boost::filesystem::path epfmiInstallPath() {
-  const auto candidate = exedir() / ("../lib/" + spawn::epfmiName());
+  const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
   if (boost::filesystem::exists(candidate)) {
     return candidate;
   } else {
-    return exedir() / spawn::epfmiName();
+    return exedir() / spawn::epfmi_filename();
   }
 }
 
@@ -70,7 +69,7 @@ boost::filesystem::path jmodelicaHome() {
     return exedir() / "../JModelica/";
   } else {
     boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-    return binary_dir / "modelica/JModelica-prefix/src/JModelica/";
+    return binary_dir / "JModelica/";
   }
 }
 
@@ -78,8 +77,18 @@ boost::filesystem::path mblPath() {
   if (isInstalled()) {
     return exedir() / "../modelica-buildings/Buildings/";
   } else {
-    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
-    return binary_dir / "modelica-buildings/Buildings/";
+    boost::filesystem::path source_dir(spawn::SOURCE_DIR);
+    return source_dir / "submodules/modelica-buildings/Buildings/";
+  }
+}
+
+void handle_eptr(std::exception_ptr eptr) {
+  try {
+    if (eptr) {
+      std::rethrow_exception(eptr);
+    }
+  } catch(const std::exception& e) {
+    std::cout << "Spawn encountered an error: \n\"" << e.what() << "\"\n";
   }
 }
 
@@ -93,9 +102,18 @@ int main(int argc, const char *argv[]) {
 
   std::string outputpath;
   auto outputPathOption =
-      app.add_option("-o,--output-path", outputpath,
-                     "Path where fmu should be placed", true);
+      app.add_option("--output-path", outputpath,
+                     "Full path including filename and extension where the fmu should be placed. Intermediate directories will be created if necessary", true);
   outputPathOption->needs(createOption);
+
+  std::string outputdir;
+  auto outputDirOption =
+      app.add_option("--output-dir", outputdir,
+                     "Directory where the fmu should be placed. This path will be created if necessary", true);
+  outputDirOption->needs(createOption);
+
+  outputDirOption->excludes(outputPathOption);
+  outputPathOption->excludes(outputDirOption);
 
   bool nozip = false;
   auto zipOption = app.add_flag("--no-zip", nozip, "Stage FMU files on disk without creating a zip archive");
@@ -117,22 +135,26 @@ int main(int argc, const char *argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  if (*createOption) {
-    auto result = spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, iddInstallPath(), epfmiInstallPath());
-    if (result) {
-      return result;
-    }
+  std::exception_ptr eptr;
+  try {
+    if (*createOption) {
+      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER
-  } else if (*compileOption) {
-    auto result = spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
-    if (result) {
-      return result;
-    }
+    } else if (*compileOption) {
+      spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
 #endif
-  } else if (*versionOption) {
-    std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*versionOption) {
+      std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    }
+  } catch(...) {
+    eptr = std::current_exception();
   }
 
-  return 0;
+  if (eptr) {
+    handle_eptr(eptr);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 

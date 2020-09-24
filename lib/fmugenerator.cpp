@@ -2,7 +2,7 @@
 #include "input.hpp"
 #include "ziputil.hpp"
 #include "modelDescription.xml.hpp"
-#include "../util/platform.hpp"
+#include "../util/fmi_paths.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
@@ -10,6 +10,7 @@
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <boost/algorithm/string.hpp>
 #include <pugixml.hpp>
+#include <fmt/format.h>
 
 using json = nlohmann::json;
 
@@ -20,15 +21,16 @@ void jsonToIdf(const nlohmann::json & idfjson, const boost::filesystem::path & i
 nlohmann::json & adjustSimulationControl(nlohmann::json & jsonidf);
 nlohmann::json & addRunPeriod(nlohmann::json & jsonidf);
 nlohmann::json & removeUnusedObjects(nlohmann::json & jsonidf);
-nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const std::vector<spawn::OutputVariable> & requestedvars);
-
+nlohmann::json & addOtherEquipment(nlohmann::json & jsonidf, const Input& input);
+nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const Input& input);
 void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath);
 
-int energyplusToFMU(
+void energyplusToFMU(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,
   const std::string & outputpath,
+  const std::string & outputdir,
   boost::filesystem::path iddpath,
   boost::filesystem::path epfmupath
 ) {
@@ -39,23 +41,30 @@ int energyplusToFMU(
   // and rewrite the json input file paths so that they reflect the new paths
   // contained within the fmu layout.
 
-  auto outputroot = boost::filesystem::current_path();
+  // The default fmu output path
+  auto fmuPath = boost::filesystem::current_path() / (input.fmuBaseName() + ".fmu");
+
+  // These are options to override the default output path
   if( ! outputpath.empty() ) {
-    if( boost::filesystem::exists(outputpath) ) {
-      outputroot = outputpath;
-    }
+    fmuPath = boost::filesystem::path(outputpath);
+  } else if( ! outputdir.empty() ) {
+    fmuPath = boost::filesystem::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
-  // FMU staging paths
-  const auto fmuPath = outputroot / (input.fmuBaseName() + ".fmu");
-  const auto fmuStagingPath = outputroot / input.fmuBaseName();
+  const auto outputroot = fmuPath.parent_path();
+  const auto fmuStagingPath = outputroot / fmuPath.stem();
+
+  if( ! boost::filesystem::exists(outputroot) ) {
+    boost::filesystem::create_directories(outputroot);
+  }
+
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
   const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuspawnPath = fmuStagingPath / "model.spawn";
-  const auto fmuEPFMIPath = fmuStagingPath / ("binaries/" + fmiplatform() + "/" + epfmiName());
+  const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
 
   boost::filesystem::remove_all(fmuPath);
   boost::filesystem::remove_all(fmuStagingPath);
@@ -71,9 +80,10 @@ int energyplusToFMU(
 
   auto jsonidf = spawn::idfToJSON(input.idfInputPath());
   adjustSimulationControl(jsonidf);
-  addRunPeriod(jsonidf);
   removeUnusedObjects(jsonidf);
-  addOutputVariables(jsonidf, input.outputVariables);
+  addRunPeriod(jsonidf);
+  addOtherEquipment(jsonidf, input);
+  addOutputVariables(jsonidf, input);
   spawn::jsonToIdf(jsonidf, fmuidfPath);
 
   createModelDescription(input, modelDescriptionPath);
@@ -86,9 +96,9 @@ int energyplusToFMU(
 
   if (! nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
+    boost::filesystem::remove_all(fmuStagingPath);
   }
 
-  return 0;
 }
 
 json idfToJSON(const boost::filesystem::path & idfpath) {
@@ -167,6 +177,48 @@ json & addRunPeriod(json & jsonidf) {
   return jsonidf;
 }
 
+// An OtherEquipment object is added for each zone
+// in order to support the Spawn input "QGaiRad_flow"
+// A different approach would be to create a new EnergyPlus actuator,
+// "otherRadiantGains" and include in the summation performed by
+// the EnergyPlus function "SumAllInternalRadiationGains"
+// Since there is already substantial manipulation of the idf by Spawn,
+// this approach seems reasonable
+// With this approach QGaiRad_flow will interface with the OtherEquipment actuator,
+// Spawn user does not need to interface directly with the actuator
+json & addOtherEquipment(json& jsonidf, const Input& input) {
+  constexpr auto scheduletype = "Schedule:Constant";
+  constexpr auto schedulename = "Spawn-RadiantGains-Schedule";
+
+  jsonidf[scheduletype] = {
+    {
+      schedulename, {
+        {"schedule_type_limits_name", ""},
+        {"hourly_value", "1.0"}
+      }
+    }
+  };
+
+  for(const auto & zone : input.zones) {
+    if( ! zone.isconnected ) continue;
+
+    jsonidf[Zone::ep_qgairad_flow_object_type][zone.ep_qgairad_flow_object_name] = {
+      {"fuel_type", "None"},
+      {"zone_or_zonelist_name", zone.idfname},
+      {"schedule_name", schedulename},
+      {"design_level_calculation_method", "EquipmentLevel"},
+      {"design_level", 0.0},
+      {"power_per_zone_floor_area", 0.0},
+      {"power_per_person", 0.0},
+      {"fraction_latent", 0.0},
+      {"fraction_radiant", 1.0},
+      {"fraction_lost", 0.0}
+    };
+  }
+
+  return jsonidf;
+}
+
 // Remove objects related to HVAC and controls
 json & removeUnusedObjects(json & jsonidf) {
   for(auto typep = jsonidf.cbegin(); typep != jsonidf.cend();){
@@ -197,13 +249,13 @@ json & removeUnusedObjects(json & jsonidf) {
 }
 
 // Add output variables requested in the spawn input file, but not in the idf
-json & addOutputVariables(json & jsonidf, const std::vector<spawn::OutputVariable> & requestedvars) {
+json & addOutputVariables(json& jsonidf, const Input& input) {
   // A pair that holds an output variable name and key,
   typedef std::pair<std::string, std::string> Varpair;
 
   // Make a list of the requested outputs
   std::vector<Varpair> requestedpairs;
-  for(const auto & var : requestedvars) {
+  for(const auto & var : input.outputVariables) {
     requestedpairs.emplace_back(var.idfname, var.idfkey);
   }
 

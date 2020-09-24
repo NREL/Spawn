@@ -50,8 +50,11 @@
 
 #include "input.hpp"
 #include "variables.hpp"
-#include "zone.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
 #include <boost/filesystem.hpp>
+#include <deque>
 #include <string>
 #include <vector>
 #include <map>
@@ -59,86 +62,100 @@
 #include <mutex>
 #include <sstream>
 #include <condition_variable>
+#include <functional>
 
 namespace spawn {
 
-enum class EPStatus { ADVANCE, NONE, TERMINATE, ERR, DONE };
-
 class Spawn {
 public:
-
-  Spawn(const std::string & t_name, const std::string & t_input);
+  Spawn(const std::string & t_name, const std::string & t_input, const boost::filesystem::path & workingdir = ".");
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
   bool operator==(const Spawn& other) const {
     return (this == &other);
   }
 
-  int start(const double & starttime = 0.0);
-  int stop();
-  int setTime(const double & time);
+  void start(const double & starttime = 0.0);
+  void stop();
+  bool isRunning() const;
+  void setTime(const double & time);
 
-  double currentSimTime() const;
-  double nextSimTime() const;
+  double currentTime() const;
+  double nextEventTime() const;
 
   void exchange();
 
   // Set a variable identified by ref to the given value
-  // Return true if the operation was successful
-  bool setValue(const unsigned int & ref, const double & value);
+  // Throws a std::exception if ref is invalid or the simulation is not running
+  void setValue(const unsigned int & ref, const double & value);
 
   // Get the value of variable identified by ref
-  // if ok parameter is given then it will be set to true if the operation was successful
-  double getValue(const unsigned int & ref, bool & ok) const;
-
+  // Throws a std::exception if ref is invalid or the simulation is not running
   double getValue(const unsigned int & ref) const;
 
-  std::string instanceName;
-
-  bool toleranceDefined;
-  double tolerance;
-  double startTime;
-  bool stopTimeDefined;
-  double stopTime;
+  void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
+  void logMessage(EnergyPlus::Error level, const std::string & message);
 
 private:
-  // Wait for the EnergyPlus thread from the control thread
-  // Return 0 on success
-  // This should be called from the control thread
-  int controlWait();
+  std::string instanceName;
+  boost::filesystem::path workingdir;
+  std::map<unsigned int, Variable> variables;
+  Input input;
 
-  struct ZoneSums {
-    double tempDepCoef;
-    double tempIndCoef;
-  };
+  double requestedTime;
+
+  // Signal EnergyPlus to move through the simulation loop
+  // Depending on the current simulation time, this may be an inner most hvac iteration,
+  // or big "outer" zone iteration
+  void iterate();
+  // Wait for EnergyPlus to complete any current iteration. ie. iterate_flag == false
+  void wait();
+  // iterate flag == true when EnergyPlus is actively working
+  bool iterate_flag{false};
+  std::condition_variable iterate_cv;
+  // is_running is true for as long as the EnergyPlus process is running
+  // in contrast to iterate_flag which is only true when EnergyPlus is actively
+  // doing computation. In many cases the EnergyPlus process may be in wait mode,
+  // waiting for the condition_variable (iterate_flag) to signal an iteration
+  bool is_running{false};
+  // Throws if not is_running
+  void isRunningCheck() const;
+
+  std::mutex sim_mutex;
+  std::thread sim_thread;
+
+  EnergyPlus::EnergyPlusData sim_state;
+  EnergyPlusState simState();
+
+  std::exception_ptr sim_exception_ptr{nullptr};
+
+  void externalHVACManager();
+
+  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
+  std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
+  void emptyLogMessageQueue();
 
   // Given a zone name, return the index according to EnergyPlus
   int zoneNum(const std::string & zoneName) const;
   // These functions assume the EnergyPlus unit system
-  ZoneSums zoneSums(const int zonenum) const;
+  // ZoneSums are the coefficients used in the zone heat transfer calculation
+  struct ZoneSums {
+    double tempDepCoef;
+    double tempIndCoef;
+  };
+  ZoneSums zoneSums(const int zonenum);
   double zoneHeatTransfer(const int zonenum);
   void setZoneTemperature(const int zonenum, const double & temp);
   double zoneTemperature(const int zonenum);
   void updateZoneTemperature(const int zonenum, const double & dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
-
-  void externalHVACManager();
-
-  double requestedTime;
-  std::thread simthread;
-  EPStatus epstatus;
-  std::condition_variable control_cv;
-  std::mutex control_mutex;
-
+  void initZoneEquip();
   // Time in seconds of the last zone temperature update
   // This is required for computing the dt in the
   // updateZoneTemperature calculation
   double prevZoneTempUpdate;
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
-
-  std::map<unsigned int, Variable> variables;
-  Input input;
 };
 
 boost::filesystem::path exedir();

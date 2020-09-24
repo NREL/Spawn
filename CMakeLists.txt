@@ -5,13 +5,15 @@ project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
 option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
-option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" TRUE)
+option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   add_definitions(-DENABLE_MODELICA_COMPILER)
 endif()
 
+set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so reset to OFF
 set(CPACK_BINARY_IFW OFF)
 
@@ -96,7 +98,6 @@ conan_cmake_run(
   BUILD
   missing)
 
-
 ###############################################################################
 # RPATH settings
 # Conan set this to true, which is not the cmake default and not what we want
@@ -109,19 +110,59 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 include(embedded/EmbedFiles.cmake)
 
+if(ENABLE_MODELICA_COMPILER)
+  find_package(LLVM REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  include_directories(${CLANG_INCLUDE_DIRS})
 
-set(jmodelica_tar "Modelica-latest.tar.gz")
-file(DOWNLOAD https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
-execute_process(COMMAND ${CMAKE_COMMAND} -E
-  tar xz "${PROJECT_BINARY_DIR}/${jmodelica_tar}"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-)
-set(jmodelica_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux/")
+  if(APPLE)
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  elseif(UNIX)
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  else()
+    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
+    set(jmodelica_tar "Modelica-latest.tar.gz")
+    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
+  endif()
 
+  set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/${jmodelica_tar}")
+  set(jmodelica_download_path "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
+  set(jmodelica_path "${PROJECT_BINARY_DIR}/JModelica/")
+
+  set(download_jmodelica TRUE)
+
+  if(EXISTS ${jmodelica_download_path})
+    file(MD5 ${jmodelica_download_path} jmodelica_current_md5)
+    if(${jmodelica_current_md5} EQUAL ${jmodelica_md5})
+      if(EXISTS ${jmodelica_path})
+        set(download_jmodelica FALSE)
+      endif()
+    endif()
+  endif()
+
+  if(download_jmodelica)
+    file(DOWNLOAD ${jmodelica_url} ${jmodelica_download_path})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+      tar xz ${jmodelica_download_path}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+      rename ${jmodelica_extracted_path} ${jmodelica_path}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+  endif()
+endif()
+
+add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory( modelica )
 endif()
-add_subdirectory( util )
 add_subdirectory( lib )
 add_subdirectory( cli )
 add_subdirectory( epfmi )
@@ -142,32 +183,32 @@ elseif( UNIX AND NOT APPLE )
   set(os_prefix spawn-linux64)
 endif()
 
-set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
-
 add_custom_target(
-  Stage ALL
+  copy_spawn_cli_depends ALL
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
-#  COMMAND ${CMAKE_COMMAND} -E copy_directory
-#          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-#          "${PROJECT_BINARY_DIR}/modelica-buildings"
-#  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
-#  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
-#  COMMAND ${CMAKE_COMMAND} -E copy
-#          $<TARGET_FILE:spawn>
-#          ${idd_path}
-#          "${modelica_bin_path}"
-#  COMMAND ${CMAKE_COMMAND} -E copy
-#          $<TARGET_FILE:epfmi>
-#          "${modelica_lib_path}"
-#  COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
 )
-#if( INSTALL_BUILDINGS_LIBRARY )
-#  install(DIRECTORY submodules/modelica-buildings DESTINATION .)
-#  install(TARGETS spawn epfmi DESTINATION ${modelica_bin_path})
-#endif()
+
+set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+
+add_custom_target(
+  stage_mbl
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+          "${PROJECT_BINARY_DIR}/modelica-buildings"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:spawn>
+          ${idd_path}
+          "${modelica_bin_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy
+          $<TARGET_FILE:epfmi>
+          "${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
+)
 
 install(DIRECTORY examples DESTINATION .)
 install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/ )

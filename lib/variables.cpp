@@ -4,6 +4,7 @@
 #include "outputvariable.hpp"
 #include "iddtypes.hpp"
 #include "schedule.hpp"
+#include "zone.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
@@ -236,7 +237,9 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("start","0.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
-        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        var.actuatorcomponentkey = zone.ep_qgairad_flow_object_name;
+        var.actuatorcomponenttype = spawn::Zone::ep_qgairad_flow_object_type;
+        var.actuatorcontroltype = spawn::Zone::ep_qgairad_flow_object_controltype;
 
         result.emplace(i,std::move(var));
       }
@@ -329,9 +332,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
         var.real_attributes.emplace_back("relativeQuantity","false");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
-
-        // TODO exchange this variable with real EnergyPlus data
-        var.setValue(21.0, spawn::units::UnitSystem::EP);
 
         result.emplace(i,std::move(var));
       }

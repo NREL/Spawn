@@ -11,10 +11,9 @@ namespace util {
   public:
     Unzipped_File(const boost::filesystem::path &zipFile,
                   boost::filesystem::path outputDir,
-                  const std::vector<boost::filesystem::path> &filesToUnzip
-);
+                  const std::vector<boost::filesystem::path> &filesToUnzip);
 
-    const boost::filesystem::path &ouputDir() const noexcept
+    const boost::filesystem::path &outputDir() const noexcept
     {
       return m_outputDir;
     }

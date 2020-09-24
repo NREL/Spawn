@@ -1,41 +1,49 @@
 #include "zone.hpp"
 #include <iostream>
+#include <fmt/format.h>
 
 using json = nlohmann::json;
 
 namespace spawn {
 
+const std::string Zone::ep_qgairad_flow_object_type = "OtherEquipment";
+const std::string Zone::ep_qgairad_flow_object_controltype = "Power Level";
+
 Zone::Zone(std::string t_idfname, bool t_isconnected) :
   idfname(std::move(t_idfname)),
-  isconnected(std::move(t_isconnected))
+  isconnected(std::move(t_isconnected)),
+  ep_qgairad_flow_object_name(fmt::format("Spawn-Zone-{}-RadiantGains", idfname))
 {
 }
 
 std::vector<Zone> Zone::createZones(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf) {
   std::vector<Zone> result;
-
   constexpr auto & type = "Zone";
+  const auto modelicazones = spawnjson.value("model",json()).value("zones", std::vector<json>(0));
+
+  auto getIsConnected = [&](const std::string & idfname) {
+    const auto zit = std::find_if(std::begin(modelicazones), std::end(modelicazones),
+        [&](const nlohmann::json & modelicazone) {
+          return (idfname == modelicazone.value("name",""));
+        }
+    );
+    if(zit != std::end(modelicazones)) {
+      return true;
+    }
+
+    return false;
+  };
+
+  auto buildzone = [&](const std::string & idfname) {
+    Zone zone(idfname, getIsConnected(idfname));
+    return zone;
+  };
 
   if ( jsonidf.find(type) != jsonidf.end() ) {
     const auto idfzones = jsonidf[type];
-    const auto & buildzone = [&](const std::string & idfname) {
-      Zone zone(idfname, false);
-      return zone;
-    };
+
     for( const auto & idfzone : idfzones.items() ) {
       result.emplace_back(buildzone(idfzone.key()));
-    }
-  }
-
-  const auto modelicazones = spawnjson.value("model",json()).value("zones", std::vector<json>(0));
-  for(const auto & modelicazone : modelicazones) {
-    const auto zit = std::find_if(std::begin(result), std::end(result),
-        [&](const Zone & zone) {
-          return (zone.idfname == modelicazone.value("name",""));
-        }
-    );
-    if(zit != std::end(result)) {
-      zit->isconnected = true;
     }
   }
 

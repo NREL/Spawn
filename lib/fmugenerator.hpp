@@ -6,11 +6,12 @@
 
 namespace spawn {
 
-int energyplusToFMU(
+void energyplusToFMU(
   const std::string &jsoninput,
   bool nozip,
   bool nocompress,
   const std::string & outputpath,
+  const std::string & outputdir,
   boost::filesystem::path iddpath,
   boost::filesystem::path epfmupath
 );

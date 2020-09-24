@@ -2,7 +2,6 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
-#include "zone.hpp"
 #include <string>
 #include <vector>
 #include <map>

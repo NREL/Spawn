@@ -28,20 +28,24 @@ add_library(libspawn
   ziputil.hpp
   ziputil.cpp
 
-  # EnergyPlus compiles these files into a DLL, but we would prefer to
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
+  ## EnergyPlus compiles these files into a DLL, but we would prefer to
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
+  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
 )
 
 target_include_directories(libspawn
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
   PRIVATE
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
@@ -50,6 +54,7 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
 )
 

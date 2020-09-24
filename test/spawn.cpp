@@ -11,7 +11,7 @@ boost::filesystem::path create_fmu()
   // This call generates an FMU for the corresponding idf file
   // testcase1() returns a path to RefBldgSmallOfficeNew2004_Chicago.spawn
   // which is a json file that configures the spawn input
-  const auto cmd = spawnexe() + " --create " + testcase1() + " --output-path " + testdir().string();
+  const auto cmd = spawnexe() + " --create " + testcase1() + " --output-dir " + testdir().string();
   const auto result = system(cmd.c_str());
   if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
@@ -33,6 +33,23 @@ TEST_CASE( "Spawn creates an FMU" ) {
   CHECK(boost::filesystem::is_regular_file(created_fmu));
   CHECK(boost::filesystem::file_size(created_fmu) > 0);
 }
+
+#if defined ENABLE_MODELICA_COMPILER
+TEST_CASE( "Spawn is able to compile a simple Modelica model" ) {
+  const auto cmd = spawnexe() + " --compile Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
+  const auto result = system(cmd.c_str());
+  REQUIRE(result == 0);
+  // Glob that binary exists. ie
+  // <build_dir>/Buildings_Controls_OBC_CDL_Continuous_Validation_Line/binaries/Buildings_Controls_OBC_CDL_Continuous_Validation_Line.so
+  // using correct shared library extension for platform
+}
+
+TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions" ) {
+  const auto cmd = spawnexe() + " --compile Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZone";
+  const auto result = system(cmd.c_str());
+  REQUIRE(result == 0);
+}
+#endif
 
 /**
 TEST_CASE( "Spawn simulates an FMU" ) {
