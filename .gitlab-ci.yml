@@ -78,6 +78,10 @@ build:windows:
  tags:
    - windows
  script:
+   - which conan && conan --version
+   - which pip3 && pip3 --version || pip --version
+   - which pip3 && pip3 install --user -U conan || pip install --user -U conan
+   - which conan && conan --version
    - mkdir build
    - cd build
    - C:\Program` Files\CMake\bin\cmake.exe -G 'Visual Studio 15 2017 Win64' -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON ..
