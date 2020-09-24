@@ -80,7 +80,7 @@ build:windows:
  script:
    - conan --version
    - pip3 --version
-   - pip3 install --user -U conan
+   - pip3 install -U conan
    - conan --version
    - mkdir build
    - cd build
