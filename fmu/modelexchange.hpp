@@ -98,6 +98,7 @@ public:
       return func(result);
     }
     }
+    throw std::logic_error("Unknown variable type to visit.");
   }
 
   FMU fmu;

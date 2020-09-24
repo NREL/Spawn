@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 
 namespace spawn {
-static std::string fmi_platform()
+static inline std::string fmi_platform()
 {
 #ifdef __APPLE__
   return "darwin64";
@@ -16,7 +16,7 @@ static std::string fmi_platform()
 #endif
 }
 
-static std::string fmi_lib_ext()
+static inline std::string fmi_lib_ext()
 {
 #ifdef __APPLE__
   return "dylib";
@@ -27,7 +27,7 @@ static std::string fmi_lib_ext()
 #endif
 }
 
-static std::string fmi_lib_prefix()
+static inline std::string fmi_lib_prefix()
 {
 #ifdef __APPLE__
   return "";
@@ -38,22 +38,22 @@ static std::string fmi_lib_prefix()
 #endif
 }
 
-static std::string fmi_lib_filename(const std::string &library_name)
+static inline std::string fmi_lib_filename(const std::string &library_name)
 {
   return fmt::format("{}{}.{}", fmi_lib_prefix(), library_name, fmi_lib_ext());
 }
 
-static boost::filesystem::path fmi_lib_path(const std::string &library_name)
+static inline boost::filesystem::path fmi_lib_path(const std::string &library_name)
 {
   return boost::filesystem::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
 
-static std::string epfmi_basename()
+static inline std::string epfmi_basename()
 {
   return "epfmi";
 }
 
-static std::string epfmi_filename()
+static inline std::string epfmi_filename()
 {
   return fmi_lib_filename(epfmi_basename());
 }

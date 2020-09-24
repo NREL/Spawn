@@ -25,7 +25,7 @@ add_executable(tests
 
 
 add_dependencies(tests fmi_load_test)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 CONAN_PKG::spdlog spawn_utils fmu)
 
 
 # Make this better

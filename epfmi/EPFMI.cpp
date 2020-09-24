@@ -107,8 +107,8 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
   auto & comp = spawn::spawns.back();
 
-	if (loggingOn) {
-		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+  if (loggingOn) {
+    const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
 
       static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
 
@@ -126,12 +126,12 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
       }
 
       const auto fmilevel = logLevelMap[level];
-			const auto & env = functions->componentEnvironment;
+      const auto & env = functions->componentEnvironment;
 
-			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
-		};
-		comp.setLogCallback(logger);
-	}
+      functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
+    };
+    comp.setLogCallback(logger);
+  }
 
   return &comp;
 }
