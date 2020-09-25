@@ -80,7 +80,7 @@ build:windows:
  script:
    - conan --version
    - pip3 --version
-   - pip3 uninstall conan
+   - pip3 uninstall -y conan
    - pip3 install -U --user conan
    - echo $env:PATH
    - $env:PATH = "c:\users\administrator\appdata\local\programs\python\python37-32\Scripts;$env:PATH"
