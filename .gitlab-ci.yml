@@ -81,9 +81,10 @@ build:windows:
    - conan --version
    - pip3 --version
    - pip3 install -U --user conan
-   - echo %PATH%
-   - set PATH="c:\\users\\administrator\\appdata\\local\\programs\\python\\python37-32\\Scripts;%PATH%"
-   - echo %PATH%
+   - echo $env:PATH
+   - $env:PATH = "c:\users\administrator\appdata\local\programs\python\python37-32\Scripts;$env:PATH"
+   - echo $env:PATH
+   - dir c:\users\administrator\appdata\local\programs\python\python37-32\Scripts
    - conan --version
    - mkdir build
    - cd build
