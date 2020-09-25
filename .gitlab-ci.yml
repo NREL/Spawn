@@ -81,11 +81,14 @@ build:windows:
    - conan --version
    - pip3 --version
    - pip3 uninstall -y conan
-   - pip3 install -U --user conan
+   - pip3 install -U conan
+   - Get-Command conan
    - echo $env:PATH
-   - $env:PATH = "c:\users\administrator\appdata\local\programs\python\python37-32\Scripts;$env:PATH"
+     # c:\windows\system32\config\systemprofile\appdata\roaming\python\python37\scripts\
+   - $env:PATH = "c:\windows\system32\config\systemprofile\appdata\roaming\python\python37\scripts;$env:PATH"
    - echo $env:PATH
-   - dir c:\users\administrator\appdata\local\programs\python\python37-32\Scripts
+   - dir c:\windows\system32\config\systemprofile\appdata\roaming\python\python37\scripts
+   - Get-Command conan
    - conan --version
    - mkdir build
    - cd build
