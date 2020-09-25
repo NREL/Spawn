@@ -80,8 +80,8 @@ build:windows:
  script:
    - conan --version
    - pip3 --version
-   - pip3 install -U conan
-   - $env:Path = "c:\windows\system32\config\systemprofile\appdata\roaming\python\python37\site-packages;$env:Path"
+   - pip3 install -U --user conan
+   - $env:Path = "c:\\users\\administrator\\appdata\\local\\programs\\python\\python37-32\\Scripts;$env:Path"
    - conan --version
    - mkdir build
    - cd build
