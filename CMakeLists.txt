@@ -188,14 +188,14 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
 )
 
-set(modelica_bin_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-set(modelica_lib_path "modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+set(modelica_bin_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 
-add_custom_target(
-  stage_mbl
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-          "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-          "${PROJECT_BINARY_DIR}/modelica-buildings"
+include(ExternalProject)
+ExternalProject_Add(MBL
+  URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+  SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
+  BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
   COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
   COMMAND ${CMAKE_COMMAND} -E copy
