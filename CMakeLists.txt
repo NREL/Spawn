@@ -176,7 +176,7 @@ add_subdirectory( test )
 if( APPLE )
   set(os_prefix spawn-darwin64)
 elseif( WIN32 )
-  set(os_prefix spawn-win32)
+  set(os_prefix spawn-win64)
 elseif( UNIX AND NOT APPLE )
   set(os_prefix spawn-linux64)
 endif()
@@ -193,11 +193,12 @@ set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resour
 
 include(ExternalProject)
 ExternalProject_Add(MBL
+  BUILD_ALWAYS 1
   URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
   SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
   BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_bin_path}"
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/${modelica_lib_path}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
   COMMAND ${CMAKE_COMMAND} -E copy
           $<TARGET_FILE:spawn>
           ${idd_path}
