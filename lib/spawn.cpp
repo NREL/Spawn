@@ -281,22 +281,30 @@ int Spawn::zoneNum(const std::string & zoneName) const {
   return 0;
 }
 
-void Spawn::exchange()
-{
-  isRunningCheck();
-
-  // Uses the EnergyPlus api getVariableHandle, but throws if the variable does not exist
-  auto spawnGetVariableHandle = [this](const std::string & name, const std::string & key) {
-    const auto h = getVariableHandle(simState(), name.c_str(), key.c_str());
+int Spawn::getVariableHandle(const std::string & name, const std::string & key) {
+  // look in the cache
+  const auto it = variable_handle_cache.find(std::make_tuple(name, key));
+  if (it != variable_handle_cache.end()) {
+    return it->second;
+  } else {
+    // Uses the EnergyPlus api getVariableHandle, but throws if the variable does not exist
+    const auto h = ::getVariableHandle(simState(), name.c_str(), key.c_str());
     if (h == -1) {
       throw std::runtime_error(fmt::format("Attempt to get invalid variable using name '{}', and key '{}'", name, key));
     }
+    variable_handle_cache[std::make_tuple(name,key)] = h;
     return h;
-  };
+  }
+}
 
-  // Uses the EnergyPlus api getActuatorHandle, but throws if the actuator does not exist
-  auto spawnGetActuatorHandle = [this](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
-    const auto h = getActuatorHandle(simState(), componenttype.c_str(), controltype.c_str(), componentname.c_str());
+int Spawn::getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
+  // look in the cache
+  const auto it = actuator_handle_cache.find(std::make_tuple(componenttype, controltype, componentname));
+  if (it != actuator_handle_cache.end()) {
+    return it->second;
+  } else {
+    // Uses the EnergyPlus api getActuatorHandle, but throws if the actuator does not exist
+    const auto h = ::getActuatorHandle(simState(), componenttype.c_str(), controltype.c_str(), componentname.c_str());
     if (h == -1) {
       throw std::runtime_error(
           fmt::format(
@@ -307,21 +315,27 @@ void Spawn::exchange()
           )
       );
     }
+    actuator_handle_cache[std::make_tuple(componenttype, controltype, componentname)] = h;
     return h;
-  };
+  }
+}
+
+void Spawn::exchange()
+{
+  isRunningCheck();
 
   auto spawnGetSensorValue = [&](Variable & var) {
-    const auto h = spawnGetVariableHandle(var.outputvarname, var.outputvarkey);
+    const auto h = getVariableHandle(var.outputvarname, var.outputvarkey);
     return getVariableValue(simState(), h);
   };
 
   auto spawnSetActuatorValue = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
-    const auto h = spawnGetActuatorHandle(componenttype, controltype, componentname);
+    const auto h = getActuatorHandle(componenttype, controltype, componentname);
     setActuatorValue(simState(), h, value);
   };
 
   auto spawnResetActuator = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
-    const auto h = spawnGetActuatorHandle(componenttype, controltype, componentname);
+    const auto h = getActuatorHandle(componenttype, controltype, componentname);
     resetActuator(simState(), h);
   };
 

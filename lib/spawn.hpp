@@ -59,6 +59,7 @@
 #include <vector>
 #include <map>
 #include <thread>
+#include <tuple>
 #include <mutex>
 #include <sstream>
 #include <condition_variable>
@@ -156,6 +157,12 @@ private:
   double prevZoneTempUpdate;
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
+
+  int getVariableHandle(const std::string & name, const std::string & key);
+  std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;
+
+  int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
 };
 
 boost::filesystem::path exedir();
