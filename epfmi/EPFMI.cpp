@@ -137,7 +137,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
       const auto fmilevel = logLevelMap[level];
 			const auto & env = functions->componentEnvironment;
 
-			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
+			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", "%s", message.c_str());
 		};
 		comp.setLogCallback(logger);
 	}
