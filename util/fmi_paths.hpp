@@ -34,7 +34,7 @@ static std::string fmi_lib_prefix()
 #elif _WIN32
   return "";
 #else
-  return "lib";
+  return "";
 #endif
 }
 
@@ -46,6 +46,16 @@ static std::string fmi_lib_filename(const std::string &library_name)
 static boost::filesystem::path fmi_lib_path(const std::string &library_name)
 {
   return boost::filesystem::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
+}
+
+static std::string epfmi_basename()
+{
+  return "epfmi";
+}
+
+static std::string epfmi_filename()
+{
+  return fmi_lib_filename(epfmi_basename());
 }
 
 }

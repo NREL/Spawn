@@ -10,16 +10,21 @@ namespace util {
   {
   public:
     Unzipped_File(const boost::filesystem::path &zipFile,
-                  const boost::filesystem::path &fileToUnzip,
-                  boost::filesystem::path outputPath);
+                  boost::filesystem::path outputDir,
+                  const std::vector<boost::filesystem::path> &filesToUnzip);
 
-    const boost::filesystem::path &unzippedFile() const noexcept
+    const boost::filesystem::path &outputDir() const noexcept
     {
-      return m_unzippedFile;
+      return m_outputDir;
+    }
+
+    const std::vector<boost::filesystem::path> &unzippedFiles() const noexcept {
+      return m_unzippedFiles;
     }
 
   private:
-    boost::filesystem::path m_unzippedFile;
+    boost::filesystem::path m_outputDir;
+    std::vector<boost::filesystem::path> m_unzippedFiles;
   };
 
 } // namespace util

@@ -15,7 +15,7 @@ build:ubuntu:
   script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=ON  ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF  ..
     - cmake ..
     - make -j1
   artifacts:
@@ -77,8 +77,6 @@ build:windows:
  stage: build
  tags:
    - windows
- #before_script:
- #  - set PATH=%PATH:C:\Program Files\Git\bin;=%
  script:
    - mkdir build
    - cd build
@@ -163,7 +161,7 @@ test:mac:
     - build:mac
   script:
     - cd build
-    - test -R unittests
+    - ctest -R unittests
   artifacts:
     expire_in: 6 hrs
     paths:

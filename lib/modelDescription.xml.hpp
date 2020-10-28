@@ -56,12 +56,10 @@ R"END(
     </Unit>
 	</UnitDefinitions>
 	<LogCategories>
-		<Category name="logLevel1" description="logLevel1 - fatal error" />
-		<Category name="logLevel2" description="logLevel2 - error" />
-		<Category name="logLevel3" description="logLevel3 - warning" />
-		<Category name="logLevel4" description="logLevel4 - info" />
-		<Category name="logLevel5" description="logLevel5 - verbose" />
-		<Category name="logLevel6" description="logLevel6 - debug" />
+		<Category name="logLevel1" description="logLevel1 - EnergyPlus Info" />
+		<Category name="logLevel2" description="logLevel2 - EnergyPlus Warning" />
+		<Category name="logLevel3" description="logLevel3 - EnergyPlus Error" />
+		<Category name="logLevel4" description="logLevel4 - EnergyPlus Fatal" />
 	</LogCategories>
 	<ModelVariables>
 	</ModelVariables>
