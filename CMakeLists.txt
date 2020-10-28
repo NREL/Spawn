@@ -4,7 +4,7 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
-option(INSTALL_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
+option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   add_definitions(-DENABLE_MODELICA_COMPILER)
@@ -191,23 +191,25 @@ add_custom_target(
 set(modelica_bin_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
 set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 
-include(ExternalProject)
-ExternalProject_Add(MBL
-  BUILD_ALWAYS 1
-  URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-  SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
-  BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:spawn>
-          ${idd_path}
-          "${modelica_bin_path}"
-  COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE:epfmi>
-          "${modelica_lib_path}"
-  COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
-)
+if(ENABLE_BUILDINGS_LIBRARY)
+  include(ExternalProject)
+  ExternalProject_Add(MBL
+    BUILD_ALWAYS 1
+    URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+    SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:spawn>
+            ${idd_path}
+            "${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:epfmi>
+            "${modelica_lib_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
+  )
+endif()
 
 install(DIRECTORY examples DESTINATION .)
 install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/ )
