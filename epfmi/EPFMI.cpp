@@ -99,50 +99,56 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   UNUSED(fmuType);
   UNUSED(visible);
 
-  // URI might be preceeded by file:// (UNIX) or file:///C/ (windows)
-  // https://en.wikipedia.org/wiki/File_URI_scheme
+  try {
+    // URI might be preceeded by file:// (UNIX) or file:///C/ (windows)
+    // https://en.wikipedia.org/wiki/File_URI_scheme
 #if _WIN32
-  // This may be brittle, but windows needs to be treated differently.
-  // "C/" is a valid path, however /C/ is not valid
-  const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file:///"), "");
+    // This may be brittle, but windows needs to be treated differently.
+    // "C/" is a valid path, however /C/ is not valid
+    const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file:///"), "");
 #else
-  // On non windows the third "/" must be retained
-  const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
+    // On non windows the third "/" must be retained
+    const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
 #endif
-  const auto resourcePath = boost::filesystem::path(resourcePathString);
-  const auto spawnJSONPath = resourcePath / "model.spawn";
-  const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
+    const auto resourcePath = boost::filesystem::path(resourcePathString);
+    const auto spawnJSONPath = resourcePath / "model.spawn";
+    const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 
-  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
-  auto & comp = spawn::spawns.back();
+    spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
+    auto & comp = spawn::spawns.back();
 
-	if (loggingOn) {
-		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+  	if (loggingOn) {
+  		const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
 
-      static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
+        static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
 
-      std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
-        {EnergyPlus::Error::Info, fmi2OK},
-        {EnergyPlus::Error::Warning, fmi2Warning},
-        {EnergyPlus::Error::Severe, fmi2Error},
-        {EnergyPlus::Error::Fatal, fmi2Fatal}
-      };
+        std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
+          {EnergyPlus::Error::Info, fmi2OK},
+          {EnergyPlus::Error::Warning, fmi2Warning},
+          {EnergyPlus::Error::Severe, fmi2Error},
+          {EnergyPlus::Error::Fatal, fmi2Fatal}
+        };
 
-      if (level == EnergyPlus::Error::Continue) {
-        level = lastError;
-      } else {
-        lastError = level;
-      }
+        if (level == EnergyPlus::Error::Continue) {
+          level = lastError;
+        } else {
+          lastError = level;
+        }
 
-      const auto fmilevel = logLevelMap[level];
-			const auto & env = functions->componentEnvironment;
+        const auto fmilevel = logLevelMap[level];
+  			const auto & env = functions->componentEnvironment;
 
-			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", "%s", message.c_str());
-		};
-		comp.setLogCallback(logger);
-	}
-
-  return &comp;
+  			functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", "%s", message.c_str());
+  		};
+  		comp.setLogCallback(logger);
+  	}
+    return &comp;
+  } catch (const std::runtime_error & e) {
+    std::clog << e.what() << "\n";
+  } catch (...) {
+    std::clog << "Unknown Exception during EnergyPlus fmi2Instantiate\n";
+  }
+  return nullptr;
 }
 
 EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
