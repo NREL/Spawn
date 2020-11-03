@@ -60,10 +60,10 @@ void energyplusToFMU(
 
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
+  const auto fmuspawnPath = fmuResourcesPath / "model.spawn";
   const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
-  const auto fmuspawnPath = fmuStagingPath / "model.spawn";
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
 
   boost::filesystem::remove_all(fmuPath);
@@ -88,9 +88,9 @@ void energyplusToFMU(
 
   createModelDescription(input, modelDescriptionPath);
 
-  const auto relativeEPWPath = boost::filesystem::relative(fmuepwPath, fmuStagingPath);
+  const auto relativeEPWPath = boost::filesystem::relative(fmuepwPath, fmuResourcesPath);
   input.setEPWInputPath(relativeEPWPath);
-  const auto relativeIdfPath = boost::filesystem::relative(fmuidfPath, fmuStagingPath);
+  const auto relativeIdfPath = boost::filesystem::relative(fmuidfPath, fmuResourcesPath);
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
