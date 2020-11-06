@@ -3,6 +3,7 @@
 
 #include "units.hpp"
 #include <map>
+#include <nlohmann/json.hpp>
 
 struct OutputProperties {
 	OutputProperties() = delete;
@@ -10,6 +11,18 @@ struct OutputProperties {
 	spawn::units::UnitType moUnitType;
 	spawn::units::UnitType epUnitType;
 };
+
+static void to_json(nlohmann::json& j, const OutputProperties& p) {
+    j = nlohmann::json{
+      {"modelicaUnit", spawn::units::toString(p.moUnitType)},
+      {"energyplusUnit", spawn::units::toString(p.epUnitType)}
+    };
+}
+
+static void from_json(const nlohmann::json& j, OutputProperties& p) {
+    p.moUnitType = spawn::units::fromString(j.at("modelicaUnit").get<std::string>());
+    p.epUnitType = spawn::units::fromString(j.at("energyplusUnit").get<std::string>());
+}
 
 const std::map<const char *, OutputProperties> outputtypes {
 	{"Site Outdoor Air Drybulb Temperature",{spawn::units::UnitType::K, spawn::units::UnitType::C}},

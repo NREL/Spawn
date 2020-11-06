@@ -1,4 +1,5 @@
 #include "../lib/fmugenerator.hpp"
+#include "../lib/outputtypes.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <cstdio>
@@ -123,8 +124,9 @@ int main(int argc, const char *argv[]) {
   auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
   compressOption->needs(createOption);
 
-  auto versionOption =
-    app.add_flag("-v,--version", "Print version info and exit");
+  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn.");
+
+  auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
 
 #if defined ENABLE_MODELICA_COMPILER
   std::string moinput = "";
@@ -145,6 +147,8 @@ int main(int argc, const char *argv[]) {
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*outputVarsOption) {
+      std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
     }
   } catch(...) {
     eptr = std::current_exception();
