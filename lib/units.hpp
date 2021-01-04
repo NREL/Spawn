@@ -38,7 +38,7 @@ enum class UnitType{
 typedef std::pair<UnitType, const char *> UnitString;
 
 const std::array<UnitString, 28> unitstrings {{
-	{UnitType::C,"C"},
+	{UnitType::C,"degC"},
   {UnitType::K,"K"},
   {UnitType::one,"1"},
   {UnitType::kgWater_per_kgDryAir,"kgWater/kgDryAir"},
