@@ -2,12 +2,12 @@
 #define INPUT_HH_INCLUDED
 
 #include "emsactuator.hpp"
-#include "iddtypes.hpp"
-#include "outputtypes.hpp"
 #include "outputvariable.hpp"
 #include "schedule.hpp"
-#include "variables.hpp"
 #include "zone.hpp"
+#include "../variables.hpp"
+#include "../iddtypes.hpp"
+#include "../outputtypes.hpp"
 #include <boost/filesystem.hpp>
 #include <fstream>
 

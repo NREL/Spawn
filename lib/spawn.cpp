@@ -1,6 +1,6 @@
 #include "spawn.hpp"
 #include "outputtypes.hpp"
-#include "input.hpp"
+#include "input/input.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/func.h"

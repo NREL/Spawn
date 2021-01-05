@@ -48,7 +48,7 @@
 #ifndef Spawn_hh_INCLUDED
 #define Spawn_hh_INCLUDED
 
-#include "input.hpp"
+#include "input/input.hpp"
 #include "variables.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"

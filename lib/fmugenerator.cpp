@@ -1,7 +1,7 @@
 #include "fmugenerator.hpp"
-#include "input.hpp"
 #include "ziputil.hpp"
 #include "modelDescription.xml.hpp"
+#include "input/input.hpp"
 #include "../util/fmi_paths.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"

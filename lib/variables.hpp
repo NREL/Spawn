@@ -7,10 +7,12 @@
 #include <map>
 #include <sstream>
 
+// See variable documentation here https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
 enum class VariableType {
   T,
   V,
   AFLO,
+  A,
   MSENFAC,
   QCONSEN_FLOW,
   QGAIRAD_FLOW,

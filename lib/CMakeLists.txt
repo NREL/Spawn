@@ -6,27 +6,28 @@ endif()
 ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
 
 add_library(libspawn
-  emsactuator.hpp
-  emsactuator.cpp
   fmugenerator.hpp
   fmugenerator.cpp
-  input.hpp
-  input.cpp
   outputtypes.hpp
-  outputvariable.hpp
-  outputvariable.cpp
   spawn.hpp
   spawn.cpp
   units.hpp
   units.cpp
   variables.hpp
   variables.cpp
-  schedule.hpp
-  schedule.cpp
-  zone.hpp
-  zone.cpp
   ziputil.hpp
   ziputil.cpp
+
+  input/emsactuator.hpp
+  input/emsactuator.cpp
+  input/input.hpp
+  input/input.cpp
+  input/outputvariable.hpp
+  input/outputvariable.cpp
+  input/schedule.hpp
+  input/schedule.cpp
+  input/zone.hpp
+  input/zone.cpp
 
   ## EnergyPlus compiles these files into a DLL, but we would prefer to
   #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh

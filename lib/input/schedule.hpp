@@ -1,7 +1,7 @@
 #ifndef Schedule_hh_INCLUDED
 #define Schedule_hh_INCLUDED
 
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "../../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 
 namespace spawn {
 

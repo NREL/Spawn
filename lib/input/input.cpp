@@ -1,5 +1,5 @@
 #include "input.hpp"
-#include "../util/idf_to_json.hpp"
+#include "../../util/idf_to_json.hpp"
 
 using json = nlohmann::json;
 
