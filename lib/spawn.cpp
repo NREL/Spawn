@@ -423,6 +423,11 @@ void Spawn::initZoneEquip() {
   }
 }
 
+// Return the interior wall surface temperature,
+// for any surfaces controlled by the external client
+void Spawn::externalSurfaceManager(int const surfaceNum) {
+}
+
 void Spawn::externalHVACManager() {
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints

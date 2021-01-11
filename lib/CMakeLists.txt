@@ -26,6 +26,8 @@ add_library(libspawn
   input/outputvariable.cpp
   input/schedule.hpp
   input/schedule.cpp
+  input/surface.hpp
+  input/surface.cpp
   input/zone.hpp
   input/zone.cpp
 

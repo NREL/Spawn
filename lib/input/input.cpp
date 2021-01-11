@@ -38,6 +38,7 @@ Input::Input(const std::string & spawninput)
   schedules = Schedule::createSchedules(spawnjson, jsonidf);
   outputVariables = OutputVariable::createOutputVariables(spawnjson, jsonidf);
   emsActuators = EMSActuator::createEMSActuators(spawnjson, jsonidf);
+  surfaces = Surface::createSurfaces(spawnjson, jsonidf);
 }
 
 std::string Input::fmuname() const {

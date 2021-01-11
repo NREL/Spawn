@@ -387,6 +387,55 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
     }
   }
 
+  for (const auto & surface : input.surfaces) {
+    if(surface.isconnected) {
+      {
+        Variable var;
+        var.type = VariableType::ASurf;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::m2;
+        var.mounittype = spawn::units::UnitType::m2;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_A");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Area of the surface that is exposed to the thermal zone");
+        var.scalar_attributes.emplace_back("causality","local");
+        var.scalar_attributes.emplace_back("variability","constant");
+        var.scalar_attributes.emplace_back("initial","exact");
+
+        var.real_attributes.emplace_back("quantity","Area");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::TSurf;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_T");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Temperature of the surface");
+        var.scalar_attributes.emplace_back("causality","input");
+        var.scalar_attributes.emplace_back("variability","continuous");
+
+        var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+    }
+  }
+
   return result;
 }
 

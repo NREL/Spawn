@@ -4,6 +4,7 @@
 #include "emsactuator.hpp"
 #include "outputvariable.hpp"
 #include "schedule.hpp"
+#include "surface.hpp"
 #include "zone.hpp"
 #include "../variables.hpp"
 #include "../iddtypes.hpp"
@@ -21,6 +22,7 @@ public:
   std::vector<Schedule> schedules;
   std::vector<OutputVariable> outputVariables;
   std::vector<EMSActuator> emsActuators;
+  std::vector<Surface> surfaces;
 
   boost::filesystem::path basepath() const;
 
