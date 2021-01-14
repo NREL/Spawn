@@ -131,11 +131,14 @@ private:
   std::exception_ptr sim_exception_ptr{nullptr};
 
   void externalHVACManager();
-  void externalSurfaceManager(int const surfaceNum);
+  std::pair<bool, float> externalSurfaceManager(int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
   void emptyLogMessageQueue();
+
+  // Given a surface name, return the index according to EnergyPlus
+  int surfaceNum(const std::string & surfaceName) const;
 
   // Given a zone name, return the index according to EnergyPlus
   int zoneNum(const std::string & zoneName) const;

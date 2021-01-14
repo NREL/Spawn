@@ -58,6 +58,7 @@ void Spawn::start(const double & starttime) {
       EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
       registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
       EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
+      EnergyPlus::DataGlobals::externalSurfaceManager = std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1);
 
       RunEnergyPlus(sim_state);
 
@@ -281,6 +282,18 @@ int Spawn::zoneNum(const std::string & zoneName) const {
   return 0;
 }
 
+int Spawn::surfaceNum(const std::string & surfaceName) const {
+  auto upperName = surfaceName;
+  std::transform(surfaceName.begin(), surfaceName.end(), upperName.begin(), ::toupper);
+  for ( const auto i : EnergyPlus::DataSurfaces::AllHTNonWindowSurfaceList ) {
+    if ( EnergyPlus::DataSurfaces::Surface[i].Name == upperName ) {
+      return i + 1;
+    }
+  }
+
+  return 0;
+}
+
 int Spawn::getVariableHandle(const std::string & name, const std::string & key) {
   // look in the cache
   const auto it = variable_handle_cache.find(std::make_tuple(name, key));
@@ -390,26 +403,51 @@ void Spawn::exchange()
   // Now update the outputs
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
-    auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
-      case VariableType::TRAD:
-        var.setValue(EnergyPlus::DataHeatBalSurface::ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
-        break;
-      case VariableType::V:
+      case VariableType::TRAD: {
+          const auto varZoneNum = zoneNum(var.name);
+          var.setValue(EnergyPlus::DataHeatBalSurface::ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
+          break;
+      }
+      case VariableType::V: {
+        const auto varZoneNum = zoneNum(var.name);
         var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume, spawn::units::UnitSystem::EP);
         break;
-      case VariableType::AFLO:
+      }
+      case VariableType::AFLO: {
+        const auto varZoneNum = zoneNum(var.name);
         var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).FloorArea, spawn::units::UnitSystem::EP);
         break;
-      case VariableType::MSENFAC:
+      }
+      case VariableType::MSENFAC: {
+        const auto varZoneNum = zoneNum(var.name);
         var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens, spawn::units::UnitSystem::EP);
         break;
-      case VariableType::QCONSEN_FLOW:
+      }
+      case VariableType::QCONSEN_FLOW: {
+        const auto varZoneNum = zoneNum(var.name);
         var.setValue(zoneHeatTransfer( varZoneNum ), spawn::units::UnitSystem::EP);
         break;
-      case VariableType::SENSOR:
+      }
+      case VariableType::SENSOR: {
         var.setValue(spawnGetSensorValue(var), spawn::units::UnitSystem::EP);
         break;
+      }
+      case VariableType::ASURF: {
+        const auto varSurfaceNum = surfaceNum(var.name);
+        var.setValue(EnergyPlus::DataSurfaces::Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QSURF_FLOW: {
+        const auto varSurfaceNum = surfaceNum(var.name);
+        auto sum = 0.0;
+        sum += EnergyPlus::DataHeatBalSurface::QdotConvInRep( varSurfaceNum );
+        sum += EnergyPlus::DataHeatBalSurface::QdotRadSolarInRep( varSurfaceNum );
+        sum += EnergyPlus::DataHeatBalSurface::QdotRadLightsInRep( varSurfaceNum );
+        sum += EnergyPlus::DataHeatBalSurface::QdotRadIntGainsInRep( varSurfaceNum );
+        var.setValue(sum, spawn::units::UnitSystem::EP);
+        break;
+      }
       default:
         break;
     }
@@ -423,9 +461,24 @@ void Spawn::initZoneEquip() {
   }
 }
 
-// Return the interior wall surface temperature,
-// for any surfaces controlled by the external client
-void Spawn::externalSurfaceManager(int const surfaceNum) {
+std::pair<bool, float> Spawn::externalSurfaceManager(int const t_surfaceNum) {
+  // This algorithm returns the value of a TSurf variable
+  // if one exists for the given t_surfaceNum, where t_surfaceNum
+  // is an index to an EnergyPlus surface
+  std::pair<bool, float> result{false, 0.0};
+
+  for( auto & varmap : variables ) {
+    auto & var = varmap.second;
+    if( var.type == VariableType::TSURF ) {
+      if( surfaceNum(var.name) == t_surfaceNum ) {
+        result.first = true;
+        result.second = var.getValue(spawn::units::UnitSystem::EP);
+        break;
+      }
+    }
+  }
+
+  return result;
 }
 
 void Spawn::externalHVACManager() {

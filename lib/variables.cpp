@@ -391,7 +391,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
     if(surface.isconnected) {
       {
         Variable var;
-        var.type = VariableType::ASurf;
+        var.type = VariableType::ASURF;
         var.name = surface.idfname;
         var.epunittype = spawn::units::UnitType::m2;
         var.mounittype = spawn::units::UnitType::m2;
@@ -414,7 +414,30 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
       ++i;
       {
         Variable var;
-        var.type = VariableType::TSurf;
+        var.type = VariableType::QSURF_FLOW;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_Q_Flow");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
+        var.scalar_attributes.emplace_back("causality","output");
+        var.scalar_attributes.emplace_back("variability","continuous");
+        var.scalar_attributes.emplace_back("initial","calculated");
+
+        var.real_attributes.emplace_back("quantity","Power");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::TSURF;
         var.name = surface.idfname;
         var.epunittype = spawn::units::UnitType::C;
         var.mounittype = spawn::units::UnitType::K;
