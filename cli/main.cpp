@@ -1,5 +1,6 @@
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
+#include "../lib/actuatortypes.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <cstdio>
@@ -126,6 +127,8 @@ int main(int argc, const char *argv[]) {
 
   auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn.");
 
+  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
+
   auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
 
 #if defined ENABLE_MODELICA_COMPILER
@@ -149,6 +152,8 @@ int main(int argc, const char *argv[]) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
     } else if (*outputVarsOption) {
       std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
+    } else if (*actuatorsOption) {
+      std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
     }
   } catch(...) {
     eptr = std::current_exception();

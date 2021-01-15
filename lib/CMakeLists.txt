@@ -6,6 +6,7 @@ endif()
 ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
 
 add_library(libspawn
+  actuatortypes.hpp
   fmugenerator.hpp
   fmugenerator.cpp
   outputtypes.hpp

@@ -234,8 +234,8 @@ json & removeUnusedObjects(json & jsonidf) {
   for(auto var = outputvars.cbegin(); var != outputvars.cend();){
     const auto & name = var.value().at("variable_name").get<std::string>();
     const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
-      [&](const std::pair<const char *, OutputProperties> & v) {
-        return boost::iequals(v.first,name);
+      [&](const OutputProperties & v) {
+        return boost::iequals(v.name, name);
       });
 
     if(findit == std::end(outputtypes)) {

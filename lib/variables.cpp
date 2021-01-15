@@ -56,13 +56,13 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
       var.outputvarkey = outputVariable.idfkey;
 
       const auto & output = std::find_if(std::begin(outputtypes), std::end(outputtypes),
-        [&](const std::pair<const char *, OutputProperties> & v) {
-          return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.first) == var.outputvarname;
+        [&](const OutputProperties & v) {
+          return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.name) == var.outputvarname;
         });
 
       if(output != std::end(outputtypes)) {
-        var.epunittype = output->second.epUnitType;
-        var.mounittype = output->second.moUnitType;
+        var.epunittype = output->epUnitType;
+        var.mounittype = output->moUnitType;
       } else {
         var.epunittype = spawn::units::UnitType::one;
         var.mounittype = spawn::units::UnitType::one;
