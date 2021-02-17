@@ -57,8 +57,8 @@ void Spawn::start(const double & starttime) {
 
       EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
       registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
-      EnergyPlus::DataGlobals::externalHVACManager = std::bind(&Spawn::externalHVACManager, this);
-      EnergyPlus::DataGlobals::externalSurfaceManager = std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1);
+      registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
+      registerExternalSurfaceManager(simState(), std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1, std::placeholders::_2));
 
       RunEnergyPlus(sim_state);
 
@@ -148,12 +148,12 @@ void Spawn::setTime(const double & time)
 
 double Spawn::currentTime() const {
   isRunningCheck();
-  return (EnergyPlus::DataGlobals::SimTimeSteps - 1) * EnergyPlus::DataGlobals::TimeStepZoneSec;
+  return (sim_state.dataGlobal->SimTimeSteps - 1) * sim_state.dataGlobal->TimeStepZoneSec;
 }
 
 double Spawn::nextEventTime() const {
   isRunningCheck();
-  return EnergyPlus::DataGlobals::SimTimeSteps * EnergyPlus::DataGlobals::TimeStepZoneSec;
+  return sim_state.dataGlobal->SimTimeSteps * sim_state.dataGlobal->TimeStepZoneSec;
 }
 
 void Spawn::setValue(const unsigned int & ref, const double & value) {
@@ -190,7 +190,7 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
   Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
   Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
 
-  EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(sim_state.dataZonePlenum, zonenum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
+  EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(sim_state, zonenum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
 
   Spawn::ZoneSums sums;
 
@@ -222,7 +222,7 @@ void Spawn::updateZoneTemperature(const int zonenum, const double & dt) {
   const auto aircap =
     EnergyPlus::DataHeatBalance::Zone(zonenum).Volume *
     EnergyPlus::DataHeatBalance::Zone(zonenum).ZoneVolCapMultpSens *
-    EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(EnergyPlus::DataEnvironment::OutBaroPress, zonetemp, EnergyPlus::DataHeatBalFanSys::ZoneAirHumRat(zonenum),"") *
+    EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state, sim_state.dataEnvrn->OutBaroPress, zonetemp, EnergyPlus::DataHeatBalFanSys::ZoneAirHumRat(zonenum),"") *
     EnergyPlus::Psychrometrics::PsyCpAirFnW(EnergyPlus::DataHeatBalFanSys::ZoneAirHumRat(zonenum));// / (TimeStepSys * SecInHour);
 
   const auto & sums = zoneSums(zonenum);
@@ -240,9 +240,9 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones) {
   // Check for...
   if(
     // 1. The beginning of the environment
-    EnergyPlus::DataGlobals::BeginEnvrnFlag ||
+    sim_state.dataGlobal->BeginEnvrnFlag ||
     // 2. The first call after warmup
-    (prevWarmupFlag && ! (EnergyPlus::DataGlobals::WarmupFlag)))
+    (prevWarmupFlag && ! (sim_state.dataGlobal->WarmupFlag)))
   {
     prevZoneTempUpdate = currentTime();
   } else {
@@ -259,7 +259,7 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones) {
     }
   }
 
-  prevWarmupFlag = EnergyPlus::DataGlobals::WarmupFlag;
+  prevWarmupFlag = sim_state.dataGlobal->WarmupFlag;
 }
 
 double Spawn::zoneHeatTransfer(const int zonenum) {
@@ -273,7 +273,7 @@ double Spawn::zoneHeatTransfer(const int zonenum) {
 int Spawn::zoneNum(const std::string & zoneName) const {
   auto upperZoneName = zoneName;
   std::transform(zoneName.begin(), zoneName.end(), upperZoneName.begin(), ::toupper);
-  for ( int i = 0; i < EnergyPlus::DataGlobals::NumOfZones; ++i ) {
+  for ( int i = 0; i < sim_state.dataGlobal->NumOfZones; ++i ) {
     if ( EnergyPlus::DataHeatBalance::Zone[i].Name == upperZoneName ) {
       return i + 1;
     }
@@ -397,7 +397,7 @@ void Spawn::exchange()
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
 
   // Run some internal EnergyPlus functions to update outputs
-  EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp();
+  EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
 
   // Now update the outputs
@@ -455,13 +455,13 @@ void Spawn::exchange()
 }
 
 void Spawn::initZoneEquip() {
-  if (!EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled) {
+  if (!sim_state.dataZoneEquip->ZoneEquipInputsFilled) {
     EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(sim_state);
-    EnergyPlus::DataZoneEquipment::ZoneEquipInputsFilled = true;
+    sim_state.dataZoneEquip->ZoneEquipInputsFilled = true;
   }
 }
 
-std::pair<bool, float> Spawn::externalSurfaceManager(int const t_surfaceNum) {
+std::pair<bool, float> Spawn::externalSurfaceManager(EnergyPlusState state, int const t_surfaceNum) {
   // This algorithm returns the value of a TSurf variable
   // if one exists for the given t_surfaceNum, where t_surfaceNum
   // is an index to an EnergyPlus surface
@@ -481,12 +481,12 @@ std::pair<bool, float> Spawn::externalSurfaceManager(int const t_surfaceNum) {
   return result;
 }
 
-void Spawn::externalHVACManager() {
+void Spawn::externalHVACManager(EnergyPlusState state) {
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once
   // during the simulation
-  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints(sim_state.dataZoneTempPredictorCorrector);
+  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints(sim_state);
 
   // Likewise init zone equipment one time
   initZoneEquip();
@@ -495,7 +495,7 @@ void Spawn::externalHVACManager() {
   // interaction with the FMU while KickOffSimulation is true.
   // Sensors and actuators may not be setup at this point, so exchange
   // might trigger exceptions
-  if( EnergyPlus::DataGlobals::KickOffSimulation ) {
+  if( sim_state.dataGlobal->KickOffSimulation ) {
     return;
   }
 
@@ -504,7 +504,7 @@ void Spawn::externalHVACManager() {
 
   // There is no interaction with the FMU during warmup,
   // so return now before signaling
-  if( EnergyPlus::DataGlobals::DoingSizing || EnergyPlus::DataGlobals::WarmupFlag ) {
+  if( sim_state.dataGlobal->DoingSizing || sim_state.dataGlobal->WarmupFlag ) {
     return;
   }
 

@@ -50,7 +50,6 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
-  PRIVATE
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
@@ -59,7 +58,12 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/re2/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/SQLite/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/kiva-ep/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/eigen/
+  ${PROJECT_BINARY_DIR}/EnergyPlus/third_party/kiva-ep/src/libkiva/
 )
 
 target_link_libraries(libspawn

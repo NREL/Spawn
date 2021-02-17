@@ -122,16 +122,16 @@ private:
   // Throws if not is_running
   void isRunningCheck() const;
 
-  std::mutex sim_mutex;
-  std::thread sim_thread;
-
   EnergyPlus::EnergyPlusData sim_state;
   EnergyPlusState simState();
 
+  std::mutex sim_mutex;
+  std::thread sim_thread;
+
   std::exception_ptr sim_exception_ptr{nullptr};
 
-  void externalHVACManager();
-  std::pair<bool, float> externalSurfaceManager(int const surfaceNum);
+  void externalHVACManager(EnergyPlusState state);
+  std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;

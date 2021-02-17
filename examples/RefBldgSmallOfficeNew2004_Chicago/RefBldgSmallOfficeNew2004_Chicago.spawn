@@ -35,7 +35,7 @@
         "fmiName": "Core_Zone_People_Output"
       },
       {
-        "name":    "Lights Electric Power",
+        "name":    "Lights Electricity Rate",
         "key":     "Core_ZN_Lights",
         "fmiName": "Core_Zone_Lights_Output"
       }
