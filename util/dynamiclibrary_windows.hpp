@@ -74,7 +74,7 @@ struct Dynamic_Library
     return symbol;
   }
 
-  explicit Dynamic_Library(boost::filesystem::path location)
+  explicit Dynamic_Library(std::filesystem::path location)
       : m_location{std::move(location)}, m_handle{LoadLibrary(to_proper_string(m_location.string()).c_str())}
   {
     if (!m_handle) {
@@ -106,7 +106,7 @@ struct Dynamic_Library
     }
   }
 
-  boost::filesystem::path m_location{};
+  std::filesystem::path m_location{};
   HMODULE m_handle{};
 };
 
