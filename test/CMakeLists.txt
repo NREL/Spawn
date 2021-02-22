@@ -43,9 +43,6 @@ if(WIN32)
           ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/testpaths.cpp
           )
 
-  target_link_libraries(testpaths-debug PUBLIC CONAN_PKG::boost)
-  target_link_libraries(testpaths-release PUBLIC CONAN_PKG::boost)
-
   target_link_libraries(tests
           PRIVATE
           debug testpaths-debug
@@ -60,8 +57,6 @@ else()
   add_library(testpaths
           ${CMAKE_CURRENT_BINARY_DIR}/testpaths.cpp
           )
-
-  target_link_libraries(testpaths PUBLIC CONAN_PKG::boost)
 
   target_link_libraries(tests
           PRIVATE

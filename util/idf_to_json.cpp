@@ -1,11 +1,12 @@
 #include "idf_to_json.hpp"
 #include <string>
+#include <fstream>
 
 using json = nlohmann::json;
 
 namespace spawn {
 
-json idfToJSON(const boost::filesystem::path & idfpath) {
+json idfToJSON(const std::filesystem::path & idfpath) {
   std::ifstream input_stream(idfpath.string(), std::ifstream::in);
 
   std::string input_file;
@@ -20,7 +21,7 @@ json idfToJSON(const boost::filesystem::path & idfpath) {
   return parser.decode(input_file, schema);
 }
 
-void jsonToIdf(const json & jsonidf, const boost::filesystem::path & idfpath) {
+void jsonToIdf(const json & jsonidf, const std::filesystem::path & idfpath) {
   ::IdfParser parser;
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);

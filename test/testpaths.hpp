@@ -1,12 +1,12 @@
 #include <string>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
-boost::filesystem::path testdir();
+std::filesystem::path testdir();
 
 std::string spawnexe();
 
 std::string testcase1();
 
-boost::filesystem::path testzip();
+std::filesystem::path testzip();
 
-boost::filesystem::path fmi_load_test();
+std::filesystem::path fmi_load_test();

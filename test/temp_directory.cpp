@@ -5,32 +5,32 @@ TEST_CASE("Temp_Directory is created and destroyed")
 {
   SECTION("Test empty directory")
   {
-    boost::filesystem::path temp_path{};
+    std::filesystem::path temp_path{};
 
     SECTION("empty directory created")
     {
       spawn::util::Temp_Directory td;
       temp_path = td.dir();
-      CHECK(boost::filesystem::exists(temp_path));
-      CHECK(boost::filesystem::is_directory(temp_path));
+      CHECK(std::filesystem::exists(temp_path));
+      CHECK(std::filesystem::is_directory(temp_path));
     }
 
     SECTION("empty directory destroyed")
     {
-      CHECK_FALSE(boost::filesystem::exists(temp_path));
+      CHECK_FALSE(std::filesystem::exists(temp_path));
     }
   }
 
   SECTION("Test directory with files")
   {
-    boost::filesystem::path temp_path{};
+    std::filesystem::path temp_path{};
 
     SECTION("empty directory created")
     {
       spawn::util::Temp_Directory td;
       temp_path = td.dir();
-      CHECK(boost::filesystem::exists(temp_path));
-      CHECK(boost::filesystem::is_directory(temp_path));
+      CHECK(std::filesystem::exists(temp_path));
+      CHECK(std::filesystem::is_directory(temp_path));
 
       const auto temp_file = td.dir() / "a_file.txt";
 
@@ -40,13 +40,13 @@ TEST_CASE("Temp_Directory is created and destroyed")
         ofs << "Hello World";
       }
 
-      CHECK(boost::filesystem::exists(temp_file));
-      CHECK(boost::filesystem::is_regular(temp_file));
+      CHECK(std::filesystem::exists(temp_file));
+      CHECK(std::filesystem::is_regular_file(temp_file));
     }
 
     SECTION("directory with files destroyed")
     {
-      CHECK_FALSE(boost::filesystem::exists(temp_path));
+      CHECK_FALSE(std::filesystem::exists(temp_path));
     }
   }
 }

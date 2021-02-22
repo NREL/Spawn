@@ -1,7 +1,7 @@
 #include "EPFMI.hpp"
 #include "../lib/spawn.hpp"
 #include <fmi2Functions.h>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <list>
 #include <regex>
 #include <iostream>
@@ -110,7 +110,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
     // On non windows the third "/" must be retained
     const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
 #endif
-    const auto resourcePath = boost::filesystem::path(resourcePathString);
+    const auto resourcePath = std::filesystem::path(resourcePathString);
     const auto spawnJSONPath = resourcePath / "model.spawn";
     const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 

@@ -9,9 +9,8 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <config.hxx>
-#include <boost/algorithm/string.hpp>
 #include <stdlib.h>
 #include "../util/fmi_paths.hpp"
 
@@ -28,15 +27,15 @@
 
 using json = nlohmann::json;
 
-boost::filesystem::path exedir() {
+std::filesystem::path exedir() {
   #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return boost::filesystem::path(szPath).parent_path();
+    return std::filesystem::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    return boost::filesystem::path(info.dli_fname).parent_path();
+    return std::filesystem::path(info.dli_fname).parent_path();
   #endif
 }
 
@@ -44,42 +43,42 @@ bool isInstalled() {
   return exedir().stem() == "bin";
 }
 
-boost::filesystem::path iddInstallPath() {
+std::filesystem::path iddInstallPath() {
   constexpr auto & iddfilename = "Energy+.idd";
   // Configuration in install tree
   auto iddInputPath = exedir() / "../etc" / iddfilename;
 
   // Configuration in a developer tree
-  if (! boost::filesystem::exists(iddInputPath)) {
+  if (! std::filesystem::exists(iddInputPath)) {
     iddInputPath = exedir() / iddfilename;
   }
 
   return iddInputPath;
 }
 
-boost::filesystem::path epfmiInstallPath() {
+std::filesystem::path epfmiInstallPath() {
   const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
-  if (boost::filesystem::exists(candidate)) {
+  if (std::filesystem::exists(candidate)) {
     return candidate;
   } else {
     return exedir() / spawn::epfmi_filename();
   }
 }
 
-boost::filesystem::path jmodelicaHome() {
+std::filesystem::path jmodelicaHome() {
   if (isInstalled()) {
     return exedir() / "../JModelica/";
   } else {
-    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+    std::filesystem::path binary_dir(spawn::BINARY_DIR);
     return binary_dir / "JModelica/";
   }
 }
 
-boost::filesystem::path mblPath() {
+std::filesystem::path mblPath() {
   if (isInstalled()) {
     return exedir() / "../modelica-buildings/Buildings/";
   } else {
-    boost::filesystem::path source_dir(spawn::SOURCE_DIR);
+    std::filesystem::path source_dir(spawn::SOURCE_DIR);
     return source_dir / "submodules/modelica-buildings/Buildings/";
   }
 }

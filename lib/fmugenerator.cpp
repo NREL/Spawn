@@ -2,13 +2,13 @@
 #include "ziputil.hpp"
 #include "modelDescription.xml.hpp"
 #include "input/input.hpp"
+#include "../util/compare.hpp"
 #include "../util/fmi_paths.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
-#include <boost/algorithm/string.hpp>
 #include <pugixml.hpp>
 #include <fmt/format.h>
 
@@ -16,14 +16,14 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-nlohmann::json idfToJSON(const boost::filesystem::path & idfpath);
-void jsonToIdf(const nlohmann::json & idfjson, const boost::filesystem::path & idfpath);
+nlohmann::json idfToJSON(const std::filesystem::path & idfpath);
+void jsonToIdf(const nlohmann::json & idfjson, const std::filesystem::path & idfpath);
 nlohmann::json & adjustSimulationControl(nlohmann::json & jsonidf);
 nlohmann::json & addRunPeriod(nlohmann::json & jsonidf);
 nlohmann::json & removeUnusedObjects(nlohmann::json & jsonidf);
 nlohmann::json & addOtherEquipment(nlohmann::json & jsonidf, const Input& input);
 nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const Input& input);
-void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath);
+void createModelDescription(const spawn::Input & input, const std::filesystem::path & savepath);
 
 void energyplusToFMU(
   const std::string &jsoninput,
@@ -31,8 +31,8 @@ void energyplusToFMU(
   bool nocompress,
   const std::string & outputpath,
   const std::string & outputdir,
-  boost::filesystem::path iddpath,
-  boost::filesystem::path epfmupath
+  std::filesystem::path iddpath,
+  std::filesystem::path epfmupath
 ) {
   spawn::Input input(jsoninput);
 
@@ -42,20 +42,20 @@ void energyplusToFMU(
   // contained within the fmu layout.
 
   // The default fmu output path
-  auto fmuPath = boost::filesystem::current_path() / (input.fmuBaseName() + ".fmu");
+  auto fmuPath = std::filesystem::current_path() / (input.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
   if( ! outputpath.empty() ) {
-    fmuPath = boost::filesystem::path(outputpath);
+    fmuPath = std::filesystem::path(outputpath);
   } else if( ! outputdir.empty() ) {
-    fmuPath = boost::filesystem::path(outputdir) / (input.fmuBaseName() + ".fmu");
+    fmuPath = std::filesystem::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
   const auto outputroot = fmuPath.parent_path();
   const auto fmuStagingPath = outputroot / fmuPath.stem();
 
-  if( ! boost::filesystem::exists(outputroot) ) {
-    boost::filesystem::create_directories(outputroot);
+  if( ! std::filesystem::exists(outputroot) ) {
+    std::filesystem::create_directories(outputroot);
   }
 
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
@@ -66,17 +66,17 @@ void energyplusToFMU(
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
 
-  boost::filesystem::remove_all(fmuPath);
-  boost::filesystem::remove_all(fmuStagingPath);
+  std::filesystem::remove_all(fmuPath);
+  std::filesystem::remove_all(fmuStagingPath);
 
   // Create fmu staging area and copy files into it
-  boost::filesystem::create_directories(fmuStagingPath);
-  boost::filesystem::create_directories(fmuResourcesPath);
-  boost::filesystem::create_directories(fmuEPFMIPath.parent_path());
+  std::filesystem::create_directories(fmuStagingPath);
+  std::filesystem::create_directories(fmuResourcesPath);
+  std::filesystem::create_directories(fmuEPFMIPath.parent_path());
 
-  boost::filesystem::copy_file(epfmupath, fmuEPFMIPath, boost::filesystem::copy_option::overwrite_if_exists);
-  boost::filesystem::copy_file(iddpath, fmuiddPath, boost::filesystem::copy_option::overwrite_if_exists);
-  boost::filesystem::copy_file(input.epwInputPath(), fmuepwPath, boost::filesystem::copy_option::overwrite_if_exists);
+  std::filesystem::copy_file(epfmupath, fmuEPFMIPath, std::filesystem::copy_options::overwrite_existing);
+  std::filesystem::copy_file(iddpath, fmuiddPath, std::filesystem::copy_options::overwrite_existing);
+  std::filesystem::copy_file(input.epwInputPath(), fmuepwPath, std::filesystem::copy_options::overwrite_existing);
 
   auto jsonidf = spawn::idfToJSON(input.idfInputPath());
   adjustSimulationControl(jsonidf);
@@ -88,20 +88,20 @@ void energyplusToFMU(
 
   createModelDescription(input, modelDescriptionPath);
 
-  const auto relativeEPWPath = boost::filesystem::relative(fmuepwPath, fmuResourcesPath);
+  const auto relativeEPWPath = std::filesystem::relative(fmuepwPath, fmuResourcesPath);
   input.setEPWInputPath(relativeEPWPath);
-  const auto relativeIdfPath = boost::filesystem::relative(fmuidfPath, fmuResourcesPath);
+  const auto relativeIdfPath = std::filesystem::relative(fmuidfPath, fmuResourcesPath);
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
   if (! nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
-    boost::filesystem::remove_all(fmuStagingPath);
+    std::filesystem::remove_all(fmuStagingPath);
   }
 
 }
 
-json idfToJSON(const boost::filesystem::path & idfpath) {
+json idfToJSON(const std::filesystem::path & idfpath) {
   std::ifstream input_stream(idfpath.string(), std::ifstream::in);
 
   std::string input_file;
@@ -116,7 +116,7 @@ json idfToJSON(const boost::filesystem::path & idfpath) {
   return parser.decode(input_file, schema);
 }
 
-void jsonToIdf(const json & jsonidf, const boost::filesystem::path & idfpath) {
+void jsonToIdf(const json & jsonidf, const std::filesystem::path & idfpath) {
   ::IdfParser parser;
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
@@ -235,7 +235,7 @@ json & removeUnusedObjects(json & jsonidf) {
     const auto & name = var.value().at("variable_name").get<std::string>();
     const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
       [&](const OutputProperties & v) {
-        return boost::iequals(v.name, name);
+        return case_insensitive_compare(v.name, name);
       });
 
     if(findit == std::end(outputtypes)) {
@@ -286,7 +286,7 @@ json & addOutputVariables(json& jsonidf, const Input& input) {
   return jsonidf;
 }
 
-void createModelDescription(const spawn::Input & input, const boost::filesystem::path & savepath) {
+void createModelDescription(const spawn::Input & input, const std::filesystem::path & savepath) {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 

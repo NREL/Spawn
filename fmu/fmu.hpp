@@ -6,7 +6,7 @@
 #include "../util/unzipped_file.hpp"
 #include "../util/fmi_paths.hpp"
 
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <fmi2FunctionTypes.h>
 #include <pugixml.hpp>
 
@@ -49,7 +49,7 @@ namespace fmu {
       std::vector<std::string> failures;
     };
 
-    FMI(boost::filesystem::path fmi_file, bool require_all_symbols) : m_fmi_file{std::move(fmi_file)}
+    FMI(std::filesystem::path fmi_file, bool require_all_symbols) : m_fmi_file{std::move(fmi_file)}
     {
       if (require_all_symbols && !m_loadResults.failures.empty()) {
         throw std::runtime_error("Failed to load all functions");
@@ -109,7 +109,7 @@ namespace fmu {
   private:
     Load_Results loadFunctions(util::Dynamic_Library &);
 
-    boost::filesystem::path m_fmi_file;
+    std::filesystem::path m_fmi_file;
     util::Dynamic_Library m_dll{m_fmi_file};
     Load_Results m_loadResults{loadFunctions(m_dll)};
   };
@@ -117,12 +117,12 @@ namespace fmu {
   class FMU
   {
   public:
-    FMU(boost::filesystem::path fmu_file, bool require_all_symbols = true)
+    FMU(std::filesystem::path fmu_file, bool require_all_symbols = true)
         : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols}
     {
     }
 
-    static boost::filesystem::path modelDescriptionPath()
+    static std::filesystem::path modelDescriptionPath()
     {
       return "modelDescription.xml";
     }
@@ -148,7 +148,7 @@ namespace fmu {
       return modelIdentifier.value();
     }
 
-    boost::filesystem::path fmiBinaryFullPath() const
+    std::filesystem::path fmiBinaryFullPath() const
     {
       return spawn::fmi_lib_path(modelIdentifier());
     }
@@ -159,13 +159,13 @@ namespace fmu {
     }
 
 
-    const boost::filesystem::path &extractedFilesPath() const {
+    const std::filesystem::path &extractedFilesPath() const {
       return m_tempDirectory.dir();
     }
 
 
   private:
-    boost::filesystem::path m_fmu_file;
+    std::filesystem::path m_fmu_file;
     bool m_require_all_symbols;
     util::Temp_Directory m_tempDirectory{};
     // unzip all files

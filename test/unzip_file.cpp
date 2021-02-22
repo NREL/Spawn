@@ -9,14 +9,14 @@ TEST_CASE("Test unzipped file")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(boost::filesystem::exists(testzip()));
-  REQUIRE(boost::filesystem::is_regular(testzip()));
+  REQUIRE(std::filesystem::exists(testzip()));
+  REQUIRE(std::filesystem::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
   spawn::util::Unzipped_File unzippedFile{testzip(), td.dir(), {"a_dir/a_file.data"}};
 
-  REQUIRE(boost::filesystem::exists(out_file));
-  REQUIRE(boost::filesystem::is_regular(out_file));
+  REQUIRE(std::filesystem::exists(out_file));
+  REQUIRE(std::filesystem::is_regular_file(out_file));
 
   std::ifstream ifs(out_file.string(), std::ios_base::binary);
 
@@ -34,9 +34,9 @@ TEST_CASE("Test missing zip file")
 {
   spawn::util::Temp_Directory td{};
 
-  const boost::filesystem::path missing_file{"missing_file.zip"};
+  const std::filesystem::path missing_file{"missing_file.zip"};
 
-  REQUIRE(!boost::filesystem::exists(missing_file));
+  REQUIRE(!std::filesystem::exists(missing_file));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
 
@@ -48,8 +48,8 @@ TEST_CASE("Test missing file in zip")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(boost::filesystem::exists(testzip()));
-  REQUIRE(boost::filesystem::is_regular(testzip()));
+  REQUIRE(std::filesystem::exists(testzip()));
+  REQUIRE(std::filesystem::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/b_file.data";
   REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), td.dir(), {"a_dir/b_file.data"}}),

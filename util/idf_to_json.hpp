@@ -6,13 +6,13 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace spawn {
 
-nlohmann::json idfToJSON(const boost::filesystem::path & idfpath);
+nlohmann::json idfToJSON(const std::filesystem::path & idfpath);
 
-void jsonToIdf(const nlohmann::json & idfjson, const boost::filesystem::path & idfpath);
+void jsonToIdf(const nlohmann::json & idfjson, const std::filesystem::path & idfpath);
 
 } // namespace spawn
 

@@ -4,6 +4,8 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.13)
 
+set(CMAKE_CXX_STANDARD 17)
+
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" FALSE)
 if(ENABLE_MODELICA_COMPILER)
@@ -84,7 +86,6 @@ conan_cmake_run(
   bzip2/1.0.8
   zlib/1.2.11
   libzip/1.5.1@bincrafters/stable
-  boost/1.69.0
   jsonformoderncpp/3.6.1@vthiery/stable
   pugixml/1.9@bincrafters/stable
   CLI11/1.7.1@cliutils/stable
@@ -156,6 +157,11 @@ if(ENABLE_MODELICA_COMPILER)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
   endif()
+endif()
+
+check_include_file("unistd.h" HAVE_UNISTD_H)
+if (HAVE_UNISTD_H)
+  ADD_DEFINITIONS("-DHAVE_UNISTD_H")
 endif()
 
 add_subdirectory( util )

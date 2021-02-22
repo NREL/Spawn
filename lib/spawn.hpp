@@ -53,7 +53,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <deque>
 #include <string>
 #include <vector>
@@ -69,7 +69,7 @@ namespace spawn {
 
 class Spawn {
 public:
-  Spawn(const std::string & t_name, const std::string & t_input, const boost::filesystem::path & workingdir = ".");
+  Spawn(const std::string & t_name, const std::string & t_input, const std::filesystem::path & workingdir = ".");
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
   bool operator==(const Spawn& other) const {
@@ -99,7 +99,7 @@ public:
 
 private:
   std::string instanceName;
-  boost::filesystem::path workingdir;
+  std::filesystem::path workingdir;
   std::map<unsigned int, Variable> variables;
   Input input;
 
@@ -169,8 +169,8 @@ private:
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
 };
 
-boost::filesystem::path exedir();
-boost::filesystem::path iddpath();
+std::filesystem::path exedir();
+std::filesystem::path iddpath();
 
 } // namespace spawn
 
