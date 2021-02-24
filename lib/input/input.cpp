@@ -11,11 +11,11 @@ Input::Input(const std::string & spawninput)
   if (!fileinput.fail()) {
     // deserialize from file
     fileinput >> spawnjson;
-    m_basepath = std::filesystem::canonical(std::filesystem::path(spawninput)).parent_path();
+    m_basepath = fs::canonical(fs::path(spawninput)).parent_path();
   } else {
     // Try to parse command line input as json string
     spawnjson = json::parse(spawninput, nullptr, false);
-    m_basepath = std::filesystem::current_path();
+    m_basepath = fs::current_path();
   }
 
   json weather;
@@ -25,10 +25,10 @@ Input::Input(const std::string & spawninput)
   }
 
   // Do the input paths exist?
-  if (! std::filesystem::exists(idfInputPath())) {
+  if (! fs::exists(idfInputPath())) {
     std::cout << "The specified idf input file does not exist, " << idfInputPath() << "." << std::endl;
   }
-  if (! std::filesystem::exists(epwInputPath())) {
+  if (! fs::exists(epwInputPath())) {
     std::cout << "The specified epw input file does not exist, " << epwInputPath() << "." << std::endl;
   }
 
@@ -46,15 +46,15 @@ std::string Input::fmuname() const {
 }
 
 std::string Input::fmuBaseName() const {
-  return std::filesystem::path(fmuname()).stem().string();
+  return fs::path(fmuname()).stem().string();
 }
 
 void Input::setFMUName(const std::string & name) {
   spawnjson["fmu"]["name"] = name;
 }
 
-std::filesystem::path Input::toPath(const std::string & pathstring) const {
-  std::filesystem::path p(pathstring);
+fs::path Input::toPath(const std::string & pathstring) const {
+  fs::path p(pathstring);
   if (! p.is_absolute()) {
     p = m_basepath / p;
   }
@@ -62,28 +62,28 @@ std::filesystem::path Input::toPath(const std::string & pathstring) const {
   return p;
 }
 
-std::filesystem::path Input::idfInputPath() const {
+fs::path Input::idfInputPath() const {
   return toPath(spawnjson["EnergyPlus"].value("idf",""));
 }
 
-void Input::setIdfInputPath(std::filesystem::path idfpath) {
+void Input::setIdfInputPath(fs::path idfpath) {
   spawnjson["EnergyPlus"]["idf"] = idfpath.string();
 }
 
-std::filesystem::path Input::epwInputPath() const {
+fs::path Input::epwInputPath() const {
   return toPath(spawnjson["EnergyPlus"].value("weather",""));
 }
 
-void Input::setEPWInputPath(std::filesystem::path epwpath) {
+void Input::setEPWInputPath(fs::path epwpath) {
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }
 
-void Input::save(const std::filesystem::path & savepath) const {
+void Input::save(const fs::path & savepath) const {
   std::ofstream o(savepath.string());
   o << std::setw(4) << spawnjson << std::endl;
 }
 
-std::filesystem::path Input::basepath() const {
+fs::path Input::basepath() const {
   return m_basepath;
 }
 

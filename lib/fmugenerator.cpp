@@ -16,14 +16,14 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-nlohmann::json idfToJSON(const std::filesystem::path & idfpath);
-void jsonToIdf(const nlohmann::json & idfjson, const std::filesystem::path & idfpath);
+nlohmann::json idfToJSON(const fs::path & idfpath);
+void jsonToIdf(const nlohmann::json & idfjson, const fs::path & idfpath);
 nlohmann::json & adjustSimulationControl(nlohmann::json & jsonidf);
 nlohmann::json & addRunPeriod(nlohmann::json & jsonidf);
 nlohmann::json & removeUnusedObjects(nlohmann::json & jsonidf);
 nlohmann::json & addOtherEquipment(nlohmann::json & jsonidf, const Input& input);
 nlohmann::json & addOutputVariables(nlohmann::json & jsonidf, const Input& input);
-void createModelDescription(const spawn::Input & input, const std::filesystem::path & savepath);
+void createModelDescription(const spawn::Input & input, const fs::path & savepath);
 
 void energyplusToFMU(
   const std::string &jsoninput,
@@ -31,8 +31,8 @@ void energyplusToFMU(
   bool nocompress,
   const std::string & outputpath,
   const std::string & outputdir,
-  std::filesystem::path iddpath,
-  std::filesystem::path epfmupath
+  fs::path iddpath,
+  fs::path epfmupath
 ) {
   spawn::Input input(jsoninput);
 
@@ -42,20 +42,20 @@ void energyplusToFMU(
   // contained within the fmu layout.
 
   // The default fmu output path
-  auto fmuPath = std::filesystem::current_path() / (input.fmuBaseName() + ".fmu");
+  auto fmuPath = fs::current_path() / (input.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
   if( ! outputpath.empty() ) {
-    fmuPath = std::filesystem::path(outputpath);
+    fmuPath = fs::path(outputpath);
   } else if( ! outputdir.empty() ) {
-    fmuPath = std::filesystem::path(outputdir) / (input.fmuBaseName() + ".fmu");
+    fmuPath = fs::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
   const auto outputroot = fmuPath.parent_path();
   const auto fmuStagingPath = outputroot / fmuPath.stem();
 
-  if( ! std::filesystem::exists(outputroot) ) {
-    std::filesystem::create_directories(outputroot);
+  if( ! fs::exists(outputroot) ) {
+    fs::create_directories(outputroot);
   }
 
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
@@ -66,17 +66,17 @@ void energyplusToFMU(
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
 
-  std::filesystem::remove_all(fmuPath);
-  std::filesystem::remove_all(fmuStagingPath);
+  fs::remove_all(fmuPath);
+  fs::remove_all(fmuStagingPath);
 
   // Create fmu staging area and copy files into it
-  std::filesystem::create_directories(fmuStagingPath);
-  std::filesystem::create_directories(fmuResourcesPath);
-  std::filesystem::create_directories(fmuEPFMIPath.parent_path());
+  fs::create_directories(fmuStagingPath);
+  fs::create_directories(fmuResourcesPath);
+  fs::create_directories(fmuEPFMIPath.parent_path());
 
-  std::filesystem::copy_file(epfmupath, fmuEPFMIPath, std::filesystem::copy_options::overwrite_existing);
-  std::filesystem::copy_file(iddpath, fmuiddPath, std::filesystem::copy_options::overwrite_existing);
-  std::filesystem::copy_file(input.epwInputPath(), fmuepwPath, std::filesystem::copy_options::overwrite_existing);
+  fs::copy_file(epfmupath, fmuEPFMIPath, fs::copy_options::overwrite_existing);
+  fs::copy_file(iddpath, fmuiddPath, fs::copy_options::overwrite_existing);
+  fs::copy_file(input.epwInputPath(), fmuepwPath, fs::copy_options::overwrite_existing);
 
   auto jsonidf = spawn::idfToJSON(input.idfInputPath());
   adjustSimulationControl(jsonidf);
@@ -88,20 +88,20 @@ void energyplusToFMU(
 
   createModelDescription(input, modelDescriptionPath);
 
-  const auto relativeEPWPath = std::filesystem::relative(fmuepwPath, fmuResourcesPath);
+  const auto relativeEPWPath = fs::relative(fmuepwPath, fmuResourcesPath);
   input.setEPWInputPath(relativeEPWPath);
-  const auto relativeIdfPath = std::filesystem::relative(fmuidfPath, fmuResourcesPath);
+  const auto relativeIdfPath = fs::relative(fmuidfPath, fmuResourcesPath);
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
   if (! nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
-    std::filesystem::remove_all(fmuStagingPath);
+    fs::remove_all(fmuStagingPath);
   }
 
 }
 
-json idfToJSON(const std::filesystem::path & idfpath) {
+json idfToJSON(const fs::path & idfpath) {
   std::ifstream input_stream(idfpath.string(), std::ifstream::in);
 
   std::string input_file;
@@ -116,7 +116,7 @@ json idfToJSON(const std::filesystem::path & idfpath) {
   return parser.decode(input_file, schema);
 }
 
-void jsonToIdf(const json & jsonidf, const std::filesystem::path & idfpath) {
+void jsonToIdf(const json & jsonidf, const fs::path & idfpath) {
   ::IdfParser parser;
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
@@ -286,7 +286,7 @@ json & addOutputVariables(json& jsonidf, const Input& input) {
   return jsonidf;
 }
 
-void createModelDescription(const spawn::Input & input, const std::filesystem::path & savepath) {
+void createModelDescription(const spawn::Input & input, const fs::path & savepath) {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 

@@ -43,9 +43,9 @@ static std::string fmi_lib_filename(const std::string &library_name)
   return fmt::format("{}{}.{}", fmi_lib_prefix(), library_name, fmi_lib_ext());
 }
 
-static std::filesystem::path fmi_lib_path(const std::string &library_name)
+static fs::path fmi_lib_path(const std::string &library_name)
 {
-  return std::filesystem::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
+  return fs::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
 
 static std::string epfmi_basename()

@@ -29,7 +29,7 @@
 
 namespace spawn {
 
-Spawn::Spawn(const std::string & t_name, const std::string & t_input, const std::filesystem::path & t_workingdir)
+Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::path & t_workingdir)
   : instanceName(t_name),
     workingdir(t_workingdir),
     input(t_input)
@@ -551,23 +551,23 @@ EnergyPlusState Spawn::simState() {
   return reinterpret_cast<EnergyPlusState>(&sim_state);
 }
 
-std::filesystem::path exedir() {
+fs::path exedir() {
   #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return std::filesystem::path(szPath).parent_path();
+    return fs::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    return std::filesystem::path(info.dli_fname).parent_path();
+    return fs::path(info.dli_fname).parent_path();
   #endif
 }
 
-std::filesystem::path iddpath() {
+fs::path iddpath() {
   constexpr auto & iddfilename = "Energy+.idd";
   auto iddInputPath = exedir() / "../../resources" / iddfilename;
 
-  if (! std::filesystem::exists(iddInputPath)) {
+  if (! fs::exists(iddInputPath)) {
     iddInputPath = exedir() / iddfilename;
   }
 

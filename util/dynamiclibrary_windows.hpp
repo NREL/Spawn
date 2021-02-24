@@ -1,10 +1,9 @@
 #ifndef spawn_dynamiclibrary_windows_hpp_INCLUDED
 #define spawn_dynamiclibrary_windows_hpp_INCLUDED
 
+#include "./filesystem.hpp"
 #include <fmt/format.h>
 #include <string>
-#include <filesystem>
-
 #include <Windows.h>
 
 namespace spawn {
@@ -75,7 +74,7 @@ struct Dynamic_Library
     return symbol;
   }
 
-  explicit Dynamic_Library(std::filesystem::path location)
+  explicit Dynamic_Library(fs::path location)
       : m_location{std::move(location)}, m_handle{LoadLibrary(to_proper_string(m_location.string()).c_str())}
   {
     if (!m_handle) {
@@ -107,7 +106,7 @@ struct Dynamic_Library
     }
   }
 
-  std::filesystem::path m_location{};
+  fs::path m_location{};
   HMODULE m_handle{};
 };
 

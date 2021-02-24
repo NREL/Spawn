@@ -2,7 +2,7 @@
 #define FMUGENERATOR_HH_INCLUDED
 
 #include <string>
-#include <filesystem>
+#include "../util/filesystem.hpp"
 
 namespace spawn {
 
@@ -12,8 +12,8 @@ void energyplusToFMU(
   bool nocompress,
   const std::string & outputpath,
   const std::string & outputdir,
-  std::filesystem::path iddpath,
-  std::filesystem::path epfmupath
+  fs::path iddpath,
+  fs::path epfmupath
 );
 
 } // namespace spawn

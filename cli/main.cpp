@@ -9,10 +9,10 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <filesystem>
 #include <config.hxx>
 #include <stdlib.h>
 #include "../util/fmi_paths.hpp"
+#include "../util/filesystem.hpp"
 
 #if defined _WIN32
 #include <windows.h>
@@ -27,15 +27,15 @@
 
 using json = nlohmann::json;
 
-std::filesystem::path exedir() {
+fs::path exedir() {
   #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return std::filesystem::path(szPath).parent_path();
+    return fs::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    return std::filesystem::path(info.dli_fname).parent_path();
+    return fs::path(info.dli_fname).parent_path();
   #endif
 }
 
@@ -43,42 +43,42 @@ bool isInstalled() {
   return exedir().stem() == "bin";
 }
 
-std::filesystem::path iddInstallPath() {
+fs::path iddInstallPath() {
   constexpr auto & iddfilename = "Energy+.idd";
   // Configuration in install tree
   auto iddInputPath = exedir() / "../etc" / iddfilename;
 
   // Configuration in a developer tree
-  if (! std::filesystem::exists(iddInputPath)) {
+  if (! fs::exists(iddInputPath)) {
     iddInputPath = exedir() / iddfilename;
   }
 
   return iddInputPath;
 }
 
-std::filesystem::path epfmiInstallPath() {
+fs::path epfmiInstallPath() {
   const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
-  if (std::filesystem::exists(candidate)) {
+  if (fs::exists(candidate)) {
     return candidate;
   } else {
     return exedir() / spawn::epfmi_filename();
   }
 }
 
-std::filesystem::path jmodelicaHome() {
+fs::path jmodelicaHome() {
   if (isInstalled()) {
     return exedir() / "../JModelica/";
   } else {
-    std::filesystem::path binary_dir(spawn::BINARY_DIR);
+    fs::path binary_dir(spawn::BINARY_DIR);
     return binary_dir / "JModelica/";
   }
 }
 
-std::filesystem::path mblPath() {
+fs::path mblPath() {
   if (isInstalled()) {
     return exedir() / "../modelica-buildings/Buildings/";
   } else {
-    std::filesystem::path source_dir(spawn::SOURCE_DIR);
+    fs::path source_dir(spawn::SOURCE_DIR);
     return source_dir / "submodules/modelica-buildings/Buildings/";
   }
 }

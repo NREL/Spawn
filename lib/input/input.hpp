@@ -9,7 +9,7 @@
 #include "../variables.hpp"
 #include "../iddtypes.hpp"
 #include "../outputtypes.hpp"
-#include <filesystem>
+#include "../../util/filesystem.hpp"
 #include <fstream>
 
 namespace spawn {
@@ -24,31 +24,31 @@ public:
   std::vector<EMSActuator> emsActuators;
   std::vector<Surface> surfaces;
 
-  std::filesystem::path basepath() const;
+  fs::path basepath() const;
 
   std::string fmuname() const;
   void setFMUName(const std::string & name);
   // fmu name without extension
   std::string fmuBaseName() const;
 
-  std::filesystem::path idfInputPath() const;
-  void setIdfInputPath(std::filesystem::path idfpath);
+  fs::path idfInputPath() const;
+  void setIdfInputPath(fs::path idfpath);
 
-  std::filesystem::path epwInputPath() const;
-  void setEPWInputPath(std::filesystem::path epwpath);
+  fs::path epwInputPath() const;
+  void setEPWInputPath(fs::path epwpath);
 
 
-  void save(const std::filesystem::path & savepath) const;
+  void save(const fs::path & savepath) const;
 
 private:
 
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
-  std::filesystem::path toPath(const std::string & pathstring) const;
+  fs::path toPath(const std::string & pathstring) const;
 
   nlohmann::json jsonidf;
   nlohmann::json spawnjson;
-  std::filesystem::path m_basepath;
+  fs::path m_basepath;
 };
 
 } // namespace spawn

@@ -1,11 +1,11 @@
 #include "testpaths.hpp"
 #include "spawn.hpp"
+#include "../util/filesystem.hpp"
 #include <catch2/catch.hpp>
 #include <cstdlib>
-#include <filesystem>
 
 
-std::filesystem::path create_fmu()
+fs::path create_fmu()
 {
   // testcase1 is the RefBldgSmallOfficeNew2004_Chicago
   // This call generates an FMU for the corresponding idf file
@@ -28,10 +28,10 @@ TEST_CASE( "Spawn shows help" ) {
 // This is the main requirement of spawn executable,
 // generate an FMU for a given EnergyPlus model
 TEST_CASE( "Spawn creates an FMU" ) {
-  std::filesystem::path created_fmu;
+  fs::path created_fmu;
   REQUIRE_NOTHROW(created_fmu = create_fmu());
-  CHECK(std::filesystem::is_regular_file(created_fmu));
-  CHECK(std::filesystem::file_size(created_fmu) > 0);
+  CHECK(fs::is_regular_file(created_fmu));
+  CHECK(fs::file_size(created_fmu) > 0);
 }
 
 #if defined ENABLE_MODELICA_COMPILER

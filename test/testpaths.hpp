@@ -1,12 +1,12 @@
 #include <string>
-#include <filesystem>
+#include "../util/filesystem.hpp"
 
-std::filesystem::path testdir();
+fs::path testdir();
 
 std::string spawnexe();
 
 std::string testcase1();
 
-std::filesystem::path testzip();
+fs::path testzip();
 
-std::filesystem::path fmi_load_test();
+fs::path fmi_load_test();

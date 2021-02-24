@@ -6,6 +6,7 @@ endif()
 add_library(spawn_utils
         compare.hpp
         compare.cpp
+        filesystem.hpp
         idf_to_json.hpp
         idf_to_json.cpp
         fmi_paths.hpp

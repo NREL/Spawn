@@ -1,7 +1,7 @@
 #ifndef NREL_SPAWN_UTILITY_HPP
 #define NREL_SPAWN_UTILITY_HPP
 
-#include <filesystem>
+#include "./filesystem.hpp"
 #include <cstdint>
 #include <fstream>
 #include <vector>
@@ -16,7 +16,7 @@ namespace util {
     explicit Temp_Directory(const std::string &t_prefix = "spawn");
     ~Temp_Directory();
 
-    const std::filesystem::path &dir() const noexcept
+    const fs::path &dir() const noexcept
     {
       return m_dir;
     }
@@ -27,7 +27,7 @@ namespace util {
     Temp_Directory &operator=(Temp_Directory &&) = delete;
 
   private:
-    std::filesystem::path m_dir;
+    fs::path m_dir;
   };
 } // namespace util
 } // namespace spawn
