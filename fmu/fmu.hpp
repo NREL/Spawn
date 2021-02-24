@@ -7,6 +7,7 @@
 #include "../util/fmi_paths.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <fmi2FunctionTypes.h>
 #include <pugixml.hpp>
 

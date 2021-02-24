@@ -3,6 +3,7 @@
 
 #include <fmt/format.h>
 #include <string>
+#include <filesystem>
 
 #include <Windows.h>
 
