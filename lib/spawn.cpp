@@ -40,15 +40,16 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::
 void Spawn::start(const double & starttime) {
   const auto & simulation = [&](){
     try {
-      auto epwPath = input.epwInputPath().string();
-      auto idfPath = input.idfInputPath().string();
-      auto iddPath = iddpath().string();
+      const auto epwPath = input.epwInputPath().string();
+      const auto idfPath = input.idfInputPath().string();
+      const auto iddPath = iddpath().string();
+      const auto workingdir_string = workingdir.string();
 
       constexpr int argc = 8;
       const char * argv[argc];
       argv[0] = "energyplus";
       argv[1] = "-d";
-      argv[2] = workingdir.string().c_str();
+      argv[2] = workingdir_string.c_str();
       argv[3] = "-w";
       argv[4] = epwPath.c_str();
       argv[5] = "-i";
