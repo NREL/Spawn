@@ -1,6 +1,7 @@
 
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
+#include "../util/filesystem.hpp"
 #include "testpaths.hpp"
 #include <catch2/catch.hpp>
 #include <array>
@@ -9,14 +10,14 @@ TEST_CASE("Test unzipped file")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(std::filesystem::exists(testzip()));
-  REQUIRE(std::filesystem::is_regular_file(testzip()));
+  REQUIRE(fs::exists(testzip()));
+  REQUIRE(fs::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
   spawn::util::Unzipped_File unzippedFile{testzip(), td.dir(), {"a_dir/a_file.data"}};
 
-  REQUIRE(std::filesystem::exists(out_file));
-  REQUIRE(std::filesystem::is_regular_file(out_file));
+  REQUIRE(fs::exists(out_file));
+  REQUIRE(fs::is_regular_file(out_file));
 
   std::ifstream ifs(out_file.string(), std::ios_base::binary);
 
@@ -34,9 +35,9 @@ TEST_CASE("Test missing zip file")
 {
   spawn::util::Temp_Directory td{};
 
-  const std::filesystem::path missing_file{"missing_file.zip"};
+  const fs::path missing_file{"missing_file.zip"};
 
-  REQUIRE(!std::filesystem::exists(missing_file));
+  REQUIRE(!fs::exists(missing_file));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
 
@@ -48,8 +49,8 @@ TEST_CASE("Test missing file in zip")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(std::filesystem::exists(testzip()));
-  REQUIRE(std::filesystem::is_regular_file(testzip()));
+  REQUIRE(fs::exists(testzip()));
+  REQUIRE(fs::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/b_file.data";
   REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), td.dir(), {"a_dir/b_file.data"}}),

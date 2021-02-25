@@ -1,4 +1,5 @@
 #include "../fmu/fmu.hpp"
+#include "../util/filesystem.hpp"
 #include "testpaths.hpp"
 #include "spawn.hpp"
 #include <catch2/catch.hpp>
@@ -7,8 +8,8 @@
 TEST_CASE("Test loading of FMI")
 {
   const auto fmi_file = fmi_load_test();
-  REQUIRE(std::filesystem::exists(fmi_file));
-  REQUIRE(std::filesystem::is_regular_file(fmi_file));
+  REQUIRE(fs::exists(fmi_file));
+  REQUIRE(fs::is_regular_file(fmi_file));
 
   spawn::fmu::FMI fmi{fmi_load_test(), false};
 
@@ -24,8 +25,8 @@ TEST_CASE("Test loading of FMI")
 TEST_CASE("Test loading of FMI missing symbols")
 {
   const auto fmi_file = fmi_load_test();
-  REQUIRE(std::filesystem::exists(fmi_file));
-  REQUIRE(std::filesystem::is_regular_file(fmi_file));
+  REQUIRE(fs::exists(fmi_file));
+  REQUIRE(fs::is_regular_file(fmi_file));
 
   REQUIRE_THROWS(spawn::fmu::FMI{fmi_load_test(), true});
 }

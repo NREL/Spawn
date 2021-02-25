@@ -20,6 +20,9 @@ add_library(spawn_utils
         )
 
 target_link_libraries(spawn_utils PUBLIC energyplusapi CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
+if(HAVE_EXP_FILESYSTEM_H)
+  target_link_libraries(spawn_utils PUBLIC stdc++fs)
+endif()
 
 target_include_directories(spawn_utils
   PRIVATE

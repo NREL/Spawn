@@ -4,6 +4,7 @@
 #include "input/input.hpp"
 #include "../util/compare.hpp"
 #include "../util/fmi_paths.hpp"
+#include "../util/filesystem.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
