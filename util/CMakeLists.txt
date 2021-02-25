@@ -21,7 +21,8 @@ add_library(spawn_utils
 
 target_link_libraries(spawn_utils PUBLIC energyplusapi CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
 
-check_cxx_compiler_flag(-lstdc++fs HAS_FS_FLAG)
+include(CheckLinkerFlag)
+check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
 if(HAS_FS_FLAG)
   target_link_libraries(spawn_utils PUBLIC stdc++fs)
 endif()
