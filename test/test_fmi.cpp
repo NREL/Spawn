@@ -1,17 +1,17 @@
 #include "../fmu/fmu.hpp"
 #include "../util/filesystem.hpp"
 #include "paths.hpp"
-#include "spawn.hpp"
+#include "create_epfmu.hpp"
 #include <catch2/catch.hpp>
 #include <iostream>
 
 TEST_CASE("Test loading of FMI")
 {
-  const auto fmi_file = fmi_load_test();
+  const auto fmi_file = example_fmu_path();
   REQUIRE(fs::exists(fmi_file));
   REQUIRE(fs::is_regular_file(fmi_file));
 
-  spawn::fmu::FMI fmi{fmi_load_test(), false};
+  spawn::fmu::FMI fmi{example_fmu_path(), false};
 
   REQUIRE(fmi.fmi2GetVersion.has_value());
 
@@ -24,16 +24,16 @@ TEST_CASE("Test loading of FMI")
 
 TEST_CASE("Test loading of FMI missing symbols")
 {
-  const auto fmi_file = fmi_load_test();
+  const auto fmi_file = example_fmu_path();
   REQUIRE(fs::exists(fmi_file));
   REQUIRE(fs::is_regular_file(fmi_file));
 
-  REQUIRE_THROWS(spawn::fmu::FMI{fmi_load_test(), true});
+  REQUIRE_THROWS(spawn::fmu::FMI{example_fmu_path(), true});
 }
 
 TEST_CASE("Test loading of Spawn Generated FMU")
 {
-  const auto fmu_file = create_fmu();
+  const auto fmu_file = create_epfmu();
   spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 }
@@ -53,7 +53,7 @@ double days_to_seconds(const int days)
 
 TEST_CASE("Test one year simulation")
 {
-  const auto fmu_file = create_fmu();
+  const auto fmu_file = create_epfmu();
   spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
@@ -67,7 +67,7 @@ TEST_CASE("Test one year simulation")
 
 TEST_CASE("Test two year simulation")
 {
-  const auto fmu_file = create_fmu();
+  const auto fmu_file = create_epfmu();
   spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 

@@ -9,4 +9,4 @@ std::string testcase1();
 
 fs::path testzip();
 
-fs::path fmi_load_test();
+fs::path example_fmu_path();

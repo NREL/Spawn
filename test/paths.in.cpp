@@ -16,7 +16,7 @@ fs::path testzip() {
   return "${PROJECT_SOURCE_DIR}/test/example_zip.zip";
 }
 
-fs::path fmi_load_test() {
-  return "$<TARGET_FILE:example_fmi_lib>";
+fs::path example_fmu_path() {
+  return "$<TARGET_FILE:example_fmu_lib>";
 }
 

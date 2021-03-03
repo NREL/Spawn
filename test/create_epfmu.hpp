@@ -1,10 +1,10 @@
-#ifndef SPAWN_SPAWN_HPP
-#define SPAWN_SPAWN_HPP
+#ifndef CREATE_EPFMU_HPP
+#define CREATE_EPFMU_HPP
 
 #include "../util/filesystem.hpp"
 
 /// \todo this generates the same file every time, breaking parallel testing
 ///       fix this with an output directory parameter passed into spawn?
-fs::path create_fmu();
+fs::path create_epfmu();
 
-#endif // SPAWN_SPAWN_HPP
+#endif // CREATE_EPFMU_HPP

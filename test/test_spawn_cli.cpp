@@ -1,23 +1,8 @@
 #include "paths.hpp"
-#include "spawn.hpp"
+#include "create_epfmu.hpp"
 #include "../util/filesystem.hpp"
 #include <catch2/catch.hpp>
 #include <cstdlib>
-
-
-fs::path create_fmu()
-{
-  // testcase1 is the RefBldgSmallOfficeNew2004_Chicago
-  // This call generates an FMU for the corresponding idf file
-  // testcase1() returns a path to RefBldgSmallOfficeNew2004_Chicago.spawn
-  // which is a json file that configures the spawn input
-  const auto cmd = spawnexe() + " --create " + testcase1() + " --no-compress --output-dir " + testdir().string();
-  const auto result = system(cmd.c_str());
-  if (result != 0) {
-    throw std::runtime_error("Error creating FMU, non-0 result");
-  }
-  return testdir() / "MyBuilding.fmu";
-}
 
 TEST_CASE( "Spawn shows help" ) {
   const auto cmd = spawnexe() + " --help";
@@ -29,7 +14,7 @@ TEST_CASE( "Spawn shows help" ) {
 // generate an FMU for a given EnergyPlus model
 TEST_CASE( "Spawn creates an FMU" ) {
   fs::path created_fmu;
-  REQUIRE_NOTHROW(created_fmu = create_fmu());
+  REQUIRE_NOTHROW(created_fmu = create_epfmu());
   CHECK(fs::is_regular_file(created_fmu));
   CHECK(fs::file_size(created_fmu) > 0);
 }

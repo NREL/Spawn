@@ -10,11 +10,12 @@ configure_file(paths.in.cpp paths.in2.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(example_fmi_lib MODULE example_fmi_lib.cpp)
+add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
 
 add_executable(tests
   catch.cpp
-  spawn.hpp
+  create_epfmu.hpp
+  create_epfmu.cpp
   paths.hpp
   test_spawn_cli.cpp
   test_temp_directory.cpp
@@ -22,7 +23,7 @@ add_executable(tests
   test_fmi.cpp
 )
 
-add_dependencies(tests example_fmi_lib)
+add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
 
 
