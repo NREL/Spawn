@@ -1,6 +1,6 @@
 #include "../fmu/fmu.hpp"
 #include "../util/filesystem.hpp"
-#include "testpaths.hpp"
+#include "paths.hpp"
 #include "spawn.hpp"
 #include <catch2/catch.hpp>
 #include <iostream>

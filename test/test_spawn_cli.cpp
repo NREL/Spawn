@@ -1,4 +1,4 @@
-#include "testpaths.hpp"
+#include "paths.hpp"
 #include "spawn.hpp"
 #include "../util/filesystem.hpp"
 #include <catch2/catch.hpp>

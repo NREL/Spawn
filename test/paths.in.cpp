@@ -1,4 +1,4 @@
-#include "testpaths.hpp"
+#include "paths.hpp"
 
 fs::path testdir() {
   return "${CMAKE_CURRENT_BINARY_DIR}";
@@ -13,10 +13,10 @@ std::string testcase1() {
 }
 
 fs::path testzip() {
-  return "${PROJECT_SOURCE_DIR}/test/test_unzipping.zip";
+  return "${PROJECT_SOURCE_DIR}/test/example_zip.zip";
 }
 
 fs::path fmi_load_test() {
-  return "$<TARGET_FILE:fmi_load_test>";
+  return "$<TARGET_FILE:example_fmi_lib>";
 }
 

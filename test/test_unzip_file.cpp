@@ -2,7 +2,7 @@
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
 #include "../util/filesystem.hpp"
-#include "testpaths.hpp"
+#include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <array>
 
