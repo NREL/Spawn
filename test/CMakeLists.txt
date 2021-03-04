@@ -17,6 +17,7 @@ add_executable(tests
   create_epfmu.hpp
   create_epfmu.cpp
   paths.hpp
+  test_epfmi.cpp
   test_spawn_cli.cpp
   test_temp_directory.cpp
   test_unzip_file.cpp
