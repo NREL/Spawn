@@ -19,13 +19,14 @@ add_executable(tests
   paths.hpp
   test_epfmi.cpp
   test_spawn_cli.cpp
+  #test_spawn_lib.cpp
   test_temp_directory.cpp
   test_unzip_file.cpp
   test_fmi.cpp
 )
 
 add_dependencies(tests example_fmu_lib)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn)
 
 
 # Make this better

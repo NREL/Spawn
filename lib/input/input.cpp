@@ -1,5 +1,5 @@
 #include "input.hpp"
-#include "../../util/idf_to_json.hpp"
+#include "../idf_to_json.hpp"
 
 using json = nlohmann::json;
 
@@ -32,7 +32,7 @@ Input::Input(const std::string & spawninput)
     std::cout << "The specified epw input file does not exist, " << epwInputPath() << "." << std::endl;
   }
 
-  jsonidf = idfToJSON(idfInputPath());
+  jsonidf = idf_to_json(idfInputPath());
 
   zones = Zone::createZones(spawnjson, jsonidf);
   schedules = Schedule::createSchedules(spawnjson, jsonidf);
