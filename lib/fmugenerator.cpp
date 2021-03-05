@@ -73,11 +73,8 @@ void energyplusToFMU(
   fs::copy_file(epfmupath, fmuEPFMIPath, fs::copy_options::overwrite_existing);
   fs::copy_file(iddpath, fmuiddPath, fs::copy_options::overwrite_existing);
   fs::copy_file(input.epwInputPath(), fmuepwPath, fs::copy_options::overwrite_existing);
-
-  auto jsonidf = spawn::idf_to_json(input.idfInputPath());
-  prepare_idf(jsonidf, input);
-  spawn::json_to_idf(jsonidf, fmuidfPath);
-
+  fs::copy_file(input.idfInputPath(), fmuidfPath);
+  
   createModelDescription(input, modelDescriptionPath);
 
   const auto relativeEPWPath = fs::relative(fmuepwPath, fmuResourcesPath);

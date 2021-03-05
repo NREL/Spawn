@@ -26,6 +26,7 @@ void json_to_idf(const json & jsonidf, const fs::path & idfpath) {
   const auto embeddedEpJSONSchema = EnergyPlus::EmbeddedEpJSONSchema::embeddedEpJSONSchema();
   json schema = json::from_cbor(embeddedEpJSONSchema.first, embeddedEpJSONSchema.second);
 
+  fs::create_directories(idfpath.parent_path());
   std::ofstream newidfstream(idfpath.string(),  std::ofstream::out |  std::ofstream::trunc);
   newidfstream << parser.encode(jsonidf, schema);
   newidfstream.close();

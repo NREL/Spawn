@@ -1,5 +1,7 @@
 #include "spawn.hpp"
 #include "outputtypes.hpp"
+#include "idf_to_json.hpp"
+#include "idfprep.hpp"
 #include "input/input.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
@@ -38,10 +40,17 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::
 }
 
 void Spawn::start(const double & starttime) {
+  auto idfPath = input.idfInputPath();
+
+  auto idfjson = idf_to_json(input.idfInputPath());
+  prepare_idf(idfjson, input);
+  idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+  json_to_idf(idfjson, idfPath);
+
   const auto & simulation = [&](){
     try {
       const auto epwPath = input.epwInputPath().string();
-      const auto idfPath = input.idfInputPath().string();
+      const auto idfPath_string = idfPath.string();
       const auto iddPath = iddpath().string();
       const auto workingdir_string = workingdir.string();
 
@@ -54,7 +63,7 @@ void Spawn::start(const double & starttime) {
       argv[4] = epwPath.c_str();
       argv[5] = "-i";
       argv[6] = iddPath.c_str();
-      argv[7] = idfPath.c_str();
+      argv[7] = idfPath_string.c_str();
 
       EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
       registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));

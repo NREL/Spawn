@@ -19,7 +19,7 @@ add_executable(tests
   paths.hpp
   test_epfmi.cpp
   test_spawn_cli.cpp
-  #test_spawn_lib.cpp
+  test_spawn_lib.cpp
   test_temp_directory.cpp
   test_unzip_file.cpp
   test_fmi.cpp
