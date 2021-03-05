@@ -45,7 +45,7 @@ R"(
 TEST_CASE("Test one Spawn")
 {
   spawn::util::Temp_Directory working_path{};
-  spawn::Spawn spawn1("spawn1", spawn_input);//, working_path.dir());
+  spawn::Spawn spawn1("spawn1", spawn_input, working_path.dir());
   spawn1.start();
   CHECK(spawn1.currentTime() == 0.0);
 
