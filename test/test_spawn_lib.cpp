@@ -45,7 +45,7 @@ R"(
 TEST_CASE("Test one Spawn")
 {
   spawn::util::Temp_Directory working_path{};
-  spawn::Spawn spawn1("spawn1", spawn_input, working_path.dir());
+  spawn::Spawn spawn1("spawn1", spawn_input);//, working_path.dir());
   spawn1.start();
   CHECK(spawn1.currentTime() == 0.0);
 
@@ -53,6 +53,8 @@ TEST_CASE("Test one Spawn")
     auto time = spawn::days_to_seconds(day);
     spawn1.setTime(time);
     CHECK(spawn1.currentTime() == time);
+    const auto lighting_power = spawn1.getValue("Core_Zone_Lights_Output");
+    CHECK(lighting_power > 0.0);
   }
   spawn1.stop();
 }
@@ -77,6 +79,11 @@ TEST_CASE("Test one Spawn")
 //    spawn2.setTime(time);
 //    CHECK(spawn1.currentTime() == time);
 //    CHECK(spawn2.currentTime() == time);
+//
+//    const auto lighting_power1 = spawn1.getValue("Core_Zone_Lights_Output");
+//    const auto lighting_power2 = spawn2.getValue("Core_Zone_Lights_Output");
+//    const auto all_lighting_power = lighting_power1 + lighting_power2;
+//    CHECK(all_lighting_power > 0.0);
 //  }
 //
 //  spawn1.stop();

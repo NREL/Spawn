@@ -190,6 +190,29 @@ double Spawn::getValue(const unsigned int & ref) const {
   }
 }
 
+unsigned int Spawn::getIndex(const std::string & name) const {
+  const auto pred = [&name](const std::pair<unsigned int, Variable> & v) {
+    return v.second.name == name;
+  };
+  
+  const auto it = std::find_if(variables.begin(), variables.end(), pred);
+  if(it == std::end(variables)) {
+    throw std::runtime_error(fmt::format("Attempt to retrieve an invalid variable name: {}", name));
+  }
+
+  return it->first;
+}
+
+double Spawn::getValue(const std::string & name) const {
+  const auto index = getIndex(name);
+  return getValue(index);
+}
+
+void Spawn::setValue(const std::string & name, const double & value) {
+  const auto index = getIndex(name);
+  setValue(index, value);
+}
+
 Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
   Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
   Real64 SumHA{0.0};      // Zone sum of Hc*Area
