@@ -4,13 +4,46 @@
 #include "../util/temp_directory.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
+#include <fmt/format.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+const auto idfpath = project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+const auto epwpath = project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+
+json spawn_input = fmt::format(
+R"(
+  {{
+    "version": "0.1",
+    "EnergyPlus": {{
+      "idf": "{idfpath}",
+      "weather": "{epwpath}"
+    }},
+    "model": {{
+      "outputVariables": [
+        {{
+          "name":    "Lights Electricity Rate",
+          "key":     "Core_ZN_Lights",
+          "fmiName": "Core_Zone_Lights_Output"
+        }}
+      ],
+      "emsActuators": [
+        {{
+          "variableName"  : "Core_ZN People",
+          "componentType" : "People",
+          "controlType"   : "Number of People",
+          "unit"          : "1",
+          "fmiName"       : "Core_Zone_People"
+        }}
+      ]
+    }}
+  }}
+)", fmt::arg("idfpath", idfpath.string()), fmt::arg("epwpath", epwpath.string()));
 
 TEST_CASE("Test one Spawn")
 {
-  // Path to a spawn json input file
-  const auto spawn_input = testcase1();
-
   spawn::util::Temp_Directory working_path{};
   spawn::Spawn spawn1("spawn1", spawn_input, working_path.dir());
   spawn1.start();
@@ -26,9 +59,6 @@ TEST_CASE("Test one Spawn")
 
 //TEST_CASE("Test two Spawns")
 //{
-//  // Path to a spawn json input file
-//  const auto spawn_input = testcase1();
-//
 //  spawn::util::Temp_Directory working_path1{};
 //  spawn::util::Temp_Directory working_path2{};
 //

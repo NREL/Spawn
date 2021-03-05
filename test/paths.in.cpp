@@ -20,3 +20,7 @@ fs::path example_fmu_path() {
   return "$<TARGET_FILE:example_fmu_lib>";
 }
 
+fs::path project_source_dir() {
+  return "${PROJECT_SOURCE_DIR}";
+}
+
