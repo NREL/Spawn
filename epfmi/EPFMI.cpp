@@ -164,7 +164,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   UNUSED(stopTime);
 
   auto action = [&](spawn::Spawn & comp) {
-    comp.start(starttime);
+    comp.setStartTime(starttime);
   };
 
   return spawn::with_spawn(c, action);
@@ -259,9 +259,13 @@ EPFMI_API void fmi2FreeInstance(fmi2Component c)
   spawn::with_spawn(c, action);
 }
 
-EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component)
+EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
-  return fmi2OK;
+  auto action = [&](spawn::Spawn & comp) {
+    comp.start();
+  };
+
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component)

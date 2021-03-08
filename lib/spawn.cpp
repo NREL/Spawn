@@ -37,7 +37,7 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::
   variables = parseVariables(input);
 }
 
-void Spawn::start(const double & starttime) {
+void Spawn::start() {
   const auto & simulation = [&](){
     try {
       const auto epwPath = input.epwInputPath().string();
@@ -84,7 +84,7 @@ void Spawn::start(const double & starttime) {
   iterate();
 
   // Move to the requested start time
-  setTime(starttime);
+  setTime(m_startTime);
 }
 
 void Spawn::wait() {
@@ -133,6 +133,14 @@ void Spawn::isRunningCheck() const {
   if (! is_running) {
     throw std::runtime_error("EnergyPlus is not running");
   }
+}
+
+double Spawn::startTime() const {
+  return m_startTime;
+}
+
+void Spawn::setStartTime(const double & time) {
+  m_startTime = time;
 }
 
 void Spawn::setTime(const double & time)
