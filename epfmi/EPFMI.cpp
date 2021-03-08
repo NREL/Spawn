@@ -201,6 +201,8 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
   fmi2Real values[])
 {
   auto action = [&](spawn::Spawn & comp) {
+    // Call to start will be a no op if the simulation is already running
+    comp.start();
     comp.exchange();
     std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return comp.getValue(valueRef); });
   };
@@ -261,16 +263,16 @@ EPFMI_API void fmi2FreeInstance(fmi2Component c)
 
 EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
+  return fmi2OK;
+}
+
+EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component c)
+{
   auto action = [&](spawn::Spawn & comp) {
     comp.start();
   };
 
   return spawn::with_spawn(c, action);
-}
-
-EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component)
-{
-  return fmi2OK;
 }
 
 EPFMI_API fmi2Status fmi2GetInteger(fmi2Component, const fmi2ValueReference[], size_t, fmi2Integer[])
