@@ -37,54 +37,54 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::
   variables = parseVariables(input);
 }
 
-void Spawn::start(const double & starttime) {
-  const auto & simulation = [&](){
-    try {
-      const auto epwPath = input.epwInputPath().string();
-      const auto idfPath = input.idfInputPath().string();
-      const auto iddPath = iddpath().string();
-      const auto workingdir_string = workingdir.string();
+void Spawn::start() {
+  if(! is_running) {
+    is_running = true;
 
-      constexpr int argc = 8;
-      const char * argv[argc];
-      argv[0] = "energyplus";
-      argv[1] = "-d";
-      argv[2] = workingdir_string.c_str();
-      argv[3] = "-w";
-      argv[4] = epwPath.c_str();
-      argv[5] = "-i";
-      argv[6] = iddPath.c_str();
-      argv[7] = idfPath.c_str();
+    const auto & simulation = [&](){
+      try {
+        const auto epwPath = input.epwInputPath().string();
+        const auto idfPath = input.idfInputPath().string();
+        const auto iddPath = iddpath().string();
+        const auto workingdir_string = workingdir.string();
 
-      EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
-      registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
-      registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
-      registerExternalSurfaceManager(simState(), std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1, std::placeholders::_2));
+        constexpr int argc = 8;
+        const char * argv[argc];
+        argv[0] = "energyplus";
+        argv[1] = "-d";
+        argv[2] = workingdir_string.c_str();
+        argv[3] = "-w";
+        argv[4] = epwPath.c_str();
+        argv[5] = "-i";
+        argv[6] = iddPath.c_str();
+        argv[7] = idfPath.c_str();
 
-      RunEnergyPlus(sim_state);
+        EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
+        registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
+        registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
+        registerExternalSurfaceManager(simState(), std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1, std::placeholders::_2));
 
-      {
-        std::unique_lock<std::mutex> lk(sim_mutex);
-        iterate_flag = false;
-        is_running = false;
+        RunEnergyPlus(sim_state);
+
+        {
+          std::unique_lock<std::mutex> lk(sim_mutex);
+          iterate_flag = false;
+          is_running = false;
+        }
+        iterate_cv.notify_one();
+      } catch(...) {
+        sim_exception_ptr = std::current_exception();
       }
-      iterate_cv.notify_one();
-    } catch(...) {
-      sim_exception_ptr = std::current_exception();
-    }
-  };
+    };
 
-  is_running = true;
-  requestedTime = 0.0;
-
-  sim_thread = std::thread(simulation);
-
-  // This will make the EnergyPlus simulation thread go through startup/warmup etc
-  // and then go back to waiting
-  iterate();
-
-  // Move to the requested start time
-  setTime(starttime);
+    requestedTime = 0.0;
+    sim_thread = std::thread(simulation);
+    // This will make the EnergyPlus simulation thread go through startup/warmup etc
+    // and then go back to waiting
+    iterate();
+    // Move to the requested start time
+    setTime(m_startTime);
+  }
 }
 
 void Spawn::wait() {
@@ -133,6 +133,14 @@ void Spawn::isRunningCheck() const {
   if (! is_running) {
     throw std::runtime_error("EnergyPlus is not running");
   }
+}
+
+double Spawn::startTime() const {
+  return m_startTime;
+}
+
+void Spawn::setStartTime(const double & time) {
+  m_startTime = time;
 }
 
 void Spawn::setTime(const double & time)

@@ -76,13 +76,16 @@ public:
     return (this == &other);
   }
 
-  void start(const double & starttime = 0.0);
+  void start();
   void stop();
   bool isRunning() const;
   void setTime(const double & time);
 
   double currentTime() const;
   double nextEventTime() const;
+
+  double startTime() const;
+  void setStartTime(const double & time);
 
   void exchange();
 
@@ -103,6 +106,7 @@ private:
   std::map<unsigned int, Variable> variables;
   Input input;
 
+  double m_startTime{0.0};
   double requestedTime;
 
   // Signal EnergyPlus to move through the simulation loop

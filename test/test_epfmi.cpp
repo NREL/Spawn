@@ -35,6 +35,7 @@ TEST_CASE("Test one year simulation")
   fmi2CallbackFunctions callbacks = {fmuLogger, calloc, free, NULL, NULL}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmu.fmi.fmi2ExitInitializationMode(comp);
   fmu.fmi.fmi2SetTime(comp, days_to_seconds(365));
   fmu.fmi.fmi2Terminate(comp);
 }
@@ -49,6 +50,7 @@ TEST_CASE("Test two year simulation")
   fmi2CallbackFunctions callbacks = {fmuLogger, calloc, free, NULL, NULL}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmu.fmi.fmi2ExitInitializationMode(comp);
   fmu.fmi.fmi2SetTime(comp, days_to_seconds(365 * 2));
   fmu.fmi.fmi2Terminate(comp);
 }
