@@ -175,7 +175,6 @@ double Spawn::nextEventTime() const {
 }
 
 void Spawn::setValue(const unsigned int & ref, const double & value) {
-  isRunningCheck();
   auto var = variables.find(ref);
   if( var != variables.end() ) {
     var->second.setValue(value, spawn::units::UnitSystem::MO);
