@@ -66,7 +66,7 @@ void Spawn::start() {
         argv[4] = epwPath.c_str();
         argv[5] = "-i";
         argv[6] = iddPath.c_str();
-        argv[7] = idfPath.c_str();
+        argv[7] = idfPath_string.c_str();
 
         EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
         registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
