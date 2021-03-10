@@ -419,7 +419,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.epunittype = spawn::units::UnitType::W;
         var.mounittype = spawn::units::UnitType::W;
 
-        var.scalar_attributes.emplace_back("name",surface.idfname + "_Q_Flow");
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_Q_flow");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
         var.scalar_attributes.emplace_back("causality","output");

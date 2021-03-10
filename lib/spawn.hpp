@@ -76,7 +76,7 @@ public:
     return (this == &other);
   }
 
-  void start(const double & starttime = 0.0);
+  void start();
   void stop();
   bool isRunning() const;
   void setTime(const double & time);
@@ -101,6 +101,9 @@ public:
   // Throws a std::exception if name is invalid or the simulation is not running
   double getValue(const std::string & name) const;
 
+  double startTime() const;
+  void setStartTime(const double & time);
+
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
 
@@ -112,6 +115,7 @@ private:
   std::map<unsigned int, Variable> variables;
   Input input;
 
+  double m_startTime{0.0};
   double requestedTime;
 
   // Signal EnergyPlus to move through the simulation loop
