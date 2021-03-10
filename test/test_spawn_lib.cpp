@@ -40,7 +40,7 @@ R"(
       ]
     }}
   }}
-)", fmt::arg("idfpath", idfpath.string()), fmt::arg("epwpath", epwpath.string()));
+)", fmt::arg("idfpath", idfpath.generic_string()), fmt::arg("epwpath", epwpath.generic_string()));
 
 TEST_CASE("Test one Spawn")
 {
