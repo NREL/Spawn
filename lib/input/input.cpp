@@ -1,5 +1,5 @@
 #include "input.hpp"
-#include "../../util/idf_to_json.hpp"
+#include "../idf_to_json.hpp"
 
 using json = nlohmann::json;
 
@@ -32,7 +32,7 @@ Input::Input(const std::string & spawninput)
     std::cout << "The specified epw input file does not exist, " << epwInputPath() << "." << std::endl;
   }
 
-  jsonidf = idfToJSON(idfInputPath());
+  jsonidf = idf_to_json(idfInputPath());
 
   zones = Zone::createZones(spawnjson, jsonidf);
   schedules = Schedule::createSchedules(spawnjson, jsonidf);
@@ -42,7 +42,7 @@ Input::Input(const std::string & spawninput)
 }
 
 std::string Input::fmuname() const {
-  return spawnjson["fmu"].value("name","spawn.fmu");
+  return spawnjson.value("fmu",json()).value("name","spawn.fmu");
 }
 
 std::string Input::fmuBaseName() const {
@@ -63,7 +63,7 @@ fs::path Input::toPath(const std::string & pathstring) const {
 }
 
 fs::path Input::idfInputPath() const {
-  return toPath(spawnjson["EnergyPlus"].value("idf",""));
+  return toPath(spawnjson.value("EnergyPlus",json()).value("idf","in.idf"));
 }
 
 void Input::setIdfInputPath(fs::path idfpath) {
@@ -71,7 +71,7 @@ void Input::setIdfInputPath(fs::path idfpath) {
 }
 
 fs::path Input::epwInputPath() const {
-  return toPath(spawnjson["EnergyPlus"].value("weather",""));
+  return toPath(spawnjson.value("EnergyPlus",json()).value("weather","in.epw"));
 }
 
 void Input::setEPWInputPath(fs::path epwpath) {

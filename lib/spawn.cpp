@@ -1,5 +1,7 @@
 #include "spawn.hpp"
 #include "outputtypes.hpp"
+#include "idf_to_json.hpp"
+#include "idfprep.hpp"
 #include "input/input.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
@@ -41,12 +43,19 @@ void Spawn::start() {
   if(! is_running) {
     is_running = true;
 
+    auto idfPath = input.idfInputPath();
+
+    auto idfjson = idf_to_json(input.idfInputPath());
+    prepare_idf(idfjson, input);
+    idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+    json_to_idf(idfjson, idfPath);
+
     const auto & simulation = [&](){
       try {
-        const auto epwPath = input.epwInputPath().string();
-        const auto idfPath = input.idfInputPath().string();
-        const auto iddPath = iddpath().string();
-        const auto workingdir_string = workingdir.string();
+      const auto epwPath = input.epwInputPath().string();
+      const auto idfPath_string = idfPath.string();
+      const auto iddPath = iddpath().string();
+      const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
         const char * argv[argc];
@@ -57,7 +66,7 @@ void Spawn::start() {
         argv[4] = epwPath.c_str();
         argv[5] = "-i";
         argv[6] = iddPath.c_str();
-        argv[7] = idfPath.c_str();
+        argv[7] = idfPath_string.c_str();
 
         EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
         registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
@@ -166,7 +175,6 @@ double Spawn::nextEventTime() const {
 }
 
 void Spawn::setValue(const unsigned int & ref, const double & value) {
-  isRunningCheck();
   auto var = variables.find(ref);
   if( var != variables.end() ) {
     var->second.setValue(value, spawn::units::UnitSystem::MO);
@@ -187,6 +195,29 @@ double Spawn::getValue(const unsigned int & ref) const {
   } else {
     throw std::runtime_error(fmt::format("Attempt to get a value using an invalid reference: {}", ref));
   }
+}
+
+unsigned int Spawn::getIndex(const std::string & name) const {
+  const auto pred = [&name](const std::pair<unsigned int, Variable> & v) {
+    return v.second.name == name;
+  };
+  
+  const auto it = std::find_if(variables.begin(), variables.end(), pred);
+  if(it == std::end(variables)) {
+    throw std::runtime_error(fmt::format("Attempt to retrieve an invalid variable name: {}", name));
+  }
+
+  return it->first;
+}
+
+double Spawn::getValue(const std::string & name) const {
+  const auto index = getIndex(name);
+  return getValue(index);
+}
+
+void Spawn::setValue(const std::string & name, const double & value) {
+  const auto index = getIndex(name);
+  setValue(index, value);
 }
 
 Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {

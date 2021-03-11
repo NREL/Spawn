@@ -84,21 +84,30 @@ public:
   double currentTime() const;
   double nextEventTime() const;
 
+  // Set value by index
+  // Throws a std::exception if index is invalid or the simulation is not running
+  void setValue(const unsigned int & index, const double & value);
+  // Get the value by index
+  // Throws a std::exception if index is invalid or the simulation is not running
+  double getValue(const unsigned int & index) const;
+
+  // Get an index for a given variable name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  unsigned int getIndex(const std::string & name) const;
+  // Set value by name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  void setValue(const std::string & name, const double & value);
+  // Get the value by name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  double getValue(const std::string & name) const;
+
   double startTime() const;
   void setStartTime(const double & time);
 
-  void exchange();
-
-  // Set a variable identified by ref to the given value
-  // Throws a std::exception if ref is invalid or the simulation is not running
-  void setValue(const unsigned int & ref, const double & value);
-
-  // Get the value of variable identified by ref
-  // Throws a std::exception if ref is invalid or the simulation is not running
-  double getValue(const unsigned int & ref) const;
-
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
+
+  void exchange();
 
 private:
   std::string instanceName;

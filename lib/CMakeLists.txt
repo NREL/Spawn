@@ -9,6 +9,10 @@ add_library(libspawn
   actuatortypes.hpp
   fmugenerator.hpp
   fmugenerator.cpp
+  idfprep.hpp
+  idfprep.cpp
+  idf_to_json.hpp
+  idf_to_json.cpp
   outputtypes.hpp
   spawn.hpp
   spawn.cpp
@@ -31,18 +35,6 @@ add_library(libspawn
   input/surface.cpp
   input/zone.hpp
   input/zone.cpp
-
-  ## EnergyPlus compiles these files into a DLL, but we would prefer to
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
 )
 
 target_include_directories(libspawn
