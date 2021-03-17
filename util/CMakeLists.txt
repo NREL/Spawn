@@ -15,6 +15,8 @@ add_library(spawn_utils
         dynamiclibrary.hpp
         dynamiclibrary_windows.hpp
         dynamiclibrary_posix.hpp
+        paths.hpp
+        paths.cpp
 )
 
 target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip)

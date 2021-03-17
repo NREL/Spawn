@@ -182,7 +182,6 @@ private:
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
 };
 
-fs::path exedir();
 fs::path iddpath();
 
 } // namespace spawn
