@@ -428,7 +428,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
 
         var.real_attributes.emplace_back("quantity","Power");
         var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","0.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
         result.emplace(i,std::move(var));
