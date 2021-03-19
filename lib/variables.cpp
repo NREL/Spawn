@@ -164,13 +164,12 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.scalar_attributes.emplace_back("name",zone.idfname + "_AFlo");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Floor area");
-        var.scalar_attributes.emplace_back("causality","local");
-        var.scalar_attributes.emplace_back("variability","constant");
-        var.scalar_attributes.emplace_back("initial","exact");
+        var.scalar_attributes.emplace_back("causality","calculatedParameter");
+        var.scalar_attributes.emplace_back("variability","fixed");
+        var.scalar_attributes.emplace_back("initial","calculated");
 
         var.real_attributes.emplace_back("quantity","Area");
         var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","12.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
         result.emplace(i,std::move(var));
