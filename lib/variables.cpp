@@ -185,13 +185,12 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.scalar_attributes.emplace_back("name",zone.idfname + "_V");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Volume");
-        var.scalar_attributes.emplace_back("causality","local");
-        var.scalar_attributes.emplace_back("variability","constant");
-        var.scalar_attributes.emplace_back("initial","exact");
+        var.scalar_attributes.emplace_back("causality","calculatedParameter");
+        var.scalar_attributes.emplace_back("variability","fixed");
+        var.scalar_attributes.emplace_back("initial","calculated");
 
         var.real_attributes.emplace_back("quantity","Volume");
         var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","36.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
         result.emplace(i,std::move(var));
@@ -207,12 +206,11 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.scalar_attributes.emplace_back("name",zone.idfname + "_mSenFac");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Factor for scaling sensible thermal mass of volume");
-        var.scalar_attributes.emplace_back("causality","local");
-        var.scalar_attributes.emplace_back("variability","constant");
-        var.scalar_attributes.emplace_back("initial","exact");
+        var.scalar_attributes.emplace_back("causality","calculatedParameter");
+        var.scalar_attributes.emplace_back("variability","fixed");
+        var.scalar_attributes.emplace_back("initial","calculated");
 
         var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","1.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
         result.emplace(i,std::move(var));
@@ -325,7 +323,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Average radiative temperature in the room");
         var.scalar_attributes.emplace_back("causality","output");
-        var.scalar_attributes.emplace_back("variability","discrete");
+        var.scalar_attributes.emplace_back("variability","continuous");
         var.scalar_attributes.emplace_back("initial","calculated");
 
         var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
@@ -398,13 +396,12 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.scalar_attributes.emplace_back("name",surface.idfname + "_A");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
         var.scalar_attributes.emplace_back("description","Area of the surface that is exposed to the thermal zone");
-        var.scalar_attributes.emplace_back("causality","local");
-        var.scalar_attributes.emplace_back("variability","constant");
-        var.scalar_attributes.emplace_back("initial","exact");
+        var.scalar_attributes.emplace_back("causality","calculatedParameter");
+        var.scalar_attributes.emplace_back("variability","fixed");
+        var.scalar_attributes.emplace_back("initial","calculated");
 
         var.real_attributes.emplace_back("quantity","Area");
         var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","0.0");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
         var.setValue(0.0, spawn::units::UnitSystem::MO);
 
