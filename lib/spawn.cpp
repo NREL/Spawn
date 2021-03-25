@@ -244,13 +244,13 @@ void Spawn::setZoneTemperature(const int zonenum, const double & temp) {
   // Is it necessary to update all of these or can we
   // simply update ZT and count on EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp()
   // to propogate the other variables?
-  EnergyPlus::DataHeatBalFanSys::ZT( zonenum ) = temp;
-  EnergyPlus::DataHeatBalFanSys::ZTAV( zonenum ) = temp;
-  EnergyPlus::DataHeatBalFanSys::MAT( zonenum ) = temp;
+  sim_state.dataHeatBalFanSys->ZT( zonenum ) = temp;
+  sim_state.dataHeatBalFanSys->ZTAV( zonenum ) = temp;
+  sim_state.dataHeatBalFanSys->MAT( zonenum ) = temp;
 }
 
 double Spawn::zoneTemperature(const int zonenum) {
-  return EnergyPlus::DataHeatBalFanSys::ZT(zonenum);
+  return sim_state.dataHeatBalFanSys->ZT(zonenum);
 }
 
 void Spawn::updateZoneTemperature(const int zonenum, const double & dt) {
@@ -260,10 +260,10 @@ void Spawn::updateZoneTemperature(const int zonenum, const double & dt) {
   double newzonetemp = zonetemp;
 
   const auto aircap =
-    EnergyPlus::DataHeatBalance::Zone(zonenum).Volume *
-    EnergyPlus::DataHeatBalance::Zone(zonenum).ZoneVolCapMultpSens *
-    EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state, sim_state.dataEnvrn->OutBaroPress, zonetemp, EnergyPlus::DataHeatBalFanSys::ZoneAirHumRat(zonenum),"") *
-    EnergyPlus::Psychrometrics::PsyCpAirFnW(EnergyPlus::DataHeatBalFanSys::ZoneAirHumRat(zonenum));// / (TimeStepSys * SecInHour);
+    sim_state.dataHeatBal->Zone(zonenum).Volume *
+    sim_state.dataHeatBal->Zone(zonenum).ZoneVolCapMultpSens *
+    EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state, sim_state.dataEnvrn->OutBaroPress, zonetemp, sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum),"") *
+    EnergyPlus::Psychrometrics::PsyCpAirFnW(sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum));// / (TimeStepSys * SecInHour);
 
   const auto & sums = zoneSums(zonenum);
   if (sums.tempDepCoef == 0.0) { // B=0
@@ -306,7 +306,7 @@ double Spawn::zoneHeatTransfer(const int zonenum) {
   const auto & sums = zoneSums(zonenum);
   // Refer to
   // https://bigladdersoftware.com/epx/docs/8-8/engineering-reference/basis-for-the-zone-and-air-system-integration.html#basis-for-the-zone-and-air-system-integration
-  const auto heatTransfer = sums.tempIndCoef - (sums.tempDepCoef * EnergyPlus::DataHeatBalFanSys::MAT(zonenum));
+  const auto heatTransfer = sums.tempIndCoef - (sums.tempDepCoef * sim_state.dataHeatBalFanSys->MAT(zonenum));
   return heatTransfer;
 }
 
@@ -314,7 +314,7 @@ int Spawn::zoneNum(const std::string & zoneName) const {
   auto upperZoneName = zoneName;
   std::transform(zoneName.begin(), zoneName.end(), upperZoneName.begin(), ::toupper);
   for ( int i = 0; i < sim_state.dataGlobal->NumOfZones; ++i ) {
-    if ( EnergyPlus::DataHeatBalance::Zone[i].Name == upperZoneName ) {
+    if ( sim_state.dataHeatBal->Zone[i].Name == upperZoneName ) {
       return i + 1;
     }
   }
@@ -325,8 +325,8 @@ int Spawn::zoneNum(const std::string & zoneName) const {
 int Spawn::surfaceNum(const std::string & surfaceName) const {
   auto upperName = surfaceName;
   std::transform(surfaceName.begin(), surfaceName.end(), upperName.begin(), ::toupper);
-  for ( const auto i : EnergyPlus::DataSurfaces::AllHTNonWindowSurfaceList ) {
-    if ( EnergyPlus::DataSurfaces::Surface[i].Name == upperName ) {
+  for ( const auto i : sim_state.dataSurface->AllHTNonWindowSurfaceList ) {
+    if ( sim_state.dataSurface->Surface[i].Name == upperName ) {
       return i + 1;
     }
   }
@@ -446,22 +446,22 @@ void Spawn::exchange()
     switch ( var.type ) {
       case VariableType::TRAD: {
           const auto varZoneNum = zoneNum(var.name);
-          var.setValue(EnergyPlus::DataHeatBalSurface::ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
+          var.setValue(sim_state.dataHeatBalSurf->ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
           break;
       }
       case VariableType::V: {
         const auto varZoneNum = zoneNum(var.name);
-        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).Volume, spawn::units::UnitSystem::EP);
+        var.setValue(sim_state.dataHeatBal->Zone( varZoneNum ).Volume, spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::AFLO: {
         const auto varZoneNum = zoneNum(var.name);
-        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).FloorArea, spawn::units::UnitSystem::EP);
+        var.setValue(sim_state.dataHeatBal->Zone( varZoneNum ).FloorArea, spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::MSENFAC: {
         const auto varZoneNum = zoneNum(var.name);
-        var.setValue(EnergyPlus::DataHeatBalance::Zone( varZoneNum ).ZoneVolCapMultpSens, spawn::units::UnitSystem::EP);
+        var.setValue(sim_state.dataHeatBal->Zone( varZoneNum ).ZoneVolCapMultpSens, spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::QCONSEN_FLOW: {
@@ -475,16 +475,16 @@ void Spawn::exchange()
       }
       case VariableType::ASURF: {
         const auto varSurfaceNum = surfaceNum(var.name);
-        var.setValue(EnergyPlus::DataSurfaces::Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
+        var.setValue(sim_state.dataSurface->Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::QSURF_FLOW: {
         const auto varSurfaceNum = surfaceNum(var.name);
         auto sum = 0.0;
-        sum += EnergyPlus::DataHeatBalSurface::QdotConvInRep( varSurfaceNum );
-        sum += EnergyPlus::DataHeatBalSurface::QdotRadSolarInRep( varSurfaceNum );
-        sum += EnergyPlus::DataHeatBalSurface::QdotRadLightsInRep( varSurfaceNum );
-        sum += EnergyPlus::DataHeatBalSurface::QdotRadIntGainsInRep( varSurfaceNum );
+        sum += sim_state.dataHeatBalSurf->QdotConvInRep( varSurfaceNum );
+        sum += sim_state.dataHeatBalSurf->QdotRadSolarInRep( varSurfaceNum );
+        sum += sim_state.dataHeatBalSurf->QdotRadLightsInRep( varSurfaceNum );
+        sum += sim_state.dataHeatBalSurf->QdotRadIntGainsInRep( varSurfaceNum );
         var.setValue(sum, spawn::units::UnitSystem::EP);
         break;
       }
