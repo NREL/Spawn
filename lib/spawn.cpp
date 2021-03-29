@@ -52,10 +52,10 @@ void Spawn::start() {
 
     const auto & simulation = [&](){
       try {
-      const auto epwPath = input.epwInputPath().string();
-      const auto idfPath_string = idfPath.string();
-      const auto iddPath = iddpath().string();
-      const auto workingdir_string = workingdir.string();
+        const auto epwPath = input.epwInputPath().string();
+        const auto idfPath_string = idfPath.string();
+        const auto iddPath = iddpath().string();
+        const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
         const char * argv[argc];
