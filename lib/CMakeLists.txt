@@ -20,6 +20,8 @@ add_library(libspawn
   units.cpp
   variables.hpp
   variables.cpp
+  warmupmanager.hpp
+  warmupmanager.cpp
   ziputil.hpp
   ziputil.cpp
 
