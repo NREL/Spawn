@@ -52,10 +52,10 @@ void Spawn::start() {
 
     const auto & simulation = [&](){
       try {
-      const auto epwPath = input.epwInputPath().string();
-      const auto idfPath_string = idfPath.string();
-      const auto iddPath = iddpath().string();
-      const auto workingdir_string = workingdir.string();
+        const auto epwPath = input.epwInputPath().string();
+        const auto idfPath_string = idfPath.string();
+        const auto iddPath = iddpath().string();
+        const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
         const char * argv[argc];
@@ -127,6 +127,13 @@ void Spawn::iterate() {
 }
 
 void Spawn::stop() {
+  // This is a workaround to make sure one "complete" step has been made during the weather period.
+  // This is required because some data structures that are used in closeout reporting are not initialized until
+  // the first non warmup non sizing step
+  if (sim_state.dataGlobal->SimTimeSteps == 1) {
+    iterate();
+  }
+
   // This is an EnergyPlus API
   stopSimulation(simState());
   // iterate the sim to allow EnergyPlus to go through shutdown;
