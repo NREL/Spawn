@@ -11,7 +11,7 @@ namespace fmu {
 class ModelDescription
 {
 public:
-  ModelDescription(const std::filesystem::path & model_description_path)
+  ModelDescription(const fs::path & model_description_path)
     : m_model_description_path(model_description_path)
   {
     if (!m_model_description_parse_result) {
@@ -65,7 +65,7 @@ private:
       fmt::format("Error finding ScalarVariable with name: {}", variable_name));
   }
 
-  std::filesystem::path m_model_description_path;
+  fs::path m_model_description_path;
   pugi::xml_document m_model_description;
   pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file(m_model_description_path.c_str())};
 };
