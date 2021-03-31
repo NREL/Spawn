@@ -13,6 +13,8 @@ add_library(libspawn
   idfprep.cpp
   idf_to_json.hpp
   idf_to_json.cpp
+  manager.hpp
+  manager.cpp
   outputtypes.hpp
   spawn.hpp
   spawn.cpp
@@ -20,6 +22,8 @@ add_library(libspawn
   units.cpp
   variables.hpp
   variables.cpp
+  warmupmanager.hpp
+  warmupmanager.cpp
   ziputil.hpp
   ziputil.cpp
 
