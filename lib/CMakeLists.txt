@@ -13,6 +13,8 @@ add_library(libspawn
   idfprep.cpp
   idf_to_json.hpp
   idf_to_json.cpp
+  manager.hpp
+  manager.cpp
   outputtypes.hpp
   spawn.hpp
   spawn.cpp

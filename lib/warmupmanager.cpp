@@ -1,9 +1,21 @@
 #include "./warmupmanager.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
 
 namespace spawn {
+
+WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData & state) 
+  : Manager(state)
+{
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = 
+    std::bind(&WarmupManager::updateConvergenceMetrics, this, std::placeholders::_1);
+
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] =
+    std::bind(&WarmupManager::checkConvergence, this, std::placeholders::_1);
+}
 
 void WarmupManager::initialize(EnergyPlus::EnergyPlusData & state) {
   const auto count = state.dataHeatBalSurf->TempSurfIn.size();
@@ -21,10 +33,12 @@ void WarmupManager::initialize(EnergyPlus::EnergyPlusData & state) {
   lastDayOfSim = state.dataGlobal->DayOfSim;
   lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
 
-  initialized = true;
+  Manager::initialize(state);
 }
 
-void WarmupManager::endZoneTimestepAfterZoneReporting(EnergyPlus::EnergyPlusData & state) {
+void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state) {
+  if (! state.dataGlobal->WarmupFlag) return;
+
   if (! initialized) {
     initialize(state);
   }
@@ -34,13 +48,12 @@ void WarmupManager::endZoneTimestepAfterZoneReporting(EnergyPlus::EnergyPlusData
   lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
 
   if (state.dataGlobal->BeginDayFlag) {
+    prevMaxSurfTemp = maxSurfTemp;
+    prevMinSurfTemp = minSurfTemp;
     for (size_t i = 0; i < surfTemp.size(); ++i) {
       maxSurfTemp[i] = surfTemp[i];
       minSurfTemp[i] = surfTemp[i];
     }
-  } else if (state.dataGlobal->EndDayFlag) {
-    prevMaxSurfTemp = maxSurfTemp;
-    prevMinSurfTemp = minSurfTemp;
   } else {
     for (size_t i = 0; i < surfTemp.size(); ++i) {
       if (surfTemp[i] > maxSurfTemp[i]) {
@@ -54,11 +67,7 @@ void WarmupManager::endZoneTimestepAfterZoneReporting(EnergyPlus::EnergyPlusData
   }
 }
 
-// This calling point is immediatly after the normal EnergyPlus convergence check.
-// In this function, additional spawn convergence checks are run, and the WarmupFlag
-// is set back to true if necessary
-// If this function is called the normal EnergyPlus convergence checks will have passed
-void WarmupManager::beginNewEnvironmentAfterWarmUp(EnergyPlus::EnergyPlusData & state) {
+void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData & state) {
   // If the max number of warmup days has been exceeded then return early,
   // and allow the simulation to continue into the run period
   if (state.dataGlobal->DayOfSim >= state.dataHeatBal->MaxNumberOfWarmupDays) {
