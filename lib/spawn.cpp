@@ -20,6 +20,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/InternalHeatGains.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/OutputProcessor.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Psychrometrics.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/ScheduleManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ZoneTempPredictorCorrector.hh"
 
 #if defined _WIN32
@@ -439,6 +440,7 @@ void Spawn::exchange()
   // Run some internal EnergyPlus functions to update outputs
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
+  EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
 
   // Now update the outputs
   for( auto & varmap : variables ) {
