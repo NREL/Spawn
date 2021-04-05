@@ -72,7 +72,6 @@ void Spawn::start() {
         EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
         registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
         registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
-        registerExternalSurfaceManager(simState(), std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1, std::placeholders::_2));
 
         RunEnergyPlus(sim_state);
 
@@ -437,14 +436,22 @@ void Spawn::exchange()
       case VariableType::QGAIRAD_FLOW:
         actuateVar(var);
         break;
+      case VariableType::TFRONT:
+        actuateVar(var);
+        break;
+      case VariableType::TBACK:
+        actuateVar(var);
+        break;
       default:
         break;
     }
   }
 
-  updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
-
   // Run some internal EnergyPlus functions to update outputs
+  // Surface managers might be expensive. Need to investigate and consider being more strategic
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
+  updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
@@ -487,13 +494,23 @@ void Spawn::exchange()
         var.setValue(sim_state.dataSurface->Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
         break;
       }
-      case VariableType::QSURF_FLOW: {
+      case VariableType::QFRONT_FLOW: {
+        // Can this just be an output variable?
         const auto varSurfaceNum = surfaceNum(var.name);
         auto sum = 0.0;
         sum += sim_state.dataHeatBalSurf->QdotConvInRep( varSurfaceNum );
         sum += sim_state.dataHeatBalSurf->QdotRadSolarInRep( varSurfaceNum );
         sum += sim_state.dataHeatBalSurf->QdotRadLightsInRep( varSurfaceNum );
         sum += sim_state.dataHeatBalSurf->QdotRadIntGainsInRep( varSurfaceNum );
+        var.setValue(sum, spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QBACK_FLOW: {
+        // Can this just be an output variable?
+        const auto varSurfaceNum = surfaceNum(var.name);
+        auto sum = 0.0;
+        sum += sim_state.dataHeatBalSurf->QdotConvOutRep( varSurfaceNum );
+        sum += sim_state.dataHeatBalSurf->QdotRadOutRep( varSurfaceNum );
         var.setValue(sum, spawn::units::UnitSystem::EP);
         break;
       }
@@ -508,26 +525,6 @@ void Spawn::initZoneEquip() {
     EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(sim_state);
     sim_state.dataZoneEquip->ZoneEquipInputsFilled = true;
   }
-}
-
-std::pair<bool, float> Spawn::externalSurfaceManager(EnergyPlusState state, int const t_surfaceNum) {
-  // This algorithm returns the value of a TSurf variable
-  // if one exists for the given t_surfaceNum, where t_surfaceNum
-  // is an index to an EnergyPlus surface
-  std::pair<bool, float> result{false, 0.0};
-
-  for( auto & varmap : variables ) {
-    auto & var = varmap.second;
-    if( var.type == VariableType::TSURF ) {
-      if( surfaceNum(var.name) == t_surfaceNum ) {
-        result.first = true;
-        result.second = var.getValue(spawn::units::UnitSystem::EP);
-        break;
-      }
-    }
-  }
-
-  return result;
 }
 
 void Spawn::externalHVACManager(EnergyPlusState state) {

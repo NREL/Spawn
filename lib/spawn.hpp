@@ -145,7 +145,6 @@ private:
   std::exception_ptr sim_exception_ptr{nullptr};
 
   void externalHVACManager(EnergyPlusState state);
-  std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;

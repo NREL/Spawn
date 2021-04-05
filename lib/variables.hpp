@@ -25,8 +25,10 @@ enum class VariableType {
   EMS_ACTUATOR,
   SCHEDULE,
   ASURF,
-  TSURF,
-  QSURF_FLOW
+  TFRONT,
+  QFRONT_FLOW,
+  TBACK,
+  QBACK_FLOW
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;
