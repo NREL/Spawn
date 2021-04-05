@@ -417,7 +417,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
 
         var.scalar_attributes.emplace_back("name",surface.idfname + "_QFront_flow");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
-        var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
+        var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the front-facing surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
         var.scalar_attributes.emplace_back("causality","output");
         var.scalar_attributes.emplace_back("variability","continuous");
         var.scalar_attributes.emplace_back("initial","calculated");
@@ -441,7 +441,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
 
         var.scalar_attributes.emplace_back("name",surface.idfname + "_TFront");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
-        var.scalar_attributes.emplace_back("description","Temperature of the surface");
+        var.scalar_attributes.emplace_back("description","Temperature of the front-facing surface.");
         var.scalar_attributes.emplace_back("causality","input");
         var.scalar_attributes.emplace_back("variability","continuous");
 
@@ -463,7 +463,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
 
         var.scalar_attributes.emplace_back("name",surface.idfname + "_QBack_flow");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
-        var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
+        var.scalar_attributes.emplace_back("description","Net heat flow rate to the back-facing surface. If coupled to another thermal zone or the outside, this consist of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation. If coupled to the ground, this consists of the heat flow rate from the ground.");
         var.scalar_attributes.emplace_back("causality","output");
         var.scalar_attributes.emplace_back("variability","continuous");
         var.scalar_attributes.emplace_back("initial","calculated");
@@ -487,7 +487,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
 
         var.scalar_attributes.emplace_back("name",surface.idfname + "_TBack");
         var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
-        var.scalar_attributes.emplace_back("description","Temperature of the surface");
+        var.scalar_attributes.emplace_back("description","Temperature of the back-facing surface.");
         var.scalar_attributes.emplace_back("causality","input");
         var.scalar_attributes.emplace_back("variability","continuous");
 
