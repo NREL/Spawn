@@ -180,6 +180,16 @@ private:
 
   int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
+  void setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value);
+  void resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  
+  double getSensorValue(Variable & var);
+
+  void setInsideSurfaceTemperature(const int surfacenum, double temp);
+  void setOutsideSurfaceTemperature(const int surfacenum, double temp);
+
+  double getInsideSurfaceHeatFlow(const int surfacenum);
+  double getOutsideSurfaceHeatFlow(const int surfacenum);
 
   // WarmupManager will register its own callbacks during construction
   // Maybe all of Spawn's implementation can be derived from "Manager" class

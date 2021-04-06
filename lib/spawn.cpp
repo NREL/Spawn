@@ -317,6 +317,44 @@ double Spawn::zoneHeatTransfer(const int zonenum) {
   return heatTransfer;
 }
 
+void Spawn::setInsideSurfaceTemperature(const int surfacenum, double temp) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  setActuatorValue("Surface", "Surface Inside Temperature", surface.Name, temp);
+  auto & extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the outside of the matching surface
+    auto & other_surface = sim_state.dataSurface->Surface(extBoundCond);
+    setActuatorValue("Surface", "Surface Outside Temperature", other_surface.Name, temp);
+  }
+}
+
+void Spawn::setOutsideSurfaceTemperature(const int surfacenum, double temp) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  setActuatorValue("Surface", "Surface Outside Temperature", surface.Name, temp);
+  auto & extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the inside of the matching surface
+    auto & other_surface = sim_state.dataSurface->Surface(extBoundCond);
+    setActuatorValue("Surface", "Surface Inside Temperature", other_surface.Name, temp);
+  }
+}
+
+double Spawn::getInsideSurfaceHeatFlow(const int surfacenum) {
+  return sim_state.dataHeatBalSurf->QdotConvInRep(surfacenum) + sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(surfacenum);
+}
+
+double Spawn::getOutsideSurfaceHeatFlow(const int surfacenum) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  auto & extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // EnergyPlus does not calculate the surface heat flux for interzone surfaces,
+    // instead return the inside face heat flux of the matching surface
+    return sim_state.dataHeatBalSurf->QdotConvInRep(extBoundCond) + sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(extBoundCond);
+  } else {
+    return sim_state.dataHeatBalSurf->QdotConvOutRep(extBoundCond) + sim_state.dataHeatBalSurf->QdotRadOutRep(extBoundCond);
+  }
+}
+
 int Spawn::zoneNum(const std::string & zoneName) const {
   auto upperZoneName = zoneName;
   std::transform(zoneName.begin(), zoneName.end(), upperZoneName.begin(), ::toupper);
@@ -380,35 +418,35 @@ int Spawn::getActuatorHandle(const std::string & componenttype, const std::strin
   }
 }
 
+void Spawn::setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
+  const auto h = getActuatorHandle(componenttype, controltype, componentname);
+  ::setActuatorValue(simState(), h, value);
+};
+
+void Spawn::resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
+  const auto h = getActuatorHandle(componenttype, controltype, componentname);
+  ::resetActuator(simState(), h);
+}
+
+double Spawn::getSensorValue(Variable & var) {
+  const auto h = getVariableHandle(var.outputvarname, var.outputvarkey);
+  return getVariableValue(simState(), h);
+}
+
 void Spawn::exchange()
 {
   isRunningCheck();
 
-  auto spawnGetSensorValue = [&](Variable & var) {
-    const auto h = getVariableHandle(var.outputvarname, var.outputvarkey);
-    return getVariableValue(simState(), h);
-  };
-
-  auto spawnSetActuatorValue = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
-    const auto h = getActuatorHandle(componenttype, controltype, componentname);
-    setActuatorValue(simState(), h, value);
-  };
-
-  auto spawnResetActuator = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
-    const auto h = getActuatorHandle(componenttype, controltype, componentname);
-    resetActuator(simState(), h);
-  };
-
   auto actuateVar = [&](const Variable & var) {
     if( var.isValueSet() ) {
-      spawnSetActuatorValue(
+      setActuatorValue(
           var.actuatorcomponenttype,
           var.actuatorcontroltype,
           var.actuatorcomponentkey,
           var.getValue(spawn::units::UnitSystem::EP)
       );
     } else {
-      spawnResetActuator(
+      resetActuator(
           var.actuatorcomponenttype,
           var.actuatorcontroltype,
           var.actuatorcomponentkey
@@ -419,10 +457,10 @@ void Spawn::exchange()
   // Update inputs first, then outputs so that we can do some updates within EnergyPlus
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
-    auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
       case VariableType::T:
         if( var.isValueSet() ) {
+          auto varZoneNum = zoneNum(var.name);
           const auto & v = var.getValue(spawn::units::UnitSystem::EP);
           setZoneTemperature(varZoneNum, v);
         }
@@ -437,10 +475,18 @@ void Spawn::exchange()
         actuateVar(var);
         break;
       case VariableType::TFRONT:
-        actuateVar(var);
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setInsideSurfaceTemperature(sn, v);
+        }
         break;
       case VariableType::TBACK:
-        actuateVar(var);
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setOutsideSurfaceTemperature(sn, v);
+        }
         break;
       default:
         break;
@@ -486,7 +532,7 @@ void Spawn::exchange()
         break;
       }
       case VariableType::SENSOR: {
-        var.setValue(spawnGetSensorValue(var), spawn::units::UnitSystem::EP);
+        var.setValue(getSensorValue(var), spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::ASURF: {
@@ -495,23 +541,15 @@ void Spawn::exchange()
         break;
       }
       case VariableType::QFRONT_FLOW: {
-        // Can this just be an output variable?
         const auto varSurfaceNum = surfaceNum(var.name);
-        auto sum = 0.0;
-        sum += sim_state.dataHeatBalSurf->QdotConvInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadSolarInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadLightsInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadIntGainsInRep( varSurfaceNum );
-        var.setValue(sum, spawn::units::UnitSystem::EP);
+        const auto & value = getInsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::QBACK_FLOW: {
-        // Can this just be an output variable?
         const auto varSurfaceNum = surfaceNum(var.name);
-        auto sum = 0.0;
-        sum += sim_state.dataHeatBalSurf->QdotConvOutRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadOutRep( varSurfaceNum );
-        var.setValue(sum, spawn::units::UnitSystem::EP);
+        const auto & value = getOutsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
         break;
       }
       default:

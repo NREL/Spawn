@@ -32,12 +32,14 @@ TEST_CASE("Test surface temperature input")
   const auto core_zn_wall_east_t_front_ref = modelDescription.valueReference("Core_ZN_wall_east_TFront");
   const auto core_zn_wall_east_t_back_ref = modelDescription.valueReference("Core_ZN_wall_east_TBack");
   fmi2ValueReference temp_vr[] = {core_zn_wall_east_t_front_ref, core_zn_wall_east_t_back_ref};
-  fmi2Real temp[] = {293.15, 293.15};
+  fmi2Real temp[] = {293.15,293.15};
   status = fmu.fmi.fmi2SetReal(comp, temp_vr, 2, temp);
   CHECK(status == fmi2OK);
 
   fmu.fmi.fmi2ExitInitializationMode(comp);
 
+  // This is an interzone surface
+  // Need tests for other surface types
   const auto core_zn_wall_east_q_front_ref = modelDescription.valueReference("Core_ZN_wall_east_QFront_flow");
   const auto core_zn_wall_east_q_back_ref = modelDescription.valueReference("Core_ZN_wall_east_QBack_flow");
   fmi2ValueReference q_vr[] = {core_zn_wall_east_q_front_ref, core_zn_wall_east_q_back_ref};
