@@ -87,7 +87,7 @@ conan_cmake_run(
   zlib/1.2.11
   libzip/1.5.1@bincrafters/stable
   jsonformoderncpp/3.6.1@vthiery/stable
-  pugixml/1.9@bincrafters/stable
+  pugixml/1.11
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
   fmt/6.0.0@bincrafters/stable
