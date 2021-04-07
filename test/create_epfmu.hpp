@@ -7,4 +7,6 @@
 ///       fix this with an output directory parameter passed into spawn?
 fs::path create_epfmu();
 
+fs::path create_single_family_house_fmu();
+
 #endif // CREATE_EPFMU_HPP

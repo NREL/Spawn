@@ -22,6 +22,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/Psychrometrics.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ScheduleManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ZoneTempPredictorCorrector.hh"
+#include <limits>
 
 #if defined _WIN32
 #include <windows.h>
@@ -351,7 +352,7 @@ double Spawn::getOutsideSurfaceHeatFlow(const int surfacenum) {
     // instead return the inside face heat flux of the matching surface
     return sim_state.dataHeatBalSurf->QdotConvInRep(extBoundCond) + sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(extBoundCond);
   } else {
-    return sim_state.dataHeatBalSurf->QdotConvOutRep(extBoundCond) + sim_state.dataHeatBalSurf->QdotRadOutRep(extBoundCond);
+    return sim_state.dataHeatBalSurf->QdotConvOutRep(surfacenum) + sim_state.dataHeatBalSurf->QdotRadOutRep(surfacenum);
   }
 }
 

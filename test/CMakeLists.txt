@@ -20,7 +20,6 @@ add_executable(tests
   test_epfmi.cpp
   test_spawn_cli.cpp
   test_spawn_lib.cpp
-  test_surface_input.cpp
   test_temp_directory.cpp
   test_unzip_file.cpp
   test_fmi.cpp
