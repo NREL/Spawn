@@ -42,7 +42,14 @@ fs::path create_single_family_house_fmu() {
            {{ "name"    : "Living:Ceiling" }},
            {{ "name"    : "Living:South" }},
            {{ "name"    : "Attic:LivingFloor" }}
-         ]
+        ],
+        "outputVariables": [
+          {{
+            "name":    "Zone Mean Air Temperature",
+            "key":     "GARAGE ZONE",
+            "fmiName": "GARAGE ZONE Temp"
+          }}
+        ]
       }}
     }}
   )", fmt::arg("idfpath", idfpath.generic_string()), fmt::arg("epwpath", epwpath.generic_string()));
