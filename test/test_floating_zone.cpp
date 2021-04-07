@@ -13,7 +13,43 @@ using json = nlohmann::json;
 
 TEST_CASE("Test SingleFamilyHouse with Floating Zone")
 {
-  const auto fmu_file_path = create_single_family_house_fmu();
+  std::string spawn_input_string = fmt::format(
+  R"(
+    {{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "fmu": {{
+          "name": "MyBuilding.fmu",
+          "version": "2.0",
+          "kind"   : "ME"
+      }},
+      "model": {{
+        "outputVariables": [
+          {{
+            "name":    "Zone Mean Air Temperature",
+            "key":     "GARAGE ZONE",
+            "fmiName": "GARAGE ZONE Temp"
+          }},
+          {{
+            "name":    "Zone Mean Air Temperature",
+            "key":     "LIVING ZONE",
+            "fmiName": "LIVING ZONE Temp"
+          }},
+          {{
+            "name":    "Site Outdoor Air Drybulb Temperature",
+            "key":     "Environment",
+            "fmiName": "Outside Temp"
+          }}
+
+        ]
+      }}
+    }}
+  )", fmt::arg("idfpath", single_family_house_idf_path().generic_string()), fmt::arg("epwpath", chicago_epw_path().generic_string()));
+
+  const auto fmu_file_path = create_epfmu(spawn_input_string);
   spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
@@ -32,8 +68,10 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char*, 1> variable_names{
-    "GARAGE ZONE Temp"
+  constexpr std::array<const char*, 3> variable_names{
+    "LIVING ZONE Temp",
+    "GARAGE ZONE Temp",
+    "Outside Temp"
   };
 
   std::map<std::string, fmi2ValueReference> variable_refs;
@@ -41,8 +79,10 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     variable_refs[name] = modelDescription.valueReference(name);
   }
 
-  const std::array<fmi2ValueReference, 1> output_refs = {
-    variable_refs["GARAGE ZONE Temp"]
+  const std::array<fmi2ValueReference, 3> output_refs = {
+    variable_refs["LIVING ZONE Temp"],
+    variable_refs["GARAGE ZONE Temp"],
+    variable_refs["Outside Temp"]
   };
 
   std::array<fmi2Real, output_refs.size()> output_values;
@@ -56,9 +96,17 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
     CHECK(status == fmi2OK);
 
+    const auto living_temp = output_values[0];
+    const auto garage_temp = output_values[1];
+    const auto outside_temp = output_values[2];
+
     // Check that zone temp is sane
-    CHECK(output_values[0] > spawn::c_to_k(-10.0));
-    CHECK(output_values[0] < spawn::c_to_k(35.0));
+    CHECK(std::abs(garage_temp - outside_temp) < 15.0);
+    CHECK(std::abs(living_temp - outside_temp) < 28.0);
+    CHECK(living_temp > spawn::c_to_k(-25.0));
+    CHECK(living_temp < spawn::c_to_k(52.0));
+    CHECK(garage_temp > spawn::c_to_k(-25.0));
+    CHECK(garage_temp < spawn::c_to_k(52.0));
 
     status = fmu.fmi.fmi2NewDiscreteStates(comp, &info);
     CHECK(status == fmi2OK);
