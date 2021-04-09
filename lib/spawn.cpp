@@ -496,8 +496,13 @@ void Spawn::exchange()
 
   // Run some internal EnergyPlus functions to update outputs
   // Surface managers might be expensive. Need to investigate and consider being more strategic
+  //
+  // These two functions are not idempotent and they are causing,
+  // "Test SingleFamilyHouse Idempotence" to fail!
+  // FIX ME !!!
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
+
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);

@@ -204,3 +204,84 @@ TEST_CASE("Test SingleFamilyHouse as FMU with surface IO")
   CHECK(status == fmi2OK);
 }
 
+TEST_CASE("Test SingleFamilyHouse Idempotence")
+{
+  std::string spawn_input_string = fmt::format(
+  R"(
+    {{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "fmu": {{
+          "name": "MyBuilding.fmu",
+          "version": "2.0",
+          "kind"   : "ME"
+      }},
+      "model": {{
+        "zones": [
+           {{ "name": "LIVING ZONE" }}
+        ]
+      }}
+    }}
+  )", fmt::arg("idfpath", single_family_house_idf_path().generic_string()), fmt::arg("epwpath", chicago_epw_path().generic_string()));
+
+  const auto fmu_file_path = create_epfmu(spawn_input_string);
+  spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
+  REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
+
+  const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
+  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+
+  fmi2Status status; 
+
+  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  REQUIRE(status == fmi2OK);
+
+  status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  REQUIRE(status == fmi2OK);
+
+  const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
+  spawn::fmu::ModelDescription modelDescription(model_description_path);
+
+  constexpr std::array<const char*, 2> variable_names{
+    "LIVING ZONE_T",
+    "LIVING ZONE_QConSen_flow",
+  };
+
+  std::map<std::string, fmi2ValueReference> variable_refs;
+  for (const auto name : variable_names) {
+    variable_refs[name] = modelDescription.valueReference(name);
+  }
+
+  const std::array<fmi2ValueReference, 1> output_refs = {
+    variable_refs["LIVING ZONE_QConSen_flow"],
+  };
+  std::array<fmi2Real, output_refs.size()> output_values;
+
+  const std::array<fmi2ValueReference, 1> input_refs = {
+    variable_refs["LIVING ZONE_T"],
+  };
+  std::array<fmi2Real, input_refs.size()> input_values{spawn::c_to_k(21.0)};
+
+  std::vector<double> living_heat_flows;
+  for (size_t i = 0; i < 20; ++i) {
+    status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
+    CHECK(status == fmi2OK);
+    status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
+    CHECK(status == fmi2OK);
+    const auto living_heat_flow = output_values[0];
+    living_heat_flows.push_back(living_heat_flow);
+  }
+
+  const auto q_max = std::max_element(living_heat_flows.begin(), living_heat_flows.end());
+  const auto q_min = std::min_element(living_heat_flows.begin(), living_heat_flows.end());
+  const auto living_heat_flows_diff = *q_max - *q_min;
+  CHECK(living_heat_flows_diff <= std::numeric_limits<double>::epsilon());
+
+  status = fmu.fmi.fmi2Terminate(comp);
+  REQUIRE(status == fmi2OK);
+}
+
