@@ -27,6 +27,15 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
           "kind"   : "ME"
       }},
       "model": {{
+        "emsActuators": [
+          {{
+            "variableName"  : "LIVING ZONE People",
+            "componentType" : "People",
+            "controlType"   : "Number of People",
+            "unit"          : "1",
+            "fmiName"       : "LIVING ZONE People"
+          }}
+        ],
         "outputVariables": [
           {{
             "name":    "Zone Mean Air Temperature",
@@ -43,7 +52,6 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
             "key":     "Environment",
             "fmiName": "Outside Temp"
           }}
-
         ]
       }}
     }}
@@ -68,10 +76,11 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char*, 3> variable_names{
+  constexpr std::array<const char*, 4> variable_names{
     "LIVING ZONE Temp",
     "GARAGE ZONE Temp",
-    "Outside Temp"
+    "Outside Temp",
+    "LIVING ZONE People",
   };
 
   std::map<std::string, fmi2ValueReference> variable_refs;
@@ -84,8 +93,13 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     variable_refs["GARAGE ZONE Temp"],
     variable_refs["Outside Temp"]
   };
-
   std::array<fmi2Real, output_refs.size()> output_values;
+
+  const std::array<fmi2ValueReference, 1> input_refs = {
+    variable_refs["LIVING ZONE People"],
+  };
+  std::array<fmi2Real, input_refs.size()> input_values{0.0};
+
   double time = 0.0;
   fmi2EventInfo info;
 
@@ -93,8 +107,19 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     status = fmu.fmi.fmi2SetTime(comp, time);
     CHECK(status == fmi2OK);
 
-    status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
-    CHECK(status == fmi2OK);
+    std::vector<double> living_temps;
+    for (size_t i = 0; i < 20; ++i) {
+      status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
+      CHECK(status == fmi2OK);
+      status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
+      CHECK(status == fmi2OK);
+      living_temps.push_back(output_values[0]);
+    }
+
+    const auto t_max = std::max_element(living_temps.begin(), living_temps.end());
+    const auto t_min = std::min_element(living_temps.begin(), living_temps.end());
+    const auto living_zone_temp_diff = *t_max - *t_min;
+    CHECK(living_zone_temp_diff <= std::numeric_limits<double>::epsilon());
 
     const auto living_temp = output_values[0];
     const auto garage_temp = output_values[1];
