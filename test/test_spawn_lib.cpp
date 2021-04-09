@@ -59,33 +59,33 @@ TEST_CASE("Test one Spawn")
   spawn1.stop();
 }
 
-//TEST_CASE("Test two Spawns")
-//{
-//  spawn::util::Temp_Directory working_path1{};
-//  spawn::util::Temp_Directory working_path2{};
-//
-//  spawn::Spawn spawn1("spawn1", spawn_input, working_path1.dir());
-//  spawn::Spawn spawn2("spawn2", spawn_input, working_path2.dir());
-//
-//  spawn1.start();
-//  spawn2.start();
-//
-//  CHECK(spawn1.currentTime() == 0.0);
-//  CHECK(spawn2.currentTime() == 0.0);
-//
-//  for(int day = 0; day <= 365; ++day) {
-//    auto time = spawn::days_to_seconds(day);
-//    spawn1.setTime(time);
-//    spawn2.setTime(time);
-//    CHECK(spawn1.currentTime() == time);
-//    CHECK(spawn2.currentTime() == time);
-//
-//    const auto lighting_power1 = spawn1.getValue("Core_Zone_Lights_Output");
-//    const auto lighting_power2 = spawn2.getValue("Core_Zone_Lights_Output");
-//    const auto all_lighting_power = lighting_power1 + lighting_power2;
-//    CHECK(all_lighting_power > 0.0);
-//  }
-//
-//  spawn1.stop();
-//  spawn2.stop();
-//}
+TEST_CASE("Test two Spawns")
+{
+  spawn::util::Temp_Directory working_path1{};
+  spawn::util::Temp_Directory working_path2{};
+
+  spawn::Spawn spawn1("spawn1", spawn_input, working_path1.dir());
+  spawn::Spawn spawn2("spawn2", spawn_input, working_path2.dir());
+
+  spawn1.start();
+  spawn2.start();
+
+  CHECK(spawn1.currentTime() == 0.0);
+  CHECK(spawn2.currentTime() == 0.0);
+
+  for(int day = 0; day <= 365; ++day) {
+    auto time = spawn::days_to_seconds(day);
+    spawn1.setTime(time);
+    spawn2.setTime(time);
+    CHECK(spawn1.currentTime() == time);
+    CHECK(spawn2.currentTime() == time);
+
+    const auto lighting_power1 = spawn1.getValue("Core_Zone_Lights_Output");
+    const auto lighting_power2 = spawn2.getValue("Core_Zone_Lights_Output");
+    const auto all_lighting_power = lighting_power1 + lighting_power2;
+    CHECK(all_lighting_power > 0.0);
+  }
+
+  spawn1.stop();
+  spawn2.stop();
+}

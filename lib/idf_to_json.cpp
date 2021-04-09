@@ -12,7 +12,7 @@ json idf_to_json(const fs::path & idfpath) {
   std::string input_file;
   std::string line;
   while (std::getline(input_stream, line)) {
-    input_file.append(line + EnergyPlus::DataStringGlobals::NL);
+    input_file.append(line + '\n');
   }
 
   ::IdfParser parser;

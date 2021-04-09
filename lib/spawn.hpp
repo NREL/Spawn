@@ -50,6 +50,7 @@
 
 #include "input/input.hpp"
 #include "variables.hpp"
+#include "warmupmanager.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
@@ -180,6 +181,12 @@ private:
 
   int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
+
+  // WarmupManager will register its own callbacks during construction
+  // Maybe all of Spawn's implementation can be derived from "Manager" class
+  // Maybe all of EnergyPlus can derive from Manager and the simulation is
+  // a simple hierarchy of loops with callback points along the way
+  WarmupManager warmupManager{sim_state};
 };
 
 fs::path iddpath();
