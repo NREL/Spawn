@@ -63,7 +63,7 @@ TEST_CASE("Test calling exedir on self with bad exe name")
 {
   const auto exe_name = spawn::exe().filename();
   fs::current_path(spawn::exedir());
-  const auto results = system(fmt::format(R"(./{}asdf "Test blerb")", exe_name.native()).c_str());
+  const auto results = system(fmt::format(R"(./{}asdf "Test blerb")", exe_name.string()).c_str());
   CHECK(results != 0);
 }
 
@@ -72,10 +72,22 @@ TEST_CASE("Test calling exedir on relative path for myself")
 {
   const auto exe_name = spawn::exe().filename();
   fs::current_path(spawn::exedir());
-  const auto results = system(fmt::format(R"(./{} "Test exedir")", exe_name.native()).c_str());
+#ifdef _WINDOWS
+  const auto results = system(fmt::format(R"(.\{} "Test exedir")", exe_name.string()).c_str());
+#else
+  const auto results = system(fmt::format(R"(./{} "Test exedir")", exe_name.string()).c_str());
+#endif
+
   CHECK(results == 0);
 
-  const auto results2 = system(fmt::format(R"(./{} "Test exedir with different working directory")", exe_name.native()).c_str());
+#ifdef _WINDOWS
+  const auto results2 =
+      system(fmt::format(R"(.\{} "Test exedir with different working directory")", exe_name.string()).c_str());
+#else
+  const auto results2 =
+      system(fmt::format(R"(./{} "Test exedir with different working directory")", exe_name.string()).c_str());
+#endif
+
   CHECK(results2 == 0);
 }
 
