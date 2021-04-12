@@ -163,9 +163,8 @@ void Spawn::setStartTime(const double & time) {
 void Spawn::setTime(const double & time)
 {
   isRunningCheck();
-
   requestedTime = time;
-  exchange();
+  exchange(true);
 
   if(requestedTime >= nextEventTime()) {
     iterate();
@@ -184,8 +183,12 @@ double Spawn::nextEventTime() const {
 
 void Spawn::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
-  if( var != variables.end() ) {
-    var->second.setValue(value, spawn::units::UnitSystem::MO);
+  if (var != variables.end()) {
+    const auto & cur_val = var->second.getValue(spawn::units::UnitSystem::MO);
+    if (std::abs(cur_val - value) > std::numeric_limits<float>::epsilon()) {
+      need_update = true;
+      var->second.setValue(value, spawn::units::UnitSystem::MO);
+    }
   } else {
     throw std::runtime_error(fmt::format("Attempt to set a value using an invalid reference: {}", ref));
   }
@@ -434,9 +437,11 @@ double Spawn::getSensorValue(Variable & var) {
   return getVariableValue(simState(), h);
 }
 
-void Spawn::exchange()
+void Spawn::exchange(const bool force)
 {
   isRunningCheck();
+
+  if (! force && ! need_update) return;
 
   auto actuateVar = [&](const Variable & var) {
     if( var.isValueSet() ) {
@@ -495,11 +500,6 @@ void Spawn::exchange()
   }
 
   // Run some internal EnergyPlus functions to update outputs
-  // Surface managers might be expensive. Need to investigate and consider being more strategic
-  //
-  // These two functions are not idempotent and they are causing,
-  // "Test SingleFamilyHouse Idempotence" to fail!
-  // FIX ME !!!
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
 
@@ -562,6 +562,8 @@ void Spawn::exchange()
         break;
     }
   }
+
+  need_update = false;
 }
 
 void Spawn::initZoneEquip() {
@@ -590,7 +592,7 @@ void Spawn::externalHVACManager(EnergyPlusState state) {
   }
 
   // Exchange data with the FMU
-  exchange();
+  exchange(true);
 
   // There is no interaction with the FMU during warmup,
   // so return now before signaling

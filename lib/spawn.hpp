@@ -108,7 +108,7 @@ public:
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
 
-  void exchange();
+  void exchange(const bool force = false);
 
 private:
   std::string instanceName;
@@ -118,6 +118,7 @@ private:
 
   double m_startTime{0.0};
   double requestedTime;
+  bool need_update{true};
 
   // Signal EnergyPlus to move through the simulation loop
   // Depending on the current simulation time, this may be an inner most hvac iteration,
