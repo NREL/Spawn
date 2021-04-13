@@ -212,7 +212,8 @@ TEST_CASE("Test SingleFamilyHouse Idempotence")
       "version": "0.1",
       "EnergyPlus": {{
         "idf": "{idfpath}",
-        "weather": "{epwpath}"
+        "weather": "{epwpath}",
+        "relativeSurfaceTolerance": 1.0e-10
       }},
       "fmu": {{
           "name": "MyBuilding.fmu",

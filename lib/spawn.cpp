@@ -73,6 +73,7 @@ void Spawn::start() {
         EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
         registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
         registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
+        sim_state.dataHeatBal->MaxAllowedDelTemp = input.relativeSurfaceTolerance();
 
         RunEnergyPlus(sim_state);
 
