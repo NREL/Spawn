@@ -280,7 +280,7 @@ TEST_CASE("Test SingleFamilyHouse Idempotence")
   const auto q_max = std::max_element(living_heat_flows.begin(), living_heat_flows.end());
   const auto q_min = std::min_element(living_heat_flows.begin(), living_heat_flows.end());
   const auto living_heat_flows_diff = *q_max - *q_min;
-  CHECK(living_heat_flows_diff <= std::numeric_limits<double>::epsilon());
+  CHECK(living_heat_flows_diff <= 1e-5);
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
