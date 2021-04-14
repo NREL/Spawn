@@ -481,18 +481,25 @@ void Spawn::exchange(const bool force)
       case VariableType::QGAIRAD_FLOW:
         actuateVar(var);
         break;
-      case VariableType::TFRONT:
+      case VariableType::TSURF_FRONT:
         if (var.isValueSet()) {
           auto sn = surfaceNum(var.name);
           const auto & v = var.getValue(spawn::units::UnitSystem::EP);
           setInsideSurfaceTemperature(sn, v);
         }
         break;
-      case VariableType::TBACK:
+      case VariableType::TSURF_BACK:
         if (var.isValueSet()) {
           auto sn = surfaceNum(var.name);
           const auto & v = var.getValue(spawn::units::UnitSystem::EP);
           setOutsideSurfaceTemperature(sn, v);
+        }
+        break;
+      case VariableType::TSURF:
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setInsideSurfaceTemperature(sn, v);
         }
         break;
       default:
@@ -547,15 +554,21 @@ void Spawn::exchange(const bool force)
         var.setValue(sim_state.dataSurface->Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
         break;
       }
-      case VariableType::QFRONT_FLOW: {
+      case VariableType::QSURF_FRONT: {
         const auto varSurfaceNum = surfaceNum(var.name);
         const auto & value = getInsideSurfaceHeatFlow(varSurfaceNum);
         var.setValue(value, spawn::units::UnitSystem::EP);
         break;
       }
-      case VariableType::QBACK_FLOW: {
+      case VariableType::QSURF_BACK: {
         const auto varSurfaceNum = surfaceNum(var.name);
         const auto & value = getOutsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QSURF: {
+        const auto varSurfaceNum = surfaceNum(var.name);
+        const auto & value = getInsideSurfaceHeatFlow(varSurfaceNum);
         var.setValue(value, spawn::units::UnitSystem::EP);
         break;
       }

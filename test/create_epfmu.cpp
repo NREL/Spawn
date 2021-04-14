@@ -69,7 +69,7 @@ fs::path create_single_family_house_fmu() {
            {{ "name": "LIVING ZONE" }},
            {{ "name": "ATTIC ZONE" }}
         ],
-        "zoneSurfaces": [
+        "buildingSurfaceDetailed": [
            {{ "name"    : "Living:Ceiling" }},
            {{ "name"    : "Living:South" }},
            {{ "name"    : "Attic:LivingFloor" }}
