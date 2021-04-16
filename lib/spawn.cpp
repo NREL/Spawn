@@ -186,7 +186,8 @@ void Spawn::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
   if (var != variables.end()) {
     const auto & cur_val = var->second.getValue(spawn::units::UnitSystem::MO);
-    if (std::abs(cur_val - value) > std::numeric_limits<float>::epsilon()) {
+    if (std::abs(value) <= std::numeric_limits<float>::epsilon() ||
+        std::abs(cur_val - value) > std::numeric_limits<float>::epsilon()) {
       need_update = true;
       var->second.setValue(value, spawn::units::UnitSystem::MO);
     }
@@ -425,6 +426,9 @@ int Spawn::getActuatorHandle(const std::string & componenttype, const std::strin
 
 void Spawn::setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
   const auto h = getActuatorHandle(componenttype, controltype, componentname);
+  if (value == 0.0) {
+    ::setActuatorValue(simState(), h, 1.0);
+  }
   ::setActuatorValue(simState(), h, value);
 };
 
