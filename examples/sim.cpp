@@ -26,7 +26,7 @@ int main(const int argc, const char *argv[])
                   variable.to_string(variable.type));
   };
 
-  auto model = spawn::fmu::ModelExchange{boost::filesystem::path{argv[1]}, "model", true, false};
+  auto model = spawn::fmu::ModelExchange{fs::path{argv[1]}, "model", true, false};
 
   const auto &core_zn_t = model.fmu.getVariableByName("Core_ZN_T");
   const auto start_time = 0.0;

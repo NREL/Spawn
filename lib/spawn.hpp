@@ -48,17 +48,19 @@
 #ifndef Spawn_hh_INCLUDED
 #define Spawn_hh_INCLUDED
 
-#include "input.hpp"
+#include "input/input.hpp"
 #include "variables.hpp"
+#include "warmupmanager.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
-#include <boost/filesystem.hpp>
+#include "../util/filesystem.hpp"
 #include <deque>
 #include <string>
 #include <vector>
 #include <map>
 #include <thread>
+#include <tuple>
 #include <mutex>
 #include <sstream>
 #include <condition_variable>
@@ -68,14 +70,14 @@ namespace spawn {
 
 class Spawn {
 public:
-  Spawn(const std::string & t_name, const std::string & t_input, const boost::filesystem::path & workingdir = ".");
+  Spawn(const std::string & t_name, const std::string & t_input, const fs::path & workingdir = ".");
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
   bool operator==(const Spawn& other) const {
     return (this == &other);
   }
 
-  void start(const double & starttime = 0.0);
+  void start();
   void stop();
   bool isRunning() const;
   void setTime(const double & time);
@@ -83,25 +85,38 @@ public:
   double currentTime() const;
   double nextEventTime() const;
 
-  void exchange();
+  // Set value by index
+  // Throws a std::exception if index is invalid or the simulation is not running
+  void setValue(const unsigned int & index, const double & value);
+  // Get the value by index
+  // Throws a std::exception if index is invalid or the simulation is not running
+  double getValue(const unsigned int & index) const;
 
-  // Set a variable identified by ref to the given value
-  // Throws a std::exception if ref is invalid or the simulation is not running
-  void setValue(const unsigned int & ref, const double & value);
+  // Get an index for a given variable name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  unsigned int getIndex(const std::string & name) const;
+  // Set value by name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  void setValue(const std::string & name, const double & value);
+  // Get the value by name
+  // Throws a std::exception if name is invalid or the simulation is not running
+  double getValue(const std::string & name) const;
 
-  // Get the value of variable identified by ref
-  // Throws a std::exception if ref is invalid or the simulation is not running
-  double getValue(const unsigned int & ref) const;
+  double startTime() const;
+  void setStartTime(const double & time);
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
 
+  void exchange();
+
 private:
   std::string instanceName;
-  boost::filesystem::path workingdir;
+  fs::path workingdir;
   std::map<unsigned int, Variable> variables;
   Input input;
 
+  double m_startTime{0.0};
   double requestedTime;
 
   // Signal EnergyPlus to move through the simulation loop
@@ -121,19 +136,23 @@ private:
   // Throws if not is_running
   void isRunningCheck() const;
 
-  std::mutex sim_mutex;
-  std::thread sim_thread;
-
   EnergyPlus::EnergyPlusData sim_state;
   EnergyPlusState simState();
 
+  std::mutex sim_mutex;
+  std::thread sim_thread;
+
   std::exception_ptr sim_exception_ptr{nullptr};
 
-  void externalHVACManager();
+  void externalHVACManager(EnergyPlusState state);
+  std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
   void emptyLogMessageQueue();
+
+  // Given a surface name, return the index according to EnergyPlus
+  int surfaceNum(const std::string & surfaceName) const;
 
   // Given a zone name, return the index according to EnergyPlus
   int zoneNum(const std::string & zoneName) const;
@@ -156,10 +175,22 @@ private:
   double prevZoneTempUpdate;
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
+
+  int getVariableHandle(const std::string & name, const std::string & key);
+  std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;
+
+  int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
+
+  // WarmupManager will register its own callbacks during construction
+  // Maybe all of Spawn's implementation can be derived from "Manager" class
+  // Maybe all of EnergyPlus can derive from Manager and the simulation is
+  // a simple hierarchy of loops with callback points along the way
+  WarmupManager warmupManager{sim_state};
 };
 
-boost::filesystem::path exedir();
-boost::filesystem::path iddpath();
+fs::path exedir();
+fs::path iddpath();
 
 } // namespace spawn
 

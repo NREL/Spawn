@@ -35,7 +35,7 @@
         "fmiName": "Core_Zone_People_Output"
       },
       {
-        "name":    "Lights Electric Power",
+        "name":    "Lights Electricity Rate",
         "key":     "Core_ZN_Lights",
         "fmiName": "Core_Zone_Lights_Output"
       }
@@ -49,12 +49,17 @@
         "fmiName"       : "Core_Zone_People"
       }
     ],
- 		"schedules": [
+    "schedules": [
        {
-        	"name"    : "BLDG_LIGHT_SCH",
-        	"unit"    : "1",
-        	"fmiName" : "Lights_Schedule"
-        }
+          "name"    : "BLDG_LIGHT_SCH",
+          "unit"    : "1",
+          "fmiName" : "Lights_Schedule"
+       }
+     ],
+    "zoneSurfaces": [
+       {
+          "name"    : "Core_ZN_floor"
+       }
      ]
-		}
+    }
 } 

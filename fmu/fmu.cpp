@@ -45,27 +45,32 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
   const auto variables = model_description.select_nodes("//fmiModelDescription/ModelVariables/ScalarVariable");
 
   const auto getCausality = [](const pugi::xml_node &node) {
-    if (const auto &attribute = node.attribute("causality"); !attribute.empty()) {
-      if (attribute.value() == std::string{"input"}) {
+    const auto &attribute = node.attribute("causality"); 
+
+    if (!attribute.empty()) {
+      if (attribute.value() == std::string_view{"input"}) {
         return Variable::Causality::Input;
-      } else if (attribute.value() == std::string{"output"}) {
+      } else if (attribute.value() == std::string_view{"output"}) {
         return Variable::Causality::Output;
-      } else if (attribute.value() == std::string{"local"}) {
+      } else if (attribute.value() == std::string_view{"local"}) {
         return Variable::Causality::Local;
+      } else if (attribute.value() == std::string_view{"calculatedParameter"}) {
+        return Variable::Causality::CalculatedParameter;
       }
     }
 
-    throw std::runtime_error("Unable to determine causality of variable");
+    throw std::runtime_error("Unable to determine causality of variable " + std::string(attribute.value()));
   };
+
   const auto getType = [](const pugi::xml_node &node) {
     if (const auto &first_child = node.first_child(); !first_child.empty()) {
-      if (first_child.name() == std::string{"Real"}) {
+      if (first_child.name() == std::string_view{"Real"}) {
         return Variable::Type::Real;
-      } else if (first_child.name() == std::string{"Integer"}) {
+      } else if (first_child.name() == std::string_view{"Integer"}) {
         return Variable::Type::Integer;
-      } else if (first_child.name() == std::string{"Boolean"}) {
+      } else if (first_child.name() == std::string_view{"Boolean"}) {
         return Variable::Type::Boolean;
-      } else if (first_child.name() == std::string{"String"}) {
+      } else if (first_child.name() == std::string_view{"String"}) {
         return Variable::Type::String;
       }
     }

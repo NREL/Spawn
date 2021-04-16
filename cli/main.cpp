@@ -1,4 +1,6 @@
 #include "../lib/fmugenerator.hpp"
+#include "../lib/outputtypes.hpp"
+#include "../lib/actuatortypes.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <cstdio>
@@ -7,11 +9,10 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <boost/filesystem.hpp>
 #include <config.hxx>
-#include <boost/algorithm/string.hpp>
 #include <stdlib.h>
 #include "../util/fmi_paths.hpp"
+#include "../util/filesystem.hpp"
 
 #if defined _WIN32
 #include <windows.h>
@@ -26,15 +27,15 @@
 
 using json = nlohmann::json;
 
-boost::filesystem::path exedir() {
+fs::path exedir() {
   #if _WIN32
     TCHAR szPath[MAX_PATH];
     GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return boost::filesystem::path(szPath).parent_path();
+    return fs::path(szPath).parent_path();
   #else
     Dl_info info;
     dladdr("main", &info);
-    return boost::filesystem::path(info.dli_fname).parent_path();
+    return fs::path(info.dli_fname).parent_path();
   #endif
 }
 
@@ -42,42 +43,42 @@ bool isInstalled() {
   return exedir().stem() == "bin";
 }
 
-boost::filesystem::path iddInstallPath() {
+fs::path iddInstallPath() {
   constexpr auto & iddfilename = "Energy+.idd";
   // Configuration in install tree
   auto iddInputPath = exedir() / "../etc" / iddfilename;
 
   // Configuration in a developer tree
-  if (! boost::filesystem::exists(iddInputPath)) {
+  if (! fs::exists(iddInputPath)) {
     iddInputPath = exedir() / iddfilename;
   }
 
   return iddInputPath;
 }
 
-boost::filesystem::path epfmiInstallPath() {
+fs::path epfmiInstallPath() {
   const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
-  if (boost::filesystem::exists(candidate)) {
+  if (fs::exists(candidate)) {
     return candidate;
   } else {
     return exedir() / spawn::epfmi_filename();
   }
 }
 
-boost::filesystem::path jmodelicaHome() {
+fs::path jmodelicaHome() {
   if (isInstalled()) {
     return exedir() / "../JModelica/";
   } else {
-    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+    fs::path binary_dir(spawn::BINARY_DIR);
     return binary_dir / "JModelica/";
   }
 }
 
-boost::filesystem::path mblPath() {
+fs::path mblPath() {
   if (isInstalled()) {
     return exedir() / "../modelica-buildings/Buildings/";
   } else {
-    boost::filesystem::path source_dir(spawn::SOURCE_DIR);
+    fs::path source_dir(spawn::SOURCE_DIR);
     return source_dir / "submodules/modelica-buildings/Buildings/";
   }
 }
@@ -123,8 +124,11 @@ int main(int argc, const char *argv[]) {
   auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
   compressOption->needs(createOption);
 
-  auto versionOption =
-    app.add_flag("-v,--version", "Print version info and exit");
+  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn.");
+
+  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
+
+  auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
 
 #if defined ENABLE_MODELICA_COMPILER
   std::string moinput = "";
@@ -145,6 +149,10 @@ int main(int argc, const char *argv[]) {
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*outputVarsOption) {
+      std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
+    } else if (*actuatorsOption) {
+      std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
     }
   } catch(...) {
     eptr = std::current_exception();

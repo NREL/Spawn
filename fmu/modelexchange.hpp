@@ -18,7 +18,7 @@ class ModelExchange
 {
 public:
   /// Todo: Validate that the provided fmu_file is valid for ModelExchange
-  ModelExchange(const boost::filesystem::path &fmu_file,
+  ModelExchange(const fs::path &fmu_file,
                 const std::string &name,
                 const bool visible,
                 const bool loggingOn)

@@ -1,7 +1,7 @@
 #include "EPFMI.hpp"
 #include "../lib/spawn.hpp"
+#include "../util/filesystem.hpp"
 #include <fmi2Functions.h>
-#include <boost/filesystem.hpp>
 #include <list>
 #include <regex>
 #include <iostream>
@@ -99,41 +99,56 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
   UNUSED(fmuType);
   UNUSED(visible);
 
-  const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
-  const auto resourcePath = boost::filesystem::path(resourcePathString);
-  const auto spawnJSONPath = resourcePath / "../model.spawn";
-  const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
+  try {
+    // URI might be preceeded by file:// (UNIX) or file:///C/ (windows)
+    // https://en.wikipedia.org/wiki/File_URI_scheme
+#if _WIN32
+    // This may be brittle, but windows needs to be treated differently.
+    // "C/" is a valid path, however /C/ is not valid
+    const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file:///"), "");
+#else
+    // On non windows the third "/" must be retained
+    const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
+#endif
+    const auto resourcePath = fs::path(resourcePathString);
+    const auto spawnJSONPath = resourcePath / "model.spawn";
+    const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 
-  spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
-  auto & comp = spawn::spawns.back();
+    spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
+    auto & comp = spawn::spawns.back();
 
-  if (loggingOn) {
-    const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+    if (loggingOn) {
+      const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+        static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
 
-      static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
+        std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
+          {EnergyPlus::Error::Info, fmi2OK},
+          {EnergyPlus::Error::Warning, fmi2Warning},
+          {EnergyPlus::Error::Severe, fmi2Error},
+          {EnergyPlus::Error::Fatal, fmi2Fatal}
+        };
 
-      std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
-        {EnergyPlus::Error::Info, fmi2OK},
-        {EnergyPlus::Error::Warning, fmi2Warning},
-        {EnergyPlus::Error::Severe, fmi2Error},
-        {EnergyPlus::Error::Fatal, fmi2Fatal}
+        if (level == EnergyPlus::Error::Continue) {
+          level = lastError;
+        } else {
+          lastError = level;
+        }
+
+        const auto fmilevel = logLevelMap[level];
+        const auto & env = functions->componentEnvironment;
+
+        functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", "%s", message.c_str());
       };
 
-      if (level == EnergyPlus::Error::Continue) {
-        level = lastError;
-      } else {
-        lastError = level;
-      }
-
-      const auto fmilevel = logLevelMap[level];
-      const auto & env = functions->componentEnvironment;
-
-      functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", message.c_str());
-    };
-    comp.setLogCallback(logger);
+      comp.setLogCallback(logger);
+    }
+    return &comp;
+  } catch (const std::runtime_error & e) {
+    std::clog << e.what() << "\n";
+  } catch (...) {
+    std::clog << "Unknown Exception during EnergyPlus fmi2Instantiate\n";
   }
-
-  return &comp;
+  return nullptr;
 }
 
 EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
@@ -149,7 +164,7 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
   UNUSED(stopTime);
 
   auto action = [&](spawn::Spawn & comp) {
-    comp.start(starttime);
+    comp.setStartTime(starttime);
   };
 
   return spawn::with_spawn(c, action);
@@ -186,6 +201,8 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
   fmi2Real values[])
 {
   auto action = [&](spawn::Spawn & comp) {
+    // Call to start will be a no op if the simulation is already running
+    comp.start();
     comp.exchange();
     std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return comp.getValue(valueRef); });
   };
@@ -244,14 +261,18 @@ EPFMI_API void fmi2FreeInstance(fmi2Component c)
   spawn::with_spawn(c, action);
 }
 
-EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component)
+EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
   return fmi2OK;
 }
 
-EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component)
+EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 {
-  return fmi2OK;
+  auto action = [&](spawn::Spawn & comp) {
+    comp.start();
+  };
+
+  return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2GetInteger(fmi2Component, const fmi2ValueReference[], size_t, fmi2Integer[])

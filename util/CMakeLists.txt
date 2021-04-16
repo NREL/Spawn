@@ -4,8 +4,9 @@ if (UNIX)
 endif()
 
 add_library(spawn_utils
-        idf_to_json.hpp
-        idf_to_json.cpp
+        compare.hpp
+        compare.cpp
+        filesystem.hpp
         fmi_paths.hpp
         temp_directory.cpp
         temp_directory.hpp
@@ -14,9 +15,15 @@ add_library(spawn_utils
         dynamiclibrary.hpp
         dynamiclibrary_windows.hpp
         dynamiclibrary_posix.hpp
-        )
+)
 
-target_link_libraries(spawn_utils PUBLIC energyplusapi CONAN_PKG::boost CONAN_PKG::fmt PRIVATE CONAN_PKG::libzip)
+target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip)
+
+include(CheckLinkerFlag)
+check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
+if(HAS_FS_FLAG)
+  target_link_libraries(spawn_utils PUBLIC stdc++fs)
+endif()
 
 target_include_directories(spawn_utils
   PRIVATE

@@ -1,5 +1,5 @@
 #include "unzipped_file.hpp"
-#include <boost/filesystem.hpp>
+#include "filesystem.hpp"
 #include <fmt/format.h>
 #include <fstream>
 #include <stdexcept>
@@ -8,7 +8,7 @@
 namespace spawn {
 namespace util {
 
-  std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const boost::filesystem::path &zipFile)
+  std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const fs::path &zipFile)
   {
     int err{};
     auto zip = zip_open(zipFile.string().c_str(), ZIP_CHECKCONS | ZIP_RDONLY, &err);
@@ -24,7 +24,7 @@ namespace util {
     return {zip, zip_discard};
   }
 
-  std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, const boost::filesystem::path &path)
+  std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, const fs::path &path)
   {
     auto *f = zip_fopen(&zipFile, path.string().c_str(), 0);
 
@@ -39,9 +39,9 @@ namespace util {
     return {f, zip_fclose};
   }
 
-  std::vector<boost::filesystem::path> zipped_files(zip_t &zipFile)
+  std::vector<fs::path> zipped_files(zip_t &zipFile)
   {
-    std::vector<boost::filesystem::path> results;
+    std::vector<fs::path> results;
 
     const auto file_count = zip_get_num_entries(&zipFile, 0);
 
@@ -55,9 +55,9 @@ namespace util {
     return results;
   }
 
-  Unzipped_File::Unzipped_File(const boost::filesystem::path &zipFile,
-                               boost::filesystem::path outputDir,
-                               const std::vector<boost::filesystem::path> &filesToUnzip)
+  Unzipped_File::Unzipped_File(const fs::path &zipFile,
+                               fs::path outputDir,
+                               const std::vector<fs::path> &filesToUnzip)
       : m_outputDir{std::move(outputDir)}
   {
     auto zip = open_zip(zipFile);
@@ -77,7 +77,7 @@ namespace util {
       const auto read_bytes = [&]() { return zip_fread(file.get(), buffer, buffer_size); };
 
       const auto unzippedFile = m_outputDir / fileToUnzip;
-      boost::filesystem::create_directories(unzippedFile.parent_path());
+      fs::create_directories(unzippedFile.parent_path());
       std::ofstream ofs(unzippedFile.string(), std::ofstream::trunc | std::ofstream::binary);
       for (zip_int64_t bytesread = read_bytes(); bytesread > 0; bytesread = read_bytes()) {
         ofs.write(buffer, bytesread);

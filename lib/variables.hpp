@@ -7,6 +7,7 @@
 #include <map>
 #include <sstream>
 
+// See variable documentation here https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
 enum class VariableType {
   T,
   V,
@@ -22,7 +23,10 @@ enum class VariableType {
   MINLETS_FLOW,
   SENSOR,
   EMS_ACTUATOR,
-  SCHEDULE
+  SCHEDULE,
+  ASURF,
+  TSURF,
+  QSURF_FLOW
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;

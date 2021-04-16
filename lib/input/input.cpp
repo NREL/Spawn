@@ -1,5 +1,5 @@
 #include "input.hpp"
-#include "../util/idf_to_json.hpp"
+#include "../idf_to_json.hpp"
 
 using json = nlohmann::json;
 
@@ -11,11 +11,11 @@ Input::Input(const std::string & spawninput)
   if (!fileinput.fail()) {
     // deserialize from file
     fileinput >> spawnjson;
-    m_basepath = boost::filesystem::canonical(boost::filesystem::path(spawninput)).parent_path();
+    m_basepath = fs::canonical(fs::path(spawninput)).parent_path();
   } else {
     // Try to parse command line input as json string
     spawnjson = json::parse(spawninput, nullptr, false);
-    m_basepath = boost::filesystem::current_path();
+    m_basepath = fs::current_path();
   }
 
   json weather;
@@ -25,35 +25,36 @@ Input::Input(const std::string & spawninput)
   }
 
   // Do the input paths exist?
-  if (! boost::filesystem::exists(idfInputPath())) {
+  if (! fs::exists(idfInputPath())) {
     std::cout << "The specified idf input file does not exist, " << idfInputPath() << "." << std::endl;
   }
-  if (! boost::filesystem::exists(epwInputPath())) {
+  if (! fs::exists(epwInputPath())) {
     std::cout << "The specified epw input file does not exist, " << epwInputPath() << "." << std::endl;
   }
 
-  jsonidf = idfToJSON(idfInputPath());
+  jsonidf = idf_to_json(idfInputPath());
 
   zones = Zone::createZones(spawnjson, jsonidf);
   schedules = Schedule::createSchedules(spawnjson, jsonidf);
   outputVariables = OutputVariable::createOutputVariables(spawnjson, jsonidf);
   emsActuators = EMSActuator::createEMSActuators(spawnjson, jsonidf);
+  surfaces = Surface::createSurfaces(spawnjson, jsonidf);
 }
 
 std::string Input::fmuname() const {
-  return spawnjson["fmu"].value("name","spawn.fmu");
+  return spawnjson.value("fmu",json()).value("name","spawn.fmu");
 }
 
 std::string Input::fmuBaseName() const {
-  return boost::filesystem::path(fmuname()).stem().string();
+  return fs::path(fmuname()).stem().string();
 }
 
 void Input::setFMUName(const std::string & name) {
   spawnjson["fmu"]["name"] = name;
 }
 
-boost::filesystem::path Input::toPath(const std::string & pathstring) const {
-  boost::filesystem::path p(pathstring);
+fs::path Input::toPath(const std::string & pathstring) const {
+  fs::path p(pathstring);
   if (! p.is_absolute()) {
     p = m_basepath / p;
   }
@@ -61,28 +62,28 @@ boost::filesystem::path Input::toPath(const std::string & pathstring) const {
   return p;
 }
 
-boost::filesystem::path Input::idfInputPath() const {
-  return toPath(spawnjson["EnergyPlus"].value("idf",""));
+fs::path Input::idfInputPath() const {
+  return toPath(spawnjson.value("EnergyPlus",json()).value("idf","in.idf"));
 }
 
-void Input::setIdfInputPath(boost::filesystem::path idfpath) {
+void Input::setIdfInputPath(fs::path idfpath) {
   spawnjson["EnergyPlus"]["idf"] = idfpath.string();
 }
 
-boost::filesystem::path Input::epwInputPath() const {
-  return toPath(spawnjson["EnergyPlus"].value("weather",""));
+fs::path Input::epwInputPath() const {
+  return toPath(spawnjson.value("EnergyPlus",json()).value("weather","in.epw"));
 }
 
-void Input::setEPWInputPath(boost::filesystem::path epwpath) {
+void Input::setEPWInputPath(fs::path epwpath) {
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }
 
-void Input::save(const boost::filesystem::path & savepath) const {
+void Input::save(const fs::path & savepath) const {
   std::ofstream o(savepath.string());
   o << std::setw(4) << spawnjson << std::endl;
 }
 
-boost::filesystem::path Input::basepath() const {
+fs::path Input::basepath() const {
   return m_basepath;
 }
 

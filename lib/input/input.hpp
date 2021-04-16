@@ -2,13 +2,14 @@
 #define INPUT_HH_INCLUDED
 
 #include "emsactuator.hpp"
-#include "iddtypes.hpp"
-#include "outputtypes.hpp"
 #include "outputvariable.hpp"
 #include "schedule.hpp"
-#include "variables.hpp"
+#include "surface.hpp"
 #include "zone.hpp"
-#include <boost/filesystem.hpp>
+#include "../variables.hpp"
+#include "../iddtypes.hpp"
+#include "../outputtypes.hpp"
+#include "../../util/filesystem.hpp"
 #include <fstream>
 
 namespace spawn {
@@ -21,32 +22,33 @@ public:
   std::vector<Schedule> schedules;
   std::vector<OutputVariable> outputVariables;
   std::vector<EMSActuator> emsActuators;
+  std::vector<Surface> surfaces;
 
-  boost::filesystem::path basepath() const;
+  fs::path basepath() const;
 
   std::string fmuname() const;
   void setFMUName(const std::string & name);
   // fmu name without extension
   std::string fmuBaseName() const;
 
-  boost::filesystem::path idfInputPath() const;
-  void setIdfInputPath(boost::filesystem::path idfpath);
+  fs::path idfInputPath() const;
+  void setIdfInputPath(fs::path idfpath);
 
-  boost::filesystem::path epwInputPath() const;
-  void setEPWInputPath(boost::filesystem::path epwpath);
+  fs::path epwInputPath() const;
+  void setEPWInputPath(fs::path epwpath);
 
 
-  void save(const boost::filesystem::path & savepath) const;
+  void save(const fs::path & savepath) const;
 
 private:
 
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
-  boost::filesystem::path toPath(const std::string & pathstring) const;
+  fs::path toPath(const std::string & pathstring) const;
 
   nlohmann::json jsonidf;
   nlohmann::json spawnjson;
-  boost::filesystem::path m_basepath;
+  fs::path m_basepath;
 };
 
 } // namespace spawn

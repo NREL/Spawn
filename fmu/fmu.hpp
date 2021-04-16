@@ -6,9 +6,12 @@
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
 
+#include "../util/fmi_paths.hpp"
+#include "../util/filesystem.hpp"
+
 #include "fmi2.hpp"
 
-#include <boost/filesystem/path.hpp>
+#include <functional>
 #include <fmi2FunctionTypes.h>
 
 #include <optional>
@@ -22,7 +25,6 @@ namespace spawn::fmu {
   class FMU
   {
   public:
-    /// Represents a Variable in the modelDescription.xml contained in the FMU
     struct Variable
     {
       enum struct Type
@@ -37,7 +39,8 @@ namespace spawn::fmu {
       {
         Input,
         Output,
-        Local
+        Local,
+        CalculatedParameter
       };
 
       [[nodiscard]] static constexpr std::string_view to_string(const Type type) noexcept
@@ -65,19 +68,21 @@ namespace spawn::fmu {
       bool validate(const Type expected, const bool throw_error = true) const;
     };
 
-    explicit FMU(boost::filesystem::path fmu_file, bool require_all_symbols = true)
+
+
+    explicit FMU(fs::path fmu_file, bool require_all_symbols = true)
         : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols}
     {
     }
 
-    [[nodiscard]] static boost::filesystem::path modelDescriptionPath()
+    static fs::path modelDescriptionPath()
     {
       return "modelDescription.xml";
     }
 
     [[nodiscard]] std::string modelIdentifier() const;
 
-    [[nodiscard]] boost::filesystem::path fmiBinaryFullPath() const
+    [[nodiscard]] fs::path fmiBinaryFullPath() const
     {
       return spawn::fmi_lib_path(modelIdentifier());
     }
@@ -97,13 +102,13 @@ namespace spawn::fmu {
 
     [[nodiscard]] const Variable &getVariableByName(std::string_view name) const;
 
-    const boost::filesystem::path &extractedFilesPath() const {
+    const fs::path &extractedFilesPath() const {
       return m_tempDirectory.dir();
     }
 
 
   private:
-    boost::filesystem::path m_fmu_file;
+    fs::path m_fmu_file;
     bool m_require_all_symbols;
     util::Temp_Directory m_tempDirectory{};
     // unzip all files

@@ -135,7 +135,6 @@ target_link_libraries(spawn
   libspawn
   energypluslib
   CONAN_PKG::CLI11
-  CONAN_PKG::boost
   CONAN_PKG::nlohmann_json
 )
 

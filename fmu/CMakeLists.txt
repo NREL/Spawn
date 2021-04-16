@@ -1,6 +1,14 @@
-
-add_library(fmu fmu.cpp fmu.hpp fmi2.cpp fmi2.hpp modelexchange.hpp modelexchange.cpp)
-target_link_libraries(fmu PUBLIC CONAN_PKG::pugixml CONAN_PKG::boost spawn_utils PRIVATE CONAN_PKG::fmt)
+add_library(fmu 
+  modeldescription.hpp
+  modeldescription.cpp
+  modelexchange.hpp
+  modelexchange.cpp
+  fmu.hpp
+  fmu.cpp
+  fmi2.hpp
+  fmi2.cpp
+)
 target_compile_features(fmu PUBLIC cxx_std_17)
+target_link_libraries(fmu PUBLIC CONAN_PKG::pugixml spawn_utils PRIVATE CONAN_PKG::fmt)
 target_include_directories(fmu PUBLIC "${PROJECT_SOURCE_DIR}/fmi2/")
 
