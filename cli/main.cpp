@@ -13,13 +13,8 @@
 #include <stdlib.h>
 #include "../util/fmi_paths.hpp"
 #include "../util/filesystem.hpp"
+#include "../util/paths.hpp"
 
-#if defined _WIN32
-#include <windows.h>
-#else
-#include <stdio.h>
-#include <dlfcn.h>
-#endif
 
 #if defined ENABLE_MODELICA_COMPILER
 #include "compilerchain.hpp"
@@ -27,47 +22,36 @@
 
 using json = nlohmann::json;
 
-fs::path exedir() {
-  #if _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return fs::path(szPath).parent_path();
-  #else
-    Dl_info info;
-    dladdr("main", &info);
-    return fs::path(info.dli_fname).parent_path();
-  #endif
-}
 
 bool isInstalled() {
-  return exedir().stem() == "bin";
+  return spawn::exedir().stem() == "bin";
 }
 
 fs::path iddInstallPath() {
   constexpr auto & iddfilename = "Energy+.idd";
   // Configuration in install tree
-  auto iddInputPath = exedir() / "../etc" / iddfilename;
+  auto iddInputPath = spawn::exedir() / "../etc" / iddfilename;
 
   // Configuration in a developer tree
   if (! fs::exists(iddInputPath)) {
-    iddInputPath = exedir() / iddfilename;
+    iddInputPath = spawn::exedir() / iddfilename;
   }
 
   return iddInputPath;
 }
 
 fs::path epfmiInstallPath() {
-  const auto candidate = exedir() / ("../lib/" + spawn::epfmi_filename());
+  const auto candidate = spawn::exedir() / ("../lib/" + spawn::epfmi_filename());
   if (fs::exists(candidate)) {
     return candidate;
   } else {
-    return exedir() / spawn::epfmi_filename();
+    return spawn::exedir() / spawn::epfmi_filename();
   }
 }
 
 fs::path jmodelicaHome() {
   if (isInstalled()) {
-    return exedir() / "../JModelica/";
+    return spawn::exedir() / "../JModelica/";
   } else {
     fs::path binary_dir(spawn::BINARY_DIR);
     return binary_dir / "JModelica/";
@@ -76,7 +60,7 @@ fs::path jmodelicaHome() {
 
 fs::path mblPath() {
   if (isInstalled()) {
-    return exedir() / "../modelica-buildings/Buildings/";
+    return spawn::exedir() / "../modelica-buildings/Buildings/";
   } else {
     fs::path source_dir(spawn::SOURCE_DIR);
     return source_dir / "submodules/modelica-buildings/Buildings/";

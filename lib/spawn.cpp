@@ -3,6 +3,8 @@
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
+#include "../util/paths.hpp"
+
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/func.h"
@@ -22,13 +24,6 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/Psychrometrics.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ScheduleManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ZoneTempPredictorCorrector.hh"
-
-#if defined _WIN32
-#include <windows.h>
-#else
-#include <stdio.h>
-#include <dlfcn.h>
-#endif
 
 namespace spawn {
 
@@ -598,18 +593,6 @@ void Spawn::emptyLogMessageQueue() {
 
 EnergyPlusState Spawn::simState() {
   return reinterpret_cast<EnergyPlusState>(&sim_state);
-}
-
-fs::path exedir() {
-  #if _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return fs::path(szPath).parent_path();
-  #else
-    Dl_info info;
-    dladdr("main", &info);
-    return fs::path(info.dli_fname).parent_path();
-  #endif
 }
 
 fs::path iddpath() {
