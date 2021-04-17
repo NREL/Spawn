@@ -5,7 +5,7 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-Schedule::Schedule(std::string t_spawnname, std::string t_idfname, std::string t_idftype) :
+Schedule::Schedule(std::string t_spawnname, std::string t_idfname, std::string t_idftype) noexcept :
   spawnname(std::move(t_spawnname)),
   idfname(std::move(t_idfname)),
   idftype(std::move(t_idftype))

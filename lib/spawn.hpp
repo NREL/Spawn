@@ -70,20 +70,21 @@ namespace spawn {
 
 class Spawn {
 public:
-  Spawn(const std::string & t_name, const std::string & t_input, const fs::path & workingdir = ".");
+  Spawn(std::string t_name, std::string t_input, fs::path workingdir = ".");
   Spawn( const Spawn& ) = delete;
   Spawn( Spawn&& ) = delete;
-  bool operator==(const Spawn& other) const {
+
+  [[nodiscard]] bool operator==(const Spawn& other) const noexcept {
     return (this == &other);
   }
 
   void start();
   void stop();
-  bool isRunning() const;
+  [[nodiscard]] bool isRunning() const noexcept;
   void setTime(const double & time);
 
-  double currentTime() const;
-  double nextEventTime() const;
+  [[nodiscard]] double currentTime() const;
+  [[nodiscard]] double nextEventTime() const;
 
   // Set value by index
   // Throws a std::exception if index is invalid or the simulation is not running
@@ -94,16 +95,16 @@ public:
 
   // Get an index for a given variable name
   // Throws a std::exception if name is invalid or the simulation is not running
-  unsigned int getIndex(const std::string & name) const;
+  [[nodiscard]] unsigned int getIndex(const std::string & name) const;
   // Set value by name
   // Throws a std::exception if name is invalid or the simulation is not running
   void setValue(const std::string & name, const double & value);
   // Get the value by name
   // Throws a std::exception if name is invalid or the simulation is not running
-  double getValue(const std::string & name) const;
+  [[nodiscard]] double getValue(const std::string & name) const;
 
-  double startTime() const;
-  void setStartTime(const double & time);
+  [[nodiscard]] double startTime() const noexcept;
+  void setStartTime(const double & time) noexcept;
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
@@ -113,8 +114,8 @@ public:
 private:
   std::string instanceName;
   fs::path workingdir;
-  std::map<unsigned int, Variable> variables;
   Input input;
+  std::map<unsigned int, Variable> variables;
 
   double m_startTime{0.0};
   double requestedTime;
@@ -145,27 +146,29 @@ private:
   std::exception_ptr sim_exception_ptr{nullptr};
 
   void externalHVACManager(EnergyPlusState state);
-  std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
+
+  [[nodiscard]] std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
   void emptyLogMessageQueue();
 
   // Given a surface name, return the index according to EnergyPlus
-  int surfaceNum(const std::string & surfaceName) const;
+  [[nodiscard]] int surfaceNum(const std::string & surfaceName) const;
 
   // Given a zone name, return the index according to EnergyPlus
-  int zoneNum(const std::string & zoneName) const;
+  [[nodiscard]] int zoneNum(const std::string & zoneName) const;
   // These functions assume the EnergyPlus unit system
   // ZoneSums are the coefficients used in the zone heat transfer calculation
   struct ZoneSums {
     double tempDepCoef;
     double tempIndCoef;
   };
-  ZoneSums zoneSums(const int zonenum);
-  double zoneHeatTransfer(const int zonenum);
+
+  [[nodiscard]] ZoneSums zoneSums(const int zonenum);
+  [[nodiscard]] double zoneHeatTransfer(const int zonenum);
   void setZoneTemperature(const int zonenum, const double & temp);
-  double zoneTemperature(const int zonenum);
+  [[nodiscard]] double zoneTemperature(const int zonenum);
   void updateZoneTemperature(const int zonenum, const double & dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
   void initZoneEquip();
@@ -176,10 +179,10 @@ private:
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
 
-  int getVariableHandle(const std::string & name, const std::string & key);
+  [[nodiscard]] int getVariableHandle(const std::string & name, const std::string & key);
   std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;
 
-  int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  [[nodiscard]] int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
 
   // WarmupManager will register its own callbacks during construction

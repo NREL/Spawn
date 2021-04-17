@@ -8,7 +8,7 @@ Manager::Manager(EnergyPlus::EnergyPlusData & state) {
   // f is just a conversion from struct EnergyPlusData to EnergyPlusState (void *);
   // This is a firewall so that dirty void * doesn't spread
   auto f = [&](EnergyPlusState s) {
-    auto f_state = reinterpret_cast<EnergyPlus::EnergyPlusData *>(s);
+    auto *f_state = reinterpret_cast<EnergyPlus::EnergyPlusData *>(s);
     registerCallbacks(*f_state);
   };
   EnergyPlus::PluginManagement::registerNewCallback(state, EnergyPlus::EMSManager::EMSCallFrom::SetupSimulation, f);
@@ -24,7 +24,7 @@ void Manager::registerCallbacks(EnergyPlus::EnergyPlusData & state) {
   }
 }
 
-void Manager::initialize(EnergyPlus::EnergyPlusData & state) {
+void Manager::initialize([[maybe_unused]] EnergyPlus::EnergyPlusData & state) {
   initialized = true;
 }
 

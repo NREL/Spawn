@@ -8,7 +8,6 @@ add_library(fmu
   fmi2.hpp
   fmi2.cpp
 )
-target_compile_features(fmu PUBLIC cxx_std_17)
-target_link_libraries(fmu PUBLIC CONAN_PKG::pugixml spawn_utils PRIVATE CONAN_PKG::fmt)
+target_link_libraries(fmu PUBLIC CONAN_PKG::pugixml spawn_utils PRIVATE CONAN_PKG::fmt compile_options)
 target_include_directories(fmu PUBLIC "${PROJECT_SOURCE_DIR}/fmi2/")
 

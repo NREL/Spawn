@@ -16,6 +16,7 @@ bool FMU::Variable::validate(const FMU::Variable::Type expected, const bool thro
 
   return type_match;
 }
+
 std::string FMU::modelIdentifier() const
 {
   if (!m_model_description_parse_result) {
@@ -59,7 +60,7 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
       }
     }
 
-    throw std::runtime_error("Unable to determine causality of variable " + std::string(attribute.value()));
+    throw std::runtime_error(fmt::format("Unable to determine causality of variable {}", attribute.value()));
   };
 
   const auto getType = [](const pugi::xml_node &node) {

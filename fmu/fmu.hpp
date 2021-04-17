@@ -65,7 +65,7 @@ namespace spawn::fmu {
       Type type;
       Causality causality;
 
-      bool validate(const Type expected, const bool throw_error = true) const;
+      [[nodiscard]] bool validate(const Type expected, const bool throw_error = true) const;
     };
 
 
@@ -87,13 +87,10 @@ namespace spawn::fmu {
       return spawn::fmi_lib_path(modelIdentifier());
     }
 
-    [[nodiscard]] const pugi::xml_document &modelDescription() const
+    [[nodiscard]] const pugi::xml_document &modelDescription() const noexcept
     {
       return m_model_description;
     }
-
-    /// Loads all Variables in the given xml_document
-    [[nodiscard]] static std::vector<Variable> variables(const pugi::xml_document &model_description);
 
     [[nodiscard]] const auto &getVariables() const noexcept
     {
@@ -102,7 +99,7 @@ namespace spawn::fmu {
 
     [[nodiscard]] const Variable &getVariableByName(std::string_view name) const;
 
-    const fs::path &extractedFilesPath() const {
+    [[nodiscard]] const fs::path &extractedFilesPath() const noexcept {
       return m_tempDirectory.dir();
     }
 
@@ -119,7 +116,10 @@ namespace spawn::fmu {
 
     std::vector<Variable> m_variables{variables(m_model_description)};
 
- public:
+    /// Loads all Variables in the given xml_document
+    [[nodiscard]] static std::vector<Variable> variables(const pugi::xml_document &model_description);
+
+  public:
     FMI2 fmi{m_unzipped.outputDir() / fmiBinaryFullPath(), m_require_all_symbols};
   };
 

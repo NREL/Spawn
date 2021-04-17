@@ -53,7 +53,7 @@ void walk_directory(const std::string& startdir, const std::string& inputdir, zi
 
 void zip_directory(const std::string& inputdir, const std::string& output_filename, bool no_compression)
 {
-  int errorp;
+  int errorp{};
   zip_t *zipper = zip_open(output_filename.c_str(), ZIP_CREATE | ZIP_EXCL, &errorp);
   if (zipper == nullptr) {
     zip_error_t ziperror;

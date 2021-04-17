@@ -18,7 +18,7 @@ namespace spawn {
 class Manager {
 
 public:
-  Manager(EnergyPlus::EnergyPlusData & state);
+  explicit Manager(EnergyPlus::EnergyPlusData & state);
 
 protected:
   virtual void initialize(EnergyPlus::EnergyPlusData & state);

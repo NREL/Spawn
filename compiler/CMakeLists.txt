@@ -37,7 +37,10 @@ target_link_libraries(
   clangFrontend
   clangFrontendTool
   CONAN_PKG::boost
-  CONAN_PKG::fmt)
+  CONAN_PKG::fmt
+  PRIVATE
+  compile_options
+)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT

@@ -6,9 +6,9 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-Surface::Surface(std::string t_idfname, bool t_isconnected) :
+Surface::Surface(std::string t_idfname, bool t_isconnected) noexcept :
   idfname(std::move(t_idfname)),
-  isconnected(std::move(t_isconnected))
+  isconnected(t_isconnected)
 {
 }
 

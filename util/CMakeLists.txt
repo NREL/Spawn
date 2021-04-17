@@ -17,7 +17,7 @@ add_library(spawn_utils
         dynamiclibrary_posix.hpp
 )
 
-target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip)
+target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)

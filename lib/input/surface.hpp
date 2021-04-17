@@ -7,14 +7,14 @@ namespace spawn {
 
 class Surface {
 public:
-  static std::vector<Surface> createSurfaces(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
+  [[nodiscard]] static std::vector<Surface> createSurfaces(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
 
   const std::string idfname;
   // Does the surface (defined in idf) have a connection to Modelica?
   const bool isconnected;
 
 private:
-  Surface(std::string idfname, bool isconnected);
+  Surface(std::string idfname, bool isconnected) noexcept;
 };
 
 } // namespace spawn

@@ -1,14 +1,11 @@
 #include "EPFMI.hpp"
 #include "../lib/spawn.hpp"
-#include "../util/filesystem.hpp"
 #include <fmi2Functions.h>
 #include <list>
 #include <regex>
 #include <iostream>
 
 using namespace std::placeholders;
-
-#define UNUSED(expr) do { (void)(expr); } while (0);
 
 namespace spawn {
 
@@ -89,18 +86,15 @@ fmi2Status with_spawn(fmi2Component c, Function f) {
 } // namespace spawn
 
 EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
-  fmi2Type fmuType,
+  [[maybe_unused]] fmi2Type fmuType,
   fmi2String fmuGUID,
   fmi2String fmuResourceURI,
   const fmi2CallbackFunctions* functions,
-  fmi2Boolean visible,
+  [[maybe_unused]] fmi2Boolean visible,
   fmi2Boolean loggingOn)
 {
-  UNUSED(fmuType);
-  UNUSED(visible);
-
   try {
-    // URI might be preceeded by file:// (UNIX) or file:///C/ (windows)
+    // URI might be preceded by file:// (UNIX) or file:///C/ (windows)
     // https://en.wikipedia.org/wiki/File_URI_scheme
 #if _WIN32
     // This may be brittle, but windows needs to be treated differently.
@@ -119,14 +113,9 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 
     if (loggingOn) {
       const auto & logger = [functions, instanceName](EnergyPlus::Error level, const std::string & message) {
+        // is there a better way to handle this static so that we don't have state spread
+        // across many different places?
         static EnergyPlus::Error lastError = EnergyPlus::Error::Info;
-
-        std::map<EnergyPlus::Error, fmi2Status> logLevelMap = {
-          {EnergyPlus::Error::Info, fmi2OK},
-          {EnergyPlus::Error::Warning, fmi2Warning},
-          {EnergyPlus::Error::Severe, fmi2Error},
-          {EnergyPlus::Error::Fatal, fmi2Fatal}
-        };
 
         if (level == EnergyPlus::Error::Continue) {
           level = lastError;
@@ -134,10 +123,28 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
           lastError = level;
         }
 
-        const auto fmilevel = logLevelMap[level];
+        const auto fmiLevel = [&](){
+          switch (level) {
+            case EnergyPlus::Error::Info:
+              return fmi2OK;
+            case EnergyPlus::Error::Warning:
+              return fmi2Warning;
+            case EnergyPlus::Error::Severe:
+              return fmi2Error;
+            case EnergyPlus::Error::Fatal:
+              return fmi2Fatal;
+            case EnergyPlus::Error::Continue:
+              // should not be possible to get here because of the block right above us
+              return fmi2Error;
+          }
+
+          std::clog << "Unhandled EnergyPlus::Error value: " << static_cast<int>(level) << '\n';
+          return fmi2Error;
+        }();
+
         const auto & env = functions->componentEnvironment;
 
-        functions->logger(env, instanceName, fmilevel, "EnergyPlus Message", "%s", message.c_str());
+        functions->logger(env, instanceName, fmiLevel, "EnergyPlus Message", "%s", message.c_str());
       };
 
       comp.setLogCallback(logger);
@@ -152,17 +159,12 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 }
 
 EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
-  fmi2Boolean toleranceDefined,
-  fmi2Real tolerance,
-  fmi2Real starttime,
-  fmi2Boolean stopTimeDefined,
-  fmi2Real stopTime)
+  [[maybe_unused]] fmi2Boolean toleranceDefined,
+  [[maybe_unused]] fmi2Real tolerance,
+  [[maybe_unused]] fmi2Real starttime,
+  [[maybe_unused]] fmi2Boolean stopTimeDefined,
+  [[maybe_unused]] fmi2Real stopTime)
 {
-  UNUSED(toleranceDefined);
-  UNUSED(tolerance);
-  UNUSED(stopTimeDefined);
-  UNUSED(stopTime);
-
   auto action = [&](spawn::Spawn & comp) {
     comp.setStartTime(starttime);
   };
@@ -204,7 +206,7 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c,
     // Call to start will be a no op if the simulation is already running
     comp.start();
     comp.exchange();
-    std::transform(vr, std::next(vr, nvr), values, [&](const int valueRef){ return comp.getValue(valueRef); });
+    std::transform(vr, std::next(vr, static_cast<std::ptrdiff_t>(nvr)), values, [&](const int valueRef){ return comp.getValue(valueRef); });
   };
 
   return spawn::with_spawn(c, action);
@@ -261,7 +263,7 @@ EPFMI_API void fmi2FreeInstance(fmi2Component c)
   spawn::with_spawn(c, action);
 }
 
-EPFMI_API fmi2Status fmi2EnterInitializationMode(fmi2Component c)
+EPFMI_API fmi2Status fmi2EnterInitializationMode([[maybe_unused]] fmi2Component c)
 {
   return fmi2OK;
 }

@@ -12,8 +12,8 @@ void energyplusToFMU(
   bool nocompress,
   const std::string & outputpath,
   const std::string & outputdir,
-  fs::path iddpath,
-  fs::path epfmupath
+  const fs::path& iddpath,
+  const fs::path& epfmupath
 );
 
 } // namespace spawn

@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace spawn {
-namespace units {
+namespace spawn::units {
 
 enum class UnitSystem {MO, EP};
 
@@ -68,9 +67,9 @@ const std::array<UnitString, 28> unitstrings {{
 	{UnitType::lm_per_W,"lm/W"}
 }};
 
-std::string toString(const UnitType & unittype);
+[[nodiscard]] std::string toString(const UnitType & unittype);
 
-UnitType fromString(const std::string & unitstring);
+[[nodiscard]] UnitType fromString(const std::string & unitstring);
 
 struct Conversion {
 	Conversion() = delete;
@@ -97,9 +96,8 @@ struct Quantity {
 	UnitType unit;
 };
 
-Quantity convert(const Quantity & q, const UnitType & targetUnit);
+[[nodiscard]] Quantity convert(const Quantity & q, const UnitType & targetUnit);
 
-} // namespace units
 } // namespace spawn
 
 #endif // SPAWN_UNITS_INCLUDED

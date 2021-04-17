@@ -23,7 +23,7 @@ static void to_json(nlohmann::json& j, const ActuatorProperties& p) {
     };
 }
 
-static void from_json(const nlohmann::json& j, ActuatorProperties& p) {
+[[maybe_unused]] static void from_json(const nlohmann::json& j, ActuatorProperties& p) {
     p.componentType = j.at("componentType").get<std::string>();
     p.controlType = j.at("controlType").get<std::string>();
     p.moUnitType = spawn::units::fromString(j.at("modelicaUnit").get<std::string>());

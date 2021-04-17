@@ -7,9 +7,9 @@
 #elif HAVE_EXP_FILESYSTEM_H
   #include <experimental/filesystem>
   namespace fs = std::experimental::filesystem;
-  namespace std { namespace experimental { namespace filesystem {
+  namespace std::experimental::filesystem {
     // https://stackoverflow.com/questions/63899489/c-experimental-filesystem-has-no-relative-function
-    inline path relative(path p, path base) {
+    [[nodiscard]] inline path relative(path p, path base) {
       // 1. convert p and base to absolute paths
       p = fs::absolute(p);
       base = fs::absolute(base);
@@ -34,7 +34,7 @@
       
       return ret;
     }
-  }}}
+  }
 #else
   #error "no filesystem support"
 #endif

@@ -1,7 +1,6 @@
 #include "fmi2.hpp"
 
-namespace spawn {
-namespace fmu {
+namespace spawn::fmu {
 
   template <typename Func>
   bool load_function(util::Dynamic_Library &loader, FMI2::Function<Func> &func, FMI2::Load_Results &results)
@@ -75,5 +74,4 @@ namespace fmu {
   }
 
 
-} // namespace fmu
 } // namespace spawn

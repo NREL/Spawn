@@ -5,27 +5,27 @@
 #include <fmt/format.h>
 #include <pugixml.hpp>
 
-namespace spawn {
-namespace fmu {
+namespace spawn::fmu {
 
 class ModelDescription
 {
 public:
-  ModelDescription(const fs::path & model_description_path)
-    : m_model_description_path(model_description_path)
+  explicit ModelDescription(fs::path model_description_path)
+    : m_model_description_path(std::move(model_description_path))
   {
+    // note this is initialized by member initializer below
     if (!m_model_description_parse_result) {
       throw std::runtime_error(
           fmt::format("Error parsing xml document located at : {}", model_description_path.string()));
     }
   }
 
-  unsigned int valueReference(const std::string & variable_name)  const {
+  [[nodiscard]] unsigned int valueReference(const std::string & variable_name) const {
     const auto valueReference = scalarVariable(variable_name).attribute("valueReference");
     if (valueReference) {
       const auto  vr = valueReference.as_int(-1);
       if (vr >= 0) {
-        return (unsigned int)vr;
+        return static_cast<unsigned int>(vr);
       }
     }
 
@@ -35,7 +35,7 @@ public:
 
 private:
 
-  pugi::xml_node fmiModelDescription() const {
+  [[nodiscard]] pugi::xml_node fmiModelDescription() const {
     const auto result = m_model_description.child("fmiModelDescription");
     if (result.empty()) {
       throw std::runtime_error("fmiModelDescription not found");
@@ -43,7 +43,7 @@ private:
     return result;
   }
 
-  pugi::xml_node modelVariables() const {
+  [[nodiscard]] pugi::xml_node modelVariables() const {
     const auto result = fmiModelDescription().child("ModelVariables");
     if (result.empty()) {
       throw std::runtime_error("ModelVariables not found");
@@ -51,7 +51,7 @@ private:
     return result;
   }
 
-  pugi::xml_node scalarVariable(const std::string & variable_name) const {
+  [[nodiscard]] pugi::xml_node scalarVariable(const std::string & variable_name) const {
     const auto vars = modelVariables();
     const auto scalarVariables = vars.children("ScalarVariable");
     for (const auto scalarVar : scalarVariables) {
@@ -70,7 +70,6 @@ private:
   pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file(m_model_description_path.c_str())};
 };
 
-} // namespace fmu
-} // namespace spawn
+} // namespace spawn::fmu
 
 #endif // spawn_modeldescription_hpp_INCLUDED

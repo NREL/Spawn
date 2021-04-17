@@ -23,7 +23,7 @@ int main(const int argc, const char *argv[])
                   variable.name,
                   variable.valueReference,
                   variable.description,
-                  variable.to_string(variable.type));
+                  spawn::fmu::FMU::Variable::to_string(variable.type));
   };
 
   auto model = spawn::fmu::ModelExchange{fs::path{argv[1]}, "model", true, false};

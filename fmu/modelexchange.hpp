@@ -48,23 +48,23 @@ public:
 
   /// gets a fmi2Boolean value, throws exception if the variable type does not match
   /// object is passed by reference to match calling semantics of the fmi2 interface
-  void getVariable(const FMU::Variable &variable, double &value);
+  void getVariable(const FMU::Variable &variable, double &value) const;
 
   /// gets a fmi2Integer value, throws exception if the variable type does not match
   /// object is passed by reference to match calling semantics of the fmi2 interface
-  void getVariable(const FMU::Variable &variable, int &value);
+  void getVariable(const FMU::Variable &variable, int &value) const;
 
   /// gets a fmi2String value, throws exception if the variable type does not match
   /// object is passed by reference to match calling semantics of the fmi2 interface
-  void getVariable(const FMU::Variable &variable, const char *&value);
+  void getVariable(const FMU::Variable &variable, const char *&value) const;
 
   /// gets a fmi2Boolean value, throws exception if the variable type does not match
   /// object is passed by reference to match calling semantics of the fmi2 interface
-  void getVariable(const FMU::Variable &variable, bool &value);
+  void getVariable(const FMU::Variable &variable, bool &value) const;
 
   /// templated getVariable for convenience that calls through to the type specific
   /// getVariable implementations.
-  template <typename VariableType>[[nodiscard]] VariableType getVariable(std::string_view name)
+  template <typename VariableType>[[nodiscard]] VariableType getVariable(std::string_view name) const
   {
     const auto &variable = fmu.getVariableByName(name);
     VariableType result;

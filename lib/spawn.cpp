@@ -32,12 +32,12 @@
 
 namespace spawn {
 
-Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::path & t_workingdir)
-  : instanceName(t_name),
-    workingdir(t_workingdir),
-    input(t_input)
+Spawn::Spawn(std::string t_name, std::string t_input, fs::path t_workingdir)
+  : instanceName(std::move(t_name)),
+    workingdir(std::move(t_workingdir)),
+    input(std::move(t_input)),
+    variables(parseVariables(input))
 {
-  variables = parseVariables(input);
 }
 
 void Spawn::start() {
@@ -142,7 +142,7 @@ void Spawn::stop() {
   sim_thread.join();
 }
 
-bool Spawn::isRunning() const {
+bool Spawn::isRunning() const noexcept {
   return is_running;
 }
 
@@ -152,11 +152,11 @@ void Spawn::isRunningCheck() const {
   }
 }
 
-double Spawn::startTime() const {
+double Spawn::startTime() const noexcept {
   return m_startTime;
 }
 
-void Spawn::setStartTime(const double & time) {
+void Spawn::setStartTime(const double & time) noexcept {
   m_startTime = time;
 }
 
