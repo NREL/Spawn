@@ -192,7 +192,6 @@ private:
   WarmupManager warmupManager{sim_state};
 };
 
-fs::path exedir();
 fs::path iddpath();
 
 } // namespace spawn

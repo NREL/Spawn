@@ -24,6 +24,7 @@ add_executable(tests
   test_temp_directory.cpp
   test_unzip_file.cpp
   test_fmi.cpp
+  test_utils.cpp
   test_mbl_idf.cpp
 )
 

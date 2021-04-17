@@ -70,8 +70,12 @@ namespace spawn::fmu {
 
 
 
-    explicit FMU(fs::path fmu_file, bool require_all_symbols = true)
-        : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols}
+    /// \param fmu_file FMU to open, extract, and load FMI symbols from
+    /// \param require_all_symbols If true, an exception is thrown if an FMI symbol could not be loaded
+    /// \param scratch_directory If a scratch_directory is passed in, it is used instead of an automatically managed temp directory
+    explicit FMU(fs::path fmu_file, bool require_all_symbols = true, fs::path scratch_directory = {})
+        : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols},
+          m_scratch_directory{std::move(scratch_directory)}
     {
     }
 
@@ -100,16 +104,22 @@ namespace spawn::fmu {
     [[nodiscard]] const Variable &getVariableByName(std::string_view name) const;
 
     [[nodiscard]] const fs::path &extractedFilesPath() const noexcept {
-      return m_tempDirectory.dir();
+      if (!m_scratch_directory.empty()) {
+        return m_scratch_directory;
+      } else {
+        return m_temp_directory.dir();
+      }
     }
 
 
   private:
     fs::path m_fmu_file;
     bool m_require_all_symbols;
-    util::Temp_Directory m_tempDirectory{};
+    fs::path m_scratch_directory;
+    util::Temp_Directory m_temp_directory;
+
     // unzip all files
-    util::Unzipped_File m_unzipped{m_fmu_file, m_tempDirectory.dir(), {}};
+    util::Unzipped_File m_unzipped{m_fmu_file, extractedFilesPath(), {}};
 
     pugi::xml_document m_model_description;
     pugi::xml_parse_result m_model_description_parse_result{m_model_description.load_file((m_unzipped.outputDir() / modelDescriptionPath()).c_str())};
