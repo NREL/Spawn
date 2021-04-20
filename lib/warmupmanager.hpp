@@ -10,7 +10,7 @@ namespace spawn {
 class WarmupManager : public Manager  {
 
 public:
-  WarmupManager(EnergyPlus::EnergyPlusData & state);
+  explicit WarmupManager(EnergyPlus::EnergyPlusData & state);
 
 protected:
   void initialize(EnergyPlus::EnergyPlusData & state);

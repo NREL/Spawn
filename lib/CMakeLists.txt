@@ -42,6 +42,7 @@ add_library(libspawn
 )
 
 target_include_directories(libspawn
+  SYSTEM  # We want to enable more warnings and not have E+ affect us
   PUBLIC
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
@@ -68,6 +69,8 @@ target_link_libraries(libspawn
   spawn_utils
   CONAN_PKG::libzip
   CONAN_PKG::pugixml
+  PRIVATE
+  compile_options
 )
 
 

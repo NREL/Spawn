@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 
 namespace spawn {
-static std::string fmi_platform()
+[[nodiscard]] constexpr static std::string_view fmi_platform() noexcept
 {
 #ifdef __APPLE__
   return "darwin64";
@@ -16,7 +16,7 @@ static std::string fmi_platform()
 #endif
 }
 
-static std::string fmi_lib_ext()
+[[nodiscard]] constexpr static std::string_view fmi_lib_ext() noexcept
 {
 #ifdef __APPLE__
   return "dylib";
@@ -27,7 +27,7 @@ static std::string fmi_lib_ext()
 #endif
 }
 
-static std::string fmi_lib_prefix()
+[[nodiscard]] constexpr static std::string_view fmi_lib_prefix() noexcept
 {
 #ifdef __APPLE__
   return "";
@@ -38,22 +38,22 @@ static std::string fmi_lib_prefix()
 #endif
 }
 
-static std::string fmi_lib_filename(const std::string &library_name)
+[[nodiscard]] static std::string fmi_lib_filename(const std::string_view library_name)
 {
   return fmt::format("{}{}.{}", fmi_lib_prefix(), library_name, fmi_lib_ext());
 }
 
-static fs::path fmi_lib_path(const std::string &library_name)
+[[nodiscard]] static fs::path fmi_lib_path(const std::string_view library_name)
 {
   return fs::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
 
-static std::string epfmi_basename()
+[[nodiscard]] constexpr static std::string_view epfmi_basename() noexcept
 {
   return "epfmi";
 }
 
-static std::string epfmi_filename()
+static inline std::string epfmi_filename()
 {
   return fmi_lib_filename(epfmi_basename());
 }

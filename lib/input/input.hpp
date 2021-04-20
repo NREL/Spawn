@@ -16,7 +16,7 @@ namespace spawn {
 
 class Input {
 public:
-  Input(const std::string & spawnInputJSON);
+  explicit Input(const std::string & spawnInputJSON);
 
   std::vector<Zone> zones;
   std::vector<Schedule> schedules;
@@ -24,17 +24,17 @@ public:
   std::vector<EMSActuator> emsActuators;
   std::vector<Surface> surfaces;
 
-  fs::path basepath() const;
+  [[nodiscard]] fs::path basepath() const;
 
-  std::string fmuname() const;
-  void setFMUName(const std::string & name);
+  [[nodiscard]] std::string fmuname() const;
+  void setFMUName(std::string name);
   // fmu name without extension
-  std::string fmuBaseName() const;
+  [[nodiscard]] std::string fmuBaseName() const;
 
-  fs::path idfInputPath() const;
+  [[nodiscard]] fs::path idfInputPath() const;
   void setIdfInputPath(fs::path idfpath);
 
-  fs::path epwInputPath() const;
+  [[nodiscard]] fs::path epwInputPath() const;
   void setEPWInputPath(fs::path epwpath);
 
 
@@ -44,7 +44,7 @@ private:
 
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
-  fs::path toPath(const std::string & pathstring) const;
+  [[nodiscard]] fs::path toPath(const std::string & pathstring) const;
 
   nlohmann::json jsonidf;
   nlohmann::json spawnjson;

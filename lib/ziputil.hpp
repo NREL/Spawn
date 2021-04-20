@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <zip.h>
 
-bool is_dir(const std::string& dir);
+[[nodiscard]] bool is_dir(const std::string& dir);
 
 void walk_directory(const std::string& startdir, const std::string& inputdir, zip_t *zipper, bool no_compression);
 

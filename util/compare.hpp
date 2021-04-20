@@ -6,7 +6,7 @@
 
 namespace spawn {
 
-bool case_insensitive_compare(std::string s1, std::string s2);
+[[nodiscard]] bool case_insensitive_compare(const std::string &s1, const std::string &s2);
 
 } // namespace spawn
 

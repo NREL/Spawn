@@ -14,12 +14,12 @@ namespace util {
                   fs::path outputDir,
                   const std::vector<fs::path> &filesToUnzip);
 
-    const fs::path &outputDir() const noexcept
+    [[nodiscard]] const fs::path &outputDir() const noexcept
     {
       return m_outputDir;
     }
 
-    const std::vector<fs::path> &unzippedFiles() const noexcept {
+    [[nodiscard]] const std::vector<fs::path> &unzippedFiles() const noexcept {
       return m_unzippedFiles;
     }
 

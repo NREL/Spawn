@@ -4,6 +4,9 @@ cmake_policy(SET CMP0025 NEW)
 project(Spawn VERSION 0.1.0)
 cmake_minimum_required(VERSION 3.13)
 
+add_library(compile_options INTERFACE)
+target_compile_features(compile_options INTERFACE cxx_std_17)
+
 set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
@@ -21,6 +24,7 @@ set(CPACK_BINARY_IFW OFF)
 
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  target_compile_options(compile_options INTERFACE -Wall -Wextra)
   option(ENABLE_ADDRESS_SANITIZER "Enable address sanitizer testing in gcc/clang" OFF)
   if(ENABLE_ADDRESS_SANITIZER)
     add_definitions(-fsanitize=address -g)
@@ -90,8 +94,8 @@ conan_cmake_run(
   pugixml/1.11
   CLI11/1.7.1@cliutils/stable
   catch2/2.11.3
-  fmt/6.0.0@bincrafters/stable
   nlohmann_json/3.7.3
+  spdlog/1.6.0
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
@@ -161,23 +165,22 @@ endif()
 
 check_include_file("unistd.h" HAVE_UNISTD_H)
 if (HAVE_UNISTD_H)
-  ADD_DEFINITIONS("-DHAVE_UNISTD_H")
+  add_definitions("-DHAVE_UNISTD_H")
 endif()
 
 check_include_file_cxx("filesystem" HAVE_FILESYSTEM_H)
 if (HAVE_FILESYSTEM_H)
-  ADD_DEFINITIONS("-DHAVE_FILESYSTEM_H")
+  add_definitions("-DHAVE_FILESYSTEM_H")
 endif()
 
 check_include_file_cxx("experimental/filesystem" HAVE_EXP_FILESYSTEM_H)
 if (HAVE_EXP_FILESYSTEM_H)
-  ADD_DEFINITIONS("-DHAVE_EXP_FILESYSTEM_H")
+  add_definitions("-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
 add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory( modelica )
-  # The C compiler is unnecessary without modelica
   add_subdirectory( compiler )
 endif()
 add_subdirectory( lib )
@@ -185,6 +188,8 @@ add_subdirectory( cli )
 add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
+add_subdirectory( examples )
+
 enable_testing()
 add_subdirectory( test )
 

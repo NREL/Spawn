@@ -49,8 +49,8 @@ std::string Input::fmuBaseName() const {
   return fs::path(fmuname()).stem().string();
 }
 
-void Input::setFMUName(const std::string & name) {
-  spawnjson["fmu"]["name"] = name;
+void Input::setFMUName(std::string name) {
+  spawnjson["fmu"]["name"] = std::move(name);
 }
 
 fs::path Input::toPath(const std::string & pathstring) const {

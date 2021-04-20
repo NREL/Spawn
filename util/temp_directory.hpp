@@ -7,8 +7,7 @@
 #include <vector>
 #include <string>
 
-namespace spawn {
-namespace util {
+namespace spawn::util {
   // creates an RAII managed temporary directory
   // TODO merge this with compiler/utility after compiler branch is merged
   struct Temp_Directory
@@ -16,7 +15,7 @@ namespace util {
     explicit Temp_Directory(const std::string &t_prefix = "spawn");
     ~Temp_Directory();
 
-    const fs::path &dir() const noexcept
+    [[nodiscard]] const fs::path &dir() const noexcept
     {
       return m_dir;
     }
@@ -29,7 +28,6 @@ namespace util {
   private:
     fs::path m_dir;
   };
-} // namespace util
 } // namespace spawn
 
 #endif

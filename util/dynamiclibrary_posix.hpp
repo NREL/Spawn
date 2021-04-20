@@ -11,7 +11,7 @@ namespace util {
 
 struct Dynamic_Library
 {
-  template <typename Signature> Signature *load_symbol(const std::string &name)
+  template <typename Signature> [[nodiscard]] Signature *load_symbol(const std::string &name)
   {
     // reinterpret_cast is necessary here
     const auto symbol = reinterpret_cast<Signature *>(dlsym(m_handle.get(), name.c_str()));

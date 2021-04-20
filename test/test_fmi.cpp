@@ -1,4 +1,4 @@
-#include "../fmu/fmu.hpp"
+#include "../fmu/fmi2.hpp"
 #include "../util/filesystem.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
@@ -10,7 +10,7 @@ TEST_CASE("Test loading of FMI")
   REQUIRE(fs::exists(fmi_file));
   REQUIRE(fs::is_regular_file(fmi_file));
 
-  spawn::fmu::FMI fmi{example_fmu_path(), false};
+  spawn::fmu::FMI2 fmi{example_fmu_path(), false};
 
   REQUIRE(fmi.fmi2GetVersion.has_value());
 
@@ -27,6 +27,6 @@ TEST_CASE("Test loading of FMI missing symbols")
   REQUIRE(fs::exists(fmi_file));
   REQUIRE(fs::is_regular_file(fmi_file));
 
-  REQUIRE_THROWS(spawn::fmu::FMI{example_fmu_path(), true});
+  REQUIRE_THROWS(spawn::fmu::FMI2{example_fmu_path(), true});
 }
 

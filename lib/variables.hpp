@@ -49,9 +49,9 @@ public:
 	// This is true "value" member has been set to a value
 	// If valueset is false then value should not be used
 	void setValue(const double & value, const spawn::units::UnitSystem & system);
-	double getValue(const spawn::units::UnitSystem & unitsystem) const;
+	[[nodiscard]] double getValue(const spawn::units::UnitSystem & unitsystem) const;
   void resetValue();
-  bool isValueSet() const;
+  [[nodiscard]] bool isValueSet() const;
 
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;

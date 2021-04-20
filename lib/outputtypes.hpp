@@ -13,7 +13,7 @@ struct OutputProperties {
 	spawn::units::UnitType epUnitType;
 };
 
-static void to_json(nlohmann::json& j, const OutputProperties& p) {
+[[maybe_unused]] static void to_json(nlohmann::json& j, const OutputProperties& p) {
     j = nlohmann::json{
       {"name", p.name},
       {"modelicaUnit", spawn::units::toString(p.moUnitType)},
@@ -21,12 +21,14 @@ static void to_json(nlohmann::json& j, const OutputProperties& p) {
     };
 }
 
-static void from_json(const nlohmann::json& j, OutputProperties& p) {
+[[maybe_unused]] static void from_json(const nlohmann::json& j, OutputProperties& p) {
     p.name = j.at("name").get<std::string>();
     p.moUnitType = spawn::units::fromString(j.at("modelicaUnit").get<std::string>());
     p.epUnitType = spawn::units::fromString(j.at("energyplusUnit").get<std::string>());
 }
 
+// we might be able to make this a constexpr std::array if we
+// can make OutputProperties::name into a string_view safely
 const std::vector<OutputProperties> outputtypes {
   {"Site Outdoor Air Drybulb Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
   {"Site Outdoor Air Dewpoint Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},

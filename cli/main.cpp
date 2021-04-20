@@ -15,6 +15,11 @@
 #include "../util/filesystem.hpp"
 #include "../util/paths.hpp"
 
+#if defined _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #if defined ENABLE_MODELICA_COMPILER
 #include "compilerchain.hpp"
@@ -28,13 +33,13 @@ bool isInstalled() {
 }
 
 fs::path iddInstallPath() {
-  constexpr auto & iddfilename = "Energy+.idd";
+  constexpr auto & iddFileName = "Energy+.idd";
   // Configuration in install tree
-  auto iddInputPath = spawn::exedir() / "../etc" / iddfilename;
+  auto iddInputPath = spawn::exedir() / "../etc" / iddFileName;
 
   // Configuration in a developer tree
   if (! fs::exists(iddInputPath)) {
-    iddInputPath = spawn::exedir() / iddfilename;
+    iddInputPath = spawn::exedir() / iddFileName;
   }
 
   return iddInputPath;
@@ -73,7 +78,7 @@ void handle_eptr(std::exception_ptr eptr) {
       std::rethrow_exception(eptr);
     }
   } catch(const std::exception& e) {
-    std::cout << "Spawn encountered an error: \n\"" << e.what() << "\"\n";
+    fmt::print("Spawn encountered an error:\n\"{}\"\n", e.what());
   }
 }
 
@@ -124,6 +129,7 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   std::exception_ptr eptr;
+
   try {
     if (*createOption) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());

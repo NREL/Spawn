@@ -5,8 +5,7 @@
 #include <stdexcept>
 #include <zip.h>
 
-namespace spawn {
-namespace util {
+namespace spawn::util {
 
   std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const fs::path &zipFile)
   {
@@ -87,5 +86,4 @@ namespace util {
     }
 
   }
-} // namespace util
 } // namespace spawn
