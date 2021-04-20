@@ -6,6 +6,7 @@
 #include <fmi2FunctionTypes.h>
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace spawn::fmu {
 
