@@ -13,7 +13,6 @@
 #include "clang/FrontendTool/Utils.h"
 
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/IR/LLVMContext.h"
@@ -31,6 +30,8 @@
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
+
 
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
@@ -39,8 +40,9 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 
+#include "../util/filesystem.hpp"
 #include "compiler/embedded_files.hxx"
-#include "utility.hpp"
+#include "../util/temp_directory.hpp"
 
 #include <iostream>
 #if defined _WIN32
@@ -74,7 +76,7 @@ std::string toString(const std::string &str)
   return str;
 }
 
-std::string toString(const boost::filesystem::path &path)
+std::string toString(const fs::path &path)
 {
   return toString(path.native());
 }
@@ -96,9 +98,9 @@ std::string getExecutablePath()
 }
 
 namespace spawn {
-void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
+void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::path> additional_libs)
 {
-  Temp_Directory td;
+  util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
 
@@ -175,7 +177,7 @@ void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std:
 }
 
 
-void Compiler::compile_and_link(const boost::filesystem::path &source)
+void Compiler::compile_and_link(const fs::path &source)
 {
   auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
@@ -186,7 +188,7 @@ void Compiler::compile_and_link(const boost::filesystem::path &source)
   }
 }
 
-void Compiler::write_bitcode(const boost::filesystem::path &loc)
+void Compiler::write_bitcode(const fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -194,10 +196,11 @@ void Compiler::write_bitcode(const boost::filesystem::path &loc)
 
   std::ofstream ofs(loc.native());
   llvm::raw_os_ostream ros(ofs);
+
   llvm::WriteBitcodeToFile(*m_currentCompilation, ros);
 }
 
-void Compiler::write_object_file(const boost::filesystem::path &loc)
+void Compiler::write_object_file(const fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -231,18 +234,18 @@ public:
       spawnclang::embedded_files::extractFile(file, toString(td.dir()));
     }
   }
-  boost::filesystem::path include_path() const
+  fs::path include_path() const
   {
     return td.dir() / "include";
   }
 
 private:
-  spawn::Temp_Directory td;
+  util::Temp_Directory td;
 };
 
-std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &source,
+std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
                                                 llvm::LLVMContext &ctx,
-                                                const std::vector<boost::filesystem::path> &include_paths,
+                                                const std::vector<fs::path> &include_paths,
                                                 const std::vector<std::string> &flags)
 {
   void *MainAddr = (void *)(intptr_t)getExecutablePath;

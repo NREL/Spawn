@@ -126,7 +126,7 @@ int main(int argc, const char *argv[]) {
   auto compileOption =
       app.add_option("--compile", moinput,
                      "Compile Modelica model to FMU format", true);
-  auto cCompiler = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
+  [[maybe_unused]] auto cCompiler = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
   auto makeExternal = app.add_subcommand("-f", "compile a Modelica external function, acting like 'make'");
   makeExternal->prefix_command();
 #endif

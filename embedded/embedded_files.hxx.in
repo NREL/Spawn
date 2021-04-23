@@ -20,7 +20,8 @@ typedef std::pair<size_t, const uint8_t *> EmbeddedFile;
 #include <stdio.h>
 #include <assert.h>
 #include <zlib.h>
-#include <boost/filesystem.hpp>
+
+#include "util/filesystem.hpp"
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
@@ -169,7 +170,7 @@ namespace embedded_files {
       }
     }();
 
-    boost::filesystem::create_directories(boost::filesystem::path{fullpath}.parent_path());
+    fs::create_directories(fs::path{fullpath}.parent_path());
     std::ofstream ofs(fullpath);
 
     std::vector<uint8_t> inflated_data;

@@ -127,6 +127,7 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
 add_executable(spawn ${src})
 
 configure_file(config.hpp.in config.hxx)
+target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(spawn PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
@@ -143,7 +144,7 @@ target_link_libraries(spawn
 )
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn compiler modelica)
+  target_link_libraries(spawn PRIVATE compiler modelica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)

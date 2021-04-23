@@ -10,12 +10,12 @@ namespace spawn {
 
 int compileMO(
   const std::string & moInput,
-  const boost::filesystem::path & outputDir,
-  const boost::filesystem::path & mblPath,
-  const boost::filesystem::path & jmodelicaHome
+  const fs::path & outputDir,
+  const fs::path & mblPath,
+  const fs::path & jmodelicaHome
 ) {
   try {
-    std::vector<boost::filesystem::path> paths;
+    std::vector<fs::path> paths;
 
     setenv("JMODELICA_HOME", jmodelicaHome.string().c_str(), 1);
     const auto mslPath = jmodelicaHome / "ThirdParty/MSL/";
@@ -35,7 +35,7 @@ int compileMO(
   }
 }
 
-std::vector<boost::filesystem::path> modelicaIncludePaths(const boost::filesystem::path &jmodelica_dir)
+std::vector<fs::path> modelicaIncludePaths(const fs::path &jmodelica_dir)
 {
   return {
     jmodelica_dir / "include/RuntimeLibrary/",
@@ -45,7 +45,7 @@ std::vector<boost::filesystem::path> modelicaIncludePaths(const boost::filesyste
   };
 }
 
-std::vector<boost::filesystem::path> modelicaLibs(const boost::filesystem::path &jmodelica_dir)
+std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
 {
   return {
     jmodelica_dir / "/lib/RuntimeLibrary/liblapack.a",
@@ -75,17 +75,17 @@ std::vector<boost::filesystem::path> modelicaLibs(const boost::filesystem::path 
 
 }
 
-int compileC(const boost::filesystem::path & output_dir) {
+int compileC(const fs::path & output_dir) {
   std::cout << "Compile C Code" << std::endl;
 
   const auto & sourcesdir = output_dir / "sources";
-  std::vector<boost::filesystem::path> sourcefiles;
+  std::vector<fs::path> sourcefiles;
 
-  if( ! boost::filesystem::is_directory(sourcesdir) ) {
+  if( ! fs::is_directory(sourcesdir) ) {
     return 1;
   }
 
-  for( const auto & p : boost::filesystem::directory_iterator(sourcesdir) ) {
+  for( const auto & p : fs::directory_iterator(sourcesdir) ) {
   	sourcefiles.push_back(p.path());
   }
 
@@ -140,7 +140,7 @@ int compileC(const boost::filesystem::path & output_dir) {
 
   const auto model_lib_dir = output_dir / "binaries";
   const auto model_lib_path = model_lib_dir / (model_identifier + ".so");
-  boost::filesystem::create_directories(model_lib_dir);
+  fs::create_directories(model_lib_dir);
   compiler.write_shared_object_file(model_lib_path, runtime_libs);
 
   return 0;
@@ -179,10 +179,10 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
     spdlog::trace("Parsed make modelica arg '{}'='{}'", lhs, rhs);
   }
 
-  boost::filesystem::path fileToCompile = boost::filesystem::path{"sources"} / arguments["FILE_NAME"];
+  fs::path fileToCompile = fs::path{"sources"} / arguments["FILE_NAME"];
   fileToCompile += ".c";
 
-  const auto jmodelica_dir = boost::filesystem::path{arguments["JMODELICA_HOME"]};
+  const auto jmodelica_dir = fs::path{arguments["JMODELICA_HOME"]};
   auto include_paths = modelicaIncludePaths(jmodelica_dir);
   include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
 
@@ -192,12 +192,12 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   spawn::Compiler compiler(include_paths, flags);
 
   compiler.compile_and_link(fileToCompile);
-  boost::filesystem::create_directories(boost::filesystem::path{"binaries"});
+  fs::create_directories(fs::path{"binaries"});
 
   // we'll name it .so regardless of platform because it's only for our use anyhow
 
-  const auto launcherFileName = boost::filesystem::path{"binaries"} / "spawn_exe_launcher";
-  const auto exeFileName = boost::filesystem::path{"binaries"} / arguments["FILE_NAME"];
+  const auto launcherFileName = fs::path{"binaries"} / "spawn_exe_launcher";
+  const auto exeFileName = fs::path{"binaries"} / arguments["FILE_NAME"];
   const auto soFileName = [&](){
     auto result = exeFileName;
     result.replace_extension(exeFileName.extension().string() + ".so");
@@ -205,18 +205,23 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   }();
 
   compiler.write_shared_object_file(soFileName, runtime_libs);
-  spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), boost::filesystem::exists(soFileName));
+  spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), fs::exists(soFileName));
 
   spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
-  boost::filesystem::rename(launcherFileName, exeFileName);
-  boost::filesystem::permissions(exeFileName, boost::filesystem::perms::owner_exe);
+  fs::rename(launcherFileName, exeFileName);
+
+#if HAVE_FILESYSTEM_H
+  fs::permissions(exeFileName, fs::perms::owner_exe);
+#else
+  fs::permissions(exeFileName, fs::perms::owner_exec);
+#endif
 }
 
 
 int modelicaToFMU(
   const std::string &moinput,
-  const boost::filesystem::path & mblPath,
-  const boost::filesystem::path & jmodelicaHome
+  const fs::path & mblPath,
+  const fs::path & jmodelicaHome
 ) {
   // output_dir_name is moinput with "." replaced by "_"
   std::string output_dir_name;
@@ -229,14 +234,14 @@ int modelicaToFMU(
       }
     }
   );
-	const auto output_dir = boost::filesystem::current_path() / output_dir_name;
+	const auto output_dir = fs::current_path() / output_dir_name;
   if(! output_dir_name.empty()) {
-    boost::filesystem::remove_all(output_dir);
+    fs::remove_all(output_dir);
   }
 
   // tmp is where we extract embedded files
   const auto & temp_dir = output_dir / "tmp";
-  boost::filesystem::create_directories(temp_dir);
+  fs::create_directories(temp_dir);
 
   for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
     spawnmodelica::embedded_files::extractFile(file, temp_dir.native());
@@ -248,7 +253,7 @@ int modelicaToFMU(
   }
 
   if(result == 0) {
-    boost::filesystem::remove_all(temp_dir);
+    fs::remove_all(temp_dir);
     spdlog::info("Model Compiled");
   }
 

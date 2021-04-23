@@ -24,11 +24,12 @@ list(APPEND EMBEDDED_PATHS "spawn_exe_launcher")
 
 embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawnclang)
 
-add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp ${EMBEDDED_OUTPUT})
+add_library(compiler compiler.hpp compiler.cpp ${EMBEDDED_OUTPUT})
 
+target_include_directories(compiler PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
-target_include_directories(compiler SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
-target_include_directories(compiler SYSTEM PRIVATE ${CLANG_INCLUDE_DIRS})
+target_include_directories(compiler SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
+target_include_directories(compiler SYSTEM PUBLIC ${CLANG_INCLUDE_DIRS})
 
 target_compile_features(compiler PRIVATE cxx_std_17)
 
@@ -46,17 +47,24 @@ target_link_libraries(
   ${LLVM_LIBRARY_DIR}/liblldCommon.a
   ${LLVM_LIBRARY_DIR}/liblldCore.a
   ${LLVM_LIBRARY_DIR}/liblldDriver.a
-  CONAN_PKG::boost
   CONAN_PKG::fmt
-  CONAN_PKG::spdlog)
+  CONAN_PKG::spdlog
   PRIVATE
   compile_options
+  spawn_utils
 )
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT
   target_link_libraries(compiler PUBLIC -rdynamic)
+
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message(SEND_ERROR "Currently we cannot link with EnergyPlus and Clang in Debug mode on Unix because EnergyPlus is defining _GLIBCXX_DEBUG whichh conflicts with build settings for libclang")
+  endif()
 else()
   target_compile_definitions(compiler PUBLIC -DNOMINMAX)
 endif()
+
+
+
 
