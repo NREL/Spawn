@@ -15,7 +15,7 @@ build:ubuntu:
   script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF  ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF -DENABLE_BUILDINGS_LIBRARY=OFF  ..
     - cmake ..
     - make -j1
   artifacts:
@@ -80,7 +80,7 @@ build:windows:
  script:
    - mkdir build
    - cd build
-   - C:\Program` Files\CMake\bin\cmake.exe -G 'Visual Studio 15 2017 Win64' -DBUILD_PACKAGE=ON -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON ..
+   - C:\Program` Files\CMake\bin\cmake.exe -G 'Visual Studio 16 2019' -DBUILD_PACKAGE=ON -DENABLE_BUILDINGS_LIBRARY=OFF -DCPACK_BINARY_ZIP=ON -DCPACK_BINARY_NSIS=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON ..
    - C:\Program` Files\CMake\bin\cmake.exe ..
    - C:\Program` Files\CMake\bin\cmake.exe --build . --config Release --target ALL_BUILD
  artifacts:
@@ -145,7 +145,7 @@ build:mac:
  script:
    - mkdir build
    - cd build
-   - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON ..
+   - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON -DENABLE_BUILDINGS_LIBRARY=OFF ..
    - cmake ..
    - make -j2
  artifacts:

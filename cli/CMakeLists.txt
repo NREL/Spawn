@@ -132,11 +132,14 @@ target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
 
 target_link_libraries(spawn
-	libspawn
+  PRIVATE
+  compile_options
+  libspawn
   energypluslib
+  spawn_utils
   CONAN_PKG::CLI11
-  CONAN_PKG::boost
   CONAN_PKG::nlohmann_json
+  CONAN_PKG::spdlog
 )
 
 if(ENABLE_MODELICA_COMPILER)

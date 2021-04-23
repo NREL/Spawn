@@ -1,9 +1,9 @@
 #ifndef spawn_dynamiclibrary_windows_hpp_INCLUDED
 #define spawn_dynamiclibrary_windows_hpp_INCLUDED
 
+#include "./filesystem.hpp"
 #include <fmt/format.h>
 #include <string>
-
 #include <Windows.h>
 
 namespace spawn {
@@ -12,12 +12,12 @@ namespace util {
 struct Dynamic_Library
 {
 
-  template <typename T> static std::wstring to_wstring(const T &t_str)
+  template <typename T> static [[nodiscard]] std::wstring to_wstring(const T &t_str)
   {
     return std::wstring(t_str.begin(), t_str.end());
   }
 
-  template <typename T> static std::string to_string(const T &t_str)
+  template <typename T> static [[nodiscard]] std::string to_string(const T &t_str)
   {
     return std::string(t_str.begin(), t_str.end());
   }
@@ -28,13 +28,13 @@ struct Dynamic_Library
     return to_wstring(t_str);
   }
 #else
-  template <typename T> static std::string to_proper_string(const T &t_str)
+  template <typename T> static std::string [[nodiscard]] to_proper_string(const T &t_str)
   {
     return to_string(t_str);
   }
 #endif
 
-  static std::string get_error_message(DWORD t_err)
+  static std::string [[nodiscard]] get_error_message(DWORD t_err)
   {
     typedef LPTSTR StringType;
 
@@ -61,7 +61,8 @@ struct Dynamic_Library
     return to_string(retval);
   }
 
-  template <typename Signature> Signature *load_symbol(const std::string &name)
+  template <typename Signature>
+  [[nodiscard]] Signature *load_symbol(const std::string &name)
   {
     // reinterpret_cast is necessary here
     const auto symbol = reinterpret_cast<Signature *>(GetProcAddress(m_handle, name.c_str()));
@@ -74,7 +75,7 @@ struct Dynamic_Library
     return symbol;
   }
 
-  explicit Dynamic_Library(boost::filesystem::path location)
+  explicit Dynamic_Library(fs::path location)
       : m_location{std::move(location)}, m_handle{LoadLibrary(to_proper_string(m_location.string()).c_str())}
   {
     if (!m_handle) {
@@ -84,12 +85,12 @@ struct Dynamic_Library
   }
 
   Dynamic_Library() = delete;
-  Dynamic_Library(Dynamic_Library &&other) : m_handle{other.m_handle}
+  Dynamic_Library(Dynamic_Library &&other) noexcept : m_handle{other.m_handle}
   {
     other.m_handle = HMODULE{};
   }
   Dynamic_Library(const Dynamic_Library &) = delete;
-  Dynamic_Library &operator=(Dynamic_Library &&other)
+  Dynamic_Library &operator=(Dynamic_Library &&other) noexcept
   {
     if (m_handle) {
       FreeLibrary(m_handle);
@@ -99,14 +100,14 @@ struct Dynamic_Library
   }
   Dynamic_Library &operator=(const Dynamic_Library &) = delete;
 
-  ~Dynamic_Library()
+  ~Dynamic_Library() noexcept
   {
     if (m_handle) {
       FreeLibrary(m_handle);
     }
   }
 
-  boost::filesystem::path m_location{};
+  fs::path m_location{};
   HMODULE m_handle{};
 };
 

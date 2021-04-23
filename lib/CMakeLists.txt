@@ -6,42 +6,43 @@ endif()
 ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
 
 add_library(libspawn
-  emsactuator.hpp
-  emsactuator.cpp
+  actuatortypes.hpp
   fmugenerator.hpp
   fmugenerator.cpp
-  input.hpp
-  input.cpp
+  idfprep.hpp
+  idfprep.cpp
+  idf_to_json.hpp
+  idf_to_json.cpp
+  manager.hpp
+  manager.cpp
   outputtypes.hpp
-  outputvariable.hpp
-  outputvariable.cpp
   spawn.hpp
   spawn.cpp
   units.hpp
   units.cpp
   variables.hpp
   variables.cpp
-  schedule.hpp
-  schedule.cpp
-  zone.hpp
-  zone.cpp
+  warmupmanager.hpp
+  warmupmanager.cpp
   ziputil.hpp
   ziputil.cpp
 
-  ## EnergyPlus compiles these files into a DLL, but we would prefer to
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/func.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/runtime.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.cc
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh
-  #${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.cc
+  input/emsactuator.hpp
+  input/emsactuator.cpp
+  input/input.hpp
+  input/input.cpp
+  input/outputvariable.hpp
+  input/outputvariable.cpp
+  input/schedule.hpp
+  input/schedule.cpp
+  input/surface.hpp
+  input/surface.cpp
+  input/zone.hpp
+  input/zone.cpp
 )
 
 target_include_directories(libspawn
+  SYSTEM  # We want to enable more warnings and not have E+ affect us
   PUBLIC
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
@@ -54,15 +55,22 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/re2/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/SQLite/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/kiva-ep/src/
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
+  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/eigen/
+  ${PROJECT_BINARY_DIR}/EnergyPlus/third_party/kiva-ep/src/libkiva/
 )
 
 target_link_libraries(libspawn
   PUBLIC
-  CONAN_PKG::boost
   spawn_utils
   CONAN_PKG::libzip
   CONAN_PKG::pugixml
+  PRIVATE
+  compile_options
 )
 
 

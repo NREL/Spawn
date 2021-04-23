@@ -2,12 +2,12 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
-#include "zone.hpp"
 #include <string>
 #include <vector>
 #include <map>
 #include <sstream>
 
+// See variable documentation here https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
 enum class VariableType {
   T,
   V,
@@ -23,7 +23,10 @@ enum class VariableType {
   MINLETS_FLOW,
   SENSOR,
   EMS_ACTUATOR,
-  SCHEDULE
+  SCHEDULE,
+  ASURF,
+  TSURF,
+  QSURF_FLOW
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;
@@ -46,9 +49,9 @@ public:
 	// This is true "value" member has been set to a value
 	// If valueset is false then value should not be used
 	void setValue(const double & value, const spawn::units::UnitSystem & system);
-	double getValue(const spawn::units::UnitSystem & unitsystem) const;
+	[[nodiscard]] double getValue(const spawn::units::UnitSystem & unitsystem) const;
   void resetValue();
-  bool isValueSet() const;
+  [[nodiscard]] bool isValueSet() const;
 
   std::vector<VariableAttribute> scalar_attributes;
   std::vector<VariableAttribute> real_attributes;

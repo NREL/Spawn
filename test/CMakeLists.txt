@@ -6,66 +6,65 @@ else ()
 endif ()
 
 
-configure_file(testpaths.in.cpp testpaths.in2.cpp)
-
+configure_file(paths.in.cpp paths.in2.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(fmi_load_test MODULE fmi_load_test.cpp)
+add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
 
 add_executable(tests
-        spawn.hpp
-        spawn.cpp
-        testpaths.hpp
-        temp_directory.cpp
-        catch.cpp
-        unzip_file.cpp
-        fmi.cpp)
+  catch.cpp
+  create_epfmu.hpp
+  create_epfmu.cpp
+  paths.hpp
+  test_epfmi.cpp
+  test_spawn_cli.cpp
+  test_spawn_lib.cpp
+  test_surface_input.cpp
+  test_temp_directory.cpp
+  test_unzip_file.cpp
+  test_fmi.cpp
+  test_utils.cpp
+  test_mbl_idf.cpp
+)
 
-
-
-add_dependencies(tests fmi_load_test)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu)
+add_dependencies(tests example_fmu_lib)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
 
 
 # Make this better
 if(WIN32)
   # file(GENERATE...) helps us get the path the the spawn exe
-  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/$<UPPER_CASE:$<CONFIG>>/testpaths.cpp
-          INPUT ${CMAKE_CURRENT_BINARY_DIR}/testpaths.in2.cpp
+  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/$<UPPER_CASE:$<CONFIG>>/paths.cpp
+          INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp
           )
 
-  add_library(testpaths-release
-          ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/testpaths.cpp
+  add_library(paths-release
+          ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/paths.cpp
           )
 
-  add_library(testpaths-debug
-          ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/testpaths.cpp
+  add_library(paths-debug
+          ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/paths.cpp
           )
-
-  target_link_libraries(testpaths-debug PUBLIC CONAN_PKG::boost)
-  target_link_libraries(testpaths-release PUBLIC CONAN_PKG::boost)
 
   target_link_libraries(tests
           PRIVATE
-          debug testpaths-debug
-          general testpaths-release
+          debug paths-debug
+          general paths-release
           )
 else()
   # file(GENERATE...) helps us get the path the the spawn exe
-  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testpaths.cpp
-          INPUT ${CMAKE_CURRENT_BINARY_DIR}/testpaths.in2.cpp
+  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
+          INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp
           )
 
-  add_library(testpaths
-          ${CMAKE_CURRENT_BINARY_DIR}/testpaths.cpp
+  add_library(paths
+          ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
           )
-
-  target_link_libraries(testpaths PUBLIC CONAN_PKG::boost)
 
   target_link_libraries(tests
           PRIVATE
-          testpaths
+          paths
           )
 endif()
 

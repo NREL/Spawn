@@ -1,5 +1,6 @@
-#include "../util/platform.hpp"
 #include "../lib/fmugenerator.hpp"
+#include "../lib/outputtypes.hpp"
+#include "../lib/actuatortypes.hpp"
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <cstdio>
@@ -8,17 +9,16 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <boost/filesystem.hpp>
 #include <config.hxx>
-#include <boost/algorithm/string.hpp>
 #include <stdlib.h>
 #include <spdlog/spdlog.h>
 #include "../util/fmi_paths.hpp"
+#include "../util/filesystem.hpp"
+#include "../util/paths.hpp"
 
 #if defined _WIN32
 #include <windows.h>
 #else
-#include <stdio.h>
 #include <dlfcn.h>
 #endif
 
@@ -28,58 +28,47 @@
 
 using json = nlohmann::json;
 
-boost::filesystem::path exedir() {
-  #if _WIN32
-    TCHAR szPath[MAX_PATH];
-    GetModuleFileName(nullptr, szPath, MAX_PATH);
-    return boost::filesystem::path(szPath).parent_path();
-  #else
-    Dl_info info;
-    dladdr("main", &info);
-    return boost::filesystem::path(info.dli_fname).parent_path();
-  #endif
-}
 
 bool isInstalled() {
-  return exedir().stem() == "bin";
+  return spawn::exedir().stem() == "bin";
 }
 
-boost::filesystem::path iddInstallPath() {
-  constexpr auto & iddfilename = "Energy+.idd";
+fs::path iddInstallPath() {
+  constexpr auto & iddFileName = "Energy+.idd";
   // Configuration in install tree
-  auto iddInputPath = exedir() / "../etc" / iddfilename;
+  auto iddInputPath = spawn::exedir() / "../etc" / iddFileName;
 
   // Configuration in a developer tree
-  if (! boost::filesystem::exists(iddInputPath)) {
-    iddInputPath = exedir() / iddfilename;
+  if (! fs::exists(iddInputPath)) {
+    iddInputPath = spawn::exedir() / iddFileName;
   }
 
   return iddInputPath;
 }
 
-boost::filesystem::path epfmiInstallPath() {
-  const auto candidate = exedir() / ("../lib/" + spawn::epfmiName());
-  if (boost::filesystem::exists(candidate)) {
+fs::path epfmiInstallPath() {
+  const auto candidate = spawn::exedir() / ("../lib/" + spawn::epfmi_filename());
+  if (fs::exists(candidate)) {
     return candidate;
   } else {
-    return exedir() / spawn::epfmiName();
+    return spawn::exedir() / spawn::epfmi_filename();
   }
 }
 
-boost::filesystem::path jmodelicaHome() {
+fs::path jmodelicaHome() {
   if (isInstalled()) {
-    return exedir() / "../JModelica/";
+    return spawn::exedir() / "../JModelica/";
   } else {
-    boost::filesystem::path binary_dir(spawn::BINARY_DIR);
+    fs::path binary_dir(spawn::BINARY_DIR);
     return binary_dir / "JModelica/";
   }
 }
 
-boost::filesystem::path mblPath() {
+fs::path mblPath() {
   if (isInstalled()) {
-    return exedir() / "../modelica-buildings/Buildings/";
+    return spawn::exedir() / "../modelica-buildings/Buildings/";
   } else {
-    boost::filesystem::path source_dir(spawn::SOURCE_DIR);
+    fs::path source_dir(spawn::SOURCE_DIR);
     return source_dir / "submodules/modelica-buildings/Buildings/";
   }
 }
@@ -90,7 +79,7 @@ void handle_eptr(std::exception_ptr eptr) {
       std::rethrow_exception(eptr);
     }
   } catch(const std::exception& e) {
-    std::cout << "Spawn encountered an error: \n\"" << e.what() << "\"\n";
+    fmt::print("Spawn encountered an error:\n\"{}\"\n", e.what());
   }
 }
 
@@ -126,8 +115,11 @@ int main(int argc, const char *argv[]) {
   auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
   compressOption->needs(createOption);
 
-  auto versionOption =
-    app.add_flag("-v,--version", "Print version info and exit");
+  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn.");
+
+  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
+
+  auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
 
 #if defined ENABLE_MODELICA_COMPILER
   std::string moinput = "";
@@ -145,6 +137,7 @@ int main(int argc, const char *argv[]) {
   CLI11_PARSE(app, argc, argv);
 
   std::exception_ptr eptr;
+
   try {
     if (*createOption) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
@@ -156,6 +149,10 @@ int main(int argc, const char *argv[]) {
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*outputVarsOption) {
+      std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
+    } else if (*actuatorsOption) {
+      std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
     }
   } catch(...) {
     eptr = std::current_exception();

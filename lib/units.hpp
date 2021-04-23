@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace spawn {
-namespace units {
+namespace spawn::units {
 
 enum class UnitSystem {MO, EP};
 
@@ -38,7 +37,7 @@ enum class UnitType{
 typedef std::pair<UnitType, const char *> UnitString;
 
 const std::array<UnitString, 28> unitstrings {{
-	{UnitType::C,"C"},
+	{UnitType::C,"degC"},
   {UnitType::K,"K"},
   {UnitType::one,"1"},
   {UnitType::kgWater_per_kgDryAir,"kgWater/kgDryAir"},
@@ -49,7 +48,7 @@ const std::array<UnitString, 28> unitstrings {{
   {UnitType::rad,"rad"},
   {UnitType::W,"W"},
   {UnitType::W_per_m2,"W/m2"},
-  {UnitType::W_per_m2_K,"W/m2-K"},
+  {UnitType::W_per_m2_K,"W/m2.K"},
 	{UnitType::J,"J"},
   {UnitType::J_per_kg,"J/kg"},
 	{UnitType::m,"m"},
@@ -58,7 +57,7 @@ const std::array<UnitString, 28> unitstrings {{
   {UnitType::L,"L"},
 	{UnitType::s,"s"},
   {UnitType::hr,"hr"},
-	{UnitType::kg,"Kg"},
+	{UnitType::kg,"kg"},
   {UnitType::kg_per_m3,"kg/m3"},
   {UnitType::kg_per_s,"kg/s"},
 	{UnitType::cd_sr,"cd.sr"},
@@ -68,9 +67,9 @@ const std::array<UnitString, 28> unitstrings {{
 	{UnitType::lm_per_W,"lm/W"}
 }};
 
-std::string toString(const UnitType & unittype);
+[[nodiscard]] std::string toString(const UnitType & unittype);
 
-UnitType fromString(const std::string & unitstring);
+[[nodiscard]] UnitType fromString(const std::string & unitstring);
 
 struct Conversion {
 	Conversion() = delete;
@@ -97,9 +96,8 @@ struct Quantity {
 	UnitType unit;
 };
 
-Quantity convert(const Quantity & q, const UnitType & targetUnit);
+[[nodiscard]] Quantity convert(const Quantity & q, const UnitType & targetUnit);
 
-} // namespace units
 } // namespace spawn
 
 #endif // SPAWN_UNITS_INCLUDED

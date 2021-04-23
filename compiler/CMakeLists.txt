@@ -1,4 +1,5 @@
-set(CMAKE_CXX_STANDARD 17)
+find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED CONFIG)
 
 string(REPLACE "git" "" LLVM_PACKAGE_VERSION ${LLVM_PACKAGE_VERSION})
 message("LLVM VERISION: ${LLVM_PACKAGE_VERSION}")
@@ -26,6 +27,10 @@ embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawnclang)
 add_library(compiler compiler.hpp compiler.cpp utility.hpp utility.cpp ${EMBEDDED_OUTPUT})
 
 target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(compiler SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
+target_include_directories(compiler SYSTEM PRIVATE ${CLANG_INCLUDE_DIRS})
+
+target_compile_features(compiler PRIVATE cxx_std_17)
 
 target_link_libraries(
   compiler
@@ -44,6 +49,9 @@ target_link_libraries(
   CONAN_PKG::boost
   CONAN_PKG::fmt
   CONAN_PKG::spdlog)
+  PRIVATE
+  compile_options
+)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT

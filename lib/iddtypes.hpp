@@ -3,6 +3,7 @@
 
 #include <array>
 
+namespace spawn {
 constexpr std::array<const char *,4> supportedScheduleTypes = {
 	"Schedule:Year",
 	"Schedule:Compact",
@@ -324,6 +325,7 @@ constexpr std::array<const char *,312> supportedIDDTypes = {
   "Output:DebuggingData",
   "Output:PreprocessorMessage"
 };
+}
 
 #endif // IDDTYPES_HH_INCLUDED
 

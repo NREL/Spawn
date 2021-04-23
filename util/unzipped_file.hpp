@@ -1,7 +1,8 @@
 #ifndef spawn_unzipped_file_hpp_INCLUDED
 #define spawn_unzipped_file_hpp_INCLUDED
 
-#include <boost/filesystem/path.hpp>
+#include "./filesystem.hpp"
+#include <vector>
 
 namespace spawn {
 namespace util {
@@ -9,17 +10,22 @@ namespace util {
   class Unzipped_File
   {
   public:
-    Unzipped_File(const boost::filesystem::path &zipFile,
-                  const boost::filesystem::path &fileToUnzip,
-                  boost::filesystem::path outputPath);
+    Unzipped_File(const fs::path &zipFile,
+                  fs::path outputDir,
+                  const std::vector<fs::path> &filesToUnzip);
 
-    const boost::filesystem::path &unzippedFile() const noexcept
+    [[nodiscard]] const fs::path &outputDir() const noexcept
     {
-      return m_unzippedFile;
+      return m_outputDir;
+    }
+
+    [[nodiscard]] const std::vector<fs::path> &unzippedFiles() const noexcept {
+      return m_unzippedFiles;
     }
 
   private:
-    boost::filesystem::path m_unzippedFile;
+    fs::path m_outputDir;
+    std::vector<fs::path> m_unzippedFiles;
   };
 
 } // namespace util

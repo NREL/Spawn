@@ -1,8 +1,5 @@
-#include <boost/filesystem/path.hpp>
-
 #if defined(_MSC_VER)
 #include "dynamiclibrary_windows.hpp"
-#elif defined(_POSIX_VERSION)
+#elif defined(HAVE_UNISTD_H)
 #include "dynamiclibrary_posix.hpp"
 #endif
-
