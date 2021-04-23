@@ -3,6 +3,7 @@
 #include "iddtypes.hpp"
 #include "input/input.hpp"
 #include "input/schedule.hpp"
+#include "input/surface.hpp"
 #include "input/zone.hpp"
 #include "input/outputvariable.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
@@ -385,7 +386,7 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
   }
 
   for (const auto & surface : input.surfaces) {
-    if(surface.isconnected) {
+    if(surface.controltype == spawn::Surface::ControlType::FrontBack) {
       {
         Variable var;
         var.type = VariableType::ASURF;
@@ -410,7 +411,147 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
       ++i;
       {
         Variable var;
-        var.type = VariableType::QSURF_FLOW;
+        var.type = VariableType::QSURF_FRONT;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_QFront_flow");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Net heat flow rate from the thermal zone to the front-facing surface, consisting of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation.");
+        var.scalar_attributes.emplace_back("causality","output");
+        var.scalar_attributes.emplace_back("variability","continuous");
+        var.scalar_attributes.emplace_back("initial","calculated");
+
+        var.real_attributes.emplace_back("quantity","Power");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::TSURF_FRONT;
+        var.name = surface.idfname;
+        var.actuatorcomponentkey = surface.idfname;
+        var.actuatorcomponenttype = "Surface";
+        var.actuatorcontroltype = "Surface Inside Temperature";
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_TFront");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Temperature of the front-facing surface.");
+        var.scalar_attributes.emplace_back("causality","input");
+        var.scalar_attributes.emplace_back("variability","continuous");
+
+        var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(21.0, spawn::units::UnitSystem::EP);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::QSURF_BACK;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_QBack_flow");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Net heat flow rate to the back-facing surface. If coupled to another thermal zone or the outside, this consist of convective heat flow, absorbed solar radiation, absorbed infrared radiation minus emitted infrared radiation. If coupled to the ground, this consists of the heat flow rate from the ground.");
+        var.scalar_attributes.emplace_back("causality","output");
+        var.scalar_attributes.emplace_back("variability","continuous");
+        var.scalar_attributes.emplace_back("initial","calculated");
+
+        var.real_attributes.emplace_back("quantity","Power");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::TSURF_BACK;
+        var.name = surface.idfname;
+        var.actuatorcomponentkey = surface.idfname;
+        var.actuatorcomponenttype = "Surface";
+        var.actuatorcontroltype = "Surface Outside Temperature";
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_TBack");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Temperature of the back-facing surface.");
+        var.scalar_attributes.emplace_back("causality","input");
+        var.scalar_attributes.emplace_back("variability","continuous");
+
+        var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(21.0, spawn::units::UnitSystem::EP);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+    } else if(surface.controltype == spawn::Surface::ControlType::Front) {
+      {
+        Variable var;
+        var.type = VariableType::ASURF;
+        var.name = surface.idfname;
+        var.epunittype = spawn::units::UnitType::m2;
+        var.mounittype = spawn::units::UnitType::m2;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_A");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Area of the surface that is exposed to the thermal zone");
+        var.scalar_attributes.emplace_back("causality","calculatedParameter");
+        var.scalar_attributes.emplace_back("variability","fixed");
+        var.scalar_attributes.emplace_back("initial","calculated");
+
+        var.real_attributes.emplace_back("quantity","Area");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::TSURF;
+        var.name = surface.idfname;
+        var.actuatorcomponentkey = surface.idfname;
+        var.actuatorcomponenttype = "Surface";
+        var.actuatorcontroltype = "Surface Inside Temperature";
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name",surface.idfname + "_T");
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description","Temperature of the surface.");
+        var.scalar_attributes.emplace_back("causality","input");
+        var.scalar_attributes.emplace_back("variability","continuous");
+
+        var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity","false");
+        var.real_attributes.emplace_back("start","0.0");
+        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
+        var.setValue(21.0, spawn::units::UnitSystem::EP);
+
+        result.emplace(i,std::move(var));
+      }
+      ++i;
+      {
+        Variable var;
+        var.type = VariableType::QSURF;
         var.name = surface.idfname;
         var.epunittype = spawn::units::UnitType::W;
         var.mounittype = spawn::units::UnitType::W;
@@ -425,28 +566,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("quantity","Power");
         var.real_attributes.emplace_back("relativeQuantity","false");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
-
-        result.emplace(i,std::move(var));
-      }
-      ++i;
-      {
-        Variable var;
-        var.type = VariableType::TSURF;
-        var.name = surface.idfname;
-        var.epunittype = spawn::units::UnitType::C;
-        var.mounittype = spawn::units::UnitType::K;
-
-        var.scalar_attributes.emplace_back("name",surface.idfname + "_T");
-        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
-        var.scalar_attributes.emplace_back("description","Temperature of the surface");
-        var.scalar_attributes.emplace_back("causality","input");
-        var.scalar_attributes.emplace_back("variability","continuous");
-
-        var.real_attributes.emplace_back("quantity","ThermodynamicTemperature");
-        var.real_attributes.emplace_back("relativeQuantity","false");
-        var.real_attributes.emplace_back("start","0.0");
-        var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
-        var.setValue(21.0, spawn::units::UnitSystem::EP);
 
         result.emplace(i,std::move(var));
       }

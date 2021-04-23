@@ -37,6 +37,7 @@ public:
   fs::path epwInputPath() const;
   void setEPWInputPath(fs::path epwpath);
 
+  double relativeSurfaceTolerance() const;
 
   void save(const fs::path & savepath) const;
 
