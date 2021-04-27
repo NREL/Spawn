@@ -202,3 +202,35 @@ release:mac:
   when: manual
   only:
     - tags
+
+
+build:ubuntu-modelica:
+  stage: build
+  tags:
+    - ubuntu-modelica
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=ON -DENABLE_BUILDINGS_LIBRARY=OFF  ..
+    - cmake ..
+    - make -j1
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+test:ubuntu-modelica:
+  stage: test
+  tags:
+    - ubuntu-modelica
+  dependencies:
+    - build:ubuntu-modelica
+  script:
+    - cd build
+    - ctest -R  unittests
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+
