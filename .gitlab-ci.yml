@@ -207,7 +207,7 @@ release:mac:
 build:ubuntu-modelica:
   stage: build
   tags:
-    - ubuntu-modelica
+    - ubuntu
   script:
     - mkdir build
     - cd build
@@ -222,7 +222,7 @@ build:ubuntu-modelica:
 test:ubuntu-modelica:
   stage: test
   tags:
-    - ubuntu-modelica
+    - ubuntu
   dependencies:
     - build:ubuntu-modelica
   script:
