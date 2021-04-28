@@ -42,7 +42,7 @@ Spawn::Spawn(const std::string & t_name, const std::string & t_input, const fs::
 }
 
 void Spawn::start() {
-  if(! is_running) {
+  if(! is_running && ! sim_exception_ptr && ! sim_thread.joinable()) {
     is_running = true;
 
     auto idfPath = input.idfInputPath();
@@ -338,6 +338,11 @@ void Spawn::setOutsideSurfaceTemperature(const int surfacenum, double temp) {
   auto & surface = sim_state.dataSurface->Surface(surfacenum);
   setActuatorValue("Surface", "Surface Outside Temperature", surface.Name, temp);
   auto & extBoundCond = surface.ExtBoundCond;
+
+  if (surfacenum == extBoundCond) {
+    throw std::runtime_error(fmt::format("Attempt to control surface named {} that has a self referencing exterior boundary condition. This is not supported by Spawn", surface.Name));
+  }
+
   if (extBoundCond > 0) {
     // If this is an interzone surface then set the inside of the matching surface
     auto & other_surface = sim_state.dataSurface->Surface(extBoundCond);

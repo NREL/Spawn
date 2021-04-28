@@ -98,7 +98,7 @@ TEST_CASE("Test SingleFamilyHouse as FMU with early stop")
   REQUIRE(status == fmi2OK);
 }
 
-TEST_CASE("Test SingleFamilyHouse as FMU with surface IO")
+TEST_CASE("Test surface IO")
 {
   const auto fmu_file = create_single_family_house_fmu();
   spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
@@ -204,7 +204,90 @@ TEST_CASE("Test SingleFamilyHouse as FMU with surface IO")
   CHECK(status == fmi2OK);
 }
 
-TEST_CASE("Test SingleFamilyHouse Idempotence")
+TEST_CASE("Test invalid surface IO")
+{
+  // The Living:Floor exterior boundary condition references itself,
+  // which Spawn does not yet support
+  // We should expect errors if we access the exterior of the Living:Floor surface
+  const auto idfpath = single_family_house_idf_path();
+  const auto epwpath = chicago_epw_path();
+
+  std::string spawn_input_string = fmt::format(
+  R"(
+    {{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "fmu": {{
+          "name": "MyBuilding.fmu",
+          "version": "2.0",
+          "kind"   : "ME"
+      }},
+      "model": {{
+        "buildingSurfaceDetailed": [
+           {{ "name"    : "Living:Floor" }}
+        ]
+      }}
+    }}
+  )", fmt::arg("idfpath", idfpath.generic_string()), fmt::arg("epwpath", epwpath.generic_string()));
+
+  const auto fmu_file = create_epfmu(spawn_input_string);
+
+  spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
+  CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
+
+  const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
+  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+
+  const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
+  spawn::fmu::ModelDescription modelDescription(model_description_path);
+
+  fmi2Status status;
+
+  constexpr std::array<const char*, 2> variable_names{
+    "Living:Floor_TBack",
+    "Living:Floor_QBack_flow"
+  };
+
+  std::map<std::string, fmi2ValueReference> variable_refs;
+  for (const auto name : variable_names) {
+    variable_refs[name] = modelDescription.valueReference(name);
+  }
+
+  status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  CHECK(status == fmi2OK);
+
+  const std::array<fmi2ValueReference, 1> input_refs = {
+    variable_refs["Living:Floor_TBack"]
+  };
+
+  const std::array<fmi2ValueReference, 1> output_refs = {
+    variable_refs["Living:Floor_QBack_flow"],
+  };
+
+  std::array<fmi2Real, output_refs.size()> output_values;
+
+  // Test active heating surface
+  const std::array<fmi2Real, input_refs.size()> input_values = {
+    spawn::c_to_k(21.0), // Neutral temperature boundary condition at ground
+    // doesn't matter because we are expecting an error
+  };
+
+  status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
+  CHECK(status == fmi2OK);
+
+  status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
+  CHECK(status == fmi2OK);
+
+  status = fmu.fmi.fmi2Terminate(comp);
+  CHECK(status == fmi2OK);
+}
+
+TEST_CASE("Test Idempotence")
 {
   std::string spawn_input_string = fmt::format(
   R"(
