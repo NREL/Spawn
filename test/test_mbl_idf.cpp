@@ -259,7 +259,7 @@ TEST_CASE("Test invalid surface IO")
   }
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
-  CHECK(status == fmi2OK);
+  CHECK(status == fmi2Error);
 
   const std::array<fmi2ValueReference, 1> input_refs = {
     variable_refs["Living:Floor_TBack"]
@@ -281,7 +281,7 @@ TEST_CASE("Test invalid surface IO")
   CHECK(status == fmi2OK);
 
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
-  CHECK(status == fmi2OK);
+  CHECK(status == fmi2Error);
 
   status = fmu.fmi.fmi2Terminate(comp);
   CHECK(status == fmi2OK);
