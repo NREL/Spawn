@@ -1,6 +1,6 @@
 #include "paths.hpp"
 #include "create_epfmu.hpp"
-#include "../util/exec.hpp"
+#include "../lib/actuatortypes.hpp"
 #include "../util/filesystem.hpp"
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
@@ -118,9 +118,7 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
   }
   edd_file.close();
 
-  const auto cmd = spawnexe() + " --actuators";
-  const auto output = spawn::exec(cmd.c_str());
-  const auto json_actuators = json::parse(output, nullptr, false);
+  const json json_actuators(actuatortypes);
   std::vector<std::string> actuators;
   for (const auto a : json_actuators) {
     actuators.push_back(a["controlType"].get<std::string>());
