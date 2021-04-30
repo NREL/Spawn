@@ -3,8 +3,6 @@ if (UNIX)
   ADD_DEFINITIONS("-fPIC")
 endif()
 
-ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
-
 add_library(libspawn
   actuatortypes.hpp
   fmugenerator.hpp
@@ -63,6 +61,8 @@ target_include_directories(libspawn
   ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/eigen/
   ${PROJECT_BINARY_DIR}/EnergyPlus/third_party/kiva-ep/src/libkiva/
 )
+
+target_compile_definitions(libspawn PUBLIC -DENERGYPLUS_STATIC_API)
 
 target_link_libraries(libspawn
   PUBLIC

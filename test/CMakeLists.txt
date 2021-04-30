@@ -62,11 +62,14 @@ else()
           ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
           )
 
+
   target_link_libraries(tests
           PRIVATE
           paths
           )
 endif()
+
+target_link_libraries(paths PRIVATE compile_options)
 
 catch_discover_tests(
         tests
