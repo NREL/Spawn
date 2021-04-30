@@ -67,9 +67,14 @@ json & addRunPeriod(json & jsonidf) {
 json & addOtherEquipment(json& jsonidf, const Input& input) {
   constexpr auto scheduletype = "Schedule:Constant";
   constexpr auto schedulename = "Spawn-RadiantGains-Schedule";
+  constexpr auto schedule_typelimits_type = "ScheduleTypeLimits";
+  constexpr auto schedule_typelimits_name = "Spawn-RadiantGains-Schedule-Limits";
+
+  jsonidf[schedule_typelimits_type][schedule_typelimits_name] = {
+  };
 
   jsonidf[scheduletype][schedulename] = {
-    {"schedule_type_limits_name", ""},
+    {"schedule_type_limits_name", schedule_typelimits_name},
     {"hourly_value", "1.0"}
   };
 
