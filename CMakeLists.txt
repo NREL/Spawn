@@ -67,14 +67,12 @@ else()
 endif()
 
 set(CPACK_PACKAGE_VERSION
-    "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}"
-)
+    "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}")
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake"
-       "${CMAKE_BINARY_DIR}/conan.cmake")
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
@@ -114,41 +112,40 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 include(embedded/EmbedFiles.cmake)
 
 check_include_file("unistd.h" HAVE_UNISTD_H)
-if (HAVE_UNISTD_H)
+if(HAVE_UNISTD_H)
   target_compile_definitions(compile_options INTERFACE "-DHAVE_UNISTD_H")
 endif()
 
 check_include_file_cxx("filesystem" HAVE_FILESYSTEM_H)
-if (HAVE_FILESYSTEM_H)
+if(HAVE_FILESYSTEM_H)
   target_compile_definitions(compile_options INTERFACE "-DHAVE_FILESYSTEM_H")
 endif()
 
 check_include_file_cxx("experimental/filesystem" HAVE_EXP_FILESYSTEM_H)
-if (HAVE_EXP_FILESYSTEM_H)
+if(HAVE_EXP_FILESYSTEM_H)
   target_compile_definitions(compile_options INTERFACE "-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
-add_subdirectory( util )
+add_subdirectory(util)
 if(ENABLE_MODELICA_COMPILER)
-  add_subdirectory( modelica )
-  add_subdirectory( compiler )
+  add_subdirectory(modelica)
+  add_subdirectory(compiler)
 endif()
-add_subdirectory( lib )
-add_subdirectory( cli )
-add_subdirectory( epfmi )
-add_subdirectory( fmu )
-add_subdirectory( embedded )
-add_subdirectory( examples )
+add_subdirectory(lib)
+add_subdirectory(cli)
+add_subdirectory(epfmi)
+add_subdirectory(fmu)
+add_subdirectory(embedded)
+add_subdirectory(examples)
 
 enable_testing()
-add_subdirectory( test )
+add_subdirectory(test)
 
-
-if( APPLE )
+if(APPLE)
   set(os_prefix spawn-darwin64)
-elseif( WIN32 )
+elseif(WIN32)
   set(os_prefix spawn-win64)
-elseif( UNIX AND NOT APPLE )
+elseif(UNIX AND NOT APPLE)
   set(os_prefix spawn-linux64)
 endif()
 
@@ -156,34 +153,28 @@ set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 add_custom_target(
   copy_spawn_cli_depends ALL
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
-)
+  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
 
 set(modelica_bin_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
 set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 
 if(ENABLE_BUILDINGS_LIBRARY)
   include(ExternalProject)
-  ExternalProject_Add(MBL
+  ExternalProject_Add(
+    MBL
     BUILD_ALWAYS 1
     URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
     SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:spawn>
-            ${idd_path}
-            "${modelica_bin_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:epfmi>
-            "${modelica_lib_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
-  )
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
+            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 endif()
 
 install(DIRECTORY examples DESTINATION .)
-install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/ )
+install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)
 
-INCLUDE(CPack)
-
+include(CPack)

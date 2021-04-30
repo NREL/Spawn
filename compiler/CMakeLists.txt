@@ -32,17 +32,10 @@ endif()
 
 if(download_jmodelica)
   file(DOWNLOAD ${jmodelica_url} ${jmodelica_download_path})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E
-    tar xz ${jmodelica_download_path}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  )
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xz ${jmodelica_download_path} WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
-  execute_process(COMMAND ${CMAKE_COMMAND} -E
-    rename ${jmodelica_extracted_path} ${jmodelica_path}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  )
+  execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${jmodelica_extracted_path} ${jmodelica_path} WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 endif()
-
 
 string(REPLACE "git" "" LLVM_PACKAGE_VERSION ${LLVM_PACKAGE_VERSION})
 message("LLVM VERISION: ${LLVM_PACKAGE_VERSION}")
@@ -74,41 +67,35 @@ target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(compiler SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
 target_include_directories(compiler SYSTEM PUBLIC ${CLANG_INCLUDE_DIRS})
 
-
 target_compile_features(compiler PRIVATE cxx_std_17)
 
 target_link_libraries(
   compiler
-  PUBLIC
-  libclang
-  clangBasic
-  clangLex
-  clangParse
-  clangCodeGen
-  clangFrontend
-  clangFrontendTool
-  ${LLVM_LIBRARY_DIR}/liblldELF.a
-  ${LLVM_LIBRARY_DIR}/liblldCommon.a
-  ${LLVM_LIBRARY_DIR}/liblldCore.a
-  ${LLVM_LIBRARY_DIR}/liblldDriver.a
-  CONAN_PKG::fmt
-  CONAN_PKG::spdlog
-  PRIVATE
-  compile_options
-  spawn_utils
-)
+  PUBLIC libclang
+         clangBasic
+         clangLex
+         clangParse
+         clangCodeGen
+         clangFrontend
+         clangFrontendTool
+         ${LLVM_LIBRARY_DIR}/liblldELF.a
+         ${LLVM_LIBRARY_DIR}/liblldCommon.a
+         ${LLVM_LIBRARY_DIR}/liblldCore.a
+         ${LLVM_LIBRARY_DIR}/liblldDriver.a
+         CONAN_PKG::fmt
+         CONAN_PKG::spdlog
+  PRIVATE compile_options spawn_utils)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT
   target_link_libraries(compiler PUBLIC -rdynamic)
 
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    message(SEND_ERROR "Currently we cannot link with EnergyPlus and Clang in Debug mode on Unix because EnergyPlus is defining _GLIBCXX_DEBUG whichh conflicts with build settings for libclang")
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message(
+      SEND_ERROR
+        "Currently we cannot link with EnergyPlus and Clang in Debug mode on Unix because EnergyPlus is defining _GLIBCXX_DEBUG whichh conflicts with build settings for libclang"
+    )
   endif()
 else()
   target_compile_definitions(compiler PUBLIC -DNOMINMAX)
 endif()
-
-
-
-
