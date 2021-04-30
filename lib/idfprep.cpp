@@ -14,9 +14,9 @@ json & adjustSimulationControl(json & jsonidf) {
   jsonidf[simulationcontroltype] = {
     {
       "Spawn-SimulationControl", {
-        {"do_plant_sizing_calculation", "Yes"},
-        {"do_system_sizing_calculation","Yes"},
-        {"do_zone_sizing_calculation", "Yes"},
+        {"do_plant_sizing_calculation", "No"},
+        {"do_system_sizing_calculation","No"},
+        {"do_zone_sizing_calculation", "No"},
         {"run_simulation_for_sizing_periods", "No"},
         {"run_simulation_for_weather_file_run_periods", "Yes"}
       }
