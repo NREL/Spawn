@@ -109,7 +109,7 @@ public:
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
 
-  void exchange();
+  void exchange(const bool force = false);
 
 private:
   std::string instanceName;
@@ -119,6 +119,7 @@ private:
 
   double m_startTime{0.0};
   double requestedTime;
+  bool need_update{true};
 
   // Signal EnergyPlus to move through the simulation loop
   // Depending on the current simulation time, this may be an inner most hvac iteration,
@@ -146,8 +147,6 @@ private:
   std::exception_ptr sim_exception_ptr{nullptr};
 
   void externalHVACManager(EnergyPlusState state);
-
-  [[nodiscard]] std::pair<bool, float> externalSurfaceManager(EnergyPlusState state, int const surfaceNum);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
@@ -184,6 +183,16 @@ private:
 
   [[nodiscard]] int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
+  void setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value);
+  void resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  
+  double getSensorValue(Variable & var);
+
+  void setInsideSurfaceTemperature(const int surfacenum, double temp);
+  void setOutsideSurfaceTemperature(const int surfacenum, double temp);
+
+  double getInsideSurfaceHeatFlow(const int surfacenum);
+  double getOutsideSurfaceHeatFlow(const int surfacenum);
 
   // WarmupManager will register its own callbacks during construction
   // Maybe all of Spawn's implementation can be derived from "Manager" class

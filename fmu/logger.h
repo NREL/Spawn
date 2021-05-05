@@ -2,9 +2,19 @@
 #define spawn_fmu_logger_h_INCLUDED
 
 #include <fmi2FunctionTypes.h>
+#include <stdarg.h>
 
-// Do nothing logger
-inline void fmuNothingLogger(fmi2ComponentEnvironment, fmi2String, fmi2Status, fmi2String, fmi2String, ...)
+inline void fmuStdOutLogger(fmi2ComponentEnvironment comp, fmi2String name, fmi2Status level, fmi2String type, fmi2String format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+  printf("\n");
+  fflush(stdout);
+}
+
+inline void fmuNothingLogger(fmi2ComponentEnvironment comp, fmi2String name, fmi2Status level, fmi2String type, fmi2String format, ...)
 {
 }
 

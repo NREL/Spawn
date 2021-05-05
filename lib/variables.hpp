@@ -26,7 +26,11 @@ enum class VariableType {
   SCHEDULE,
   ASURF,
   TSURF,
-  QSURF_FLOW
+  QSURF,
+  TSURF_FRONT,
+  QSURF_FRONT,
+  TSURF_BACK,
+  QSURF_BACK,
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;
