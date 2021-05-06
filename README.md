@@ -29,7 +29,7 @@ End user installer packages for the latest development builds are available at t
 
 * Install clang development libraries. One Linux this would be...
 ```shell
-apt-get install libllvm8 llvm-8-dev clang-8 libclang-8-dev
+apt-get install libllvm8 llvm-8-dev clang-8 libclang-8-dev liblld-8-dev
 ```
 
 ```shell

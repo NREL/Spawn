@@ -210,11 +210,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
   fs::rename(launcherFileName, exeFileName);
 
-#if HAVE_FILESYSTEM_H
-  fs::permissions(exeFileName, fs::perms::owner_exe);
-#else
   fs::permissions(exeFileName, fs::perms::owner_exec);
-#endif
 }
 
 
