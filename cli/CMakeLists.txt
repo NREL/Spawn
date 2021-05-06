@@ -134,7 +134,8 @@ target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
 target_link_libraries(spawn
 	libspawn
   energypluslib
-  CONAN_PKG::CLI11
+  spawn_utils
+  CONAN_PKG::cli11
   CONAN_PKG::nlohmann_json
 )
 
