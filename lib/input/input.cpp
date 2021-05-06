@@ -62,6 +62,16 @@ fs::path Input::toPath(const std::string & pathstring) const {
   return p;
 }
 
+double Input::relativeSurfaceTolerance() const {
+  const auto tol = spawnjson.value("EnergyPlus",json())["relativeSurfaceTolerance"];
+  if (! tol.is_null()) {
+    if (tol.is_number_float()) {
+      return tol;
+    }
+  }
+  return 1.0e-6;
+}
+
 fs::path Input::idfInputPath() const {
   return toPath(spawnjson.value("EnergyPlus",json()).value("idf","in.idf"));
 }

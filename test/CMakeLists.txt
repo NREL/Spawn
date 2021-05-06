@@ -20,9 +20,10 @@ add_executable(tests
   test_epfmi.cpp
   test_spawn_cli.cpp
   test_spawn_lib.cpp
-  test_surface_input.cpp
   test_temp_directory.cpp
   test_unzip_file.cpp
+  test_floating_zone.cpp
+  test_single_family_house_lights_control.cpp
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp

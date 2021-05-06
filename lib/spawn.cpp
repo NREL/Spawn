@@ -24,6 +24,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/Psychrometrics.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ScheduleManager.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/ZoneTempPredictorCorrector.hh"
+#include <limits>
 
 namespace spawn {
 
@@ -36,7 +37,7 @@ Spawn::Spawn(std::string t_name, std::string t_input, fs::path t_workingdir)
 }
 
 void Spawn::start() {
-  if(! is_running) {
+  if(! is_running && ! sim_exception_ptr && ! sim_thread.joinable()) {
     is_running = true;
 
     auto idfPath = input.idfInputPath();
@@ -67,7 +68,7 @@ void Spawn::start() {
         EnergyPlus::CommandLineInterface::ProcessArgs( sim_state, argc, argv );
         registerErrorCallback(simState(), std::bind(&Spawn::logMessage, this, std::placeholders::_1, std::placeholders::_2));
         registerExternalHVACManager(simState(), std::bind(&Spawn::externalHVACManager, this, std::placeholders::_1));
-        registerExternalSurfaceManager(simState(), std::bind(&Spawn::externalSurfaceManager, this, std::placeholders::_1, std::placeholders::_2));
+        sim_state.dataHeatBal->MaxAllowedDelTemp = input.relativeSurfaceTolerance();
 
         RunEnergyPlus(sim_state);
 
@@ -158,9 +159,8 @@ void Spawn::setStartTime(const double & time) noexcept {
 void Spawn::setTime(const double & time)
 {
   isRunningCheck();
-
   requestedTime = time;
-  exchange();
+  exchange(true);
 
   if(requestedTime >= nextEventTime()) {
     iterate();
@@ -179,8 +179,13 @@ double Spawn::nextEventTime() const {
 
 void Spawn::setValue(const unsigned int & ref, const double & value) {
   auto var = variables.find(ref);
-  if( var != variables.end() ) {
-    var->second.setValue(value, spawn::units::UnitSystem::MO);
+  if (var != variables.end()) {
+    const auto & cur_val = var->second.getValue(spawn::units::UnitSystem::MO);
+    if (std::abs(value) <= std::numeric_limits<float>::epsilon() ||
+        std::abs(cur_val - value) > std::numeric_limits<float>::epsilon()) {
+      need_update = true;
+      var->second.setValue(value, spawn::units::UnitSystem::MO);
+    }
   } else {
     throw std::runtime_error(fmt::format("Attempt to set a value using an invalid reference: {}", ref));
   }
@@ -313,6 +318,49 @@ double Spawn::zoneHeatTransfer(const int zonenum) {
   return heatTransfer;
 }
 
+void Spawn::setInsideSurfaceTemperature(const int surfacenum, double temp) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  setActuatorValue("Surface", "Surface Inside Temperature", surface.Name, temp);
+  auto & extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the outside of the matching surface
+    auto & other_surface = sim_state.dataSurface->Surface(extBoundCond);
+    setActuatorValue("Surface", "Surface Outside Temperature", other_surface.Name, temp);
+  }
+}
+
+void Spawn::setOutsideSurfaceTemperature(const int surfacenum, double temp) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  setActuatorValue("Surface", "Surface Outside Temperature", surface.Name, temp);
+  auto & extBoundCond = surface.ExtBoundCond;
+
+  if (surfacenum == extBoundCond) {
+    throw std::runtime_error(fmt::format("Attempt to control surface named {} that has a self referencing exterior boundary condition. This is not supported by Spawn", surface.Name));
+  }
+
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the inside of the matching surface
+    auto & other_surface = sim_state.dataSurface->Surface(extBoundCond);
+    setActuatorValue("Surface", "Surface Inside Temperature", other_surface.Name, temp);
+  }
+}
+
+double Spawn::getInsideSurfaceHeatFlow(const int surfacenum) {
+  return sim_state.dataHeatBalSurf->QdotConvInRep(surfacenum) + sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(surfacenum);
+}
+
+double Spawn::getOutsideSurfaceHeatFlow(const int surfacenum) {
+  auto & surface = sim_state.dataSurface->Surface(surfacenum);
+  auto & extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // EnergyPlus does not calculate the surface heat flux for interzone surfaces,
+    // instead return the inside face heat flux of the matching surface
+    return sim_state.dataHeatBalSurf->QdotConvInRep(extBoundCond) + sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(extBoundCond);
+  } else {
+    return sim_state.dataHeatBalSurf->QdotConvOutRep(surfacenum) + sim_state.dataHeatBalSurf->QdotRadOutRep(surfacenum);
+  }
+}
+
 int Spawn::zoneNum(const std::string & zoneName) const {
   auto upperZoneName = zoneName;
   std::transform(zoneName.begin(), zoneName.end(), upperZoneName.begin(), ::toupper);
@@ -376,35 +424,40 @@ int Spawn::getActuatorHandle(const std::string & componenttype, const std::strin
   }
 }
 
-void Spawn::exchange()
+void Spawn::setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
+  const auto h = getActuatorHandle(componenttype, controltype, componentname);
+  if (value == 0.0) {
+    ::setActuatorValue(simState(), h, 1.0);
+  }
+  ::setActuatorValue(simState(), h, value);
+};
+
+void Spawn::resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
+  const auto h = getActuatorHandle(componenttype, controltype, componentname);
+  ::resetActuator(simState(), h);
+}
+
+double Spawn::getSensorValue(Variable & var) {
+  const auto h = getVariableHandle(var.outputvarname, var.outputvarkey);
+  return getVariableValue(simState(), h);
+}
+
+void Spawn::exchange(const bool force)
 {
   isRunningCheck();
 
-  auto spawnGetSensorValue = [&](Variable & var) {
-    const auto h = getVariableHandle(var.outputvarname, var.outputvarkey);
-    return getVariableValue(simState(), h);
-  };
-
-  auto spawnSetActuatorValue = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
-    const auto h = getActuatorHandle(componenttype, controltype, componentname);
-    setActuatorValue(simState(), h, value);
-  };
-
-  auto spawnResetActuator = [&](const std::string & componenttype, const std::string & controltype, const std::string & componentname) {
-    const auto h = getActuatorHandle(componenttype, controltype, componentname);
-    resetActuator(simState(), h);
-  };
+  if (! force && ! need_update) return;
 
   auto actuateVar = [&](const Variable & var) {
     if( var.isValueSet() ) {
-      spawnSetActuatorValue(
+      setActuatorValue(
           var.actuatorcomponenttype,
           var.actuatorcontroltype,
           var.actuatorcomponentkey,
           var.getValue(spawn::units::UnitSystem::EP)
       );
     } else {
-      spawnResetActuator(
+      resetActuator(
           var.actuatorcomponenttype,
           var.actuatorcontroltype,
           var.actuatorcomponentkey
@@ -415,10 +468,10 @@ void Spawn::exchange()
   // Update inputs first, then outputs so that we can do some updates within EnergyPlus
   for( auto & varmap : variables ) {
     auto & var = varmap.second;
-    auto varZoneNum = zoneNum(var.name);
     switch ( var.type ) {
       case VariableType::T:
         if( var.isValueSet() ) {
+          auto varZoneNum = zoneNum(var.name);
           const auto & v = var.getValue(spawn::units::UnitSystem::EP);
           setZoneTemperature(varZoneNum, v);
         }
@@ -432,14 +485,37 @@ void Spawn::exchange()
       case VariableType::QGAIRAD_FLOW:
         actuateVar(var);
         break;
+      case VariableType::TSURF_FRONT:
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setInsideSurfaceTemperature(sn, v);
+        }
+        break;
+      case VariableType::TSURF_BACK:
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setOutsideSurfaceTemperature(sn, v);
+        }
+        break;
+      case VariableType::TSURF:
+        if (var.isValueSet()) {
+          auto sn = surfaceNum(var.name);
+          const auto & v = var.getValue(spawn::units::UnitSystem::EP);
+          setInsideSurfaceTemperature(sn, v);
+        }
+        break;
       default:
         break;
     }
   }
 
-  updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
-
   // Run some internal EnergyPlus functions to update outputs
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
+
+  updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
@@ -474,7 +550,7 @@ void Spawn::exchange()
         break;
       }
       case VariableType::SENSOR: {
-        var.setValue(spawnGetSensorValue(var), spawn::units::UnitSystem::EP);
+        var.setValue(getSensorValue(var), spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::ASURF: {
@@ -482,20 +558,30 @@ void Spawn::exchange()
         var.setValue(sim_state.dataSurface->Surface( varSurfaceNum ).GrossArea, spawn::units::UnitSystem::EP);
         break;
       }
-      case VariableType::QSURF_FLOW: {
+      case VariableType::QSURF_FRONT: {
         const auto varSurfaceNum = surfaceNum(var.name);
-        auto sum = 0.0;
-        sum += sim_state.dataHeatBalSurf->QdotConvInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadSolarInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadLightsInRep( varSurfaceNum );
-        sum += sim_state.dataHeatBalSurf->QdotRadIntGainsInRep( varSurfaceNum );
-        var.setValue(sum, spawn::units::UnitSystem::EP);
+        const auto & value = getInsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QSURF_BACK: {
+        const auto varSurfaceNum = surfaceNum(var.name);
+        const auto & value = getOutsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QSURF: {
+        const auto varSurfaceNum = surfaceNum(var.name);
+        const auto & value = getInsideSurfaceHeatFlow(varSurfaceNum);
+        var.setValue(value, spawn::units::UnitSystem::EP);
         break;
       }
       default:
         break;
     }
   }
+
+  need_update = false;
 }
 
 void Spawn::initZoneEquip() {
@@ -503,26 +589,6 @@ void Spawn::initZoneEquip() {
     EnergyPlus::DataZoneEquipment::GetZoneEquipmentData(sim_state);
     sim_state.dataZoneEquip->ZoneEquipInputsFilled = true;
   }
-}
-
-std::pair<bool, float> Spawn::externalSurfaceManager(EnergyPlusState state, int const t_surfaceNum) {
-  // This algorithm returns the value of a TSurf variable
-  // if one exists for the given t_surfaceNum, where t_surfaceNum
-  // is an index to an EnergyPlus surface
-  std::pair<bool, float> result{false, 0.0};
-
-  for( auto & varmap : variables ) {
-    auto & var = varmap.second;
-    if( var.type == VariableType::TSURF ) {
-      if( surfaceNum(var.name) == t_surfaceNum ) {
-        result.first = true;
-        result.second = var.getValue(spawn::units::UnitSystem::EP);
-        break;
-      }
-    }
-  }
-
-  return result;
 }
 
 void Spawn::externalHVACManager(EnergyPlusState state) {
@@ -544,7 +610,7 @@ void Spawn::externalHVACManager(EnergyPlusState state) {
   }
 
   // Exchange data with the FMU
-  exchange();
+  exchange(true);
 
   // There is no interaction with the FMU during warmup,
   // so return now before signaling

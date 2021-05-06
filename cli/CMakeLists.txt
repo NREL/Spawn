@@ -138,7 +138,7 @@ target_link_libraries(spawn
   libspawn
   energypluslib
   spawn_utils
-  CONAN_PKG::CLI11
+  CONAN_PKG::cli11
   CONAN_PKG::nlohmann_json
   CONAN_PKG::spdlog
 )

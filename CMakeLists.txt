@@ -81,18 +81,13 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-#conan_check(VERSION 1.0.0 REQUIRED)
-
-conan_add_remote(NAME bincrafters URL https://api.bintray.com/conan/bincrafters/public-conan)
-
 conan_cmake_run(
   REQUIRES
   bzip2/1.0.8
   zlib/1.2.11
-  libzip/1.5.1@bincrafters/stable
-  jsonformoderncpp/3.6.1@vthiery/stable
+  libzip/1.7.3
   pugixml/1.11
-  CLI11/1.7.1@cliutils/stable
+  cli11/1.9.1
   catch2/2.11.3
   fmt/6.1.2
   nlohmann_json/3.7.3
@@ -101,7 +96,8 @@ conan_cmake_run(
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
   BUILD
-  missing)
+  missing
+)
 
 ###############################################################################
 # RPATH settings

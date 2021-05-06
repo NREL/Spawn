@@ -14,9 +14,9 @@ json & adjustSimulationControl(json & jsonidf) {
   jsonidf[simulationcontroltype] = {
     {
       "Spawn-SimulationControl", {
-        {"do_plant_sizing_calculation", "Yes"},
-        {"do_system_sizing_calculation","Yes"},
-        {"do_zone_sizing_calculation", "Yes"},
+        {"do_plant_sizing_calculation", "No"},
+        {"do_system_sizing_calculation","No"},
+        {"do_zone_sizing_calculation", "No"},
         {"run_simulation_for_sizing_periods", "No"},
         {"run_simulation_for_weather_file_run_periods", "Yes"}
       }
@@ -67,9 +67,14 @@ json & addRunPeriod(json & jsonidf) {
 json & addOtherEquipment(json& jsonidf, const Input& input) {
   constexpr auto scheduletype = "Schedule:Constant";
   constexpr auto schedulename = "Spawn-RadiantGains-Schedule";
+  constexpr auto schedule_typelimits_type = "ScheduleTypeLimits";
+  constexpr auto schedule_typelimits_name = "Spawn-RadiantGains-Schedule-Limits";
+
+  jsonidf[schedule_typelimits_type][schedule_typelimits_name] = {
+  };
 
   jsonidf[scheduletype][schedulename] = {
-    {"schedule_type_limits_name", ""},
+    {"schedule_type_limits_name", schedule_typelimits_name},
     {"hourly_value", "1.0"}
   };
 

@@ -58,7 +58,7 @@
      ],
     "zoneSurfaces": [
        {
-          "name"    : "Core_ZN_floor"
+          "name"    : "Core_ZN_wall_east"
        }
      ]
     }
