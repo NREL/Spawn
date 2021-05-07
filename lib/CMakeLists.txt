@@ -137,32 +137,9 @@ if(BUILD_PYTHON_BINDINGS)
  swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
 
   add_test(
-    NAME test_python_only
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
-    COMMAND ${Python_EXECUTABLE} test_python_only.rb)
+    NAME test_python_bindings
+    #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/python/test_python.py)
 
 endif()
-
-if(BUILD_PYTHON_BINDINGS)
-  #  add_test(
-  #  NAME test_pycall
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-  #  COMMAND ${RUBY_EXECUTABLE} test_pycall.rb)
-
-  #add_test(
-  #  NAME test_pycall_workaround
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_workaround.rb)
-
-  #add_test(
-  #  NAME test_pycall_use_cpp_to_convert_pointers
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_use_cpp_to_convert_pointers.rb)
-
-  #add_test(
-  #  NAME test_pycall_script
-  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
-  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_script.rb)
-endif()
-
 

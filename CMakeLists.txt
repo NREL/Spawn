@@ -174,6 +174,10 @@ if (HAVE_EXP_FILESYSTEM_H)
   add_definitions("-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
+
+enable_testing()
+
+
 add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory( modelica )
@@ -185,8 +189,6 @@ add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
 add_subdirectory( examples )
-
-enable_testing()
 add_subdirectory( test )
 
 
