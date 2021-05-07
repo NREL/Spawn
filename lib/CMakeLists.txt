@@ -74,4 +74,95 @@ target_link_libraries(libspawn
   compile_options
 )
 
+# ##############################################################################
+# S W I G                               #
+# ##############################################################################
+
+# Build Python bindings Requires: SWIG Python
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+
+if(BUILD_PYTHON_BINDINGS)
+  set(target_name libspawn)
+
+  # lib swig files
+  set(${target_name}_swig_src libspawn.i)
+
+  foreach(SWIG_FILE ${${target_name}_swig_src})
+    message("SWIG_FILE=${SWIG_FILE}")
+    set_source_files_properties(${SWIG_FILE} PROPERTIES CPLUSPLUS ON)
+  endforeach()
+
+  find_package(SWIG REQUIRED COMPONENTS python)
+  message("${SWIG_USE_FILE}")
+  include(${SWIG_USE_FILE})
+
+
+  set(swig_target_name ${target_name}_python)
+
+  find_package(
+    Python
+    COMPONENTS Interpreter Development
+    REQUIRED)
+
+  set(output_dir "${CMAKE_CURRENT_BINARY_DIR}/Products/python")
+
+
+  swig_add_library(
+    ${swig_target_name}
+    TYPE MODULE
+    LANGUAGE python OUTPUT_DIR "${output_dir}"
+                    OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/python_wrapper"
+    SOURCES ${${target_name}_swig_src})
+
+  set_target_properties(${swig_target_name} PROPERTIES OUTPUT_NAME
+    ${target_name})
+
+  set_target_properties(
+    ${swig_target_name} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
+    "${output_dir}")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+    "${output_dir}")
+  set_target_properties(
+    ${swig_target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+    "${output_dir}")
+
+  swig_link_libraries(${swig_target_name} PUBLIC ${target_name}  PRIVATE
+    compile_options
+    )
+
+ target_include_directories(${swig_target_name} PRIVATE SYSTEM
+   ${CMAKE_CURRENT_SOURCE_DIR})
+
+ swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
+
+  add_test(
+    NAME test_python_only
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
+    COMMAND ${Python_EXECUTABLE} test_python_only.rb)
+
+endif()
+
+if(BUILD_PYTHON_BINDINGS)
+  #  add_test(
+  #  NAME test_pycall
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+  #  COMMAND ${RUBY_EXECUTABLE} test_pycall.rb)
+
+  #add_test(
+  #  NAME test_pycall_workaround
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_workaround.rb)
+
+  #add_test(
+  #  NAME test_pycall_use_cpp_to_convert_pointers
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_use_cpp_to_convert_pointers.rb)
+
+  #add_test(
+  #  NAME test_pycall_script
+  #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ruby
+  #  COMMAND ${RUBY_EXECUTABLE} test_pycall_script.rb)
+endif()
+
 

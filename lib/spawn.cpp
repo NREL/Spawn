@@ -152,11 +152,11 @@ double Spawn::startTime() const noexcept {
   return m_startTime;
 }
 
-void Spawn::setStartTime(const double & time) noexcept {
+void Spawn::setStartTime(const double time) noexcept {
   m_startTime = time;
 }
 
-void Spawn::setTime(const double & time)
+void Spawn::setTime(const double time)
 {
   isRunningCheck();
   requestedTime = time;
@@ -177,7 +177,7 @@ double Spawn::nextEventTime() const {
   return sim_state.dataGlobal->SimTimeSteps * sim_state.dataGlobal->TimeStepZoneSec;
 }
 
-void Spawn::setValue(const unsigned int & ref, const double & value) {
+void Spawn::setValue(const unsigned int ref, const double value) {
   auto var = variables.find(ref);
   if (var != variables.end()) {
     const auto & cur_val = var->second.getValue(spawn::units::UnitSystem::MO);
@@ -191,7 +191,7 @@ void Spawn::setValue(const unsigned int & ref, const double & value) {
   }
 }
 
-double Spawn::getValue(const unsigned int & ref) const {
+double Spawn::getValue(const unsigned int ref) const {
   isRunningCheck();
   auto var = variables.find(ref);
   if( var != variables.end() ) {
@@ -223,7 +223,7 @@ double Spawn::getValue(const std::string & name) const {
   return getValue(index);
 }
 
-void Spawn::setValue(const std::string & name, const double & value) {
+void Spawn::setValue(const std::string & name, const double value) {
   const auto index = getIndex(name);
   setValue(index, value);
 }
@@ -248,7 +248,7 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
   return sums;
 }
 
-void Spawn::setZoneTemperature(const int zonenum, const double & temp) {
+void Spawn::setZoneTemperature(const int zonenum, const double temp) {
   // Is it necessary to update all of these or can we
   // simply update ZT and count on EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp()
   // to propogate the other variables?
@@ -261,7 +261,7 @@ double Spawn::zoneTemperature(const int zonenum) {
   return sim_state.dataHeatBalFanSys->ZT(zonenum);
 }
 
-void Spawn::updateZoneTemperature(const int zonenum, const double & dt) {
+void Spawn::updateZoneTemperature(const int zonenum, const double dt) {
   // Based on the EnergyPlus analytical method
   // See ZoneTempPredictorCorrector::CorrectZoneAirTemp
   const auto & zonetemp = zoneTemperature(zonenum);
@@ -424,7 +424,7 @@ int Spawn::getActuatorHandle(const std::string & componenttype, const std::strin
   }
 }
 
-void Spawn::setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value) {
+void Spawn::setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 value) {
   const auto h = getActuatorHandle(componenttype, controltype, componentname);
   if (value == 0.0) {
     ::setActuatorValue(simState(), h, 1.0);
