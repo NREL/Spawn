@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Enable undefined behavior sanitizer testing in gcc/clang" FALSE)
 if(ENABLE_MODELICA_COMPILER)
-  add_definitions(-DENABLE_MODELICA_COMPILER)
+  target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
@@ -24,22 +24,20 @@ set(CPACK_BINARY_IFW OFF)
 
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+
   target_compile_options(compile_options INTERFACE -Wall -Wextra)
   option(ENABLE_ADDRESS_SANITIZER "Enable address sanitizer testing in gcc/clang" OFF)
   if(ENABLE_ADDRESS_SANITIZER)
-    add_definitions(-fsanitize=address -g)
-    set(SANITIZER_LINKER_FLAGS "${SANITIZER_LINKER_FLAGS} -fsanitize=address")
+    target_compile_options(compile_options INTERFACE -fsanitize=address -g)
+    target_link_options(compile_options INTERFACE -fsanitize=address)
   endif()
 
   option(ENABLE_UNDEFINED_SANITIZER "Enable undefined behavior sanitizer testing in gcc/clang" OFF)
   if(ENABLE_UNDEFINED_SANITIZER)
-    add_definitions(-fsanitize=undefined -g)
-    set(SANITIZER_LINKER_FLAGS "${SANITIZER_LINKER_FLAGS} -fsanitize=undefined")
+    target_compile_options(compile_options INTERFACE -fsanitize=undefined -g)
+    target_link_options(compile_options INTERFACE -fsanitize=undefined)
   endif()
 
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SANITIZER_LINKER_FLAGS}")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_LINKER_FLAGS}")
-  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${SANITIZER_LINKER_FLAGS}")
 endif()
 
 if(NOT GIT_FOUND)
@@ -69,14 +67,12 @@ else()
 endif()
 
 set(CPACK_PACKAGE_VERSION
-    "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}"
-)
+    "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}")
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake"
-       "${CMAKE_BINARY_DIR}/conan.cmake")
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
@@ -111,91 +107,41 @@ install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)
 
 include(embedded/EmbedFiles.cmake)
 
-if(ENABLE_MODELICA_COMPILER)
-  find_package(LLVM REQUIRED CONFIG)
-  find_package(Clang REQUIRED CONFIG)
-  include_directories(${LLVM_INCLUDE_DIRS})
-  include_directories(${CLANG_INCLUDE_DIRS})
-
-  if(APPLE)
-    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
-    set(jmodelica_tar "Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  elseif(UNIX)
-    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
-    set(jmodelica_tar "Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  else()
-    set(jmodelica_extracted_path "${PROJECT_BINARY_DIR}/Modelica-0.1.1-Linux")
-    set(jmodelica_tar "Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  endif()
-
-  set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/${jmodelica_tar}")
-  set(jmodelica_download_path "${PROJECT_BINARY_DIR}/${jmodelica_tar}")
-  set(jmodelica_path "${PROJECT_BINARY_DIR}/JModelica/")
-
-  set(download_jmodelica TRUE)
-
-  if(EXISTS ${jmodelica_download_path})
-    file(MD5 ${jmodelica_download_path} jmodelica_current_md5)
-    if(${jmodelica_current_md5} EQUAL ${jmodelica_md5})
-      if(EXISTS ${jmodelica_path})
-        set(download_jmodelica FALSE)
-      endif()
-    endif()
-  endif()
-
-  if(download_jmodelica)
-    file(DOWNLOAD ${jmodelica_url} ${jmodelica_download_path})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
-      tar xz ${jmodelica_download_path}
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    )
-
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
-      rename ${jmodelica_extracted_path} ${jmodelica_path}
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    )
-  endif()
-endif()
-
 check_include_file("unistd.h" HAVE_UNISTD_H)
-if (HAVE_UNISTD_H)
-  add_definitions("-DHAVE_UNISTD_H")
+if(HAVE_UNISTD_H)
+  target_compile_definitions(compile_options INTERFACE "-DHAVE_UNISTD_H")
 endif()
 
 check_include_file_cxx("filesystem" HAVE_FILESYSTEM_H)
-if (HAVE_FILESYSTEM_H)
-  add_definitions("-DHAVE_FILESYSTEM_H")
+if(HAVE_FILESYSTEM_H)
+  target_compile_definitions(compile_options INTERFACE "-DHAVE_FILESYSTEM_H")
 endif()
 
 check_include_file_cxx("experimental/filesystem" HAVE_EXP_FILESYSTEM_H)
-if (HAVE_EXP_FILESYSTEM_H)
-  add_definitions("-DHAVE_EXP_FILESYSTEM_H")
+if(HAVE_EXP_FILESYSTEM_H)
+  target_compile_definitions(compile_options INTERFACE "-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
-add_subdirectory( util )
+add_subdirectory(util)
 if(ENABLE_MODELICA_COMPILER)
-  add_subdirectory( modelica )
-  add_subdirectory( compiler )
+  add_subdirectory(modelica)
+  add_subdirectory(compiler)
 endif()
-add_subdirectory( lib )
-add_subdirectory( cli )
-add_subdirectory( epfmi )
-add_subdirectory( fmu )
-add_subdirectory( embedded )
-add_subdirectory( examples )
+add_subdirectory(lib)
+add_subdirectory(cli)
+add_subdirectory(epfmi)
+add_subdirectory(fmu)
+add_subdirectory(embedded)
+add_subdirectory(examples)
 
 enable_testing()
-add_subdirectory( test )
+add_subdirectory(test)
 
-
-if( APPLE )
+if(APPLE)
   set(os_prefix spawn-darwin64)
-elseif( WIN32 )
+elseif(WIN32)
   set(os_prefix spawn-win64)
-elseif( UNIX AND NOT APPLE )
+elseif(UNIX AND NOT APPLE)
   set(os_prefix spawn-linux64)
 endif()
 
@@ -203,34 +149,28 @@ set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 add_custom_target(
   copy_spawn_cli_depends ALL
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
-)
+  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
 
 set(modelica_bin_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
 set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
 
 if(ENABLE_BUILDINGS_LIBRARY)
   include(ExternalProject)
-  ExternalProject_Add(MBL
+  ExternalProject_Add(
+    MBL
     BUILD_ALWAYS 1
     URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
     SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:spawn>
-            ${idd_path}
-            "${modelica_bin_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:epfmi>
-            "${modelica_lib_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago" "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
-  )
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
+            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 endif()
 
 install(DIRECTORY examples DESTINATION .)
-install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/ )
+install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)
 
-INCLUDE(CPack)
-
+include(CPack)
