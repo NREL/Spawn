@@ -1,5 +1,7 @@
 %module libspawn
 
+%include <std_string.i>
+%include <std_wstring.i>
 
 %{
 #include "input/input.hpp"
@@ -20,7 +22,60 @@
 #include <condition_variable>
 #include <functional>
 #include "spawn.hpp"
+#include "../util/temp_directory.hpp"
+#include "../util/math.hpp"
+
+
 %}
+
+namespace fs {
+  class path
+  {
+  public:
+    path(const std::string &path);
+  };
+
+  %extend path {
+    std::string toString() const {
+      return $self->generic_string();
+    }
+
+    // append to path
+    path __div__(const path& other) const{
+      return (*self) / other;
+    }
+
+    // append to path
+    path __plus__(const path& other) const{
+      return (*self) / other;
+    }
+
+    // append to path
+    path append(const path& other) const{
+      return (*self) / other;
+    }
+
+
+    // to std::string
+    std::string __str__() const{
+      return $self->generic_string();
+    }
+
+  };
+
+};
+
+namespace spawn {
+  double days_to_seconds(double);
+
+  namespace util {
+    struct Temp_Directory {
+      public:
+      const fs::path &dir();
+    };
+  }
+}
+
 
 namespace spawn {
 class Spawn {

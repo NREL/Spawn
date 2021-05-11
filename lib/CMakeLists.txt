@@ -136,10 +136,12 @@ if(BUILD_PYTHON_BINDINGS)
 
  swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
 
+ configure_file(${CMAKE_SOURCE_DIR}/python/test_python.in.py test_python.py)
+
   add_test(
     NAME test_python_bindings
     #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
-    COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/python/test_python.py)
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/test_python.py)
 
 endif()
 
