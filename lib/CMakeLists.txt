@@ -92,7 +92,8 @@ if(BUILD_PYTHON_BINDINGS)
     set_source_files_properties(${SWIG_FILE} PROPERTIES CPLUSPLUS ON)
   endforeach()
 
-  find_package(SWIG REQUIRED COMPONENTS python)
+  set(SWIG_ROOT ${CONAN_SWIG_ROOT}/bin)
+  find_package(SWIG 4.0 REQUIRED COMPONENTS python)
   message("${SWIG_USE_FILE}")
   include(${SWIG_USE_FILE})
 
