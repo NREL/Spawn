@@ -165,10 +165,45 @@ json & addOutputVariables(json& jsonidf, const Input& input) {
   return jsonidf;
 }
 
+// Remove infiltration idf input objects for zones that are connected to Modelica
+json & removeInfiltration(json & jsonidf, const Input& input) {
+
+  // Idf infiltration type paired with the field which identifies the related zone
+  constexpr std::array<std::pair<const char *, const char *>, 3> infiltrationTypes = {{
+    {"ZoneInfiltration:DesignFlowRate", "zone_or_zonelist_name"},
+    {"ZoneInfiltration:EffectiveLeakageArea", "zone_name"},
+    {"ZoneInfiltration:FlowCoefficient", "zone_name"}
+  }};
+
+  const auto zones = input.zones;
+
+  for (const auto & type : infiltrationTypes) {
+    auto & infiltrationObjects = jsonidf[type.first];
+    for (auto var = infiltrationObjects.cbegin(); var != infiltrationObjects.cend();){
+      const auto zoneName = var->at(type.second).get<std::string>();
+      const auto connected_zone_it = std::find_if(
+        zones.cbegin(),
+        zones.cend(), 
+        [&](const spawn::Zone & z) {
+          return z.isconnected && (z.idfname == zoneName);
+        }
+      );
+      if (connected_zone_it != zones.cend()) {
+        var = infiltrationObjects.erase(var);
+      } else {
+        ++var;
+      }
+    }
+  }
+
+  return jsonidf;
+}
+
 void prepare_idf(json & jsonidf, const Input& input) {
   adjustSimulationControl(jsonidf);
   removeUnusedObjects(jsonidf);
   addRunPeriod(jsonidf);
+  removeInfiltration(jsonidf, input);
   addOtherEquipment(jsonidf, input);
   addOutputVariables(jsonidf, input);
 }

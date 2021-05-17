@@ -10,7 +10,7 @@ constexpr std::array<const char *,4> supportedScheduleTypes = {
 	"Schedule:File"
 };
 
-constexpr std::array<const char *,312> supportedIDDTypes = {
+constexpr std::array<const char *,315> supportedIDDTypes = {
   "Version",
   "SimulationControl",
   "PerformancePrecisionTradeoffs",
@@ -322,7 +322,10 @@ constexpr std::array<const char *,312> supportedIDDTypes = {
   "FuelFactors",
   "Output:Diagnostics",
   "Output:DebuggingData",
-  "Output:PreprocessorMessage"
+  "Output:PreprocessorMessage",
+  "ZoneInfiltration:DesignFlowRate",
+  "ZoneInfiltration:EffectiveLeakageArea",
+  "ZoneInfiltration:FlowCoefficient"
 };
 
 #endif // IDDTYPES_HH_INCLUDED
