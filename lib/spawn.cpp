@@ -247,8 +247,8 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
 
   Spawn::ZoneSums sums;
 
-  sums.tempDepCoef = SumHA;                   // + SumMCp;
-  sums.tempIndCoef = SumIntGain + SumHATsurf; // - SumHATref + SumMCpT;
+  sums.tempDepCoef = SumHA + SumMCp;
+  sums.tempIndCoef = SumIntGain + SumHATsurf + SumMCpT;
 
   return sums;
 }
