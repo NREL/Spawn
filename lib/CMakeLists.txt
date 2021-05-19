@@ -132,17 +132,18 @@ if(BUILD_PYTHON_BINDINGS)
     compile_options
     )
 
- target_include_directories(${swig_target_name} PRIVATE SYSTEM
-   ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${swig_target_name} PRIVATE SYSTEM
+    ${CMAKE_CURRENT_SOURCE_DIR})
 
- swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
+  swig_link_libraries(${swig_target_name} PRIVATE Python::Module)
 
- configure_file(${CMAKE_SOURCE_DIR}/python/test_python.in.py test_python.py)
+  configure_file(${CMAKE_SOURCE_DIR}/python/test_python.in.py test_python.py)
 
   add_test(
     NAME test_python_bindings
     #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
     COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/test_python.py)
-
+  
+  set_tests_properties( test_python_bindings PROPERTIES ENVIRONMENT  PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/Products/python/$<IF:$<CONFIG:Debug>,Debug,Release>)  
 endif()
 
