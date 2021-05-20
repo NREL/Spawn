@@ -26,6 +26,7 @@ add_executable(tests
   test_single_family_house_lights_control.cpp
   test_fmi.cpp
   test_mbl_idf.cpp
+  test_infiltration.cpp
 )
 
 add_dependencies(tests example_fmu_lib)
