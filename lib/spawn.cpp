@@ -523,6 +523,7 @@ void Spawn::exchange(const bool force)
 
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
+  EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
 

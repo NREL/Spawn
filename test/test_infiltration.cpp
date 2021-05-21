@@ -38,6 +38,16 @@ TEST_CASE("Test Infiltration")
             "name":    "Zone Mean Air Temperature",
             "key":     "Thermal Zone 2",
             "fmiName": "zone 2 temp"
+          }},
+          {{
+            "name":    "Zone Infiltration Standard Density Volume Flow Rate",
+            "key":     "Thermal Zone 1",
+            "fmiName": "zone 1 infiltration output"
+          }},
+          {{
+            "name":    "Zone Infiltration Standard Density Volume Flow Rate",
+            "key":     "Thermal Zone 2",
+            "fmiName": "zone 2 infiltration output"
           }}
         ],
         "emsActuators": [
@@ -76,11 +86,13 @@ TEST_CASE("Test Infiltration")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char*, 4> variable_names{
+  constexpr std::array<const char*, 6> variable_names{
     "zone 1 temp",
     "zone 2 temp",
     "zone 1 infiltration",
-    "zone 2 infiltration"
+    "zone 2 infiltration",
+    "zone 1 infiltration output",
+    "zone 2 infiltration output"
   };
 
   std::map<std::string, fmi2ValueReference> variable_refs;
@@ -92,9 +104,11 @@ TEST_CASE("Test Infiltration")
   const auto zone_2_temp_ref = modelDescription.valueReference("zone 2 temp");
   const auto zone_1_infiltration_ref = modelDescription.valueReference("zone 1 infiltration");
   const auto zone_2_infiltration_ref = modelDescription.valueReference("zone 2 infiltration");
+  const auto zone_1_infiltration_output_ref = modelDescription.valueReference("zone 1 infiltration output");
+  const auto zone_2_infiltration_output_ref = modelDescription.valueReference("zone 2 infiltration output");
 
   const std::array<fmi2ValueReference, 2> input_refs = {zone_1_infiltration_ref, zone_2_infiltration_ref};
-  const std::array<fmi2ValueReference, 2> output_refs = {zone_1_temp_ref, zone_2_temp_ref};
+  const std::array<fmi2ValueReference, 4> output_refs = {zone_1_temp_ref, zone_2_temp_ref, zone_1_infiltration_output_ref, zone_2_infiltration_output_ref};
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
@@ -109,12 +123,14 @@ TEST_CASE("Test Infiltration")
   CHECK( output_values[1] > spawn::c_to_k(10.0) );
   CHECK( output_values[0] < spawn::c_to_k(30.0) );
   CHECK( output_values[1] < spawn::c_to_k(30.0) );
-  CHECK( output_values[1] < spawn::c_to_k(30.0) );
   CHECK( std::abs(output_values[0] - output_values[1]) < 0.1 );
 
   // After "turning off" infiltration and simulating for a day, the zones should still have the same temperature
-  input_values[0] = 0.0;
-  input_values[1] = 0.0;
+  double zone_1_infiltration_input_value = 0.0;
+  double zone_2_infiltration_input_value = 0.0;
+  input_values[0] = zone_1_infiltration_input_value;
+  input_values[1] = zone_2_infiltration_input_value;
+
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
   CHECK(status == fmi2OK);
 
@@ -127,12 +143,17 @@ TEST_CASE("Test Infiltration")
   CHECK( output_values[1] > spawn::c_to_k(10.0) );
   CHECK( output_values[0] < spawn::c_to_k(30.0) );
   CHECK( output_values[1] < spawn::c_to_k(30.0) );
-  CHECK( output_values[1] < spawn::c_to_k(30.0) );
   CHECK( std::abs(output_values[0] - output_values[1]) < 0.1 );
 
+  CHECK( output_values[2] == Approx(zone_1_infiltration_input_value) );
+  CHECK( output_values[3] == Approx(zone_2_infiltration_input_value) );
+
   // After setting different infiltration rates and simulating for a day, the zone temperatures should diverge
-  input_values[0] = 0.0;
-  input_values[1] = 0.1;
+  zone_1_infiltration_input_value = 0.0;
+  zone_2_infiltration_input_value = 0.1;
+  input_values[0] = zone_1_infiltration_input_value;
+  input_values[1] = zone_2_infiltration_input_value;
+
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
   CHECK(status == fmi2OK);
 
@@ -145,10 +166,14 @@ TEST_CASE("Test Infiltration")
   CHECK( output_values[1] > spawn::c_to_k(10.0) );
   CHECK( output_values[0] < spawn::c_to_k(30.0) );
   CHECK( output_values[1] < spawn::c_to_k(30.0) );
-  CHECK( output_values[1] < spawn::c_to_k(30.0) );
   // It is winter, and zone 2 has cold air infiltrating the zone,
   // so zone 2 is colder than zone 1
   CHECK( std::abs(output_values[0] - output_values[1]) > 1.0 );
+
+  // Why can't we achieve higher tolerance? Is it the air density assumption between input and output?
+  // The output is assumed to be standard density, but the input actuator is not documented.
+  CHECK( std::abs(output_values[2] - zone_1_infiltration_input_value) < 0.01 );
+  CHECK( std::abs(output_values[3] - zone_2_infiltration_input_value) < 0.01 );
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
