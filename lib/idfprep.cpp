@@ -165,8 +165,98 @@ json & addOutputVariables(json& jsonidf, const Input& input) {
   return jsonidf;
 }
 
+// Undo the use of zone list for infiltration objects
+// zone lists are only allowed for ZoneInfiltration:DesignFlowRate
+// other types of infiltration input do not allow zone lists
+// so this work is not required for those other types
+json & expandInfiltrationZoneLists(json & jsonidf) {
+  const auto infiltrationType = "ZoneInfiltration:DesignFlowRate";
+  auto & infiltrationObjects = jsonidf[infiltrationType];
+
+  const auto zoneListType = "ZoneList";
+  const auto zoneListObjects = jsonidf[zoneListType];
+
+  json newInfiltration;
+  std::vector<std::string> infNamesToRemove;
+
+  for (const auto & [infname, inffields] : infiltrationObjects.items()) {
+    const auto possibleZoneListName = inffields.at("zone_or_zonelist_name").get<std::string>();
+    // if zoneName is the name of a zone list and not a real zone....
+    if (zoneListObjects.contains(possibleZoneListName)) {
+      const auto zoneNameObjects = zoneListObjects.value(possibleZoneListName, json()).value("zones", json());
+      if (! zoneNameObjects.is_null()) {
+        // need to expand the infiltration objects associated with this zonelist
+        for (const auto & zoneNameObject : zoneNameObjects) {
+          const auto zoneName = zoneNameObject.at("zone_name").get<std::string>();
+          auto newInfName = std::string("Spawn-") + zoneName + "-" + infname;
+          newInfiltration[newInfName] = inffields;
+          newInfiltration[newInfName]["zone_or_zonelist_name"] = zoneName;
+        }
+        // Also need to remove the orginal infiltration
+        infNamesToRemove.push_back(infname);
+      }
+    }
+  }
+
+  // Remove the old infiltration objects
+  for (const auto & name : infNamesToRemove) {
+    infiltrationObjects.erase(name);
+  }
+
+  // Add the expanded infiltration objects
+  for (const auto & [name, fields] : newInfiltration.items()) {
+    infiltrationObjects[name] = fields;
+  }
+
+  return jsonidf;
+}
+
+// Connected zones will have user provided infiltration objects removed,
+// however if zones do not have any infiltration input, then report variables and 
+// actuators related to infiltration are not available. This can be confusing to users,
+// since some zones have infiltration output variables and actuators while others don't. 
+// To address this confusion we will insert default infiltration objects for connected zones,
+// which have zero flow specified.
+json & addDefaultZeroInfiltration(json & jsonidf, const Input& input) {
+  constexpr auto infiltrationType = "ZoneInfiltration:DesignFlowRate";
+  constexpr auto scheduletype = "Schedule:Constant";
+  constexpr auto schedulename = "Spawn-DefaultInfiltration-Schedule";
+  constexpr auto schedule_typelimits_type = "ScheduleTypeLimits";
+  constexpr auto schedule_typelimits_name = "Spawn-DefaultInfiltration-Schedule-Limits";
+
+  jsonidf[schedule_typelimits_type][schedule_typelimits_name] = {};
+
+  jsonidf[scheduletype][schedulename] = {
+    {"schedule_type_limits_name", schedule_typelimits_name},
+    {"hourly_value", "1.0"}
+  };
+
+  const auto zones = input.zones;
+  for (const auto & zone : zones) {
+    // Only add default infiltration for "connected" zones
+    if (zone.isconnected) {
+      const auto infiltrationName = std::string("Spawn-") + zone.idfname + "-Default Infiltration";
+
+      jsonidf[infiltrationType][infiltrationName] = {
+        {"air_changes_per_hour",0.0},
+        {"constant_term_coefficient",1},
+        {"design_flow_rate_calculation_method","AirChanges/Hour"},
+        {"schedule_name", schedulename},
+        {"temperature_term_coefficient",0},
+        {"velocity_squared_term_coefficient",0},
+        {"velocity_term_coefficient",0},
+        {"zone_or_zonelist_name", zone.idfname}
+      };
+    }
+  }
+
+  return jsonidf;
+}
+
 // Remove infiltration idf input objects for zones that are connected to Modelica
 json & removeInfiltration(json & jsonidf, const Input& input) {
+  // First expand any infiltration that uses zone lists
+  expandInfiltrationZoneLists(jsonidf);
 
   // Idf infiltration type paired with the field which identifies the related zone
   constexpr std::array<std::pair<const char *, const char *>, 3> infiltrationTypes = {{
@@ -195,6 +285,8 @@ json & removeInfiltration(json & jsonidf, const Input& input) {
       }
     }
   }
+
+  addDefaultZeroInfiltration(jsonidf, input);
 
   return jsonidf;
 }
