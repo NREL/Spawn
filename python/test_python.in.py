@@ -44,6 +44,9 @@ spawn_input = R'''{
 
 
 class TestSpawn(unittest.TestCase):
+    def setUp(self):
+        print("Setting up Python SWIG/Spawn test harness")
+        
     def test_OneSpawn(self):
         working_path = libspawn.Temp_Directory()
 
@@ -56,18 +59,25 @@ class TestSpawn(unittest.TestCase):
 
         for day in range(366):
             time = libspawn.days_to_seconds(day)
-            print("Setting time to %s for day %s" % (time, day))
             spawn1.setTime(time)
             self.assertEqual(spawn1.currentTime(), time)
-            print("Getting Core_Zone_Lights_Output")
             lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
-            print("Core_Zone_Lights_Output: %d", lighting_power)
+            print("Time %s, Day %s; Core_Zone_Lights_Output: %d" % (time, day, lighting_power), flush=True)
             self.assertGreater(lighting_power, 0.0)
 
+        print("Shutting down EnergyPlus", flush=True)
         spawn1.stop()
+        print("Spawn / EnergyPlus successfully shut down", flush=True)
+        
+    def tearDown(self):
+        print("Tearing down Python test harness", flush=True)
 
+print("Starting test harness", flush = True)
 
 if __name__ == '__main__':
     unittest.main()
 
+
+
+print("Finishing test harness?", flush = True)
 
