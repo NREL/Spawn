@@ -27,6 +27,7 @@ add_executable(tests
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp
+  test_infiltration.cpp
 )
 
 add_dependencies(tests example_fmu_lib)

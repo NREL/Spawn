@@ -242,8 +242,8 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
 
   Spawn::ZoneSums sums;
 
-  sums.tempDepCoef = SumHA;                   // + SumMCp;
-  sums.tempIndCoef = SumIntGain + SumHATsurf; // - SumHATref + SumMCpT;
+  sums.tempDepCoef = SumHA + SumMCp;
+  sums.tempIndCoef = SumIntGain + SumHATsurf + SumMCpT;
 
   return sums;
 }
@@ -514,9 +514,11 @@ void Spawn::exchange(const bool force)
   // Run some internal EnergyPlus functions to update outputs
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
+  EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
 
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
+  EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
 
