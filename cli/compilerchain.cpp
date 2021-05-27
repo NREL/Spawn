@@ -48,36 +48,34 @@ std::vector<fs::path> modelicaIncludePaths(const fs::path &jmodelica_dir)
 std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
 {
   return {
-    jmodelica_dir / "/lib/RuntimeLibrary/liblapack.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaIO.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaExternalC.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_cs.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_get_set_default.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi2.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libblas.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_block_solver.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi_evaluator_util.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libjmi.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaStandardTables.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libModelicaMatIO.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libzlib.a",
-    jmodelica_dir / "/lib/RuntimeLibrary/libfmi1_me.a",
-    jmodelica_dir / "/ThirdParty/Minpack/lib/libcminpack.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecserial.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_idas.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvodes.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_ida.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_arkode.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_cvode.a",
-    jmodelica_dir / "/ThirdParty/Sundials/lib/libsundials_kinsol.a"
+    jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libModelicaIO.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libModelicaExternalC.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_cs.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_default.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi2.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libblas.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi_block_solver.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi_evaluator_util.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libModelicaStandardTables.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libModelicaMatIO.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libzlib.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
+    jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecserial.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_idas.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvodes.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_ida.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a"
   };
 
 }
 
 int compileC(const fs::path & output_dir) {
-  std::cout << "Compile C Code" << std::endl;
-
   const auto & sourcesdir = output_dir / "sources";
   std::vector<fs::path> sourcefiles;
 
@@ -119,12 +117,11 @@ int compileC(const fs::path & output_dir) {
   // Libs to link
 
   const auto temp_dir = output_dir / "tmp";
-
   const auto jmodelica_dir = temp_dir / "JModelica";
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
+
   // include paths
   auto include_paths = modelicaIncludePaths(jmodelica_dir);
-  include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
 
   const auto model_description_path = output_dir / "modelDescription.xml";
 

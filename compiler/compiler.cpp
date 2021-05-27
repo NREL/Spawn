@@ -100,6 +100,7 @@ std::string getExecutablePath()
 namespace spawn {
 void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::path> additional_libs)
 {
+
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
@@ -128,11 +129,9 @@ void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::pat
       "-o",
       toString(loc),
       "-lm",
-      "-lgcc_s",
       "-lc",
       "-ldl",
       "-lpthread",
-      "-lgfortran",
     });
 
 
