@@ -150,12 +150,12 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
     spdlog::trace("makeModelicalExternalFunction parameter {}", param);
   }
 
-  if (parameters.size() < 5) {
+  if (parameters.size() < 3) {
     spdlog::error("unable to determine build target");
     return;
   }
 
-  if (parameters[5] == "ceval") {
+  if (parameters[3] == "ceval") {
     spdlog::info("ceval: compiling executable from .c files");
   } else {
     spdlog::error("Unknown build target: '{}' aborting", parameters[5]);
@@ -181,7 +181,8 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
 
   const auto jmodelica_dir = fs::path{arguments["JMODELICA_HOME"]};
   auto include_paths = modelicaIncludePaths(jmodelica_dir);
-  include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
+  // TODO configure this
+  //include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
 
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 

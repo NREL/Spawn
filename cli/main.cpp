@@ -126,12 +126,11 @@ int main(int argc, const char *argv[]) {
   auto compileOption =
       app.add_option("--compile", moinput,
                      "Compile Modelica model to FMU format", true);
-  auto clangapp = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
-  auto makeExternal = clangapp->add_flag("-f", "compile a Modelica external function, acting like 'make'");
+  //auto clangapp = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
+  auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
 
-
-
+  app.allow_extras();
 
   CLI11_PARSE(app, argc, argv);
 
@@ -143,8 +142,8 @@ int main(int argc, const char *argv[]) {
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*compileOption) {
       spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
-    } else if (makeExternal) {
-      spawn::makeModelicaExternalFunction({argv, std::next(argv, argc)});
+    } else if (*makeOption) {
+      spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
