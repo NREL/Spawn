@@ -50,24 +50,28 @@ class TestSpawn(unittest.TestCase):
     def test_OneSpawn(self):
         working_path = libspawn.Temp_Directory()
 
-        print("Temp directory created: %s" % working_path.dir().toString());
+        def runOneSpawn():
+            print("Temp directory created: %s" % working_path.dir().toString());
 
-        spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path.dir());
-        spawn1.start()
+            spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path.dir());
+            spawn1.start()
 
-        self.assertEqual(spawn1.currentTime(), 0.0)
+            self.assertEqual(spawn1.currentTime(), 0.0)
 
-        for day in range(366):
-            time = libspawn.days_to_seconds(day)
-            spawn1.setTime(time)
-            self.assertEqual(spawn1.currentTime(), time)
-            lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
-            print("Time %s, Day %s; Core_Zone_Lights_Output: %d" % (time, day, lighting_power), flush=True)
-            self.assertGreater(lighting_power, 0.0)
+            for day in range(366):
+                time = libspawn.days_to_seconds(day)
+                spawn1.setTime(time)
+                self.assertEqual(spawn1.currentTime(), time)
+                lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
+                print("Time %s, Day %s; Core_Zone_Lights_Output: %d" % (time, day, lighting_power), flush=True)
+                self.assertGreater(lighting_power, 0.0)
 
-        print("Shutting down EnergyPlus", flush=True)
-        spawn1.stop()
-        print("Spawn / EnergyPlus successfully shut down", flush=True)
+            print("Shutting down EnergyPlus", flush=True)
+            spawn1.stop()
+            print("Spawn / EnergyPlus successfully shut down", flush=True)
+
+        #explicit scope to make sure spawn1 is destroyed before the Temp_Directory and things are cleaned up properly
+        runOneSpawn()
         
     def tearDown(self):
         print("Tearing down Python test harness", flush=True)

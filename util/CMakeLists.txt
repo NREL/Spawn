@@ -19,7 +19,7 @@ add_library(spawn_utils
         paths.cpp
 )
 
-target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip compile_options)
+target_link_libraries(spawn_utils PUBLIC energyplusapi PRIVATE CONAN_PKG::libzip CONAN_PKG::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
