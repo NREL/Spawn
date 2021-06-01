@@ -1,6 +1,7 @@
 import unittest
 import sys
 import os
+import tempfile
 
 
 print("Current working directory: %s" % os.getcwd())
@@ -48,12 +49,13 @@ class TestSpawn(unittest.TestCase):
         print("Setting up Python SWIG/Spawn test harness")
         
     def test_OneSpawn(self):
-        working_path = libspawn.Temp_Directory()
 
-        def runOneSpawn():
-            print("Temp directory created: %s" % working_path.dir().toString());
+        # This will safely clean up the temp directory after the spawn has finished
+        with tempfile.TemporaryDirectory() as temp_path:
+            working_path = libspawn.path(temp_path)
+            print("Temp directory created: %s" % working_path.toString());
 
-            spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path.dir());
+            spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path);
             spawn1.start()
 
             self.assertEqual(spawn1.currentTime(), 0.0)
@@ -70,8 +72,9 @@ class TestSpawn(unittest.TestCase):
             spawn1.stop()
             print("Spawn / EnergyPlus successfully shut down", flush=True)
 
-        #explicit scope to make sure spawn1 is destroyed before the Temp_Directory and things are cleaned up properly
-        runOneSpawn()
+            # Make sure spawn1 is fully destroyed before we try to remove the TemporaryDirectory that 
+            # was being used
+            del spawn1
         
     def tearDown(self):
         print("Tearing down Python test harness", flush=True)
