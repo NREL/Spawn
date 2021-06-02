@@ -10,7 +10,7 @@ constexpr std::array<const char *,4> supportedScheduleTypes = {
 	"Schedule:File"
 };
 
-constexpr std::array<const char *,315> supportedIDDTypes = {
+constexpr std::array<const char *,298> supportedIDDTypes = {
   "Version",
   "SimulationControl",
   "PerformancePrecisionTradeoffs",
@@ -228,23 +228,6 @@ constexpr std::array<const char *,315> supportedIDDTypes = {
   "EnergyManagementSystem:InternalVariable",
   "EnergyManagementSystem:CurveOrTableIndexVariable",
   "EnergyManagementSystem:ConstructionIndexVariable",
-  "Refrigeration:Case",
-  "Refrigeration:CompressorRack",
-  "Refrigeration:CaseAndWalkInList",
-  "Refrigeration:Condenser:AirCooled",
-  "Refrigeration:Condenser:EvaporativeCooled",
-  "Refrigeration:Condenser:WaterCooled",
-  "Refrigeration:Condenser:Cascade",
-  "Refrigeration:GasCooler:AirCooled",
-  "Refrigeration:TransferLoadList",
-  "Refrigeration:Subcooler",
-  "Refrigeration:Compressor",
-  "Refrigeration:CompressorList",
-  "Refrigeration:System",
-  "Refrigeration:TranscriticalSystem",
-  "Refrigeration:SecondarySystem",
-  "Refrigeration:WalkIn",
-  "Refrigeration:AirChiller",
   "Matrix:TwoDimension",
   "Curve:Linear",
   "Curve:QuadLinear",
