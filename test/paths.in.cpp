@@ -24,3 +24,7 @@ fs::path project_source_dir() {
   return "${PROJECT_SOURCE_DIR}";
 }
 
+fs::path project_binary_dir() {
+  return "${PROJECT_BINARY_DIR}";
+}
+
