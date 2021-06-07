@@ -1,5 +1,6 @@
 #include "create_epfmu.hpp"
 #include "paths.hpp"
+#include "../util/paths.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <fmt/format.h>
 #include <fstream>
@@ -7,15 +8,15 @@
 using json = nlohmann::json;
 
 fs::path single_family_house_idf_path() {
-  return project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/Examples/SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
+  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/Examples/SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
 }
 
 fs::path two_zones_idf_path() {
-  return project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
+  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
 }
 
 fs::path chicago_epw_path() {
-  return  project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+  return  spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 }
 
 fs::path create_epfmu() {

@@ -2,6 +2,10 @@ if(UNIX)
   add_definitions("-fPIC")
 endif()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+configure_file(paths.in.cpp paths.cpp)
+
 add_library(
   spawn_utils
   compare.hpp
@@ -16,7 +20,8 @@ add_library(
   dynamiclibrary_windows.hpp
   dynamiclibrary_posix.hpp
   paths.hpp
-  paths.cpp)
+  ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
+)
 
 target_link_libraries(
   spawn_utils

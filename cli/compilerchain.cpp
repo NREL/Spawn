@@ -1,4 +1,5 @@
 #include "../compiler/compiler.hpp"
+#include "../util/paths.hpp"
 #include "cli/embedded_files.hxx"
 #include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
@@ -35,13 +36,14 @@ int compileMO(
   }
 }
 
-std::vector<fs::path> modelicaIncludePaths(const fs::path &jmodelica_dir)
+std::vector<fs::path> includePaths(const fs::path &jmodelica_dir)
 {
   return {
     jmodelica_dir / "include/RuntimeLibrary/",
     jmodelica_dir / "include/RuntimeLibrary/module_include",
     jmodelica_dir / "include/RuntimeLibrary/zlib",
-    jmodelica_dir / "ThirdParty/FMI/2.0"
+    jmodelica_dir / "ThirdParty/FMI/2.0",
+    spawn::mbl_home_dir() / "Buildings/Resources/C-Sources/"
   };
 }
 
@@ -121,7 +123,7 @@ int compileC(const fs::path & output_dir) {
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   // include paths
-  auto include_paths = modelicaIncludePaths(jmodelica_dir);
+  auto include_paths = includePaths(jmodelica_dir);
 
   const auto model_description_path = output_dir / "modelDescription.xml";
 
@@ -180,10 +182,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   fileToCompile += ".c";
 
   const auto jmodelica_dir = fs::path{arguments["JMODELICA_HOME"]};
-  auto include_paths = modelicaIncludePaths(jmodelica_dir);
-  // TODO configure this
-  //include_paths.push_back("/home/jason/Spawn/submodules/modelica-buildings/Buildings/Resources/C-Sources/EnergyPlus/");
-
+  const auto include_paths = includePaths(jmodelica_dir);
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   const std::vector<std::string> flags{};

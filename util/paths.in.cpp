@@ -46,10 +46,24 @@ namespace spawn {
   return path;
   }
   
-fs::path exedir() {
-  static const auto path = exe().parent_path();
-  return path;
-}
+  fs::path exedir() {
+    static const auto path = exe().parent_path();
+    return path;
+  }
+
+  fs::path mbl_home_dir() {
+    // TODO: This does not work in an installed scenario.
+    // And... it needs to, because it is expected to be used in production
+    return project_source_dir() / "submodules/modelica-buildings";
+  }
+
+  fs::path project_source_dir() {
+    return "${PROJECT_SOURCE_DIR}";
+  }
+  
+  fs::path project_binary_dir() {
+    return "${PROJECT_BINARY_DIR}";
+  }
 }
 
 

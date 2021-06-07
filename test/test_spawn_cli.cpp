@@ -6,6 +6,7 @@
 #include "../fmu/logger.h"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
+#include "../util/paths.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <catch2/catch.hpp>
 #include <cstdlib>
@@ -48,7 +49,7 @@ TEST_CASE( "Spawn is able to compile a Modelica model that uses external functio
 
 TEST_CASE( "Spawn lists the correct actuators" ) {
   // copy idf and modify to generate edd file
-  const auto idf_path = project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+  const auto idf_path = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
   const auto new_idf_path = testdir() / "actuators.idf";
   fs::copy(idf_path, new_idf_path, fs::copy_options::overwrite_existing);
 
