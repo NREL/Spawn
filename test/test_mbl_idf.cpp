@@ -284,7 +284,7 @@ TEST_CASE("Test invalid surface IO")
   CHECK(status == fmi2Error);
 
   status = fmu.fmi.fmi2Terminate(comp);
-  CHECK(status == fmi2OK);
+  CHECK(status == fmi2Error);
 }
 
 TEST_CASE("Test Idempotence")

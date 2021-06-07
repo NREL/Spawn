@@ -88,7 +88,17 @@ void Spawn::start() {
     // This will make the EnergyPlus simulation thread go through startup/warmup etc
     // and then go back to waiting
     iterate();
+
+    // We might see isRunning return false, before
+    // the EnergyPlus thread is terminated.
+    if (! isRunning() ) {
+      sim_thread.join();
+    }
+
     // Move to the requested start time
+    // This will throw if EnergyPlus is not running
+    // Because of the previous isRunning check and then join,
+    // EnergyPlus will have shutdown cleanly
     setTime(m_startTime);
   }
 }

@@ -70,7 +70,8 @@ void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state)
 void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData & state) {
   // If the max number of warmup days has been exceeded then return early,
   // and allow the simulation to continue into the run period
-  if (state.dataGlobal->DayOfSim >= state.dataHeatBal->MaxNumberOfWarmupDays) {
+  if (lastDayOfSim >= state.dataHeatBal->MaxNumberOfWarmupDays) {
+    state.dataGlobal->WarmupFlag = false;
     return;
   }
 

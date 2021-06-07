@@ -82,8 +82,7 @@ TEST_CASE("Test invalid input")
   status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(365));
   REQUIRE(status == fmi2Error);
 
-  // Should we return an error if you try to terminate a model that is not running?
   status = fmu.fmi.fmi2Terminate(comp);
-  REQUIRE(status == fmi2OK);
+  REQUIRE(status == fmi2Error);
 }
 

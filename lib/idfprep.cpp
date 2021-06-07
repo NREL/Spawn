@@ -109,18 +109,20 @@ json & removeUnusedObjects(json & jsonidf) {
   }
 
   // Remove unsupported output vars
-  auto & outputvars = jsonidf.at("Output:Variable");
-  for(auto var = outputvars.cbegin(); var != outputvars.cend();){
-    const auto & name = var.value().at("variable_name").get<std::string>();
-    const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
-      [&](const OutputProperties & v) {
-        return case_insensitive_compare(v.name, name);
-      });
+  auto outputvars = jsonidf.find("Output:Variable");
+  if( outputvars != jsonidf.end() ) {
+    for( auto var = outputvars->cbegin(); var != outputvars->cend(); ){
+      const auto & name = var.value().at("variable_name").get<std::string>();
+      const auto & findit = std::find_if(std::begin(outputtypes), std::end(outputtypes),
+        [&](const OutputProperties & v) {
+          return case_insensitive_compare(v.name, name);
+        });
 
-    if(findit == std::end(outputtypes)) {
-      var = outputvars.erase(var);
-    } else {
-      ++var;
+      if(findit == std::end(outputtypes)) {
+        var = outputvars->erase(var);
+      } else {
+        ++var;
+      }
     }
   }
 
