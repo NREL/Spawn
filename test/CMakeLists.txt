@@ -18,6 +18,7 @@ add_executable(
   create_epfmu.cpp
   paths.hpp
   test_epfmi.cpp
+  test_example_files.cpp
   test_spawn_cli.cpp
   test_spawn_lib.cpp
   test_temp_directory.cpp
@@ -26,7 +27,9 @@ add_executable(
   test_single_family_house_lights_control.cpp
   test_fmi.cpp
   test_utils.cpp
-  test_mbl_idf.cpp)
+  test_mbl_idf.cpp
+  test_infiltration.cpp
+)
 
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)

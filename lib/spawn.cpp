@@ -88,7 +88,17 @@ void Spawn::start() {
     // This will make the EnergyPlus simulation thread go through startup/warmup etc
     // and then go back to waiting
     iterate();
+
+    // We might see isRunning return false, before
+    // the EnergyPlus thread is terminated.
+    if (! isRunning() ) {
+      sim_thread.join();
+    }
+
     // Move to the requested start time
+    // This will throw if EnergyPlus is not running
+    // Because of the previous isRunning check and then join,
+    // EnergyPlus will have shutdown cleanly
     setTime(m_startTime);
   }
 }
@@ -242,8 +252,8 @@ Spawn::ZoneSums Spawn::zoneSums(const int zonenum) {
 
   Spawn::ZoneSums sums;
 
-  sums.tempDepCoef = SumHA;                   // + SumMCp;
-  sums.tempIndCoef = SumIntGain + SumHATsurf; // - SumHATref + SumMCpT;
+  sums.tempDepCoef = SumHA + SumMCp;
+  sums.tempIndCoef = SumIntGain + SumHATsurf + SumMCpT;
 
   return sums;
 }
@@ -514,9 +524,11 @@ void Spawn::exchange(const bool force)
   // Run some internal EnergyPlus functions to update outputs
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
+  EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
 
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
+  EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
 

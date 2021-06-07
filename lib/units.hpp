@@ -25,6 +25,7 @@ enum class UnitType{
 	m,
   m2,
 	m3, L,
+	m3_per_s,
 	s, hr,
 	kg,
   kg_per_m3,
@@ -36,7 +37,7 @@ enum class UnitType{
 
 typedef std::pair<UnitType, const char *> UnitString;
 
-const std::array<UnitString, 28> unitstrings {{
+const std::array<UnitString, 29> unitstrings {{
 	{UnitType::C,"degC"},
   {UnitType::K,"K"},
   {UnitType::one,"1"},
@@ -55,6 +56,7 @@ const std::array<UnitString, 28> unitstrings {{
   {UnitType::m2,"m2"},
 	{UnitType::m3,"m3"},
   {UnitType::L,"L"},
+	{UnitType::m3_per_s,"m3/s"},
 	{UnitType::s,"s"},
   {UnitType::hr,"hr"},
 	{UnitType::kg,"kg"},

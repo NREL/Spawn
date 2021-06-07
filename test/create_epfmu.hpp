@@ -5,6 +5,8 @@
 
 fs::path single_family_house_idf_path();
 
+fs::path two_zones_idf_path();
+
 fs::path chicago_epw_path();
 
 /// \todo this generates the same file every time, breaking parallel testing
