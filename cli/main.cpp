@@ -56,19 +56,26 @@ fs::path epfmiInstallPath() {
 }
 
 fs::path mblPath() {
+  fs::path p;
+
   if (isInstalled()) {
-    return spawn::exedir() / "../modelica-buildings/Buildings/";
+    p = spawn::exedir() / "../etc/modelica-buildings/Buildings/";
   } else {
-    return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
+    p = spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
   }
+
+  return p.lexically_normal();
 }
 
 fs::path mslPath() {
+  fs::path p;
   if (isInstalled()) {
-    return spawn::exedir() / "../MSL/";
+    p = spawn::exedir() / "../etc/MSL/";
   } else {
-    return spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
+    p = spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
   }
+
+  return p.lexically_normal();
 }
 
 void handle_eptr(std::exception_ptr eptr) {

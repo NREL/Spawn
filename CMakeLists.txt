@@ -164,6 +164,7 @@ if(ENABLE_MODELICA_COMPILER)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
   endif()
+  install(DIRECTORY "${jmodelica_path}/ThirdParty/MSL" DESTINATION etc/)
 endif()
 
 add_subdirectory(util)
@@ -176,7 +177,6 @@ add_subdirectory(cli)
 add_subdirectory(epfmi)
 add_subdirectory(fmu)
 add_subdirectory(embedded)
-add_subdirectory(examples)
 
 enable_testing()
 add_subdirectory(test)
@@ -212,9 +212,10 @@ if(ENABLE_BUILDINGS_LIBRARY)
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
+
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica-buildings" DESTINATION etc/)
 endif()
 
-install(DIRECTORY examples DESTINATION .)
 install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)
 
 include(CPack)
