@@ -55,21 +55,19 @@ fs::path epfmiInstallPath() {
   }
 }
 
-fs::path jmodelicaHome() {
-  if (isInstalled()) {
-    return spawn::exedir() / "../JModelica/";
-  } else {
-    fs::path binary_dir(spawn::BINARY_DIR);
-    return binary_dir / "JModelica/";
-  }
-}
-
 fs::path mblPath() {
   if (isInstalled()) {
     return spawn::exedir() / "../modelica-buildings/Buildings/";
   } else {
-    fs::path source_dir(spawn::SOURCE_DIR);
-    return source_dir / "submodules/modelica-buildings/Buildings/";
+    return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
+  }
+}
+
+fs::path mslPath() {
+  if (isInstalled()) {
+    return spawn::exedir() / "../MSL/";
+  } else {
+    return spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
   }
 }
 
@@ -141,7 +139,7 @@ int main(int argc, const char *argv[]) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*compileOption) {
-      spawn::modelicaToFMU(moinput, mblPath(), jmodelicaHome());
+      spawn::modelicaToFMU(moinput, mblPath(), mslPath());
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif

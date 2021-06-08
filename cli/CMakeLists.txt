@@ -145,13 +145,17 @@ if(ENABLE_MODELICA_COMPILER)
 
   file(GLOB_RECURSE code_gen_files FOLLOW_SYMLINKS "${jmodelica_path}/CodeGenTemplates/**" "${jmodelica_path}/XML/**")
 
-  foreach(filepath ${template_files})
+  foreach(filepath ${code_gen_files})
     file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
     list(APPEND embedded_files ${filepath})
     list(APPEND embedded_paths ${embedded_path})
   endforeach()
 
-  # don't embed MSL for now
+  set(makefile "${jmodelica_path}/Makefiles/MakeFile")
+  file(RELATIVE_PATH embedded_makefile "${jmodelica_path}/../" ${makefile})
+  list(APPEND embedded_files ${makefile})
+  list(APPEND embedded_paths ${embedded_makefile})
+
   #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
   #  "${jmodelica_path}/ThirdParty/MSL/**"
   #)
@@ -161,6 +165,7 @@ if(ENABLE_MODELICA_COMPILER)
   #  list(APPEND embedded_files ${filepath})
   #  list(APPEND embedded_paths ${embedded_path})
   #endforeach()
+
   # don't embed MBL for now
   #set(mbl_path "${CMAKE_BINARY_DIR}/modelica-buildings")
   #file(GLOB_RECURSE mbl_files FOLLOW_SYMLINKS

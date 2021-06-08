@@ -10,15 +10,19 @@ int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
   const fs::path & mblPath,
-  const fs::path & jmodelicaHome
+  const fs::path & jmodelica_dir,
+  const fs::path & mslPath
 );
 
-int compileC(const fs::path & output_dir);
+int compileC(
+  const fs::path & output_dir,
+  const fs::path & jmodelica_dir
+);
 
 int modelicaToFMU(
   const std::string &moinput,
   const fs::path & mblPath,
-  const fs::path & jmodelicaHome
+  const fs::path & mslPath
 );
 
 void makeModelicaExternalFunction(const std::vector<std::string> &parameters);

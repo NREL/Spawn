@@ -13,13 +13,13 @@ int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
   const fs::path & mblPath,
-  const fs::path & jmodelicaHome
+  const fs::path & jmodelica_dir,
+  const fs::path & mslPath
 ) {
   try {
     std::vector<fs::path> paths;
 
-    setenv("JMODELICA_HOME", jmodelicaHome.string().c_str(), 1);
-    const auto mslPath = jmodelicaHome / "ThirdParty/MSL/";
+    setenv("JMODELICA_HOME", jmodelica_dir.string().c_str(), 1);
 
     paths.push_back(mslPath);
     paths.push_back(mblPath);
@@ -77,7 +77,7 @@ std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
 
 }
 
-int compileC(const fs::path & output_dir) {
+int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir) {
   const auto & sourcesdir = output_dir / "sources";
   std::vector<fs::path> sourcefiles;
 
@@ -118,8 +118,6 @@ int compileC(const fs::path & output_dir) {
 
   // Libs to link
 
-  const auto temp_dir = output_dir / "tmp";
-  const auto jmodelica_dir = temp_dir / "JModelica";
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   // include paths
@@ -214,7 +212,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
 int modelicaToFMU(
   const std::string &moinput,
   const fs::path & mblPath,
-  const fs::path & jmodelicaHome
+  const fs::path & mslPath
 ) {
   // output_dir_name is moinput with "." replaced by "_"
   std::string output_dir_name;
@@ -234,15 +232,17 @@ int modelicaToFMU(
 
   // tmp is where we extract embedded files
   const auto & temp_dir = output_dir / "tmp";
+  const auto jmodelica_dir = temp_dir / "JModelica";
+
   fs::create_directories(temp_dir);
 
   for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
     spawnmodelica::embedded_files::extractFile(file, temp_dir.native());
   }
 
-  int result = compileMO(moinput, output_dir.native(), mblPath, jmodelicaHome);
+  int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath);
   if(result == 0) {
-    result = compileC(output_dir);
+    result = compileC(output_dir, jmodelica_dir);
   }
 
   if(result == 0) {
