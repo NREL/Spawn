@@ -1,5 +1,6 @@
 #include "../compiler/compiler.hpp"
 #include "../util/paths.hpp"
+#include "../lib/ziputil.hpp"
 #include "cli/embedded_files.hxx"
 #include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
@@ -226,8 +227,12 @@ int modelicaToFMU(
     }
   );
 	const auto output_dir = fs::current_path() / output_dir_name;
+  const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
   if(! output_dir_name.empty()) {
     fs::remove_all(output_dir);
+  }
+  if(fs::exists(fmu_path)) {
+    fs::remove_all(fmu_path);
   }
 
   // tmp is where we extract embedded files
@@ -246,6 +251,8 @@ int modelicaToFMU(
   }
 
   if(result == 0) {
+    zip_directory(output_dir.string(), fmu_path.string(), false);
+    fs::remove_all(output_dir);
     fs::remove_all(temp_dir);
     spdlog::info("Model Compiled");
   }
