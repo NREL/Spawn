@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.io.File;
 
-public class Modelica { 
+public class JModelica { 
   //@CEntryPoint
   //public static void foo() {
   //}

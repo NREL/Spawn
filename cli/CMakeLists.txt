@@ -206,14 +206,7 @@ target_link_libraries(
 )
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE compiler modelica)
+  target_link_libraries(spawn PRIVATE compiler jmodelica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)
-
-# This is only necessary if ENABLE_MODELICA_COMPILER, but shouldn't hurt in any case
-if(WIN32)
-  set(spawn_output_name "spawn.exe")
-else()
-  set(spawn_output_name "spawn")
-endif()

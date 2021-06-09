@@ -169,7 +169,7 @@ endif()
 
 add_subdirectory(util)
 if(ENABLE_MODELICA_COMPILER)
-  add_subdirectory(modelica)
+  add_subdirectory(jmodelica)
   add_subdirectory(compiler)
 endif()
 add_subdirectory(lib)

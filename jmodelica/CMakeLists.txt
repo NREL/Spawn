@@ -19,38 +19,31 @@ add_custom_command(
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java)
 
 add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Modelica.class
-  COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/Modelica.java
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/JModelica.class
+  COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/JModelica.java
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Modelica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class)
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/JModelica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class)
 
 # RPATH complications mean the library needs to be generated next to the spawn
 # executable Maybe this can be fixed
-set(modelica_lib_path "${PROJECT_BINARY_DIR}/cli/modelica${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(jmodelica_lib_path "${PROJECT_BINARY_DIR}/cli/jmodelica${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 add_custom_command(
-  OUTPUT ${modelica_lib_path}
-  COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} --shared Modelica
+  OUTPUT ${jmodelica_lib_path}
+  COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} --shared JModelica
           # WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cli"
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/Modelica.class)
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/JModelica.class)
 
-add_custom_target(modelica-lib DEPENDS ${modelica_lib_path})
+add_custom_target(jmodelica-lib DEPENDS ${jmodelica_lib_path})
 
-add_library(modelica SHARED IMPORTED GLOBAL)
-set_target_properties(modelica PROPERTIES IMPORTED_LOCATION ${modelica_lib_path})
+add_library(jmodelica SHARED IMPORTED GLOBAL)
+set_target_properties(jmodelica PROPERTIES IMPORTED_LOCATION ${jmodelica_lib_path})
 
-# Need cmake 3.11 or greater to do this target_include_directories(modelica
-# INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-# #$<INSTALL_INTERFACE:include/mylib>  # <prefix>/include/mylib )
-
-add_dependencies(modelica modelica-lib)
-
-# can't install imported targets install(TARGETS modelica RUNTIME DESTINATION
-# bin)
+add_dependencies(jmodelica jmodelica-lib)
 
 if(WIN32)
-  install(PROGRAMS ${modelica_lib_path} DESTINATION bin)
+  install(PROGRAMS ${jmodelica_lib_path} DESTINATION bin)
 else()
-  install(PROGRAMS ${modelica_lib_path} DESTINATION lib)
+  install(PROGRAMS ${jmodelica_lib_path} DESTINATION lib)
 endif()
