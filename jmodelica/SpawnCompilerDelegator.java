@@ -14,32 +14,16 @@ public class SpawnCompilerDelegator extends GccCompilerDelegator {
 
   @Override
   protected void compileCCode(ModelicaLogger log, CCompilerArguments args, File workDir, String[] platforms) {
-    System.out.println("Calling SpawnCompilerDelegator::compile()");
-
-    try {
-      System.out.println("Executing from: " + new File(SpawnCompilerDelegator.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath());
-    } catch (java.lang.Exception ex) {
-    }
-
-    System.out.println("Makefile: " + getMakefile().getPath());
-
     super.compileCCode(log, args, workDir, platforms);
-
-    System.out.println("Compiled: " + args.getFileName());
   }
 
   @Override
   protected String getMake(String platform)
   {
-    System.out.println("getMake called");
     try {
       String myPath = new File(SpawnCompilerDelegator.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
-      System.out.println("Calling '" + myPath + "'");
-      //System.out.println("Delegating to real make for now");
-      //return super.getMake(platform);
       return myPath;
     } catch (java.lang.Exception ex) {
-      System.out.println("Unable to determine my executable location? What to do?");
       return "make";
     }
   }
@@ -72,7 +56,6 @@ public class SpawnCompilerDelegator extends GccCompilerDelegator {
           return new SpawnCompilerDelegator(EnvironmentUtils.getJModelicaHome(), EnvironmentUtils.getJavaPlatform());
         }
       });
-      System.out.println("Registered SpawnCompilerDelegator in place of GccCompilerDelegator");
     } catch (NoSuchFieldException | IllegalAccessException e) {
       e.printStackTrace();
     }

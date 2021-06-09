@@ -89,8 +89,10 @@ void handle_eptr(std::exception_ptr eptr) {
 }
 
 int main(int argc, const char *argv[]) {
-  spdlog::set_level(spdlog::level::trace);
   CLI::App app{"Spawn of EnergyPlus"};
+
+  auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
+  auto verboseOption = app.add_flag("--verbose", "Use verbose logging");
 
   std::string jsoninput = "spawn.json";
   auto createOption =
@@ -124,8 +126,6 @@ int main(int argc, const char *argv[]) {
 
   auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
 
-  auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
-
 #if defined ENABLE_MODELICA_COMPILER
   std::string moinput = "";
   auto compileOption =
@@ -142,6 +142,13 @@ int main(int argc, const char *argv[]) {
   std::exception_ptr eptr;
 
   try {
+    if (*verboseOption) {
+      spdlog::set_level(spdlog::level::trace);
+    } else {
+      spdlog::set_pattern("%v");
+      spdlog::set_level(spdlog::level::info);
+    }
+
     if (*createOption) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER

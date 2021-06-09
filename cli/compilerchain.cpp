@@ -247,14 +247,19 @@ int modelicaToFMU(
 
   int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath);
   if(result == 0) {
+    spdlog::info("Compile C Code");
     result = compileC(output_dir, jmodelica_dir);
   }
 
   if(result == 0) {
+    spdlog::info("Compress FMU");
     zip_directory(output_dir.string(), fmu_path.string(), false);
     fs::remove_all(output_dir);
     fs::remove_all(temp_dir);
     spdlog::info("Model Compiled");
+  } else {
+    spdlog::info("Model Failed to Compile");
+    spdlog::info("Input files can be inspected here: {}", output_dir.string());
   }
 
   return result;
