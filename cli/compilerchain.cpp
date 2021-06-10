@@ -4,7 +4,7 @@
 #include "cli/embedded_files.hxx"
 #include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
-#include <modelica.h>
+#include <jmodelica.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 
