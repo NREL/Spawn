@@ -10,7 +10,7 @@ int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
   const fs::path & mblPath,
-  const fs::path & jmodelica_dir,
+  const fs::path & modelicaHome,
   const fs::path & mslPath
 );
 

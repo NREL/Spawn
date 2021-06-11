@@ -12,11 +12,6 @@ import org.jmodelica.util.streams.NullStream;
 
 public class SpawnCompilerDelegator extends GccCompilerDelegator {
 
-  //@Override
-  //protected void compileCCode(ModelicaLogger log, CCompilerArguments args, File workDir, String[] platforms) {
-  //  super.compileCCode(log, args, workDir, platforms);
-  //}
-
   @Override
   protected String getMake(String platform)
   {
@@ -29,7 +24,8 @@ public class SpawnCompilerDelegator extends GccCompilerDelegator {
   }
 
   public SpawnCompilerDelegator(File jmHome, String buildPlatform) {
-    super(jmHome, buildPlatform);
+    //super(jmHome, buildPlatform);
+    super(jmHome);
   }
 
 

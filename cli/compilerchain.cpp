@@ -5,8 +5,12 @@
 #include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
 #include <jmodelica.h>
+#include <optimica.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace spawn {
 
@@ -14,23 +18,40 @@ int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
   const fs::path & mblPath,
-  const fs::path & jmodelica_dir,
+  const fs::path & modelicaHome,
   const fs::path & mslPath
 ) {
   try {
-    std::vector<fs::path> paths;
+    setenv("JMODELICA_HOME", modelicaHome.string().c_str(), 1);
 
-    setenv("JMODELICA_HOME", jmodelica_dir.string().c_str(), 1);
+    std::vector<std::string> paths;
+    paths.push_back(mblPath.generic_string());
 
-    paths.push_back(mslPath);
-    paths.push_back(mblPath);
+    // Graal boilerplate
+    graal_isolate_t *isolate = nullptr;
+    graal_isolatethread_t *thread = nullptr;
+    graal_create_isolate(nullptr, &isolate, &thread);
 
-    std::vector<std::string> params{"modelica", moInput, outputDir.native()};
-    std::transform(std::begin(paths), std::end(paths), std::inserter(params, std::next(std::begin(params))), [](const auto & path) {return path.string();});
-    std::vector<const char *> cparams(params.size());
-    std::transform(std::begin(params), std::end(params), std::begin(cparams), [](const auto & p) {return p.c_str();});
+    // Only primitive data types can be passed from C++ to Java
+    // JSON is serialized and converted to a raw character array
+    json j;
+    j["model"] = moInput;
+    j["outputDir"] = outputDir.generic_string();
+    j["mslDir"] = mslPath.generic_string();
+    j["modelicaPaths"] = paths;
 
-    run_main(cparams.size(), (char **)cparams.data());
+    std::string params = j.dump();
+    std::vector<char> cparams(params.c_str(), params.c_str() + params.size() + 1);
+
+    // The original idea was to allow switching between jmodelica and optimica,
+    // but there are challenges related to graal that might make this difficult or impossible.
+    //if (true) {
+    //  jmodelica_compile(thread, cparams.data());
+    //} else {
+      // optimica is not yet enabled, but plan to enable the option to choose jmodelica or optimica
+      optimica_compile(thread, cparams.data());
+    //}
+
     return 0;
   } catch(...) {
     return 1;

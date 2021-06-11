@@ -14,6 +14,7 @@ set( jars
   "${optimica_path}/lib/casadi_interface/ModelicaCompiler.jar"
   "${optimica_path}/lib/casadi_interface/util.jar"
   "${optimica_path}/lib/casadi_interface/OptimicaCompiler.jar"
+  ${PROJECT_SOURCE_DIR}/java/json-simple-3.1.1.jar
 )
 
 foreach(jar IN LISTS jars)
@@ -21,18 +22,18 @@ foreach(jar IN LISTS jars)
 endforeach()
 string(CONCAT classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}:${CMAKE_CURRENT_BINARY_DIR})
 
-#add_custom_command(
-#  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
-#  COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
-#  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
-#)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
+  COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
+)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
   COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java #${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
 )
 
 # RPATH complications mean the library needs to be generated next to the spawn
@@ -44,8 +45,7 @@ add_custom_command(
   COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} --shared Optimica
           # WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cli"
-  #DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
 )
 
 add_custom_target(optimica-lib DEPENDS ${optimica_lib_path})

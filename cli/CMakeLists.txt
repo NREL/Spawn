@@ -183,16 +183,12 @@ if(ENABLE_MODELICA_COMPILER)
   list(APPEND src compilerchain.hpp compilerchain.cpp ${embedded_output})
 endif()
 
-# INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/fmi2/ )
-# INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR} )
-
 add_executable(spawn ${src})
 
 configure_file(config.hpp.in config.hxx)
 target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(spawn PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
-target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}/modelica")
 
 target_link_libraries(
   spawn
@@ -206,7 +202,7 @@ target_link_libraries(
 )
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE compiler jmodelica)
+  target_link_libraries(spawn PRIVATE compiler optimica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)
