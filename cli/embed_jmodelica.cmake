@@ -1,5 +1,5 @@
 function(
-  embedded_jmodelica
+  embed_jmodelica
   jmodelica_path
   embedded_files
   embedded_paths

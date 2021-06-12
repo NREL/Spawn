@@ -4,8 +4,8 @@ set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 set(src main.cpp)
 
 if(ENABLE_MODELICA_COMPILER)
-  include(embedded_jmodelica.cmake)
-  embedded_jmodelica(
+  include(embed_jmodelica.cmake)
+  embed_jmodelica(
     ${jmodelica_path}
     embedded_files
     embedded_paths
