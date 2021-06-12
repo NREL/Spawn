@@ -127,7 +127,7 @@ int main(int argc, const char *argv[]) {
   auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
 
 #if defined ENABLE_MODELICA_COMPILER
-  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for interacting Modelica operations.");
+  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations.");
   std::string moinput = "";
   auto createModelicaFMUOption =
       modelicaCommand->add_option("--create-fmu", moinput,
