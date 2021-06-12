@@ -1,11 +1,12 @@
+#include "compilerchain.hpp"
+#include "jmodelica.h"
+#include "optimica.h"
 #include "../compiler/compiler.hpp"
 #include "../util/paths.hpp"
 #include "../lib/ziputil.hpp"
 #include "cli/embedded_files.hxx"
 #include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
-#include <jmodelica.h>
-#include <optimica.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
@@ -19,7 +20,8 @@ int compileMO(
   const fs::path & outputDir,
   const fs::path & mblPath,
   const fs::path & modelicaHome,
-  const fs::path & mslPath
+  const fs::path & mslPath,
+  const ModelicaCompilerType & moType
 ) {
   try {
     setenv("JMODELICA_HOME", modelicaHome.string().c_str(), 1);
@@ -27,13 +29,8 @@ int compileMO(
     std::vector<std::string> paths;
     paths.push_back(mblPath.generic_string());
 
-    // Graal boilerplate
-    graal_isolate_t *isolate = nullptr;
-    graal_isolatethread_t *thread = nullptr;
-    graal_create_isolate(nullptr, &isolate, &thread);
-
     // Only primitive data types can be passed from C++ to Java
-    // JSON is serialized and converted to a raw character array
+    // so JSON is serialized and converted to a raw character array
     json j;
     j["model"] = moInput;
     j["outputDir"] = outputDir.generic_string();
@@ -43,14 +40,18 @@ int compileMO(
     std::string params = j.dump();
     std::vector<char> cparams(params.c_str(), params.c_str() + params.size() + 1);
 
+    graal_isolate_t *isolate = nullptr;
+    graal_isolatethread_t *thread = nullptr;
+
     // The original idea was to allow switching between jmodelica and optimica,
     // but there are challenges related to graal that might make this difficult or impossible.
-    //if (true) {
-    //  jmodelica_compile(thread, cparams.data());
-    //} else {
-      // optimica is not yet enabled, but plan to enable the option to choose jmodelica or optimica
+    if (moType == ModelicaCompilerType::Optimica) {
+      optimica_create_isolate(nullptr, &isolate, &thread);
       optimica_compile(thread, cparams.data());
-    //}
+    } else {
+      jmodelica_create_isolate(nullptr, &isolate, &thread);
+      jmodelica_compile(thread, cparams.data());
+    }
 
     return 0;
   } catch(...) {
@@ -234,7 +235,8 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
 int modelicaToFMU(
   const std::string &moinput,
   const fs::path & mblPath,
-  const fs::path & mslPath
+  const fs::path & mslPath,
+  const ModelicaCompilerType & moType
 ) {
   // output_dir_name is moinput with "." replaced by "_"
   std::string output_dir_name;
@@ -266,7 +268,7 @@ int modelicaToFMU(
     spawnmodelica::embedded_files::extractFile(file, temp_dir.native());
   }
 
-  int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath);
+  int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath, moType);
   if(result == 0) {
     spdlog::info("Compile C Code");
     result = compileC(output_dir, jmodelica_dir);

@@ -202,7 +202,7 @@ target_link_libraries(
 )
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE compiler optimica)
+  target_link_libraries(spawn PRIVATE compiler jmodelica optimica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)

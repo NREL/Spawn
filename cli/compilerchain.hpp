@@ -2,16 +2,23 @@
 #define COMPILERCHAIN_HPP_INCLUDED
 
 #include <string>
+#include <vector>
 #include "../util/filesystem.hpp"
 
 namespace spawn {
+
+enum class ModelicaCompilerType {
+  JModelica,
+  Optimica
+};
 
 int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
   const fs::path & mblPath,
   const fs::path & modelicaHome,
-  const fs::path & mslPath
+  const fs::path & mslPath,
+  const ModelicaCompilerType & moType
 );
 
 int compileC(
@@ -22,7 +29,8 @@ int compileC(
 int modelicaToFMU(
   const std::string &moinput,
   const fs::path & mblPath,
-  const fs::path & mslPath
+  const fs::path & mslPath,
+  const ModelicaCompilerType & moType = ModelicaCompilerType::JModelica
 );
 
 void makeModelicaExternalFunction(const std::vector<std::string> &parameters);

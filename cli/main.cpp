@@ -127,11 +127,20 @@ int main(int argc, const char *argv[]) {
   auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
 
 #if defined ENABLE_MODELICA_COMPILER
+  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for interacting Modelica operations.");
   std::string moinput = "";
-  auto compileOption =
-      app.add_option("--compile", moinput,
+  auto createModelicaFMUOption =
+      modelicaCommand->add_option("--create-fmu", moinput,
                      "Compile Modelica model to FMU format", true);
-  //auto clangapp = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
+
+  bool optimica = false;
+  auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler.");
+  optimicaOption->needs(createModelicaFMUOption);
+
+  bool jmodelica = false;
+  auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler.");
+  jmodelicaOption->needs(createModelicaFMUOption);
+
   auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
 
@@ -152,8 +161,12 @@ int main(int argc, const char *argv[]) {
     if (*createOption) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER
-    } else if (*compileOption) {
-      spawn::modelicaToFMU(moinput, mblPath(), mslPath());
+    } else if (*createModelicaFMUOption) {
+      if (optimica) {
+        spawn::modelicaToFMU(moinput, mblPath(), mslPath(), spawn::ModelicaCompilerType::Optimica);
+      } else {
+        spawn::modelicaToFMU(moinput, mblPath(), mslPath());
+      }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif

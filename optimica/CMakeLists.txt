@@ -42,8 +42,7 @@ set(optimica_lib_path "${PROJECT_BINARY_DIR}/cli/optimica${CMAKE_SHARED_LIBRARY_
 
 add_custom_command(
   OUTPUT ${optimica_lib_path}
-  COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} --shared Optimica
-          # WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} -H:APIFunctionPrefix="optimica_" --shared Optimica
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cli"
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
 )
