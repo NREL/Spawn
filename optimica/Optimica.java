@@ -33,8 +33,6 @@ interface Optimica {
   static void compile(IsolateThread thread, CCharPointer args) { 
     try {
       String argsString = CTypeConversion.toJavaString(args);
-      System.out.println("java received data...");
-      System.out.println(argsString);
 
       JsonObject deserialized = (JsonObject)Jsoner.deserialize(argsString);
       String model = (String)deserialized.get("model");
@@ -52,6 +50,7 @@ interface Optimica {
       mc.setModelicapath(mslDir);
       OptimicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
 
+      System.out.println("Compiling Model with Optimica");
       System.out.println("Parse Model");
       SourceRoot sr = mc.parseModel(modelicaPaths);
       System.out.println("Instantiate Model");
@@ -61,7 +60,7 @@ interface Optimica {
       System.out.println("Generate C Code");
       mc.generateCode(flatMO,to);
     } catch (java.lang.Exception e) {
-      System.out.println("Trouble during JModelica Compiling");
+      System.out.println("Trouble during Optimica Compiling");
       System.out.println(e.getMessage());
       System.out.println("****");
     }

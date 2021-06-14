@@ -41,7 +41,7 @@ function(
   )
   
   find_library(
-    optimica_libsundials_cvodes
+    optimica_libsundials_cvode
     NAMES libsundials_cvode.a
     PATHS "${optimica_path}/ThirdParty/Sundials/lib/"
   )
@@ -156,14 +156,14 @@ function(
   
   list(
     APPEND
-    ${modelica_libs}
+    modelica_libs
     ${optimica_libsundials_idas}
     ${optimica_libsundials_nvecserial}
     ${optimica_libsundials_arkode}
     ${optimica_libsundials_ida}
     ${optimica_libsundials_nvecopenmp}
     ${optimica_libsundials_cvodes}
-    ${optimica_libsundials_cvodes}
+    ${optimica_libsundials_cvode}
     ${optimica_libsundials_kinsol}
     ${optimica_ibcminpack}
     ${optimica_libjmi}
@@ -215,6 +215,19 @@ function(
   file(RELATIVE_PATH embedded_makefile "${optimica_path}/../" ${makefile})
   list(APPEND optimica_embedded_files ${makefile})
   list(APPEND optimica_embedded_paths ${embedded_makefile})
+
+  file(GLOB_RECURSE license_files FOLLOW_SYMLINKS "${optimica_path}/lib/LicensingEncryption/**")
+  
+  foreach(filepath ${license_files})
+    file(RELATIVE_PATH embedded_path "${optimica_path}/../" ${filepath})
+    list(APPEND optimica_embedded_files ${filepath})
+    list(APPEND optimica_embedded_paths ${embedded_path})
+  endforeach()
+
+  set(jmi_evaluator "${optimica_path}/bin/jmi_evaluator")
+  file(RELATIVE_PATH embedded_jmi_evaluator "${optimica_path}/../" ${jmi_evaluator})
+  list(APPEND optimica_embedded_files ${jmi_evaluator})
+  list(APPEND optimica_embedded_paths ${embedded_jmi_evaluator})
 
   set(${embedded_files} ${optimica_embedded_files} PARENT_SCOPE)
   set(${embedded_paths} ${optimica_embedded_paths} PARENT_SCOPE)

@@ -51,6 +51,7 @@ interface JModelica {
       mc.setModelicapath(mslDir);
       ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
 
+      System.out.println("Compiling Model with JModelica");
       System.out.println("Parse Model");
       SourceRoot sr = mc.parseModel(modelicaPaths);
       System.out.println("Instantiate Model");

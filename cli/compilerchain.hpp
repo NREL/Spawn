@@ -12,6 +12,13 @@ enum class ModelicaCompilerType {
   Optimica
 };
 
+int modelicaToFMU(
+  const std::string &moinput,
+  const fs::path & mblPath,
+  const fs::path & mslPath,
+  const ModelicaCompilerType & moType = ModelicaCompilerType::JModelica
+);
+
 int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
@@ -26,11 +33,9 @@ int compileC(
   const fs::path & jmodelica_dir
 );
 
-int modelicaToFMU(
-  const std::string &moinput,
-  const fs::path & mblPath,
-  const fs::path & mslPath,
-  const ModelicaCompilerType & moType = ModelicaCompilerType::JModelica
+void extractEmbeddedCompilerFiles(
+  const fs::path & dir,
+  const ModelicaCompilerType & moType
 );
 
 void makeModelicaExternalFunction(const std::vector<std::string> &parameters);

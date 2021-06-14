@@ -225,12 +225,34 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   compiler.write_shared_object_file(soFileName, runtime_libs);
   spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), fs::exists(soFileName));
 
+  // To support Windows this needs to be configured for extension
   spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
   fs::rename(launcherFileName, exeFileName);
 
   fs::permissions(exeFileName, fs::perms::owner_exec);
 }
 
+void extractEmbeddedCompilerFiles(
+  const fs::path & dir,
+  const ModelicaCompilerType &
+) {
+  fs::create_directories(dir);
+
+  // TODO: This includes both jmodelica and optimica,
+  // it would be better to select only the compiler files we need
+  for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
+    spawnmodelica::embedded_files::extractFile(file, dir.native());
+  }
+
+  // The embedded filesystem does not preserve permission so this is an ugly but important step
+  // To support Windows this needs to be configured for extension
+  const fs::path licenseExecutable = dir / "Optimica/lib/LicensingEncryption/linux/leif_mlle";
+  fs::permissions(licenseExecutable, fs::perms::owner_exec | fs::perms::others_exec, fs::perm_options::add);
+
+  // To support Windows this needs to be configured for extension
+  const fs::path jmiEvaluatorExecutable = dir / "Optimica/bin/jmi_evaluator";
+  fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec | fs::perms::others_exec, fs::perm_options::add);
+}
 
 int modelicaToFMU(
   const std::string &moinput,
@@ -260,12 +282,11 @@ int modelicaToFMU(
 
   // tmp is where we extract embedded files
   const auto & temp_dir = output_dir / "tmp";
-  const auto jmodelica_dir = temp_dir / "JModelica";
+  extractEmbeddedCompilerFiles(temp_dir, moType);
 
-  fs::create_directories(temp_dir);
-
-  for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
-    spawnmodelica::embedded_files::extractFile(file, temp_dir.native());
+  auto jmodelica_dir = temp_dir / "JModelica";
+  if (moType == ModelicaCompilerType::Optimica) {
+    jmodelica_dir = temp_dir / "Optimica";
   }
 
   int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath, moType);
@@ -275,6 +296,7 @@ int modelicaToFMU(
   }
 
   if(result == 0) {
+    fs::remove_all(temp_dir);
     spdlog::info("Compress FMU");
     zip_directory(output_dir.string(), fmu_path.string(), false);
     fs::remove_all(output_dir);
