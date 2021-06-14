@@ -7,8 +7,15 @@ if(ENABLE_MODELICA_COMPILER)
   include(embed_jmodelica.cmake)
   embed_jmodelica(
     ${jmodelica_path}
-    embedded_files
-    embedded_paths
+    jmodelica_files
+    jmodelica_paths
+  )
+
+  include(embed_optimica.cmake)
+  embed_optimica(
+    ${optimica_path}
+    optimica_files
+    optimica_paths
   )
 
   #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
@@ -33,6 +40,8 @@ if(ENABLE_MODELICA_COMPILER)
   #  list(APPEND embedded_paths ${embedded_path})
   #endforeach()
 
+  list(APPEND embedded_files ${jmodelica_files} ${optimica_files})
+  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths})
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src compilerchain.hpp compilerchain.cpp ${embedded_output})
