@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
-option(ENABLE_OPTIMICA "Build and include the Optimica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
+  set(OPTIMICA_TARFILE_URL "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz" CACHE STRING "Tarball of Optimica distribution")
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
@@ -149,20 +149,15 @@ if(ENABLE_MODELICA_COMPILER)
   )
 
   install(DIRECTORY "${jmodelica_path}/ThirdParty/MSL" DESTINATION etc/)
-endif()
 
-#if(ENABLE_OPTIMICA)
   if(APPLE)
     set(optimica_tar_root "install")
-    set(optimica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
     set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
   elseif(UNIX)
     set(optimica_tar_root "install")
-    set(optimica_url "file:///home/kbenne/Desktop/OCT-EndUser-trunk-r23009.tar.gz")
     set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
   else()
     set(optimica_tar_root "install")
-    set(optimica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
     set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
   endif()
 
@@ -172,9 +167,9 @@ endif()
     ${optimica_path} # The final directory name
     ${optimica_tar_root} # The directory name of the tarball root, this will be moved / renamed to modelica_path
     ${optimica_md5} # The md5 of the tarball
-    ${optimica_url} # The download url. Can be a local file:// url
+    ${OPTIMICA_TARFILE_URL} # The download url. Can be a local file:// url
   )
-#endif()
+endif()
 
 add_subdirectory(util)
 if(ENABLE_MODELICA_COMPILER)
