@@ -24,7 +24,6 @@ public class SpawnCompilerDelegator extends GccCompilerDelegator {
   }
 
   public SpawnCompilerDelegator(File jmHome, String buildPlatform) {
-    //super(jmHome, buildPlatform);
     super(jmHome);
   }
 
