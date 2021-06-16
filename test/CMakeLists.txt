@@ -43,8 +43,10 @@ if(WIN32)
     INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp)
 
   add_library(paths-release ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/paths.cpp)
+  target_link_libraries(paths-release PRIVATE compile_options)
 
   add_library(paths-debug ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/paths.cpp)
+  target_link_libraries(paths-debug PRIVATE compile_options)
 
   target_link_libraries(tests PRIVATE debug paths-debug general paths-release)
 else()
@@ -55,10 +57,10 @@ else()
     INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp)
 
   add_library(paths ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp)
+  target_link_libraries(paths PRIVATE compile_options)
 
   target_link_libraries(tests PRIVATE paths)
 endif()
 
-target_link_libraries(paths PRIVATE compile_options)
 
 catch_discover_tests(tests TEST_PREFIX "unittests.")
