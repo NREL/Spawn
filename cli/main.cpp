@@ -64,7 +64,7 @@ fs::path mblPath() {
     p = spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
   }
 
-  return p.lexically_normal();
+  return p;
 }
 
 fs::path mslPath() {
@@ -75,7 +75,7 @@ fs::path mslPath() {
     p = spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
   }
 
-  return p.lexically_normal();
+  return p;
 }
 
 void handle_eptr(std::exception_ptr eptr) {
