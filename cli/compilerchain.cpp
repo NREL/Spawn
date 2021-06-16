@@ -247,11 +247,11 @@ void extractEmbeddedCompilerFiles(
   // The embedded filesystem does not preserve permission so this is an ugly but important step
   // To support Windows this needs to be configured for extension
   const fs::path licenseExecutable = dir / "Optimica/lib/LicensingEncryption/linux/leif_mlle";
-  fs::permissions(licenseExecutable, fs::perms::owner_exec | fs::perms::others_exec, fs::perm_options::add);
+  fs::permissions(licenseExecutable, fs::perms::owner_exec);
 
   // To support Windows this needs to be configured for extension
   const fs::path jmiEvaluatorExecutable = dir / "Optimica/bin/jmi_evaluator";
-  fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec | fs::perms::others_exec, fs::perm_options::add);
+  fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec);
 }
 
 int modelicaToFMU(
