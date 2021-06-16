@@ -20,7 +20,7 @@ End user installer packages for the latest development builds are available at t
 
 * Install EnergyPlus dependencies according to https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus
 
-* Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with one addition,
+* Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with a few additions,
 
 * Install clang development libraries. One Linux this would be...
 ```shell
@@ -37,7 +37,7 @@ export LLVM_DIR=/path/to/llvm/
 export Clang_DIR=/path/to/clang/
 ```
 
-* Install Graal from https://github.com/graalvm/graalvm-ce-builds/releases. Spawn requires the java8 "ce" package, which is the community open source version.
+* Install Graal from https://github.com/graalvm/graalvm-ce-builds/releases. Spawn requires the java11 "ce" package, which is the community open source version.
 Extract the graal tarball and include the bin directory in the system path. After installing graal the "native-image" utility must be installed separately according to the directions here https://www.graalvm.org/docs/reference-manual/native-image/#install-native-image.
 
 ```shell
@@ -56,6 +56,7 @@ make -j
 ```
 
 ## Example Usage
+Detailed help is built into the command line program `spawn --help`.
 
 * Create a fmu. The .spawn file defines the resources that will be compiled into an EnergyPlus based FMU. 
 The most important items are epw and idf files.
@@ -73,14 +74,14 @@ and may be tested with pyfmi or other fmu simulation tools.
 the Modelica Standard Library are included and available to the compiler by default
 
 ```shell
-./spawn --compile Buildings.Examples.Tutorial.Boiler.System1
+./spawn modelica --create-fmu Buildings.Examples.Tutorial.Boiler.System1
 
 ```
 
 The output of the above command is expected as the following.
 
 ```shell
-$ ./spawn -c Buildings.Examples.Tutorial.Boiler.System1
+$ ./spawn modelica --create-fmu Buildings.Examples.Tutorial.Boiler.System1
 Parse Model
 Instantiate Model
 Flatten Model
@@ -111,21 +112,6 @@ Buildings_Examples_Tutorial_Boiler_System1/binaries
 Buildings_Examples_Tutorial_Boiler_System1/binaries/Buildings_Examples_Tutorial_Boiler_System1.so
 Buildings_Examples_Tutorial_Boiler_System1/out.log
 Buildings_Examples_Tutorial_Boiler_System1/modelDescription.xml
-```
-
-* List available options
-
-```shell
-$ ./spawn -h
-Spawn of EnergyPlus
-Usage: ./spawn [OPTIONS]
-
-Options:
-  -h,--help                   Print this help message and exit
-  -c,--compile TEXT           Compile Modelica model to FMU format
-  -e,--export TEXT=spawn.json Export a standalone EnergyPlus based FMU
-  --no-zip Needs: --export    Skip compressing the contents of the fmu into a zip archive
-  -v,--version                Print version info and exit
 ```
 
 ## Data Exchange Variables
