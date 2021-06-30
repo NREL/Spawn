@@ -16,6 +16,14 @@ End user installer packages for the latest development builds are available at t
 * [Mac](https://spawn.s3.amazonaws.com/latest/Spawn-latest-Darwin.tar.gz).
 * [Windows](https://spawn.s3.amazonaws.com/latest/Spawn-latest-win64.zip).
 
+## Compiler Enabled Builds
+
+The Modelica compiler toolchain is an optional feature, which must be turned on via a cmake
+configuration option. The nightly builds have disabled the compiler chain, however a compiler enabled build is
+available at the following location.
+
+* [Linux](https://spawn.s3.amazonaws.com/compiler-enabled-builds/Spawn-0.1.1-ca187e7d8c-Linux.tar.gz).
+
 ## Compiling from source
 
 * Install EnergyPlus dependencies according to https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus
