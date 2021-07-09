@@ -156,15 +156,15 @@ if(ENABLE_MODELICA_COMPILER)
   list(APPEND embedded_files ${makefile})
   list(APPEND embedded_paths ${embedded_makefile})
 
-  #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
-  #  "${jmodelica_path}/ThirdParty/MSL/**"
-  #)
+  file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
+    "${jmodelica_path}/ThirdParty/MSL/**"
+  )
   #
-  #foreach(filepath ${msl_files})
-  #  file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
-  #  list(APPEND embedded_files ${filepath})
-  #  list(APPEND embedded_paths ${embedded_path})
-  #endforeach()
+  foreach(filepath ${msl_files})
+    file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
+    list(APPEND embedded_files ${filepath})
+   list(APPEND embedded_paths ${embedded_path})
+  endforeach()
 
   # don't embed MBL for now
   #set(mbl_path "${CMAKE_BINARY_DIR}/modelica-buildings")
