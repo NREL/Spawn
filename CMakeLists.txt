@@ -91,6 +91,7 @@ conan_cmake_run(
   catch2/2.11.3
   nlohmann_json/3.7.3
   spdlog/1.6.0
+  swig/4.0.2
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
@@ -174,6 +175,10 @@ if (HAVE_EXP_FILESYSTEM_H)
   add_definitions("-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
+
+enable_testing()
+
+
 add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory( modelica )
@@ -185,8 +190,6 @@ add_subdirectory( epfmi )
 add_subdirectory( fmu )
 add_subdirectory( embedded )
 add_subdirectory( examples )
-
-enable_testing()
 add_subdirectory( test )
 
 

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
 
 namespace spawn::util {
 
@@ -26,7 +27,11 @@ namespace spawn::util {
 
   Temp_Directory::~Temp_Directory()
   {
-    fs::remove_all(m_dir);
+    try {
+      fs::remove_all(m_dir);
+    } catch (const std::exception &e) {
+      spdlog::error("Error removing temporary files: {}", e.what());
+    }
   }
 
 } // namespace spawn
