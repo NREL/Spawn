@@ -1,6 +1,7 @@
 import unittest
 import sys
 import os
+import tempfile
 
 
 print("Current working directory: %s" % os.getcwd())
@@ -44,30 +45,46 @@ spawn_input = R'''{
 
 
 class TestSpawn(unittest.TestCase):
+    def setUp(self):
+        print("Setting up Python SWIG/Spawn test harness")
+        
     def test_OneSpawn(self):
-        working_path = libspawn.Temp_Directory()
 
-        print("Temp directory created: %s" % working_path.dir().toString());
+        # This will safely clean up the temp directory after the spawn has finished
+        with tempfile.TemporaryDirectory() as temp_path:
+            working_path = libspawn.path(temp_path)
+            print("Temp directory created: %s" % working_path.toString());
 
-        spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path.dir());
-        spawn1.start()
+            spawn1 = libspawn.Spawn("spawn1", spawn_input, working_path);
+            spawn1.start()
 
-        self.assertEqual(spawn1.currentTime(), 0.0)
+            self.assertEqual(spawn1.currentTime(), 0.0)
 
-        for day in range(366):
-            time = libspawn.days_to_seconds(day)
-            print("Setting time to %s for day %s" % (time, day))
-            spawn1.setTime(time)
-            self.assertEqual(spawn1.currentTime(), time)
-            print("Getting Core_Zone_Lights_Output")
-            lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
-            print("Core_Zone_Lights_Output: %d", lighting_power)
-            self.assertGreater(lighting_power, 0.0)
+            for day in range(366):
+                time = libspawn.days_to_seconds(day)
+                spawn1.setTime(time)
+                self.assertEqual(spawn1.currentTime(), time)
+                lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
+                print("Time %s, Day %s; Core_Zone_Lights_Output: %d" % (time, day, lighting_power), flush=True)
+                self.assertGreater(lighting_power, 0.0)
 
-        spawn1.stop()
+            print("Shutting down EnergyPlus", flush=True)
+            spawn1.stop()
+            print("Spawn / EnergyPlus successfully shut down", flush=True)
 
+            # Make sure spawn1 is fully destroyed before we try to remove the TemporaryDirectory that 
+            # was being used
+            del spawn1
+        
+    def tearDown(self):
+        print("Tearing down Python test harness", flush=True)
+
+print("Starting test harness", flush = True)
 
 if __name__ == '__main__':
     unittest.main()
 
+
+
+print("Finishing test harness?", flush = True)
 

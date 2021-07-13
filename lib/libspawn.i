@@ -55,7 +55,6 @@ namespace fs {
       return (*self) / other;
     }
 
-
     // to std::string
     std::string __str__() const{
       return $self->generic_string();
@@ -67,13 +66,6 @@ namespace fs {
 
 namespace spawn {
   double days_to_seconds(double);
-
-  namespace util {
-    struct Temp_Directory {
-      public:
-      const fs::path &dir();
-    };
-  }
 }
 
 
