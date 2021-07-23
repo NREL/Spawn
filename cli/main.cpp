@@ -133,6 +133,10 @@ int main(int argc, const char *argv[]) {
       modelicaCommand->add_option("--create-fmu", moinput,
                      "Compile Modelica model to FMU format", true);
 
+  std::vector<std::string> modelicaPaths;
+  auto modelicaPathsOption = modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths.");
+  modelicaPathsOption->needs(createModelicaFMUOption);
+
   bool optimica = false;
   auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler.");
   optimicaOption->needs(createModelicaFMUOption);
@@ -162,10 +166,11 @@ int main(int argc, const char *argv[]) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
+      modelicaPaths.push_back(mblPath().generic_string());
       if (optimica) {
-        spawn::modelicaToFMU(moinput, mblPath(), mslPath(), spawn::ModelicaCompilerType::Optimica);
+        spawn::modelicaToFMU(moinput, modelicaPaths, mslPath(), spawn::ModelicaCompilerType::Optimica);
       } else {
-        spawn::modelicaToFMU(moinput, mblPath(), mslPath());
+        spawn::modelicaToFMU(moinput, modelicaPaths, mslPath());
       }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));

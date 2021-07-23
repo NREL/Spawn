@@ -14,7 +14,7 @@ enum class ModelicaCompilerType {
 
 int modelicaToFMU(
   const std::string &moinput,
-  const fs::path & mblPath,
+  const std::vector<std::string> & modelicaPaths,
   const fs::path & mslPath,
   const ModelicaCompilerType & moType = ModelicaCompilerType::JModelica
 );
@@ -22,7 +22,7 @@ int modelicaToFMU(
 int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
-  const fs::path & mblPath,
+  const std::vector<std::string> & modelicaPaths,
   const fs::path & modelicaHome,
   const fs::path & mslPath,
   const ModelicaCompilerType & moType

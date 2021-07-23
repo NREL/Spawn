@@ -18,7 +18,7 @@ namespace spawn {
 int compileMO(
   const std::string & moInput,
   const fs::path & outputDir,
-  const fs::path & mblPath,
+  const std::vector<std::string> & modelicaPaths,
   const fs::path & modelicaHome,
   const fs::path & mslPath,
   const ModelicaCompilerType & moType
@@ -26,16 +26,13 @@ int compileMO(
   try {
     setenv("JMODELICA_HOME", modelicaHome.string().c_str(), 1);
 
-    std::vector<std::string> paths;
-    paths.push_back(mblPath.generic_string());
-
     // Only primitive data types can be passed from C++ to Java
     // so JSON is serialized and converted to a raw character array
     json j;
     j["model"] = moInput;
     j["outputDir"] = outputDir.generic_string();
     j["mslDir"] = mslPath.generic_string();
-    j["modelicaPaths"] = paths;
+    j["modelicaPaths"] = modelicaPaths;
 
     std::string params = j.dump();
     std::vector<char> cparams(params.c_str(), params.c_str() + params.size() + 1);
@@ -247,16 +244,16 @@ void extractEmbeddedCompilerFiles(
   // The embedded filesystem does not preserve permission so this is an ugly but important step
   // To support Windows this needs to be configured for extension
   const fs::path licenseExecutable = dir / "Optimica/lib/LicensingEncryption/linux/leif_mlle";
-  fs::permissions(licenseExecutable, fs::perms::owner_exec);
+  fs::permissions(licenseExecutable, fs::perms::owner_exec | fs::perms::owner_read);
 
   // To support Windows this needs to be configured for extension
   const fs::path jmiEvaluatorExecutable = dir / "Optimica/bin/jmi_evaluator";
-  fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec);
+  fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec | fs::perms::owner_read);
 }
 
 int modelicaToFMU(
   const std::string &moinput,
-  const fs::path & mblPath,
+  const std::vector<std::string> & modelicaPaths,
   const fs::path & mslPath,
   const ModelicaCompilerType & moType
 ) {
@@ -289,7 +286,7 @@ int modelicaToFMU(
     jmodelica_dir = temp_dir / "Optimica";
   }
 
-  int result = compileMO(moinput, output_dir.native(), mblPath, jmodelica_dir, mslPath, moType);
+  int result = compileMO(moinput, output_dir.native(), modelicaPaths, jmodelica_dir, mslPath, moType);
   if(result == 0) {
     spdlog::info("Compile C Code");
     result = compileC(output_dir, jmodelica_dir);
