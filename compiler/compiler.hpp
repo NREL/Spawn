@@ -1,12 +1,13 @@
 #ifndef NREL_SPAWN_COMPILER_HPP
 #define NREL_SPAWN_COMPILER_HPP
 
-#include "JIT.hpp"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetOptions.h"
+#include "llvm/Target/TargetMachine.h"
 #include "../util/filesystem.hpp"
 
 namespace spawn {
@@ -36,22 +37,6 @@ public:
   auto context()
   {
     return m_context;
-  }
-
-  auto move_to_jit()
-  {
-    auto jit = JIT::Create();
-    if (!jit) {
-      throw std::runtime_error("Some error happened, but it's too much of a pain to get it out of the Expected object");
-    }
-    move_to_jit(*jit.get());
-    return std::move(*jit);
-  }
-
-  void move_to_jit(JIT &jit)
-
-  {
-    jit.addModule(take_compilation(), context());
   }
 
   void write_bitcode(const fs::path &loc);
@@ -101,7 +86,7 @@ private:
                                                          llvm::TargetMachine *target_machine)
   {
     assert(ctx.getContext());
-    auto module = llvm::make_unique<llvm::Module>("Module", *ctx.getContext());
+    auto module = std::make_unique<llvm::Module>("Module", *ctx.getContext());
     module->setDataLayout(target_machine->createDataLayout());
     return module;
   }

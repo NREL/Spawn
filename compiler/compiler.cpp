@@ -13,8 +13,6 @@
 #include "clang/FrontendTool/Utils.h"
 
 #include "llvm/ADT/SmallString.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -31,7 +29,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-
+#include "llvm/Target/TargetMachine.h"
 
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
@@ -105,6 +103,7 @@ void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::pat
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
 
+  std::stringstream out_ss;
   std::stringstream err_ss;
 
   std::vector<std::string> str_args {
@@ -154,10 +153,11 @@ void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::pat
 
   { // scope to ensure error stream buffer is flushed
     llvm::raw_os_ostream err(err_ss);
+    llvm::raw_os_ostream out(out_ss);
 
-    success = lld::elf::link(Args, false /*canExitEarly*/, err);
+    success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
     if (!success) {
-      spdlog::error("Linking errors with {} errors", lld::errorHandler().ErrorCount);
+      spdlog::error("Linking errors with {} errors", lld::errorHandler().errorCount);
     }
   }
 
@@ -210,7 +210,7 @@ void Compiler::write_object_file(const fs::path &loc)
   llvm::legacy::PassManager pass;
   std::string error;
 
-  llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_ObjectFile;
+  llvm::CodeGenFileType ft = llvm::CGFT_ObjectFile;
 
   std::error_code EC;
   std::string sloc = toString(loc);
@@ -309,7 +309,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
   const auto &CCArgs = Cmd.getArguments();
   std::unique_ptr<clang::CompilerInvocation> CI{new clang::CompilerInvocation};
   clang::CompilerInvocation::CreateFromArgs(
-      *CI, const_cast<const char **>(CCArgs.data()), const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
+      *CI, CCArgs, Diags);
 
   // Show the invocation, with -v.
   if (CI->getHeaderSearchOpts().Verbose) {

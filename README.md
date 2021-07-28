@@ -32,7 +32,7 @@ available at the following location.
 
 * Install clang development libraries. One Linux this would be...
 ```shell
-apt-get install libllvm8 llvm-8-dev clang-8 libclang-8-dev liblld-8-dev
+apt install libllvm10 llvm-10-dev clang-10 libclang-10-dev liblld-10-dev liblld-10-dev
 ```
 
 ```shell
