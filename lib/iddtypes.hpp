@@ -11,7 +11,7 @@ constexpr std::array<const char *,4> supportedScheduleTypes = {
 	"Schedule:File"
 };
 
-constexpr std::array<const char *,312> supportedIDDTypes = {
+constexpr std::array<const char *,286> supportedIDDTypes = {
   "Version",
   "SimulationControl",
   "PerformancePrecisionTradeoffs",
@@ -217,35 +217,6 @@ constexpr std::array<const char *,312> supportedIDDTypes = {
   "Exterior:Lights",
   "Exterior:FuelEquipment",
   "Exterior:WaterEquipment",
-  "EnergyManagementSystem:Sensor",
-  "EnergyManagementSystem:Actuator",
-  "EnergyManagementSystem:ProgramCallingManager",
-  "EnergyManagementSystem:Program",
-  "EnergyManagementSystem:Subroutine",
-  "EnergyManagementSystem:GlobalVariable",
-  "EnergyManagementSystem:OutputVariable",
-  "EnergyManagementSystem:MeteredOutputVariable",
-  "EnergyManagementSystem:TrendVariable",
-  "EnergyManagementSystem:InternalVariable",
-  "EnergyManagementSystem:CurveOrTableIndexVariable",
-  "EnergyManagementSystem:ConstructionIndexVariable",
-  "Refrigeration:Case",
-  "Refrigeration:CompressorRack",
-  "Refrigeration:CaseAndWalkInList",
-  "Refrigeration:Condenser:AirCooled",
-  "Refrigeration:Condenser:EvaporativeCooled",
-  "Refrigeration:Condenser:WaterCooled",
-  "Refrigeration:Condenser:Cascade",
-  "Refrigeration:GasCooler:AirCooled",
-  "Refrigeration:TransferLoadList",
-  "Refrigeration:Subcooler",
-  "Refrigeration:Compressor",
-  "Refrigeration:CompressorList",
-  "Refrigeration:System",
-  "Refrigeration:TranscriticalSystem",
-  "Refrigeration:SecondarySystem",
-  "Refrigeration:WalkIn",
-  "Refrigeration:AirChiller",
   "Matrix:TwoDimension",
   "Curve:Linear",
   "Curve:QuadLinear",
@@ -323,7 +294,10 @@ constexpr std::array<const char *,312> supportedIDDTypes = {
   "FuelFactors",
   "Output:Diagnostics",
   "Output:DebuggingData",
-  "Output:PreprocessorMessage"
+  "Output:PreprocessorMessage",
+  "ZoneInfiltration:DesignFlowRate",
+  "ZoneInfiltration:EffectiveLeakageArea",
+  "ZoneInfiltration:FlowCoefficient"
 };
 }
 
