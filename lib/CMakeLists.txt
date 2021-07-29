@@ -88,13 +88,20 @@ if(BUILD_PYTHON_BINDINGS)
   set(${target_name}_swig_src libspawn.i)
 
   foreach(SWIG_FILE ${${target_name}_swig_src})
-    message("SWIG_FILE=${SWIG_FILE}")
     set_source_files_properties(${SWIG_FILE} PROPERTIES CPLUSPLUS ON)
   endforeach()
 
   set(SWIG_ROOT ${CONAN_SWIG_ROOT}/bin)
   find_package(SWIG 4.0 REQUIRED COMPONENTS python)
-  message("${SWIG_USE_FILE}")
+  # The swig cmake finder calls the swig executable with -swiglib to locate the swig library path.
+  # Unfortunately the Mac conan build of swig 4.0.2 returns a non portable path that is only valid on the 
+  # machine where the swig binary was created, ie:
+  # /Users/jenkins/w/BuildSingleReference@3/.conan/data/swig/4.0.2/_/_/package/099d7b9cd06e9bd11e92b9a2ddf3b29cd986fdcb/bin/swiglib
+  # The following is a workaround...
+  if(APPLE)
+    set(new_swig_dir "${SWIG_EXECUTABLE}/../swiglib")
+    cmake_path(NORMAL_PATH new_swig_dir OUTPUT_VARIABLE SWIG_DIR)
+  endif()
   include(${SWIG_USE_FILE})
 
 
