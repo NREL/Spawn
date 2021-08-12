@@ -1,30 +1,7 @@
-find_package(LLVM REQUIRED CONFIG)
-find_package(Clang REQUIRED CONFIG)
-
-string(REPLACE "git" "" LLVM_PACKAGE_VERSION ${LLVM_PACKAGE_VERSION})
-message("LLVM VERISION: ${LLVM_PACKAGE_VERSION}")
-message("LLVM INSTALL PREFIX: ${LLVM_INSTALL_PREFIX}")
-set(CLANG_C_HEADERS_ROOT "${LLVM_INSTALL_PREFIX}/lib/clang/${LLVM_PACKAGE_VERSION}")
-set(CLANG_C_HEADERS_DIR "${CLANG_C_HEADERS_ROOT}/include")
-message("Possible header dir: ${CLANG_C_HEADERS_DIR}")
-
-file(GLOB_RECURSE HEADER_FILES FOLLOW_SYMLINKS "${CLANG_C_HEADERS_DIR}/**")
-
-foreach(_FILE ${HEADER_FILES})
-  file(RELATIVE_PATH LOCATION "${CLANG_C_HEADERS_ROOT}" ${_FILE})
-  list(APPEND FILES ${_FILE})
-  list(APPEND EMBEDDED_PATHS ${LOCATION})
-endforeach()
-
 add_executable(spawn_exe_launcher spawn_exe_launcher.c)
 target_link_libraries(spawn_exe_launcher ${CMAKE_DL_LIBS})
 
-list(APPEND FILES "${CMAKE_CURRENT_BINARY_DIR}/spawn_exe_launcher")
-list(APPEND EMBEDDED_PATHS "spawn_exe_launcher")
-
-embed_files("${FILES}" "${EMBEDDED_PATHS}" EMBEDDED_OUTPUT spawnclang)
-
-add_library(compiler compiler.hpp compiler.cpp ${EMBEDDED_OUTPUT})
+add_library(compiler compiler.hpp compiler.cpp)
 
 target_include_directories(compiler PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")

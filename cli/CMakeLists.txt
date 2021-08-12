@@ -18,30 +18,18 @@ if(ENABLE_MODELICA_COMPILER)
     optimica_paths
   )
 
-  #file(GLOB_RECURSE msl_files FOLLOW_SYMLINKS
-  #  "${jmodelica_path}/ThirdParty/MSL/**"
-  #)
-  #
-  #foreach(filepath ${msl_files})
-  #  file(RELATIVE_PATH embedded_path "${jmodelica_path}/../" ${filepath})
-  #  list(APPEND embedded_files ${filepath})
-  #  list(APPEND embedded_paths ${embedded_path})
-  #endforeach()
+  include(embed_libc.cmake)
+  embed_libc(
+    libc_files
+    libc_paths
+  )
 
-  # don't embed MBL for now
-  #set(mbl_path "${CMAKE_BINARY_DIR}/modelica-buildings")
-  #file(GLOB_RECURSE mbl_files FOLLOW_SYMLINKS
-  #  "${mbl_path}/**"
-  #)
-  #
-  #foreach(filepath ${mbl_files})
-  #  file(RELATIVE_PATH embedded_path "${mbl_path}/../" ${filepath})
-  #  list(APPEND embedded_files ${filepath})
-  #  list(APPEND embedded_paths ${embedded_path})
-  #endforeach()
+  list(APPEND embedded_files ${jmodelica_files} ${optimica_files} ${libc_files})
+  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths} ${libc_paths})
 
-  list(APPEND embedded_files ${jmodelica_files} ${optimica_files})
-  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths})
+  list(APPEND embedded_files "${CMAKE_BINARY_DIR}/compiler/spawn_exe_launcher")
+  list(APPEND embedded_paths "spawn_exe_launcher")
+
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src compilerchain.hpp compilerchain.cpp ${embedded_output})

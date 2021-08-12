@@ -30,7 +30,8 @@ int compileMO(
 
 int compileC(
   const fs::path & output_dir,
-  const fs::path & jmodelica_dir
+  const fs::path & jmodelica_dir,
+  const fs::path & embedded_files_temp_dir
 );
 
 void extractEmbeddedCompilerFiles(

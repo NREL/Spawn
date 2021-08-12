@@ -39,7 +39,6 @@
 #include <spdlog/spdlog.h>
 
 #include "../util/filesystem.hpp"
-#include "compiler/embedded_files.hxx"
 #include "../util/temp_directory.hpp"
 
 #include <iostream>
@@ -96,9 +95,12 @@ std::string getExecutablePath()
 }
 
 namespace spawn {
-void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::path> additional_libs)
-{
 
+void Compiler::write_shared_object_file(
+  const fs::path &loc,
+  const fs::path &sysroot,
+  std::vector<fs::path> additional_libs
+) {
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
@@ -107,16 +109,11 @@ void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::pat
   std::stringstream err_ss;
 
   std::vector<std::string> str_args {
-    "ld.lld-8",
+    "ld.lld-10",
     "-shared",
-    "-L/usr/lib/gcc/x86_64-linux-gnu/7",
-    "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../x86_64-linux-gnu",
-    "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../../../lib",
-    "-L/lib/x86_64-linux-gnu",
-    "-L/lib/../lib",
-    "-L/usr/lib/x86_64-linux-gnu",
-    "-L/usr/lib/../lib",
-    "-L/usr/lib/gcc/x86_64-linux-gnu/7/../../..",
+    fmt::format("--sysroot={}", toString(sysroot)),
+    fmt::format("-L{}", toString(sysroot / "usr/lib/")),
+    fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
     toString(temporary_object_file_location)
   };
 
@@ -125,20 +122,18 @@ void Compiler::write_shared_object_file(const fs::path &loc, std::vector<fs::pat
   }
 
   str_args.insert(str_args.end(), {
-      "-o",
-      toString(loc),
       "-lm",
       "-lc",
       "-ldl",
       "-lpthread",
+      "-o",
+      toString(loc),
     });
 
 
   for (const auto &arg : str_args) {
     spdlog::trace("embedded lld argument: {}", arg);
   }
-
-
   
   clang::SmallVector<const char *, 64> Args{};
 
@@ -224,24 +219,6 @@ void Compiler::write_object_file(const fs::path &loc)
   destination.flush();
 }
 
-class Embedded_Headers
-{
-public:
-  Embedded_Headers()
-  {
-    for (const auto &file : spawnclang::embedded_files::fileNames()) {
-      spawnclang::embedded_files::extractFile(file, toString(td.dir()));
-    }
-  }
-  fs::path include_path() const
-  {
-    return td.dir() / "include";
-  }
-
-private:
-  util::Temp_Directory td;
-};
-
 std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
                                                 llvm::LLVMContext &ctx,
                                                 const std::vector<fs::path> &include_paths,
@@ -260,16 +237,15 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
-  Embedded_Headers embedded_headers;
   // a place for the strings to live
   std::vector<std::string> str_args;
   str_args.push_back(toString(source));
-  str_args.push_back("-I" + toString(embedded_headers.include_path()));
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
     return "-I" + toString(str);
   });
   str_args.push_back("-fsyntax-only");
   str_args.push_back("-fPIC");
+  str_args.push_back("-Wno-incomplete-setjmp-declaration");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));

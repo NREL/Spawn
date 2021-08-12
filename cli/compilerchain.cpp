@@ -56,14 +56,20 @@ int compileMO(
   }
 }
 
-std::vector<fs::path> includePaths(const fs::path &jmodelica_dir)
-{
+std::vector<fs::path> includePaths(
+    const fs::path & jmodelica_dir,
+    const fs::path & embedded_files_temp_dir
+) {
   return {
     jmodelica_dir / "include/RuntimeLibrary/",
     jmodelica_dir / "include/RuntimeLibrary/module_include",
     jmodelica_dir / "include/RuntimeLibrary/zlib",
     jmodelica_dir / "ThirdParty/FMI/2.0",
-    spawn::mbl_home_dir() / "Buildings/Resources/C-Sources/"
+    spawn::mbl_home_dir() / "Buildings/Resources/C-Sources",
+    embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
+    embedded_files_temp_dir / "usr/include",
+    embedded_files_temp_dir / "usr/include/linux",
+    embedded_files_temp_dir / "usr/include/x86_64-linux-gnu"
   };
 }
 
@@ -97,7 +103,7 @@ std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
 
 }
 
-int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir) {
+int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const fs::path & embedded_files_temp_dir) {
   const auto & sourcesdir = output_dir / "sources";
   std::vector<fs::path> sourcefiles;
 
@@ -137,11 +143,10 @@ int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir) {
   // some Modelica models
 
   // Libs to link
-
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   // include paths
-  auto include_paths = includePaths(jmodelica_dir);
+  auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
   const auto model_description_path = output_dir / "modelDescription.xml";
 
@@ -158,7 +163,7 @@ int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir) {
   const auto model_lib_dir = output_dir / "binaries";
   const auto model_lib_path = model_lib_dir / (model_identifier + ".so");
   fs::create_directories(model_lib_dir);
-  compiler.write_shared_object_file(model_lib_path, runtime_libs);
+  compiler.write_shared_object_file(model_lib_path, embedded_files_temp_dir, runtime_libs);
 
   return 0;
 }
@@ -200,7 +205,8 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   fileToCompile += ".c";
 
   const auto jmodelica_dir = fs::path{arguments["JMODELICA_HOME"]};
-  const auto include_paths = includePaths(jmodelica_dir);
+  const auto embedded_files_temp_dir = jmodelica_dir.parent_path();
+  const auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
   const auto runtime_libs = modelicaLibs(jmodelica_dir);
 
   const std::vector<std::string> flags{};
@@ -219,11 +225,11 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
     return result;
   }();
 
-  compiler.write_shared_object_file(soFileName, runtime_libs);
+  compiler.write_shared_object_file(soFileName, embedded_files_temp_dir, runtime_libs);
   spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), fs::exists(soFileName));
 
   // To support Windows this needs to be configured for extension
-  spawnclang::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
+  spawnmodelica::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
   fs::rename(launcherFileName, exeFileName);
 
   fs::permissions(exeFileName, fs::perms::owner_exec);
@@ -289,7 +295,7 @@ int modelicaToFMU(
   int result = compileMO(moinput, output_dir.native(), modelicaPaths, jmodelica_dir, mslPath, moType);
   if(result == 0) {
     spdlog::info("Compile C Code");
-    result = compileC(output_dir, jmodelica_dir);
+    result = compileC(output_dir, jmodelica_dir, temp_dir);
   }
 
   if(result == 0) {
@@ -297,7 +303,6 @@ int modelicaToFMU(
     spdlog::info("Compress FMU");
     zip_directory(output_dir.string(), fmu_path.string(), false);
     fs::remove_all(output_dir);
-    fs::remove_all(temp_dir);
     spdlog::info("Model Compiled");
   } else {
     spdlog::info("Model Failed to Compile");

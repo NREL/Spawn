@@ -41,7 +41,11 @@ public:
 
   void write_bitcode(const fs::path &loc);
   void write_object_file(const fs::path &loc);
-  void write_shared_object_file(const fs::path &loc, std::vector<fs::path> additional_libs = {});
+  void write_shared_object_file(
+    const fs::path &loc,
+    const fs::path &sysroot,
+    std::vector<fs::path> additional_libs = {}
+  );
 
 private:
   std::string m_target_triple{get_target_triple()};

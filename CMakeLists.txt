@@ -125,6 +125,9 @@ endif()
 
 include(cmake/download_modelica.cmake)
 if(ENABLE_MODELICA_COMPILER)
+  find_package(LLVM REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG)
+
   if(APPLE)
     set(jmodelica_tar_root "Modelica-0.1.1-Linux")
     set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
