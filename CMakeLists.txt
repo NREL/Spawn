@@ -67,8 +67,14 @@ else()
   set(GIT_DIR "")
 endif()
 
+set(package_variant "")
+if(NOT ENABLE_MODELICA_COMPILER)
+  set(package_variant "light-")
+endif()
+
 set(CPACK_PACKAGE_VERSION
-    "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}")
+  "${package_variant}${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}"
+)
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")

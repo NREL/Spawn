@@ -233,4 +233,40 @@ test:ubuntu-modelica:
     paths:
       - build/
 
+package:ubuntu-modelica:
+  stage: package
+  tags:
+    - ubuntu
+  dependencies:
+    - test:ubuntu-modelica
+  script:
+    - cd build
+    - make package
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.tar.gz
+
+publish:ubuntu-modelica:
+  stage: publish
+  tags:
+    - ubuntu
+  dependencies:
+    - package:ubuntu-modelica
+  script:
+    - python3 cmake/publish.py publish
+  when: manual
+
+release:ubuntu-modelica:
+  stage: release
+  tags:
+    - ubuntu
+  dependencies:
+    - package:ubuntu-modelica
+  script:
+    - python3 cmake/publish.py release
+  when: manual
+  only:
+    - tags
+
 
