@@ -274,8 +274,11 @@ int modelicaToFMU(
       }
     }
   );
+
 	const auto output_dir = fs::current_path() / output_dir_name;
   const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
+  const auto sources_dir = output_dir / "sources";
+
   if(! output_dir_name.empty()) {
     fs::remove_all(output_dir);
   }
@@ -297,6 +300,8 @@ int modelicaToFMU(
     spdlog::info("Compile C Code");
     result = compileC(output_dir, jmodelica_dir, temp_dir);
   }
+
+  fs::remove_all(sources_dir);
 
   if(result == 0) {
     fs::remove_all(temp_dir);
