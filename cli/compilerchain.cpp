@@ -5,7 +5,6 @@
 #include "../util/paths.hpp"
 #include "../lib/ziputil.hpp"
 #include "cli/embedded_files.hxx"
-#include "compiler/embedded_files.hxx"
 #include <pugixml.hpp>
 #include <iostream>
 #include <spdlog/spdlog.h>
