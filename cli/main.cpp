@@ -28,56 +28,6 @@
 
 using json = nlohmann::json;
 
-
-bool isInstalled() {
-  return spawn::exedir().stem() == "bin";
-}
-
-fs::path iddInstallPath() {
-  constexpr auto & iddFileName = "Energy+.idd";
-  // Configuration in install tree
-  auto iddInputPath = spawn::exedir() / "../etc" / iddFileName;
-
-  // Configuration in a developer tree
-  if (! fs::exists(iddInputPath)) {
-    iddInputPath = spawn::exedir() / iddFileName;
-  }
-
-  return iddInputPath;
-}
-
-fs::path epfmiInstallPath() {
-  const auto candidate = spawn::exedir() / ("../lib/" + spawn::epfmi_filename());
-  if (fs::exists(candidate)) {
-    return candidate;
-  } else {
-    return spawn::exedir() / spawn::epfmi_filename();
-  }
-}
-
-fs::path mblPath() {
-  fs::path p;
-
-  if (isInstalled()) {
-    p = spawn::exedir() / "../etc/modelica-buildings/Buildings/";
-  } else {
-    p = spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
-  }
-
-  return p;
-}
-
-fs::path mslPath() {
-  fs::path p;
-  if (isInstalled()) {
-    p = spawn::exedir() / "../etc/MSL/";
-  } else {
-    p = spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
-  }
-
-  return p;
-}
-
 void handle_eptr(std::exception_ptr eptr) {
   try {
     if (eptr) {
@@ -163,14 +113,14 @@ int main(int argc, const char *argv[]) {
     }
 
     if (*createOption) {
-      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
+      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
-      modelicaPaths.push_back(mblPath().generic_string());
+      modelicaPaths.push_back(spawn::mbl_home_dir().generic_string());
       if (optimica) {
-        spawn::modelicaToFMU(moinput, modelicaPaths, mslPath(), spawn::ModelicaCompilerType::Optimica);
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::msl_path(), spawn::ModelicaCompilerType::Optimica);
       } else {
-        spawn::modelicaToFMU(moinput, modelicaPaths, mslPath());
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::msl_path());
       }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));

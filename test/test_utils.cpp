@@ -34,13 +34,13 @@ TEST_CASE("Test exe with different working directory")
 
 TEST_CASE("Test exedir")
 {
-  const auto exedir = spawn::exedir();
+  const auto exedir = spawn::exe_dir();
 
   CHECK(fs::is_directory(exedir));
   CHECK(!fs::is_symlink(exedir));
   CHECK(exedir.is_absolute());
 
-  std::cout << spawn::exedir() << '\n';
+  std::cout << spawn::exe_dir() << '\n';
 }
 
 TEST_CASE("Test exedir with different working directory")
@@ -50,19 +50,19 @@ TEST_CASE("Test exedir with different working directory")
 
   CHECK(old_working_dir != fs::current_path());
 
-  const auto exedir = spawn::exedir();
+  const auto exedir = spawn::exe_dir();
 
   CHECK(fs::is_directory(exedir));
   CHECK(!fs::is_symlink(exedir));
   CHECK(exedir.is_absolute());
 
-  std::cout << spawn::exedir() << '\n';
+  std::cout << spawn::exe_dir() << '\n';
 }
 
 TEST_CASE("Test calling exedir on self with bad exe name")
 {
   const auto exe_name = spawn::exe().filename();
-  fs::current_path(spawn::exedir());
+  fs::current_path(spawn::exe_dir());
   const auto results = system(fmt::format(R"(./{}asdf "Test blerb")", exe_name.string()).c_str());
   CHECK(results != 0);
 }
@@ -71,7 +71,7 @@ TEST_CASE("Test calling exedir on self with bad exe name")
 TEST_CASE("Test calling exedir on relative path for myself")
 {
   const auto exe_name = spawn::exe().filename();
-  fs::current_path(spawn::exedir());
+  fs::current_path(spawn::exe_dir());
 #ifdef _WINDOWS
   const auto results = system(fmt::format(R"(.\{} "Test exedir")", exe_name.string()).c_str());
 #else

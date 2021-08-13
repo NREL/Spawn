@@ -1,6 +1,7 @@
 #ifndef SPAWN_FMI_PATHS_HPP
 #define SPAWN_FMI_PATHS_HPP
 
+#include "paths.hpp"
 #include <string>
 #include <fmt/format.h>
 
@@ -58,6 +59,6 @@ static inline std::string epfmi_filename()
   return fmi_lib_filename(epfmi_basename());
 }
 
-}
+} // namespace spawn
 
 #endif // SPAWN_FMI_PATHS_HPP
