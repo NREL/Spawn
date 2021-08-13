@@ -22,28 +22,28 @@
 
 namespace spawn {
   fs::path exe() {
-  auto get_path = [](){
-    #if _WIN32
-      TCHAR szPath[MAX_PATH];
-      GetModuleFileName(nullptr, szPath, MAX_PATH);
-      return fs::path(szPath);
-    #else
-      // if /proc/self/exe exists, this should be our best option
-      char buf[PATH_MAX + 1];
-      if (const auto result = readlink("/proc/self/exe", buf, sizeof(buf) - 1); result != -1) {
-        return fs::path(std::begin(buf), std::next(buf, result));
-      }
+    auto get_path = [](){
+      #if _WIN32
+        TCHAR szPath[MAX_PATH];
+        GetModuleFileName(nullptr, szPath, MAX_PATH);
+        return fs::path(szPath);
+      #else
+        // if /proc/self/exe exists, this should be our best option
+        char buf[PATH_MAX + 1];
+        if (const auto result = readlink("/proc/self/exe", buf, sizeof(buf) - 1); result != -1) {
+          return fs::path(std::begin(buf), std::next(buf, result));
+        }
 
-      // otherwise we'll dlopen ourselves and see where "main" exists
-      Dl_info info;
-      dladdr("main", &info);
-      return fs::path(info.dli_fname);
-    #endif
-  };
+        // otherwise we'll dlopen ourselves and see where "main" exists
+        Dl_info info;
+        dladdr("main", &info);
+        return fs::path(info.dli_fname);
+      #endif
+    };
 
-  // canonical also makes the path absolute
-  static const auto path = fs::canonical(get_path());
-  return path;
+    // canonical also makes the path absolute
+    static const auto path = fs::canonical(get_path());
+    return path;
   }
   
   fs::path exedir() {
@@ -52,9 +52,10 @@ namespace spawn {
   }
 
   fs::path mbl_home_dir() {
-    // TODO: This does not work in an installed scenario.
-    // And... it needs to, because it is expected to be used in production
-    return project_source_dir() / "submodules/modelica-buildings";
+    const auto exedirname = toString(*(exedir().end()));
+
+    const auto dir = project_source_dir() / "submodules/modelica-buildings";
+    std::cout << "mbl_home_dir: " << dir << std::endl;
   }
 
   fs::path project_source_dir() {
