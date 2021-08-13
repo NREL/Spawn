@@ -10,7 +10,6 @@
 #include <windows.h>
 #endif
 
-
 #if __has_include(<linux/limits.h>)
 #include <linux/limits.h>
 #endif
@@ -18,7 +17,6 @@
 #if __has_include(<limits.h>)
 #include <limits.h>
 #endif
-
 
 namespace spawn {
   fs::path exe() {
@@ -52,10 +50,13 @@ namespace spawn {
   }
 
   fs::path mbl_home_dir() {
-    const auto exedirname = toString(*(exedir().end()));
+    const auto exedirname = (--exedir().end())->string();
 
-    const auto dir = project_source_dir() / "submodules/modelica-buildings";
-    std::cout << "mbl_home_dir: " << dir << std::endl;
+    if (exedirname == "bin") {
+      return exedir() / "../etc/modelica-buildings";
+    } else {
+      return project_source_dir() / "submodules/modelica-buildings";
+    }
   }
 
   fs::path project_source_dir() {
@@ -66,6 +67,3 @@ namespace spawn {
     return "${PROJECT_BINARY_DIR}";
   }
 }
-
-
-
