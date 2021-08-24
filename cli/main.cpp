@@ -116,11 +116,10 @@ int main(int argc, const char *argv[]) {
       spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
-      modelicaPaths.push_back(spawn::mbl_home_dir().generic_string());
       if (optimica) {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::msl_path(), spawn::ModelicaCompilerType::Optimica);
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::ModelicaCompilerType::Optimica);
       } else {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::msl_path());
+        spawn::modelicaToFMU(moinput, modelicaPaths);
       }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));

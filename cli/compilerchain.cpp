@@ -14,62 +14,66 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-int compileMO(
-  const std::string & moInput,
-  const fs::path & outputDir,
-  const std::vector<std::string> & modelicaPaths,
-  const fs::path & modelicaHome,
-  const fs::path & mslPath,
-  const ModelicaCompilerType & moType
-) {
-  try {
-    setenv("JMODELICA_HOME", modelicaHome.string().c_str(), 1);
-
-    // Only primitive data types can be passed from C++ to Java
-    // so JSON is serialized and converted to a raw character array
-    json j;
-    j["model"] = moInput;
-    j["outputDir"] = outputDir.generic_string();
-    j["mslDir"] = mslPath.generic_string();
-    j["modelicaPaths"] = modelicaPaths;
-
-    std::string params = j.dump();
-    std::vector<char> cparams(params.c_str(), params.c_str() + params.size() + 1);
-
-    graal_isolate_t *isolate = nullptr;
-    graal_isolatethread_t *thread = nullptr;
-
-    // The original idea was to allow switching between jmodelica and optimica,
-    // but there are challenges related to graal that might make this difficult or impossible.
-    if (moType == ModelicaCompilerType::Optimica) {
-      optimica_create_isolate(nullptr, &isolate, &thread);
-      optimica_compile(thread, cparams.data());
-    } else {
-      jmodelica_create_isolate(nullptr, &isolate, &thread);
-      jmodelica_compile(thread, cparams.data());
+// Given a vector of file paths, return any path that appears to be a path
+// to the MBL, if not found return empty path
+fs::path mblPathInPaths(const std::vector<std::string> & modelicaPaths) {
+  for(const auto & p : modelicaPaths) {
+    const auto path = fs::path(p);
+    const auto package_path = path / "package.mo";
+    const auto name = package_path.parent_path().stem().generic_string();
+    if(fs::exists(package_path) && (name == "Buildings")) {
+      return path;
     }
-
-    return 0;
-  } catch(...) {
-    return 1;
   }
+
+  return fs::path();
+}
+
+// Convert a vector of paths to a colon deliminated path string
+std::string pathVectorToPath(const std::vector<std::string> paths) {
+  std::stringstream ss;
+  std::ostream_iterator<std::string> it(ss, ":");
+  std::copy(paths.begin(), paths.end(), it);
+  return ss.str();
+}
+
+// Convert a colon deliminated path string to a vector of paths
+std::vector<std::string> pathToPathVector(const std::string & path) {
+  std::stringstream ss(path);
+  std::vector<std::string> result;
+  std::string s;
+  while(std::getline(ss, s, ':')) {
+    result.push_back(s);
+  }
+  return result;
 }
 
 std::vector<fs::path> includePaths(
     const fs::path & jmodelica_dir,
     const fs::path & embedded_files_temp_dir
 ) {
-  return {
+  std::vector<fs::path> result = {
     jmodelica_dir / "include/RuntimeLibrary/",
     jmodelica_dir / "include/RuntimeLibrary/module_include",
     jmodelica_dir / "include/RuntimeLibrary/zlib",
     jmodelica_dir / "ThirdParty/FMI/2.0",
-    spawn::mbl_home_dir() / "Buildings/Resources/C-Sources",
     embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
     embedded_files_temp_dir / "usr/include",
     embedded_files_temp_dir / "usr/include/linux",
     embedded_files_temp_dir / "usr/include/x86_64-linux-gnu"
   };
+
+  const std::string pathstring = getenv("MODELICAPATH");
+  const auto pathvector = pathToPathVector(pathstring);
+  const auto mbl_path = mblPathInPaths(pathvector);
+  if (! mbl_path.empty()) {
+    // Should this apply to any libraries on the MODELICAPATH?
+    // Are C sources always in Resources/C-sources ?
+    const auto s = mbl_path / "Resources/C-Sources";
+    result.push_back(mbl_path / "Resources/C-Sources");
+  }
+
+  return result;
 }
 
 std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
@@ -99,7 +103,43 @@ std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a"
   };
+}
 
+int compileMO(
+  const std::string & moInput,
+  const fs::path & outputDir,
+  const std::vector<std::string> & modelicaPaths,
+  const ModelicaCompilerType & moType
+) {
+  try {
+    // Only primitive data types can be passed from C++ to Java
+    // so JSON is serialized and converted to a raw character array
+    json j;
+    j["model"] = moInput;
+    j["outputDir"] = outputDir.generic_string();
+    j["mslDir"] = msl_path().generic_string();
+    j["modelicaPaths"] = modelicaPaths;
+
+    std::string params = j.dump();
+    std::vector<char> cparams(params.c_str(), params.c_str() + params.size() + 1);
+
+    graal_isolate_t *isolate = nullptr;
+    graal_isolatethread_t *thread = nullptr;
+
+    // The original idea was to allow switching between jmodelica and optimica,
+    // but there are challenges related to graal that might make this difficult or impossible.
+    if (moType == ModelicaCompilerType::Optimica) {
+      optimica_create_isolate(nullptr, &isolate, &thread);
+      optimica_compile(thread, cparams.data());
+    } else {
+      jmodelica_create_isolate(nullptr, &isolate, &thread);
+      jmodelica_compile(thread, cparams.data());
+    }
+
+    return 0;
+  } catch(...) {
+    return 1;
+  }
 }
 
 int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const fs::path & embedded_files_temp_dir) {
@@ -258,8 +298,7 @@ void extractEmbeddedCompilerFiles(
 
 int modelicaToFMU(
   const std::string &moinput,
-  const std::vector<std::string> & modelicaPaths,
-  const fs::path & mslPath,
+  std::vector<std::string> modelicaPaths,
   const ModelicaCompilerType & moType
 ) {
   // output_dir_name is moinput with "." replaced by "_"
@@ -294,7 +333,15 @@ int modelicaToFMU(
     jmodelica_dir = temp_dir / "Optimica";
   }
 
-  int result = compileMO(moinput, output_dir.native(), modelicaPaths, jmodelica_dir, mslPath, moType);
+  const auto mbl_path = mblPathInPaths(modelicaPaths);
+  if (mbl_path.empty()) {
+    modelicaPaths.push_back(mbl_home_dir().generic_string());
+  }
+
+  setenv("JMODELICA_HOME", jmodelica_dir.generic_string().c_str(), 1);
+  setenv("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str(), 1);
+
+  int result = compileMO(moinput, output_dir.native(), modelicaPaths, moType);
   if(result == 0) {
     spdlog::info("Compile C Code");
     result = compileC(output_dir, jmodelica_dir, temp_dir);

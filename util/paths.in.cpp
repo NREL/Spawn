@@ -52,9 +52,9 @@ namespace spawn {
 
   fs::path mbl_home_dir() {
     if (is_installed()) {
-      return exe_dir() / "../etc/modelica-buildings";
+      return exe_dir() / "../etc/modelica-buildings/Buildings";
     } else {
-      return project_source_dir() / "submodules/modelica-buildings";
+      return project_source_dir() / "submodules/modelica-buildings/Buildings";
     }
   }
 
