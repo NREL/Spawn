@@ -49,11 +49,12 @@ function(embed_files FILES EMBEDDED_LOCATIONS CXX_OUTPUT_FILES)
     add_custom_command(OUTPUT ${EMBED_SOURCE_FILE}
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBED_SOURCE_PATH}
       COMMAND CreateEmbeddedSource
-        ${FILE}
-        ${EMBED_SOURCE_FILE}
+        "${FILE}"
+        "${EMBED_SOURCE_FILE}"
         ${i}
-        ${EMBEDDED_LOCATION}
+        "${EMBEDDED_LOCATION}"
         DEPENDS ${FILE}
+        VERBATIM
     )
 
     set(EMBEDDED_FILE_INCLUDES "${EMBEDDED_FILE_INCLUDES}#include <${EMBED_SOURCE_FILE_REL_PATH}>\n")
