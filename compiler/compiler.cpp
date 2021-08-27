@@ -13,9 +13,6 @@
 #include "clang/FrontendTool/Utils.h"
 
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -31,11 +28,18 @@
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
+#include "llvm/Target/TargetMachine.h"
+
+#include "lld/Common/Driver.h"
+#include "lld/Common/ErrorHandler.h"
+
 
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
 
-#include "compiler/embedded_files.hxx"
-#include "utility.hpp"
+#include "../util/filesystem.hpp"
+#include "../util/temp_directory.hpp"
 
 #include <iostream>
 #if defined _WIN32
@@ -47,6 +51,8 @@
 
 #include <codecvt>
 #include <iterator>
+#include <sstream>
+#include <stdexcept>
 
 #include "compiler.hpp"
 
@@ -67,7 +73,7 @@ std::string toString(const std::string &str)
   return str;
 }
 
-std::string toString(const boost::filesystem::path &path)
+std::string toString(const fs::path &path)
 {
   return toString(path.native());
 }
@@ -89,25 +95,83 @@ std::string getExecutablePath()
 }
 
 namespace spawn {
-void Compiler::write_shared_object_file(const boost::filesystem::path &loc, std::vector<boost::filesystem::path> additional_libs)
-{
-  Temp_Directory td;
+
+void Compiler::write_shared_object_file(
+  const fs::path &loc,
+  const fs::path &sysroot,
+  std::vector<fs::path> additional_libs
+) {
+  util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
 
-  std::string libargs;
-  std::for_each(
-      std::begin(additional_libs),
-      std::end(additional_libs),
-      [&libargs](const auto & p) {
-        return libargs.append(toString(p) + " ");
-      }
-  );
+  std::stringstream out_ss;
+  std::stringstream err_ss;
 
-  system(fmt::format("ld -shared {} {} -o {} -shared", toString(temporary_object_file_location), libargs, toString(loc)).c_str());
+  std::vector<std::string> str_args {
+    "ld.lld-10",
+    "-shared",
+    fmt::format("--sysroot={}", toString(sysroot)),
+    fmt::format("-L{}", toString(sysroot / "usr/lib/")),
+    fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+    toString(temporary_object_file_location)
+  };
+
+  for (const auto &lib : additional_libs) {
+    str_args.push_back(toString(lib));
+  }
+
+  str_args.insert(str_args.end(), {
+      "-lm",
+      "-lc",
+      "-ldl",
+      "-lpthread",
+      "-o",
+      toString(loc),
+    });
+
+
+  for (const auto &arg : str_args) {
+    spdlog::trace("embedded lld argument: {}", arg);
+  }
+  
+  clang::SmallVector<const char *, 64> Args{};
+
+  std::transform(
+      str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
+
+
+  spdlog::info("linking to: {}", toString(loc));
+
+
+  bool success = true;
+
+  { // scope to ensure error stream buffer is flushed
+    llvm::raw_os_ostream err(err_ss);
+    llvm::raw_os_ostream out(out_ss);
+
+    success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
+    if (!success) {
+      spdlog::error("Linking errors with {} errors", lld::errorHandler().errorCount);
+    }
+  }
+
+  const auto errors = err_ss.str();
+
+  if (!success) {
+    throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", toString(loc), errors));
+  }
+
+  if (success && !errors.empty())
+  {
+    spdlog::warn("Linking warnings: '{}'", errors);
+  }
+
+
 }
 
-void Compiler::compile_and_link(const boost::filesystem::path &source)
+
+void Compiler::compile_and_link(const fs::path &source)
 {
   auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
@@ -118,7 +182,7 @@ void Compiler::compile_and_link(const boost::filesystem::path &source)
   }
 }
 
-void Compiler::write_bitcode(const boost::filesystem::path &loc)
+void Compiler::write_bitcode(const fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -126,10 +190,11 @@ void Compiler::write_bitcode(const boost::filesystem::path &loc)
 
   std::ofstream ofs(loc.native());
   llvm::raw_os_ostream ros(ofs);
+
   llvm::WriteBitcodeToFile(*m_currentCompilation, ros);
 }
 
-void Compiler::write_object_file(const boost::filesystem::path &loc)
+void Compiler::write_object_file(const fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -140,7 +205,7 @@ void Compiler::write_object_file(const boost::filesystem::path &loc)
   llvm::legacy::PassManager pass;
   std::string error;
 
-  llvm::TargetMachine::CodeGenFileType ft = llvm::TargetMachine::CGFT_ObjectFile;
+  llvm::CodeGenFileType ft = llvm::CGFT_ObjectFile;
 
   std::error_code EC;
   std::string sloc = toString(loc);
@@ -154,27 +219,9 @@ void Compiler::write_object_file(const boost::filesystem::path &loc)
   destination.flush();
 }
 
-class Embedded_Headers
-{
-public:
-  Embedded_Headers()
-  {
-    for (const auto &file : spawnclang::embedded_files::fileNames()) {
-      spawnclang::embedded_files::extractFile(file, toString(td.dir()));
-    }
-  }
-  boost::filesystem::path include_path() const
-  {
-    return td.dir() / "include";
-  }
-
-private:
-  spawn::Temp_Directory td;
-};
-
-std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &source,
+std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
                                                 llvm::LLVMContext &ctx,
-                                                const std::vector<boost::filesystem::path> &include_paths,
+                                                const std::vector<fs::path> &include_paths,
                                                 const std::vector<std::string> &flags)
 {
   void *MainAddr = (void *)(intptr_t)getExecutablePath;
@@ -190,15 +237,15 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
-  Embedded_Headers embedded_headers;
   // a place for the strings to live
   std::vector<std::string> str_args;
   str_args.push_back(toString(source));
-  str_args.push_back("-I" + toString(embedded_headers.include_path()));
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
     return "-I" + toString(str);
   });
   str_args.push_back("-fsyntax-only");
+  str_args.push_back("-fPIC");
+  str_args.push_back("-Wno-incomplete-setjmp-declaration");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));
@@ -238,7 +285,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const boost::filesystem::path &s
   const auto &CCArgs = Cmd.getArguments();
   std::unique_ptr<clang::CompilerInvocation> CI{new clang::CompilerInvocation};
   clang::CompilerInvocation::CreateFromArgs(
-      *CI, const_cast<const char **>(CCArgs.data()), const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
+      *CI, CCArgs, Diags);
 
   // Show the invocation, with -v.
   if (CI->getHeaderSearchOpts().Verbose) {

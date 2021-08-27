@@ -1,6 +1,7 @@
 #ifndef SPAWN_FMI_PATHS_HPP
 #define SPAWN_FMI_PATHS_HPP
 
+#include "paths.hpp"
 #include <string>
 #include <fmt/format.h>
 
@@ -43,7 +44,7 @@ namespace spawn {
   return fmt::format("{}{}.{}", fmi_lib_prefix(), library_name, fmi_lib_ext());
 }
 
-[[nodiscard]] static fs::path fmi_lib_path(const std::string_view library_name)
+[[maybe_unused]] [[nodiscard]] static fs::path fmi_lib_path(const std::string_view library_name)
 {
   return fs::path{"binaries"} / fmi_platform() / fmi_lib_filename(library_name);
 }
@@ -58,6 +59,6 @@ static inline std::string epfmi_filename()
   return fmi_lib_filename(epfmi_basename());
 }
 
-}
+} // namespace spawn
 
 #endif // SPAWN_FMI_PATHS_HPP

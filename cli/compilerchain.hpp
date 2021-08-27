@@ -2,24 +2,41 @@
 #define COMPILERCHAIN_HPP_INCLUDED
 
 #include <string>
-#include <boost/filesystem.hpp>
+#include <vector>
+#include "../util/filesystem.hpp"
 
 namespace spawn {
 
-int compileMO(
-  const std::string & moInput,
-  const boost::filesystem::path & outputDir,
-  const boost::filesystem::path & mblPath,
-  const boost::filesystem::path & jmodelicaHome
-);
-
-int compileC(const boost::filesystem::path & output_dir);
+enum class ModelicaCompilerType {
+  JModelica,
+  Optimica
+};
 
 int modelicaToFMU(
   const std::string &moinput,
-  const boost::filesystem::path & mblPath,
-  const boost::filesystem::path & jmodelicaHome
+  std::vector<std::string> modelicaPaths,
+  const ModelicaCompilerType & moType = ModelicaCompilerType::JModelica
 );
+
+int compileMO(
+  const std::string & moInput,
+  const fs::path & outputDir,
+  const std::vector<std::string> & modelicaPaths,
+  const ModelicaCompilerType & moType
+);
+
+int compileC(
+  const fs::path & output_dir,
+  const fs::path & jmodelica_dir,
+  const fs::path & embedded_files_temp_dir
+);
+
+void extractEmbeddedCompilerFiles(
+  const fs::path & dir,
+  const ModelicaCompilerType & moType
+);
+
+void makeModelicaExternalFunction(const std::vector<std::string> &parameters);
 
 } // namespace spawn
 

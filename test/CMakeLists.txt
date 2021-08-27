@@ -1,10 +1,9 @@
 # automatically enable catch2 to generate ctest targets
-if (CONAN_CATCH2_ROOT_DEBUG)
+if(CONAN_CATCH2_ROOT_DEBUG)
   include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
-else ()
+else()
   include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
-endif ()
-
+endif()
 
 configure_file(paths.in.cpp paths.in2.cpp)
 
@@ -12,7 +11,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
 
-add_executable(tests
+add_executable(
+  tests
   catch.cpp
   create_epfmu.hpp
   create_epfmu.cpp
@@ -34,45 +34,33 @@ add_executable(tests
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
 
-
 # Make this better
 if(WIN32)
   # file(GENERATE...) helps us get the path the the spawn exe
-  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/$<UPPER_CASE:$<CONFIG>>/paths.cpp
-          INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp
-          )
+  file(
+    GENERATE
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/$<UPPER_CASE:$<CONFIG>>/paths.cpp
+    INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp)
 
-  add_library(paths-release
-          ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/paths.cpp
-          )
+  add_library(paths-release ${CMAKE_CURRENT_BINARY_DIR}/RELEASE/paths.cpp)
+  target_link_libraries(paths-release PRIVATE compile_options)
 
-  add_library(paths-debug
-          ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/paths.cpp
-          )
+  add_library(paths-debug ${CMAKE_CURRENT_BINARY_DIR}/DEBUG/paths.cpp)
+  target_link_libraries(paths-debug PRIVATE compile_options)
 
-  target_link_libraries(tests
-          PRIVATE
-          debug paths-debug
-          general paths-release
-          )
+  target_link_libraries(tests PRIVATE debug paths-debug general paths-release)
 else()
   # file(GENERATE...) helps us get the path the the spawn exe
-  file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
-          INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp
-          )
+  file(
+    GENERATE
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
+    INPUT ${CMAKE_CURRENT_BINARY_DIR}/paths.in2.cpp)
 
-  add_library(paths
-          ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
-          )
+  add_library(paths ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp)
+  target_link_libraries(paths PRIVATE compile_options)
 
-  target_link_libraries(tests
-          PRIVATE
-          paths
-          )
+  target_link_libraries(tests PRIVATE paths)
 endif()
 
-catch_discover_tests(
-        tests
-        TEST_PREFIX
-        "unittests.")
 
+catch_discover_tests(tests TEST_PREFIX "unittests.")

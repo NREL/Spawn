@@ -51,7 +51,7 @@ void Spawn::start() {
       try {
         const auto epwPath = input.epwInputPath().string();
         const auto idfPath_string = idfPath.string();
-        const auto iddPath = iddpath().string();
+        const auto iddPath = spawn::idd_path().string();
         const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
@@ -671,17 +671,6 @@ void Spawn::emptyLogMessageQueue() {
 
 EnergyPlusState Spawn::simState() {
   return reinterpret_cast<EnergyPlusState>(&sim_state);
-}
-
-fs::path iddpath() {
-  constexpr auto & iddfilename = "Energy+.idd";
-  auto iddInputPath = exedir() / "../../resources" / iddfilename;
-
-  if (! fs::exists(iddInputPath)) {
-    iddInputPath = exedir() / iddfilename;
-  }
-
-  return iddInputPath;
 }
 
 } // namespace spawn
