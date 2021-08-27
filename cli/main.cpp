@@ -28,56 +28,6 @@
 
 using json = nlohmann::json;
 
-
-bool isInstalled() {
-  return spawn::exedir().stem() == "bin";
-}
-
-fs::path iddInstallPath() {
-  constexpr auto & iddFileName = "Energy+.idd";
-  // Configuration in install tree
-  auto iddInputPath = spawn::exedir() / "../etc" / iddFileName;
-
-  // Configuration in a developer tree
-  if (! fs::exists(iddInputPath)) {
-    iddInputPath = spawn::exedir() / iddFileName;
-  }
-
-  return iddInputPath;
-}
-
-fs::path epfmiInstallPath() {
-  const auto candidate = spawn::exedir() / ("../lib/" + spawn::epfmi_filename());
-  if (fs::exists(candidate)) {
-    return candidate;
-  } else {
-    return spawn::exedir() / spawn::epfmi_filename();
-  }
-}
-
-fs::path mblPath() {
-  fs::path p;
-
-  if (isInstalled()) {
-    p = spawn::exedir() / "../etc/modelica-buildings/Buildings/";
-  } else {
-    p = spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/";
-  }
-
-  return p.lexically_normal();
-}
-
-fs::path mslPath() {
-  fs::path p;
-  if (isInstalled()) {
-    p = spawn::exedir() / "../etc/MSL/";
-  } else {
-    p = spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
-  }
-
-  return p.lexically_normal();
-}
-
 void handle_eptr(std::exception_ptr eptr) {
   try {
     if (eptr) {
@@ -127,11 +77,24 @@ int main(int argc, const char *argv[]) {
   auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
 
 #if defined ENABLE_MODELICA_COMPILER
+  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations.");
   std::string moinput = "";
-  auto compileOption =
-      app.add_option("--compile", moinput,
+  auto createModelicaFMUOption =
+      modelicaCommand->add_option("--create-fmu", moinput,
                      "Compile Modelica model to FMU format", true);
-  //auto clangapp = app.add_subcommand("clang", "Pass all remaining arguments to the internal clang compiler (not yet implemented)");
+
+  std::vector<std::string> modelicaPaths;
+  auto modelicaPathsOption = modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths.");
+  modelicaPathsOption->needs(createModelicaFMUOption);
+
+  bool optimica = false;
+  auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler.");
+  optimicaOption->needs(createModelicaFMUOption);
+
+  bool jmodelica = false;
+  auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler.");
+  jmodelicaOption->needs(createModelicaFMUOption);
+
   auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
 
@@ -150,10 +113,14 @@ int main(int argc, const char *argv[]) {
     }
 
     if (*createOption) {
-      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, iddInstallPath(), epfmiInstallPath());
+      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
-    } else if (*compileOption) {
-      spawn::modelicaToFMU(moinput, mblPath(), mslPath());
+    } else if (*createModelicaFMUOption) {
+      if (optimica) {
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::ModelicaCompilerType::Optimica);
+      } else {
+        spawn::modelicaToFMU(moinput, modelicaPaths);
+      }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif

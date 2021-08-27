@@ -3,11 +3,11 @@ import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 
-import org.jmodelica.modelica.compiler.ModelicaCompiler;
-import org.jmodelica.modelica.compiler.SourceRoot;
-import org.jmodelica.modelica.compiler.InstClassDecl;
-import org.jmodelica.modelica.compiler.FClass;
-import org.jmodelica.modelica.compiler.generated.OptionRegistry;
+import org.jmodelica.optimica.compiler.OptimicaCompiler;
+import org.jmodelica.optimica.compiler.generated.OptionRegistry;
+import org.jmodelica.optimica.compiler.SourceRoot;
+import org.jmodelica.optimica.compiler.InstClassDecl;
+import org.jmodelica.optimica.compiler.FClass;
 import org.jmodelica.common.options.AbstractOptionRegistry;
 import org.jmodelica.util.exceptions.CompilerException;
 import org.jmodelica.util.exceptions.ModelicaClassNotFoundException;
@@ -25,12 +25,11 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
-
-interface JModelica {
+interface Optimica {
   static void main(String[] args) { 
   }
 
-  @CEntryPoint(name = "jmodelica_compile")
+  @CEntryPoint(name = "optimica_compile")
   static void compile(IsolateThread thread, CCharPointer args) { 
     try {
       String argsString = CTypeConversion.toJavaString(args);
@@ -41,17 +40,17 @@ interface JModelica {
       String mslDir = (String)deserialized.get("mslDir");
       String[] modelicaPaths = ((JsonArray)deserialized.get("modelicaPaths")).toArray(new String[0]);
 
-      OptionRegistry options = ModelicaCompiler.createOptions();
+      OptionRegistry options = OptimicaCompiler.createOptions();
       options.setStringOption("fmu_type", "FMUME20");
-      ModelicaCompiler mc = new ModelicaCompiler(options);
+      OptimicaCompiler mc = new OptimicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);
       mc.setOutDir(new File(outputDir));
       mc.setLogger("d:" + outputDir + "/out.log");
       mc.setModelicapath(mslDir);
-      ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
+      OptimicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
 
-      System.out.println("Compiling Model with JModelica");
+      System.out.println("Compiling Model with Optimica");
       System.out.println("Parse Model");
       SourceRoot sr = mc.parseModel(modelicaPaths);
       System.out.println("Instantiate Model");
@@ -61,7 +60,7 @@ interface JModelica {
       System.out.println("Generate C Code");
       mc.generateCode(flatMO,to);
     } catch (java.lang.Exception e) {
-      System.out.println("Trouble during JModelica Compiling");
+      System.out.println("Trouble during Optimica Compiling");
       System.out.println(e.getMessage());
       System.out.println("****");
     }

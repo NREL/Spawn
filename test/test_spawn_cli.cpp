@@ -32,16 +32,25 @@ TEST_CASE( "Spawn creates an FMU" ) {
 
 #if defined ENABLE_MODELICA_COMPILER
 TEST_CASE( "Spawn is able to compile a simple Modelica model" ) {
-  const auto cmd = spawnexe() + " --compile Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
+  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
-  // Glob that binary exists. ie
-  // <build_dir>/Buildings_Controls_OBC_CDL_Continuous_Validation_Line/binaries/Buildings_Controls_OBC_CDL_Continuous_Validation_Line.so
-  // using correct shared library extension for platform
 }
 
 TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions" ) {
-  const auto cmd = spawnexe() + " --compile Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
+  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
+  const auto result = system(cmd.c_str());
+  REQUIRE(result == 0);
+}
+
+TEST_CASE( "Spawn is able to compile a simple Modelica model, using Optimica" ) {
+  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
+  const auto result = system(cmd.c_str());
+  REQUIRE(result == 0);
+}
+
+TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions, using Optimica" ) {
+  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
