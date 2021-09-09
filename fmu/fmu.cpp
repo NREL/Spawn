@@ -57,6 +57,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
         return Variable::Causality::Local;
       } else if (attribute.value() == std::string_view{"calculatedParameter"}) {
         return Variable::Causality::CalculatedParameter;
+      } else if (attribute.value() == std::string_view{"parameter"}) {
+        return Variable::Causality::Parameter;
       }
     }
 
@@ -73,6 +75,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
         return Variable::Type::Boolean;
       } else if (first_child.name() == std::string_view{"String"}) {
         return Variable::Type::String;
+      } else if (first_child.name() == std::string_view{"Enumeration"}) {
+        return Variable::Type::Enumeration;
       }
     }
 
