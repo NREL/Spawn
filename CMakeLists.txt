@@ -207,23 +207,26 @@ set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
 add_custom_target(
   copy_spawn_cli_depends ALL
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
+  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>
+)
 
-set(modelica_bin_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-set(modelica_lib_path "${PROJECT_BINARY_DIR}/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+set(modelica_bin_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+set(modelica_lib_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+set(modelica_idd_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/etc/")
 
 if(ENABLE_BUILDINGS_LIBRARY)
   include(ExternalProject)
   ExternalProject_Add(
     MBL
     BUILD_ALWAYS 1
-    URL "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-    SOURCE_DIR "${PROJECT_BINARY_DIR}/modelica-buildings"
+    BUILD_IN_SOURCE
+    SOURCE_DIR "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${modelica_bin_path}"
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${modelica_idd_path}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 
