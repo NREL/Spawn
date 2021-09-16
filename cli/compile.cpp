@@ -1,4 +1,4 @@
-#include "compilerchain.hpp"
+#include "compile.hpp"
 #include "jmodelica.h"
 #include "optimica.h"
 #include "../compiler/compiler.hpp"
@@ -48,10 +48,18 @@ std::vector<std::string> pathToPathVector(const std::string & path) {
   return result;
 }
 
+// Return the mbl path from the environment variable
+fs::path mblPathFromEnv() {
+  const std::string pathstring = getenv("MODELICAPATH");
+  const auto pathvector = pathToPathVector(pathstring);
+  return mblPathInPaths(pathvector);
+}
+
 std::vector<fs::path> includePaths(
     const fs::path & jmodelica_dir,
     const fs::path & embedded_files_temp_dir
 ) {
+  const auto mbl_path = mblPathFromEnv();
   std::vector<fs::path> result = {
     jmodelica_dir / "include/RuntimeLibrary/",
     jmodelica_dir / "include/RuntimeLibrary/module_include",
@@ -60,25 +68,27 @@ std::vector<fs::path> includePaths(
     embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
     embedded_files_temp_dir / "usr/include",
     embedded_files_temp_dir / "usr/include/linux",
-    embedded_files_temp_dir / "usr/include/x86_64-linux-gnu"
+    embedded_files_temp_dir / "usr/include/x86_64-linux-gnu",
+    // The mbl_paths are a hack because our compile rule is not aware of Modelica annoations,
+    // such as the following....
+    //    annotation (
+    //      IncludeDirectory="modelica://Buildings/Resources/C-Sources",
+    // Which is used by the Modelica external C objects
+    // It would be good to generalize this so that it works for all Modelica libraries that may use
+    // external objects
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/",
+    mbl_path / "Resources/C-Sources",
+    mbl_path / "Resources/src/fmi-library/include"
   };
-
-  const std::string pathstring = getenv("MODELICAPATH");
-  const auto pathvector = pathToPathVector(pathstring);
-  const auto mbl_path = mblPathInPaths(pathvector);
-  if (! mbl_path.empty()) {
-    // Should this apply to any libraries on the MODELICAPATH?
-    // Are C sources always in Resources/C-sources ?
-    const auto s = mbl_path / "Resources/C-Sources";
-    result.push_back(mbl_path / "Resources/C-Sources");
-  }
 
   return result;
 }
 
 std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
 {
+  const auto mbl_path = mblPathFromEnv();
   return {
+    mbl_path / "Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a",
     jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
     jmodelica_dir / "lib/RuntimeLibrary/libModelicaIO.a",
     jmodelica_dir / "lib/RuntimeLibrary/libModelicaExternalC.a",
@@ -102,6 +112,20 @@ std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a"
+  };
+}
+
+std::vector<fs::path> additionalSource() {
+  const auto mbl_path = mblPathFromEnv();
+  return {
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectExchange.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/BuildingInstantiate.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectInstantiate.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/cryptographicsHash.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnFMU.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectFree.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectAllocate.c",
+    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnUtil.c"
   };
 }
 
@@ -172,6 +196,9 @@ int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const 
 		std::remove_if(begin(sourcefiles), end(sourcefiles), [](const auto & p) {return (p.filename().string() == "ModelicaStrings_compare.c");}),
 		end(sourcefiles)
 	);
+
+  const auto source_to_add = additionalSource();
+  sourcefiles.insert(sourcefiles.end(), source_to_add.begin(), source_to_add.end());
 
   // src/JModelica/Makefiles/MakeFile
   // Setup link libs and include paths

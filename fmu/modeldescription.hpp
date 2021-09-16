@@ -33,6 +33,10 @@ public:
       fmt::format("Unable to retrieve value reference for variable named: {}", variable_name));
   }
 
+  [[nodiscard]] std::string guid() const {
+    return fmiModelDescription().attribute("guid").as_string();
+  }
+
 private:
 
   [[nodiscard]] pugi::xml_node fmiModelDescription() const {

@@ -23,8 +23,9 @@
 #endif
 
 #if defined ENABLE_MODELICA_COMPILER
-#include "compilerchain.hpp"
+#include "compile.hpp"
 #endif
+#include "simulate.hpp"
 
 using json = nlohmann::json;
 
@@ -60,7 +61,6 @@ int main(int argc, const char *argv[]) {
       app.add_option("--output-dir", outputdir,
                      "Directory where the fmu should be placed. This path will be created if necessary", true);
   outputDirOption->needs(createOption);
-
   outputDirOption->excludes(outputPathOption);
   outputPathOption->excludes(outputDirOption);
 
@@ -69,34 +69,44 @@ int main(int argc, const char *argv[]) {
   zipOption->needs(createOption);
 
   bool nocompress = false;
-  auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead.");
+  auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead");
   compressOption->needs(createOption);
 
-  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn.");
+  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn");
 
-  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn.");
+  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn");
 
 #if defined ENABLE_MODELICA_COMPILER
-  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations.");
+  auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations");
   std::string moinput = "";
   auto createModelicaFMUOption =
       modelicaCommand->add_option("--create-fmu", moinput,
                      "Compile Modelica model to FMU format", true);
 
   std::vector<std::string> modelicaPaths;
-  auto modelicaPathsOption = modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths.");
+  auto modelicaPathsOption = modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths");
   modelicaPathsOption->needs(createModelicaFMUOption);
 
   bool optimica = false;
-  auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler.");
+  auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler");
   optimicaOption->needs(createModelicaFMUOption);
 
   bool jmodelica = false;
-  auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler.");
+  auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler");
   jmodelicaOption->needs(createModelicaFMUOption);
 
   auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
+
+  auto fmuCommand = app.add_subcommand("fmu", "Subcommand for FMU related operations");
+  std::string fmuinput = "";
+  double fmustart = 0.0;
+  double fmustop = 365.0 * 24 * 60 * 60;
+  auto fmuSimulateOption = fmuCommand->add_option("--simulate", fmuinput, "Simulate the FMU located at the given path");
+  auto fmuStartOption = fmuCommand->add_option("--start", fmustart, "Simulation start time");
+  fmuStartOption->needs(fmuSimulateOption);
+  auto fmuStopOption = fmuCommand->add_option("--stop", fmustop, "Simulation stop time");
+  fmuStopOption->needs(fmuSimulateOption);
 
   app.allow_extras();
 
@@ -130,7 +140,10 @@ int main(int argc, const char *argv[]) {
       std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
     } else if (*actuatorsOption) {
       std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
+    } else if (*fmuSimulateOption) {
+      spawn::simulate(fmuinput);
     }
+
   } catch(...) {
     eptr = std::current_exception();
   }

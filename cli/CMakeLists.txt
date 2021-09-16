@@ -1,7 +1,13 @@
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 
-set(src main.cpp)
+set(src 
+  main.cpp
+  compile.hpp 
+  compile.cpp
+  simulate.hpp 
+  simulate.cpp
+)
 
 if(ENABLE_MODELICA_COMPILER)
   include(embed_jmodelica.cmake)
@@ -32,7 +38,9 @@ if(ENABLE_MODELICA_COMPILER)
 
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
-  list(APPEND src compilerchain.hpp compilerchain.cpp ${embedded_output})
+  list(APPEND src 
+    ${embedded_output}
+  )
 endif()
 
 add_executable(spawn ${src})
@@ -45,6 +53,7 @@ target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
 target_link_libraries(
   spawn
   PRIVATE compile_options
+          fmu
           libspawn
           energypluslib
           spawn_utils

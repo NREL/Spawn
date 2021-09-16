@@ -42,14 +42,14 @@ interface JModelica {
       String[] modelicaPaths = ((JsonArray)deserialized.get("modelicaPaths")).toArray(new String[0]);
 
       OptionRegistry options = ModelicaCompiler.createOptions();
-      options.setStringOption("fmu_type", "FMUME20");
+      options.setStringOption("fmu_type", "FMUCS20");
       ModelicaCompiler mc = new ModelicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);
       mc.setOutDir(new File(outputDir));
       mc.setLogger("d:" + outputDir + "/out.log");
       mc.setModelicapath(mslDir);
-      ModelicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
+      ModelicaCompiler.TargetObject to = mc.createTargetObject("cs", "2.0");
 
       System.out.println("Compiling Model with JModelica");
       System.out.println("Parse Model");

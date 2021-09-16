@@ -245,6 +245,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
   });
   str_args.push_back("-fsyntax-only");
   str_args.push_back("-fPIC");
+  str_args.push_back("-g");
   str_args.push_back("-Wno-incomplete-setjmp-declaration");
   str_args.push_back("-Wno-expansion-to-defined");
   str_args.push_back("-Wno-nullability-completeness");
