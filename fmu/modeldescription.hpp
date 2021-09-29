@@ -4,6 +4,8 @@
 #include "../util/filesystem.hpp"
 #include <fmt/format.h>
 #include <pugixml.hpp>
+#include <map>
+#include <iostream>
 
 namespace spawn::fmu {
 
@@ -31,6 +33,26 @@ public:
 
     throw std::runtime_error(
       fmt::format("Unable to retrieve value reference for variable named: {}", variable_name));
+  }
+
+  // Return a map of all time varying variables, where key is the variable name,
+  // and value is the variable value reference
+  [[nodiscard]] std::map<std::string, unsigned int> variables() const {
+    std::map<std::string, unsigned int> result;
+
+    const auto vars = modelVariables().children("ScalarVariable");
+
+    for (const auto & var : vars) {
+      const auto name = var.attribute("name").as_string();
+      const auto vr = var.attribute("valueReference").as_int();
+      const std::string variability = var.attribute("variability").as_string();
+      // Only return continuous variables for now
+      if (variability.compare("continuous") == 0) {
+        result[name] = vr;
+      }
+    }
+
+    return result;
   }
 
   [[nodiscard]] std::string guid() const {
@@ -66,7 +88,7 @@ private:
   [[nodiscard]] pugi::xml_node scalarVariable(const std::string & variable_name) const {
     const auto vars = modelVariables();
     const auto scalarVariables = vars.children("ScalarVariable");
-    for (const auto scalarVar : scalarVariables) {
+    for (const auto & scalarVar : scalarVariables) {
       const auto name = scalarVar.attribute("name").value();
       if (name == variable_name) {
         return scalarVar;
