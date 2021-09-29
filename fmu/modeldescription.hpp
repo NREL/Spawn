@@ -37,6 +37,14 @@ public:
     return fmiModelDescription().attribute("guid").as_string();
   }
 
+  [[nodiscard]] double defaultTolerance() const {
+    const auto attribute = fmiModelDescription().child("DefaultExperiment").attribute("tolerance");
+    if (attribute.empty()) {
+      throw std::runtime_error("Default tolerance not found");
+    }
+    return attribute.as_double();
+  }
+
 private:
 
   [[nodiscard]] pugi::xml_node fmiModelDescription() const {

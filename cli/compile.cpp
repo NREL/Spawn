@@ -100,7 +100,7 @@ std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
     jmodelica_dir / "lib/RuntimeLibrary/libjmi_evaluator_util.a",
     jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
     jmodelica_dir / "lib/RuntimeLibrary/libModelicaStandardTables.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libModelicaMatIO.a",
+    //jmodelica_dir / "lib/RuntimeLibrary/libModelicaMatIO.a",
     jmodelica_dir / "lib/RuntimeLibrary/libzlib.a",
     jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
     jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",

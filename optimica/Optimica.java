@@ -41,14 +41,14 @@ interface Optimica {
       String[] modelicaPaths = ((JsonArray)deserialized.get("modelicaPaths")).toArray(new String[0]);
 
       OptionRegistry options = OptimicaCompiler.createOptions();
-      options.setStringOption("fmu_type", "FMUME20");
+      options.setStringOption("fmu_type", "FMUCS20");
       OptimicaCompiler mc = new OptimicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);
       mc.setOutDir(new File(outputDir));
       mc.setLogger("d:" + outputDir + "/out.log");
       mc.setModelicapath(mslDir);
-      OptimicaCompiler.TargetObject to = mc.createTargetObject("me", "2.0");
+      OptimicaCompiler.TargetObject to = mc.createTargetObject("cs", "2.0");
 
       System.out.println("Compiling Model with Optimica");
       System.out.println("Parse Model");
