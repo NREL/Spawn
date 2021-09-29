@@ -3,6 +3,7 @@
 //
 
 #include "fmu.hpp"
+#include <iostream>
 
 namespace spawn::fmu {
 bool FMU::Variable::validate(const FMU::Variable::Type expected, const bool throw_error) const
@@ -37,6 +38,22 @@ std::string FMU::modelIdentifier() const
   }
 
   return modelIdentifier.value();
+}
+
+std::string FMU::guid() const
+{
+  const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
+  return fmiModelDescription.attribute("guid").as_string();
+}
+
+double FMU::defaultTolerance() const
+{
+  const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
+  const auto attribute = fmiModelDescription.child("DefaultExperiment").attribute("tolerance");
+  if (attribute.empty()) {
+    throw std::runtime_error("Default tolerance not found");
+  }
+  return attribute.as_double();
 }
 
 std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_description)
@@ -83,6 +100,24 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
     throw std::runtime_error("Unable to determine type of variable");
   };
 
+  const auto getVariability = [](const pugi::xml_node &node) {
+    const auto &attribute = node.attribute("variability"); 
+
+    if (!attribute.empty()) {
+      if (attribute.value() == std::string_view{"continuous"}) {
+        return Variable::Variability::Continuous;
+      } else if (attribute.value() == std::string_view{"fixed"}) {
+        return Variable::Variability::Fixed;
+      } else if (attribute.value() == std::string_view{"constant"}) {
+        return Variable::Variability::Constant;
+      } else {
+        std::cout << attribute.value() << std::endl;
+      }
+    }
+
+    throw std::runtime_error("Unable to determine variability of variable");
+  };
+
   for (const auto &variable : variables) {
     if (const auto &node = variable.node(); !node.empty()) {
 
@@ -91,7 +126,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
                    static_cast<fmi2ValueReference>(std::atoi(node.attribute("valueReference").value())),
                    node.attribute("description").value(),
                    getType(node),
-                   getCausality(node)
+                   getCausality(node),
+                   getVariability(node)
           });
     }
   }

@@ -141,7 +141,9 @@ int main(int argc, const char *argv[]) {
     } else if (*actuatorsOption) {
       std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
     } else if (*fmuSimulateOption) {
-      spawn::simulate(fmuinput);
+      spawn::fmu::Sim sim(fmuinput);
+      sim.run();
+      //spawn::fmu::simulate(fmuinput);
     }
 
   } catch(...) {

@@ -45,6 +45,13 @@ namespace spawn::fmu {
         Parameter
       };
 
+      enum struct Variability
+      {
+        Fixed,
+        Constant,
+        Continuous
+      };
+
       [[nodiscard]] static constexpr std::string_view to_string(const Type type) noexcept
       {
         switch (type) {
@@ -63,11 +70,26 @@ namespace spawn::fmu {
         return "Unknown";
       }
 
+      [[nodiscard]] static constexpr std::string_view to_string(const Variability variability) noexcept
+      {
+        switch (variability) {
+        case Variability::Fixed:
+          return "fixed";
+        case Variability::Constant:
+          return "constant";
+        case Variability::Continuous:
+          return "continuous";
+        }
+
+        return "Unknown";
+      }
+
       std::string name;
       fmi2ValueReference valueReference;
       std::string description;
       Type type;
       Causality causality;
+      Variability variability;
 
       [[nodiscard]] bool validate(const Type expected, const bool throw_error = true) const;
     };
@@ -89,6 +111,10 @@ namespace spawn::fmu {
     }
 
     [[nodiscard]] std::string modelIdentifier() const;
+
+    [[nodiscard]] std::string guid() const;
+
+    [[nodiscard]] double defaultTolerance() const;
 
     [[nodiscard]] fs::path fmiBinaryFullPath() const
     {
