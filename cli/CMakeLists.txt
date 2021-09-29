@@ -3,8 +3,6 @@ set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 
 set(src 
   main.cpp
-  compile.hpp 
-  compile.cpp
   simulate.hpp 
   simulate.cpp
 )
@@ -39,6 +37,8 @@ if(ENABLE_MODELICA_COMPILER)
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src 
+    compile.hpp 
+    compile.cpp
     ${embedded_output}
   )
 endif()
