@@ -37,12 +37,12 @@ std::vector<fmi2ValueReference> Sim::initValueReferences() {
   return vrs;
 }
 
-void Sim::run() {
+void Sim::run(const nlohmann::json & config) {
   std::cout << "Simulating " << m_fmu_path << std::endl;
 
-  double start = 0.0;
-  double stop = 1.0;
-  double step = 0.001;
+  double start = config["start"];
+  double stop = config["stop"];
+  double step = config["step"];
 
   const auto guid = m_fmu.guid();
   fmi2CallbackFunctions callbacks = {fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation

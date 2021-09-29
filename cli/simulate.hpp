@@ -12,7 +12,7 @@ namespace spawn::fmu {
 class Sim {
 public:
   explicit Sim(fs::path fmu_path);
-  void run();
+  void run(const nlohmann::json & config);
 
 private:
   void openLogs();

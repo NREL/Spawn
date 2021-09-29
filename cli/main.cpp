@@ -101,12 +101,15 @@ int main(int argc, const char *argv[]) {
   auto fmuCommand = app.add_subcommand("fmu", "Subcommand for FMU related operations");
   std::string fmuinput = "";
   double fmustart = 0.0;
-  double fmustop = 365.0 * 24 * 60 * 60;
+  double fmustop = 60.0;
+  double fmustep = 0.001;
   auto fmuSimulateOption = fmuCommand->add_option("--simulate", fmuinput, "Simulate the FMU located at the given path");
   auto fmuStartOption = fmuCommand->add_option("--start", fmustart, "Simulation start time");
   fmuStartOption->needs(fmuSimulateOption);
   auto fmuStopOption = fmuCommand->add_option("--stop", fmustop, "Simulation stop time");
   fmuStopOption->needs(fmuSimulateOption);
+  auto fmuStepOption = fmuCommand->add_option("--step", fmustep, "Simulation step size");
+  fmuStepOption->needs(fmuSimulateOption);
 
   app.allow_extras();
 
@@ -142,8 +145,11 @@ int main(int argc, const char *argv[]) {
       std::cout << nlohmann::json(actuatortypes).dump(4) << std::endl;
     } else if (*fmuSimulateOption) {
       spawn::fmu::Sim sim(fmuinput);
-      sim.run();
-      //spawn::fmu::simulate(fmuinput);
+      nlohmann::json config;
+      config["start"] = fmustart;
+      config["stop"] = fmustop;
+      config["step"] = fmustep;
+      sim.run(config);
     }
 
   } catch(...) {
