@@ -230,10 +230,15 @@ if(ENABLE_BUILDINGS_LIBRARY)
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica-buildings" DESTINATION etc/)
-
   set(fmilib_project_source_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
+
+  install(
+    DIRECTORY "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+    DESTINATION etc/
+    PATTERN ${fmilib_project_build_dir} EXCLUDE
+  )
+
   ExternalProject_Add(
     FMILIB
     SOURCE_DIR ${fmilib_project_source_dir}

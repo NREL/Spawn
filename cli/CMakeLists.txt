@@ -65,6 +65,8 @@ target_link_libraries(
           CONAN_PKG::spdlog
 )
 
+add_dependencies(spawn FMILIB)
+
 if(ENABLE_MODELICA_COMPILER)
   target_link_libraries(spawn PRIVATE compiler jmodelica optimica)
 endif()
