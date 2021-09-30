@@ -232,11 +232,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
 
   install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica-buildings" DESTINATION etc/)
 
-  include(ExternalProject)
+  set(fmilib_project_source_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/")
+  set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
   ExternalProject_Add(
     FMILIB
-    SOURCE_DIR "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/"
-    #BINARY_DIR "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/"
+    SOURCE_DIR ${fmilib_project_source_dir}
+    BINARY_DIR ${fmilib_project_build_dir}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     INSTALL_COMMAND ""
   )
