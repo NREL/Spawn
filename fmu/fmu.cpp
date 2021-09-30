@@ -110,6 +110,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
         return Variable::Variability::Fixed;
       } else if (attribute.value() == std::string_view{"constant"}) {
         return Variable::Variability::Constant;
+      } else if (attribute.value() == std::string_view{"discrete"}) {
+        return Variable::Variability::Discrete;
       } else {
         std::cout << attribute.value() << std::endl;
       }

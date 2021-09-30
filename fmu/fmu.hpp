@@ -49,7 +49,8 @@ namespace spawn::fmu {
       {
         Fixed,
         Constant,
-        Continuous
+        Continuous,
+        Discrete
       };
 
       [[nodiscard]] static constexpr std::string_view to_string(const Type type) noexcept
@@ -79,6 +80,8 @@ namespace spawn::fmu {
           return "constant";
         case Variability::Continuous:
           return "continuous";
+        case Variability::Discrete:
+          return "discrete";
         }
 
         return "Unknown";
