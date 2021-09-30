@@ -34,8 +34,10 @@ if(ENABLE_MODELICA_COMPILER)
   list(APPEND embedded_files "${CMAKE_BINARY_DIR}/compiler/spawn_exe_launcher")
   list(APPEND embedded_paths "spawn_exe_launcher")
 
-  list(APPEND embedded_files "${CMAKE_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a")
-  list(APPEND embedded_paths "usr/lib/libfmilib.a")
+  if(ENABLE_BUILDINGS_LIBRARY)
+    list(APPEND embedded_files "${CMAKE_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a")
+    list(APPEND embedded_paths "usr/lib/libfmilib.a")
+  endif()
 
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
@@ -65,7 +67,9 @@ target_link_libraries(
           CONAN_PKG::spdlog
 )
 
-add_dependencies(spawn FMILIB)
+if(ENABLE_BUILDINGS_LIBRARY)
+  add_dependencies(spawn FMILIB)
+endif()
 
 if(ENABLE_MODELICA_COMPILER)
   target_link_libraries(spawn PRIVATE compiler jmodelica optimica)
