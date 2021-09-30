@@ -34,6 +34,9 @@ if(ENABLE_MODELICA_COMPILER)
   list(APPEND embedded_files "${CMAKE_BINARY_DIR}/compiler/spawn_exe_launcher")
   list(APPEND embedded_paths "spawn_exe_launcher")
 
+  list(APPEND embedded_files "${CMAKE_BINARY_DIR}/FMILIB-prefix/src/FMILIB-build/fmi-library-modelon/src/install/lib/libfmilib.a")
+  list(APPEND embedded_paths "usr/lib/libfmilib.a")
+
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src 

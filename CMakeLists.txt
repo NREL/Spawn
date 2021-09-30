@@ -231,6 +231,15 @@ if(ENABLE_BUILDINGS_LIBRARY)
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 
   install(DIRECTORY "${PROJECT_BINARY_DIR}/modelica-buildings" DESTINATION etc/)
+
+  include(ExternalProject)
+  ExternalProject_Add(
+    FMILIB
+    SOURCE_DIR "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/"
+    #BINARY_DIR "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/"
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
+    INSTALL_COMMAND ""
+  )
 endif()
 
 install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)

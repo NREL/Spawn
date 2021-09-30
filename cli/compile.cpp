@@ -84,11 +84,13 @@ std::vector<fs::path> includePaths(
   return result;
 }
 
-std::vector<fs::path> modelicaLibs(const fs::path &jmodelica_dir)
-{
+std::vector<fs::path> modelicaLibs(
+  const fs::path & jmodelica_dir,
+  const fs::path & embedded_files_temp_dir
+){
   const auto mbl_path = mblPathFromEnv();
   return {
-    mbl_path / "Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a",
+    embedded_files_temp_dir / "usr/lib/libfmilib.a",
     jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
     jmodelica_dir / "lib/RuntimeLibrary/libModelicaIO.a",
     jmodelica_dir / "lib/RuntimeLibrary/libModelicaExternalC.a",
@@ -209,7 +211,7 @@ int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const 
   // some Modelica models
 
   // Libs to link
-  const auto runtime_libs = modelicaLibs(jmodelica_dir);
+  const auto runtime_libs = modelicaLibs(jmodelica_dir, embedded_files_temp_dir);
 
   // include paths
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
@@ -273,7 +275,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   const auto jmodelica_dir = fs::path{arguments["JMODELICA_HOME"]};
   const auto embedded_files_temp_dir = jmodelica_dir.parent_path();
   const auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
-  const auto runtime_libs = modelicaLibs(jmodelica_dir);
+  const auto runtime_libs = modelicaLibs(jmodelica_dir, embedded_files_temp_dir);
 
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
