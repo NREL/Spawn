@@ -1,11 +1,11 @@
 # Spawn 
-Spawn is a software package for building co-simulations involving EnergyPlus and Modelica.
+Spawn is a software package for performing co-simulations involving EnergyPlus and Modelica.
 The primary interface to spawn is the command line interface, `spawn`,
 which provides the following capabilities in one self contained executable software tool.
 
 1. A Modelica compiler toolchain for compiling Modelica source to Functional Mockup Unit (FMU) format
-2. A method for exporting EnergyPlus models to FMU format
-3. A method for simulating a Functional Mockup Unit
+2. A method for simulating a Functional Mockup Unit
+3. A method for exporting EnergyPlus models to FMU format
 
 Additionally, the Spawn package bundles the Modelica Standard Library and the Modelica Buildings Library (MBL),
 and the built in compiler is preconfigured to utilize these libraries. The Buildings Library now includes 
