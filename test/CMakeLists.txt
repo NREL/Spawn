@@ -24,7 +24,7 @@ add_executable(
   test_temp_directory.cpp
   test_unzip_file.cpp
   test_floating_zone.cpp
-  test_single_family_house_lights_control.cpp
+  test_single_family_house.cpp
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp

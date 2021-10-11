@@ -260,9 +260,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("relativeQuantity","false");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
-        // TODO exchange this variable with real EnergyPlus data
-        var.setValue(0.0, spawn::units::UnitSystem::MO);
-
         result.emplace(i,std::move(var));
       }
       ++i;
