@@ -168,6 +168,7 @@ private:
   double zoneTemperature(const int zonenum);
   void updateZoneTemperature(const int zonenum, const double & dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
+  void updateLatentGains();
   void initZoneEquip();
   // Time in seconds of the last zone temperature update
   // This is required for computing the dt in the

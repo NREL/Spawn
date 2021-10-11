@@ -325,6 +325,12 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones) {
   prevWarmupFlag = sim_state.dataGlobal->WarmupFlag;
 }
 
+void Spawn::updateLatentGains() {
+  for (int zonei = 1; zonei <= sim_state.dataGlobal->NumOfZones; ++zonei) {
+    EnergyPlus::InternalHeatGains::SumAllInternalLatentGains(sim_state, zonei, sim_state.dataHeatBalFanSys->ZoneLatentGain(zonei));
+  }
+}
+
 double Spawn::zoneHeatTransfer(const int zonenum) {
   const auto & sums = zoneSums(zonenum);
   // Refer to
@@ -536,6 +542,7 @@ void Spawn::exchange(const bool force)
   EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
+  updateLatentGains();
 
   // Now update the outputs
   for( auto & varmap : variables ) {
@@ -564,6 +571,12 @@ void Spawn::exchange(const bool force)
       case VariableType::QCONSEN_FLOW: {
         const auto varZoneNum = zoneNum(var.name);
         var.setValue(zoneHeatTransfer( varZoneNum ), spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QLAT_FLOW: {
+        const auto varZoneNum = zoneNum(var.name);
+        const auto value = sim_state.dataHeatBalFanSys->ZoneLatentGain( varZoneNum );
+        var.setValue(sim_state.dataHeatBalFanSys->ZoneLatentGain( varZoneNum ), spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::SENSOR: {
