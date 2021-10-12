@@ -63,6 +63,7 @@ TEST_CASE("Test SingleFamilyHouse")
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
+  std::cout << "resource_path: " << resource_path << std::endl;
   fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
@@ -121,8 +122,9 @@ TEST_CASE("Test SingleFamilyHouse")
 
   // Begin test latent heat
   const auto qlat_flow_ref = modelDescription.valueReference("LIVING ZONE_QLat_flow");
+  const auto qpeo_flow_ref = modelDescription.valueReference("LIVING ZONE_QPeo_flow");
   const auto people_input_ref = modelDescription.valueReference("living zone people");
-  const std::array<fmi2ValueReference, 1> latent_output_refs = {qlat_flow_ref};
+  const std::array<fmi2ValueReference, 2> latent_output_refs = {qlat_flow_ref, qpeo_flow_ref};
   const std::array<fmi2ValueReference, 1> latent_input_refs = {people_input_ref};
 
   std::array<fmi2Real, latent_output_refs.size()> latent_output_values;
@@ -130,7 +132,10 @@ TEST_CASE("Test SingleFamilyHouse")
 
   status = fmu.fmi.fmi2GetReal(comp, latent_output_refs.data(), latent_output_refs.size(), latent_output_values.data());
   CHECK(status == fmi2OK);
+  // QLAT_FLOW should be zero
   CHECK( latent_output_values[0] == Approx(0.0) );
+  // QPEO_FLOW is also zero
+  CHECK( latent_output_values[1] == Approx(0.0) );
 
   latent_input_values[0] = 5.0;
   status = fmu.fmi.fmi2SetReal(comp, latent_input_refs.data(), latent_input_refs.size(), latent_input_values.data());
@@ -138,7 +143,10 @@ TEST_CASE("Test SingleFamilyHouse")
 
   status = fmu.fmi.fmi2GetReal(comp, latent_output_refs.data(), latent_output_refs.size(), latent_output_values.data());
   CHECK(status == fmi2OK);
+  // QLAT_FLOW should be non zero
   CHECK( latent_output_values[0] > 10.0 );
+  // QPEO_FLOW is also non zero
+  //CHECK( latent_output_values[1] > 10.0 );
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);

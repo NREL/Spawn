@@ -129,8 +129,55 @@ json & removeUnusedObjects(json & jsonidf) {
   return jsonidf;
 }
 
+json & addPeopleOutputVariables(json& jsonidf, const Input& input) {
+  // Some zones don't have people input, which will result in an EnergyPlus error,
+  // Insert a default people object that defines zero people
+  constexpr auto scheduletype = "Schedule:Constant";
+  constexpr auto peopleSchedulename = "Spawn-People-Schedule";
+  constexpr auto activitySchedulename = "Spawn-PeopleActivity-Schedule";
+  constexpr auto schedule_typelimits_type = "ScheduleTypeLimits";
+  constexpr auto schedule_typelimits_name = "Spawn-People-Limits";
+
+  jsonidf[schedule_typelimits_type][schedule_typelimits_name] = {
+  };
+
+  jsonidf[scheduletype][peopleSchedulename] = {
+    {"schedule_type_limits_name", schedule_typelimits_name},
+    {"hourly_value", "1.0"}
+  };
+
+  jsonidf[scheduletype][activitySchedulename] = {
+    {"schedule_type_limits_name", schedule_typelimits_name},
+    {"hourly_value", "1.0"}
+  };
+
+  for(const auto & zone : input.zones) {
+    if( ! zone.isconnected ) continue;
+
+    jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] = {
+      {"zone_or_zonelist_name", zone.idfname},
+      {"number_of_people_schedule_name", peopleSchedulename},
+      {"number_of_people_calculation_method", "People"},
+      {"number_of_people", "0"},
+      {"people_per_zone_floor_area", "0"},
+      {"zone_floor_area_per_person", "0"},
+      {"fraction_radiant", "0"},
+      {"sensible_heat_fraction", "autocalculate"},
+      {"activity_level_schedule_name", activitySchedulename}
+    };
+
+    jsonidf[zone.ep_outputvariable_type][zone.ep_qpeo_flow_object_name] = {
+      {"variable_name", zone.ep_qpeo_flow_output_var_name},
+      {"key_value", zone.idfname},
+      {"reporting_frequency", "Timestep"}
+    };
+  }
+
+  return jsonidf;
+}
+
 // Add output variables requested in the spawn input file, but not in the idf
-json & addOutputVariables(json& jsonidf, const Input& input) {
+json & addRequestedOutputVariables(json& jsonidf, const Input& input) {
   // A pair that holds an output variable name and key,
   typedef std::pair<std::string, std::string> Varpair;
 
@@ -299,7 +346,8 @@ void prepare_idf(json & jsonidf, const Input& input) {
   addRunPeriod(jsonidf);
   removeInfiltration(jsonidf, input);
   addOtherEquipment(jsonidf, input);
-  addOutputVariables(jsonidf, input);
+  addRequestedOutputVariables(jsonidf, input);
+  addPeopleOutputVariables(jsonidf, input);
 }
 
 } // namespace spawn
