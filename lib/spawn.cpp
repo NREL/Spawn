@@ -531,11 +531,11 @@ void Spawn::exchange(const bool force)
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
   EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
-
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
+  EnergyPlus::InternalHeatGains::ReportInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
   updateLatentGains();
 
@@ -570,8 +570,11 @@ void Spawn::exchange(const bool force)
       }
       case VariableType::QLAT_FLOW: {
         const auto varZoneNum = zoneNum(var.name);
-        const auto value = sim_state.dataHeatBalFanSys->ZoneLatentGain( varZoneNum );
         var.setValue(sim_state.dataHeatBalFanSys->ZoneLatentGain( varZoneNum ), spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QPEO_FLOW: {
+        var.setValue(getSensorValue(var), spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::SENSOR: {
