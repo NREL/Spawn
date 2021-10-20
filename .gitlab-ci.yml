@@ -147,7 +147,7 @@ build:mac:
    - cd build
    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_STGZ=OFF -DCPACK_BINARY_IFW=OFF -DBUILD_TESTING=ON -DENABLE_BUILDINGS_LIBRARY=OFF ..
    - cmake ..
-   - make -j2
+   - make -j8
  artifacts:
    expire_in: 6 hrs
    paths:
