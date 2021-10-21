@@ -146,7 +146,16 @@ TEST_CASE("Test SingleFamilyHouse")
   // QLAT_FLOW should be non zero
   CHECK( latent_output_values[0] > 10.0 );
   // QPEO_FLOW is also non zero
-  //CHECK( latent_output_values[1] > 10.0 );
+  CHECK( latent_output_values[1] > 10.0 );
+
+  // QLAT and QPEO for 5 people should be reasonable
+  CHECK( latent_output_values[0] < 1000.0 );
+  CHECK( latent_output_values[1] < 1000.0 );
+
+  // Ratio of latent heat, should be reasonable
+  const auto latent_fraction = latent_output_values[0] / latent_output_values[1];
+  CHECK( latent_fraction < 0.7 );
+  CHECK( latent_fraction > 0.3 );
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
