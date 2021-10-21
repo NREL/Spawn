@@ -23,7 +23,7 @@ public:
 
   // The name of the EnergyPlus output variable related to QPeo_flow
   const std::string ep_qpeo_flow_object_name{fmt::format("Spawn-Zone-{}-QPeo_flow", idfname)};
-  static constexpr auto ep_qpeo_flow_output_var_name{"Zone People Total Heating Energy"};
+  static constexpr auto ep_qpeo_flow_output_var_name{"Zone People Total Heating Rate"};
 
   static constexpr auto ep_outputvariable_type{"Output:Variable"};
   static constexpr auto ep_people_object_type{"People"};
