@@ -1,5 +1,6 @@
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
+cmake_policy(SET CMP0087 NEW)
 
 set(src 
   main.cpp
@@ -50,6 +51,14 @@ endif()
 
 add_executable(spawn ${src})
 
+set_target_properties(spawn PROPERTIES OUTPUT_NAME "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
+
+add_custom_command(
+  TARGET spawn
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE_NAME:spawn> "spawn$<TARGET_FILE_SUFFIX:spawn>"
+)
+
 configure_file(config.hpp.in config.hxx)
 target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(spawn PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
@@ -76,3 +85,4 @@ if(ENABLE_MODELICA_COMPILER)
 endif()
 
 install(TARGETS spawn DESTINATION bin)
+install(CODE "file(CREATE_LINK $<TARGET_FILE_NAME:spawn> \${CMAKE_INSTALL_PREFIX}/bin/spawn$<TARGET_FILE_SUFFIX:spawn> SYMBOLIC)")
