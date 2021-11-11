@@ -58,6 +58,8 @@ interface JModelica {
       InstClassDecl mo = mc.instantiateModel(sr,model,to);
       System.out.println("Flatten Model");
       FClass flatMO = mc.flattenModel(mo,to,model);
+      System.out.println("Load Resources");
+      flatMO.loadResources(new File(outputDir, "resources"));
       System.out.println("Generate C Code");
       mc.generateCode(flatMO,to);
     } catch (java.lang.Exception e) {
