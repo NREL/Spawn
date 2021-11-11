@@ -119,16 +119,17 @@ std::vector<fs::path> modelicaLibs(
 
 std::vector<fs::path> additionalSource() {
   const auto mbl_path = mblPathFromEnv();
-  return {
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectExchange.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/BuildingInstantiate.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectInstantiate.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/cryptographicsHash.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnFMU.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectFree.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnObjectAllocate.c",
-    mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/SpawnUtil.c"
-  };
+  std::vector<fs::path> result;
+
+  for (const auto & entry : fs::directory_iterator(mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/")) {
+    if (entry.exists()) {
+      if (entry.path().extension() == ".c") {
+        result.push_back(entry.path());
+      }
+    }
+  }
+
+  return result;
 }
 
 int compileMO(
