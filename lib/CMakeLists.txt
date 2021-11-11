@@ -131,11 +131,11 @@ if(BUILD_PYTHON_BINDINGS)
   configure_file(${CMAKE_SOURCE_DIR}/python/test_python.in.py test_python.py)
 
   add_test(
-    NAME test_python_bindings
+    NAME spawn.python_bindings
     #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/python
     COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/test_python.py)
   
-  set_tests_properties( test_python_bindings PROPERTIES ENVIRONMENT  PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/Products/python/$<IF:$<CONFIG:Debug>,Debug,Release>)  
+  set_tests_properties( spawn.python_bindings PROPERTIES ENVIRONMENT  PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/Products/python/$<IF:$<CONFIG:Debug>,Debug,Release>)  
 endif()
 
 target_compile_definitions(libspawn PUBLIC -DENERGYPLUS_STATIC_API)

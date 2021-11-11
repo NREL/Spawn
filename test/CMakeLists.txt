@@ -63,4 +63,4 @@ else()
 endif()
 
 
-catch_discover_tests(tests TEST_PREFIX "unittests.")
+catch_discover_tests(tests TEST_PREFIX "spawn.")
