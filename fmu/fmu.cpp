@@ -3,6 +3,7 @@
 //
 
 #include "fmu.hpp"
+#include <iostream>
 
 namespace spawn::fmu {
 bool FMU::Variable::validate(const FMU::Variable::Type expected, const bool throw_error) const
@@ -39,6 +40,22 @@ std::string FMU::modelIdentifier() const
   return modelIdentifier.value();
 }
 
+std::string FMU::guid() const
+{
+  const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
+  return fmiModelDescription.attribute("guid").as_string();
+}
+
+double FMU::defaultTolerance() const
+{
+  const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
+  const auto attribute = fmiModelDescription.child("DefaultExperiment").attribute("tolerance");
+  if (attribute.empty()) {
+    throw std::runtime_error("Default tolerance not found");
+  }
+  return attribute.as_double();
+}
+
 std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_description)
 {
   std::vector<FMU::Variable> result;
@@ -57,6 +74,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
         return Variable::Causality::Local;
       } else if (attribute.value() == std::string_view{"calculatedParameter"}) {
         return Variable::Causality::CalculatedParameter;
+      } else if (attribute.value() == std::string_view{"parameter"}) {
+        return Variable::Causality::Parameter;
       }
     }
 
@@ -73,10 +92,32 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
         return Variable::Type::Boolean;
       } else if (first_child.name() == std::string_view{"String"}) {
         return Variable::Type::String;
+      } else if (first_child.name() == std::string_view{"Enumeration"}) {
+        return Variable::Type::Enumeration;
       }
     }
 
     throw std::runtime_error("Unable to determine type of variable");
+  };
+
+  const auto getVariability = [](const pugi::xml_node &node) {
+    const auto &attribute = node.attribute("variability"); 
+
+    if (!attribute.empty()) {
+      if (attribute.value() == std::string_view{"continuous"}) {
+        return Variable::Variability::Continuous;
+      } else if (attribute.value() == std::string_view{"fixed"}) {
+        return Variable::Variability::Fixed;
+      } else if (attribute.value() == std::string_view{"constant"}) {
+        return Variable::Variability::Constant;
+      } else if (attribute.value() == std::string_view{"discrete"}) {
+        return Variable::Variability::Discrete;
+      } else {
+        std::cout << attribute.value() << std::endl;
+      }
+    }
+
+    throw std::runtime_error("Unable to determine variability of variable");
   };
 
   for (const auto &variable : variables) {
@@ -87,7 +128,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
                    static_cast<fmi2ValueReference>(std::atoi(node.attribute("valueReference").value())),
                    node.attribute("description").value(),
                    getType(node),
-                   getCausality(node)
+                   getCausality(node),
+                   getVariability(node)
           });
     }
   }

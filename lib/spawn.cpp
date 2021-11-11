@@ -51,7 +51,7 @@ void Spawn::start() {
       try {
         const auto epwPath = input.epwInputPath().string();
         const auto idfPath_string = idfPath.string();
-        const auto iddPath = iddpath().string();
+        const auto iddPath = spawn::idd_path().string();
         const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
@@ -320,6 +320,12 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones) {
   prevWarmupFlag = sim_state.dataGlobal->WarmupFlag;
 }
 
+void Spawn::updateLatentGains() {
+  for (int zonei = 1; zonei <= sim_state.dataGlobal->NumOfZones; ++zonei) {
+    EnergyPlus::InternalHeatGains::SumAllInternalLatentGains(sim_state, zonei, sim_state.dataHeatBalFanSys->ZoneLatentGain(zonei));
+  }
+}
+
 double Spawn::zoneHeatTransfer(const int zonenum) {
   const auto & sums = zoneSums(zonenum);
   // Refer to
@@ -525,12 +531,13 @@ void Spawn::exchange(const bool force)
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
   EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
-
   updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
+  EnergyPlus::InternalHeatGains::ReportInternalHeatGains(sim_state);
   EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
+  updateLatentGains();
 
   // Now update the outputs
   for( auto & varmap : variables ) {
@@ -559,6 +566,15 @@ void Spawn::exchange(const bool force)
       case VariableType::QCONSEN_FLOW: {
         const auto varZoneNum = zoneNum(var.name);
         var.setValue(zoneHeatTransfer( varZoneNum ), spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QLAT_FLOW: {
+        const auto varZoneNum = zoneNum(var.name);
+        var.setValue(sim_state.dataHeatBalFanSys->ZoneLatentGain( varZoneNum ), spawn::units::UnitSystem::EP);
+        break;
+      }
+      case VariableType::QPEO_FLOW: {
+        var.setValue(getSensorValue(var), spawn::units::UnitSystem::EP);
         break;
       }
       case VariableType::SENSOR: {
@@ -671,17 +687,6 @@ void Spawn::emptyLogMessageQueue() {
 
 EnergyPlusState Spawn::simState() {
   return reinterpret_cast<EnergyPlusState>(&sim_state);
-}
-
-fs::path iddpath() {
-  constexpr auto & iddfilename = "Energy+.idd";
-  auto iddInputPath = exedir() / "../../resources" / iddfilename;
-
-  if (! fs::exists(iddInputPath)) {
-    iddInputPath = exedir() / iddfilename;
-  }
-
-  return iddInputPath;
 }
 
 } // namespace spawn

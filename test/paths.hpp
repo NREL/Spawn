@@ -11,6 +11,3 @@ fs::path testzip();
 
 fs::path example_fmu_path();
 
-fs::path project_source_dir();
-
-fs::path project_binary_dir();

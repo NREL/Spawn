@@ -3,7 +3,7 @@
 #include "../fmu/logger.h"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "paths.hpp"
+#include "../util/paths.hpp"
 #include "create_epfmu.hpp"
 #include <catch2/catch.hpp>
 #include <nlohmann/json.hpp>
@@ -40,8 +40,8 @@ constexpr std::array<const char *, 27> ignorelist = {
 
 TEST_CASE("Test example file", "[!hide]")
 {
-  const auto testfileDirectory = project_source_dir() / "submodules/EnergyPlus/testfiles";
-  const auto simulationDirectory = project_binary_dir() / "testfile-simulations";
+  const auto testfileDirectory = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles";
+  const auto simulationDirectory = spawn::project_binary_dir() / "testfile-simulations";
 
   SECTION("clean simulation working directory") {
     fs::remove_all(simulationDirectory);

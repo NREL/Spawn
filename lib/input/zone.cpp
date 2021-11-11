@@ -8,8 +8,7 @@ namespace spawn {
 
 Zone::Zone(std::string t_idfname, bool t_isconnected) :
   idfname(std::move(t_idfname)),
-  isconnected(t_isconnected),
-  ep_qgairad_flow_object_name(fmt::format("Spawn-Zone-{}-RadiantGains", idfname))
+  isconnected(t_isconnected)
 {
 }
 

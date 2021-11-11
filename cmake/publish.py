@@ -7,28 +7,25 @@ import shutil
 import re
 import sys
 
-package_path = glob.glob('build/Spawn-[0-9].[0-9].[0-9]*')[0]
+package_path = glob.glob('build/Spawn-*[0-9].[0-9].[0-9]*')[0]
 package_name = os.path.basename(package_path)
+subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
 
-# Copy to AWS S3 bucket
-# Copy package to a new location omitting the version info
-# This is to provide a stable download location
-latest_package_name = re.sub(r'[0-9]\.[0-9]\.[0-9]-[a-zA-Z_0-9]*','latest',package_name)
-latest_package_path = 'build/' + latest_package_name
-shutil.copyfile(package_path, latest_package_path)
-if os.name == 'nt':
+# This is to provide a stable download location for the "latest"
+# Only do this for "light" packages that do not have the compiler chain
+# This "latest" package is specifically for incorporating into MBL
+if 'Spawn-light' in package_path:
+    latest_package_name = re.sub(r'[0-9]\.[0-9]\.[0-9]-[a-zA-Z_0-9]*','latest',package_name)
+    latest_package_path = 'build/' + latest_package_name
+    shutil.copyfile(package_path, latest_package_path)
     subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', latest_package_path, 's3://spawn/latest/'])
-    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
-else:
-    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', latest_package_path, 's3://spawn/latest/'])
-    subprocess.run(['aws', 's3', 'cp', '--acl', 'public-read', package_path, 's3://spawn/builds/'])
 
 if sys.argv[1] == 'release':
     project_id = '10361647'
     release_id = os.environ['CI_COMMIT_TAG']
     headers = {"PRIVATE-TOKEN": os.environ['GITLAB_TOKEN']}
 
-    # Create a release (it may already exists, but this is just in case)
+    # Create a release (it may already exist, but this is just in case)
     gitlab_api_url = "https://gitlab.com/api/v4/projects/%s/releases" % (project_id)
     payload = {'name': release_id, 'tag_name': release_id, 'description': release_id + ' Release'}
     r = requests.post(gitlab_api_url, headers=headers, data=payload)

@@ -20,7 +20,8 @@ typedef std::pair<size_t, const uint8_t *> EmbeddedFile;
 #include <stdio.h>
 #include <assert.h>
 #include <zlib.h>
-#include <boost/filesystem.hpp>
+
+#include "util/filesystem.hpp"
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
@@ -91,6 +92,7 @@ inline int inf(const EmbeddedFile & file, std::vector<uint8_t> & result)
         switch (ret) {
           case Z_NEED_DICT:
               ret = Z_DATA_ERROR;     /* and fall through */
+              [[fallthrough]];
           case Z_DATA_ERROR:
           case Z_MEM_ERROR:
               (void)inflateEnd(&strm);
@@ -114,9 +116,8 @@ inline int inf(const EmbeddedFile & file, std::vector<uint8_t> & result)
 
 
 namespace embedded_files {
-  std::map<std::string, EmbeddedFile > files();
-
-  std::vector<std::string> fileNames();
+  const std::map<std::string, EmbeddedFile > &files();
+  const std::vector<std::string> &fileNames();
 
   inline std::string allFileNamesAsString(){
     std::string result;
@@ -139,12 +140,12 @@ namespace embedded_files {
   }
 
   inline bool hasFile(const std::string &t_filename) {
-    const auto fs = fileNames();
+    const auto &fs = fileNames();
     return (std::find(fs.begin(), fs.end(), t_filename) != fs.end());
   }
 
   inline std::string getFileAsString(const std::string &t_filename) {
-    const auto fs = files();
+    const auto &fs = files();
     const auto f = fs.find(t_filename);
     if (f == fs.end()){
       throw std::runtime_error("Embedded file not found '" + t_filename + "'");
@@ -158,9 +159,7 @@ namespace embedded_files {
 
   inline void extractFile(const std::string &t_filename, const std::string &t_location, const bool strip_colon = true)
   {
-    const auto fs = files();
-
-
+    const auto &fs = files();
 
     auto f = fs.at(t_filename);
     const auto fullpath = [&](){ 
@@ -171,7 +170,7 @@ namespace embedded_files {
       }
     }();
 
-    boost::filesystem::create_directories(boost::filesystem::path{fullpath}.parent_path());
+    fs::create_directories(fs::path{fullpath}.parent_path());
     std::ofstream ofs(fullpath);
 
     std::vector<uint8_t> inflated_data;

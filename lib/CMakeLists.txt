@@ -1,11 +1,9 @@
-
-if (UNIX)
-  ADD_DEFINITIONS("-fPIC")
+if(UNIX)
+  add_definitions("-fPIC")
 endif()
 
-ADD_DEFINITIONS(-DENERGYPLUS_STATIC_API)
-
-add_library(libspawn
+add_library(
+  libspawn
   actuatortypes.hpp
   fmugenerator.hpp
   fmugenerator.cpp
@@ -39,40 +37,26 @@ add_library(libspawn
   input/surface.hpp
   input/surface.cpp
   input/zone.hpp
-  input/zone.cpp
-)
+  input/zone.cpp)
 
-target_include_directories(libspawn
-  SYSTEM  # We want to enable more warnings and not have E+ affect us
-  PUBLIC
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/re2/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/SQLite/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/kiva-ep/src/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
-  ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/eigen/
-  ${PROJECT_BINARY_DIR}/EnergyPlus/third_party/kiva-ep/src/libkiva/
-)
-
-target_link_libraries(libspawn
-  PUBLIC
-  spawn_utils
-  CONAN_PKG::libzip
-  CONAN_PKG::pugixml
-  PRIVATE
-  compile_options
-)
+target_include_directories(
+  libspawn SYSTEM # We want to enable more warnings and not have E+ affect us
+  PUBLIC ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/ ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/Data
+         ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
+  PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/re2/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/SQLite/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/kiva-ep/src/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/eigen/
+          ${PROJECT_BINARY_DIR}/EnergyPlus/third_party/kiva-ep/src/libkiva/)
 
 # ##############################################################################
 # S W I G                               #
@@ -154,3 +138,9 @@ if(BUILD_PYTHON_BINDINGS)
   set_tests_properties( test_python_bindings PROPERTIES ENVIRONMENT  PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/Products/python/$<IF:$<CONFIG:Debug>,Debug,Release>)  
 endif()
 
+target_compile_definitions(libspawn PUBLIC -DENERGYPLUS_STATIC_API)
+
+target_link_libraries(
+  libspawn
+  PUBLIC spawn_utils CONAN_PKG::libzip CONAN_PKG::pugixml
+  PRIVATE compile_options)

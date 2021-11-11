@@ -260,9 +260,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("relativeQuantity","false");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
 
-        // TODO exchange this variable with real EnergyPlus data
-        var.setValue(0.0, spawn::units::UnitSystem::MO);
-
         result.emplace(i,std::move(var));
       }
       ++i;
@@ -270,6 +267,8 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         Variable var;
         var.type = VariableType::QPEO_FLOW;
         var.name = zone.idfname;
+        var.outputvarname = zone.ep_qpeo_flow_output_var_name;
+        var.outputvarkey = zone.idfname;
         var.epunittype = spawn::units::UnitType::W;
         var.mounittype = spawn::units::UnitType::W;
 
@@ -283,9 +282,6 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input & input) {
         var.real_attributes.emplace_back("quantity","Power");
         var.real_attributes.emplace_back("relativeQuantity","false");
         var.real_attributes.emplace_back("unit",spawn::units::toString(var.mounittype));
-
-        // TODO exchange this variable with real EnergyPlus data
-        var.setValue(0.0, spawn::units::UnitSystem::MO);
 
         result.emplace(i,std::move(var));
       }

@@ -2,7 +2,7 @@
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
 #include "../util/temp_directory.hpp"
-#include "paths.hpp"
+#include "../util/paths.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -10,8 +10,8 @@
 
 using json = nlohmann::json;
 
-const auto idfpath = project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
-const auto epwpath = project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+const auto idfpath = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+const auto epwpath = spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
 json spawn_input = fmt::format(
 R"(

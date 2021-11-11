@@ -32,7 +32,8 @@ namespace spawn::fmu {
         Real,
         String,
         Boolean,
-        Integer
+        Integer,
+        Enumeration
       };
 
       enum struct Causality
@@ -40,7 +41,16 @@ namespace spawn::fmu {
         Input,
         Output,
         Local,
-        CalculatedParameter
+        CalculatedParameter,
+        Parameter
+      };
+
+      enum struct Variability
+      {
+        Fixed,
+        Constant,
+        Continuous,
+        Discrete
       };
 
       [[nodiscard]] static constexpr std::string_view to_string(const Type type) noexcept
@@ -54,6 +64,24 @@ namespace spawn::fmu {
           return "Boolean";
         case Type::Integer:
           return "Integer";
+        case Type::Enumeration:
+          return "Enumeration";
+        }
+
+        return "Unknown";
+      }
+
+      [[nodiscard]] static constexpr std::string_view to_string(const Variability variability) noexcept
+      {
+        switch (variability) {
+        case Variability::Fixed:
+          return "fixed";
+        case Variability::Constant:
+          return "constant";
+        case Variability::Continuous:
+          return "continuous";
+        case Variability::Discrete:
+          return "discrete";
         }
 
         return "Unknown";
@@ -64,6 +92,7 @@ namespace spawn::fmu {
       std::string description;
       Type type;
       Causality causality;
+      Variability variability;
 
       [[nodiscard]] bool validate(const Type expected, const bool throw_error = true) const;
     };
@@ -86,9 +115,26 @@ namespace spawn::fmu {
 
     [[nodiscard]] std::string modelIdentifier() const;
 
+    [[nodiscard]] std::string guid() const;
+
+    [[nodiscard]] double defaultTolerance() const;
+
     [[nodiscard]] fs::path fmiBinaryFullPath() const
     {
-      return spawn::fmi_lib_path(modelIdentifier());
+      const auto libFilename = fmi_lib_filename(modelIdentifier());
+
+      std::vector<fs::path> possiblePaths {
+        m_unzipped.outputDir() / fs::path{"binaries"} / fmi_platform() / libFilename,
+        m_unzipped.outputDir() / fs::path{"binaries"} / libFilename
+      };
+
+      for (const auto p : possiblePaths) {
+        if (fs::exists(p)) {
+          return p;
+        }
+      }
+
+      return fs::path();
     }
 
     [[nodiscard]] const pugi::xml_document &modelDescription() const noexcept
@@ -130,7 +176,7 @@ namespace spawn::fmu {
     [[nodiscard]] static std::vector<Variable> variables(const pugi::xml_document &model_description);
 
   public:
-    FMI2 fmi{m_unzipped.outputDir() / fmiBinaryFullPath(), m_require_all_symbols};
+    FMI2 fmi{fmiBinaryFullPath(), m_require_all_symbols};
   };
 
 

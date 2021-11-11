@@ -1,0 +1,10 @@
+[
+{
+  "name":"java.lang.ClassLoader",
+  "methods":[{"name":"getPlatformClassLoader","parameterTypes":[] }]
+},
+{
+  "name":"org.oct.util.LE.MLLEInterface",
+  "fields":[{"name":"nativeConnections"}]
+}
+]

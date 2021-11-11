@@ -1,0 +1,1064 @@
+[
+{
+  "name":"beaver.Symbol",
+  "fields":[{"name":"value", "allowWrite": true}],
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredClasses" : true,
+  "allPublicClasses" : true
+},
+{
+  "name":"java.lang.String[]"
+},
+{
+  "name":"java.security.MessageDigestSpi"
+},
+{
+  "name":"org.jmodelica.modelica.parser.ModelicaParser$Terminals",
+  "fields":[
+    {"name":"CONSTANT"}, 
+    {"name":"DOT"}, 
+    {"name":"EOF"}, 
+    {"name":"ID"}, 
+    {"name":"INNER"}, 
+    {"name":"OUTER"}, 
+    {"name":"PARAMETER"}
+  ]
+},
+{
+  "name":"org.jmodelica.modelica.parser.ModelicaScanner",
+  "methods":[{"name":"<init>","parameterTypes":["java.io.Reader"] }]
+},
+{
+  "name":"org.jmodelica.optimica.compiler.AbstractGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.AbstractGenerator$Mode",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.AbstractTag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAEArrayTag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_dae_add_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_dae_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_dae_init_add_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_dae_init_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_function_headers",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_CAD_ode_derivatives",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_DAE_INIT_homotopy_block",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_add_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_init_add_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_init_blocks_residual_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_init_n_blocks",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dae_n_blocks",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_defines",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_delay_init",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_delay_sample",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_destruct_external_object",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dynamic_state_add_call",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_dynamic_state_coefficients",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_enums_strings",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_equationResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_eventIndicatorResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_export_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_export_wrappers",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_externalFuncIncludes",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_function_headers",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_functions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_global_temps",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_guid",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_initialDependentParameterResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_initialEquationResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_initialEventIndicatorResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_initialGuessEquationResiduals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_initial_relations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_jmodelica_version",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_blocks",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_dependent_meta_blocks",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_dirty_blocks_size",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_func_vector",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_funcs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_independent_meta_blocks",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_index_offset",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_max_depth",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_p",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_qb",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_lazy_evaluation_s",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_model_id",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_model_init_eval_independent_globals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_nominals",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_ode_derivatives",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_ode_guards",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_ode_guards_init",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_ode_initialization",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_ode_time_events",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_old_update",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_propagate_fmi_parameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_records",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_relations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_runtime_option_map",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_scalingMethod",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_variableAliases",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_variableAliases$Visitor",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_C_z_stringOffsets",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_model_init_eval_dependent",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_model_init_eval_dependent_variables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_model_init_eval_independent_start",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_n_asserts",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_n_delays",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_n_spatialdists",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_numDelaySwitchingFunctions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$DAETag_numSpatialDistSwitchingFunctions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_calc",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_calc_decl",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_calc_free",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_calc_init",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_decl",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_external_includes",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_free",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_record_definitions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_setup_decl",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_setup_free",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ECETag_setup_init",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.CGenerator$ZOffsets",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.DAETag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.ExternalCEvalTag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$InitialType",
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_coSimulation",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_fmiModelDescription",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_logCategories",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_logCategories$XMLTag_category",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelExchange",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_derivatives",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_initialUnknowns",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_outputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_unknown",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_unknownForInit",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelStructure$XMLTag_unknownForSimulation",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_boolean",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_enumeration",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_integer",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_real",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_real$XMLTag_reinit",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_string",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_modelVariables$XMLTag_variables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_typeDefinitions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_typeDefinitions$XMLTag_enumerationType",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_typeDefinitions$XMLTag_enumerationType$XMLTag_item",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_typeDefinitions$XMLTag_type",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_unitDefinitions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_unitDefinitions$XMLTag_unit",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_unitDefinitions$XMLTag_unit$XMLTag_baseUnit",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.Fmi2XMLGenerator$XMLTag_unitDefinitions$XMLTag_unit$XMLTag_displayUnit",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$CSTag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$CompilerVersionAnnotation",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$FMIVendorAnnotation",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$METag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$ModelVariablesBase",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_defaultExperiment",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_fmiPortModelHierarchy",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_fmiPortModelHierarchy$XMLTag_fmiPort",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_fmiPorts",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_stateEventIndicators",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_stateEventIndicators$XMLTag_stateEventIndicators_element",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_stateEvents",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_tool",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations_annotations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.FmiXMLGenerator$XMLTag_vendorAnnotations_tool",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_dynamic_state_n_sets",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_fmu_type_define",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numAlgebraicContinousRealVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numBooleanInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentBooleanConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentBooleanParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentEnumConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentEnumParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentIntegerConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentIntegerParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentRealConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentRealParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentStringConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDependentStringParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDifferentiatedRealVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteBooleanVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteEnumVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteIntegerVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteRealVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteStringVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numDiscreteVariables",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEnumInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEquations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEvalIndependentBooleanParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEvalIndependentEnumParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEvalIndependentIntegerParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEvalIndependentRealParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEvalIndependentStringParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numEventIndicators",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numExternalObjects",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numFinalIndependentBooleanParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numFinalIndependentEnumParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numFinalIndependentIntegerParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numFinalIndependentRealParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numFinalIndependentStringParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numGuards",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentBooleanConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentBooleanParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentEnumConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentEnumParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentIntegerConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentIntegerParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentRealConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentRealParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentStringConstants",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIndependentStringParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInitialEquations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInitialEventIndicators",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInitialGuards",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInitialGuessEquations",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInitialSwitchingFunctions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numIntegerInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numRealInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStateSwitchingFunctions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStringInputs",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStructuralIndependentBooleanParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStructuralIndependentEnumParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStructuralIndependentIntegerParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStructuralIndependentRealParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numStructuralIndependentStringParameters",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericGenerator$DAETag_numTimeSwitchingFunctions",
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericXMLGenerator",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.GenericXMLGenerator$XMLTag",
+  "allDeclaredClasses":true
+},
+{
+  "name":"org.jmodelica.optimica.compiler.StepInfo$MemoryChangeItem",
+  "methods":[{"name":"<init>","parameterTypes":["org.jmodelica.optimica.compiler.StepInfo"] }]
+},
+{
+  "name":"org.jmodelica.optimica.compiler.StepInfo$TimeNoGCItem",
+  "methods":[{"name":"<init>","parameterTypes":["org.jmodelica.optimica.compiler.StepInfo"] }]
+},
+{
+  "name":"sun.security.provider.MD5",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA2$SHA256",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+}
+]
