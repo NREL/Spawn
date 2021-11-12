@@ -122,10 +122,8 @@ std::vector<fs::path> additionalSource() {
   std::vector<fs::path> result;
 
   for (const auto & entry : fs::directory_iterator(mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/")) {
-    if (entry.exists()) {
-      if (entry.path().extension() == ".c") {
-        result.push_back(entry.path());
-      }
+    if (entry.path().extension() == ".c") {
+      result.push_back(entry.path());
     }
   }
 
