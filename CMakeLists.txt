@@ -9,12 +9,15 @@ target_compile_features(compile_options INTERFACE cxx_std_17)
 
 set(CMAKE_CXX_STANDARD 17)
 
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   set(OPTIMICA_TARFILE_URL "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz" CACHE STRING "Tarball of Optimica distribution")
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
+
 
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)

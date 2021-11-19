@@ -62,9 +62,6 @@ target_include_directories(
 # S W I G                               #
 # ##############################################################################
 
-# Build Python bindings Requires: SWIG Python
-option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
-
 if(BUILD_PYTHON_BINDINGS)
   set(target_name libspawn)
 
