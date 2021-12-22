@@ -324,6 +324,17 @@ void extractEmbeddedCompilerFiles(
   fs::permissions(jmiEvaluatorExecutable, fs::perms::owner_exec | fs::perms::owner_read);
 }
 
+void chmodFilesInPath(
+    const fs::path & path,
+    const fs::perms perm
+) {
+  for(const auto & entry: fs::directory_iterator{path}) {
+    if (entry.is_regular_file()) {
+      fs::permissions(entry, perm);
+    }
+  }
+}
+
 int modelicaToFMU(
   const std::string &moinput,
   std::vector<std::string> modelicaPaths,
@@ -344,6 +355,7 @@ int modelicaToFMU(
 	const auto output_dir = fs::current_path() / output_dir_name;
   const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
   const auto sources_dir = output_dir / "sources";
+  const auto binary_dir = output_dir / "binaries";
 
   if(! output_dir_name.empty()) {
     fs::remove_all(output_dir);
@@ -379,6 +391,8 @@ int modelicaToFMU(
 
   if(result == 0) {
     fs::remove_all(temp_dir);
+    const auto perm = fs::perms::owner_all | fs::perms::group_read | fs::perms::group_exec | fs::perms::others_read | fs::perms::others_exec;
+    chmodFilesInPath(binary_dir, perm);
     spdlog::info("Compress FMU");
     zip_directory(output_dir.string(), fmu_path.string(), false);
     fs::remove_all(output_dir);
