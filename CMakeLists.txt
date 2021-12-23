@@ -93,9 +93,9 @@ conan_cmake_run(
   pugixml/1.11
   cli11/1.9.1
   catch2/2.11.3
-  fmt/6.1.2
+  fmt/8.0.1
   nlohmann_json/3.10.2
-  spdlog/1.6.0
+  spdlog/1.9.2
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
