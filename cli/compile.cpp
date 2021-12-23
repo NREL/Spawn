@@ -329,9 +329,7 @@ void chmodFilesInPath(
     const fs::perms perm
 ) {
   for(const auto & entry: fs::directory_iterator{path}) {
-    if (entry.is_regular_file()) {
-      fs::permissions(entry, perm);
-    }
+    fs::permissions(entry, perm);
   }
 }
 
