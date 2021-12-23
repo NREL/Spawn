@@ -15,7 +15,7 @@
 #include "../util/fmi_paths.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/paths.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+//#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 
 #if defined _WIN32
 #include <windows.h>
@@ -144,7 +144,7 @@ int main(int argc, const char *argv[]) {
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
     } else if (*energyplusVersionOption) {
-      std::cout << EnergyPlus::DataStringGlobals::VerString << std::endl;
+      //std::cout << EnergyPlus::DataStringGlobals::VerString << std::endl;
     } else if (*outputVarsOption) {
       std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
     } else if (*actuatorsOption) {

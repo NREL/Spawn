@@ -40,9 +40,9 @@ std::vector<fmi2ValueReference> Sim::initValueReferences() {
 void Sim::run(const nlohmann::json & config) {
   std::cout << "Simulating " << m_fmu_path << std::endl;
 
-  double start = config["start"];
-  double stop = config["stop"];
-  double step = config["step"];
+  double start = config["start"].get<double>();
+  double stop = config["stop"].get<double>();
+  double step = config["step"].get<double>();
 
   const auto guid = m_fmu.guid();
   fmi2CallbackFunctions callbacks = {fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation

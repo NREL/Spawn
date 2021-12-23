@@ -13,7 +13,7 @@ using json = nlohmann::json;
 const auto idfpath = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
 const auto epwpath = spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
-json spawn_input = fmt::format(
+std::string spawn_input = fmt::format(
 R"(
   {{
     "version": "0.1",

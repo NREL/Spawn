@@ -545,7 +545,7 @@ void Spawn::exchange(const bool force)
     switch ( var.type ) {
       case VariableType::TRAD: {
           const auto varZoneNum = zoneNum(var.name);
-          var.setValue(sim_state.dataHeatBalSurf->ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
+          var.setValue(sim_state.dataHeatBal->ZoneMRT( varZoneNum ), spawn::units::UnitSystem::EP);
           break;
       }
       case VariableType::V: {

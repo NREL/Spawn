@@ -66,7 +66,7 @@ double Input::relativeSurfaceTolerance() const {
   const auto tol = spawnjson.value("EnergyPlus",json())["relativeSurfaceTolerance"];
   if (! tol.is_null()) {
     if (tol.is_number_float()) {
-      return tol;
+      return tol.get<double>();
     }
   }
   return 1.0e-6;
