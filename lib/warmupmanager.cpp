@@ -18,7 +18,7 @@ WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData & state)
 }
 
 void WarmupManager::initialize(EnergyPlus::EnergyPlusData & state) {
-  const auto count = state.dataHeatBalSurf->TempSurfIn.size();
+  const auto count = state.dataHeatBalSurf->SurfTempIn.size();
 
   maxSurfTemp.clear();
   minSurfTemp.clear();
@@ -43,7 +43,7 @@ void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state)
     initialize(state);
   }
 
-  const auto & surfTemp = state.dataHeatBalSurf->TempSurfIn;
+  const auto & surfTemp = state.dataHeatBalSurf->SurfTempIn;
   lastDayOfSim = state.dataGlobal->DayOfSim;
   lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
 

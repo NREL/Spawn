@@ -15,6 +15,7 @@
 #include "../util/fmi_paths.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/paths.hpp"
+#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 
 #if defined _WIN32
 #include <windows.h>
@@ -111,6 +112,9 @@ int main(int argc, const char *argv[]) {
   auto fmuStepOption = fmuCommand->add_option("--step", fmustep, "Simulation step size");
   fmuStepOption->needs(fmuSimulateOption);
 
+  auto energyplusCommand = app.add_subcommand("energyplus", "Subcommand for EnergyPlus related operations");
+  auto energyplusVersionOption = energyplusCommand->add_flag("-v, --version", "Print version info about the embedded EnergyPlus software");
+
   app.allow_extras();
 
   CLI11_PARSE(app, argc, argv);
@@ -139,6 +143,8 @@ int main(int argc, const char *argv[]) {
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+    } else if (*energyplusVersionOption) {
+      std::cout << EnergyPlus::DataStringGlobals::VerString << std::endl;
     } else if (*outputVarsOption) {
       std::cout << nlohmann::json(outputtypes).dump(4) << std::endl;
     } else if (*actuatorsOption) {
