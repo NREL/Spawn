@@ -1,11 +1,12 @@
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0025 NEW)
 
-project(Spawn VERSION 0.2.1)
+project(Spawn VERSION 0.3.0)
 cmake_minimum_required(VERSION 3.13)
 
 add_library(compile_options INTERFACE)
 target_compile_features(compile_options INTERFACE cxx_std_17)
+#target_compile_definitions(compile_options INTERFACE JSON_USE_IMPLICIT_CONVERSIONS=ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -92,9 +93,9 @@ conan_cmake_run(
   pugixml/1.11
   cli11/1.9.1
   catch2/2.11.3
-  fmt/6.1.2
-  nlohmann_json/3.7.3
-  spdlog/1.6.0
+  fmt/8.0.1
+  nlohmann_json/3.10.2
+  spdlog/1.9.2
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS

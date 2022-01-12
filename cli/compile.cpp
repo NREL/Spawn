@@ -7,8 +7,8 @@
 #include "cli/embedded_files.hxx"
 #include <pugixml.hpp>
 #include <iostream>
-#include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
 
 using json = nlohmann::json;
 

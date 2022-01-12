@@ -14,7 +14,7 @@ using json = nlohmann::json;
 TEST_CASE("Test SingleFamilyHouse as FMU")
 {
   const auto fmu_file_path = create_single_family_house_fmu();
-  spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
+  spawn::fmu::FMU fmu{fmu_file_path, false, "./mblidf"}; // don't require all symbols
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
