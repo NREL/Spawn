@@ -81,30 +81,30 @@ public:
   void start();
   void stop();
   [[nodiscard]] bool isRunning() const noexcept;
-  void setTime(const double & time);
+  void setTime(const double time);
 
   [[nodiscard]] double currentTime() const;
   [[nodiscard]] double nextEventTime() const;
 
   // Set value by index
   // Throws a std::exception if index is invalid or the simulation is not running
-  void setValue(const unsigned int & index, const double & value);
+  void setValue(unsigned int index, double value);
   // Get the value by index
   // Throws a std::exception if index is invalid or the simulation is not running
-  double getValue(const unsigned int & index) const;
+  double getValue(unsigned int index) const;
 
   // Get an index for a given variable name
   // Throws a std::exception if name is invalid or the simulation is not running
   [[nodiscard]] unsigned int getIndex(const std::string & name) const;
   // Set value by name
   // Throws a std::exception if name is invalid or the simulation is not running
-  void setValue(const std::string & name, const double & value);
+  void setValue(const std::string & name, double value);
   // Get the value by name
   // Throws a std::exception if name is invalid or the simulation is not running
   [[nodiscard]] double getValue(const std::string & name) const;
 
   [[nodiscard]] double startTime() const noexcept;
-  void setStartTime(const double & time) noexcept;
+  void setStartTime(double time) noexcept;
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string & message);
@@ -166,9 +166,9 @@ private:
 
   [[nodiscard]] ZoneSums zoneSums(const int zonenum);
   [[nodiscard]] double zoneHeatTransfer(const int zonenum);
-  void setZoneTemperature(const int zonenum, const double & temp);
+  void setZoneTemperature(const int zonenum, const double temp);
   [[nodiscard]] double zoneTemperature(const int zonenum);
-  void updateZoneTemperature(const int zonenum, const double & dt);
+  void updateZoneTemperature(const int zonenum, const double dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
   void updateLatentGains();
   void initZoneEquip();
@@ -184,7 +184,7 @@ private:
 
   [[nodiscard]] int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
-  void setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 & value);
+  void setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 value);
   void resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
   
   double getSensorValue(Variable & var);

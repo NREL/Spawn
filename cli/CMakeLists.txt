@@ -73,6 +73,7 @@ target_link_libraries(
           spawn_utils
           CONAN_PKG::cli11
           CONAN_PKG::nlohmann_json
+          CONAN_PKG::fmt
           CONAN_PKG::spdlog
 )
 

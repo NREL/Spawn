@@ -1,7 +1,7 @@
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0025 NEW)
 
-project(Spawn VERSION 0.2.1)
+project(Spawn VERSION 0.3.0)
 cmake_minimum_required(VERSION 3.13)
 
 add_library(compile_options INTERFACE)
@@ -9,12 +9,15 @@ target_compile_features(compile_options INTERFACE cxx_std_17)
 
 set(CMAKE_CXX_STANDARD 17)
 
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   set(OPTIMICA_TARFILE_URL "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz" CACHE STRING "Tarball of Optimica distribution")
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
+
 
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
@@ -92,9 +95,10 @@ conan_cmake_run(
   pugixml/1.11
   cli11/1.9.1
   catch2/2.11.3
-  fmt/6.1.2
-  nlohmann_json/3.7.3
-  spdlog/1.6.0
+  fmt/8.0.1
+  nlohmann_json/3.10.2
+  spdlog/1.9.2
+  swig/4.0.2
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
@@ -180,20 +184,20 @@ if(ENABLE_MODELICA_COMPILER)
   )
 endif()
 
-add_subdirectory(util)
+enable_testing()
+
+add_subdirectory( util )
 if(ENABLE_MODELICA_COMPILER)
   add_subdirectory(jmodelica)
   add_subdirectory(compiler)
   add_subdirectory(optimica)
 endif()
-add_subdirectory(lib)
-add_subdirectory(cli)
-add_subdirectory(epfmi)
-add_subdirectory(fmu)
-add_subdirectory(embedded)
-
-enable_testing()
-add_subdirectory(test)
+add_subdirectory( lib )
+add_subdirectory( cli )
+add_subdirectory( epfmi )
+add_subdirectory( fmu )
+add_subdirectory( embedded )
+add_subdirectory( test )
 
 if(APPLE)
   set(os_prefix spawn-darwin64)

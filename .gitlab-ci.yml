@@ -31,7 +31,7 @@ test:ubuntu:
     - build:ubuntu
   script:
     - cd build
-    - ctest -R  unittests
+    - ctest -R spawn
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -96,7 +96,7 @@ test:windows:
     - build:windows
   script:
     - cd build
-    - C:\Program` Files\CMake\bin\ctest.exe -R unittests
+    - C:\Program` Files\CMake\bin\ctest.exe -R spawn
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -161,7 +161,7 @@ test:mac:
     - build:mac
   script:
     - cd build
-    - ctest -R unittests
+    - ctest -R spawn
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -227,7 +227,7 @@ test:ubuntu-modelica:
     - build:ubuntu-modelica
   script:
     - cd build
-    - ctest -R  unittests
+    - ctest -R  spawn
   artifacts:
     expire_in: 6 hrs
     paths:

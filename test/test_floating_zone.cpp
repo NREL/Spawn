@@ -119,7 +119,7 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     const auto t_max = std::max_element(living_temps.begin(), living_temps.end());
     const auto t_min = std::min_element(living_temps.begin(), living_temps.end());
     const auto living_zone_temp_diff = *t_max - *t_min;
-    CHECK(living_zone_temp_diff <= std::numeric_limits<double>::epsilon());
+    CHECK(living_zone_temp_diff <= std::numeric_limits<float>::epsilon());
 
     const auto living_temp = output_values[0];
     const auto garage_temp = output_values[1];

@@ -83,7 +83,7 @@ json & addOtherEquipment(json& jsonidf, const Input& input) {
 
     jsonidf[Zone::ep_qgairad_flow_object_type][zone.ep_qgairad_flow_object_name] = {
       {"fuel_type", "None"},
-      {"zone_or_zonelist_name", zone.idfname},
+      {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname},
       {"schedule_name", schedulename},
       {"design_level_calculation_method", "EquipmentLevel"},
       {"design_level", 0.0},
@@ -154,8 +154,9 @@ json & addPeopleOutputVariables(json& jsonidf, const Input& input) {
   for(const auto & zone : input.zones) {
     if( ! zone.isconnected ) continue;
 
+
     jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] = {
-      {"zone_or_zonelist_name", zone.idfname},
+      {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname},
       {"number_of_people_schedule_name", peopleSchedulename},
       {"number_of_people_calculation_method", "People"},
       {"number_of_people", "0"},
@@ -165,6 +166,8 @@ json & addPeopleOutputVariables(json& jsonidf, const Input& input) {
       {"sensible_heat_fraction", "autocalculate"},
       {"activity_level_schedule_name", activitySchedulename}
     };
+
+    //std::cout << "adding people: " << jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] << std::endl;
 
     jsonidf[zone.ep_outputvariable_type][zone.ep_qpeo_flow_object_name] = {
       {"variable_name", zone.ep_qpeo_flow_output_var_name},
