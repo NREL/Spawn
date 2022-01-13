@@ -2,8 +2,8 @@
 #define SPAWN_FMI_PATHS_HPP
 
 #include "paths.hpp"
-#include <string>
 #include <fmt/format.h>
+#include <string>
 
 namespace spawn {
 [[nodiscard]] constexpr static std::string_view fmi_platform() noexcept

@@ -5,9 +5,11 @@
 
 namespace spawn {
 
-class OutputVariable {
+class OutputVariable
+{
 public:
-  [[nodiscard]] static std::vector<OutputVariable> createOutputVariables(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
+  [[nodiscard]] static std::vector<OutputVariable> createOutputVariables(const nlohmann::json &spawnjson,
+                                                                         const nlohmann::json &jsonidf);
 
   std::string spawnname;
   std::string idfname;
@@ -20,4 +22,3 @@ private:
 } // namespace spawn
 
 #endif // outputvariable_hh_INCLUDED
-

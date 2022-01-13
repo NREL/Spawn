@@ -273,7 +273,7 @@ TEST_CASE("Test invalid surface IO")
   // Test active heating surface
   const std::array<fmi2Real, input_refs.size()> input_values = {
       spawn::c_to_k(21.0), // Neutral temperature boundary condition at ground
-      // doesn't matter because we are expecting an error
+                           // doesn't matter because we are expecting an error
   };
 
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());

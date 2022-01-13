@@ -10,16 +10,15 @@ namespace util {
   class Unzipped_File
   {
   public:
-    Unzipped_File(const fs::path &zipFile,
-                  fs::path outputDir,
-                  const std::vector<fs::path> &filesToUnzip);
+    Unzipped_File(const fs::path &zipFile, fs::path outputDir, const std::vector<fs::path> &filesToUnzip);
 
     [[nodiscard]] const fs::path &outputDir() const noexcept
     {
       return m_outputDir;
     }
 
-    [[nodiscard]] const std::vector<fs::path> &unzippedFiles() const noexcept {
+    [[nodiscard]] const std::vector<fs::path> &unzippedFiles() const noexcept
+    {
       return m_unzippedFiles;
     }
 

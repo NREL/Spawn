@@ -25,7 +25,7 @@ public:
     }
 
     // convenience wrapper for calling this Function as if it were the wrapped function
-    template <typename... Param> decltype(auto) operator()(Param &&... param) const
+    template <typename... Param> decltype(auto) operator()(Param &&...param) const
     {
       return function(std::forward<Param>(param)...);
     }

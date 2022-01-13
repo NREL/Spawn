@@ -6,9 +6,10 @@
 
 namespace spawn {
 
-class Zone {
+class Zone
+{
 public:
-  [[nodiscard]] static std::vector<Zone> createZones(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
+  [[nodiscard]] static std::vector<Zone> createZones(const nlohmann::json &spawnjson, const nlohmann::json &jsonidf);
 
   const std::string idfname;
   // Does the zone (defined in idf) have a connection to Modelica?
@@ -35,4 +36,3 @@ private:
 } // namespace spawn
 
 #endif // Zone_hh_INCLUDED
-

@@ -1,22 +1,23 @@
 #ifndef INPUT_HH_INCLUDED
 #define INPUT_HH_INCLUDED
 
+#include "../../util/filesystem.hpp"
+#include "../iddtypes.hpp"
+#include "../outputtypes.hpp"
+#include "../variables.hpp"
 #include "emsactuator.hpp"
 #include "outputvariable.hpp"
 #include "schedule.hpp"
 #include "surface.hpp"
 #include "zone.hpp"
-#include "../variables.hpp"
-#include "../iddtypes.hpp"
-#include "../outputtypes.hpp"
-#include "../../util/filesystem.hpp"
 #include <fstream>
 
 namespace spawn {
 
-class Input {
+class Input
+{
 public:
-  explicit Input(const std::string & spawnInputJSON);
+  explicit Input(const std::string &spawnInputJSON);
 
   std::vector<Zone> zones;
   std::vector<Schedule> schedules;
@@ -39,13 +40,12 @@ public:
 
   double relativeSurfaceTolerance() const;
 
-  void save(const fs::path & savepath) const;
+  void save(const fs::path &savepath) const;
 
 private:
-
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
-  [[nodiscard]] fs::path toPath(const std::string & pathstring) const;
+  [[nodiscard]] fs::path toPath(const std::string &pathstring) const;
 
   nlohmann::json jsonidf;
   nlohmann::json spawnjson;
@@ -55,4 +55,3 @@ private:
 } // namespace spawn
 
 #endif // INPUT_HH_INCLUDED
-

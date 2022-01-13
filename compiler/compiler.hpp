@@ -1,14 +1,14 @@
 #ifndef NREL_SPAWN_COMPILER_HPP
 #define NREL_SPAWN_COMPILER_HPP
 
+#include "../util/filesystem.hpp"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
-#include "../util/filesystem.hpp"
+#include "llvm/Target/TargetOptions.h"
 
 namespace spawn {
 
@@ -41,11 +41,8 @@ public:
 
   void write_bitcode(const fs::path &loc);
   void write_object_file(const fs::path &loc);
-  void write_shared_object_file(
-    const fs::path &loc,
-    const fs::path &sysroot,
-    std::vector<fs::path> additional_libs = {}
-  );
+  void
+  write_shared_object_file(const fs::path &loc, const fs::path &sysroot, std::vector<fs::path> additional_libs = {});
 
 private:
   std::string m_target_triple{get_target_triple()};
@@ -68,8 +65,6 @@ private:
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
-
-
 
     return llvm::sys::getDefaultTargetTriple();
   }

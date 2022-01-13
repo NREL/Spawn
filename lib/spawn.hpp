@@ -48,33 +48,35 @@
 #ifndef Spawn_hh_INCLUDED
 #define Spawn_hh_INCLUDED
 
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
+#include "../util/filesystem.hpp"
 #include "input/input.hpp"
 #include "variables.hpp"
 #include "warmupmanager.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
-#include "../util/filesystem.hpp"
+#include <condition_variable>
 #include <deque>
-#include <string>
-#include <vector>
+#include <functional>
 #include <map>
-#include <thread>
-#include <tuple>
 #include <mutex>
 #include <sstream>
-#include <condition_variable>
-#include <functional>
+#include <string>
+#include <thread>
+#include <tuple>
+#include <vector>
 
 namespace spawn {
 
-class Spawn {
+class Spawn
+{
 public:
   Spawn(std::string t_name, std::string t_input, fs::path workingdir = ".");
-  Spawn( const Spawn& ) = delete;
-  Spawn( Spawn&& ) = delete;
+  Spawn(const Spawn &) = delete;
+  Spawn(Spawn &&) = delete;
 
-  [[nodiscard]] bool operator==(const Spawn& other) const noexcept {
+  [[nodiscard]] bool operator==(const Spawn &other) const noexcept
+  {
     return (this == &other);
   }
 
@@ -95,19 +97,19 @@ public:
 
   // Get an index for a given variable name
   // Throws a std::exception if name is invalid or the simulation is not running
-  [[nodiscard]] unsigned int getIndex(const std::string & name) const;
+  [[nodiscard]] unsigned int getIndex(const std::string &name) const;
   // Set value by name
   // Throws a std::exception if name is invalid or the simulation is not running
-  void setValue(const std::string & name, double value);
+  void setValue(const std::string &name, double value);
   // Get the value by name
   // Throws a std::exception if name is invalid or the simulation is not running
-  [[nodiscard]] double getValue(const std::string & name) const;
+  [[nodiscard]] double getValue(const std::string &name) const;
 
   [[nodiscard]] double startTime() const noexcept;
   void setStartTime(double time) noexcept;
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
-  void logMessage(EnergyPlus::Error level, const std::string & message);
+  void logMessage(EnergyPlus::Error level, const std::string &message);
 
   void exchange(const bool force = false);
 
@@ -149,17 +151,18 @@ private:
   void externalHVACManager(EnergyPlusState state);
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
-  std::deque<std::pair<EnergyPlus::Error, std::string> > log_message_queue;
+  std::deque<std::pair<EnergyPlus::Error, std::string>> log_message_queue;
   void emptyLogMessageQueue();
 
   // Given a surface name, return the index according to EnergyPlus
-  [[nodiscard]] int surfaceNum(const std::string & surfaceName) const;
+  [[nodiscard]] int surfaceNum(const std::string &surfaceName) const;
 
   // Given a zone name, return the index according to EnergyPlus
-  [[nodiscard]] int zoneNum(const std::string & zoneName) const;
+  [[nodiscard]] int zoneNum(const std::string &zoneName) const;
   // These functions assume the EnergyPlus unit system
   // ZoneSums are the coefficients used in the zone heat transfer calculation
-  struct ZoneSums {
+  struct ZoneSums
+  {
     double tempDepCoef;
     double tempIndCoef;
   };
@@ -179,15 +182,20 @@ private:
   // State of the warmup flag during the previous zone temp update
   bool prevWarmupFlag;
 
-  [[nodiscard]] int getVariableHandle(const std::string & name, const std::string & key);
+  [[nodiscard]] int getVariableHandle(const std::string &name, const std::string &key);
   std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;
 
-  [[nodiscard]] int getActuatorHandle(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
+  [[nodiscard]] int
+  getActuatorHandle(const std::string &componenttype, const std::string &controltype, const std::string &componentname);
   std::map<std::tuple<std::string, std::string, std::string>, int> actuator_handle_cache;
-  void setActuatorValue(const std::string & componenttype, const std::string & controltype, const std::string & componentname, const Real64 value);
-  void resetActuator(const std::string & componenttype, const std::string & controltype, const std::string & componentname);
-  
-  double getSensorValue(Variable & var);
+  void setActuatorValue(const std::string &componenttype,
+                        const std::string &controltype,
+                        const std::string &componentname,
+                        const Real64 value);
+  void
+  resetActuator(const std::string &componenttype, const std::string &controltype, const std::string &componentname);
+
+  double getSensorValue(Variable &var);
 
   void setInsideSurfaceTemperature(const int surfacenum, double temp);
   void setOutsideSurfaceTemperature(const int surfacenum, double temp);
@@ -207,4 +215,3 @@ fs::path iddpath();
 } // namespace spawn
 
 #endif
-
