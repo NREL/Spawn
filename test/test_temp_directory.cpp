@@ -1,5 +1,5 @@
-#include "../util/temp_directory.hpp"
 #include "../util/filesystem.hpp"
+#include "../util/temp_directory.hpp"
 #include <catch2/catch.hpp>
 
 TEST_CASE("Temp_Directory is created and destroyed")

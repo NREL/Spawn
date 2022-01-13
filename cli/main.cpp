@@ -1,21 +1,21 @@
+#include "../lib/actuatortypes.hpp"
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
-#include "../lib/actuatortypes.hpp"
-#include <CLI/CLI.hpp>
-#include <nlohmann/json.hpp>
-#include <cstdio>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <iterator>
-#include <config.hxx>
-#include <stdlib.h>
-#include <spdlog/spdlog.h>
-#include "../util/fmi_paths.hpp"
-#include "../util/filesystem.hpp"
-#include "../util/paths.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../util/filesystem.hpp"
+#include "../util/fmi_paths.hpp"
+#include "../util/paths.hpp"
+#include <CLI/CLI.hpp>
+#include <algorithm>
+#include <config.hxx>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
+#include <stdlib.h>
+#include <vector>
 
 #if defined _WIN32
 #include <windows.h>
@@ -30,37 +30,41 @@
 
 using json = nlohmann::json;
 
-void handle_eptr(std::exception_ptr eptr) {
+void handle_eptr(std::exception_ptr eptr)
+{
   try {
     if (eptr) {
       std::rethrow_exception(eptr);
     }
-  } catch(const std::exception& e) {
+  } catch (const std::exception &e) {
     fmt::print("Spawn encountered an error:\n\"{}\"\n", e.what());
   }
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[])
+{
   CLI::App app{"Spawn of EnergyPlus"};
 
   auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
   auto verboseOption = app.add_flag("--verbose", "Use verbose logging");
 
   std::string jsoninput = "spawn.json";
-  auto createOption =
-      app.add_option("-c,--create", jsoninput,
-                     "Create a standalone FMU based on json input", true);
+  auto createOption = app.add_option("-c,--create", jsoninput, "Create a standalone FMU based on json input", true);
 
   std::string outputpath;
-  auto outputPathOption =
-      app.add_option("--output-path", outputpath,
-                     "Full path including filename and extension where the fmu should be placed. Intermediate directories will be created if necessary", true);
+  auto outputPathOption = app.add_option("--output-path",
+                                         outputpath,
+                                         "Full path including filename and extension where the fmu should be placed. "
+                                         "Intermediate directories will be created if necessary",
+                                         true);
   outputPathOption->needs(createOption);
 
   std::string outputdir;
   auto outputDirOption =
-      app.add_option("--output-dir", outputdir,
-                     "Directory where the fmu should be placed. This path will be created if necessary", true);
+      app.add_option("--output-dir",
+                     outputdir,
+                     "Directory where the fmu should be placed. This path will be created if necessary",
+                     true);
   outputDirOption->needs(createOption);
   outputDirOption->excludes(outputPathOption);
   outputPathOption->excludes(outputDirOption);
@@ -70,22 +74,27 @@ int main(int argc, const char *argv[]) {
   zipOption->needs(createOption);
 
   bool nocompress = false;
-  auto compressOption = app.add_flag("--no-compress", nocompress, "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead");
+  auto compressOption = app.add_flag(
+      "--no-compress",
+      nocompress,
+      "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead");
   compressOption->needs(createOption);
 
-  auto outputVarsOption = app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn");
+  auto outputVarsOption =
+      app.add_flag("--output-vars", "Report the EnergyPlus output variables supported by this version of Spawn");
 
-  auto actuatorsOption = app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn");
+  auto actuatorsOption =
+      app.add_flag("--actuators", "Report the EnergyPlus actuators supported by this version of Spawn");
 
 #if defined ENABLE_MODELICA_COMPILER
   auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations");
   std::string moinput = "";
   auto createModelicaFMUOption =
-      modelicaCommand->add_option("--create-fmu", moinput,
-                     "Compile Modelica model to FMU format", true);
+      modelicaCommand->add_option("--create-fmu", moinput, "Compile Modelica model to FMU format", true);
 
   std::vector<std::string> modelicaPaths;
-  auto modelicaPathsOption = modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths");
+  auto modelicaPathsOption =
+      modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths");
   modelicaPathsOption->needs(createModelicaFMUOption);
 
   bool optimica = false;
@@ -113,7 +122,8 @@ int main(int argc, const char *argv[]) {
   fmuStepOption->needs(fmuSimulateOption);
 
   auto energyplusCommand = app.add_subcommand("energyplus", "Subcommand for EnergyPlus related operations");
-  auto energyplusVersionOption = energyplusCommand->add_flag("-v, --version", "Print version info about the embedded EnergyPlus software");
+  auto energyplusVersionOption =
+      energyplusCommand->add_flag("-v, --version", "Print version info about the embedded EnergyPlus software");
 
   app.allow_extras();
 
@@ -130,7 +140,8 @@ int main(int argc, const char *argv[]) {
     }
 
     if (*createOption) {
-      spawn::energyplusToFMU(jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
+      spawn::energyplusToFMU(
+          jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
       if (optimica) {
@@ -158,7 +169,7 @@ int main(int argc, const char *argv[]) {
       sim.run(config);
     }
 
-  } catch(...) {
+  } catch (...) {
     eptr = std::current_exception();
   }
 
@@ -169,4 +180,3 @@ int main(int argc, const char *argv[]) {
     return 0;
   }
 }
-

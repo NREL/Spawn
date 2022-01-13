@@ -70,4 +70,4 @@ void ModelExchange::getVariable(const FMU::Variable &variable, bool &value) cons
   fmu.fmi.fmi2GetBoolean(component, &variable.valueReference, 1, &fmi2val);
   value = static_cast<bool>(fmi2val);
 }
-}
+} // namespace spawn::fmu

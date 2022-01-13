@@ -1,8 +1,8 @@
 #include "../lib/spawn.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "../util/temp_directory.hpp"
 #include "../util/paths.hpp"
+#include "../util/temp_directory.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -10,11 +10,13 @@
 
 using json = nlohmann::json;
 
-const auto idfpath = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
-const auto epwpath = spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+const auto idfpath =
+    spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+const auto epwpath =
+    spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
 std::string spawn_input = fmt::format(
-R"(
+    R"(
   {{
     "version": "0.1",
     "EnergyPlus": {{
@@ -40,7 +42,9 @@ R"(
       ]
     }}
   }}
-)", fmt::arg("idfpath", idfpath.generic_string()), fmt::arg("epwpath", epwpath.generic_string()));
+)",
+    fmt::arg("idfpath", idfpath.generic_string()),
+    fmt::arg("epwpath", epwpath.generic_string()));
 
 TEST_CASE("Test one Spawn")
 {
@@ -49,7 +53,7 @@ TEST_CASE("Test one Spawn")
   spawn1.start();
   CHECK(spawn1.currentTime() == 0.0);
 
-  for(int day = 0; day <= 365; ++day) {
+  for (int day = 0; day <= 365; ++day) {
     auto time = spawn::days_to_seconds(day);
     spawn1.setTime(time);
     CHECK(spawn1.currentTime() == time);
@@ -73,7 +77,7 @@ TEST_CASE("Test two Spawns")
   CHECK(spawn1.currentTime() == 0.0);
   CHECK(spawn2.currentTime() == 0.0);
 
-  for(int day = 0; day <= 365; ++day) {
+  for (int day = 0; day <= 365; ++day) {
     auto time = spawn::days_to_seconds(day);
     spawn1.setTime(time);
     spawn2.setTime(time);

@@ -5,7 +5,6 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-
 #ifdef _MSC_VER
 #define EXPORT_SYMBOL __declspec(dllexport)
 #else
@@ -14,7 +13,8 @@
 
 extern "C" {
 static int call_count = 0;
-EXPORT_SYMBOL void call() {
+EXPORT_SYMBOL void call()
+{
   ++call_count;
 }
 }
@@ -37,7 +37,6 @@ int main(int argc, const char *argv[])
   compiler.write_bitcode("a.bc");
   compiler.write_object_file("a.o");
   compiler.write_shared_object_file("a.so");
-
 
   auto jit = compiler.move_to_jit();
   auto go = jit->get_function<int()>("go");

@@ -13,6 +13,7 @@
 #include "clang/FrontendTool/Utils.h"
 
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -28,12 +29,10 @@
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/Target/TargetMachine.h"
 
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
-
 
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
@@ -96,11 +95,10 @@ std::string getExecutablePath()
 
 namespace spawn {
 
-void Compiler::write_shared_object_file(
-  const fs::path &loc,
-  const fs::path &sysroot,
-  std::vector<fs::path> additional_libs
-) {
+void Compiler::write_shared_object_file(const fs::path &loc,
+                                        const fs::path &sysroot,
+                                        std::vector<fs::path> additional_libs)
+{
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
   write_object_file(temporary_object_file_location);
@@ -108,41 +106,37 @@ void Compiler::write_shared_object_file(
   std::stringstream out_ss;
   std::stringstream err_ss;
 
-  std::vector<std::string> str_args {
-    "ld.lld-10",
-    "-shared",
-    fmt::format("--sysroot={}", toString(sysroot)),
-    fmt::format("-L{}", toString(sysroot / "usr/lib/")),
-    fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
-    toString(temporary_object_file_location)
-  };
+  std::vector<std::string> str_args{"ld.lld-10",
+                                    "-shared",
+                                    fmt::format("--sysroot={}", toString(sysroot)),
+                                    fmt::format("-L{}", toString(sysroot / "usr/lib/")),
+                                    fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+                                    toString(temporary_object_file_location)};
 
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));
   }
 
-  str_args.insert(str_args.end(), {
-      "-lm",
-      "-lc",
-      "-ldl",
-      "-lpthread",
-      "-o",
-      toString(loc),
-    });
-
+  str_args.insert(str_args.end(),
+                  {
+                      "-lm",
+                      "-lc",
+                      "-ldl",
+                      "-lpthread",
+                      "-o",
+                      toString(loc),
+                  });
 
   for (const auto &arg : str_args) {
     spdlog::trace("embedded lld argument: {}", arg);
   }
-  
+
   clang::SmallVector<const char *, 64> Args{};
 
   std::transform(
       str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
-
   spdlog::info("linking to: {}", toString(loc));
-
 
   bool success = true;
 
@@ -162,14 +156,10 @@ void Compiler::write_shared_object_file(
     throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", toString(loc), errors));
   }
 
-  if (success && !errors.empty())
-  {
+  if (success && !errors.empty()) {
     spdlog::warn("Linking warnings: '{}'", errors);
   }
-
-
 }
-
 
 void Compiler::compile_and_link(const fs::path &source)
 {
@@ -285,8 +275,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
   // Initialize a compiler invocation object from the clang (-cc1) arguments.
   const auto &CCArgs = Cmd.getArguments();
   std::unique_ptr<clang::CompilerInvocation> CI{new clang::CompilerInvocation};
-  clang::CompilerInvocation::CreateFromArgs(
-      *CI, CCArgs, Diags);
+  clang::CompilerInvocation::CreateFromArgs(*CI, CCArgs, Diags);
 
   // Show the invocation, with -v.
   if (CI->getHeaderSearchOpts().Verbose) {
@@ -319,6 +308,5 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
 
   return Act->takeModule();
 }
-
 
 } // namespace spawn

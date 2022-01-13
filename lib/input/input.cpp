@@ -5,7 +5,7 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-Input::Input(const std::string & spawninput)
+Input::Input(const std::string &spawninput)
 {
   std::ifstream fileinput(spawninput);
   if (!fileinput.fail()) {
@@ -25,10 +25,10 @@ Input::Input(const std::string & spawninput)
   }
 
   // Do the input paths exist?
-  if (! fs::exists(idfInputPath())) {
+  if (!fs::exists(idfInputPath())) {
     std::cout << "The specified idf input file does not exist, " << idfInputPath() << "." << std::endl;
   }
-  if (! fs::exists(epwInputPath())) {
+  if (!fs::exists(epwInputPath())) {
     std::cout << "The specified epw input file does not exist, " << epwInputPath() << "." << std::endl;
   }
 
@@ -41,30 +41,35 @@ Input::Input(const std::string & spawninput)
   surfaces = Surface::createSurfaces(spawnjson, jsonidf);
 }
 
-std::string Input::fmuname() const {
-  return spawnjson.value("fmu",json()).value("name","spawn.fmu");
+std::string Input::fmuname() const
+{
+  return spawnjson.value("fmu", json()).value("name", "spawn.fmu");
 }
 
-std::string Input::fmuBaseName() const {
+std::string Input::fmuBaseName() const
+{
   return fs::path(fmuname()).stem().string();
 }
 
-void Input::setFMUName(std::string name) {
+void Input::setFMUName(std::string name)
+{
   spawnjson["fmu"]["name"] = std::move(name);
 }
 
-fs::path Input::toPath(const std::string & pathstring) const {
+fs::path Input::toPath(const std::string &pathstring) const
+{
   fs::path p(pathstring);
-  if (! p.is_absolute()) {
+  if (!p.is_absolute()) {
     p = m_basepath / p;
   }
 
   return p;
 }
 
-double Input::relativeSurfaceTolerance() const {
-  const auto tol = spawnjson.value("EnergyPlus",json())["relativeSurfaceTolerance"];
-  if (! tol.is_null()) {
+double Input::relativeSurfaceTolerance() const
+{
+  const auto tol = spawnjson.value("EnergyPlus", json())["relativeSurfaceTolerance"];
+  if (!tol.is_null()) {
     if (tol.is_number_float()) {
       return tol.get<double>();
     }
@@ -72,30 +77,35 @@ double Input::relativeSurfaceTolerance() const {
   return 1.0e-6;
 }
 
-fs::path Input::idfInputPath() const {
-  return toPath(spawnjson.value("EnergyPlus",json()).value("idf","in.idf"));
+fs::path Input::idfInputPath() const
+{
+  return toPath(spawnjson.value("EnergyPlus", json()).value("idf", "in.idf"));
 }
 
-void Input::setIdfInputPath(fs::path idfpath) {
+void Input::setIdfInputPath(fs::path idfpath)
+{
   spawnjson["EnergyPlus"]["idf"] = idfpath.string();
 }
 
-fs::path Input::epwInputPath() const {
-  return toPath(spawnjson.value("EnergyPlus",json()).value("weather","in.epw"));
+fs::path Input::epwInputPath() const
+{
+  return toPath(spawnjson.value("EnergyPlus", json()).value("weather", "in.epw"));
 }
 
-void Input::setEPWInputPath(fs::path epwpath) {
+void Input::setEPWInputPath(fs::path epwpath)
+{
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }
 
-void Input::save(const fs::path & savepath) const {
+void Input::save(const fs::path &savepath) const
+{
   std::ofstream o(savepath.string());
   o << std::setw(4) << spawnjson << std::endl;
 }
 
-fs::path Input::basepath() const {
+fs::path Input::basepath() const
+{
   return m_basepath;
 }
 
 } // namespace spawn
-

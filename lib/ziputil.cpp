@@ -1,23 +1,23 @@
 #include "ziputil.hpp"
-#include <iostream>
-#include <sys/stat.h>
-#include <errno.h>
-#include <string.h>
 #include "zip.h"
+#include <errno.h>
+#include <iostream>
+#include <string.h>
+#include <sys/stat.h>
 #if _MSC_VER
 #include "./msvc/dirent.h"
 #else
 #include <dirent.h>
 #endif
 
-bool is_dir(const std::string& dir)
+bool is_dir(const std::string &dir)
 {
   struct stat st;
   ::stat(dir.c_str(), &st);
   return S_ISDIR(st.st_mode);
 }
 
-void walk_directory(const std::string& startdir, const std::string& inputdir, zip_t *zipper, bool no_compression)
+void walk_directory(const std::string &startdir, const std::string &inputdir, zip_t *zipper, bool no_compression)
 {
   DIR *dp = ::opendir(inputdir.c_str());
   if (dp == nullptr) {
@@ -38,8 +38,9 @@ void walk_directory(const std::string& startdir, const std::string& inputdir, zi
         if (source == nullptr) {
           throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
         }
-        const auto & index = zip_file_add(zipper, fullname.substr(startdir.length() + 1).c_str(), source, ZIP_FL_ENC_UTF_8);
-        if ( index < 0) {
+        const auto &index =
+            zip_file_add(zipper, fullname.substr(startdir.length() + 1).c_str(), source, ZIP_FL_ENC_UTF_8);
+        if (index < 0) {
           zip_source_free(source);
           throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
         } else if (no_compression) {
@@ -51,7 +52,7 @@ void walk_directory(const std::string& startdir, const std::string& inputdir, zi
   ::closedir(dp);
 }
 
-void zip_directory(const std::string& inputdir, const std::string& output_filename, bool no_compression)
+void zip_directory(const std::string &inputdir, const std::string &output_filename, bool no_compression)
 {
   int errorp{};
   zip_t *zipper = zip_open(output_filename.c_str(), ZIP_CREATE | ZIP_EXCL, &errorp);
@@ -63,11 +64,10 @@ void zip_directory(const std::string& inputdir, const std::string& output_filena
 
   try {
     walk_directory(inputdir, inputdir, zipper, no_compression);
-  } catch(...) {
+  } catch (...) {
     zip_close(zipper);
     throw;
   }
 
   zip_close(zipper);
 }
-

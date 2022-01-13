@@ -1,35 +1,34 @@
 #include "fmugenerator.hpp"
-#include "idf_to_json.hpp"
-#include "idfprep.hpp"
-#include "ziputil.hpp"
-#include "modelDescription.xml.hpp"
-#include "input/input.hpp"
-#include "../util/compare.hpp"
-#include "../util/fmi_paths.hpp"
-#include "../util/filesystem.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
+#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
-#include <pugixml.hpp>
+#include "../util/compare.hpp"
+#include "../util/filesystem.hpp"
+#include "../util/fmi_paths.hpp"
+#include "idf_to_json.hpp"
+#include "idfprep.hpp"
+#include "input/input.hpp"
+#include "modelDescription.xml.hpp"
+#include "ziputil.hpp"
 #include <fmt/format.h>
+#include <pugixml.hpp>
 
 using json = nlohmann::json;
 
 namespace spawn {
 
-void createModelDescription(const spawn::Input & input, const fs::path & savepath);
+void createModelDescription(const spawn::Input &input, const fs::path &savepath);
 
-void energyplusToFMU(
-  const std::string &jsoninput,
-  bool nozip,
-  bool nocompress,
-  const std::string & outputpath,
-  const std::string & outputdir,
-  const fs::path& iddpath,
-  const fs::path& epfmupath
-) {
+void energyplusToFMU(const std::string &jsoninput,
+                     bool nozip,
+                     bool nocompress,
+                     const std::string &outputpath,
+                     const std::string &outputdir,
+                     const fs::path &iddpath,
+                     const fs::path &epfmupath)
+{
   spawn::Input input(jsoninput);
 
   // We are going to copy the required files into an FMU staging directory,
@@ -41,16 +40,16 @@ void energyplusToFMU(
   auto fmuPath = fs::current_path() / (input.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
-  if( ! outputpath.empty() ) {
+  if (!outputpath.empty()) {
     fmuPath = fs::path(outputpath);
-  } else if( ! outputdir.empty() ) {
+  } else if (!outputdir.empty()) {
     fmuPath = fs::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
   const auto outputroot = fmuPath.parent_path();
   const auto fmuStagingPath = outputroot / fmuPath.stem();
 
-  if( ! fs::exists(outputroot) ) {
+  if (!fs::exists(outputroot)) {
     fs::create_directories(outputroot);
   }
 
@@ -74,7 +73,7 @@ void energyplusToFMU(
   fs::copy_file(iddpath, fmuiddPath, fs::copy_options::overwrite_existing);
   fs::copy_file(input.epwInputPath(), fmuepwPath, fs::copy_options::overwrite_existing);
   fs::copy_file(input.idfInputPath(), fmuidfPath);
-  
+
   createModelDescription(input, modelDescriptionPath);
 
   const auto relativeEPWPath = fs::relative(fmuepwPath, fmuResourcesPath);
@@ -83,13 +82,14 @@ void energyplusToFMU(
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
-  if (! nozip) {
+  if (!nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
     fs::remove_all(fmuStagingPath);
   }
 }
 
-void createModelDescription(const spawn::Input & input, const fs::path & savepath) {
+void createModelDescription(const spawn::Input &input, const fs::path &savepath)
+{
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 
@@ -97,16 +97,16 @@ void createModelDescription(const spawn::Input & input, const fs::path & savepat
 
   const auto variables = parseVariables(input);
 
-  for (const auto & varpair : variables) {
+  for (const auto &varpair : variables) {
     const auto var = varpair.second;
 
     auto scalarVar = xmlvariables.append_child("ScalarVariable");
-    for (const auto & attribute : var.scalar_attributes) {
+    for (const auto &attribute : var.scalar_attributes) {
       scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
     }
 
     auto real = scalarVar.append_child("Real");
-    for (const auto & attribute : var.real_attributes) {
+    for (const auto &attribute : var.real_attributes) {
       real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
     }
   }
@@ -115,4 +115,3 @@ void createModelDescription(const spawn::Input & input, const fs::path & savepat
 }
 
 } // namespace spawn
-

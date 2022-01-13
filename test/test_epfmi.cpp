@@ -1,13 +1,13 @@
 #include "../fmu/fmu.hpp"
-#include "../fmu/modeldescription.hpp"
 #include "../fmu/logger.h"
+#include "../fmu/modeldescription.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "paths.hpp"
 #include "create_epfmu.hpp"
+#include "paths.hpp"
 #include <catch2/catch.hpp>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 TEST_CASE("Test loading of Spawn Generated FMU")
@@ -24,8 +24,10 @@ TEST_CASE("Test one year simulation")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   fmu.fmi.fmi2ExitInitializationMode(comp);
   fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(365));
@@ -39,8 +41,10 @@ TEST_CASE("Test two year simulation")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   fmu.fmi.fmi2ExitInitializationMode(comp);
   fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(365 * 2));
@@ -54,10 +58,12 @@ TEST_CASE("Test invalid input")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
 
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status; 
+  fmi2Status status;
 
   status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   CHECK(status == fmi2OK);
@@ -85,4 +91,3 @@ TEST_CASE("Test invalid input")
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2Error);
 }
-

@@ -1,10 +1,10 @@
 
+#include "../util/filesystem.hpp"
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
-#include "../util/filesystem.hpp"
 #include "paths.hpp"
-#include <catch2/catch.hpp>
 #include <array>
+#include <catch2/catch.hpp>
 
 TEST_CASE("Test unzipped file")
 {

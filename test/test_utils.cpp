@@ -1,8 +1,8 @@
 #include "../util/paths.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
-#include <iostream>
 #include <fmt/format.h>
+#include <iostream>
 
 TEST_CASE("Test exe")
 {
@@ -30,7 +30,6 @@ TEST_CASE("Test exe with different working directory")
 
   std::cout << spawn::exe() << '\n';
 }
-
 
 TEST_CASE("Test exedir")
 {
@@ -67,7 +66,6 @@ TEST_CASE("Test calling exedir on self with bad exe name")
   CHECK(results != 0);
 }
 
-
 TEST_CASE("Test calling exedir on relative path for myself")
 {
   const auto exe_name = spawn::exe().filename();
@@ -90,5 +88,3 @@ TEST_CASE("Test calling exedir on relative path for myself")
 
   CHECK(results2 == 0);
 }
-
-

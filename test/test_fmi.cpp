@@ -14,7 +14,6 @@ TEST_CASE("Test loading of FMI")
 
   REQUIRE(fmi.fmi2GetVersion.has_value());
 
-
   CHECK(fmi.fmi2GetVersion() == std::string("TEST_VERSION"));
 
   CHECK(fmi.loadResults().successes.size() == 1);
@@ -29,4 +28,3 @@ TEST_CASE("Test loading of FMI missing symbols")
 
   REQUIRE_THROWS(spawn::fmu::FMI2{example_fmu_path(), true});
 }
-

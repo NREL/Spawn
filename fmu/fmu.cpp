@@ -21,8 +21,7 @@ bool FMU::Variable::validate(const FMU::Variable::Type expected, const bool thro
 std::string FMU::modelIdentifier() const
 {
   if (!m_model_description_parse_result) {
-    throw std::runtime_error(
-        fmt::format("Error parsing xml document: {}", m_model_description_parse_result.status));
+    throw std::runtime_error(fmt::format("Error parsing xml document: {}", m_model_description_parse_result.status));
   }
   const auto fmiModelDescription = m_model_description.child("fmiModelDescription");
   if (fmiModelDescription.empty()) {
@@ -63,7 +62,7 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
   const auto variables = model_description.select_nodes("//fmiModelDescription/ModelVariables/ScalarVariable");
 
   const auto getCausality = [](const pugi::xml_node &node) {
-    const auto &attribute = node.attribute("causality"); 
+    const auto &attribute = node.attribute("causality");
 
     if (!attribute.empty()) {
       if (attribute.value() == std::string_view{"input"}) {
@@ -101,7 +100,7 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
   };
 
   const auto getVariability = [](const pugi::xml_node &node) {
-    const auto &attribute = node.attribute("variability"); 
+    const auto &attribute = node.attribute("variability");
 
     if (!attribute.empty()) {
       if (attribute.value() == std::string_view{"continuous"}) {
@@ -123,14 +122,12 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
   for (const auto &variable : variables) {
     if (const auto &node = variable.node(); !node.empty()) {
 
-      result.emplace_back(
-          Variable{node.attribute("name").value(),
-                   static_cast<fmi2ValueReference>(std::atoi(node.attribute("valueReference").value())),
-                   node.attribute("description").value(),
-                   getType(node),
-                   getCausality(node),
-                   getVariability(node)
-          });
+      result.emplace_back(Variable{node.attribute("name").value(),
+                                   static_cast<fmi2ValueReference>(std::atoi(node.attribute("valueReference").value())),
+                                   node.attribute("description").value(),
+                                   getType(node),
+                                   getCausality(node),
+                                   getVariability(node)});
     }
   }
 
@@ -148,4 +145,4 @@ const FMU::Variable &FMU::getVariableByName(std::string_view name) const
 
   throw std::runtime_error("Unable to find variable: " + std::string(name));
 }
-}
+} // namespace spawn::fmu

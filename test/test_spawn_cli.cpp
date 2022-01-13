@@ -1,13 +1,12 @@
-#include "paths.hpp"
-#include "create_epfmu.hpp"
-#include "../lib/actuatortypes.hpp"
-#include "../util/filesystem.hpp"
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
+#include "../lib/actuatortypes.hpp"
+#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
 #include "../util/paths.hpp"
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "create_epfmu.hpp"
+#include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <cstdlib>
 #include <fstream>
@@ -15,7 +14,8 @@
 
 using json = nlohmann::json;
 
-TEST_CASE( "Spawn shows help" ) {
+TEST_CASE("Spawn shows help")
+{
   const auto cmd = spawnexe() + " --help";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
@@ -23,7 +23,8 @@ TEST_CASE( "Spawn shows help" ) {
 
 // This is the main requirement of spawn executable,
 // generate an FMU for a given EnergyPlus model
-TEST_CASE( "Spawn creates an FMU" ) {
+TEST_CASE("Spawn creates an FMU")
+{
   fs::path created_fmu;
   REQUIRE_NOTHROW(created_fmu = create_epfmu());
   CHECK(fs::is_regular_file(created_fmu));
@@ -31,34 +32,44 @@ TEST_CASE( "Spawn creates an FMU" ) {
 }
 
 #if defined ENABLE_MODELICA_COMPILER
-TEST_CASE( "Spawn is able to compile a simple Modelica model" ) {
+TEST_CASE("Spawn is able to compile a simple Modelica model")
+{
   const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
 
-TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions" ) {
-  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
+TEST_CASE("Spawn is able to compile a Modelica model that uses external functions")
+{
+  const auto cmd =
+      spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
 
-TEST_CASE( "Spawn is able to compile a simple Modelica model, using Optimica" ) {
-  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
+TEST_CASE("Spawn is able to compile a simple Modelica model, using Optimica")
+{
+  const auto cmd =
+      spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
 
-TEST_CASE( "Spawn is able to compile a Modelica model that uses external functions, using Optimica" ) {
-  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
+TEST_CASE("Spawn is able to compile a Modelica model that uses external functions, using Optimica")
+{
+  const auto cmd =
+      spawnexe() +
+      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
   const auto result = system(cmd.c_str());
   REQUIRE(result == 0);
 }
 #endif
 
-TEST_CASE( "Spawn lists the correct actuators" ) {
+TEST_CASE("Spawn lists the correct actuators")
+{
   // copy idf and modify to generate edd file
-  const auto idf_path = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+  const auto idf_path =
+      spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
   const auto new_idf_path = testdir() / "actuators.idf";
   fs::copy(idf_path, new_idf_path, fs::copy_options::overwrite_existing);
 
@@ -74,7 +85,7 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
 
   // Minimal Spawn input
   std::string spawn_input_string = fmt::format(
-  R"(
+      R"(
     {{
       "version": "0.1",
       "EnergyPlus": {{
@@ -90,8 +101,9 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
       "model": {{
       }}
     }}
-  )", fmt::arg("idfpath", new_idf_path.generic_string()), fmt::arg("epwpath", chicago_epw_path().generic_string()));
-
+  )",
+      fmt::arg("idfpath", new_idf_path.generic_string()),
+      fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
   // Run a basic simulation to generate a edd file
   const auto fmu_file_path = create_epfmu(spawn_input_string);
@@ -99,8 +111,10 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   fmu.fmi.fmi2ExitInitializationMode(comp);
   fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
@@ -121,7 +135,7 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
     std::string prefix("EnergyManagementSystem:Actuator Available, *,");
     line.erase(0, prefix.length());
     auto pos = line.find(",");
-    line.erase(0,pos + 1);
+    line.erase(0, pos + 1);
     pos = line.find(",");
     line.erase(pos);
     edd_actuators.push_back(line);
@@ -138,7 +152,8 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
   // are reported by spawn
   for (const auto edd_act : edd_actuators) {
     const auto it = std::find(actuators.begin(), actuators.end(), edd_act);
-    INFO("'" << edd_act << "'" << " is supported by energylus but not reported by spawn --actuators");
+    INFO("'" << edd_act << "'"
+             << " is supported by energylus but not reported by spawn --actuators");
     CHECK(it != actuators.end());
   }
 
@@ -146,7 +161,8 @@ TEST_CASE( "Spawn lists the correct actuators" ) {
   // are supported by Energyplus
   for (const auto act : actuators) {
     const auto it = std::find(edd_actuators.begin(), edd_actuators.end(), act);
-    INFO("'" << act << "'" << " is reported by 'spawn --actuators' but not supported by EnergyPlus");
+    INFO("'" << act << "'"
+             << " is reported by 'spawn --actuators' but not supported by EnergyPlus");
     CHECK(it != edd_actuators.end());
   }
 }
@@ -180,4 +196,3 @@ TEST_CASE( "Spawn compiles modelica files" ) {
   REQUIRE(result == 0);
 }
 **/
-
