@@ -14,7 +14,7 @@ jobs:
         exclude: './third_party ./external'
         extensions: 'h,cpp'
         clangFormatVersion: 12
-        style: chromium
+        inplace: True
     - uses: EndBug/add-and-commit@v4
       with:
         author_name: Clang Robot
