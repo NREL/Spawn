@@ -15,3 +15,10 @@ jobs:
         extensions: 'h,cpp'
         clangFormatVersion: 12
         style: chromium
+    - uses: EndBug/add-and-commit@v4
+      with:
+        author_name: Clang Robot
+        author_email: robot@example.com
+        message: 'Committing clang-format changes'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
