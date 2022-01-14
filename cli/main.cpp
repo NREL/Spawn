@@ -34,7 +34,7 @@ void handle_eptr(std::exception_ptr eptr)
 {
   try {
     if (eptr) {
-      std::rethrow_exception(eptr);
+      std::rethrow_exception(std::move(eptr));
     }
   } catch (const std::exception &e) {
     fmt::print("Spawn encountered an error:\n\"{}\"\n", e.what());
@@ -48,21 +48,21 @@ int main(int argc, const char *argv[])
   auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
   auto verboseOption = app.add_flag("--verbose", "Use verbose logging");
 
-  std::string jsoninput = "spawn.json";
-  auto createOption = app.add_option("-c,--create", jsoninput, "Create a standalone FMU based on json input", true);
+  std::string jsonInput = "spawn.json";
+  auto createOption = app.add_option("-c,--create", jsonInput, "Create a standalone FMU based on json input", true);
 
-  std::string outputpath;
+  std::string outputPath;
   auto outputPathOption = app.add_option("--output-path",
-                                         outputpath,
+                                         outputPath,
                                          "Full path including filename and extension where the fmu should be placed. "
                                          "Intermediate directories will be created if necessary",
                                          true);
   outputPathOption->needs(createOption);
 
-  std::string outputdir;
+  std::string outputDir;
   auto outputDirOption =
       app.add_option("--output-dir",
-                     outputdir,
+                     outputDir,
                      "Directory where the fmu should be placed. This path will be created if necessary",
                      true);
   outputDirOption->needs(createOption);
@@ -109,7 +109,7 @@ int main(int argc, const char *argv[])
 #endif
 
   auto fmuCommand = app.add_subcommand("fmu", "Subcommand for FMU related operations");
-  std::string fmuinput = "";
+  std::string fmuinput;
   double fmustart = 0.0;
   double fmustop = 60.0;
   double fmustep = 0.001;
@@ -141,7 +141,7 @@ int main(int argc, const char *argv[])
 
     if (*createOption) {
       spawn::energyplusToFMU(
-          jsoninput, nozip, nocompress, outputpath, outputdir, spawn::idd_install_path(), spawn::epfmi_install_path());
+          jsonInput, nozip, nocompress, outputPath, outputDir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
       if (optimica) {

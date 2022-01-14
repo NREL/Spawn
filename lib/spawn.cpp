@@ -484,7 +484,7 @@ void Spawn::setActuatorValue(const std::string &componenttype,
     ::setActuatorValue(simState(), h, 1.0);
   }
   ::setActuatorValue(simState(), h, value);
-};
+}
 
 void Spawn::resetActuator(const std::string &componenttype,
                           const std::string &controltype,
@@ -656,7 +656,7 @@ void Spawn::initZoneEquip()
   }
 }
 
-void Spawn::externalHVACManager(EnergyPlusState state)
+void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
 {
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints

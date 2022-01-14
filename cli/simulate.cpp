@@ -41,7 +41,7 @@ void Sim::run(const nlohmann::json &config)
 
   const auto guid = m_fmu.guid();
   fmi2CallbackFunctions callbacks = {
-      fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = m_fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2CoSimulation, guid.c_str(), m_resource_url.c_str(), &callbacks, false, true);
   if (!comp) throw std::runtime_error("Could not instantiate FMU");

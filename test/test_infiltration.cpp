@@ -278,19 +278,16 @@ TEST_CASE("Test infiltration with unconnected and connected zones")
 
   const auto zone_1_temp_ref = modelDescription.valueReference("zone 1 temp");
   const auto zone_2_temp_ref = modelDescription.valueReference("zone 2 temp");
-  const auto zone_1_infiltration_ref = modelDescription.valueReference("zone 1 infiltration");
   const auto zone_1_infiltration_output_ref = modelDescription.valueReference("zone 1 infiltration output");
   const auto zone_2_infiltration_output_ref = modelDescription.valueReference("zone 2 infiltration output");
 
-  const std::array<fmi2ValueReference, 1> input_refs = {zone_1_infiltration_ref};
   const std::array<fmi2ValueReference, 4> output_refs = {
       zone_1_temp_ref, zone_2_temp_ref, zone_1_infiltration_output_ref, zone_2_infiltration_output_ref};
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
-  std::array<fmi2Real, output_refs.size()> output_values;
-  std::array<fmi2Real, input_refs.size()> input_values;
+  std::array<fmi2Real, output_refs.size()> output_values{};
 
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2OK);

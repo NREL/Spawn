@@ -243,7 +243,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   }
 
   if (parameters.size() < 3) {
-    spdlog::error("unable to determine build target");
+    spdlog::error("unable to determine build target, aborting");
     return;
   }
 
