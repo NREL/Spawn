@@ -5,9 +5,13 @@
 #include <stdarg.h>
 
 extern "C" {
-//NOLINTNEXTLINE
-inline void fmuStdOutLogger(
-    fmi2ComponentEnvironment /*comp*/, fmi2String /*name*/, fmi2Status /*level*/, fmi2String /*type*/, fmi2String format, ...)
+// NOLINTNEXTLINE
+inline void fmuStdOutLogger(fmi2ComponentEnvironment /*comp*/,
+                            fmi2String /*name*/,
+                            fmi2Status /*level*/,
+                            fmi2String /*type*/,
+                            fmi2String format,
+                            ...)
 {
   va_list args;
   va_start(args, format);
@@ -18,8 +22,12 @@ inline void fmuStdOutLogger(
 }
 
 // NOLINTNEXTLINE
-inline void fmuNothingLogger(
-    fmi2ComponentEnvironment /*comp*/, fmi2String /*name*/, fmi2Status /*level*/, fmi2String /*type*/, fmi2String /*format*/, ...)
+inline void fmuNothingLogger(fmi2ComponentEnvironment /*comp*/,
+                             fmi2String /*name*/,
+                             fmi2Status /*level*/,
+                             fmi2String /*type*/,
+                             fmi2String /*format*/,
+                             ...)
 {
 }
 }
