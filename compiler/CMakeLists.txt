@@ -23,32 +23,36 @@ endfunction()
 
 remove_llvm(clangFrontendTool)
 # Most but not all of the LLVM libs are needed
-list(REMOVE_ITEM LLVM_AVAILABLE_LIBS edit LLVMLineEditor LLVM LTO Remarks)
+list(
+  REMOVE_ITEM
+  LLVM_AVAILABLE_LIBS
+  edit
+  LLVMLineEditor
+  LLVM
+  LTO
+  Remarks)
 
 target_link_libraries(
-    compiler
-  PUBLIC 
-    clangFrontendTool
-    ${LLVM_LIBRARY_DIR}/liblldYAML.a
-    ${LLVM_LIBRARY_DIR}/liblldCOFF.a
-    ${LLVM_LIBRARY_DIR}/liblldMinGW.a
-    ${LLVM_LIBRARY_DIR}/liblldELF.a
-    ${LLVM_LIBRARY_DIR}/liblldMachO.a
-    ${LLVM_LIBRARY_DIR}/liblldWasm.a
-    ${LLVM_LIBRARY_DIR}/liblldReaderWriter.a
-    ${LLVM_LIBRARY_DIR}/liblldDriver.a
-    ${LLVM_LIBRARY_DIR}/liblldCore.a
-    ${LLVM_LIBRARY_DIR}/liblldCommon.a
-    # This would be one or two top level libs such as LLVMCore, LLVMLibDriver, or similar,
-    # however the previous LLD libs have dependencies on LLVM libs, and there are no exported cmake
-    # targets with defined INTERFACE_LINK_LIBRARIES, so we just throw the whole set of LLVM libs
-    # into the link path
-    ${LLVM_AVAILABLE_LIBS}
-    CONAN_PKG::fmt
-    CONAN_PKG::spdlog
-  PRIVATE 
-    compile_options spawn_utils
-)
+  compiler
+  PUBLIC clangFrontendTool
+         ${LLVM_LIBRARY_DIR}/liblldYAML.a
+         ${LLVM_LIBRARY_DIR}/liblldCOFF.a
+         ${LLVM_LIBRARY_DIR}/liblldMinGW.a
+         ${LLVM_LIBRARY_DIR}/liblldELF.a
+         ${LLVM_LIBRARY_DIR}/liblldMachO.a
+         ${LLVM_LIBRARY_DIR}/liblldWasm.a
+         ${LLVM_LIBRARY_DIR}/liblldReaderWriter.a
+         ${LLVM_LIBRARY_DIR}/liblldDriver.a
+         ${LLVM_LIBRARY_DIR}/liblldCore.a
+         ${LLVM_LIBRARY_DIR}/liblldCommon.a
+         # This would be one or two top level libs such as LLVMCore, LLVMLibDriver, or similar,
+         # however the previous LLD libs have dependencies on LLVM libs, and there are no exported cmake
+         # targets with defined INTERFACE_LINK_LIBRARIES, so we just throw the whole set of LLVM libs
+         # into the link path
+         ${LLVM_AVAILABLE_LIBS}
+         CONAN_PKG::fmt
+         CONAN_PKG::spdlog
+  PRIVATE compile_options spawn_utils)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT

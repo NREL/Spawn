@@ -11,16 +11,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 
-option(ENABLE_BUILDINGS_LIBRARY
-       "Include the Modelica Buildings Library in the installer package" FALSE)
-option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler"
-       FALSE)
+option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
+option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
   set(OPTIMICA_TARFILE_URL
       "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz"
       CACHE STRING "Tarball of Optimica distribution")
-  target_compile_definitions(compile_options
-                             INTERFACE -DENABLE_MODELICA_COMPILER)
+  target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
@@ -31,7 +28,6 @@ include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 # reset to OFF
 set(CPACK_BINARY_IFW OFF)
 
-
 # Intentionally only enable clang-tidy for everything except EnergyPlus
 option(ENABLE_CLANG_TIDY "Enable clang-tidy checks during compilation" FALSE)
 
@@ -39,11 +35,9 @@ if(ENABLE_CLANG_TIDY)
   find_program(CLANGTIDY NAMES clang-tidy-12 clang-tidy-10 clang-tidy)
 
   if(CLANGTIDY)
-    set(CMAKE_CXX_CLANG_TIDY ${CLANGTIDY}
-                             -extra-arg=-Wno-unknown-warning-option)
+    set(CMAKE_CXX_CLANG_TIDY ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
     if(${CMAKE_CXX_STANDARD})
-      set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY}
-                               -extra-arg=-std=c++${CMAKE_CXX_STANDARD})
+      set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} -extra-arg=-std=c++${CMAKE_CXX_STANDARD})
     endif()
 
     list(APPEND CMAKE_CXX_CLANG_TIDY -warnings-as-errors=*)
@@ -52,20 +46,17 @@ if(ENABLE_CLANG_TIDY)
   endif()
 endif()
 
-
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
   target_compile_options(compile_options INTERFACE -Wall -Wconversion -Wextra -Wpedantic -Werror)
-  option(ENABLE_ADDRESS_SANITIZER
-         "Enable address sanitizer testing in gcc/clang" OFF)
+  option(ENABLE_ADDRESS_SANITIZER "Enable address sanitizer testing in gcc/clang" OFF)
   if(ENABLE_ADDRESS_SANITIZER)
     target_compile_options(compile_options INTERFACE -fsanitize=address -g)
     target_link_options(compile_options INTERFACE -fsanitize=address)
   endif()
 
-  option(ENABLE_UNDEFINED_SANITIZER
-         "Enable undefined behavior sanitizer testing in gcc/clang" OFF)
+  option(ENABLE_UNDEFINED_SANITIZER "Enable undefined behavior sanitizer testing in gcc/clang" OFF)
   if(ENABLE_UNDEFINED_SANITIZER)
     target_compile_options(compile_options INTERFACE -fsanitize=undefined -g)
     target_link_options(compile_options INTERFACE -fsanitize=undefined)
@@ -88,8 +79,7 @@ if(GIT_FOUND)
     RESULT_VARIABLE RESULT
     OUTPUT_VARIABLE GIT_VERSION
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL
-                           "${CMAKE_PROJECT_VERSION_BUILD}")
+  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL "${CMAKE_PROJECT_VERSION_BUILD}")
     set(CMAKE_PROJECT_VERSION_BUILD
         ${GIT_VERSION}
         CACHE STRING "Build number" FORCE) # git sha
@@ -106,18 +96,12 @@ if(NOT ENABLE_MODELICA_COMPILER)
 endif()
 
 set(CPACK_PACKAGE_VERSION
-    "${package_variant}${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}"
-)
+    "${package_variant}${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}")
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(
-    STATUS
-      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(
-    DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake"
-    "${CMAKE_BINARY_DIR}/conan.cmake")
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.16/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
@@ -163,8 +147,7 @@ endif()
 
 check_include_file_cxx("experimental/filesystem" HAVE_EXP_FILESYSTEM_H)
 if(HAVE_EXP_FILESYSTEM_H)
-  target_compile_definitions(compile_options
-                             INTERFACE "-DHAVE_EXP_FILESYSTEM_H")
+  target_compile_definitions(compile_options INTERFACE "-DHAVE_EXP_FILESYSTEM_H")
 endif()
 
 include(cmake/download_modelica.cmake)
@@ -174,18 +157,15 @@ if(ENABLE_MODELICA_COMPILER)
 
   if(APPLE)
     set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url
-        "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
+    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
     set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
   elseif(UNIX)
     set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url
-        "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
+    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
     set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
   else()
     set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url
-        "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
+    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
     set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
   endif()
 
@@ -252,15 +232,9 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
 
-set(modelica_bin_path
-    "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/"
-)
-set(modelica_lib_path
-    "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/"
-)
-set(modelica_idd_path
-    "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/etc/"
-)
+set(modelica_bin_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
+set(modelica_lib_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
+set(modelica_idd_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/etc/")
 
 if(ENABLE_BUILDINGS_LIBRARY)
   include(ExternalProject)
@@ -272,18 +246,13 @@ if(ENABLE_BUILDINGS_LIBRARY)
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path}
-            "${modelica_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${modelica_bin_path}"
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
     COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${modelica_idd_path}"
-    COMMAND
-      ${CMAKE_COMMAND} -E copy_directory
-      "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
-      "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
+            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 
-  set(fmilib_project_source_dir
-      "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/"
-  )
+  set(fmilib_project_source_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
 
   install(
@@ -299,7 +268,6 @@ if(ENABLE_BUILDINGS_LIBRARY)
     INSTALL_COMMAND "")
 endif()
 
-install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd
-        DESTINATION etc/)
+install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)
 
 include(CPack)
