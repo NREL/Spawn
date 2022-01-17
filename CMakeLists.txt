@@ -8,6 +8,7 @@ add_library(compile_options INTERFACE)
 target_compile_features(compile_options INTERFACE cxx_std_17)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 
