@@ -15,7 +15,7 @@ struct Temp_Directory
   explicit Temp_Directory(const std::string &t_prefix = "spawn");
   ~Temp_Directory();
 
-  [[nodiscard]] const fs::path &dir() const noexcept
+  [[nodiscard]] const spawn_fs::path &dir() const noexcept
   {
     return m_dir;
   }
@@ -26,7 +26,7 @@ struct Temp_Directory
   Temp_Directory &operator=(Temp_Directory &&) = delete;
 
 private:
-  fs::path m_dir;
+  spawn_fs::path m_dir;
 };
 } // namespace spawn::util
 

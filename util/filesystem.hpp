@@ -3,17 +3,17 @@
 
 #if HAVE_FILESYSTEM_H
 #include <filesystem>
-namespace fs = std::filesystem;
+namespace spawn_fs = std::filesystem;
 #elif HAVE_EXP_FILESYSTEM_H
 #include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+namespace spawn_fs = std::experimental::filesystem;
 namespace std::experimental::filesystem {
 // https://stackoverflow.com/questions/63899489/c-experimental-filesystem-has-no-relative-function
 [[nodiscard]] inline path relative(path p, path base)
 {
   // 1. convert p and base to absolute paths
-  p = fs::absolute(p);
-  base = fs::absolute(base);
+  p = spawn_fs::absolute(p);
+  base = spawn_fs::absolute(base);
 
   // 2. find first mismatch and shared root path
   auto mismatched = std::mismatch(p.begin(), p.end(), base.begin(), base.end());

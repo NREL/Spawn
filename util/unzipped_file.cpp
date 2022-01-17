@@ -7,7 +7,7 @@
 
 namespace spawn::util {
 
-std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const fs::path &zipFile)
+std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const spawn_fs::path &zipFile)
 {
   int err{};
   auto zip = zip_open(zipFile.string().c_str(), ZIP_CHECKCONS | ZIP_RDONLY, &err);
@@ -23,7 +23,7 @@ std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const fs::path &zipFile)
   return {zip, zip_discard};
 }
 
-std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, const fs::path &path)
+std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, const spawn_fs::path &path)
 {
   auto *f = zip_fopen(&zipFile, path.string().c_str(), 0);
 
@@ -38,9 +38,9 @@ std::unique_ptr<zip_file_t, decltype(&zip_fclose)> open_file(zip_t &zipFile, con
   return {f, zip_fclose};
 }
 
-std::vector<fs::path> zipped_files(zip_t &zipFile)
+std::vector<spawn_fs::path> zipped_files(zip_t &zipFile)
 {
-  std::vector<fs::path> results;
+  std::vector<spawn_fs::path> results;
 
   const auto file_count = zip_get_num_entries(&zipFile, 0);
 
@@ -54,7 +54,8 @@ std::vector<fs::path> zipped_files(zip_t &zipFile)
   return results;
 }
 
-Unzipped_File::Unzipped_File(const fs::path &zipFile, fs::path outputDir, const std::vector<fs::path> &filesToUnzip)
+Unzipped_File::Unzipped_File(const spawn_fs::path &zipFile,
+                             spawn_fs::path outputDir, const std::vector<spawn_fs::path> &filesToUnzip)
     : m_outputDir{std::move(outputDir)}
 {
   auto zip = open_zip(zipFile);
@@ -74,7 +75,7 @@ Unzipped_File::Unzipped_File(const fs::path &zipFile, fs::path outputDir, const 
     const auto read_bytes = [&]() { return zip_fread(file.get(), buffer, buffer_size); };
 
     const auto unzippedFile = m_outputDir / fileToUnzip;
-    fs::create_directories(unzippedFile.parent_path());
+    spawn_fs::create_directories(unzippedFile.parent_path());
     std::ofstream ofs(unzippedFile.string(), std::ofstream::trunc | std::ofstream::binary);
     for (zip_int64_t bytesread = read_bytes(); bytesread > 0; bytesread = read_bytes()) {
       ofs.write(buffer, bytesread);

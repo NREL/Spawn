@@ -7,26 +7,26 @@
 
 using json = nlohmann::json;
 
-fs::path single_family_house_idf_path()
+spawn_fs::path single_family_house_idf_path()
 {
   return spawn::project_source_dir() /
          "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/Examples/"
          "SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
 }
 
-fs::path two_zones_idf_path()
+spawn_fs::path two_zones_idf_path()
 {
   return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones/EnergyPlus/"
                                        "Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
 }
 
-fs::path chicago_epw_path()
+spawn_fs::path chicago_epw_path()
 {
   return spawn::project_source_dir() /
          "submodules/modelica-buildings/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 }
 
-fs::path create_epfmu()
+spawn_fs::path create_epfmu()
 {
   // testcase1 is the RefBldgSmallOfficeNew2004_Chicago
   // This call generates an FMU for the corresponding idf file
@@ -40,11 +40,11 @@ fs::path create_epfmu()
   return testdir() / "MyBuilding.fmu";
 }
 
-fs::path create_epfmu(const std::string &input_string)
+spawn_fs::path create_epfmu(const std::string &input_string)
 {
   auto input = json::parse(input_string);
   const auto fmuname = input.value("fmu", json()).value("name", "MyBuilding.fmu");
-  fs::path fmupath(fmuname);
+  spawn_fs::path fmupath(fmuname);
 
   const auto spawn_input_path = testdir() / (fmupath.stem().string() + ".json");
   std::ofstream spawn_input_file(spawn_input_path);
@@ -62,7 +62,7 @@ fs::path create_epfmu(const std::string &input_string)
   return fmu_file_path;
 }
 
-fs::path create_single_family_house_fmu()
+spawn_fs::path create_single_family_house_fmu()
 {
   const auto idfpath = single_family_house_idf_path();
   const auto epwpath = chicago_epw_path();

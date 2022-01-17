@@ -10,9 +10,9 @@
 
 namespace spawn {
 
-[[nodiscard]] nlohmann::json idf_to_json(const fs::path &idfpath);
+[[nodiscard]] nlohmann::json idf_to_json(const spawn_fs::path &idfpath);
 
-void json_to_idf(const nlohmann::json &idfjson, const fs::path &idfpath);
+void json_to_idf(const nlohmann::json &idfjson, const spawn_fs::path &idfpath);
 
 } // namespace spawn
 

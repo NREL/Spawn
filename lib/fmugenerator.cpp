@@ -19,15 +19,15 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-void createModelDescription(const spawn::Input &input, const fs::path &savepath);
+void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath);
 
 void energyplusToFMU(const std::string &jsoninput,
                      bool nozip,
                      bool nocompress,
                      const std::string &outputpath,
                      const std::string &outputdir,
-                     const fs::path &iddpath,
-                     const fs::path &epfmupath)
+                     const spawn_fs::path &iddpath,
+                     const spawn_fs::path &epfmupath)
 {
   spawn::Input input(jsoninput);
 
@@ -37,20 +37,20 @@ void energyplusToFMU(const std::string &jsoninput,
   // contained within the fmu layout.
 
   // The default fmu output path
-  auto fmuPath = fs::current_path() / (input.fmuBaseName() + ".fmu");
+  auto fmuPath = spawn_fs::current_path() / (input.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
   if (!outputpath.empty()) {
-    fmuPath = fs::path(outputpath);
+    fmuPath = spawn_fs::path(outputpath);
   } else if (!outputdir.empty()) {
-    fmuPath = fs::path(outputdir) / (input.fmuBaseName() + ".fmu");
+    fmuPath = spawn_fs::path(outputdir) / (input.fmuBaseName() + ".fmu");
   }
 
   const auto outputroot = fmuPath.parent_path();
   const auto fmuStagingPath = outputroot / fmuPath.stem();
 
-  if (!fs::exists(outputroot)) {
-    fs::create_directories(outputroot);
+  if (!spawn_fs::exists(outputroot)) {
+    spawn_fs::create_directories(outputroot);
   }
 
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
@@ -61,34 +61,34 @@ void energyplusToFMU(const std::string &jsoninput,
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
 
-  fs::remove_all(fmuPath);
-  fs::remove_all(fmuStagingPath);
+  spawn_fs::remove_all(fmuPath);
+  spawn_fs::remove_all(fmuStagingPath);
 
   // Create fmu staging area and copy files into it
-  fs::create_directories(fmuStagingPath);
-  fs::create_directories(fmuResourcesPath);
-  fs::create_directories(fmuEPFMIPath.parent_path());
+  spawn_fs::create_directories(fmuStagingPath);
+  spawn_fs::create_directories(fmuResourcesPath);
+  spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
-  fs::copy_file(epfmupath, fmuEPFMIPath, fs::copy_options::overwrite_existing);
-  fs::copy_file(iddpath, fmuiddPath, fs::copy_options::overwrite_existing);
-  fs::copy_file(input.epwInputPath(), fmuepwPath, fs::copy_options::overwrite_existing);
-  fs::copy_file(input.idfInputPath(), fmuidfPath);
+  spawn_fs::copy_file(epfmupath, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(iddpath, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(input.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(input.idfInputPath(), fmuidfPath);
 
   createModelDescription(input, modelDescriptionPath);
 
-  const auto relativeEPWPath = fs::relative(fmuepwPath, fmuResourcesPath);
+  const auto relativeEPWPath = spawn_fs::relative(fmuepwPath, fmuResourcesPath);
   input.setEPWInputPath(relativeEPWPath);
-  const auto relativeIdfPath = fs::relative(fmuidfPath, fmuResourcesPath);
+  const auto relativeIdfPath = spawn_fs::relative(fmuidfPath, fmuResourcesPath);
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
   if (!nozip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
-    fs::remove_all(fmuStagingPath);
+    spawn_fs::remove_all(fmuStagingPath);
   }
 }
 
-void createModelDescription(const spawn::Input &input, const fs::path &savepath)
+void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath)
 {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());

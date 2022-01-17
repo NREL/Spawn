@@ -10,21 +10,22 @@ namespace util {
   class Unzipped_File
   {
   public:
-    Unzipped_File(const fs::path &zipFile, fs::path outputDir, const std::vector<fs::path> &filesToUnzip);
+    Unzipped_File(const spawn_fs::path &zipFile,
+                  spawn_fs::path outputDir, const std::vector<spawn_fs::path> &filesToUnzip);
 
-    [[nodiscard]] const fs::path &outputDir() const noexcept
+    [[nodiscard]] const spawn_fs::path &outputDir() const noexcept
     {
       return m_outputDir;
     }
 
-    [[nodiscard]] const std::vector<fs::path> &unzippedFiles() const noexcept
+    [[nodiscard]] const std::vector<spawn_fs::path> &unzippedFiles() const noexcept
     {
       return m_unzippedFiles;
     }
 
   private:
-    fs::path m_outputDir;
-    std::vector<fs::path> m_unzippedFiles;
+    spawn_fs::path m_outputDir;
+    std::vector<spawn_fs::path> m_unzippedFiles;
   };
 
 } // namespace util

@@ -8,7 +8,7 @@
 
 namespace spawn::fmu {
 
-Sim::Sim(fs::path fmu_path) : m_fmu_path(std::move(fmu_path))
+Sim::Sim(spawn_fs::path fmu_path) : m_fmu_path(std::move(fmu_path))
 {
 }
 

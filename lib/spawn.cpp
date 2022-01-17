@@ -28,7 +28,7 @@
 
 namespace spawn {
 
-Spawn::Spawn(std::string t_name, std::string t_input, fs::path t_workingdir)
+Spawn::Spawn(std::string t_name, std::string t_input, spawn_fs::path t_workingdir)
     : instanceName(std::move(t_name)), workingdir(std::move(t_workingdir)), input(std::move(t_input)),
       variables(parseVariables(input))
 {

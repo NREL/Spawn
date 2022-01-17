@@ -25,31 +25,31 @@ public:
   std::vector<EMSActuator> emsActuators;
   std::vector<Surface> surfaces;
 
-  [[nodiscard]] fs::path basepath() const;
+  [[nodiscard]] spawn_fs::path basepath() const;
 
   [[nodiscard]] std::string fmuname() const;
   void setFMUName(std::string name);
   // fmu name without extension
   [[nodiscard]] std::string fmuBaseName() const;
 
-  [[nodiscard]] fs::path idfInputPath() const;
-  void setIdfInputPath(fs::path idfpath);
+  [[nodiscard]] spawn_fs::path idfInputPath() const;
+  void setIdfInputPath(spawn_fs::path idfpath);
 
-  [[nodiscard]] fs::path epwInputPath() const;
-  void setEPWInputPath(fs::path epwpath);
+  [[nodiscard]] spawn_fs::path epwInputPath() const;
+  void setEPWInputPath(spawn_fs::path epwpath);
 
   double relativeSurfaceTolerance() const;
 
-  void save(const fs::path &savepath) const;
+  void save(const spawn_fs::path &savepath) const;
 
 private:
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
-  [[nodiscard]] fs::path toPath(const std::string &pathstring) const;
+  [[nodiscard]] spawn_fs::path toPath(const std::string &pathstring) const;
 
   nlohmann::json jsonidf;
   nlohmann::json spawnjson;
-  fs::path m_basepath;
+  spawn_fs::path m_basepath;
 };
 
 } // namespace spawn

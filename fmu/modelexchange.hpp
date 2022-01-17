@@ -17,7 +17,7 @@ class ModelExchange
 {
 public:
   /// Todo: Validate that the provided fmu_file is valid for ModelExchange
-  ModelExchange(const fs::path &fmu_file, const std::string &name, const bool visible, const bool loggingOn)
+  ModelExchange(const spawn_fs::path &fmu_file, const std::string &name, const bool visible, const bool loggingOn)
       : fmu{fmu_file, false}, m_unzippedResources{fmu_file, m_resourcesDirectory.dir(), {}}
   {
     auto resourcesUri = fmt::format("file://{}/resources", m_resourcesDirectory.dir().generic_string());

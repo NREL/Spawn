@@ -70,10 +70,10 @@ TEST_CASE("Test example file", "[!hide]")
 
   SECTION("clean simulation working directory")
   {
-    fs::remove_all(simulationDirectory);
+    spawn_fs::remove_all(simulationDirectory);
   }
 
-  for (const auto &entry : fs::directory_iterator(testfileDirectory)) {
+  for (const auto &entry : spawn_fs::directory_iterator(testfileDirectory)) {
     const auto p = entry.path();
 
     if (p.extension() != ".idf") {
@@ -139,7 +139,7 @@ TEST_CASE("Test example file", "[!hide]")
 
       // If this point is reached then the test passed and it is ok to remove the simulation fiiles.
       // They probably wont be needed for inspection
-      fs::remove_all(testDirectory);
+      spawn_fs::remove_all(testDirectory);
     }
   }
 }

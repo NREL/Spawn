@@ -101,13 +101,13 @@ public:
   /// \param require_all_symbols If true, an exception is thrown if an FMI symbol could not be loaded
   /// \param scratch_directory If a scratch_directory is passed in, it is used instead of an automatically managed temp
   /// directory
-  explicit FMU(fs::path fmu_file, bool require_all_symbols = true, fs::path scratch_directory = {})
+  explicit FMU(spawn_fs::path fmu_file, bool require_all_symbols = true, spawn_fs::path scratch_directory = {})
       : m_fmu_file{std::move(fmu_file)}, m_require_all_symbols{require_all_symbols}, m_scratch_directory{
                                                                                          std::move(scratch_directory)}
   {
   }
 
-  static fs::path modelDescriptionPath()
+  static spawn_fs::path modelDescriptionPath()
   {
     return "modelDescription.xml";
   }
@@ -118,20 +118,20 @@ public:
 
   [[nodiscard]] double defaultTolerance() const;
 
-  [[nodiscard]] fs::path fmiBinaryFullPath() const
+  [[nodiscard]] spawn_fs::path fmiBinaryFullPath() const
   {
     const auto libFilename = fmi_lib_filename(modelIdentifier());
 
-    std::vector<fs::path> possiblePaths{m_unzipped.outputDir() / fs::path{"binaries"} / fmi_platform() / libFilename,
-                                        m_unzipped.outputDir() / fs::path{"binaries"} / libFilename};
+    std::vector<spawn_fs::path> possiblePaths{m_unzipped.outputDir() / spawn_fs::path{"binaries"} / fmi_platform() / libFilename,
+                                        m_unzipped.outputDir() / spawn_fs::path{"binaries"} / libFilename};
 
     for (const auto p : possiblePaths) {
-      if (fs::exists(p)) {
+      if (spawn_fs::exists(p)) {
         return p;
       }
     }
 
-    return fs::path();
+    return spawn_fs::path();
   }
 
   [[nodiscard]] const pugi::xml_document &modelDescription() const noexcept
@@ -146,7 +146,7 @@ public:
 
   [[nodiscard]] const Variable &getVariableByName(std::string_view name) const;
 
-  [[nodiscard]] const fs::path &extractedFilesPath() const noexcept
+  [[nodiscard]] const spawn_fs::path &extractedFilesPath() const noexcept
   {
     if (!m_scratch_directory.empty()) {
       return m_scratch_directory;
@@ -156,9 +156,9 @@ public:
   }
 
 private:
-  fs::path m_fmu_file;
+  spawn_fs::path m_fmu_file;
   bool m_require_all_symbols;
-  fs::path m_scratch_directory;
+  spawn_fs::path m_scratch_directory;
   util::Temp_Directory m_temp_directory;
 
   // unzip all files

@@ -71,7 +71,7 @@ namespace spawn {
 class Spawn
 {
 public:
-  Spawn(std::string t_name, std::string t_input, fs::path workingdir = ".");
+  Spawn(std::string t_name, std::string t_input, spawn_fs::path workingdir = ".");
   Spawn(const Spawn &) = delete;
   Spawn(Spawn &&) = delete;
 
@@ -115,7 +115,7 @@ public:
 
 private:
   std::string instanceName;
-  fs::path workingdir;
+  spawn_fs::path workingdir;
   Input input;
   std::map<unsigned int, Variable> variables;
 
@@ -210,7 +210,7 @@ private:
   WarmupManager warmupManager{sim_state};
 };
 
-fs::path iddpath();
+spawn_fs::path iddpath();
 
 } // namespace spawn
 

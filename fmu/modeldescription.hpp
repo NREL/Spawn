@@ -12,7 +12,7 @@ namespace spawn::fmu {
 class ModelDescription
 {
 public:
-  explicit ModelDescription(fs::path model_description_path)
+  explicit ModelDescription(spawn_fs::path model_description_path)
       : m_model_description_path(std::move(model_description_path))
   {
     // note this is initialized by member initializer below
@@ -89,7 +89,7 @@ private:
     throw std::runtime_error(fmt::format("Error finding ScalarVariable with name: {}", variable_name));
   }
 
-  fs::path m_model_description_path;
+  spawn_fs::path m_model_description_path;
   pugi::xml_document m_model_description;
   pugi::xml_parse_result m_model_description_parse_result{
       m_model_description.load_file(m_model_description_path.c_str())};

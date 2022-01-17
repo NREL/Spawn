@@ -105,7 +105,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
     // On non windows the third "/" must be retained
     const auto resourcePathString = std::regex_replace(fmuResourceURI, std::regex("^file://"), "");
 #endif
-    const auto resourcePath = fs::path(resourcePathString);
+    const auto resourcePath = spawn_fs::path(resourcePathString);
     const auto spawnJSONPath = resourcePath / "model.spawn";
     const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 

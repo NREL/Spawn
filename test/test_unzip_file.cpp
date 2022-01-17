@@ -10,14 +10,14 @@ TEST_CASE("Test unzipped file")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(fs::exists(testzip()));
-  REQUIRE(fs::is_regular_file(testzip()));
+  REQUIRE(spawn_fs::exists(testzip()));
+  REQUIRE(spawn_fs::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
   spawn::util::Unzipped_File unzippedFile{testzip(), td.dir(), {"a_dir/a_file.data"}};
 
-  REQUIRE(fs::exists(out_file));
-  REQUIRE(fs::is_regular_file(out_file));
+  REQUIRE(spawn_fs::exists(out_file));
+  REQUIRE(spawn_fs::is_regular_file(out_file));
 
   std::ifstream ifs(out_file.string(), std::ios_base::binary);
 
@@ -35,9 +35,9 @@ TEST_CASE("Test missing zip file")
 {
   spawn::util::Temp_Directory td{};
 
-  const fs::path missing_file{"missing_file.zip"};
+  const spawn_fs::path missing_file{"missing_file.zip"};
 
-  REQUIRE(!fs::exists(missing_file));
+  REQUIRE(!spawn_fs::exists(missing_file));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
 
@@ -49,8 +49,8 @@ TEST_CASE("Test missing file in zip")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(fs::exists(testzip()));
-  REQUIRE(fs::is_regular_file(testzip()));
+  REQUIRE(spawn_fs::exists(testzip()));
+  REQUIRE(spawn_fs::is_regular_file(testzip()));
 
   const auto out_file = td.dir() / "a_dir/b_file.data";
   REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), td.dir(), {"a_dir/b_file.data"}}),

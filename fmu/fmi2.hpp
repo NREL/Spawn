@@ -48,7 +48,7 @@ public:
   };
 
   /// Loads the given dynamic library and attempts to load all possible FMI2 symbols
-  FMI2(fs::path fmi_file, bool require_all_symbols) : m_fmi_file{std::move(fmi_file)}
+  FMI2(spawn_fs::path fmi_file, bool require_all_symbols) : m_fmi_file{std::move(fmi_file)}
   {
     if (require_all_symbols && !m_loadResults.failures.empty()) {
       throw std::runtime_error("Failed to load all functions");
@@ -111,7 +111,7 @@ public:
 private:
   [[nodiscard]] Load_Results loadFunctions(util::Dynamic_Library &) noexcept;
 
-  fs::path m_fmi_file;
+  spawn_fs::path m_fmi_file;
   util::Dynamic_Library m_dll{m_fmi_file};
   Load_Results m_loadResults{loadFunctions(m_dll)};
 };

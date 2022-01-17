@@ -25,10 +25,10 @@ TEST_CASE("Spawn shows help")
 // generate an FMU for a given EnergyPlus model
 TEST_CASE("Spawn creates an FMU")
 {
-  fs::path created_fmu;
+  spawn_fs::path created_fmu;
   REQUIRE_NOTHROW(created_fmu = create_epfmu());
-  CHECK(fs::is_regular_file(created_fmu));
-  CHECK(fs::file_size(created_fmu) > 0);
+  CHECK(spawn_fs::is_regular_file(created_fmu));
+  CHECK(spawn_fs::file_size(created_fmu) > 0);
 }
 
 #if defined ENABLE_MODELICA_COMPILER
@@ -71,7 +71,7 @@ TEST_CASE("Spawn lists the correct actuators")
   const auto idf_path =
       spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
   const auto new_idf_path = testdir() / "actuators.idf";
-  fs::copy(idf_path, new_idf_path, fs::copy_options::overwrite_existing);
+  spawn_fs::copy(idf_path, new_idf_path, spawn_fs::copy_options::overwrite_existing);
 
   std::ofstream new_idf;
   new_idf.open(new_idf_path, std::ios::app);

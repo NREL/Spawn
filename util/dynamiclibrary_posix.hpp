@@ -23,7 +23,7 @@ namespace util {
       return symbol;
     }
 
-    explicit Dynamic_Library(fs::path location)
+    explicit Dynamic_Library(spawn_fs::path location)
         : m_location{std::move(location)}, m_handle{dlopen(m_location.c_str(), RTLD_LAZY), m_handle_deleter}
     {
       if (!m_handle) {
@@ -39,7 +39,7 @@ namespace util {
       }
     }
 
-    fs::path m_location{};
+    spawn_fs::path m_location{};
     std::unique_ptr<void, decltype(&m_handle_deleter)> m_handle{nullptr, m_handle_deleter};
   };
 } // namespace util
