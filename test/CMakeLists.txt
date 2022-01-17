@@ -34,6 +34,12 @@ add_executable(
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
 
+target_include_directories(
+        tests
+        SYSTEM
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
+
 # Make this better
 if(WIN32)
   # file(GENERATE...) helps us get the path the the spawn exe

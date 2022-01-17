@@ -56,7 +56,7 @@ endif()
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
-  target_compile_options(compile_options INTERFACE -Wall -Wextra -Wpedantic -Werror)
+  target_compile_options(compile_options INTERFACE -Wall -Wconversion -Wextra -Wpedantic -Werror)
   option(ENABLE_ADDRESS_SANITIZER
          "Enable address sanitizer testing in gcc/clang" OFF)
   if(ENABLE_ADDRESS_SANITIZER)

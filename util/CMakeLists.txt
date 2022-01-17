@@ -36,6 +36,7 @@ endif()
 
 target_include_directories(
   spawn_utils
+  SYSTEM
   PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus

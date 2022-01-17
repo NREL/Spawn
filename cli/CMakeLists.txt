@@ -77,6 +77,12 @@ target_link_libraries(
           CONAN_PKG::spdlog
 )
 
+target_include_directories(
+        spawn
+        SYSTEM
+        PRIVATE
+        ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
+
 if(ENABLE_BUILDINGS_LIBRARY)
   add_dependencies(spawn FMILIB)
 endif()
