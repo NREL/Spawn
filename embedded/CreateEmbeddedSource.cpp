@@ -3,8 +3,9 @@
 #include <iostream>
 #include <string>
 
-#include <assert.h>
-#include <stdio.h>
+#include <array>
+#include <cassert>
+#include <cstdio>
 #include <zlib.h>
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
@@ -23,16 +24,17 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  auto infile = argv[1];
-  auto outfile = argv[2];
-  auto filenum = argv[3];
-  auto embeddedname = argv[4];
+  auto *infile = argv[1];
+  auto *outfile = argv[2];
+  auto *filenum = argv[3];
+  auto *embeddedname = argv[4];
 
-  int ret, flush;
-  unsigned have;
+  int ret = 0;
+  int flush = 0;
+  unsigned have = 0;
   z_stream strm;
-  unsigned char in[CHUNK];
-  unsigned char out[CHUNK];
+  std::array<unsigned char, CHUNK> in;
+  std::array<unsigned char, CHUNK> out;
 
   /* allocate deflate state */
   strm.zalloc = Z_NULL;
@@ -55,19 +57,19 @@ int main(int argc, char *argv[])
   if (outstream.is_open()) {
     outstream << "static const uint8_t embedded_file_" << filenum << "[] = {";
     do {
-      strm.avail_in = fread(in, 1, CHUNK, source);
-      if (ferror(source)) {
-        (void)deflateEnd(&strm);
+      strm.avail_in = static_cast<uInt>(fread(in.data(), 1, CHUNK, source));
+      if (ferror(source) != 0) {
+        [[maybe_unused]] const auto result = deflateEnd(&strm);
         return EXIT_FAILURE;
       }
-      flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
-      strm.next_in = in;
+      flush = feof(source) != 0 ? Z_FINISH : Z_NO_FLUSH;
+      strm.next_in = in.data();
 
       /* run deflate() on input until output buffer not full, finish
          compression if all of source has been read in */
       do {
         strm.avail_out = CHUNK;
-        strm.next_out = out;
+        strm.next_out = out.data();
         ret = deflate(&strm, flush);   /* no bad return value */
         assert(ret != Z_STREAM_ERROR); /* state not clobbered */
         have = CHUNK - strm.avail_out;
