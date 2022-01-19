@@ -20,11 +20,11 @@
 
 #if defined ENABLE_MODELICA_COMPILER
 #include "compile.hpp"
-#include <cstdlib>
-#include <vector>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
+#include <vector>
 #endif
 
 #include "simulate.hpp"

@@ -71,7 +71,7 @@ namespace spawn {
 class Spawn
 {
 public:
-  Spawn(std::string t_name, const std::string& t_input, spawn_fs::path workingdir = ".");
+  Spawn(std::string t_name, const std::string &t_input, spawn_fs::path workingdir = ".");
   Spawn(const Spawn &) = delete;
   Spawn(Spawn &&) = delete;
 

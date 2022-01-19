@@ -1,10 +1,10 @@
 #include "ziputil.hpp"
 #include "zip.h"
 #include <cerrno>
-#include <iostream>
 #include <cstring>
-#include <sys/stat.h>
 #include <fmt/format.h>
+#include <iostream>
+#include <sys/stat.h>
 
 #if _MSC_VER
 #include "./msvc/dirent.h"
@@ -14,7 +14,9 @@
 
 bool is_dir(const std::string &dir)
 {
-  struct stat st{};
+  struct stat st
+  {
+  };
   ::stat(dir.c_str(), &st);
   return S_ISDIR(st.st_mode); // NOLINT
 }
@@ -51,7 +53,7 @@ void walk_directory(const std::string &startdir, const std::string &inputdir, zi
           zip_source_free(source);
           throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
         } else if (no_compression) {
-          zip_set_file_compression(zipper, static_cast<zip_uint64_t >(index), ZIP_CM_STORE, 0);
+          zip_set_file_compression(zipper, static_cast<zip_uint64_t>(index), ZIP_CM_STORE, 0);
         }
       }
     }

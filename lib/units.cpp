@@ -4,51 +4,51 @@ using namespace spawn::units;
 
 namespace spawn::units {
 
-  std::string toString(const UnitType &unittype)
-  {
-    const auto it = std::find_if(
-        std::begin(unitstrings), std::end(unitstrings), [&](const UnitString &us) { return us.first == unittype; });
+std::string toString(const UnitType &unittype)
+{
+  const auto it = std::find_if(
+      std::begin(unitstrings), std::end(unitstrings), [&](const UnitString &us) { return us.first == unittype; });
 
-    if (it != std::end(unitstrings)) {
-      return it->second;
-    }
-
-    return "";
+  if (it != std::end(unitstrings)) {
+    return it->second;
   }
 
-  UnitType fromString(const std::string &unitstring)
-  {
-    const auto it = std::find_if(
-        std::begin(unitstrings), std::end(unitstrings), [&](const UnitString &us) { return us.second == unitstring; });
+  return "";
+}
 
-    if (it != std::end(unitstrings)) {
-      return it->first;
-    }
+UnitType fromString(const std::string &unitstring)
+{
+  const auto it = std::find_if(
+      std::begin(unitstrings), std::end(unitstrings), [&](const UnitString &us) { return us.second == unitstring; });
 
-    return UnitType::one;
+  if (it != std::end(unitstrings)) {
+    return it->first;
   }
 
-  Quantity convert(const Quantity &q, const UnitType &targetUnit)
-  {
-    if (q.unit == targetUnit) {
-      // no conversion needed
-      return q;
-    }
+  return UnitType::one;
+}
 
-    // Lookup a unit conversion
-    auto c = conversions.find({q.unit, targetUnit});
-    if (c != std::end(conversions)) {
-      return {q.value * c->second.factor + c->second.offset, targetUnit};
-    }
-
-    // Lookup the reverse unit conversion
-    c = conversions.find({targetUnit, q.unit});
-    if (c != std::end(conversions)) {
-      return {(q.value - c->second.offset) / c->second.factor, targetUnit};
-    }
-
-    std::cout << "No unit conversion is available" << std::endl;
+Quantity convert(const Quantity &q, const UnitType &targetUnit)
+{
+  if (q.unit == targetUnit) {
+    // no conversion needed
     return q;
   }
 
-} // namespace spawn
+  // Lookup a unit conversion
+  auto c = conversions.find({q.unit, targetUnit});
+  if (c != std::end(conversions)) {
+    return {q.value * c->second.factor + c->second.offset, targetUnit};
+  }
+
+  // Lookup the reverse unit conversion
+  c = conversions.find({targetUnit, q.unit});
+  if (c != std::end(conversions)) {
+    return {(q.value - c->second.offset) / c->second.factor, targetUnit};
+  }
+
+  std::cout << "No unit conversion is available" << std::endl;
+  return q;
+}
+
+} // namespace spawn::units

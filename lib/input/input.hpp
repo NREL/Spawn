@@ -33,10 +33,10 @@ public:
   [[nodiscard]] std::string fmuBaseName() const;
 
   [[nodiscard]] spawn_fs::path idfInputPath() const;
-  void setIdfInputPath(const spawn_fs::path& idfpath);
+  void setIdfInputPath(const spawn_fs::path &idfpath);
 
   [[nodiscard]] spawn_fs::path epwInputPath() const;
-  void setEPWInputPath(const spawn_fs::path& epwpath);
+  void setEPWInputPath(const spawn_fs::path &epwpath);
 
   double relativeSurfaceTolerance() const;
 

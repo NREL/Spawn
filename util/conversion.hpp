@@ -1,8 +1,8 @@
 #ifndef SPAWN_CONVERSION_HPP
 #define SPAWN_CONVERSION_HPP
 
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 
 std::size_t as_size_t(const long long value)
 {

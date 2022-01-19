@@ -21,7 +21,7 @@ class Manager
 public:
   explicit Manager(EnergyPlus::EnergyPlusData &state);
   virtual ~Manager() = default;
-  Manager &operator=(Manager &)  = delete;
+  Manager &operator=(Manager &) = delete;
   Manager &operator=(Manager &&) = delete;
   Manager(const Manager &) = delete;
   Manager(Manager &&) = delete;

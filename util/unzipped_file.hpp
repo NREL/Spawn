@@ -11,7 +11,8 @@ namespace util {
   {
   public:
     Unzipped_File(const spawn_fs::path &zipFile,
-                  spawn_fs::path outputDir, const std::vector<spawn_fs::path> &filesToUnzip);
+                  spawn_fs::path outputDir,
+                  const std::vector<spawn_fs::path> &filesToUnzip);
 
     [[nodiscard]] const spawn_fs::path &outputDir() const noexcept
     {

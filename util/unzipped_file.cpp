@@ -55,7 +55,8 @@ std::vector<spawn_fs::path> zipped_files(zip_t &zipFile)
 }
 
 Unzipped_File::Unzipped_File(const spawn_fs::path &zipFile,
-                             spawn_fs::path outputDir, const std::vector<spawn_fs::path> &filesToUnzip)
+                             spawn_fs::path outputDir,
+                             const std::vector<spawn_fs::path> &filesToUnzip)
     : m_outputDir{std::move(outputDir)}
 {
   auto zip = open_zip(zipFile);

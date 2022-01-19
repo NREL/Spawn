@@ -1,6 +1,6 @@
 #include "spawn.hpp"
-#include "../util/paths.hpp"
 #include "../util/conversion.hpp"
+#include "../util/paths.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
@@ -15,7 +15,7 @@
 
 namespace spawn {
 
-Spawn::Spawn(std::string t_name, const std::string& t_input, spawn_fs::path t_workingdir)
+Spawn::Spawn(std::string t_name, const std::string &t_input, spawn_fs::path t_workingdir)
     : instanceName(std::move(t_name)), workingdir(std::move(t_workingdir)), input(t_input),
       variables(parseVariables(input))
 {
@@ -41,17 +41,14 @@ void Spawn::start()
         const auto workingdir_string = workingdir.string();
 
         constexpr int argc = 8;
-        std::array<const char *, argc> argv
-        {
-          "energyplus",
-          "-d",
-          workingdir_string.c_str(),
-          "-w",
-          epwPath.c_str(),
-          "-i",
-          iddPath.c_str(),
-          idfPath_string.c_str()
-        };
+        std::array<const char *, argc> argv{"energyplus",
+                                            "-d",
+                                            workingdir_string.c_str(),
+                                            "-w",
+                                            epwPath.c_str(),
+                                            "-i",
+                                            iddPath.c_str(),
+                                            idfPath_string.c_str()};
 
         EnergyPlus::CommandLineInterface::ProcessArgs(sim_state, argc, argv.data());
         registerErrorCallback(simState(),
@@ -577,7 +574,8 @@ void Spawn::exchange(const bool force)
     }
     case VariableType::MSENFAC: {
       const auto varZoneNum = zoneNum(var.name);
-      var.setValue(sim_state.dataHeatBal->Zone(as_size_t(varZoneNum)).ZoneVolCapMultpSens, spawn::units::UnitSystem::EP);
+      var.setValue(sim_state.dataHeatBal->Zone(as_size_t(varZoneNum)).ZoneVolCapMultpSens,
+                   spawn::units::UnitSystem::EP);
       break;
     }
     case VariableType::QCONSEN_FLOW: {
