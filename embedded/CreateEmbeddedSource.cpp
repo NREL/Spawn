@@ -1,4 +1,3 @@
-
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -16,7 +15,7 @@
 #define SET_BINARY_MODE(file)
 #endif
 
-#define CHUNK 16384
+static constexpr auto CHUNK = 16384;
 
 int main(int argc, char *argv[])
 {
@@ -24,27 +23,28 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  auto *infile = argv[1];
-  auto *outfile = argv[2];
-  auto *filenum = argv[3];
-  auto *embeddedname = argv[4];
+  auto *infile = argv[1]; // NOLINT pointer arithmetic
+  auto *outfile = argv[2]; // NOLINT pointer arithmetic
+  auto *filenum = argv[3]; // NOLINT pointer arithmetic
+  auto *embeddedname = argv[4]; // NOLINT pointer arithmetic
 
-  int ret = 0;
-  int flush = 0;
-  unsigned have = 0;
+  int ret{};
+  int flush{};
+  std::size_t have{};
   z_stream strm;
-  std::array<unsigned char, CHUNK> in;
-  std::array<unsigned char, CHUNK> out;
+  std::array<unsigned char, CHUNK> in{};
+  std::array<unsigned char, CHUNK> out{};
 
   /* allocate deflate state */
   strm.zalloc = Z_NULL;
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
   ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
-  if (ret != Z_OK) return 1;
+  if (ret != Z_OK) { return 1;
+}
 
   FILE *source = fopen(infile, "rb");
-  if (source == NULL) {
+  if (source == nullptr) {
     fputs("File error", stderr);
     return EXIT_FAILURE;
   }
@@ -71,22 +71,22 @@ int main(int argc, char *argv[])
         strm.avail_out = CHUNK;
         strm.next_out = out.data();
         ret = deflate(&strm, flush);   /* no bad return value */
-        assert(ret != Z_STREAM_ERROR); /* state not clobbered */
+        assert(ret != Z_STREAM_ERROR); /* state not clobbered */ // NOLINT
         have = CHUNK - strm.avail_out;
 
-        for (unsigned i = 0; i != have; ++i) {
+        for (std::size_t i = 0; i != have; ++i) {
           if (length != 0) {
             outstream << ",";
           }
-          outstream << "0x" << std::hex << static_cast<int>(out[i]);
+          outstream << "0x" << std::hex << static_cast<int>(out.at(i));
           ++length;
         }
       } while (strm.avail_out == 0);
-      assert(strm.avail_in == 0); /* all input will be used */
+      assert(strm.avail_in == 0); /* all input will be used */ // NOLINT
 
       /* done when last data in file processed */
     } while (flush != Z_FINISH);
-    assert(ret == Z_STREAM_END); /* stream will be complete */
+    assert(ret == Z_STREAM_END); /* stream will be complete */ // NOLINT
 
     /* clean up and return */
     (void)deflateEnd(&strm);

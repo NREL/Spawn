@@ -18,14 +18,14 @@ public:
     // note this is initialized by member initializer below
     if (!m_model_description_parse_result) {
       throw std::runtime_error(
-          fmt::format("Error parsing xml document located at : {}", model_description_path.string()));
+          fmt::format("Error parsing xml document located at : {}", m_model_description_path.string()));
     }
   }
 
   [[nodiscard]] unsigned int valueReference(const std::string &variable_name) const
   {
     const auto valueReference = scalarVariable(variable_name).attribute("valueReference");
-    if (valueReference) {
+    if (!valueReference.empty()) {
       const auto vr = valueReference.as_int(-1);
       if (vr >= 0) {
         return static_cast<unsigned int>(vr);
@@ -48,7 +48,7 @@ public:
       const auto vr = var.attribute("valueReference").as_int();
       const std::string variability = var.attribute("variability").as_string();
       // Only return continuous variables for now
-      if (variability.compare("continuous") == 0) {
+      if (variability == "continuous") {
         result[name] = vr;
       }
     }

@@ -10,12 +10,12 @@
 
 using json = nlohmann::json;
 
-const auto idfpath =
+const auto idfpath = // NOLINT
     spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
-const auto epwpath =
+const auto epwpath = // NOLINT
     spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
-std::string spawn_input = fmt::format(
+std::string spawn_input = fmt::format( // NOLINT
     R"(
   {{
     "version": "0.1",

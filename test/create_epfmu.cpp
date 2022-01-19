@@ -33,7 +33,7 @@ spawn_fs::path create_epfmu()
   // testcase1() returns a path to RefBldgSmallOfficeNew2004_Chicago.spawn
   // which is a json file that configures the spawn input
   const auto cmd = spawnexe() + " --create " + testcase1() + " --no-compress --output-dir " + testdir().string();
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
   }
@@ -51,10 +51,10 @@ spawn_fs::path create_epfmu(const std::string &input_string)
   spawn_input_file << input_string << std::endl;
   spawn_input_file.close();
 
-  const auto fmu_file_path = testdir() / fmupath;
+  auto fmu_file_path = testdir() / fmupath;
   const auto cmd = spawnexe() + " --create " + spawn_input_path.generic_string() + " --no-compress --output-path " +
                    fmu_file_path.generic_string();
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
   }

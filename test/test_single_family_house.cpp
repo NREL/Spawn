@@ -67,13 +67,11 @@ TEST_CASE("Test SingleFamilyHouse")
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   std::cout << "resource_path: " << resource_path << std::endl;
   fmi2CallbackFunctions callbacks = {
-      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status;
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
@@ -89,8 +87,8 @@ TEST_CASE("Test SingleFamilyHouse")
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
-  std::array<fmi2Real, lighting_output_refs.size()> lighting_output_values;
-  std::array<fmi2Real, lighting_input_refs.size()> lighting_input_values;
+  std::array<fmi2Real, lighting_output_refs.size()> lighting_output_values{};
+  std::array<fmi2Real, lighting_input_refs.size()> lighting_input_values{};
 
   lighting_input_values[0] = 0.0;
   status =
@@ -139,8 +137,8 @@ TEST_CASE("Test SingleFamilyHouse")
   const std::array<fmi2ValueReference, 2> latent_output_refs = {qlat_flow_ref, qpeo_flow_ref};
   const std::array<fmi2ValueReference, 1> latent_input_refs = {people_input_ref};
 
-  std::array<fmi2Real, latent_output_refs.size()> latent_output_values;
-  std::array<fmi2Real, latent_input_refs.size()> latent_input_values;
+  std::array<fmi2Real, latent_output_refs.size()> latent_output_values{};
+  std::array<fmi2Real, latent_input_refs.size()> latent_input_values{};
 
   status = fmu.fmi.fmi2GetReal(comp, latent_output_refs.data(), latent_output_refs.size(), latent_output_values.data());
   CHECK(status == fmi2OK);

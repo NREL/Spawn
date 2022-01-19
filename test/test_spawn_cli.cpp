@@ -17,7 +17,7 @@ using json = nlohmann::json;
 TEST_CASE("Spawn shows help")
 {
   const auto cmd = spawnexe() + " --help";
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 
@@ -112,7 +112,7 @@ TEST_CASE("Spawn lists the correct actuators")
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
-      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
@@ -134,9 +134,9 @@ TEST_CASE("Spawn lists the correct actuators")
     // cleanup what we don't want
     std::string prefix("EnergyManagementSystem:Actuator Available, *,");
     line.erase(0, prefix.length());
-    auto pos = line.find(",");
+    auto pos = line.find(',');
     line.erase(0, pos + 1);
-    pos = line.find(",");
+    pos = line.find(',');
     line.erase(pos);
     edd_actuators.push_back(line);
   }
@@ -144,13 +144,13 @@ TEST_CASE("Spawn lists the correct actuators")
 
   const json json_actuators(actuatortypes);
   std::vector<std::string> actuators;
-  for (const auto a : json_actuators) {
+  for (const auto &a : json_actuators) {
     actuators.push_back(a["controlType"].get<std::string>());
   }
 
   // Check if each of the EnergyPlus reported actuators
   // are reported by spawn
-  for (const auto edd_act : edd_actuators) {
+  for (const auto &edd_act : edd_actuators) {
     const auto it = std::find(actuators.begin(), actuators.end(), edd_act);
     INFO("'" << edd_act << "'"
              << " is supported by energylus but not reported by spawn --actuators");
@@ -159,7 +159,7 @@ TEST_CASE("Spawn lists the correct actuators")
 
   // Check if each of the Spawn reported actuators
   // are supported by Energyplus
-  for (const auto act : actuators) {
+  for (const auto &act : actuators) {
     const auto it = std::find(edd_actuators.begin(), edd_actuators.end(), act);
     INFO("'" << act << "'"
              << " is reported by 'spawn --actuators' but not supported by EnergyPlus");

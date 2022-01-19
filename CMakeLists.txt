@@ -114,7 +114,7 @@ conan_cmake_run(
   libzip/1.7.3
   pugixml/1.11
   cli11/1.9.1
-  catch2/2.11.3
+  catch2/2.13.7
   fmt/8.0.1
   nlohmann_json/3.10.2
   spdlog/1.9.2

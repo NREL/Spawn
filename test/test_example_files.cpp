@@ -70,7 +70,7 @@ TEST_CASE("Test example file", "[!hide]")
   }
 
   for (const auto &entry : spawn_fs::directory_iterator(testfileDirectory)) {
-    const auto p = entry.path();
+    const auto &p = entry.path();
 
     if (p.extension() != ".idf") {
       continue;
@@ -115,11 +115,11 @@ TEST_CASE("Test example file", "[!hide]")
 
       const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
       fmi2CallbackFunctions callbacks = {
-          fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+          fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
       const auto comp = fmu.fmi.fmi2Instantiate(
           "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-      fmi2Status status;
+      fmi2Status status{};
 
       status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
       REQUIRE(status == fmi2OK);

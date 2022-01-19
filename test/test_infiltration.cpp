@@ -78,13 +78,11 @@ TEST_CASE("Test infiltration with unconnected zones")
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
-      fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status;
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
@@ -116,8 +114,8 @@ TEST_CASE("Test infiltration with unconnected zones")
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
-  std::array<fmi2Real, output_refs.size()> output_values;
-  std::array<fmi2Real, input_refs.size()> input_values;
+  std::array<fmi2Real, output_refs.size()> output_values{};
+  std::array<fmi2Real, input_refs.size()> input_values{};
 
   // Initially the zones should have the same temperature
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
@@ -252,13 +250,11 @@ TEST_CASE("Test infiltration with unconnected and connected zones")
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
-      fmuStdOutLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status;
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();

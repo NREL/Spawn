@@ -112,7 +112,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
     spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
     auto &comp = spawn::spawns.back();
 
-    if (loggingOn) {
+    if (loggingOn != 0) {
       const auto &logger = [functions, instanceName](EnergyPlus::Error level, const std::string &message) {
         // is there a better way to handle this static so that we don't have state spread
         // across many different places?
@@ -161,7 +161,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
 
 EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
                                          [[maybe_unused]] fmi2Boolean toleranceDefined,
-                                         [[maybe_unused]] fmi2Real tolerance,
+                                         [[maybe_unused]] fmi2Real toleranceValue,
                                          [[maybe_unused]] fmi2Real starttime,
                                          [[maybe_unused]] fmi2Boolean stopTimeDefined,
                                          [[maybe_unused]] fmi2Real stopTime)
@@ -182,8 +182,8 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[],
 {
   auto action = [&](spawn::Spawn &comp) {
     for (size_t i = 0; i < nvr; ++i) {
-      auto valueRef = vr[i];
-      auto value = values[i];
+      auto valueRef = vr[i]; // NOLINT
+      auto value = values[i]; // NOLINT
       comp.setValue(valueRef, value);
     }
   };
@@ -197,7 +197,7 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[],
     // Call to start will be a no op if the simulation is already running
     comp.start();
     comp.exchange();
-    std::transform(vr, std::next(vr, static_cast<std::ptrdiff_t>(nvr)), values, [&](const int valueRef) {
+    std::transform(vr, std::next(vr, static_cast<std::ptrdiff_t>(nvr)), values, [&](const auto valueRef) {
       return comp.getValue(valueRef);
     });
   };

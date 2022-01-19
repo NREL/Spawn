@@ -25,7 +25,7 @@ TEST_CASE("Test one year simulation")
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
-      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   auto *const comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
@@ -42,7 +42,7 @@ TEST_CASE("Test two year simulation")
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
-      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
@@ -59,24 +59,22 @@ TEST_CASE("Test invalid input")
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
 
   fmi2CallbackFunctions callbacks = {
-      fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status;
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   CHECK(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
   const auto core_zn_t_ref = modelDescription.valueReference("Core_ZN_T");
-  fmi2ValueReference vr[] = {core_zn_t_ref};
+  std::array<fmi2ValueReference, 1> vr{core_zn_t_ref};
   // 0.0 actually does not halt EnergyPlus,
   // but slightly below absolute zero and EnergyPlus fails. lala land.
   // The fmi2SetReal function will return ok, because there is minimal validation
-  fmi2Real v[] = {-10.0};
-  status = fmu.fmi.fmi2SetReal(comp, vr, 1, v);
+  std::array<fmi2Real, 1> v{-10.0};
+  status = fmu.fmi.fmi2SetReal(comp, vr.data(), 1U, v.data());
   CHECK(status == fmi2OK);
 
   // But as soon as EnergyPlus iterates which happens upon fmi2ExitInitializationMode

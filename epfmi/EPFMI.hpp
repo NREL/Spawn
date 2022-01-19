@@ -7,7 +7,7 @@ extern "C" {
 EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
                                         fmi2Type fmuType,
                                         fmi2String fmuGUID,
-                                        fmi2String fmuResourceLocation,
+                                        fmi2String fmuResourceURI,
                                         const fmi2CallbackFunctions *functions,
                                         fmi2Boolean visible,
                                         fmi2Boolean loggingOn);

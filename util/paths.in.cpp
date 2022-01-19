@@ -12,11 +12,11 @@
 #endif
 
 #if __has_include(<linux/limits.h>)
-#include <linux/limits.h>
+#include <linux/limits.h> // NOLINT
 #endif
 
 #if __has_include(<limits.h>)
-#include <limits.h>
+#include <limits.h> // NOLINT are we trying to get the POSIX version?
 #endif
 
 namespace spawn {
@@ -29,9 +29,9 @@ spawn_fs::path exe()
     return spawn_fs::path(szPath);
 #else
     // if /proc/self/exe exists, this should be our best option
-    char buf[PATH_MAX + 1];
-    if (const auto result = readlink("/proc/self/exe", buf, sizeof(buf) - 1); result != -1) {
-      return spawn_fs::path(std::begin(buf), std::next(buf, result));
+    std::array<char, PATH_MAX + 1> buf{};
+    if (const auto result = readlink("/proc/self/exe", buf.data(), buf.size() - 1); result != -1) {
+      return spawn_fs::path(std::begin(buf), std::next(buf.begin(), result));
     }
 
     // otherwise we'll dlopen ourselves and see where "main" exists
@@ -82,7 +82,7 @@ spawn_fs::path idd_install_path()
 
 spawn_fs::path epfmi_install_path()
 {
-  const auto candidate = spawn::exe_dir() / ("../lib/" + spawn::epfmi_filename());
+  auto candidate = spawn::exe_dir() / ("../lib/" + spawn::epfmi_filename());
   if (spawn_fs::exists(candidate)) {
     return candidate;
   } else {
