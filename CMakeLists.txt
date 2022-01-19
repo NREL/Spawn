@@ -30,7 +30,7 @@ include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 set(CPACK_BINARY_IFW OFF)
 
 # Intentionally only enable clang-tidy for everything except EnergyPlus
-option(ENABLE_CLANG_TIDY "Enable clang-tidy checks during compilation" FALSE)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy checks during compilation" ON)
 
 if(ENABLE_CLANG_TIDY)
   find_program(CLANGTIDY NAMES clang-tidy-12 clang-tidy-10 clang-tidy)
