@@ -82,7 +82,7 @@ spawn_fs::path Input::idfInputPath() const
   return toPath(spawnjson.value("EnergyPlus", json()).value("idf", "in.idf"));
 }
 
-void Input::setIdfInputPath(spawn_fs::path idfpath)
+void Input::setIdfInputPath(const spawn_fs::path& idfpath)
 {
   spawnjson["EnergyPlus"]["idf"] = idfpath.string();
 }
@@ -92,7 +92,7 @@ spawn_fs::path Input::epwInputPath() const
   return toPath(spawnjson.value("EnergyPlus", json()).value("weather", "in.epw"));
 }
 
-void Input::setEPWInputPath(spawn_fs::path epwpath)
+void Input::setEPWInputPath(const spawn_fs::path& epwpath)
 {
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }

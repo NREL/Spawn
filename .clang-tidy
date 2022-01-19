@@ -1,5 +1,5 @@
 ---
-Checks:          '*,-abseil-*,-altera-*,-fuchsia-*,-google-*,-llvm*,-modernize-use-trailing-return-type,-zircon-*,-readability-else-after-return,-readability-named-parameter,-readability-avoid-const-params-in-decls,-cppcoreguidelines-non-private-member-variables-in-classes,-misc-non-private-member-variables-in-classes,-readability-static-accessed-through-instance'
+Checks:          '*,-abseil-*,-altera-*,-fuchsia-*,-google-*,-llvm*,-modernize-use-trailing-return-type,-zircon-*,-readability-else-after-return,-readability-named-parameter,-readability-avoid-const-params-in-decls,-cppcoreguidelines-non-private-member-variables-in-classes,-misc-non-private-member-variables-in-classes,-readability-static-accessed-through-instance,-readability-qualified-auto,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 FormatStyle:     none

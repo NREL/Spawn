@@ -55,7 +55,7 @@ spawn_fs::path create_epfmu(const std::string &input_string)
   const auto cmd = spawnexe() + " --create " + spawn_input_path.generic_string() + " --no-compress --output-path " +
                    fmu_file_path.generic_string();
   const auto result = system(cmd.c_str());
-  if (result) {
+  if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
   }
 

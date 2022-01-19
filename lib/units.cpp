@@ -2,8 +2,7 @@
 
 using namespace spawn::units;
 
-namespace spawn {
-namespace units {
+namespace spawn::units {
 
   std::string toString(const UnitType &unittype)
   {
@@ -52,5 +51,4 @@ namespace units {
     return q;
   }
 
-} // namespace units
 } // namespace spawn

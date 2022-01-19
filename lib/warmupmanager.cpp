@@ -1,6 +1,5 @@
 #include "./warmupmanager.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
@@ -9,11 +8,13 @@ namespace spawn {
 
 WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData &state) : Manager(state)
 {
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] =
-      std::bind(&WarmupManager::updateConvergenceMetrics, this, std::placeholders::_1);
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = [this](auto &state) {
+    updateConvergenceMetrics(state);
+  };
 
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] =
-      std::bind(&WarmupManager::checkConvergence, this, std::placeholders::_1);
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] = [this](auto &state) {
+    checkConvergence(state);
+  };
 }
 
 void WarmupManager::initialize(EnergyPlus::EnergyPlusData &state)
@@ -38,7 +39,9 @@ void WarmupManager::initialize(EnergyPlus::EnergyPlusData &state)
 
 void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state)
 {
-  if (!state.dataGlobal->WarmupFlag) return;
+  if (!state.dataGlobal->WarmupFlag) {
+    return;
+  }
 
   if (!initialized) {
     initialize(state);

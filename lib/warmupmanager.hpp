@@ -14,7 +14,7 @@ public:
   explicit WarmupManager(EnergyPlus::EnergyPlusData &state);
 
 protected:
-  void initialize(EnergyPlus::EnergyPlusData &state);
+  void initialize(EnergyPlus::EnergyPlusData &state) override;
   void updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state);
   void checkConvergence(EnergyPlus::EnergyPlusData &state);
 

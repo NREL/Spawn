@@ -7,14 +7,14 @@ using json = nlohmann::json;
 namespace spawn {
 
 Surface::Surface(std::string t_idfname, ControlType t_controltype) noexcept
-    : idfname(std::move(t_idfname)), controltype(std::move(t_controltype))
+    : idfname(std::move(t_idfname)), controltype(t_controltype)
 {
 }
 
 std::vector<Surface> Surface::createSurfaces(const nlohmann::json &spawnjson, const nlohmann::json &jsonidf)
 {
   std::vector<Surface> result;
-  constexpr auto &idftype = "BuildingSurface:Detailed";
+  constexpr auto *idftype = "BuildingSurface:Detailed";
   const auto front_control_surfaces = spawnjson.value("model", json()).value("zoneSurfaces", std::vector<json>(0));
   const auto frontback_control_surfaces =
       spawnjson.value("model", json()).value("buildingSurfaceDetailed", std::vector<json>(0));

@@ -10,7 +10,7 @@ namespace spawn::util {
 std::unique_ptr<zip_t, decltype(&zip_discard)> open_zip(const spawn_fs::path &zipFile)
 {
   int err{};
-  auto zip = zip_open(zipFile.string().c_str(), ZIP_CHECKCONS | ZIP_RDONLY, &err);
+  auto zip = zip_open(zipFile.string().c_str(), ZIP_CHECKCONS | ZIP_RDONLY, &err); // NOLINT bitwise or with signed
 
   if (zip == nullptr) {
     zip_error_t errt{};
@@ -45,7 +45,7 @@ std::vector<spawn_fs::path> zipped_files(zip_t &zipFile)
   const auto file_count = zip_get_num_entries(&zipFile, 0);
 
   for (auto i = static_cast<decltype(file_count)>(0); i < file_count; ++i) {
-    const auto *name = zip_get_name(&zipFile, i, ZIP_FL_ENC_GUESS);
+    const auto *name = zip_get_name(&zipFile, static_cast<zip_uint64_t>(i), ZIP_FL_ENC_GUESS);
     if (name != nullptr) {
       results.emplace_back(name);
     }
@@ -71,14 +71,14 @@ Unzipped_File::Unzipped_File(const spawn_fs::path &zipFile,
   for (const auto &fileToUnzip : files) {
     auto file = open_file(*zip, fileToUnzip);
     constexpr auto buffer_size = 4096;
-    char buffer[buffer_size];
-    const auto read_bytes = [&]() { return zip_fread(file.get(), buffer, buffer_size); };
+    std::array<char, buffer_size> buffer{};
+    const auto read_bytes = [&]() { return zip_fread(file.get(), buffer.data(), buffer_size); };
 
     const auto unzippedFile = m_outputDir / fileToUnzip;
     spawn_fs::create_directories(unzippedFile.parent_path());
     std::ofstream ofs(unzippedFile.string(), std::ofstream::trunc | std::ofstream::binary);
     for (zip_int64_t bytesread = read_bytes(); bytesread > 0; bytesread = read_bytes()) {
-      ofs.write(buffer, bytesread);
+      ofs.write(buffer.data(), bytesread);
     }
 
     m_unzippedFiles.push_back(unzippedFile);

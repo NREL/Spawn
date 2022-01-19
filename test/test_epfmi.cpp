@@ -26,7 +26,7 @@ TEST_CASE("Test one year simulation")
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
   fmi2CallbackFunctions callbacks = {
       fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate(
+  auto *const comp = fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   fmu.fmi.fmi2ExitInitializationMode(comp);

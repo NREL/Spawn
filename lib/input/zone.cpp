@@ -13,7 +13,7 @@ Zone::Zone(std::string t_idfname, bool t_isconnected) : idfname(std::move(t_idfn
 std::vector<Zone> Zone::createZones(const nlohmann::json &spawnjson, const nlohmann::json &jsonidf)
 {
   std::vector<Zone> result;
-  constexpr auto &type = "Zone";
+  constexpr auto type = "Zone";
   const auto modelicazones = spawnjson.value("model", json()).value("zones", std::vector<json>(0));
 
   auto getIsConnected = [&](const std::string &idfname) {
@@ -21,11 +21,8 @@ std::vector<Zone> Zone::createZones(const nlohmann::json &spawnjson, const nlohm
         std::find_if(std::begin(modelicazones), std::end(modelicazones), [&](const nlohmann::json &modelicazone) {
           return (idfname == modelicazone.value("name", ""));
         });
-    if (zit != std::end(modelicazones)) {
-      return true;
-    }
 
-    return false;
+    return zit != std::end(modelicazones);
   };
 
   auto buildzone = [&](const std::string &idfname) {

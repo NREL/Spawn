@@ -1,12 +1,8 @@
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
 #include "../fmu/modeldescription.hpp"
-#include "../util/filesystem.hpp"
-#include "../util/math.hpp"
-#include "../util/paths.hpp"
 #include "create_epfmu.hpp"
 #include <catch2/catch.hpp>
-#include <nlohmann/json.hpp>
 
 constexpr std::array<const char *, 27> ignorelist = {
     "1ZoneParameterAspect.idf", // Preproc macros - Value type "string" for input "=$width" not permitted by 'type'

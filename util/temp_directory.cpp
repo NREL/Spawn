@@ -10,8 +10,8 @@ namespace spawn::util {
 // creates an RAII managed temporary directory
 Temp_Directory::Temp_Directory(const std::string &t_prefix)
 {
-
-  for (int count = 0; count < 1000; ++count) {
+  static constexpr auto max_tries = 1000;
+  for (int count = 0; count < max_tries; ++count) {
     const auto p =
         spawn_fs::temp_directory_path() /
         fmt::format(

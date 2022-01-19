@@ -4,7 +4,7 @@
 #include <functional>
 #include <map>
 
-typedef void *EnergyPlusState;
+using EnergyPlusState = void *;
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -20,6 +20,11 @@ class Manager
 
 public:
   explicit Manager(EnergyPlus::EnergyPlusData &state);
+  virtual ~Manager() = default;
+  Manager &operator=(Manager &)  = delete;
+  Manager &operator=(Manager &&) = delete;
+  Manager(const Manager &) = delete;
+  Manager(Manager &&) = delete;
 
 protected:
   virtual void initialize(EnergyPlus::EnergyPlusData &state);

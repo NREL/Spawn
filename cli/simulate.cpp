@@ -44,17 +44,25 @@ void Sim::run(const nlohmann::json &config)
       fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = m_fmu.fmi.fmi2Instantiate(
       "test-instance", fmi2CoSimulation, guid.c_str(), m_resource_url.c_str(), &callbacks, false, true);
-  if (!comp) throw std::runtime_error("Could not instantiate FMU");
+  if (comp == nullptr) {
+    throw std::runtime_error("Could not instantiate FMU");
+  }
 
   const auto tolerance = m_fmu.defaultTolerance();
   auto flag = m_fmu.fmi.fmi2SetupExperiment(comp, fmi2True, tolerance, start, fmi2True, stop);
-  if (flag > fmi2Warning) throw std::runtime_error("Could not FMI setupExperiment");
+  if (flag > fmi2Warning) {
+    throw std::runtime_error("Could not FMI setupExperiment");
+  }
 
   flag = m_fmu.fmi.fmi2EnterInitializationMode(comp);
-  if (flag > fmi2Warning) throw std::runtime_error("Could not FMI enterInitializationMode");
+  if (flag > fmi2Warning) {
+    throw std::runtime_error("Could not FMI enterInitializationMode");
+  }
 
   flag = m_fmu.fmi.fmi2ExitInitializationMode(comp);
-  if (flag > fmi2Warning) throw std::runtime_error("Could not FMI exitInitializationMode");
+  if (flag > fmi2Warning) {
+    throw std::runtime_error("Could not FMI exitInitializationMode");
+  }
 
   openLogs();
 
@@ -65,7 +73,9 @@ void Sim::run(const nlohmann::json &config)
       step = stop - time;
     }
     flag = m_fmu.fmi.fmi2DoStep(comp, time, step, fmi2True);
-    if (flag > fmi2Warning) throw std::runtime_error("Could not FMI doStep");
+    if (flag > fmi2Warning) {
+      throw std::runtime_error("Could not FMI doStep");
+    }
     writeLogs(comp, time);
     time += step;
   }

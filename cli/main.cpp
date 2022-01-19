@@ -2,20 +2,15 @@
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
-#include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
-#include "../util/paths.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
 #include <config.hxx>
-#include <cstdio>
-#include <fstream>
+
 #include <iostream>
-#include <iterator>
+
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
-#include <stdlib.h>
-#include <vector>
 
 #if defined _WIN32
 #include <windows.h>
@@ -25,7 +20,13 @@
 
 #if defined ENABLE_MODELICA_COMPILER
 #include "compile.hpp"
+#include <cstdlib>
+#include <vector>
+#include <cstdio>
+#include <fstream>
+#include <iterator>
 #endif
+
 #include "simulate.hpp"
 
 using json = nlohmann::json;
@@ -41,7 +42,7 @@ void handle_eptr(std::exception_ptr eptr)
   }
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 {
   CLI::App app{"Spawn of EnergyPlus"};
 

@@ -122,12 +122,23 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
   for (const auto &variable : variables) {
     if (const auto &node = variable.node(); !node.empty()) {
 
-      result.emplace_back(Variable{node.attribute("name").value(),
-                                   static_cast<fmi2ValueReference>(std::atoi(node.attribute("valueReference").value())),
-                                   node.attribute("description").value(),
-                                   getType(node),
-                                   getCausality(node),
-                                   getVariability(node)});
+      const auto string = std::string{node.attribute("valueReference").value()};
+      try {
+        std::size_t amount_parsed = 0;
+        int value = std::stoi(string, &amount_parsed);
+        if (amount_parsed != string.size()) {
+          throw std::runtime_error(fmt::format("Error parsing '{}' as an integer for fmi2ValueReference", string));
+        }
+
+        result.emplace_back(Variable{node.attribute("name").value(),
+                                     static_cast<fmi2ValueReference>(value),
+                                     node.attribute("description").value(),
+                                     getType(node),
+                                     getCausality(node),
+                                     getVariability(node)});
+      } catch (const std::exception &) {
+        throw std::runtime_error(fmt::format("Error parsing '{}' as an integer for fmi2ValueReference", string));
+      }
     }
   }
 

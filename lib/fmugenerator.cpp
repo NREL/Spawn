@@ -1,18 +1,9 @@
 #include "fmugenerator.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
-#include "../util/compare.hpp"
-#include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
-#include "idf_to_json.hpp"
-#include "idfprep.hpp"
 #include "input/input.hpp"
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
-#include <fmt/format.h>
 #include <pugixml.hpp>
 
 using json = nlohmann::json;

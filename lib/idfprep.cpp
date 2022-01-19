@@ -69,7 +69,9 @@ json &addOtherEquipment(json &jsonidf, const Input &input)
                                          {"hourly_value", "1.0"}};
 
   for (const auto &zone : input.zones) {
-    if (!zone.isconnected) continue;
+    if (!zone.isconnected) {
+      continue;
+    }
 
     jsonidf[Zone::ep_qgairad_flow_object_type][zone.ep_qgairad_flow_object_name] = {
         {"fuel_type", "None"},
@@ -138,7 +140,9 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
                                                  {"hourly_value", "1.0"}};
 
   for (const auto &zone : input.zones) {
-    if (!zone.isconnected) continue;
+    if (!zone.isconnected) {
+      continue;
+    }
 
     jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] = {
         {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname},
@@ -167,7 +171,7 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
 json &addRequestedOutputVariables(json &jsonidf, const Input &input)
 {
   // A pair that holds an output variable name and key,
-  typedef std::pair<std::string, std::string> Varpair;
+  using Varpair = std::pair<std::string, std::string>;
 
   // Make a list of the requested outputs
   std::vector<Varpair> requestedpairs;
@@ -210,10 +214,10 @@ json &addRequestedOutputVariables(json &jsonidf, const Input &input)
 // so this work is not required for those other types
 json &expandInfiltrationZoneLists(json &jsonidf)
 {
-  const auto infiltrationType = "ZoneInfiltration:DesignFlowRate";
+  const auto *const infiltrationType = "ZoneInfiltration:DesignFlowRate";
   auto &infiltrationObjects = jsonidf[infiltrationType];
 
-  const auto zoneListType = "ZoneList";
+  const auto *const zoneListType = "ZoneList";
   const auto zoneListObjects = jsonidf[zoneListType];
 
   json newInfiltration;
@@ -228,7 +232,7 @@ json &expandInfiltrationZoneLists(json &jsonidf)
         // need to expand the infiltration objects associated with this zonelist
         for (const auto &zoneNameObject : zoneNameObjects) {
           const auto zoneName = zoneNameObject.at("zone_name").get<std::string>();
-          auto newInfName = std::string("Spawn-") + zoneName + "-" + infname;
+          auto newInfName = fmt::format("Spawn-{}-{}", zoneName, infname);
           newInfiltration[newInfName] = inffields;
           newInfiltration[newInfName]["zone_or_zonelist_name"] = zoneName;
         }

@@ -71,7 +71,7 @@ namespace spawn {
 class Spawn
 {
 public:
-  Spawn(std::string t_name, std::string t_input, spawn_fs::path workingdir = ".");
+  Spawn(std::string t_name, const std::string& t_input, spawn_fs::path workingdir = ".");
   Spawn(const Spawn &) = delete;
   Spawn(Spawn &&) = delete;
 
@@ -120,7 +120,7 @@ private:
   std::map<unsigned int, Variable> variables;
 
   double m_startTime{0.0};
-  double requestedTime;
+  double requestedTime{};
   bool need_update{true};
 
   // Signal EnergyPlus to move through the simulation loop
@@ -170,7 +170,7 @@ private:
   [[nodiscard]] ZoneSums zoneSums(const int zonenum);
   [[nodiscard]] double zoneHeatTransfer(const int zonenum);
   void setZoneTemperature(const int zonenum, const double temp);
-  [[nodiscard]] double zoneTemperature(const int zonenum);
+  [[nodiscard]] double zoneTemperature(const int zonenum) const;
   void updateZoneTemperature(const int zonenum, const double dt);
   void updateZoneTemperatures(bool skipConnectedZones = false);
   void updateLatentGains();
@@ -178,9 +178,9 @@ private:
   // Time in seconds of the last zone temperature update
   // This is required for computing the dt in the
   // updateZoneTemperature calculation
-  double prevZoneTempUpdate;
+  double prevZoneTempUpdate{};
   // State of the warmup flag during the previous zone temp update
-  bool prevWarmupFlag;
+  bool prevWarmupFlag{false};
 
   [[nodiscard]] int getVariableHandle(const std::string &name, const std::string &key);
   std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;
@@ -200,8 +200,8 @@ private:
   void setInsideSurfaceTemperature(const int surfacenum, double temp);
   void setOutsideSurfaceTemperature(const int surfacenum, double temp);
 
-  double getInsideSurfaceHeatFlow(const int surfacenum);
-  double getOutsideSurfaceHeatFlow(const int surfacenum);
+  double getInsideSurfaceHeatFlow(const int surfacenum) const;
+  double getOutsideSurfaceHeatFlow(const int surfacenum) const;
 
   // WarmupManager will register its own callbacks during construction
   // Maybe all of Spawn's implementation can be derived from "Manager" class
