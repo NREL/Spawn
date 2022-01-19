@@ -182,7 +182,7 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[],
 {
   auto action = [&](spawn::Spawn &comp) {
     for (size_t i = 0; i < nvr; ++i) {
-      auto valueRef = vr[i]; // NOLINT
+      auto valueRef = vr[i];  // NOLINT
       auto value = values[i]; // NOLINT
       comp.setValue(valueRef, value);
     }

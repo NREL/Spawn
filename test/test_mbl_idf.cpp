@@ -114,7 +114,6 @@ TEST_CASE("Test surface IO")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-
   constexpr std::array<const char *, 14> variable_names{"ATTIC ZONE_T",
                                                         "LIVING ZONE_T",
                                                         "Living:Ceiling_TFront",
@@ -244,7 +243,6 @@ TEST_CASE("Test invalid surface IO")
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
-
 
   constexpr std::array<const char *, 2> variable_names{"Living:Floor_TBack", "Living:Floor_QBack_flow"};
 

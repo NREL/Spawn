@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  auto *infile = argv[1]; // NOLINT pointer arithmetic
-  auto *outfile = argv[2]; // NOLINT pointer arithmetic
-  auto *filenum = argv[3]; // NOLINT pointer arithmetic
+  auto *infile = argv[1];       // NOLINT pointer arithmetic
+  auto *outfile = argv[2];      // NOLINT pointer arithmetic
+  auto *filenum = argv[3];      // NOLINT pointer arithmetic
   auto *embeddedname = argv[4]; // NOLINT pointer arithmetic
 
   int ret{};
@@ -40,8 +40,9 @@ int main(int argc, char *argv[])
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
   ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
-  if (ret != Z_OK) { return 1;
-}
+  if (ret != Z_OK) {
+    return 1;
+  }
 
   FILE *source = fopen(infile, "rb");
   if (source == nullptr) {
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
       do {
         strm.avail_out = CHUNK;
         strm.next_out = out.data();
-        ret = deflate(&strm, flush);   /* no bad return value */
+        ret = deflate(&strm, flush);                             /* no bad return value */
         assert(ret != Z_STREAM_ERROR); /* state not clobbered */ // NOLINT
         have = CHUNK - strm.avail_out;
 
