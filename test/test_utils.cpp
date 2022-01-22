@@ -82,7 +82,7 @@ TEST_CASE("Test calling exedir on relative path for myself")
   const auto results2 =
       system(fmt::format(R"(.\{} "Test exedir with different working directory")", exe_name.string()).c_str());
 #else
-  const auto results2 = system(  // NOLINT
+  const auto results2 = system(                                                                 // NOLINT
       fmt::format(R"(./{} "Test exedir with different working directory")", exe_name.string()).c_str());
 #endif
 
