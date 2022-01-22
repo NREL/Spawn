@@ -44,8 +44,8 @@
 #if defined _WIN32
 #include <windows.h>
 #else
-#include <dlfcn.h>
 #include <cstdio>
+#include <dlfcn.h>
 #endif
 
 #include <codecvt>
@@ -97,7 +97,7 @@ namespace spawn {
 
 void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
-                                        const std::vector<spawn_fs::path>& additional_libs)
+                                        const std::vector<spawn_fs::path> &additional_libs)
 {
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
