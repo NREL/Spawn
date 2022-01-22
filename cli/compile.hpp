@@ -22,7 +22,9 @@ int compileMO(const std::string &moInput,
               const std::vector<std::string> &modelicaPaths,
               const ModelicaCompilerType &moType);
 
-int compileC(const spawn_fs::path &output_dir, const spawn_fs::path &jmodelica_dir, const spawn_fs::path &embedded_files_temp_dir);
+int compileC(const spawn_fs::path &output_dir,
+             const spawn_fs::path &jmodelica_dir,
+             const spawn_fs::path &embedded_files_temp_dir);
 
 void extractEmbeddedCompilerFiles(const spawn_fs::path &dir, const ModelicaCompilerType &moType);
 
