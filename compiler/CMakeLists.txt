@@ -10,9 +10,8 @@ target_include_directories(compiler SYSTEM PUBLIC ${CLANG_INCLUDE_DIRS})
 
 target_compile_features(compiler PRIVATE cxx_std_17)
 
-# Recursively remove the LLVM target as a dependency.
-# The LLVM target relates to a shared lib, which is not wanted.
-# Instead llvm archive libs will be linked
+# Recursively remove the LLVM target as a dependency. The LLVM target relates to
+# a shared lib, which is not wanted. Instead llvm archive libs will be linked
 function(remove_llvm target_name)
   get_target_property(target_libs ${target_name} INTERFACE_LINK_LIBRARIES)
   list(REMOVE_ITEM libs LLVM)
@@ -45,10 +44,11 @@ target_link_libraries(
          ${LLVM_LIBRARY_DIR}/liblldDriver.a
          ${LLVM_LIBRARY_DIR}/liblldCore.a
          ${LLVM_LIBRARY_DIR}/liblldCommon.a
-         # This would be one or two top level libs such as LLVMCore, LLVMLibDriver, or similar,
-         # however the previous LLD libs have dependencies on LLVM libs, and there are no exported cmake
-         # targets with defined INTERFACE_LINK_LIBRARIES, so we just throw the whole set of LLVM libs
-         # into the link path
+         # This would be one or two top level libs such as LLVMCore,
+         # LLVMLibDriver, or similar, however the previous LLD libs have
+         # dependencies on LLVM libs, and there are no exported cmake targets
+         # with defined INTERFACE_LINK_LIBRARIES, so we just throw the whole set
+         # of LLVM libs into the link path
          ${LLVM_AVAILABLE_LIBS}
          CONAN_PKG::fmt
          CONAN_PKG::spdlog

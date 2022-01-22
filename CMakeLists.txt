@@ -15,9 +15,11 @@ option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
+  find_file(OPTIMICA_TARFILE OCT-EndUser-trunk-r23009.tar.gz PATHS /usr/local/etc REQUIRED)
   set(OPTIMICA_TARFILE_URL
-      "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz"
+      "file://${OPTIMICA_TARFILE}"
       CACHE STRING "Tarball of Optimica distribution")
+
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
@@ -153,8 +155,12 @@ endif()
 
 include(cmake/download_modelica.cmake)
 if(ENABLE_MODELICA_COMPILER)
-  find_package(LLVM REQUIRED CONFIG)
-  find_package(Clang REQUIRED CONFIG)
+
+  # we only support llvm-10 right now
+  find_package(LLVM 10 REQUIRED CONFIG)
+  # We want to nudge cmake towards clang-10, so it doesn't find the wrong libclang
+  # we cannot use the version number because clang's cmake files don't have versioning
+  find_package(Clang REQUIRED CONFIG HINTS /usr/lib/cmake/clang-10)
 
   if(APPLE)
     set(jmodelica_tar_root "Modelica-0.1.1-Linux")
