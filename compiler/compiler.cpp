@@ -45,7 +45,7 @@
 #include <windows.h>
 #else
 #include <dlfcn.h>
-#include <stdio.h>
+#include <cstdio>
 #endif
 
 #include <codecvt>
@@ -72,7 +72,7 @@ std::string toString(const std::string &str)
   return str;
 }
 
-std::string toString(const fs::path &path)
+std::string toString(const spawn_fs::path &path)
 {
   return toString(path.native());
 }
@@ -86,7 +86,7 @@ std::string getExecutablePath()
   }
 #else
   Dl_info info;
-  if (dladdr("main", &info)) {
+  if (dladdr("main", &info) == 0) {
     return std::string(info.dli_fname);
   }
 #endif
@@ -95,9 +95,9 @@ std::string getExecutablePath()
 
 namespace spawn {
 
-void Compiler::write_shared_object_file(const fs::path &loc,
-                                        const fs::path &sysroot,
-                                        std::vector<fs::path> additional_libs)
+void Compiler::write_shared_object_file(const spawn_fs::path &loc,
+                                        const spawn_fs::path &sysroot,
+                                        const std::vector<spawn_fs::path>& additional_libs)
 {
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
@@ -161,7 +161,7 @@ void Compiler::write_shared_object_file(const fs::path &loc,
   }
 }
 
-void Compiler::compile_and_link(const fs::path &source)
+void Compiler::compile_and_link(const spawn_fs::path &source)
 {
   auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
 
@@ -172,7 +172,7 @@ void Compiler::compile_and_link(const fs::path &source)
   }
 }
 
-void Compiler::write_bitcode(const fs::path &loc)
+void Compiler::write_bitcode(const spawn_fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -184,7 +184,7 @@ void Compiler::write_bitcode(const fs::path &loc)
   llvm::WriteBitcodeToFile(*m_currentCompilation, ros);
 }
 
-void Compiler::write_object_file(const fs::path &loc)
+void Compiler::write_object_file(const spawn_fs::path &loc)
 {
   if (!m_currentCompilation) {
     throw std::runtime_error("No current compilation available to write");
@@ -199,7 +199,7 @@ void Compiler::write_object_file(const fs::path &loc)
 
   std::error_code EC;
   std::string sloc = toString(loc);
-  llvm::raw_fd_ostream destination(sloc.c_str(), EC, llvm::sys::fs::OF_None);
+  llvm::raw_fd_ostream destination(sloc, EC, llvm::sys::fs::OF_None);
 
   if (m_target_machine->addPassesToEmitFile(pass, destination, nullptr, ft)) {
     throw std::runtime_error("TargetMachine can't emit a file of this type");
@@ -209,12 +209,12 @@ void Compiler::write_object_file(const fs::path &loc)
   destination.flush();
 }
 
-std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
+std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
                                                 llvm::LLVMContext &ctx,
-                                                const std::vector<fs::path> &include_paths,
+                                                const std::vector<spawn_fs::path> &include_paths,
                                                 const std::vector<std::string> &flags)
 {
-  void *MainAddr = (void *)(intptr_t)getExecutablePath;
+  void *MainAddr = reinterpret_cast<void *>(getExecutablePath); // NOLINT we have to get a void * out of this somehow
   std::string Path = getExecutablePath();
   clang::IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts{new clang::DiagnosticOptions()};
   clang::TextDiagnosticPrinter *DiagClient{new clang::TextDiagnosticPrinter(llvm::errs(), &*DiagOpts)};
@@ -233,12 +233,12 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
     return "-I" + toString(str);
   });
-  str_args.push_back("-fsyntax-only");
-  str_args.push_back("-fPIC");
-  str_args.push_back("-g");
-  str_args.push_back("-Wno-incomplete-setjmp-declaration");
-  str_args.push_back("-Wno-expansion-to-defined");
-  str_args.push_back("-Wno-nullability-completeness");
+  str_args.emplace_back("-fsyntax-only");
+  str_args.emplace_back("-fPIC");
+  str_args.emplace_back("-g");
+  str_args.emplace_back("-Wno-incomplete-setjmp-declaration");
+  str_args.emplace_back("-Wno-expansion-to-defined");
+  str_args.emplace_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));
   str_args.push_back(toString(source));
 
@@ -292,7 +292,9 @@ std::unique_ptr<llvm::Module> Compiler::compile(const fs::path &source,
 
   // Create the compilers actual diagnostics engine.
   Clang.createDiagnostics();
-  if (!Clang.hasDiagnostics()) return {};
+  if (!Clang.hasDiagnostics()) {
+    return {};
+  }
 
   // Infer the builtin include path if unspecified.
   // if (Clang.getHeaderSearchOpts().UseBuiltinIncludes &&
