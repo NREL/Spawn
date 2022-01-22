@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
       do {
         strm.avail_out = CHUNK;
         strm.next_out = out.data();
-        ret = deflate(&strm, flush);                             /* no bad return value */
+        ret = deflate(&strm, flush);                             /* no bad return value */ // NOLINT
         assert(ret != Z_STREAM_ERROR); /* state not clobbered */ // NOLINT
         have = CHUNK - strm.avail_out;
 

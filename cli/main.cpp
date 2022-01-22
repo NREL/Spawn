@@ -89,7 +89,7 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 
 #if defined ENABLE_MODELICA_COMPILER
   auto modelicaCommand = app.add_subcommand("modelica", "Subcommand for Modelica operations");
-  std::string moinput = "";
+  std::string moinput;
   auto createModelicaFMUOption =
       modelicaCommand->add_option("--create-fmu", moinput, "Compile Modelica model to FMU format", true);
 

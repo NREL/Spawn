@@ -35,7 +35,7 @@ TEST_CASE("Spawn creates an FMU")
 TEST_CASE("Spawn is able to compile a simple Modelica model")
 {
   const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 
@@ -43,7 +43,7 @@ TEST_CASE("Spawn is able to compile a Modelica model that uses external function
 {
   const auto cmd =
       spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 
@@ -51,7 +51,7 @@ TEST_CASE("Spawn is able to compile a simple Modelica model, using Optimica")
 {
   const auto cmd =
       spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 
@@ -60,7 +60,7 @@ TEST_CASE("Spawn is able to compile a Modelica model that uses external function
   const auto cmd =
       spawnexe() +
       " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
-  const auto result = system(cmd.c_str());
+  const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 #endif

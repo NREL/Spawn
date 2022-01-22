@@ -170,7 +170,7 @@ namespace embedded_files {
       }
     }();
 
-    fs::create_directories(fs::path{fullpath}.parent_path());
+    spawn_fs::create_directories(spawn_fs::path{fullpath}.parent_path());
     std::ofstream ofs(fullpath);
 
     std::vector<uint8_t> inflated_data;
