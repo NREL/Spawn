@@ -4,6 +4,7 @@
 #include "../compiler/compiler.hpp"
 #include "../util/paths.hpp"
 #include "../lib/ziputil.hpp"
+#include "../fmu/modeldescription.hpp"
 #include "cli/embedded_files.hxx"
 #include <config.hxx>
 #include <pugixml.hpp>
@@ -169,15 +170,19 @@ int compileMO(
   }
 }
 
-int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const fs::path & embedded_files_temp_dir) {
-  const auto & sourcesdir = output_dir / "sources";
+int compileC(
+  const fs::path & sources_dir,
+  const fs::path & model_lib_path,
+  const fs::path & jmodelica_dir,
+  const fs::path & embedded_files_temp_dir
+) {
   std::vector<fs::path> sourcefiles;
 
-  if( ! fs::is_directory(sourcesdir) ) {
+  if( ! fs::is_directory(sources_dir) ) {
     return 1;
   }
 
-  for( const auto & p : fs::directory_iterator(sourcesdir) ) {
+  for( const auto & p : fs::directory_iterator(sources_dir) ) {
   	sourcefiles.push_back(p.path());
   }
 
@@ -217,21 +222,13 @@ int compileC(const fs::path & output_dir, const fs::path & jmodelica_dir, const 
   // include paths
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
-  const auto model_description_path = output_dir / "modelDescription.xml";
-
-  pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file(model_description_path.native().c_str());
-  if(! result) { return 1;}
-  std::string model_identifier = doc.child("fmiModelDescription").child("ModelExchange").attribute("modelIdentifier").as_string();
 
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
 
-  const auto model_lib_dir = output_dir / "binaries";
-  const auto model_lib_path = model_lib_dir / (model_identifier + ".so");
-  fs::create_directories(model_lib_dir);
+  fs::create_directories(model_lib_path.parent_path());
   compiler.write_shared_object_file(model_lib_path, embedded_files_temp_dir, runtime_libs);
 
   return 0;
@@ -356,6 +353,7 @@ int modelicaToFMU(
   const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
   const auto sources_dir = output_dir / "sources";
   const auto binary_dir = output_dir / "binaries" / spawn::FMI_PLATFORM;
+  const auto model_description_path = output_dir / "modelDescription.xml";
 
   if(! output_dir_name.empty()) {
     fs::remove_all(output_dir);
@@ -382,9 +380,12 @@ int modelicaToFMU(
   setenv("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str(), 1);
 
   int result = compileMO(moinput, output_dir.native(), modelicaPaths, moType);
+
   if(result == 0) {
     spdlog::info("Compile C Code");
-    result = compileC(output_dir, jmodelica_dir, temp_dir);
+    spawn::fmu::ModelDescription md(model_description_path);
+    fs::path model_lib_path = binary_dir / (md.modelIdentifier() + ".so");
+    result = compileC(sources_dir, model_lib_path, jmodelica_dir, temp_dir);
   }
 
   fs::remove_all(sources_dir);
