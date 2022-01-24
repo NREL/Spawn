@@ -40,6 +40,9 @@ if(ENABLE_MODELICA_COMPILER)
     list(APPEND embedded_paths "usr/lib/libfmilib.a")
   endif()
 
+  list(APPEND embedded_files ${GFORTRANLIB_REAL_PATH})
+  list(APPEND embedded_paths ${GFORTRANLIB_EMBEDDED_PATH})
+
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src 

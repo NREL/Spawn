@@ -111,6 +111,7 @@ void Compiler::write_shared_object_file(
   std::vector<std::string> str_args {
     "ld.lld-10",
     "-shared",
+    "-rpath=$ORIGIN",
     fmt::format("--sysroot={}", toString(sysroot)),
     fmt::format("-L{}", toString(sysroot / "usr/lib/")),
     fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),

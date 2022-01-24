@@ -5,6 +5,7 @@
 #include "../util/paths.hpp"
 #include "../lib/ziputil.hpp"
 #include "cli/embedded_files.hxx"
+#include <config.hxx>
 #include <pugixml.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -113,7 +114,8 @@ std::vector<fs::path> modelicaLibs(
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
-    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a"
+    jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a",
+    embedded_files_temp_dir / spawn::GFORTRANLIB_EMBEDDED_PATH
   };
 }
 
@@ -353,7 +355,7 @@ int modelicaToFMU(
 	const auto output_dir = fs::current_path() / output_dir_name;
   const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
   const auto sources_dir = output_dir / "sources";
-  const auto binary_dir = output_dir / "binaries";
+  const auto binary_dir = output_dir / "binaries" / spawn::FMI_PLATFORM;
 
   if(! output_dir_name.empty()) {
     fs::remove_all(output_dir);
@@ -388,7 +390,12 @@ int modelicaToFMU(
   fs::remove_all(sources_dir);
 
   if(result == 0) {
+    // Bundle GFortran with the FMU, since it is a required dependency, but not provided out of the box on most systems
+    fs::copy(temp_dir / spawn::GFORTRANLIB_EMBEDDED_PATH, binary_dir);
+
+    // Remove temp_dir which is where the embedded filesystem was extracted
     fs::remove_all(temp_dir);
+    // Update permissions to work in a variety of scenarios, including from within containers
     const auto perm = fs::perms::owner_all | fs::perms::group_read | fs::perms::group_exec | fs::perms::others_read | fs::perms::others_exec;
     chmodFilesInPath(binary_dir, perm);
     spdlog::info("Compress FMU");
