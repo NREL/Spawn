@@ -59,32 +59,34 @@ spawn_fs::path mblPathFromEnv()
   return mblPathInPaths(pathvector);
 }
 
-std::vector<spawn_fs::path> includePaths(const spawn_fs::path &jmodelica_dir, const spawn_fs::path &embedded_files_temp_dir)
+std::vector<spawn_fs::path> includePaths(const spawn_fs::path &jmodelica_dir,
+                                         const spawn_fs::path &embedded_files_temp_dir)
 {
   const auto mbl_path = mblPathFromEnv();
   std::vector<spawn_fs::path> result = {jmodelica_dir / "include/RuntimeLibrary/",
-                                  jmodelica_dir / "include/RuntimeLibrary/module_include",
-                                  jmodelica_dir / "include/RuntimeLibrary/zlib",
-                                  jmodelica_dir / "ThirdParty/FMI/2.0",
-                                  embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
-                                  embedded_files_temp_dir / "usr/include",
-                                  embedded_files_temp_dir / "usr/include/linux",
-                                  embedded_files_temp_dir / "usr/include/x86_64-linux-gnu",
-                                  // The mbl_paths are a hack because our compile rule is not aware of Modelica
-                                  // annoations, such as the following....
-                                  //    annotation (
-                                  //      IncludeDirectory="modelica://Buildings/Resources/C-Sources",
-                                  // Which is used by the Modelica external C objects
-                                  // It would be good to generalize this so that it works for all Modelica libraries
-                                  // that may use external objects
-                                  mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/",
-                                  mbl_path / "Resources/C-Sources",
-                                  mbl_path / "Resources/src/fmi-library/include"};
+                                        jmodelica_dir / "include/RuntimeLibrary/module_include",
+                                        jmodelica_dir / "include/RuntimeLibrary/zlib",
+                                        jmodelica_dir / "ThirdParty/FMI/2.0",
+                                        embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
+                                        embedded_files_temp_dir / "usr/include",
+                                        embedded_files_temp_dir / "usr/include/linux",
+                                        embedded_files_temp_dir / "usr/include/x86_64-linux-gnu",
+                                        // The mbl_paths are a hack because our compile rule is not aware of Modelica
+                                        // annoations, such as the following....
+                                        //    annotation (
+                                        //      IncludeDirectory="modelica://Buildings/Resources/C-Sources",
+                                        // Which is used by the Modelica external C objects
+                                        // It would be good to generalize this so that it works for all Modelica
+                                        // libraries that may use external objects
+                                        mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/",
+                                        mbl_path / "Resources/C-Sources",
+                                        mbl_path / "Resources/src/fmi-library/include"};
 
   return result;
 }
 
-std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir, const spawn_fs::path &embedded_files_temp_dir)
+std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
+                                         const spawn_fs::path &embedded_files_temp_dir)
 {
   const auto mbl_path = mblPathFromEnv();
   return {embedded_files_temp_dir / "usr/lib/libfmilib.a",
@@ -118,7 +120,8 @@ std::vector<spawn_fs::path> additionalSource()
   const auto mbl_path = mblPathFromEnv();
   std::vector<spawn_fs::path> result;
 
-  for (const auto &entry : spawn_fs::directory_iterator(mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/")) {
+  for (const auto &entry :
+       spawn_fs::directory_iterator(mbl_path / "Resources/src/ThermalZones/EnergyPlus/C-Sources/")) {
     if (entry.path().extension() == ".c") {
       result.push_back(entry.path());
     }
@@ -164,7 +167,9 @@ int compileMO(const std::string &moInput,
   }
 }
 
-int compileC(const spawn_fs::path &output_dir, const spawn_fs::path &jmodelica_dir, const spawn_fs::path &embedded_files_temp_dir)
+int compileC(const spawn_fs::path &output_dir,
+             const spawn_fs::path &jmodelica_dir,
+             const spawn_fs::path &embedded_files_temp_dir)
 {
   const auto &sourcesdir = output_dir / "sources";
   std::vector<spawn_fs::path> sourcefiles;
@@ -383,8 +388,8 @@ int modelicaToFMU(const std::string &moinput,
 
   if (result == 0) {
     spawn_fs::remove_all(temp_dir);
-    const auto perm = spawn_fs::perms::owner_all | spawn_fs::perms::group_read | spawn_fs::perms::group_exec | spawn_fs::perms::others_read |
-                      spawn_fs::perms::others_exec;
+    const auto perm = spawn_fs::perms::owner_all | spawn_fs::perms::group_read | spawn_fs::perms::group_exec |
+                      spawn_fs::perms::others_read | spawn_fs::perms::others_exec;
     chmodFilesInPath(binary_dir, perm);
     spdlog::info("Compress FMU");
     zip_directory(output_dir.string(), fmu_path.string(), false);
