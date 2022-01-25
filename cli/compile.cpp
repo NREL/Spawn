@@ -2,11 +2,10 @@
 #include "jmodelica.h"
 #include "optimica.h"
 #include "../compiler/compiler.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 #include "../lib/ziputil.hpp"
 #include "../fmu/modeldescription.hpp"
 #include "cli/embedded_files.hxx"
-#include <config.hxx>
 #include <pugixml.hpp>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -116,7 +115,7 @@ std::vector<fs::path> modelicaLibs(
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a",
-    embedded_files_temp_dir / spawn::GFORTRANLIB_EMBEDDED_PATH
+    embedded_files_temp_dir / spawn::gfortranlib_embedded_path()
   };
 }
 
@@ -282,7 +281,6 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   fs::create_directories(fs::path{"binaries"});
 
   // we'll name it .so regardless of platform because it's only for our use anyhow
-
   const auto launcherFileName = fs::path{"binaries"} / "spawn_exe_launcher";
   const auto exeFileName = fs::path{"binaries"} / arguments["FILE_NAME"];
   const auto soFileName = [&](){
@@ -352,7 +350,7 @@ int modelicaToFMU(
 	const auto output_dir = fs::current_path() / output_dir_name;
   const auto fmu_path = output_dir.parent_path() / (output_dir_name + ".fmu");
   const auto sources_dir = output_dir / "sources";
-  const auto binary_dir = output_dir / "binaries" / spawn::FMI_PLATFORM;
+  const auto binary_dir = output_dir / "binaries" / fmi_platform();
   const auto model_description_path = output_dir / "modelDescription.xml";
 
   if(! output_dir_name.empty()) {
@@ -392,7 +390,7 @@ int modelicaToFMU(
 
   if(result == 0) {
     // Bundle GFortran with the FMU, since it is a required dependency, but not provided out of the box on most systems
-    fs::copy(temp_dir / spawn::GFORTRANLIB_EMBEDDED_PATH, binary_dir);
+    fs::copy(temp_dir / spawn::gfortranlib_embedded_path(), binary_dir);
 
     // Remove temp_dir which is where the embedded filesystem was extracted
     fs::remove_all(temp_dir);

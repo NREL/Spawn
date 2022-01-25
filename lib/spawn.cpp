@@ -3,7 +3,7 @@
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"

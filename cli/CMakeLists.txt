@@ -61,8 +61,6 @@ add_custom_command(
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE_NAME:spawn> "spawn$<TARGET_FILE_SUFFIX:spawn>"
 )
-
-configure_file(config.hpp.in config.hxx)
 target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(spawn PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")

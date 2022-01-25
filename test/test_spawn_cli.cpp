@@ -6,7 +6,7 @@
 #include "../fmu/logger.h"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <catch2/catch.hpp>
 #include <cstdlib>

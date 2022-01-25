@@ -23,7 +23,7 @@ public:
   }
 
   [[nodiscard]] std::string modelIdentifier() const {
-    return fmiModelDescription().child("ModelExchange").attribute("modelIdentifier").as_string();
+    return fmiModelDescription().child("CoSimulation").attribute("modelIdentifier").as_string();
   }
 
   [[nodiscard]] unsigned int valueReference(const std::string & variable_name) const {

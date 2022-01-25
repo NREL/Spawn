@@ -4,7 +4,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-configure_file(paths.in.cpp paths.cpp)
+configure_file(config.cpp.in config.cxx)
 
 add_library(
   spawn_utils
@@ -19,8 +19,7 @@ add_library(
   dynamiclibrary.hpp
   dynamiclibrary_windows.hpp
   dynamiclibrary_posix.hpp
-  paths.hpp
-  ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
 )
 
 target_link_libraries(
@@ -36,7 +35,9 @@ endif()
 
 target_include_directories(
   spawn_utils
-  PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
+  PRIVATE 
+          ${CMAKE_CURRENT_BINARY_DIR}
+          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public

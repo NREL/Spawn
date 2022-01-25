@@ -43,6 +43,13 @@ interface JModelica {
 
       OptionRegistry options = ModelicaCompiler.createOptions();
       options.setStringOption("fmu_type", "FMUCS20");
+      options.setBooleanOption("generate_ode", true);
+      options.setBooleanOption("generate_dae", false);
+      options.setBooleanOption("equation_sorting", true);
+      options.setBooleanOption("generate_fmi_me_xml", false);
+      options.setBooleanOption("generate_fmi_cs_xml", true);
+      options.setBooleanOption("generate_xml_equations", false);
+
       ModelicaCompiler mc = new ModelicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);

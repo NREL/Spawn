@@ -2,7 +2,7 @@
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
 #include "../util/temp_directory.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>

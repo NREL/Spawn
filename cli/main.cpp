@@ -9,12 +9,11 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
-#include <config.hxx>
 #include <stdlib.h>
 #include <spdlog/spdlog.h>
 #include "../util/fmi_paths.hpp"
 #include "../util/filesystem.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 
 #if defined _WIN32
@@ -142,7 +141,7 @@ int main(int argc, const char *argv[]) {
       spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif
     } else if (*versionOption) {
-      std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+      std::cout << "Spawn-" << spawn::version_string() << std::endl;
     } else if (*energyplusVersionOption) {
       std::cout << EnergyPlus::DataStringGlobals::VerString << std::endl;
     } else if (*outputVarsOption) {
