@@ -1,5 +1,6 @@
 #include "unzipped_file.hpp"
 #include "filesystem.hpp"
+#include <array>
 #include <fmt/format.h>
 #include <fstream>
 #include <stdexcept>
