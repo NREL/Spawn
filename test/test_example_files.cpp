@@ -2,6 +2,8 @@
 #include "../fmu/logger.h"
 #include "../fmu/modeldescription.hpp"
 #include "create_epfmu.hpp"
+
+#include <array>
 #include <catch2/catch.hpp>
 
 constexpr std::array<const char *, 27> ignorelist = {

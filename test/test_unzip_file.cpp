@@ -1,8 +1,8 @@
-
 #include "../util/filesystem.hpp"
 #include "../util/temp_directory.hpp"
 #include "../util/unzipped_file.hpp"
 #include "paths.hpp"
+
 #include <array>
 #include <catch2/catch.hpp>
 
