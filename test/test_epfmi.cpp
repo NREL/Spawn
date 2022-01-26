@@ -5,6 +5,7 @@
 #include "../util/math.hpp"
 #include "create_epfmu.hpp"
 #include "paths.hpp"
+#include <array>
 #include <catch2/catch.hpp>
 #include <fstream>
 #include <iostream>
