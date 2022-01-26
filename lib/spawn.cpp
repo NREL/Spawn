@@ -11,6 +11,8 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/func.h"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
+
+#include <array>
 #include <limits>
 
 namespace spawn {

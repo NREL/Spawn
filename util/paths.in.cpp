@@ -1,5 +1,6 @@
 #include "paths.hpp"
 #include "fmi_paths.hpp"
+#include <array>
 #include <iostream>
 
 #if __has_include(<unistd.h>)
