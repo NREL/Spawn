@@ -115,6 +115,7 @@ void Compiler::write_shared_object_file(
     fmt::format("--sysroot={}", toString(sysroot)),
     fmt::format("-L{}", toString(sysroot / "usr/lib/")),
     fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+    "--allow-multiple-definition",
     toString(temporary_object_file_location)
   };
 
