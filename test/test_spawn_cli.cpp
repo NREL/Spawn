@@ -2,9 +2,9 @@
 #include "../fmu/logger.h"
 #include "../lib/actuatortypes.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "../util/config.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "../util/config.hpp"
 #include "create_epfmu.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>

@@ -1,9 +1,8 @@
 #ifndef SPAWN_FMI_PATHS_HPP
 #define SPAWN_FMI_PATHS_HPP
 
-#include "filesystem.hpp"
 #include "config.hpp"
-#include <string>
+#include "filesystem.hpp"
 #include <fmt/format.h>
 #include <string>
 

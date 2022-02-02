@@ -2,19 +2,17 @@
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../util/config.hpp"
+#include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <iterator>
-#include <stdlib.h>
 #include <spdlog/spdlog.h>
-#include "../util/fmi_paths.hpp"
-#include "../util/filesystem.hpp"
-#include "../util/config.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include <stdlib.h>
+#include <vector>
 
 #if defined _WIN32
 #include <windows.h>

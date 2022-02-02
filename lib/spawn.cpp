@@ -1,9 +1,9 @@
 #include "spawn.hpp"
+#include "../util/config.hpp"
 #include "../util/conversion.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
-#include "../util/config.hpp"
 #include "outputtypes.hpp"
 
 #include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
