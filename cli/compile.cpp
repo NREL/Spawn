@@ -92,29 +92,36 @@ std::vector<spawn_fs::path> includePaths(const spawn_fs::path &jmodelica_dir,
 std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
                                          const spawn_fs::path &embedded_files_temp_dir)
 {
-  const auto mbl_path = mblPathFromEnv();
+  const auto msl = msl_path();
 
   return {embedded_files_temp_dir / "usr/lib/libfmilib.a",
-          jmodelica_dir / "lib/RuntimeLibrary/libblas.a",
-          jmodelica_dir / "lib/RuntimeLibrary/libfmi1_cs.a",
-          jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
-          jmodelica_dir / "lib/RuntimeLibrary/libfmi2.a",
+          // linking libModelicaExternalCasadiC results in runtime errors
+          //msl / "Modelica/Resources/Library/linux64/libModelicaExternalCasadiC.a",
+          msl / "Modelica/Resources/Library/linux64/libzlib.a",
+          msl / "Modelica/Resources/Library/linux64/libModelicaMatIO.a",
+          msl / "Modelica/Resources/Library/linux64/libModelicaExternalC.a",
+          msl / "Modelica/Resources/Library/linux64/libModelicaStandardTables.a",
+          msl / "Modelica/Resources/Library/linux64/libModelicaIO.a",
+          
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_idas.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecserial.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_ida.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvodes.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
+          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a",
+          jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
-          jmodelica_dir / "lib/RuntimeLibrary/libjmi_block_solver.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libblas.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_evaluator_util.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libfmi2.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libfmi1_cs.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libjmi_block_solver.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_default.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_lazy.a",
           jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
-
-          jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecserial.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_idas.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvodes.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_ida.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecopenmp.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
-          jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a",
           embedded_files_temp_dir / spawn::gfortranlib_embedded_path()};
 }
 
