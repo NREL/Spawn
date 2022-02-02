@@ -26,15 +26,24 @@ import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
 interface Optimica {
+
+  // This function is only used to generate reflection information at build time
+  // The build system will compile a simple model using this interface
   static void main(String[] args) { 
+    String jsonOptions = args[0];
+    compile(jsonOptions);
   }
 
+  // This is the normal entry point for using the embedded Optimica compiler
   @CEntryPoint(name = "optimica_compile")
   static void compile(IsolateThread thread, CCharPointer args) { 
-    try {
-      String argsString = CTypeConversion.toJavaString(args);
+    String options = CTypeConversion.toJavaString(args);
+    compile(options);
+  }
 
-      JsonObject deserialized = (JsonObject)Jsoner.deserialize(argsString);
+  static void compile(String jsonOptions) { 
+    try {
+      JsonObject deserialized = (JsonObject)Jsoner.deserialize(jsonOptions);
       String model = (String)deserialized.get("model");
       String outputDir = (String)deserialized.get("outputDir");
       String mslDir = (String)deserialized.get("mslDir");

@@ -14,7 +14,7 @@ option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
-  set(OPTIMICA_TARFILE_URL "file:///usr/local/etc/OCT-EndUser-trunk-r23009.tar.gz" CACHE STRING "Tarball of Optimica distribution")
+  set(OPTIMICA_TARFILE_URL "file:///usr/local/etc/OCT-enduser-stable-1.33.3.tar.gz" CACHE STRING "Tarball of Optimica distribution")
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
@@ -161,17 +161,15 @@ if(ENABLE_MODELICA_COMPILER)
     ${jmodelica_url} # The download url. Can be a local file:// url
   )
 
-  install(DIRECTORY "${jmodelica_path}/ThirdParty/MSL" DESTINATION etc/)
-
   if(APPLE)
     set(optimica_tar_root "install")
-    set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
+    set(optimica_md5 "b3d2f4690c506753fdd9399ad1d3af6a")
   elseif(UNIX)
     set(optimica_tar_root "install")
-    set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
+    set(optimica_md5 "b3d2f4690c506753fdd9399ad1d3af6a")
   else()
     set(optimica_tar_root "install")
-    set(optimica_md5 "b62ecf0b9483c9af1e4bc1b628d50bc9")
+    set(optimica_md5 "b3d2f4690c506753fdd9399ad1d3af6a")
   endif()
 
   set(optimica_path "${PROJECT_BINARY_DIR}/Optimica/")
@@ -182,6 +180,10 @@ if(ENABLE_MODELICA_COMPILER)
     ${optimica_md5} # The md5 of the tarball
     ${OPTIMICA_TARFILE_URL} # The download url. Can be a local file:// url
   )
+
+  set(MSL_ROOT_DIR "${optimica_path}/ThirdParty/MSL")
+  set(MSL_VER "MSL400")
+  install(DIRECTORY "${MSL_ROOT_DIR} "DESTINATION etc/)
 
   # Sets the variable "platform" corresponding to the FMI conventions
   include(cmake/fmiplatform.cmake)

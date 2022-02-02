@@ -97,9 +97,9 @@ fs::path epfmi_install_path() {
 fs::path msl_path() {
   fs::path p;
   if (is_installed()) {
-    p = spawn::exe_dir() / "../etc/MSL/";
+    p = spawn::exe_dir() / "../etc/MSL/${MSL_VER}";
   } else {
-    p = spawn::project_binary_dir() / "JModelica/ThirdParty/MSL/";
+    p = "${MSL_ROOT_DIR}/${MSL_VER}";
   }
 
   return p;

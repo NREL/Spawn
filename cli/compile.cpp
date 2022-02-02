@@ -63,13 +63,16 @@ std::vector<fs::path> includePaths(
   const auto mbl_path = mblPathFromEnv();
   std::vector<fs::path> result = {
     jmodelica_dir / "include/RuntimeLibrary/",
+    jmodelica_dir / "include/RuntimeLibrary/LazyEvaluation",
     jmodelica_dir / "include/RuntimeLibrary/module_include",
-    jmodelica_dir / "include/RuntimeLibrary/zlib",
+    //jmodelica_dir / "include/RuntimeLibrary/module_include",
+    //jmodelica_dir / "include/RuntimeLibrary/zlib",
     jmodelica_dir / "ThirdParty/FMI/2.0",
     embedded_files_temp_dir / "usr/lib/llvm-10/lib/clang/10.0.0/include",
     embedded_files_temp_dir / "usr/include",
     embedded_files_temp_dir / "usr/include/linux",
     embedded_files_temp_dir / "usr/include/x86_64-linux-gnu",
+    spawn::msl_path() / "Modelica/Resources/C-Sources",
     // The mbl_paths are a hack because our compile rule is not aware of Modelica annoations,
     // such as the following....
     //    annotation (
@@ -92,20 +95,19 @@ std::vector<fs::path> modelicaLibs(
   const auto mbl_path = mblPathFromEnv();
   return {
     embedded_files_temp_dir / "usr/lib/libfmilib.a",
-    jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libModelicaIO.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libModelicaExternalC.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_cs.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_default.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libfmi2.a",
+
     jmodelica_dir / "lib/RuntimeLibrary/libblas.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_cs.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libfmi2.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
     jmodelica_dir / "lib/RuntimeLibrary/libjmi_block_solver.a",
     jmodelica_dir / "lib/RuntimeLibrary/libjmi_evaluator_util.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libModelicaStandardTables.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libModelicaMatIO.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libzlib.a",
-    jmodelica_dir / "lib/RuntimeLibrary/libfmi1_me.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_default.a",
+    jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_lazy.a",
+    jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
+
+
     jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecserial.a",
     jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_idas.a",
@@ -222,7 +224,10 @@ int compileC(
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
 
-  const std::vector<std::string> flags{};
+  const std::vector<std::string> flags{
+    "-Wno-enum-conversion",
+    "-Wno-incompatible-pointer-types-discards-qualifiers"
+  };
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
@@ -273,6 +278,8 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   const auto embedded_files_temp_dir = jmodelica_dir.parent_path();
   const auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
   const auto runtime_libs = modelicaLibs(jmodelica_dir, embedded_files_temp_dir);
+
+  std::cout << "jmodelica_dir: " << jmodelica_dir << std::endl;
 
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
@@ -369,6 +376,7 @@ int modelicaToFMU(
     jmodelica_dir = temp_dir / "Optimica";
   }
 
+  modelicaPaths.push_back(spawn::msl_path());
   const auto mbl_path = mblPathInPaths(modelicaPaths);
   if (mbl_path.empty()) {
     modelicaPaths.push_back(mbl_home_dir().generic_string());
