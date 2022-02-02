@@ -183,7 +183,7 @@ if(ENABLE_MODELICA_COMPILER)
 
   set(MSL_ROOT_DIR "${optimica_path}/ThirdParty/MSL")
   set(MSL_VER "MSL400")
-  install(DIRECTORY "${MSL_ROOT_DIR} "DESTINATION etc/)
+  install(DIRECTORY "${MSL_ROOT_DIR}" DESTINATION etc/)
 
   # Sets the variable "platform" corresponding to the FMI conventions
   include(cmake/fmiplatform.cmake)
