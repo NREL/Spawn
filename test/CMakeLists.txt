@@ -28,11 +28,12 @@ add_executable(
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp
-  test_infiltration.cpp
-)
+  test_infiltration.cpp)
 
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
+
+target_include_directories(tests SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 
 # Make this better
 if(WIN32)
@@ -61,6 +62,5 @@ else()
 
   target_link_libraries(tests PRIVATE paths)
 endif()
-
 
 catch_discover_tests(tests TEST_PREFIX "spawn.")

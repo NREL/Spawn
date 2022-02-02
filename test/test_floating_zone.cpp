@@ -1,20 +1,22 @@
 #include "../fmu/fmu.hpp"
-#include "../fmu/modeldescription.hpp"
 #include "../fmu/logger.h"
+#include "../fmu/modeldescription.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "paths.hpp"
 #include "create_epfmu.hpp"
+#include "paths.hpp"
+
+#include <array>
 #include <catch2/catch.hpp>
-#include <nlohmann/json.hpp>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 TEST_CASE("Test SingleFamilyHouse with Floating Zone")
 {
   std::string spawn_input_string = fmt::format(
-  R"(
+      R"(
     {{
       "version": "0.1",
       "EnergyPlus": {{
@@ -55,19 +57,21 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
         ]
       }}
     }}
-  )", fmt::arg("idfpath", single_family_house_idf_path().generic_string()), fmt::arg("epwpath", chicago_epw_path().generic_string()));
+  )",
+      fmt::arg("idfpath", single_family_house_idf_path().generic_string()),
+      fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);
   spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status; 
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
@@ -76,11 +80,11 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char*, 4> variable_names{
-    "LIVING ZONE Temp",
-    "GARAGE ZONE Temp",
-    "Outside Temp",
-    "LIVING ZONE People",
+  constexpr std::array<const char *, 4> variable_names{
+      "LIVING ZONE Temp",
+      "GARAGE ZONE Temp",
+      "Outside Temp",
+      "LIVING ZONE People",
   };
 
   std::map<std::string, fmi2ValueReference> variable_refs;
@@ -89,14 +93,12 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
   }
 
   const std::array<fmi2ValueReference, 3> output_refs = {
-    variable_refs["LIVING ZONE Temp"],
-    variable_refs["GARAGE ZONE Temp"],
-    variable_refs["Outside Temp"]
-  };
-  std::array<fmi2Real, output_refs.size()> output_values;
+      variable_refs["LIVING ZONE Temp"], variable_refs["GARAGE ZONE Temp"], variable_refs["Outside Temp"]};
+
+  std::array<fmi2Real, output_refs.size()> output_values{};
 
   const std::array<fmi2ValueReference, 1> input_refs = {
-    variable_refs["LIVING ZONE People"],
+      variable_refs["LIVING ZONE People"],
   };
   std::array<fmi2Real, input_refs.size()> input_values{0.0};
 
@@ -141,5 +143,3 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
 }
-
-

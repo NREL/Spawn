@@ -5,9 +5,11 @@
 
 namespace spawn {
 
-class EMSActuator {
+class EMSActuator
+{
 public:
-  [[nodiscard]] static std::vector<EMSActuator> createEMSActuators(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
+  [[nodiscard]] static std::vector<EMSActuator> createEMSActuators(const nlohmann::json &spawnjson,
+                                                                   const nlohmann::json &jsonidf);
 
   std::string spawnname;
   std::string idfname;
@@ -15,7 +17,10 @@ public:
   std::string idfcontroltype;
 
 private:
-  EMSActuator(std::string t_spawnname, std::string t_idfname, std::string t_idftype, std::string t_idfcontroltype) noexcept;
+  EMSActuator(std::string t_spawnname,
+              std::string t_idfname,
+              std::string t_idftype,
+              std::string t_idfcontroltype) noexcept;
 };
 
 } // namespace spawn

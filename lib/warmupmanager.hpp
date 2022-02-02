@@ -2,20 +2,21 @@
 #define Spawn_warmupmanager_hh_INCLUDED
 
 #include "./manager.hpp"
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace spawn {
 
-class WarmupManager : public Manager  {
+class WarmupManager : public Manager
+{
 
 public:
-  explicit WarmupManager(EnergyPlus::EnergyPlusData & state);
+  explicit WarmupManager(EnergyPlus::EnergyPlusData &state);
 
 protected:
-  void initialize(EnergyPlus::EnergyPlusData & state);
-  void updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state);
-  void checkConvergence(EnergyPlus::EnergyPlusData & state);
+  void initialize(EnergyPlus::EnergyPlusData &state) override;
+  void updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state);
+  void checkConvergence(EnergyPlus::EnergyPlusData &state);
 
 private:
   std::vector<double> maxSurfTemp;

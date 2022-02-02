@@ -1,8 +1,8 @@
 #ifndef spawn_compare_INCLUDED
 #define spawn_compare_INCLUDED
 
-#include<iostream>
 #include <algorithm>
+#include <iostream>
 
 namespace spawn {
 

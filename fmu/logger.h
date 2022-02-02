@@ -4,7 +4,14 @@
 #include <fmi2FunctionTypes.h>
 #include <stdarg.h>
 
-inline void fmuStdOutLogger(fmi2ComponentEnvironment comp, fmi2String name, fmi2Status level, fmi2String type, fmi2String format, ...)
+extern "C" {
+// NOLINTNEXTLINE
+inline void fmuStdOutLogger(fmi2ComponentEnvironment /*comp*/,
+                            fmi2String /*name*/,
+                            fmi2Status /*level*/,
+                            fmi2String /*type*/,
+                            fmi2String format,
+                            ...)
 {
   va_list args;
   va_start(args, format);
@@ -14,8 +21,15 @@ inline void fmuStdOutLogger(fmi2ComponentEnvironment comp, fmi2String name, fmi2
   fflush(stdout);
 }
 
-inline void fmuNothingLogger(fmi2ComponentEnvironment comp, fmi2String name, fmi2Status level, fmi2String type, fmi2String format, ...)
+// NOLINTNEXTLINE
+inline void fmuNothingLogger(fmi2ComponentEnvironment /*comp*/,
+                             fmi2String /*name*/,
+                             fmi2Status /*level*/,
+                             fmi2String /*type*/,
+                             fmi2String /*format*/,
+                             ...)
 {
+}
 }
 
 #endif // spawn_fmu_logger_h_INCLUDED

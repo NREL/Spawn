@@ -34,10 +34,8 @@ if(HAS_FS_FLAG)
 endif()
 
 target_include_directories(
-  spawn_utils
-  PRIVATE 
-          ${CMAKE_CURRENT_BINARY_DIR}
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
+  spawn_utils SYSTEM
+  PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public

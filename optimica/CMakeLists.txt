@@ -4,18 +4,17 @@ find_package(Java)
 get_filename_component(java_bin ${Java_JAVAC_EXECUTABLE} DIRECTORY)
 find_program(NATIVE_IMAGE_EXECUTABLE native-image ${java_bin})
 
-set( jars 
-  "${optimica_path}/ThirdParty/Beaver/lib/beaver-rt.jar"
-  "${optimica_path}/ThirdParty/gson/lib/gson-2.8.5.jar"
-  "${optimica_path}/lib/ModelicaCompiler.jar"
-  "${optimica_path}/lib/separateProcess.jar"
-  "${optimica_path}/lib/util.jar"
-  "${optimica_path}/lib/OptimicaCompiler.jar"
-  "${optimica_path}/lib/casadi_interface/ModelicaCompiler.jar"
-  "${optimica_path}/lib/casadi_interface/util.jar"
-  "${optimica_path}/lib/casadi_interface/OptimicaCompiler.jar"
-  ${PROJECT_SOURCE_DIR}/java/json-simple-3.1.1.jar
-)
+set(jars
+    "${optimica_path}/ThirdParty/Beaver/lib/beaver-rt.jar"
+    "${optimica_path}/ThirdParty/gson/lib/gson-2.8.5.jar"
+    "${optimica_path}/lib/ModelicaCompiler.jar"
+    "${optimica_path}/lib/separateProcess.jar"
+    "${optimica_path}/lib/util.jar"
+    "${optimica_path}/lib/OptimicaCompiler.jar"
+    "${optimica_path}/lib/casadi_interface/ModelicaCompiler.jar"
+    "${optimica_path}/lib/casadi_interface/util.jar"
+    "${optimica_path}/lib/casadi_interface/OptimicaCompiler.jar"
+    ${PROJECT_SOURCE_DIR}/java/json-simple-3.1.1.jar)
 
 foreach(jar IN LISTS jars)
   string(CONCAT classpath ${classpath} "${jar}:")
@@ -26,15 +25,13 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
   COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java
-)
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SpawnCompilerDelegator.java)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
   COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR} -classpath ${classpath} ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
-)
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class)
 
 # optimica-reflect is a target used to generate reflection information that is used by native-image
 configure_file(reflect.cpp.in reflect.cxx)

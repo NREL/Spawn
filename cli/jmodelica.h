@@ -7,9 +7,11 @@
 extern "C" {
 #endif
 
-void jmodelica_compile(graal_isolatethread_t*, char*);
+void jmodelica_compile(graal_isolatethread_t *, char *);
 
-int jmodelica_create_isolate(graal_create_isolate_params_t* params, graal_isolate_t** isolate, graal_isolatethread_t** thread);
+int jmodelica_create_isolate(graal_create_isolate_params_t *params,
+                             graal_isolate_t **isolate,
+                             graal_isolatethread_t **thread);
 
 #if defined(__cplusplus)
 }

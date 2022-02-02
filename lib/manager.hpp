@@ -4,28 +4,34 @@
 #include <functional>
 #include <map>
 
-typedef void * EnergyPlusState;
+using EnergyPlusState = void *;
 
 namespace EnergyPlus {
-  struct EnergyPlusData;
-  namespace EMSManager {
-    enum class EMSCallFrom;
-  } // namespace EMSManager
+struct EnergyPlusData;
+namespace EMSManager {
+  enum class EMSCallFrom;
+} // namespace EMSManager
 } // namespace EnergyPlus
 
 namespace spawn {
 
-class Manager {
+class Manager
+{
 
 public:
-  explicit Manager(EnergyPlus::EnergyPlusData & state);
+  explicit Manager(EnergyPlus::EnergyPlusData &state);
+  virtual ~Manager() = default;
+  Manager &operator=(Manager &) = delete;
+  Manager &operator=(Manager &&) = delete;
+  Manager(const Manager &) = delete;
+  Manager(Manager &&) = delete;
 
 protected:
-  virtual void initialize(EnergyPlus::EnergyPlusData & state);
+  virtual void initialize(EnergyPlus::EnergyPlusData &state);
   bool initialized{false};
-  void registerCallbacks(EnergyPlus::EnergyPlusData & state);
+  void registerCallbacks(EnergyPlus::EnergyPlusData &state);
 
-  std::map<EnergyPlus::EMSManager::EMSCallFrom, std::function<void (EnergyPlus::EnergyPlusData &)> > callbacks;
+  std::map<EnergyPlus::EMSManager::EMSCallFrom, std::function<void(EnergyPlus::EnergyPlusData &)>> callbacks;
 };
 
 } // namespace spawn

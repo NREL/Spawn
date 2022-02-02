@@ -6,9 +6,9 @@
 using json = nlohmann::json;
 
 namespace spawn {
-  class Input;
+class Input;
 
-  void prepare_idf(json & jsonidf, const Input& input);
+void prepare_idf(json &jsonidf, const Input &input);
 } // namespace spawn
 
 #endif // idfprep_hh_INCLUDED

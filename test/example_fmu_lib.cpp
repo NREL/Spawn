@@ -5,9 +5,8 @@ extern "C" {
 #ifdef _MSC_VER
 __declspec(dllexport)
 #endif
-const char *fmi2GetVersion()
+    const char *fmi2GetVersion()
 {
   return "TEST_VERSION";
 }
 }
-
