@@ -20,8 +20,7 @@ add_library(
   dynamiclibrary_windows.hpp
   dynamiclibrary_posix.hpp
   paths.hpp
-  ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp
-)
+  ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp)
 
 target_link_libraries(
   spawn_utils
@@ -35,7 +34,7 @@ if(HAS_FS_FLAG)
 endif()
 
 target_include_directories(
-  spawn_utils
+  spawn_utils SYSTEM
   PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
           ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus

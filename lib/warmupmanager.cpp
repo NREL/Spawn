@@ -1,23 +1,24 @@
 #include "./warmupmanager.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataGlobals.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
 
 namespace spawn {
 
-WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData & state) 
-  : Manager(state)
+WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData &state) : Manager(state)
 {
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = 
-    std::bind(&WarmupManager::updateConvergenceMetrics, this, std::placeholders::_1);
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = [this](auto &state) {
+    updateConvergenceMetrics(state);
+  };
 
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] =
-    std::bind(&WarmupManager::checkConvergence, this, std::placeholders::_1);
+  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] = [this](auto &state) {
+    checkConvergence(state);
+  };
 }
 
-void WarmupManager::initialize(EnergyPlus::EnergyPlusData & state) {
+void WarmupManager::initialize(EnergyPlus::EnergyPlusData &state)
+{
   const auto count = state.dataHeatBalSurf->SurfTempIn.size();
 
   maxSurfTemp.clear();
@@ -36,14 +37,17 @@ void WarmupManager::initialize(EnergyPlus::EnergyPlusData & state) {
   Manager::initialize(state);
 }
 
-void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state) {
-  if (! state.dataGlobal->WarmupFlag) return;
+void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state)
+{
+  if (!state.dataGlobal->WarmupFlag) {
+    return;
+  }
 
-  if (! initialized) {
+  if (!initialized) {
     initialize(state);
   }
 
-  const auto & surfTemp = state.dataHeatBalSurf->SurfTempIn;
+  const auto &surfTemp = state.dataHeatBalSurf->SurfTempIn;
   lastDayOfSim = state.dataGlobal->DayOfSim;
   lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
 
@@ -67,7 +71,8 @@ void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData & state)
   }
 }
 
-void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData & state) {
+void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData &state)
+{
   // If the max number of warmup days has been exceeded then return early,
   // and allow the simulation to continue into the run period
   if (lastDayOfSim >= state.dataHeatBal->MaxNumberOfWarmupDays) {
@@ -95,7 +100,7 @@ void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData & state) {
 
   if (convergenceChecksFailed) {
     state.dataGlobal->WarmupFlag = true;
-    // EnergyPlus will have reset these values after convergence was satisfied 
+    // EnergyPlus will have reset these values after convergence was satisfied
     // Here they are restored to their last value before reset
     state.dataGlobal->DayOfSim = lastDayOfSim;
     state.dataGlobal->DayOfSimChr = lastDayOfSimChr;

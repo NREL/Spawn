@@ -2,13 +2,15 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
-#include <string>
-#include <vector>
 #include <map>
 #include <sstream>
+#include <string>
+#include <vector>
 
-// See variable documentation here https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
-enum class VariableType {
+// See variable documentation here
+// https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
+enum class VariableType
+{
   T,
   V,
   AFLO,
@@ -41,19 +43,20 @@ namespace units {
 }
 
 class Input;
-}
+} // namespace spawn
 
-class Variable {
+class Variable
+{
 public:
   VariableType type;
-	std::string name;
-	spawn::units::UnitType epunittype{spawn::units::UnitType::one};
-	spawn::units::UnitType mounittype{spawn::units::UnitType::one};
+  std::string name;
+  spawn::units::UnitType epunittype{spawn::units::UnitType::one};
+  spawn::units::UnitType mounittype{spawn::units::UnitType::one};
 
-	// This is true "value" member has been set to a value
-	// If valueset is false then value should not be used
-	void setValue(const double & value, const spawn::units::UnitSystem & system);
-	[[nodiscard]] double getValue(const spawn::units::UnitSystem & unitsystem) const;
+  // This is true "value" member has been set to a value
+  // If valueset is false then value should not be used
+  void setValue(const double &value, const spawn::units::UnitSystem &system);
+  [[nodiscard]] double getValue(const spawn::units::UnitSystem &unitsystem) const;
   void resetValue();
   [[nodiscard]] bool isValueSet() const;
 
@@ -70,12 +73,11 @@ public:
   std::string actuatorcontroltype;
 
 private:
-	// Value stored using the Modelica unit system
+  // Value stored using the Modelica unit system
   double value{};
   bool valueset{false};
 };
 
-std::map<unsigned int, Variable> parseVariables(const spawn::Input & input);
+std::map<unsigned int, Variable> parseVariables(const spawn::Input &input);
 
 #endif // Variables_hh_INCLUDED
-

@@ -1,13 +1,15 @@
 #include "../fmu/fmu.hpp"
-#include "../fmu/modeldescription.hpp"
 #include "../fmu/logger.h"
+#include "../fmu/modeldescription.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
-#include "paths.hpp"
 #include "create_epfmu.hpp"
+#include "paths.hpp"
+
+#include <array>
 #include <catch2/catch.hpp>
-#include <nlohmann/json.hpp>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
@@ -18,12 +20,12 @@ TEST_CASE("Test SingleFamilyHouse as FMU")
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status; 
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
@@ -31,15 +33,15 @@ TEST_CASE("Test SingleFamilyHouse as FMU")
   const auto core_zn_t_ref = modelDescription.valueReference("LIVING ZONE_T");
   const auto core_zone_q_ref = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
 
-  fmi2ValueReference input_vr[] = {core_zn_t_ref};
-  fmi2Real input_v[] = {294.15};
-  status = fmu.fmi.fmi2SetReal(comp, input_vr, 1, input_v);
+  std::array<fmi2ValueReference, 1> input_vr{core_zn_t_ref};
+  std::array<fmi2Real, 1> input_v{294.15};
+  status = fmu.fmi.fmi2SetReal(comp, input_vr.data(), 1U, input_v.data());
   REQUIRE(status == fmi2OK);
 
   // fmi2GetReal will start energyplus
-  fmi2ValueReference output_vr[] = {core_zone_q_ref};
-  fmi2Real output_v[1];
-  status = fmu.fmi.fmi2GetReal(comp, output_vr, 1, output_v);
+  std::array<fmi2ValueReference, 1> output_vr{core_zone_q_ref};
+  std::array<fmi2Real, 1> output_v{};
+  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
   REQUIRE(status == fmi2OK);
 
   // Without the previous call to fmi2GetReal this would start energyplus
@@ -47,13 +49,13 @@ TEST_CASE("Test SingleFamilyHouse as FMU")
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
-  status = fmu.fmi.fmi2GetReal(comp, output_vr, 1, output_v);
+  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
   REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(2));
   REQUIRE(status == fmi2OK);
 
-  status = fmu.fmi.fmi2GetReal(comp, output_vr, 1, output_v);
+  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
   REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2Terminate(comp);
@@ -67,12 +69,12 @@ TEST_CASE("Test SingleFamilyHouse as FMU with early stop")
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status; 
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
@@ -80,14 +82,14 @@ TEST_CASE("Test SingleFamilyHouse as FMU with early stop")
   const auto core_zn_t_ref = modelDescription.valueReference("LIVING ZONE_T");
   const auto core_zone_q_ref = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
 
-  fmi2ValueReference input_vr[] = {core_zn_t_ref};
-  fmi2Real input_v[] = {294.15};
-  status = fmu.fmi.fmi2SetReal(comp, input_vr, 1, input_v);
+  std::array<fmi2ValueReference, 1> input_vr{core_zn_t_ref};
+  std::array<fmi2Real, 1> input_v{294.15};
+  status = fmu.fmi.fmi2SetReal(comp, input_vr.data(), 1U, input_v.data());
   REQUIRE(status == fmi2OK);
 
-  fmi2ValueReference output_vr[] = {core_zone_q_ref};
-  fmi2Real output_v[1];
-  status = fmu.fmi.fmi2GetReal(comp, output_vr, 1, output_v);
+  std::array<fmi2ValueReference, 1> output_vr{core_zone_q_ref};
+  std::array<fmi2Real, 1> output_v{};
+  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
   REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
@@ -105,31 +107,29 @@ TEST_CASE("Test surface IO")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  fmi2Status status;
-
-  constexpr std::array<const char*, 14> variable_names{
-    "ATTIC ZONE_T",
-    "LIVING ZONE_T",
-    "Living:Ceiling_TFront",
-    "Living:Ceiling_TBack",
-    "Living:South_TFront",
-    "Living:South_TBack",
-    "Attic:LivingFloor_TFront",
-    "Attic:LivingFloor_TBack",
-    "Living:Ceiling_QFront_flow",
-    "Living:Ceiling_QBack_flow",
-    "Living:South_QFront_flow",
-    "Living:South_QBack_flow",
-    "Attic:LivingFloor_QFront_flow",
-    "Attic:LivingFloor_QBack_flow"
-  };
+  constexpr std::array<const char *, 14> variable_names{"ATTIC ZONE_T",
+                                                        "LIVING ZONE_T",
+                                                        "Living:Ceiling_TFront",
+                                                        "Living:Ceiling_TBack",
+                                                        "Living:South_TFront",
+                                                        "Living:South_TBack",
+                                                        "Attic:LivingFloor_TFront",
+                                                        "Attic:LivingFloor_TBack",
+                                                        "Living:Ceiling_QFront_flow",
+                                                        "Living:Ceiling_QBack_flow",
+                                                        "Living:South_QFront_flow",
+                                                        "Living:South_QBack_flow",
+                                                        "Attic:LivingFloor_QFront_flow",
+                                                        "Attic:LivingFloor_QBack_flow"};
 
   std::map<std::string, fmi2ValueReference> variable_refs;
   for (const auto name : variable_names) {
@@ -138,31 +138,27 @@ TEST_CASE("Test surface IO")
 
   fmu.fmi.fmi2ExitInitializationMode(comp);
 
-  const std::array<fmi2ValueReference, 4> input_refs = {
-    variable_refs["ATTIC ZONE_T"],
-    variable_refs["LIVING ZONE_T"],
-    variable_refs["Living:Ceiling_TFront"],
-    variable_refs["Living:Ceiling_TBack"]
-  };
+  const std::array<fmi2ValueReference, 4> input_refs = {variable_refs["ATTIC ZONE_T"],
+                                                        variable_refs["LIVING ZONE_T"],
+                                                        variable_refs["Living:Ceiling_TFront"],
+                                                        variable_refs["Living:Ceiling_TBack"]};
 
-  const std::array<fmi2ValueReference, 4> output_refs = {
-    variable_refs["Living:Ceiling_QFront_flow"],
-    variable_refs["Living:Ceiling_QBack_flow"],
-    variable_refs["Attic:LivingFloor_QFront_flow"],
-    variable_refs["Attic:LivingFloor_QBack_flow"]
-  };
+  const std::array<fmi2ValueReference, 4> output_refs = {variable_refs["Living:Ceiling_QFront_flow"],
+                                                         variable_refs["Living:Ceiling_QBack_flow"],
+                                                         variable_refs["Attic:LivingFloor_QFront_flow"],
+                                                         variable_refs["Attic:LivingFloor_QBack_flow"]};
 
-  std::array<fmi2Real, output_refs.size()> output_values;
+  std::array<fmi2Real, output_refs.size()> output_values{};
 
   // Test active heating surface
   const std::array<fmi2Real, input_refs.size()> heating_input_values = {
-    spawn::c_to_k(0.0), // Cold attic
-    spawn::c_to_k(15.0), // Chilly living space
-    spawn::c_to_k(25.0), // Active heating living space ceiling
-    spawn::c_to_k(10.0) // Some heat leakage to back of living space ceiling
+      spawn::c_to_k(0.0),  // Cold attic
+      spawn::c_to_k(15.0), // Chilly living space
+      spawn::c_to_k(25.0), // Active heating living space ceiling
+      spawn::c_to_k(10.0)  // Some heat leakage to back of living space ceiling
   };
 
-  status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), heating_input_values.data());
+  fmi2Status status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), heating_input_values.data());
   CHECK(status == fmi2OK);
 
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
@@ -178,10 +174,10 @@ TEST_CASE("Test surface IO")
 
   // Test active cooling surface
   const std::array<fmi2Real, input_refs.size()> cooling_input_values = {
-    spawn::c_to_k(35.0), // Hot attic
-    spawn::c_to_k(25.0), // Warm living space
-    spawn::c_to_k(10.0), // Active cooling living space ceiling
-    spawn::c_to_k(20.0) // Some heat leakage to back of living space ceiling
+      spawn::c_to_k(35.0), // Hot attic
+      spawn::c_to_k(25.0), // Warm living space
+      spawn::c_to_k(10.0), // Active cooling living space ceiling
+      spawn::c_to_k(20.0)  // Some heat leakage to back of living space ceiling
   };
 
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), cooling_input_values.data());
@@ -213,7 +209,7 @@ TEST_CASE("Test invalid surface IO")
   const auto epwpath = chicago_epw_path();
 
   std::string spawn_input_string = fmt::format(
-  R"(
+      R"(
     {{
       "version": "0.1",
       "EnergyPlus": {{
@@ -231,7 +227,9 @@ TEST_CASE("Test invalid surface IO")
         ]
       }}
     }}
-  )", fmt::arg("idfpath", idfpath.generic_string()), fmt::arg("epwpath", epwpath.generic_string()));
+  )",
+      fmt::arg("idfpath", idfpath.generic_string()),
+      fmt::arg("epwpath", epwpath.generic_string()));
 
   const auto fmu_file = create_epfmu(spawn_input_string);
 
@@ -239,42 +237,37 @@ TEST_CASE("Test invalid surface IO")
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
   fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  fmi2Status status;
-
-  constexpr std::array<const char*, 2> variable_names{
-    "Living:Floor_TBack",
-    "Living:Floor_QBack_flow"
-  };
+  constexpr std::array<const char *, 2> variable_names{"Living:Floor_TBack", "Living:Floor_QBack_flow"};
 
   std::map<std::string, fmi2ValueReference> variable_refs;
   for (const auto name : variable_names) {
     variable_refs[name] = modelDescription.valueReference(name);
   }
 
-  status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  fmi2Status status = fmu.fmi.fmi2ExitInitializationMode(comp);
   CHECK(status == fmi2Error);
 
-  const std::array<fmi2ValueReference, 1> input_refs = {
-    variable_refs["Living:Floor_TBack"]
-  };
+  const std::array<fmi2ValueReference, 1> input_refs = {variable_refs["Living:Floor_TBack"]};
 
   const std::array<fmi2ValueReference, 1> output_refs = {
-    variable_refs["Living:Floor_QBack_flow"],
+      variable_refs["Living:Floor_QBack_flow"],
   };
 
-  std::array<fmi2Real, output_refs.size()> output_values;
+  std::array<fmi2Real, output_refs.size()> output_values{};
 
   // Test active heating surface
   const std::array<fmi2Real, input_refs.size()> input_values = {
-    spawn::c_to_k(21.0), // Neutral temperature boundary condition at ground
-    // doesn't matter because we are expecting an error
+      spawn::c_to_k(21.0), // Neutral temperature boundary condition at ground
+                           // doesn't matter because we are expecting an error
   };
 
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
@@ -290,7 +283,7 @@ TEST_CASE("Test invalid surface IO")
 TEST_CASE("Test Idempotence")
 {
   std::string spawn_input_string = fmt::format(
-  R"(
+      R"(
     {{
       "version": "0.1",
       "EnergyPlus": {{
@@ -309,19 +302,21 @@ TEST_CASE("Test Idempotence")
         ]
       }}
     }}
-  )", fmt::arg("idfpath", single_family_house_idf_path().generic_string()), fmt::arg("epwpath", chicago_epw_path().generic_string()));
+  )",
+      fmt::arg("idfpath", single_family_house_idf_path().generic_string()),
+      fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);
   spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
-  fmi2CallbackFunctions callbacks = {fmuNothingLogger, calloc, free, NULL, NULL}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate("test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+  fmi2CallbackFunctions callbacks = {
+      fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
 
-  fmi2Status status; 
-
-  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
@@ -330,9 +325,9 @@ TEST_CASE("Test Idempotence")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char*, 2> variable_names{
-    "LIVING ZONE_T",
-    "LIVING ZONE_QConSen_flow",
+  constexpr std::array<const char *, 2> variable_names{
+      "LIVING ZONE_T",
+      "LIVING ZONE_QConSen_flow",
   };
 
   std::map<std::string, fmi2ValueReference> variable_refs;
@@ -341,12 +336,12 @@ TEST_CASE("Test Idempotence")
   }
 
   const std::array<fmi2ValueReference, 1> output_refs = {
-    variable_refs["LIVING ZONE_QConSen_flow"],
+      variable_refs["LIVING ZONE_QConSen_flow"],
   };
-  std::array<fmi2Real, output_refs.size()> output_values;
+  std::array<fmi2Real, output_refs.size()> output_values{};
 
   const std::array<fmi2ValueReference, 1> input_refs = {
-    variable_refs["LIVING ZONE_T"],
+      variable_refs["LIVING ZONE_T"],
   };
   std::array<fmi2Real, input_refs.size()> input_values{spawn::c_to_k(21.0)};
 
@@ -368,4 +363,3 @@ TEST_CASE("Test Idempotence")
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
 }
-

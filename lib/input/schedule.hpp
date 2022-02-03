@@ -5,9 +5,11 @@
 
 namespace spawn {
 
-class Schedule {
+class Schedule
+{
 public:
-  [[nodiscard]] static std::vector<Schedule> createSchedules(const nlohmann::json & spawnjson, const nlohmann::json & jsonidf);
+  [[nodiscard]] static std::vector<Schedule> createSchedules(const nlohmann::json &spawnjson,
+                                                             const nlohmann::json &jsonidf);
 
   std::string spawnname;
   std::string idfname;
