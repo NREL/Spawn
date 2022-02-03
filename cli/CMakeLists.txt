@@ -37,7 +37,7 @@ endif()
 
 add_executable(spawn ${src})
 
-set_target_properties(spawn PROPERTIES OUTPUT_NAME "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
+set_target_properties(spawn PROPERTIES OUTPUT_NAME ${spawn_cli_name})
 
 add_custom_command(
   TARGET spawn

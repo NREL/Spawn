@@ -23,12 +23,15 @@ if(ENABLE_MODELICA_COMPILER)
   target_compile_definitions(compile_options INTERFACE -DENABLE_MODELICA_COMPILER)
 endif()
 
+set(spawn_cli_name "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
+
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
 # EnergyPlus will link to openmp dynamically by default
 # We don't want that
 set(ENABLE_OPENMP OFF)
+set(USE_OpenMP OFF)
 
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so
 # reset to OFF
@@ -273,6 +276,11 @@ if(ENABLE_BUILDINGS_LIBRARY)
     COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${modelica_idd_path}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
+
+  # The full spawn cli name is embedded in the MBL, here we update the name with the latest sha
+  file(READ submodules/modelica-buildings/Buildings/ThermalZones/EnergyPlus/Building.mo building_mo_text)
+  string(REGEX REPLACE "spawn-[0-9]\.[0-9]\.[0-9]-.........." ${spawn_cli_name} new_building_mo_text "${building_mo_text}")
+  file(WRITE submodules/modelica-buildings/Buildings/ThermalZones/EnergyPlus/Building.mo "${new_building_mo_text}")
 
   set(fmilib_project_source_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
