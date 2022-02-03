@@ -96,13 +96,13 @@ std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
 
   return {embedded_files_temp_dir / "usr/lib/libfmilib.a",
           // linking libModelicaExternalCasadiC results in runtime errors
-          //msl / "Modelica/Resources/Library/linux64/libModelicaExternalCasadiC.a",
+          // msl / "Modelica/Resources/Library/linux64/libModelicaExternalCasadiC.a",
           msl / "Modelica/Resources/Library/linux64/libzlib.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaMatIO.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaExternalC.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaStandardTables.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaIO.a",
-          
+
           jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_idas.a",
           jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_nvecserial.a",
           jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_arkode.a",
