@@ -4,6 +4,7 @@
 #include <fmt/format.h>
 #include <fstream>
 #include <stdexcept>
+#include <type_traits>
 #include <zip.h>
 
 namespace spawn::util {
@@ -45,7 +46,7 @@ std::vector<spawn_fs::path> zipped_files(zip_t &zipFile)
 
   const auto file_count = zip_get_num_entries(&zipFile, 0);
 
-  for (auto i = static_cast<decltype(file_count)>(0); i < file_count; ++i) {
+  for (auto i = static_cast<std::remove_const<decltype(file_count)>::type>(0); i < file_count; ++i) {
     const auto *name = zip_get_name(&zipFile, static_cast<zip_uint64_t>(i), ZIP_FL_ENC_GUESS);
     if (name != nullptr) {
       results.emplace_back(name);
