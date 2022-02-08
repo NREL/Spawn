@@ -25,13 +25,13 @@ endif()
 
 set(spawn_cli_name "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
 
+# EnergyPlus will link to openmp dynamically by default
+# We don't want that
+set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+set(USE_OpenMP OFF CACHE BOOL "" FORCE)
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
-# EnergyPlus will link to openmp dynamically by default
-# We don't want that
-set(ENABLE_OPENMP OFF)
-set(USE_OpenMP OFF)
 
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so
 # reset to OFF
