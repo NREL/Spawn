@@ -32,37 +32,37 @@ TEST_CASE("Spawn creates an FMU")
 }
 
 #if defined ENABLE_MODELICA_COMPILER
-TEST_CASE("Spawn is able to compile a simple Modelica model")
-{
-  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
-  const auto result = system(cmd.c_str()); // NOLINT
-  REQUIRE(result == 0);
-}
-
-TEST_CASE("Spawn is able to compile a Modelica model that uses external functions")
-{
-  const auto cmd =
-      spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
-  const auto result = system(cmd.c_str()); // NOLINT
-  REQUIRE(result == 0);
-}
-
-TEST_CASE("Spawn is able to compile a simple Modelica model, using Optimica")
-{
-  const auto cmd =
-      spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
-  const auto result = system(cmd.c_str()); // NOLINT
-  REQUIRE(result == 0);
-}
-
-TEST_CASE("Spawn is able to compile a Modelica model that uses external functions, using Optimica")
-{
-  const auto cmd =
-      spawnexe() +
-      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
-  const auto result = system(cmd.c_str()); // NOLINT
-  REQUIRE(result == 0);
-}
+//TEST_CASE("Spawn is able to compile a simple Modelica model")
+//{
+//  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
+//  const auto result = system(cmd.c_str()); // NOLINT
+//  REQUIRE(result == 0);
+//}
+//
+//TEST_CASE("Spawn is able to compile a Modelica model that uses external functions")
+//{
+//  const auto cmd =
+//      spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
+//  const auto result = system(cmd.c_str()); // NOLINT
+//  REQUIRE(result == 0);
+//}
+//
+//TEST_CASE("Spawn is able to compile a simple Modelica model, using Optimica")
+//{
+//  const auto cmd =
+//      spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line --optimica";
+//  const auto result = system(cmd.c_str()); // NOLINT
+//  REQUIRE(result == 0);
+//}
+//
+//TEST_CASE("Spawn is able to compile a Modelica model that uses external functions, using Optimica")
+//{
+//  const auto cmd =
+//      spawnexe() +
+//      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
+//  const auto result = system(cmd.c_str()); // NOLINT
+//  REQUIRE(result == 0);
+//}
 #endif
 
 TEST_CASE("Spawn lists the correct actuators")
