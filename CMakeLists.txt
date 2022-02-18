@@ -268,6 +268,9 @@ if(ENABLE_BUILDINGS_LIBRARY)
     BUILD_ALWAYS 1
     BUILD_IN_SOURCE SOURCE_DIR
     "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+    # This patch is a temporary measure until the following PR is merged and incorporated into the MBL
+    # https://github.com/ibpsa/modelica-ibpsa/pull/1586 
+    PATCH_COMMAND git apply "${PROJECT_SOURCE_DIR}/cmake/SignalExchange.patch"
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
