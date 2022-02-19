@@ -28,10 +28,17 @@ add_executable(
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp
-  test_infiltration.cpp)
+  test_infiltration.cpp
+  )
 
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
+
+if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+  add_executable(test_compiler test_compiler.cpp)
+  target_link_libraries(test_compiler PRIVATE compile_options compiler)
+endif()
+
 
 target_include_directories(tests SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 

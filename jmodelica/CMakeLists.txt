@@ -4,16 +4,16 @@ find_package(Java 11)
 execute_process(COMMAND ${Java_JAVA_EXECUTABLE} --version
                 OUTPUT_VARIABLE JAVA_VERSION_STRING)
 
-if(NOT JAVA_VERSION_STRING MATCHES ".*GraalVM.*21.*11.*")
+if(NOT JAVA_VERSION_STRING MATCHES ".*GraalVM.*\\(build.*11.*")
   message(
     FATAL_ERROR
-      "Did not find expected graalvm java version (version 21 based on Java 11) found: ${JAVA_VERSION_STRING}"
+      "Did not find expected graalvm java version (based on Java 11) found: ${JAVA_VERSION_STRING}"
   )
 endif()
 
 get_filename_component(java_bin ${Java_JAVAC_EXECUTABLE} DIRECTORY)
 message(
-  "If native-image is not found, you don't have a correct installation of graalvm java"
+  "If native-image is not found, you don't have a correct installation of graalvm java (install with `gu install native-image`)"
 )
 find_program(NATIVE_IMAGE_EXECUTABLE native-image
              PATHS ${java_bin} ${java_bin}/../lib/svm/bin REQUIRED)

@@ -36,10 +36,12 @@ add_executable(spawn ${src})
 
 set_target_properties(spawn PROPERTIES OUTPUT_NAME "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
 
-add_custom_command(
-  TARGET spawn
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE_NAME:spawn> "spawn$<TARGET_FILE_SUFFIX:spawn>")
+if (NOT WIN32)
+  add_custom_command(
+    TARGET spawn
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE_NAME:spawn> "spawn$<TARGET_FILE_SUFFIX:spawn>")
+endif()
 
 configure_file(config.hpp.in config.hxx)
 target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -64,8 +66,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
   add_dependencies(spawn FMILIB)
 endif()
 
+if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
+  target_link_libraries(spawn PRIVATE compiler )
+endif()
+
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE compiler jmodelica optimica)
+  target_link_libraries(spawn PRIVATE jmodelica optimica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)

@@ -26,23 +26,25 @@ int main(int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  const std::vector<boost::filesystem::path> include_paths{};
+  const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{"-v"};
   spawn::Compiler compiler(include_paths, flags);
 
-  const std::vector<boost::filesystem::path> source_files{std::next(argv), std::next(argv, argc)};
+  const std::vector<spawn_fs::path> source_files{std::next(argv), std::next(argv, argc)};
 
   std::for_each(begin(source_files), end(source_files), [&](const auto &path) { compiler.compile_and_link(path); });
 
   compiler.write_bitcode("a.bc");
   compiler.write_object_file("a.o");
-  compiler.write_shared_object_file("a.so");
+  compiler.write_shared_object_file("a.so", {});
 
+  /*
   auto jit = compiler.move_to_jit();
   auto go = jit->get_function<int()>("go");
   go();
+  */
 
-  llvm::llvm_shutdown();
+  //llvm::llvm_shutdown();
 
   std::cout << "call_count: " << call_count << '\n';
   assert(call_count == 1);
