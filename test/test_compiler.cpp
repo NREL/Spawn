@@ -44,7 +44,7 @@ int main(int argc, const char *argv[])
   go();
   */
 
-  //llvm::llvm_shutdown();
+  // llvm::llvm_shutdown();
 
   std::cout << "call_count: " << call_count << '\n';
   assert(call_count == 1);
