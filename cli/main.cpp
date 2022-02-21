@@ -108,6 +108,10 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
   auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler");
   jmodelicaOption->needs(createModelicaFMUOption);
 
+  std::string fmuType = toString(spawn::FMUType::CS);
+  auto fmuTypeOption = modelicaCommand->add_option("--fmu-type", fmuType, "FMU Type, CS or ME");
+  fmuTypeOption->needs(createModelicaFMUOption);
+
   auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
 
@@ -148,9 +152,9 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
       if (jmodelica) {
-        spawn::modelicaToFMU(moinput, modelicaPaths);
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType));
       } else {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::ModelicaCompilerType::Optimica);
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType), spawn::ModelicaCompilerType::Optimica);
       }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));

@@ -15,6 +15,26 @@ using json = nlohmann::json;
 
 namespace spawn {
 
+const char* toString(FMUType t)
+{
+  switch (t) {
+    case FMUType::ME: return "ME";
+    case FMUType::CS: return "CS";
+    default: return "CS";
+  }
+}
+
+FMUType toFMUType(const std::string &t)
+{
+  if (t == "ME") {
+    return FMUType::ME;
+  } else if (t == "CS") {
+    return FMUType::CS;
+  } else {
+    return FMUType::CS;
+  }
+}
+
 // Given a vector of file paths, return any path that appears to be a path
 // to the MBL, if not found return empty path
 spawn_fs::path mblPathInPaths(const std::vector<std::string> &modelicaPaths)
@@ -143,6 +163,7 @@ std::vector<spawn_fs::path> additionalSource()
 int compileMO(const std::string &moInput,
               const spawn_fs::path &outputDir,
               const std::vector<std::string> &modelicaPaths,
+              const FMUType &fmuType,
               const ModelicaCompilerType &moType)
 {
   try {
@@ -152,6 +173,7 @@ int compileMO(const std::string &moInput,
     j["model"] = moInput;
     j["outputDir"] = outputDir.generic_string();
     j["mslDir"] = msl_path().generic_string();
+    j["fmuType"] = toString(fmuType);
     j["modelicaPaths"] = modelicaPaths;
 
     std::string params = j.dump();
@@ -336,6 +358,7 @@ void chmodFilesInPath(const spawn_fs::path &path, const spawn_fs::perms perm)
 
 int modelicaToFMU(const std::string &moinput,
                   std::vector<std::string> modelicaPaths,
+                  const FMUType &fmuType,
                   const ModelicaCompilerType &moType)
 {
   // output_dir_name is moinput with "." replaced by "_"
@@ -379,7 +402,10 @@ int modelicaToFMU(const std::string &moinput,
   setenv("JMODELICA_HOME", jmodelica_dir.generic_string().c_str(), 1);
   setenv("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str(), 1);
 
-  int result = compileMO(moinput, output_dir.native(), modelicaPaths, moType);
+  int result = compileMO(moinput, output_dir.native(),
+                         modelicaPaths,
+                         fmuType,
+                         moType);
 
   if (result == 0) {
     spdlog::info("Compile C Code");

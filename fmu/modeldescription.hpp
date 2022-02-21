@@ -24,7 +24,13 @@ public:
 
   [[nodiscard]] std::string modelIdentifier() const
   {
-    return fmiModelDescription().child("CoSimulation").attribute("modelIdentifier").as_string();
+    auto typeNode = fmiModelDescription().child("CoSimulation");
+
+    if (! typeNode) {
+      typeNode = fmiModelDescription().child("ModelExchange");
+    }
+
+    return typeNode.attribute("modelIdentifier").as_string();
   }
 
   [[nodiscard]] unsigned int valueReference(const std::string &variable_name) const
