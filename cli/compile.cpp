@@ -15,12 +15,15 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-const char* toString(FMUType t)
+const char *toString(FMUType t)
 {
   switch (t) {
-    case FMUType::ME: return "ME";
-    case FMUType::CS: return "CS";
-    default: return "CS";
+  case FMUType::ME:
+    return "ME";
+  case FMUType::CS:
+    return "CS";
+  default:
+    return "CS";
   }
 }
 
@@ -402,10 +405,7 @@ int modelicaToFMU(const std::string &moinput,
   setenv("JMODELICA_HOME", jmodelica_dir.generic_string().c_str(), 1);
   setenv("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str(), 1);
 
-  int result = compileMO(moinput, output_dir.native(),
-                         modelicaPaths,
-                         fmuType,
-                         moType);
+  int result = compileMO(moinput, output_dir.native(), modelicaPaths, fmuType, moType);
 
   if (result == 0) {
     spdlog::info("Compile C Code");

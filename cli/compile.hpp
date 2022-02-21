@@ -19,7 +19,7 @@ enum class FMUType
   CS
 };
 
-const char* toString(FMUType t);
+const char *toString(FMUType t);
 
 FMUType toFMUType(const std::string &t);
 

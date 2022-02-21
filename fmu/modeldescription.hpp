@@ -26,7 +26,7 @@ public:
   {
     auto typeNode = fmiModelDescription().child("CoSimulation");
 
-    if (! typeNode) {
+    if (!typeNode) {
       typeNode = fmiModelDescription().child("ModelExchange");
     }
 
