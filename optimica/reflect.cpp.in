@@ -12,6 +12,7 @@ int main() {
   json options;
   options["model"] = "Buildings.ThermalZones.EnergyPlus.Examples.SingleFamilyHouse.AirHeating";
   options["outputDir"] = "${CMAKE_CURRENT_BINARY_DIR}/AirHeating";
+  options["fmuType"] = "CS";
   options["mslDir"] = msl_dir;
   options["modelicaPaths"] = std::vector{"${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings"};
 
