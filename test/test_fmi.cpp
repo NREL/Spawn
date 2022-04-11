@@ -2,9 +2,9 @@
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
 #include "../fmu/modeldescription.hpp"
-#include "../util/math.hpp"
-#include "../util/filesystem.hpp"
 #include "../util/config.hpp"
+#include "../util/filesystem.hpp"
+#include "../util/math.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <iostream>
@@ -37,11 +37,13 @@ TEST_CASE("Test loading of FMI missing symbols")
 TEST_CASE("Test Resetting a Spawn based FMU")
 {
   const auto cmd =
-      spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --fmu-type ME";
+      spawnexe() +
+      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --fmu-type ME";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
-  const auto fmu_path = spawn::project_binary_dir() / "Buildings_ThermalZones_EnergyPlus_Validation_ThermalZone_OneZoneOneYear.fmu";
+  const auto fmu_path =
+      spawn::project_binary_dir() / "Buildings_ThermalZones_EnergyPlus_Validation_ThermalZone_OneZoneOneYear.fmu";
 
   spawn::fmu::FMU fmu{fmu_path, false};
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
@@ -51,8 +53,13 @@ TEST_CASE("Test Resetting a Spawn based FMU")
 
   fmi2CallbackFunctions callbacks = {
       fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
-  const auto comp = fmu.fmi.fmi2Instantiate(
-      "test-instance", fmi2ModelExchange, modelDescription.guid().c_str(), resource_path.c_str(), &callbacks, false, true);
+  const auto comp = fmu.fmi.fmi2Instantiate("test-instance",
+                                            fmi2ModelExchange,
+                                            modelDescription.guid().c_str(),
+                                            resource_path.c_str(),
+                                            &callbacks,
+                                            false,
+                                            true);
 
   // Run the model for a day
   fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
