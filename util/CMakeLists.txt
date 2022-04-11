@@ -19,6 +19,8 @@ add_library(
   dynamiclibrary.hpp
   dynamiclibrary_windows.hpp
   dynamiclibrary_posix.hpp
+  unique_id.hpp
+  unique_id.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
 )
 

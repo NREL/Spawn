@@ -22,6 +22,11 @@ public:
     }
   }
 
+  [[nodiscard]] std::string guid() const
+  {
+    return fmiModelDescription().attribute("guid").as_string();
+  }
+
   [[nodiscard]] std::string modelIdentifier() const
   {
     auto typeNode = fmiModelDescription().child("CoSimulation");
