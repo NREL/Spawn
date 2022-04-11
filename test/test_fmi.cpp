@@ -34,6 +34,7 @@ TEST_CASE("Test loading of FMI missing symbols")
   REQUIRE_THROWS(spawn::fmu::FMI2{example_fmu_path(), true});
 }
 
+#if defined ENABLE_MODELICA_COMPILER
 TEST_CASE("Test Resetting a Spawn based FMU")
 {
   const auto cmd =
@@ -89,3 +90,4 @@ TEST_CASE("Test Resetting a Spawn based FMU")
   status = fmu.fmi.fmi2Terminate(comp);
   CHECK(status == fmi2OK);
 }
+#endif
