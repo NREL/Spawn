@@ -1,3 +1,4 @@
+#include "../fmu/simulate.hpp"
 #include "../lib/actuatortypes.hpp"
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
@@ -5,7 +6,6 @@
 #include "../util/config.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
-#include "../fmu/simulate.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
 #include <fstream>
@@ -29,7 +29,6 @@
 #include <iterator>
 #include <vector>
 #endif
-
 
 using json = nlohmann::json;
 

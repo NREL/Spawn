@@ -1,5 +1,5 @@
-#include "../util/math.hpp"
 #include "../fmu/simulate.hpp"
+#include "../util/math.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
 
