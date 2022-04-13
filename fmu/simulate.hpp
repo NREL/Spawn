@@ -1,11 +1,11 @@
 #ifndef spawn_fmu_sim_INCLUDED
 #define spawn_fmu_sim_INCLUDED
 
-#include <nlohmann/json.hpp>
 #include "../fmu/fmu.hpp"
 #include "../fmu/modeldescription.hpp"
 #include "../util/filesystem.hpp"
 #include <fstream>
+#include <nlohmann/json.hpp>
 //#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 
 namespace spawn::fmu {
