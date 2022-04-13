@@ -686,7 +686,7 @@ void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::stri
 
 void Spawn::logMessage(EnergyPlus::Error level, const std::string &message)
 {
-  if (logCallback) {
+  if (logCallback && ! message.empty()) {
     log_message_queue.emplace_back(level, message);
   }
 }
