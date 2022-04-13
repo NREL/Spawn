@@ -17,7 +17,7 @@ build:ubuntu:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF -DENABLE_BUILDINGS_LIBRARY=OFF  ..
     - cmake ..
-    - make -j1
+    - make -j4
   artifacts:
     expire_in: 6 hrs
     paths:
