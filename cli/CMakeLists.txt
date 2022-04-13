@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 cmake_policy(SET CMP0087 NEW)
 
-set(src main.cpp simulate.hpp simulate.cpp)
+set(src main.cpp)
 
 if(ENABLE_MODELICA_COMPILER)
   include(embed_jmodelica.cmake)
@@ -27,6 +27,9 @@ if(ENABLE_MODELICA_COMPILER)
     list(APPEND embedded_paths "usr/lib/libfmilib.a")
   endif()
 
+  list(APPEND embedded_files ${GFORTRANLIB_REAL_PATH})
+  list(APPEND embedded_paths ${GFORTRANLIB_EMBEDDED_PATH})
+
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src compile.hpp compile.cpp ${embedded_output})
@@ -34,14 +37,13 @@ endif()
 
 add_executable(spawn ${src})
 
-set_target_properties(spawn PROPERTIES OUTPUT_NAME "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
+set_target_properties(spawn PROPERTIES OUTPUT_NAME ${spawn_cli_name})
 
 add_custom_command(
   TARGET spawn
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE_NAME:spawn> "spawn$<TARGET_FILE_SUFFIX:spawn>")
 
-configure_file(config.hpp.in config.hxx)
 target_include_directories(spawn PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(spawn PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(spawn PRIVATE "${PROJECT_BINARY_DIR}")
@@ -51,7 +53,7 @@ target_link_libraries(
   PRIVATE compile_options
           fmu
           libspawn
-          energypluslib
+          #energypluslib
           spawn_utils
           CONAN_PKG::cli11
           CONAN_PKG::nlohmann_json

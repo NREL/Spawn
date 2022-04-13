@@ -1,6 +1,7 @@
 #include "fmugenerator.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../util/fmi_paths.hpp"
+#include "../util/unique_id.hpp"
 #include "input/input.hpp"
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
@@ -10,7 +11,7 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath);
+void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id);
 
 void energyplusToFMU(const std::string &jsoninput,
                      bool nozip,
@@ -44,13 +45,15 @@ void energyplusToFMU(const std::string &jsoninput,
     spawn_fs::create_directories(outputroot);
   }
 
+  const auto id = util::uniqueId();
+
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
   const auto fmuspawnPath = fmuResourcesPath / "model.spawn";
   const auto fmuidfPath = fmuResourcesPath / input.idfInputPath().filename();
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
-  const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(epfmi_basename());
+  const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(id);
 
   spawn_fs::remove_all(fmuPath);
   spawn_fs::remove_all(fmuStagingPath);
@@ -60,12 +63,14 @@ void energyplusToFMU(const std::string &jsoninput,
   spawn_fs::create_directories(fmuResourcesPath);
   spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
+  std::cout << "Generating fmuEPFMIPath: " << fmuEPFMIPath << std::endl;
+
   spawn_fs::copy_file(epfmupath, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(iddpath, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(input.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(input.idfInputPath(), fmuidfPath);
 
-  createModelDescription(input, modelDescriptionPath);
+  createModelDescription(input, modelDescriptionPath, id);
 
   const auto relativeEPWPath = spawn_fs::relative(fmuepwPath, fmuResourcesPath);
   input.setEPWInputPath(relativeEPWPath);
@@ -79,13 +84,19 @@ void energyplusToFMU(const std::string &jsoninput,
   }
 }
 
-void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath)
+void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id)
 {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
 
-  auto xmlvariables = doc.child("fmiModelDescription").child("ModelVariables");
+  auto fmiModelDescription = doc.child("fmiModelDescription");
+  auto modelExchange = fmiModelDescription.child("ModelExchange");
 
+  fmiModelDescription.attribute("modelName").set_value(id.c_str());
+  fmiModelDescription.attribute("guid").set_value(id.c_str());
+  modelExchange.attribute("modelIdentifier").set_value(id.c_str());
+
+  auto xmlvariables = fmiModelDescription.child("ModelVariables");
   const auto variables = parseVariables(input);
 
   for (const auto &varpair : variables) {

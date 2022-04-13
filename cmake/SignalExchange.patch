@@ -1,0 +1,25 @@
+diff --git a/Buildings/Utilities/IO/SignalExchange/Overwrite.mo b/Buildings/Utilities/IO/SignalExchange/Overwrite.mo
+index 90dd7cdc51..3275881634 100644
+--- a/Buildings/Utilities/IO/SignalExchange/Overwrite.mo
++++ b/Buildings/Utilities/IO/SignalExchange/Overwrite.mo
+@@ -12,7 +12,7 @@ block Overwrite "Block that allows a signal to overwritten by an FMU input"
+   Modelica.Blocks.Sources.BooleanExpression activate
+     "Block to activate use of external signal"
+     annotation (Placement(transformation(extent={{-60,-10},{-40,10}})));
+-protected
++
+   final parameter Boolean boptestOverwrite = true
+     "Protected parameter, used by tools to search for overwrite block in models";
+ 
+diff --git a/Buildings/Utilities/IO/SignalExchange/Read.mo b/Buildings/Utilities/IO/SignalExchange/Read.mo
+index ea4c072301..f2bed44c3d 100644
+--- a/Buildings/Utilities/IO/SignalExchange/Read.mo
++++ b/Buildings/Utilities/IO/SignalExchange/Read.mo
+@@ -23,7 +23,6 @@ model Read "Block that allows a signal to be read as an FMU output"
+     KPIs==Buildings.Utilities.IO.SignalExchange.SignalTypes.SignalsForKPIs.RelativeHumidity or
+     KPIs==Buildings.Utilities.IO.SignalExchange.SignalTypes.SignalsForKPIs.CO2Concentration)));
+ 
+-protected
+   final parameter Boolean boptestRead = true
+     "Protected parameter, used by tools to search for read block in models";
+   annotation (Documentation(info="<html>

@@ -108,9 +108,11 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 
   std::vector<std::string> str_args{"ld.lld-10",
                                     "-shared",
+                                    "-rpath=$ORIGIN",
                                     fmt::format("--sysroot={}", toString(sysroot)),
                                     fmt::format("-L{}", toString(sysroot / "usr/lib/")),
                                     fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+                                    "--allow-multiple-definition",
                                     toString(temporary_object_file_location)};
 
   for (const auto &lib : additional_libs) {

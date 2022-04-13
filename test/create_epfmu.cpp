@@ -1,6 +1,6 @@
 #include "create_epfmu.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
-#include "../util/paths.hpp"
+#include "../util/config.hpp"
 #include "paths.hpp"
 #include <fmt/format.h>
 #include <fstream>

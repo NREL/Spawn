@@ -1,6 +1,6 @@
 #include "spawn.hpp"
+#include "../util/config.hpp"
 #include "../util/conversion.hpp"
-#include "../util/paths.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"

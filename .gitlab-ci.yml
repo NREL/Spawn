@@ -17,7 +17,7 @@ build:ubuntu:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF -DENABLE_BUILDINGS_LIBRARY=OFF  ..
     - cmake ..
-    - make -j1
+    - make -j4
   artifacts:
     expire_in: 6 hrs
     paths:
@@ -204,69 +204,69 @@ release:mac:
     - tags
 
 
-build:ubuntu-modelica:
-  stage: build
-  tags:
-    - ubuntu
-  script:
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=ON -DENABLE_BUILDINGS_LIBRARY=ON  ..
-    - cmake ..
-    - make -j1
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/
-
-test:ubuntu-modelica:
-  stage: test
-  tags:
-    - ubuntu
-  dependencies:
-    - build:ubuntu-modelica
-  script:
-    - cd build
-    - ctest -R  spawn
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/
-
-package:ubuntu-modelica:
-  stage: package
-  tags:
-    - ubuntu
-  dependencies:
-    - test:ubuntu-modelica
-  script:
-    - cd build
-    - make package
-  artifacts:
-    expire_in: 6 hrs
-    paths:
-      - build/Spawn*.tar.gz
-
-publish:ubuntu-modelica:
-  stage: publish
-  tags:
-    - ubuntu
-  dependencies:
-    - package:ubuntu-modelica
-  script:
-    - python3 cmake/publish.py publish
-  when: manual
-
-release:ubuntu-modelica:
-  stage: release
-  tags:
-    - ubuntu
-  dependencies:
-    - package:ubuntu-modelica
-  script:
-    - python3 cmake/publish.py release
-  when: manual
-  only:
-    - tags
+      #build:ubuntu-modelica:
+      #  stage: build
+      #  tags:
+      #    - ubuntu
+      #  script:
+      #    - mkdir build
+      #    - cd build
+      #    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=ON -DENABLE_BUILDINGS_LIBRARY=ON  ..
+      #    - cmake ..
+      #    - make -j1
+      #  artifacts:
+      #    expire_in: 6 hrs
+      #    paths:
+      #      - build/
+      #
+      #test:ubuntu-modelica:
+      #  stage: test
+      #  tags:
+      #    - ubuntu
+      #  dependencies:
+      #    - build:ubuntu-modelica
+      #  script:
+      #    - cd build
+      #    - ctest -R  spawn
+      #  artifacts:
+      #    expire_in: 6 hrs
+      #    paths:
+      #      - build/
+      #
+      #package:ubuntu-modelica:
+      #  stage: package
+      #  tags:
+      #    - ubuntu
+      #  dependencies:
+      #    - test:ubuntu-modelica
+      #  script:
+      #    - cd build
+      #    - make package
+      #  artifacts:
+      #    expire_in: 6 hrs
+      #    paths:
+      #      - build/Spawn*.tar.gz
+      #
+      #publish:ubuntu-modelica:
+      #  stage: publish
+      #  tags:
+      #    - ubuntu
+      #  dependencies:
+      #    - package:ubuntu-modelica
+      #  script:
+      #    - python3 cmake/publish.py publish
+      #  when: manual
+      #
+      #release:ubuntu-modelica:
+      #  stage: release
+      #  tags:
+      #    - ubuntu
+      #  dependencies:
+      #    - package:ubuntu-modelica
+      #  script:
+      #    - python3 cmake/publish.py release
+      #  when: manual
+      #  only:
+      #    - tags
 
 

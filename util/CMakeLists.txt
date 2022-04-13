@@ -4,7 +4,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-configure_file(paths.in.cpp paths.cpp)
+configure_file(config.cpp.in config.cxx)
 
 add_library(
   spawn_utils
@@ -19,27 +19,17 @@ add_library(
   dynamiclibrary.hpp
   dynamiclibrary_windows.hpp
   dynamiclibrary_posix.hpp
-  paths.hpp
-  ${CMAKE_CURRENT_BINARY_DIR}/paths.cpp)
+  unique_id.hpp
+  unique_id.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
+)
 
 target_link_libraries(
   spawn_utils
-  PUBLIC energyplusapi
-  PRIVATE CONAN_PKG::libzip CONAN_PKG::spdlog compile_options)
+  PRIVATE CONAN_PKG::libzip CONAN_PKG::fmt CONAN_PKG::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
 if(HAS_FS_FLAG)
   target_link_libraries(spawn_utils PUBLIC stdc++fs)
 endif()
-
-target_include_directories(
-  spawn_utils SYSTEM
-  PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
