@@ -137,7 +137,7 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
                                                {"hourly_value", "1.0"}};
 
   jsonidf[scheduletype][activitySchedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
-                                                 {"hourly_value", "1.0"}};
+                                                 {"hourly_value", "100.0"}};
 
   for (const auto &zone : input.zones) {
     if (!zone.isconnected) {
@@ -154,9 +154,6 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
         {"fraction_radiant", "0"},
         {"sensible_heat_fraction", "autocalculate"},
         {"activity_level_schedule_name", activitySchedulename}};
-
-    // std::cout << "adding people: " << jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] <<
-    // std::endl;
 
     jsonidf[zone.ep_outputvariable_type][zone.ep_qpeo_flow_object_name] = {
         {"variable_name", zone.ep_qpeo_flow_output_var_name},
