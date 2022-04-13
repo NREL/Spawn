@@ -139,5 +139,5 @@ target_compile_definitions(libspawn PUBLIC -DENERGYPLUS_STATIC_API)
 
 target_link_libraries(
   libspawn
-  PUBLIC spawn_utils CONAN_PKG::libzip CONAN_PKG::pugixml
+  PUBLIC spawn_utils CONAN_PKG::libzip CONAN_PKG::pugixml energyplusapi
   PRIVATE compile_options)

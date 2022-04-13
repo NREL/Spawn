@@ -27,11 +27,16 @@ std::string FMU::modelIdentifier() const
   if (fmiModelDescription.empty()) {
     throw std::runtime_error("fmiModelDescription not found");
   }
-  const auto modelExchange = fmiModelDescription.child("ModelExchange");
-  if (modelExchange.empty()) {
-    throw std::runtime_error("ModelExchange not found");
+  auto modelType = fmiModelDescription.child("ModelExchange");
+  if (modelType.empty()) {
+    modelType = fmiModelDescription.child("CoSimulation");
   }
-  const auto modelIdentifier = modelExchange.attribute("modelIdentifier");
+
+  if (modelType.empty()) {
+    throw std::runtime_error("Model Type (CS or ME) could not be determined");
+  }
+
+  const auto modelIdentifier = modelType.attribute("modelIdentifier");
   if (modelIdentifier.empty()) {
     throw std::runtime_error("attribute modelIdentifier not found");
   }

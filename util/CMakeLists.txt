@@ -26,22 +26,10 @@ add_library(
 
 target_link_libraries(
   spawn_utils
-  PUBLIC energyplusapi
-  PRIVATE CONAN_PKG::libzip CONAN_PKG::spdlog compile_options)
+  PRIVATE CONAN_PKG::libzip CONAN_PKG::fmt CONAN_PKG::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
 if(HAS_FS_FLAG)
   target_link_libraries(spawn_utils PUBLIC stdc++fs)
 endif()
-
-target_include_directories(
-  spawn_utils SYSTEM
-  PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/src/EnergyPlus/public
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/ObjexxFCL/src/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/FMI2/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/CLI/
-          ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)

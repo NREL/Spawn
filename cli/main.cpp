@@ -5,6 +5,7 @@
 #include "../util/config.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
+#include "../fmu/simulate.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
 #include <fstream>
@@ -29,7 +30,6 @@
 #include <vector>
 #endif
 
-#include "simulate.hpp"
 
 using json = nlohmann::json;
 

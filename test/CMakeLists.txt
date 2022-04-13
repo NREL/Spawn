@@ -28,7 +28,9 @@ add_executable(
   test_fmi.cpp
   test_utils.cpp
   test_mbl_idf.cpp
-  test_infiltration.cpp)
+  test_infiltration.cpp
+  test_simulate.cpp
+)
 
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)

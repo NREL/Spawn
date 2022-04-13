@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 cmake_policy(SET CMP0087 NEW)
 
-set(src main.cpp simulate.hpp simulate.cpp)
+set(src main.cpp)
 
 if(ENABLE_MODELICA_COMPILER)
   include(embed_jmodelica.cmake)
@@ -53,7 +53,7 @@ target_link_libraries(
   PRIVATE compile_options
           fmu
           libspawn
-          energypluslib
+          #energypluslib
           spawn_utils
           CONAN_PKG::cli11
           CONAN_PKG::nlohmann_json
