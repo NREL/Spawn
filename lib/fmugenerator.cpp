@@ -45,7 +45,7 @@ void energyplusToFMU(const std::string &jsoninput,
     spawn_fs::create_directories(outputroot);
   }
 
-  const auto id = util::uniqueId();
+  const auto id = std::string("epfmi_") + util::uniqueId();
 
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
