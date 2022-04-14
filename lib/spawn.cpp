@@ -327,17 +327,27 @@ void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
   double moistureMassFlowRate = 0.0;
 
   // Calculate hourly humidity ratio from infiltration + humdidity added from latent load + system added moisture
-  const auto latentGain = sim_state.dataHeatBalFanSys->ZoneLatentGain(zonenum) + sim_state.dataHeatBalFanSys->SumLatentHTRadSys(zonenum) +
-               sim_state.dataHeatBalFanSys->SumLatentPool(zonenum);
+  const auto latentGain = sim_state.dataHeatBalFanSys->ZoneLatentGain(zonenum) +
+                          sim_state.dataHeatBalFanSys->SumLatentHTRadSys(zonenum) +
+                          sim_state.dataHeatBalFanSys->SumLatentPool(zonenum);
 
-  const double RhoAir = EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state, sim_state.dataEnvrn->OutBaroPress, ZT(zonenum), sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum), RoutineName);
-  const double h2oHtOfVap = EnergyPlus::Psychrometrics::PsyHgAirFnWTdb(sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum), ZT(zonenum));
+  const double RhoAir =
+      EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state,
+                                                    sim_state.dataEnvrn->OutBaroPress,
+                                                    ZT(zonenum),
+                                                    sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum),
+                                                    RoutineName);
+  const double h2oHtOfVap =
+      EnergyPlus::Psychrometrics::PsyHgAirFnWTdb(sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum), ZT(zonenum));
 
   const double B = (latentGain / h2oHtOfVap) +
-      ((sim_state.dataHeatBalFanSys->OAMFL(zonenum) + sim_state.dataHeatBalFanSys->VAMFL(zonenum) + sim_state.dataHeatBalFanSys->CTMFL(zonenum)) *
-       sim_state.dataEnvrn->OutHumRat) +
-      sim_state.dataHeatBalFanSys->EAMFLxHumRat(zonenum) + (moistureMassFlowRate) + sim_state.dataHeatBalFanSys->SumHmARaW(zonenum) +
-      sim_state.dataHeatBalFanSys->MixingMassFlowXHumRat(zonenum) + sim_state.dataHeatBalFanSys->MDotOA(zonenum) * sim_state.dataEnvrn->OutHumRat;
+                   ((sim_state.dataHeatBalFanSys->OAMFL(zonenum) + sim_state.dataHeatBalFanSys->VAMFL(zonenum) +
+                     sim_state.dataHeatBalFanSys->CTMFL(zonenum)) *
+                    sim_state.dataEnvrn->OutHumRat) +
+                   sim_state.dataHeatBalFanSys->EAMFLxHumRat(zonenum) + (moistureMassFlowRate) +
+                   sim_state.dataHeatBalFanSys->SumHmARaW(zonenum) +
+                   sim_state.dataHeatBalFanSys->MixingMassFlowXHumRat(zonenum) +
+                   sim_state.dataHeatBalFanSys->MDotOA(zonenum) * sim_state.dataEnvrn->OutHumRat;
 
   const double C = RhoAir * Zone(zonenum).Volume * Zone(zonenum).ZoneVolCapMultpMoist / dt;
 
@@ -348,7 +358,8 @@ void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
 
   // Check to make sure that is saturated there is condensation in the zone
   // by resetting to saturation conditions.
-  const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(sim_state, ZT(zonenum), 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
+  const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
+      sim_state, ZT(zonenum), 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
 
   if (newHumidityRatio > wzSat) newHumidityRatio = wzSat;
 
