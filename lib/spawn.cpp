@@ -1,6 +1,7 @@
 #include "spawn.hpp"
 #include "../util/config.hpp"
 #include "../util/conversion.hpp"
+#include "../util/math.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
@@ -14,6 +15,7 @@
 
 #include <array>
 #include <limits>
+#include <cmath>
 
 namespace spawn {
 
@@ -156,7 +158,18 @@ double Spawn::startTime() const noexcept
 
 void Spawn::setStartTime(const double time) noexcept
 {
-  m_startTime = time;
+  if (time < 0.0) {
+    // If time is negative then apply an offset from the end of the year
+    // Consider the possibility that time could be more than a year negative
+    // Does not consider leap year
+    constexpr auto secondsInYear = spawn::days_to_seconds(365);
+    m_startTime = secondsInYear - std::fmod(std::abs(time), secondsInYear);
+  } else {
+    // Consider that time could be greater than one year,
+    // for now it is accepted.
+    // Would m_startTime = time % secondsInYear be more correct?
+    m_startTime = time;
+  }
 }
 
 void Spawn::setTime(const double time)
