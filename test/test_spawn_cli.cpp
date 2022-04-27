@@ -14,6 +14,10 @@
 
 using json = nlohmann::json;
 
+const std::string one_zone_one_year = "Buildings.ThermalZones."
+  + spawn::mbl_energyplus_version_string()
+  + ".Validation.ThermalZone.OneZoneOneYear";
+
 TEST_CASE("Spawn shows help")
 {
   const auto cmd = spawnexe() + " --help";
@@ -42,7 +46,7 @@ TEST_CASE("Spawn is able to compile a simple Modelica model")
 TEST_CASE("Spawn is able to compile a Modelica model that uses external functions")
 {
   const auto cmd =
-      spawnexe() + " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear";
+      spawnexe() + " modelica --create-fmu " + one_zone_one_year;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
@@ -59,7 +63,7 @@ TEST_CASE("Spawn is able to compile a Modelica model that uses external function
 {
   const auto cmd =
       spawnexe() +
-      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --optimica";
+      " modelica --create-fmu " + one_zone_one_year + " --optimica";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }

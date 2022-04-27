@@ -30,8 +30,18 @@ set(spawn_cli_name "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD
 set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
 set(USE_OpenMP OFF CACHE BOOL "" FORCE)
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
+
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+# This is a method to capture the EnergyPlus version
+# See notes in make_energyplus_version.cmake
+execute_process(COMMAND ${CMAKE_COMMAND}
+  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}/submodules/EnergyPlus
+  -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}/EnergyPlus
+  -DSpawn_SOURCE_DIR=${Spawn_SOURCE_DIR}
+  -P ${PROJECT_SOURCE_DIR}/cmake/create_energyplus_version.cmake)
+include("${PROJECT_BINARY_DIR}/EnergyPlus/energyplus_version.cmake")
+set(MBL_ENERGYPLUS_VERSION_STRING "EnergyPlus_${ENERGYPLUS_VERSION_MAJOR}_${ENERGYPLUS_VERSION_MINOR}_${ENERGYPLUS_VERSION_PATCH}")
 
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so
 # reset to OFF
@@ -244,11 +254,11 @@ add_subdirectory(embedded)
 add_subdirectory(test)
 
 if(APPLE)
-  set(os_prefix spawn-darwin64)
+  set(os_prefix darwin64)
 elseif(WIN32)
-  set(os_prefix spawn-win64)
+  set(os_prefix win64)
 elseif(UNIX AND NOT APPLE)
-  set(os_prefix spawn-linux64)
+  set(os_prefix linux64)
 endif()
 
 set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
@@ -257,9 +267,10 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
 
-set(modelica_bin_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/bin/")
-set(modelica_lib_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/lib/")
-set(modelica_idd_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${os_prefix}/etc/")
+set(mbl_spawn_root_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${spawn_cli_name}/${os_prefix}")
+set(mbl_spawn_bin_path "${mbl_spawn_root_path}/bin/")
+set(mbl_spawn_lib_path "${mbl_spawn_root_path}/lib/")
+set(mbl_spawn_idd_path "${mbl_spawn_root_path}/etc/")
 
 if(ENABLE_BUILDINGS_LIBRARY)
   include(ExternalProject)
@@ -268,22 +279,21 @@ if(ENABLE_BUILDINGS_LIBRARY)
     BUILD_ALWAYS 1
     BUILD_IN_SOURCE SOURCE_DIR
     "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
-    # This patch is a temporary measure until the following PR is merged and incorporated into the MBL
-    # https://github.com/ibpsa/modelica-ibpsa/pull/1586 
-    PATCH_COMMAND git apply "${PROJECT_SOURCE_DIR}/cmake/SignalExchange.patch"
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_bin_path}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${modelica_lib_path}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${modelica_bin_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${modelica_lib_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${modelica_idd_path}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_bin_path}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_lib_path}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_idd_path}
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${mbl_spawn_bin_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${mbl_spawn_lib_path}"
+    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${mbl_spawn_idd_path}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
             "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
 
   # The full spawn cli name is embedded in the MBL, here we update the name with the latest sha
-  file(READ submodules/modelica-buildings/Buildings/ThermalZones/EnergyPlus/Building.mo building_mo_text)
+  set(building_mo_path "submodules/modelica-buildings/Buildings/ThermalZones/${MBL_ENERGYPLUS_VERSION_STRING}/Building.mo")
+  file(READ ${building_mo_path} building_mo_text)
   string(REGEX REPLACE "spawn-[0-9]\.[0-9]\.[0-9]-.........." ${spawn_cli_name} new_building_mo_text "${building_mo_text}")
-  file(WRITE submodules/modelica-buildings/Buildings/ThermalZones/EnergyPlus/Building.mo "${new_building_mo_text}")
+  file(WRITE ${building_mo_path} "${new_building_mo_text}")
 
   set(fmilib_project_source_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")

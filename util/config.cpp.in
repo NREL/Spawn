@@ -68,6 +68,10 @@ spawn_fs::path mbl_home_dir() {
   }
 }
 
+std::string mbl_energyplus_version_string() {
+  return "${MBL_ENERGYPLUS_VERSION_STRING}";
+}
+
 bool is_installed() {
   return spawn::exe_dir().stem() == "bin";
 }

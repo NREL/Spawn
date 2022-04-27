@@ -17,6 +17,8 @@ spawn_fs::path exe_dir();
 
 spawn_fs::path mbl_home_dir();
 
+std::string mbl_energyplus_version_string();
+
 spawn_fs::path idd_install_path();
 
 spawn_fs::path epfmi_install_path();

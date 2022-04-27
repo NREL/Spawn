@@ -37,14 +37,19 @@ TEST_CASE("Test loading of FMI missing symbols")
 #if defined ENABLE_MODELICA_COMPILER
 TEST_CASE("Test Resetting a Spawn based FMU")
 {
+  const std::string model_name = "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Validation.ThermalZone.OneZoneOneYear";
+  const std::string fmu_name = "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Validation_ThermalZone_OneZoneOneYear.fmu";
+
   const auto cmd =
       spawnexe() +
-      " modelica --create-fmu Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear --fmu-type ME";
+      " modelica --create-fmu " +
+      model_name +
+      " --fmu-type ME";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
   const auto fmu_path =
-      spawn::project_binary_dir() / "Buildings_ThermalZones_EnergyPlus_Validation_ThermalZone_OneZoneOneYear.fmu";
+      spawn::project_binary_dir() / fmu_name;
 
   spawn::fmu::FMU fmu{fmu_path, false};
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
