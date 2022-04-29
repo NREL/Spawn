@@ -86,7 +86,8 @@ spawn_fs::path mblPathFromEnv()
 std::vector<spawn_fs::path> includePaths(const spawn_fs::path &jmodelica_dir,
                                          const spawn_fs::path &embedded_files_temp_dir)
 {
-  //const std::string mbl_energyplus_c_sources = "Resources/src/ThermalZones/" + spawn::mbl_energyplus_version_string() + "/C-Sources/";
+  // const std::string mbl_energyplus_c_sources = "Resources/src/ThermalZones/" + spawn::mbl_energyplus_version_string()
+  // + "/C-Sources/";
   const auto mbl_path = mblPathFromEnv();
   std::vector<spawn_fs::path> result = {jmodelica_dir / "include/RuntimeLibrary/",
                                         jmodelica_dir / "include/RuntimeLibrary/LazyEvaluation",
@@ -106,7 +107,8 @@ std::vector<spawn_fs::path> includePaths(const spawn_fs::path &jmodelica_dir,
                                         // Which is used by the Modelica external C objects
                                         // It would be good to generalize this so that it works for all Modelica
                                         // libraries that may use external objects
-                                        mbl_path / "Resources/src/ThermalZones/" / spawn::mbl_energyplus_version_string() / "C-Sources/",
+                                        mbl_path / "Resources/src/ThermalZones/" /
+                                            spawn::mbl_energyplus_version_string() / "C-Sources/",
                                         mbl_path / "Resources/C-Sources",
                                         mbl_path / "Resources/src/fmi-library/include"};
 
@@ -154,8 +156,8 @@ std::vector<spawn_fs::path> additionalSource()
   const auto mbl_path = mblPathFromEnv();
   std::vector<spawn_fs::path> result;
 
-  for (const auto &entry :
-       spawn_fs::directory_iterator(mbl_path / "Resources/src/ThermalZones" / spawn::mbl_energyplus_version_string() / "C-Sources/")) {
+  for (const auto &entry : spawn_fs::directory_iterator(mbl_path / "Resources/src/ThermalZones" /
+                                                        spawn::mbl_energyplus_version_string() / "C-Sources/")) {
     if (entry.path().extension() == ".c") {
       result.push_back(entry.path());
     }
@@ -255,7 +257,8 @@ int compileC(const spawn_fs::path &sources_dir,
   // include paths
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
-  const std::vector<std::string> flags{"-Wno-enum-conversion", "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-logical-not-parentheses"};
+  const std::vector<std::string> flags{
+      "-Wno-enum-conversion", "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-logical-not-parentheses"};
   spawn::Compiler compiler(include_paths, flags);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });

@@ -9,16 +9,15 @@ using json = nlohmann::json;
 
 spawn_fs::path single_family_house_idf_path()
 {
-  return spawn::project_source_dir()
-         / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones"/ spawn::mbl_energyplus_version_string() / "Examples"
-         / "SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
+  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones" /
+         spawn::mbl_energyplus_version_string() / "Examples" /
+         "SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
 }
 
 spawn_fs::path two_zones_idf_path()
 {
-  return spawn::project_source_dir()
-    / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones" / spawn::mbl_energyplus_version_string()
-    / "Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
+  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones" /
+         spawn::mbl_energyplus_version_string() / "Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
 }
 
 spawn_fs::path chicago_epw_path()
