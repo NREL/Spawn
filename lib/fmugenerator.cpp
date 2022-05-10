@@ -120,12 +120,13 @@ void createModelDescription(const spawn::Input &input, const spawn_fs::path &sav
   doc.save_file(savepath.c_str());
 }
 
-spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path &base) {
+spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path &base)
+{
   // 1. Look in the base path directory (e.g. same directory as the idf)
   auto result = find_recursive(p, base);
 
   if (result.empty()) {
-    // 2. Look one level up to account for Optimica generated subdirectories (e.g. resources/1/foo.idf) 
+    // 2. Look one level up to account for Optimica generated subdirectories (e.g. resources/1/foo.idf)
     const auto candidate = base.parent_path();
     if (candidate.filename() == "resources") {
       result = find_recursive(p, candidate);
