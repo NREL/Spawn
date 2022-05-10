@@ -1,5 +1,5 @@
 #include "fmugenerator.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
+#include "idf_to_json.hpp"
 #include "../util/fmi_paths.hpp"
 #include "../util/unique_id.hpp"
 #include "input/input.hpp"
@@ -12,6 +12,7 @@ using json = nlohmann::json;
 namespace spawn {
 
 void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id);
+void copyIDFResourceFiles(const spawn_fs::path &idfInputPath,const spawn_fs::path &resourcesOutputPath);
 
 void energyplusToFMU(const std::string &jsoninput,
                      bool nozip,
@@ -63,7 +64,7 @@ void energyplusToFMU(const std::string &jsoninput,
   spawn_fs::create_directories(fmuResourcesPath);
   spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
-  std::cout << "Generating fmuEPFMIPath: " << fmuEPFMIPath << std::endl;
+  copyIDFResourceFiles(input.idfInputPath(), fmuResourcesPath);
 
   spawn_fs::copy_file(epfmupath, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(iddpath, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
@@ -114,6 +115,38 @@ void createModelDescription(const spawn::Input &input, const spawn_fs::path &sav
   }
 
   doc.save_file(savepath.c_str());
+}
+
+spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path &base) {
+  // 1. Look in the base path directory (e.g. same directory as the idf)
+  auto result = find_recursive(p, base);
+
+  if (result.empty()) {
+    // 2. Look one level up to account for Optimica generated subdirectories (e.g. resources/1/foo.idf) 
+    const auto candidate = base.parent_path();
+    if (candidate.filename() == "resources") {
+      result = find_recursive(p, candidate);
+    }
+  }
+
+  return result;
+}
+
+void copyIDFResourceFiles(const spawn_fs::path &idfInputPath, [[maybe_unused]] const spawn_fs::path &resourcesOutputPath)
+{
+  // The purpose of this function is to copy resources (CSV files used by Schedule:File),
+  // into the generated FMU.
+  // Consider that the the idfInputPath may itself by located within the/an "outer" FMU
+  const auto idfDir = idfInputPath.parent_path();
+
+  // Identify csv files used by Schedule:File input objects within the idf
+  const auto schedules = idf_to_json(idfInputPath).value("Schedule:File", nlohmann::json());
+
+  for (const auto &[name, fields] : schedules.items()) {
+    const auto file = fields.find("file_name");
+    const auto resource = findIDFResourceFile(file->get<std::string>(), idfDir);
+    spawn_fs::copy_file(resource, resourcesOutputPath / resource.filename(), spawn_fs::copy_options::skip_existing);
+  }
 }
 
 } // namespace spawn

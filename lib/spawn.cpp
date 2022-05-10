@@ -34,7 +34,7 @@ void Spawn::start()
 
     auto idfjson = idf_to_json(input.idfInputPath());
     prepare_idf(idfjson, input);
-    idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+    idfPath = idfPath.parent_path() / (idfPath.stem().string() + ".spawn.idf");
     json_to_idf(idfjson, idfPath);
 
     const auto &simulation = [&]() {
