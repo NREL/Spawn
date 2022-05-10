@@ -1,7 +1,7 @@
 #include "fmugenerator.hpp"
-#include "idf_to_json.hpp"
 #include "../util/fmi_paths.hpp"
 #include "../util/unique_id.hpp"
+#include "idf_to_json.hpp"
 #include "input/input.hpp"
 #include "modelDescription.xml.hpp"
 #include "ziputil.hpp"
@@ -12,7 +12,7 @@ using json = nlohmann::json;
 namespace spawn {
 
 void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id);
-void copyIDFResourceFiles(const spawn_fs::path &idfInputPath,const spawn_fs::path &resourcesOutputPath);
+void copyIDFResourceFiles(const spawn_fs::path &idfInputPath, const spawn_fs::path &resourcesOutputPath);
 
 void energyplusToFMU(const std::string &jsoninput,
                      bool nozip,
@@ -117,12 +117,13 @@ void createModelDescription(const spawn::Input &input, const spawn_fs::path &sav
   doc.save_file(savepath.c_str());
 }
 
-spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path &base) {
+spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path &base)
+{
   // 1. Look in the base path directory (e.g. same directory as the idf)
   auto result = find_recursive(p, base);
 
   if (result.empty()) {
-    // 2. Look one level up to account for Optimica generated subdirectories (e.g. resources/1/foo.idf) 
+    // 2. Look one level up to account for Optimica generated subdirectories (e.g. resources/1/foo.idf)
     const auto candidate = base.parent_path();
     if (candidate.filename() == "resources") {
       result = find_recursive(p, candidate);
@@ -132,7 +133,8 @@ spawn_fs::path findIDFResourceFile(const spawn_fs::path &p, const spawn_fs::path
   return result;
 }
 
-void copyIDFResourceFiles(const spawn_fs::path &idfInputPath, [[maybe_unused]] const spawn_fs::path &resourcesOutputPath)
+void copyIDFResourceFiles(const spawn_fs::path &idfInputPath,
+                          [[maybe_unused]] const spawn_fs::path &resourcesOutputPath)
 {
   // The purpose of this function is to copy resources (CSV files used by Schedule:File),
   // into the generated FMU.

@@ -45,8 +45,7 @@ namespace spawn {
 
 [[nodiscard]] inline spawn_fs::path find_recursive(const spawn_fs::path &p, const spawn_fs::path &base)
 {
-  for (auto const& dir_entry : spawn_fs::recursive_directory_iterator(base))
-  {
+  for (auto const &dir_entry : spawn_fs::recursive_directory_iterator(base)) {
     if (p.filename() == dir_entry.path().filename()) {
       return dir_entry.path();
     }
@@ -55,6 +54,6 @@ namespace spawn {
   return spawn_fs::path();
 }
 
-} // spawn
+} // namespace spawn
 
 #endif // spawn_util_filesystem_hh_INCLUDED
