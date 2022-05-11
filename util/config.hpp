@@ -2,6 +2,7 @@
 #define SPAWN_CONFIG_HXX_INCLUDED
 
 #include "filesystem.hpp"
+#include <string>
 
 namespace spawn {
 

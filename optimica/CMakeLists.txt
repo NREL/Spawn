@@ -40,9 +40,10 @@ add_executable(
   reflect.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
 )
+target_include_directories(optimica-reflect PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(
   optimica-reflect
-  PRIVATE CONAN_PKG::nlohmann_json spawn_utils
+  PRIVATE CONAN_PKG::nlohmann_json spawn_utils compile_options
 )
 set(reflect_config ${CMAKE_CURRENT_BINARY_DIR}/META-INF/native-image/reflect-config.json)
 add_custom_command(
