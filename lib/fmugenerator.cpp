@@ -146,6 +146,7 @@ void copyIDFResourceFiles(const json &jsonidf, const spawn_fs::path &from, const
   const auto schedules = jsonidf.value("Schedule:File", nlohmann::json());
 
   for (const auto &[name, fields] : schedules.items()) {
+    [[maybe_unused]] auto &n = name;
     const auto file = fields.find("file_name");
     const auto resource = findIDFResourceFile(file->get<std::string>(), from);
     spawn_fs::copy_file(resource, to / resource.filename(), spawn_fs::copy_options::skip_existing);
