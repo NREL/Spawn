@@ -16,7 +16,8 @@ TEST_CASE("Test Zone Multiplier")
   const std::string fmu_name = "Zone_Multiplier.fmu";
   const auto model_dir = spawn::project_binary_dir() / "test/models/";
 
-  const auto cmd = spawnexe() + " modelica --modelica-path " + model_dir.string() + " --create-fmu " + model_name + " --fmu-type ME";
+  const auto cmd =
+      spawnexe() + " modelica --modelica-path " + model_dir.string() + " --create-fmu " + model_name + " --fmu-type ME";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 

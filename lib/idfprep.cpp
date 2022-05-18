@@ -347,9 +347,9 @@ void validate_idf(json &jsonidf)
     }
   }
 
-  if (! multiplier_zones.empty()) {
+  if (!multiplier_zones.empty()) {
     std::string names;
-    for (const auto & name: multiplier_zones) {
+    for (const auto &name : multiplier_zones) {
       if (multiplier_zones.back() == name) {
         // Each zone name except the last gets a comman and space appended
         names.append(name);
@@ -357,7 +357,8 @@ void validate_idf(json &jsonidf)
         names.append(name + ", ");
       }
     }
-    const auto message = fmt::format("The Spawn version of EnergyPlus does not support the zone multiplier input for the zones named: {}.", names);
+    const auto message = fmt::format(
+        "The Spawn version of EnergyPlus does not support the zone multiplier input for the zones named: {}.", names);
     throw std::runtime_error(message);
   }
 }
