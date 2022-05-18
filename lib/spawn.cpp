@@ -31,15 +31,18 @@ void Spawn::start()
     is_running = true;
 
     auto idfPath = input.idfInputPath();
+    auto idfjson = idf_to_json(idfPath);
 
     // Skip this step if the .spawn extension is present,
     // which will indicate that the idf has already been "prepared"
     if (idfPath.stem().extension() != ".spawn") {
-      auto idfjson = idf_to_json(idfPath);
       prepare_idf(idfjson, input);
       idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
       json_to_idf(idfjson, idfPath);
     }
+
+    // Will throw an exception if validation fails
+    validate_idf(idfjson);
 
     const auto &simulation = [&]() {
       try {

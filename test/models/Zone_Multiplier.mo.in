@@ -1,0 +1,25 @@
+model Zone_Multiplier "Zone_Multiplier"
+  extends Modelica.Icons.Example;
+  replaceable package Medium=Buildings.Media.Air;
+
+  parameter String weaName=Modelica.Utilities.Files.loadResource(
+  "modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos");
+
+  Buildings.ThermalZones.${MBL_ENERGYPLUS_VERSION_STRING}.ThermalZone zon(zoneName="Core_top",
+  redeclare package Medium = Medium);
+
+  inner Buildings.ThermalZones.${MBL_ENERGYPLUS_VERSION_STRING}.Building building(
+    idfName=Modelica.Utilities.Files.loadResource("file:///${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/testfiles/RefBldgLargeOfficeNew2004_Chicago.idf"),
+    epwName=Modelica.Utilities.Files.loadResource("modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"),
+    weaName=Modelica.Utilities.Files.loadResource("modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos"));
+
+  Modelica.Blocks.Sources.RealExpression realExpression;
+  Modelica.Blocks.Sources.RealExpression realExpression1;
+  Modelica.Blocks.Sources.RealExpression realExpression2;
+
+equation
+  connect(realExpression.y, zon.qGai_flow[1]);
+  connect(realExpression1.y, zon.qGai_flow[2]);
+  connect(realExpression2.y, zon.qGai_flow[3]);
+
+end Zone_Multiplier;

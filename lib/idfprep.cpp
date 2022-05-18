@@ -335,4 +335,31 @@ void prepare_idf(json &jsonidf, const Input &input)
   addPeopleOutputVariables(jsonidf, input);
 }
 
+void validate_idf(json &jsonidf)
+{
+  std::vector<std::string> multiplier_zones;
+
+  auto &zone_objects = jsonidf["Zone"];
+  for (const auto &[name, fields] : zone_objects.items()) {
+    const auto multiplier = fields.value("multiplier", 1);
+    if (multiplier != 1) {
+      multiplier_zones.push_back(name);
+    }
+  }
+
+  if (! multiplier_zones.empty()) {
+    std::string names;
+    for (const auto & name: multiplier_zones) {
+      if (multiplier_zones.back() == name) {
+        // Each zone name except the last gets a comman and space appended
+        names.append(name);
+      } else {
+        names.append(name + ", ");
+      }
+    }
+    const auto message = fmt::format("The Spawn version of EnergyPlus does not support the zone multiplier input for the zones named: {}.", names);
+    throw std::runtime_error(message);
+  }
+}
+
 } // namespace spawn

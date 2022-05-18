@@ -110,6 +110,7 @@ public:
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string &message);
+  void emptyLogMessageQueue();
 
   void exchange(const bool force = false);
 
@@ -152,7 +153,6 @@ private:
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string>> log_message_queue;
-  void emptyLogMessageQueue();
 
   // Given a surface name, return the index according to EnergyPlus
   [[nodiscard]] int surfaceNum(const std::string &surfaceName) const;

@@ -57,6 +57,7 @@ fmi2Status handle_fmi_exception(spawn::Spawn &comp)
     throw;
   } catch (const std::runtime_error &e) {
     comp.logMessage(EnergyPlus::Error::Fatal, e.what());
+    comp.emptyLogMessageQueue();
   } catch (...) {
     std::clog << "Unknown Exception\n";
   }

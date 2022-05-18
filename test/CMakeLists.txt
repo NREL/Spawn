@@ -6,6 +6,7 @@ else()
 endif()
 
 configure_file(paths.in.cpp paths.in2.cpp)
+configure_file(models/Zone_Multiplier.mo.in models/Zone_Multiplier.mo)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -30,6 +31,7 @@ add_executable(
   test_mbl_idf.cpp
   test_infiltration.cpp
   test_simulate.cpp
+  test_zone_multiplier.cpp
 )
 
 add_dependencies(tests example_fmu_lib)
