@@ -269,4 +269,68 @@ release:mac:
       #  only:
       #    - tags
 
+build:centos7:
+  stage: build
+  tags:
+    - centos7
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PACKAGE=ON -DCPACK_BINARY_IFW=OFF -DCPACK_BINARY_STGZ=OFF -DBUILD_TESTING=ON -DENABLE_MODELICA_COMPILER=OFF -DENABLE_BUILDINGS_LIBRARY=OFF  ..
+    - cmake ..
+    - make -j4
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+test:centos7:
+  stage: test
+  tags:
+    - centos7
+  dependencies:
+    - build:centos7
+  script:
+    - cd build
+    - ctest -R spawn
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/
+
+package:centos7:
+  stage: package
+  tags:
+    - centos7
+  dependencies:
+    - test:centos7
+  script:
+    - cd build
+    - make package
+  artifacts:
+    expire_in: 6 hrs
+    paths:
+      - build/Spawn*.tar.gz
+
+publish:centos7:
+  stage: publish
+  tags:
+    - centos7
+  dependencies:
+    - package:centos7
+  script:
+    - python3 cmake/publish.py publish
+  when: manual
+
+release:centos7:
+  stage: release
+  tags:
+    - centos7
+  dependencies:
+    - package:centos7
+  script:
+    - python3 cmake/publish.py release
+  when: manual
+  only:
+    - tags
 
