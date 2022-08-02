@@ -1,6 +1,6 @@
+#include "../util/dynamiclibrary.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/temp_directory.hpp"
-#include "../util/dynamiclibrary.hpp"
 
 #include "../compiler/compiler.hpp"
 #include <catch2/catch.hpp>
@@ -17,7 +17,7 @@ TEST_CASE("Sanity Test Embedded Compiler")
 
   {
     std::ofstream test_file(test_file_path);
-    test_file<<"int main() {}" << std::endl; // we want a flush here
+    test_file << "int main() {}" << std::endl; // we want a flush here
   }
 
   compiler.compile_and_link(test_file_path);
@@ -25,7 +25,6 @@ TEST_CASE("Sanity Test Embedded Compiler")
   const spawn_fs::path object_path = td.dir() / "test.so";
 
   compiler.write_shared_object_file(object_path, td.dir(), {}, false);
-
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -65,9 +64,9 @@ TEST_CASE("Test embedded compiler simple loadable module")
 
   spawn::util::Dynamic_Library dl(object_path);
 
-  CHECK_THROWS(dl.load_symbol<void ()>("unknown_symbol"));
-  
-  const auto func = dl.load_symbol<int ()>("get_value");
+  CHECK_THROWS(dl.load_symbol<void()>("unknown_symbol"));
+
+  const auto func = dl.load_symbol<int()>("get_value");
 
   CHECK(func() == 42);
 }
@@ -119,7 +118,8 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
   {
     std::ofstream test_file(test_file_path);
     // Note: fabs was ruled out because it gets eliminated in the resulting binary
-    test_file << "#include <math.h>\ndouble get_cos(double input) { return cos(input); }" << std::endl; // we want a flush here
+    test_file << "#include <math.h>\ndouble get_cos(double input) { return cos(input); }"
+              << std::endl; // we want a flush here
   }
 
   compiler.compile_and_link(test_file_path);
@@ -136,7 +136,7 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
   CHECK(file_size > 0);
 
   spawn::util::Dynamic_Library dl(object_path);
-  const auto func = dl.load_symbol<double (double)>("get_cos");
+  const auto func = dl.load_symbol<double(double)>("get_cos");
 
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
