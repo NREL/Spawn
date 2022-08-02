@@ -362,7 +362,7 @@ int modelicaToFMU(const std::string &moinput,
   }
 
   // tmp is where we extract embedded files
-  const auto &temp_dir = output_dir / "tmp";
+  const auto temp_dir = output_dir / "tmp";
   extractEmbeddedCompilerFiles(temp_dir, moType);
 
   auto jmodelica_dir = temp_dir / "JModelica";

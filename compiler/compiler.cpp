@@ -97,7 +97,8 @@ namespace spawn {
 
 void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
-                                        const std::vector<spawn_fs::path> &additional_libs)
+                                        const std::vector<spawn_fs::path> &additional_libs,
+                                        bool link_standard_libs)
 {
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.o";
@@ -117,12 +118,18 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
     str_args.push_back(toString(lib));
   }
 
+  if (link_standard_libs) {
+    str_args.insert(str_args.end(),
+                    {
+                        "-lm",
+                        "-lc",
+                        "-ldl",
+                        "-lpthread",
+                    });
+  }
+
   str_args.insert(str_args.end(),
                   {
-                      "-lm",
-                      "-lc",
-                      "-ldl",
-                      "-lpthread",
                       "-o",
                       toString(loc),
                   });

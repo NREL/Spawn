@@ -43,7 +43,8 @@ public:
   void write_object_file(const spawn_fs::path &loc);
   void write_shared_object_file(const spawn_fs::path &loc,
                                 const spawn_fs::path &sysroot,
-                                const std::vector<spawn_fs::path> &additional_libs = {});
+                                const std::vector<spawn_fs::path> &additional_libs = {},
+                                bool link_standard_libs = true);
 
 private:
   std::string m_target_triple{get_target_triple()};

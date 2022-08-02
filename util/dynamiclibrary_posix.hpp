@@ -14,10 +14,10 @@ namespace util {
     template <typename Signature> [[nodiscard]] Signature *load_symbol(const std::string &name)
     {
       // reinterpret_cast is necessary here
-      const auto symbol = reinterpret_cast<Signature *>(dlsym(m_handle.get(), name.c_str()));
+      const auto symbol = reinterpret_cast<Signature *>(dlsym(m_handle.get(), name.c_str())); // NOLINT
 
       if (symbol == nullptr) {
-        throw std::runtime_error(fmt::format("Unable to load symbol: '{}', reason: '{}'", name, dlerror()));
+        throw std::runtime_error(fmt::format("Unable to load symbol: '{}', reason: '{}'", name, dlerror())); // NOLINT
       }
 
       return symbol;
@@ -28,7 +28,7 @@ namespace util {
     {
       if (!m_handle) {
         throw std::runtime_error(
-            fmt::format("Unable to load library '{}', reason: '{}'", m_location.string(), dlerror()));
+            fmt::format("Unable to load library '{}', reason: '{}'", m_location.string(), dlerror())); // NOLINT
       }
     }
 
