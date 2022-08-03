@@ -95,24 +95,48 @@ std::string getExecutablePath()
 
 namespace spawn {
 
+spawn_fs::path Compiler::shared_object_extension()
+{
+#ifdef _MSC_VER
+  return ".dll";
+#else
+  return ".so";
+#endif
+}
+
 void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
                                         const std::vector<spawn_fs::path> &additional_libs,
                                         bool link_standard_libs)
 {
   util::Temp_Directory td;
-  const auto temporary_object_file_location = td.dir() / "temporary_object.o";
+  const auto temporary_object_file_location = td.dir() / "temporary_object.obj";
   write_object_file(temporary_object_file_location);
 
   std::stringstream out_ss;
   std::stringstream err_ss;
 
-  std::vector<std::string> str_args{"ld.lld-10",
-                                    "-shared",
-                                    fmt::format("--sysroot={}", toString(sysroot)),
-                                    fmt::format("-L{}", toString(sysroot / "usr/lib/")),
-                                    fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
-                                    toString(temporary_object_file_location)};
+  std::vector<std::string> str_args{
+#ifdef _MSC_VER
+      "ld-link.exe",
+      "/dll",
+      "/subsystem:windows",
+      "/machine:x64",
+      "/dynamicbase",
+      "/nxcompat",
+      "/opt:ref",
+      "/nologo",
+      "/tlbid:1",
+      "/opt:icf",
+#else
+      "ld.lld-10",
+      "-shared",
+      fmt::format("--sysroot={}", toString(sysroot)),
+      fmt::format("-L{}", toString(sysroot / "usr/lib/")),
+      fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+#endif
+      toString(temporary_object_file_location)
+  };
 
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));
@@ -128,11 +152,21 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                     });
   }
 
-  str_args.insert(str_args.end(),
-                  {
-                      "-o",
-                      toString(loc),
-                  });
+  str_args.insert(
+      str_args.end(),
+      {
+#ifdef _MSC_VER
+          fmt::format("/out:{}", toString(loc)),
+          "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
+          "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
+          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x64/libucrt.lib",
+          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
+          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",
+#else
+          "-o",
+          toString(loc),
+#endif
+      });
 
   for (const auto &arg : str_args) {
     spdlog::trace("embedded lld argument: {}", arg);
@@ -151,7 +185,12 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
     llvm::raw_os_ostream err(err_ss);
     llvm::raw_os_ostream out(out_ss);
 
+#ifdef _MSC_VER
+    success = lld::coff::link(Args, false, out, err);
+#else
     success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
+#endif
+
     if (!success) {
       spdlog::error("Linking errors with {} errors", lld::errorHandler().errorCount);
     }
@@ -241,7 +280,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
     return "-I" + toString(str);
   });
   str_args.emplace_back("-fsyntax-only");
-  str_args.emplace_back("-fPIC");
+  // str_args.emplace_back("-fPIC");
   str_args.emplace_back("-g");
   str_args.emplace_back("-Wno-incomplete-setjmp-declaration");
   str_args.emplace_back("-Wno-expansion-to-defined");

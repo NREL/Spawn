@@ -46,6 +46,12 @@ public:
                                 const std::vector<spawn_fs::path> &additional_libs = {},
                                 bool link_standard_libs = true);
 
+  static spawn_fs::path append_shared_object_extension(spawn_fs::path path)
+  {
+    return path += shared_object_extension();
+  }
+  static spawn_fs::path shared_object_extension();
+
 private:
   std::string m_target_triple{get_target_triple()};
   const llvm::Target *m_target{get_target(m_target_triple)};

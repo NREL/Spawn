@@ -4,6 +4,7 @@
 
 #include "../compiler/compiler.hpp"
 #include <catch2/catch.hpp>
+#include <spdlog/spdlog.h>
 
 TEST_CASE("Sanity Test Embedded Compiler")
 {
@@ -22,7 +23,7 @@ TEST_CASE("Sanity Test Embedded Compiler")
 
   compiler.compile_and_link(test_file_path);
 
-  const spawn_fs::path object_path = td.dir() / "test.so";
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
 
   compiler.write_shared_object_file(object_path, td.dir(), {}, false);
 
@@ -36,6 +37,7 @@ TEST_CASE("Sanity Test Embedded Compiler")
 
 TEST_CASE("Test embedded compiler simple loadable module")
 {
+  spdlog::set_level(spdlog::level::trace);
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
@@ -46,12 +48,24 @@ TEST_CASE("Test embedded compiler simple loadable module")
 
   {
     std::ofstream test_file(test_file_path);
-    test_file << "int get_value() { return 42; }" << std::endl; // we want a flush here
+
+test_file << R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT int get_value() { 
+  return 42;
+}
+)" << std::endl; // we want a flush here
+
   }
 
   compiler.compile_and_link(test_file_path);
 
-  const spawn_fs::path object_path = td.dir() / "test.so";
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test_with_return");
 
   compiler.write_shared_object_file(object_path, td.dir(), {}, false);
 
@@ -83,12 +97,22 @@ TEST_CASE("Test embedded compiler simple loadable module with param")
 
   {
     std::ofstream test_file(test_file_path);
-    test_file << "int get_value_1(int input) { return 42 * input; }" << std::endl; // we want a flush here
+    test_file << R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT int get_value_1(int input) { 
+  return 42 * input;
+}
+)" << std::endl; // we want a flush here
   }
 
   compiler.compile_and_link(test_file_path);
 
-  const spawn_fs::path object_path = td.dir() / "test.so";
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test_with_param");
 
   compiler.write_shared_object_file(object_path, td.dir(), {}, false);
 
@@ -118,13 +142,24 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
   {
     std::ofstream test_file(test_file_path);
     // Note: fabs was ruled out because it gets eliminated in the resulting binary
-    test_file << "#include <math.h>\ndouble get_cos(double input) { return cos(input); }"
+    test_file << 
+        R"(
+#include <math.h>
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_cos(double input) { return cos(input); }
+)"
               << std::endl; // we want a flush here
   }
 
   compiler.compile_and_link(test_file_path);
 
-  const spawn_fs::path object_path = td.dir() / "test.so";
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath");
 
   compiler.write_shared_object_file(object_path, td.dir(), {}, false);
 
@@ -141,3 +176,4 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
 }
+
