@@ -135,8 +135,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
       fmt::format("-L{}", toString(sysroot / "usr/lib/")),
       fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
 #endif
-      toString(temporary_object_file_location)
-  };
+      toString(temporary_object_file_location)};
 
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));

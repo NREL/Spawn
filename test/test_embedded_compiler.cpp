@@ -49,7 +49,7 @@ TEST_CASE("Test embedded compiler simple loadable module")
   {
     std::ofstream test_file(test_file_path);
 
-test_file << R"(
+    test_file << R"(
 #ifdef _MSC_VER
 #define DLLEXPORT __declspec(dllexport)
 #else
@@ -60,7 +60,6 @@ DLLEXPORT int get_value() {
   return 42;
 }
 )" << std::endl; // we want a flush here
-
   }
 
   compiler.compile_and_link(test_file_path);
@@ -142,7 +141,7 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
   {
     std::ofstream test_file(test_file_path);
     // Note: fabs was ruled out because it gets eliminated in the resulting binary
-    test_file << 
+    test_file <<
         R"(
 #include <math.h>
 
@@ -153,8 +152,7 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
 #endif
 
 DLLEXPORT double get_cos(double input) { return cos(input); }
-)"
-              << std::endl; // we want a flush here
+)" << std::endl; // we want a flush here
   }
 
   compiler.compile_and_link(test_file_path);
@@ -176,4 +174,3 @@ DLLEXPORT double get_cos(double input) { return cos(input); }
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
 }
-
