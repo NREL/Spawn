@@ -148,7 +148,8 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
         {
 #ifdef _MSC_VER
             "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
-            "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
+            "c:/Program Files/Microsoft Visual "
+            "Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
             "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x64/libucrt.lib",
             "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
             "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",

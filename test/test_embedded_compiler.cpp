@@ -44,7 +44,6 @@ TEST_CASE("Test embedded compiler simple loadable module")
 
   spawn::util::Temp_Directory td;
 
-
   const spawn_fs::path test_file_path = td.dir() / "test.c";
 
   {
@@ -176,7 +175,6 @@ DLLEXPORT double get_cos(double input) { return cos(input); }
   CHECK(func(42.0) == std::cos(42.0));
 }
 
-
 TEST_CASE("Test embedded compiler with bootstrapped DLL")
 {
   const std::vector<spawn_fs::path> include_paths{};
@@ -237,7 +235,6 @@ DLLEXPORT double get_val(double input) {
   CHECK(func(42.0) == 42.0 * 3.2);
 }
 
-
 TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 {
   const std::vector<spawn_fs::path> include_paths{};
@@ -250,7 +247,6 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 
   const spawn_fs::path test_file_path = td.dir() / "test.c";
 
- 
   {
     std::ofstream test_file(test_file_path);
     test_file <<
@@ -297,4 +293,3 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
 }
-
