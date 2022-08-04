@@ -128,6 +128,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
       "/nologo",
       "/tlbid:1",
       "/opt:icf",
+      "/force:unresolved",
 #else
       "ld.lld-10",
       "-shared",
@@ -135,38 +136,41 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
       fmt::format("-L{}", toString(sysroot / "usr/lib/")),
       fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
 #endif
-      toString(temporary_object_file_location)
-  };
+      toString(temporary_object_file_location)};
 
   for (const auto &lib : additional_libs) {
     str_args.push_back(toString(lib));
   }
 
   if (link_standard_libs) {
-    str_args.insert(str_args.end(),
-                    {
-                        "-lm",
-                        "-lc",
-                        "-ldl",
-                        "-lpthread",
-                    });
+    str_args.insert(
+        str_args.end(),
+        {
+#ifdef _MSC_VER
+            "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
+            "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
+            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x64/libucrt.lib",
+            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
+            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",
+#else
+            "-lm",
+            "-lc",
+            "-ldl",
+            "-lpthread",
+
+#endif
+        });
   }
 
-  str_args.insert(
-      str_args.end(),
-      {
+  str_args.insert(str_args.end(),
+                  {
 #ifdef _MSC_VER
-          fmt::format("/out:{}", toString(loc)),
-          "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
-          "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
-          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x64/libucrt.lib",
-          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
-          "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",
+                      fmt::format("/out:{}", toString(loc)),
 #else
-          "-o",
-          toString(loc),
+                      "-o",
+                      toString(loc),
 #endif
-      });
+                  });
 
   for (const auto &arg : str_args) {
     spdlog::trace("embedded lld argument: {}", arg);
