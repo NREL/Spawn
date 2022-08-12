@@ -4,12 +4,12 @@ find_package(Java 11)
 execute_process(COMMAND ${Java_JAVA_EXECUTABLE} --version
                 OUTPUT_VARIABLE JAVA_VERSION_STRING)
 
-if(NOT JAVA_VERSION_STRING MATCHES ".*GraalVM.*21.*11.*")
-  message(
-    FATAL_ERROR
-      "Did not find expected graalvm java version (version 21 based on Java 11) found: ${JAVA_VERSION_STRING}"
-  )
-endif()
+#if(NOT JAVA_VERSION_STRING MATCHES ".*GraalVM.*21.*11.*")
+#  message(
+#    FATAL_ERROR
+#      "Did not find expected graalvm java version (version 21 based on Java 11) found: ${JAVA_VERSION_STRING}"
+#  )
+#endif()
 
 get_filename_component(java_bin ${Java_JAVAC_EXECUTABLE} DIRECTORY)
 message(

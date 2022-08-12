@@ -19,6 +19,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.io.File;
+import java.nio.file.Path;
 
 // https://github.com/cliftonlabs/json-simple
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -72,7 +73,7 @@ interface Optimica {
       OptimicaCompiler mc = new OptimicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);
-      mc.setOutDir(new File(outputDir));
+      mc.setOutDir(new File(outputDir).toPath());
       mc.setLogger("d:" + outputDir + "/out.log");
       mc.setModelicapath(mslDir);
       OptimicaCompiler.TargetObject to;

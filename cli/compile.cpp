@@ -121,8 +121,6 @@ std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
   const auto msl = msl_path();
 
   return {embedded_files_temp_dir / "usr/lib/libfmilib.a",
-          // linking libModelicaExternalCasadiC results in runtime errors
-          // msl / "Modelica/Resources/Library/linux64/libModelicaExternalCasadiC.a",
           msl / "Modelica/Resources/Library/linux64/libzlib.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaMatIO.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaExternalC.a",
@@ -138,6 +136,7 @@ std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
           jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_cvode.a",
           jmodelica_dir / "ThirdParty/Sundials/lib/libsundials_kinsol.a",
           jmodelica_dir / "ThirdParty/Minpack/lib/libcminpack.a",
+
           jmodelica_dir / "lib/RuntimeLibrary/libjmi.a",
           jmodelica_dir / "lib/RuntimeLibrary/libblas.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_evaluator_util.a",
@@ -148,6 +147,8 @@ std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_default.a",
           jmodelica_dir / "lib/RuntimeLibrary/libjmi_get_set_lazy.a",
           jmodelica_dir / "lib/RuntimeLibrary/liblapack.a",
+          jmodelica_dir / "lib/RuntimeLibrary/libModelicaUtilities.a",
+
           embedded_files_temp_dir / spawn::gfortranlib_embedded_path()};
 }
 

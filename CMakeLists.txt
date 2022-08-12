@@ -15,7 +15,7 @@ option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
 if(ENABLE_MODELICA_COMPILER)
-  find_file(OPTIMICA_TARFILE OCT-enduser-stable-1.33.3.tar.gz PATHS /usr/local/etc REQUIRED)
+  find_file(OPTIMICA_TARFILE OCT-1.37.5-final-ubuntu.tar.gz PATHS /usr/local/etc REQUIRED)
   set(OPTIMICA_TARFILE_URL
       "file://${OPTIMICA_TARFILE}"
       CACHE STRING "Tarball of Optimica distribution")
@@ -58,8 +58,6 @@ if(ENABLE_CLANG_TIDY)
     if(${CMAKE_CXX_STANDARD})
       set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} -extra-arg=-std=c++${CMAKE_CXX_STANDARD})
     endif()
-
-    list(APPEND CMAKE_CXX_CLANG_TIDY -warnings-as-errors=*)
   else()
     message(${WARNING_MESSAGE} "clang-tidy requested but executable not found")
   endif()
@@ -67,7 +65,6 @@ endif()
 
 # Enable runtime checking features
 if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-
   target_compile_options(compile_options INTERFACE -Wall -Wconversion -Wextra -Wpedantic -Werror)
   option(ENABLE_ADDRESS_SANITIZER "Enable address sanitizer testing in gcc/clang" OFF)
   if(ENABLE_ADDRESS_SANITIZER)

@@ -14,7 +14,7 @@ TEST_CASE("Simulate class is able to run a simulation")
 
   const std::string fmu_name =
       "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Examples_SingleFamilyHouse_AirHeating.fmu";
-  const auto fmu_path = spawn::project_binary_dir() / fmu_name;
+  const auto fmu_path = spawn::project_binary_dir() / "test" / fmu_name;
 
   spawn::fmu::Sim sim(fmu_path);
   nlohmann::json config;
