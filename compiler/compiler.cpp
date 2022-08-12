@@ -147,6 +147,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
         str_args.end(),
         {
 #ifdef _MSC_VER
+
             "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
             "c:/Program Files/Microsoft Visual "
             "Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
@@ -161,6 +162,14 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 
 #endif
         });
+  } else {
+    str_args.insert(str_args.end(),
+                    {
+#ifdef _MSC_VER
+                        "C:/Users/Jason/Spawn-build/compiler/Release/c_bridge.lib",
+#else
+#endif
+                    });
   }
 
   str_args.insert(str_args.end(),

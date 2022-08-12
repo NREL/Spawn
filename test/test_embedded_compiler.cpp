@@ -59,7 +59,7 @@ TEST_CASE("Test embedded compiler simple loadable module")
 DLLEXPORT int get_value() { 
   return 42;
 }
-)" << std::endl; // we want a flush here
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
@@ -106,7 +106,7 @@ TEST_CASE("Test embedded compiler simple loadable module with param")
 DLLEXPORT int get_value_1(int input) { 
   return 42 * input;
 }
-)" << std::endl; // we want a flush here
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
@@ -152,7 +152,7 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
 #endif
 
 DLLEXPORT double get_cos(double input) { return cos(input); }
-)" << std::endl; // we want a flush here
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
@@ -212,7 +212,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 DLLEXPORT double get_val(double input) {
   return input * 3.2;
 }
-)" << std::endl; // we want a flush here
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
@@ -237,7 +237,10 @@ DLLEXPORT double get_val(double input) {
 
 TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 {
-  const std::vector<spawn_fs::path> include_paths{};
+  spdlog::set_level(spdlog::level::trace);
+  const std::vector<spawn_fs::path> include_paths{
+      "C:/Users/Jason/Spawn/compiler",
+  };
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags);
 
@@ -251,6 +254,8 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
     std::ofstream test_file(test_file_path);
     test_file <<
         R"(
+#include "c_bridge.h"
+
 #ifdef _MSC_VER
 #define DLLEXPORT __declspec(dllexport)
 #else
@@ -259,19 +264,16 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 
 #define BOOL int
 #define WINAPI __stdcall
-#define __cdecl __attribute__((__cdecl__))
 
 BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lpReserved)
 {
   return 1;
 }
 
-double __cdecl cos(double);
-
 DLLEXPORT double get_cos(double input) {
   return cos(input);
 }
-)" << std::endl; // we want a flush here
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);

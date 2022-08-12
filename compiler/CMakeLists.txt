@@ -76,3 +76,8 @@ if(NOT MSVC)
 else()
   target_compile_definitions(compiler PUBLIC -DNOMINMAX)
 endif()
+
+
+add_library(c_bridge SHARED c_bridge.c)
+set_property(TARGET c_bridge PROPERTY
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

@@ -29,7 +29,7 @@ if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
     list(APPEND embedded_paths "usr/lib/libfmilib.a")
   endif()
 
-  embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
+  #embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src compile.hpp compile.cpp ${embedded_output})
 endif()

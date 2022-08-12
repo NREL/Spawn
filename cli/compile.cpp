@@ -9,6 +9,11 @@
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
 #include <spdlog/spdlog.h>
+#include <cstdlib>
+
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
 
 using json = nlohmann::json;
 
@@ -315,7 +320,7 @@ void extractEmbeddedCompilerFiles(const spawn_fs::path &dir, const ModelicaCompi
   // TODO: This includes both jmodelica and optimica,
   // it would be better to select only the compiler files we need
   for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
-    spawnmodelica::embedded_files::extractFile(file, dir.native());
+    spawnmodelica::embedded_files::extractFile(file, dir.string());
   }
 
   // The embedded filesystem does not preserve permission so this is an ugly but important step
@@ -375,8 +380,13 @@ int modelicaToFMU(const std::string &moinput,
     modelicaPaths.push_back(mbl_home_dir().generic_string());
   }
 
+#ifdef _MSC_VER
+  SetEnvironmentVariable("JMODELICA_HOME", jmodelica_dir.generic_string().c_str());
+  SetEnvironmentVariable("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str());
+#else
   setenv("JMODELICA_HOME", jmodelica_dir.generic_string().c_str(), 1);
   setenv("MODELICAPATH", pathVectorToPath(modelicaPaths).c_str(), 1);
+#endif
 
   int result = compileMO(moinput, output_dir.native(), modelicaPaths, moType);
   if (result == 0) {
