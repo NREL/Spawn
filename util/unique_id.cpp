@@ -13,9 +13,9 @@ std::string uniqueId()
 
   while (uuid.size() < len) {
     auto n = gen();
-    for (auto i = std::mt19937::max(); i & 0x8 && uuid.size() < len; i >>= 4) {
-      uuid += hex_chars[n & 0xf];
-      n >>= 4;
+    for (unsigned i = std::mt19937::max(); bool(i & 0x8U) && (uuid.size() < len); i >>= 4U) {
+      uuid += hex_chars[n & 0xfU];
+      n >>= 4U;
     }
   }
 
