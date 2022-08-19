@@ -5,11 +5,11 @@
 #include "cli/embedded_files.hxx"
 #include "jmodelica.h"
 #include "optimica.h"
+#include <cstdlib>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
 #include <spdlog/spdlog.h>
-#include <cstdlib>
 
 #ifdef _MSC_VER
 #include <Windows.h>
