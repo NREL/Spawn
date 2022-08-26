@@ -78,6 +78,6 @@ else()
 endif()
 
 
-add_library(c_bridge SHARED c_bridge.c)
+add_library(c_bridge SHARED c_bridge/c_bridge.c)
 set_property(TARGET c_bridge PROPERTY
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

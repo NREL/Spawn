@@ -16,10 +16,26 @@
 #endif
 
 
+// stdio.h
+C_BRIDGE_API int snprintf_wrap( char *restrict buffer, size_t bufsz, const char *restrict format, ... );
+
+// string.h
+C_BRIDGE_API void *memset_wrap(void *dest, int ch, size_t count);
+
+// math.h
 C_BRIDGE_API double cos_wrap(double);
 
 #ifndef C_BRIDGE_IMPL
+
+// stdio.h
+#define snprintf snprintf_wrap
+
+// string.h
+#define memset cos_wrap
+
+// math.h
 #define cos cos_wrap
+
 #endif
 
 

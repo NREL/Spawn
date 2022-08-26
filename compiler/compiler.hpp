@@ -10,6 +10,7 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 
+
 namespace spawn {
 
 class Compiler
@@ -92,6 +93,7 @@ private:
   static std::unique_ptr<llvm::Module> initialize_module(llvm::orc::ThreadSafeContext ctx,
                                                          llvm::TargetMachine *target_machine)
   {
+    static std::atomic_int id = 0;
     assert(ctx.getContext());
     auto module = std::make_unique<llvm::Module>("Module", *ctx.getContext());
     module->setDataLayout(target_machine->createDataLayout());
