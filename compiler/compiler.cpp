@@ -267,8 +267,6 @@ void Compiler::write_object_file(const spawn_fs::path &loc)
 
   pass.run(*m_currentCompilation);
   destination.flush();
-
-  llvm::llvm_shutdown();
 }
 
 std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
