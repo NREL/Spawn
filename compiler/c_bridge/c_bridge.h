@@ -1,20 +1,18 @@
 #ifndef C_BRIDGE_H
 #define C_BRIDGE_H
 
-
 #ifdef _MSC_VER
 #if defined(c_bridge_EXPORTS)
-#      define C_BRIDGE_API __declspec(dllexport)
-#      define C_BRIDGE_TEMPLATE_EXT
-#    else
-#      define C_BRIDGE_API __declspec(dllimport)
-#      define C_BRIDGE_TEMPLATE_EXT extern
-#    endif
+#define C_BRIDGE_API __declspec(dllexport)
+#define C_BRIDGE_TEMPLATE_EXT
 #else
-#    define C_BRIDGE_API
-#    define C_BRIDGE_TEMPLATE_EXT
+#define C_BRIDGE_API __declspec(dllimport)
+#define C_BRIDGE_TEMPLATE_EXT extern
 #endif
-
+#else
+#define C_BRIDGE_API
+#define C_BRIDGE_TEMPLATE_EXT
+#endif
 
 // stdio.h
 C_BRIDGE_API int snprintf_wrap( char *restrict buffer, size_t bufsz, const char *restrict format, ... );
@@ -37,6 +35,5 @@ C_BRIDGE_API double cos_wrap(double);
 #define cos cos_wrap
 
 #endif
-
 
 #endif
