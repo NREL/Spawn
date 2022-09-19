@@ -113,12 +113,10 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
   const auto temporary_object_file_location = td.dir() / "temporary_object.obj";
   write_object_file(temporary_object_file_location);
 
-  std::stringstream out_ss;
-  std::stringstream err_ss;
 
   std::vector<std::string> str_args{
 #ifdef _MSC_VER
-      "ld-link.exe",
+      "ld-link",
       "/dll",
       "/subsystem:windows",
       "/machine:x64",
@@ -195,12 +193,27 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 
   bool success = true;
 
+  spdlog::trace("Temp obj file size: {}", std::filesystem::file_size(temporary_object_file_location));
+
+  std::stringstream out_ss;
+  std::stringstream err_ss;
+
   { // scope to ensure error stream buffer is flushed
     llvm::raw_os_ostream err(err_ss);
     llvm::raw_os_ostream out(out_ss);
 
 #ifdef _MSC_VER
-    success = lld::coff::link(Args, false, out, err);
+    //success = lld::coff::link(Args, false, out, err);
+    std::string lld_cmd = "\"C:/Program Files/LLVM/bin/lld-link.exe\"";
+    auto newargs = str_args;
+    newargs.erase(newargs.begin());
+    for (const auto &arg : newargs) {
+      lld_cmd += fmt::format(" \"{}\"", arg);
+    }
+    lld_cmd = fmt::format("\"{}\"", lld_cmd);
+
+    spdlog::trace("Calling: `{}`", lld_cmd);
+    system(lld_cmd.c_str());
 #else
     success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
 #endif
@@ -209,6 +222,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
       spdlog::error("Linking errors with {} errors", lld::errorHandler().errorCount);
     }
   }
+
 
   const auto errors = err_ss.str();
 
