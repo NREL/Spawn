@@ -245,13 +245,12 @@ if(ENABLE_MODELICA_COMPILER)
 endif()
 
 if (ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
-  message(
-    "To get the compiler working on windows, you need: clang-10 custom build with appropriate version of MSVC" 
-    "; built with LLVM_ENABLE_PROJECTS=clang;lld LLVM_TARGETS_TO_BUILD=X86 LLVM_TOOL_LLD_BUILD=TRUE. Make sure NSIS is installed, and `make PACKAGE`."
-    "Note that downloading the official source package will not work, because it has symlinks. You have to clone the github repository, checkout 10.0.1, and configure "
-    "the llvm subdirectory. What else... oh right. You'll get a build error. Comment out line 181 in type_traits.h when you get there. It'll be fine. Trust me."
-    "Once the package is built, it should install fine, and be found by this script"  
-  )
+  if (MSVC)
+    message(
+      "To get the compiler working on windows, you need: clang-10 custom build with appropriate version of MSVC" 
+      "See: https://github.com/lefticus/llvm-msvc/releases/tag/llvmorg-10.0.1"
+    )
+  endif()
 
   # we only support llvm-10 right now
   find_package(LLVM 10 REQUIRED CONFIG)
