@@ -1,6 +1,7 @@
 #include "spawn.hpp"
+#include "../util/config.hpp"
 #include "../util/conversion.hpp"
-#include "../util/paths.hpp"
+#include "../util/math.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
@@ -13,6 +14,7 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
 
 #include <array>
+#include <cmath>
 #include <limits>
 
 namespace spawn {
@@ -29,11 +31,18 @@ void Spawn::start()
     is_running = true;
 
     auto idfPath = input.idfInputPath();
+    auto idfjson = idf_to_json(idfPath);
 
-    auto idfjson = idf_to_json(input.idfInputPath());
-    prepare_idf(idfjson, input);
-    idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
-    json_to_idf(idfjson, idfPath);
+    // Skip this step if the .spawn extension is present,
+    // which will indicate that the idf has already been "prepared"
+    if (idfPath.stem().extension() != ".spawn") {
+      prepare_idf(idfjson, input);
+      idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+      json_to_idf(idfjson, idfPath);
+    }
+
+    // Will throw an exception if validation fails
+    validate_idf(idfjson);
 
     const auto &simulation = [&]() {
       try {
@@ -156,7 +165,18 @@ double Spawn::startTime() const noexcept
 
 void Spawn::setStartTime(const double time) noexcept
 {
-  m_startTime = time;
+  if (time < 0.0) {
+    // If time is negative then apply an offset from the end of the year
+    // Consider the possibility that time could be more than a year negative
+    // Does not consider leap year
+    constexpr auto secondsInYear = spawn::days_to_seconds(365);
+    m_startTime = secondsInYear - std::fmod(std::abs(time), secondsInYear);
+  } else {
+    // Consider that time could be greater than one year,
+    // for now it is accepted.
+    // Would m_startTime = time % secondsInYear be more correct?
+    m_startTime = time;
+  }
 }
 
 void Spawn::setTime(const double time)
@@ -268,6 +288,18 @@ void Spawn::setZoneTemperature(const int zonenum, const double temp) // NOLINT t
   sim_state.dataHeatBalFanSys->MAT(zonenum) = temp;
 }
 
+void Spawn::setZoneHumidityRatio(const int zonenum, const double ratio)
+{
+  sim_state.dataHeatBalFanSys->ZoneAirHumRatAvg(zonenum) = ratio;
+  sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum) = ratio;
+  sim_state.dataHeatBalFanSys->ZoneAirHumRatTemp(zonenum) = ratio;
+}
+
+double Spawn::zoneHumidityRatio(const int zonenum) const
+{
+  return sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum);
+}
+
 double Spawn::zoneTemperature(const int zonenum) const
 {
   return sim_state.dataHeatBalFanSys->ZT(zonenum);
@@ -302,7 +334,59 @@ void Spawn::updateZoneTemperature(const int zonenum, const double dt)
   setZoneTemperature(zonenum, newzonetemp);
 }
 
-void Spawn::updateZoneTemperatures(bool skipConnectedZones)
+void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
+{
+  // Based on the EnergyPlus analytical method
+  // See ZoneTempPredictorCorrector::CorrectZoneHumRat
+
+  static constexpr std::string_view RoutineName("updateZoneHumidityRatio");
+  const auto humidityRatio = zoneHumidityRatio(zonenum);
+
+  auto &ZT = sim_state.dataHeatBalFanSys->ZT;
+  auto &Zone = sim_state.dataHeatBal->Zone;
+  double moistureMassFlowRate = 0.0;
+
+  // Calculate hourly humidity ratio from infiltration + humdidity added from latent load + system added moisture
+  const auto latentGain = sim_state.dataHeatBalFanSys->ZoneLatentGain(zonenum) +
+                          sim_state.dataHeatBalFanSys->SumLatentHTRadSys(zonenum) +
+                          sim_state.dataHeatBalFanSys->SumLatentPool(zonenum);
+
+  const double RhoAir =
+      EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state,
+                                                    sim_state.dataEnvrn->OutBaroPress,
+                                                    ZT(zonenum),
+                                                    sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum),
+                                                    RoutineName);
+  const double h2oHtOfVap =
+      EnergyPlus::Psychrometrics::PsyHgAirFnWTdb(sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum), ZT(zonenum));
+
+  const double B = (latentGain / h2oHtOfVap) +
+                   ((sim_state.dataHeatBalFanSys->OAMFL(zonenum) + sim_state.dataHeatBalFanSys->VAMFL(zonenum) +
+                     sim_state.dataHeatBalFanSys->CTMFL(zonenum)) *
+                    sim_state.dataEnvrn->OutHumRat) +
+                   sim_state.dataHeatBalFanSys->EAMFLxHumRat(zonenum) + (moistureMassFlowRate) +
+                   sim_state.dataHeatBalFanSys->SumHmARaW(zonenum) +
+                   sim_state.dataHeatBalFanSys->MixingMassFlowXHumRat(zonenum) +
+                   sim_state.dataHeatBalFanSys->MDotOA(zonenum) * sim_state.dataEnvrn->OutHumRat;
+
+  const double C = RhoAir * Zone(zonenum).Volume * Zone(zonenum).ZoneVolCapMultpMoist / dt;
+
+  double newHumidityRatio = humidityRatio + B / C;
+
+  // Set the humidity ratio to zero if the zone has been dried out
+  if (newHumidityRatio < 0.0) newHumidityRatio = 0.0;
+
+  // Check to make sure that is saturated there is condensation in the zone
+  // by resetting to saturation conditions.
+  const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
+      sim_state, ZT(zonenum), 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
+
+  if (newHumidityRatio > wzSat) newHumidityRatio = wzSat;
+
+  setZoneHumidityRatio(zonenum, newHumidityRatio);
+}
+
+void Spawn::updateZoneConditions(bool skipConnectedZones)
 {
   // Check for...
   if (
@@ -310,10 +394,10 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones)
       sim_state.dataGlobal->BeginEnvrnFlag ||
       // 2. The first call after warmup
       (prevWarmupFlag && !(sim_state.dataGlobal->WarmupFlag))) {
-    prevZoneTempUpdate = currentTime();
+    prevZoneUpdate = currentTime();
   } else {
-    const double dt = currentTime() - prevZoneTempUpdate;
-    prevZoneTempUpdate = currentTime();
+    const double dt = currentTime() - prevZoneUpdate;
+    prevZoneUpdate = currentTime();
 
     for (const auto &zone : input.zones) {
       if (skipConnectedZones && zone.isconnected) {
@@ -322,6 +406,7 @@ void Spawn::updateZoneTemperatures(bool skipConnectedZones)
 
       const auto zonenum = zoneNum(zone.idfname);
       updateZoneTemperature(zonenum, dt);
+      updateZoneHumidityRatio(zonenum, dt);
     }
   }
 
@@ -518,6 +603,13 @@ void Spawn::exchange(const bool force)
         setZoneTemperature(varZoneNum, v);
       }
       break;
+    case VariableType::X:
+      if (var.isValueSet()) {
+        auto varZoneNum = zoneNum(var.name);
+        const auto &v = var.getValue(spawn::units::UnitSystem::EP);
+        setZoneHumidityRatio(varZoneNum, v);
+      }
+      break;
     case VariableType::EMS_ACTUATOR:
     case VariableType::SCHEDULE:
     case VariableType::QGAIRAD_FLOW:
@@ -547,7 +639,7 @@ void Spawn::exchange(const bool force)
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
   EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
   EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
-  updateZoneTemperatures(true); // true means skip any connected zones which are not under EP control
+  updateZoneConditions(true); // true means skip any connected zones which are not under EP control
   EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
   EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
@@ -686,7 +778,7 @@ void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::stri
 
 void Spawn::logMessage(EnergyPlus::Error level, const std::string &message)
 {
-  if (logCallback) {
+  if (logCallback && !message.empty() && (level != EnergyPlus::Error::Info)) {
     log_message_queue.emplace_back(level, message);
   }
 }

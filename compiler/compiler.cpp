@@ -191,9 +191,11 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 #else
       "ld.lld-10",
       "-shared",
+      "-rpath=$ORIGIN",
       fmt::format("--sysroot={}", toString(sysroot)),
       fmt::format("-L{}", toString(sysroot / "usr/lib/")),
       fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+      "--allow-multiple-definition",
 #endif
       toString(temporary_object_file_location)};
 

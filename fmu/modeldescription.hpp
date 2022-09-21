@@ -22,6 +22,22 @@ public:
     }
   }
 
+  [[nodiscard]] std::string guid() const
+  {
+    return fmiModelDescription().attribute("guid").as_string();
+  }
+
+  [[nodiscard]] std::string modelIdentifier() const
+  {
+    auto typeNode = fmiModelDescription().child("CoSimulation");
+
+    if (!typeNode) {
+      typeNode = fmiModelDescription().child("ModelExchange");
+    }
+
+    return typeNode.attribute("modelIdentifier").as_string();
+  }
+
   [[nodiscard]] unsigned int valueReference(const std::string &variable_name) const
   {
     const auto valueReference = scalarVariable(variable_name).attribute("valueReference");

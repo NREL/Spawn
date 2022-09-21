@@ -6,6 +6,7 @@ else()
 endif()
 
 configure_file(paths.in.cpp paths.in2.cpp)
+configure_file(models/Zone_Multiplier.mo.in models/Zone_Multiplier.mo)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -33,8 +34,10 @@ add_executable(
   test_utils.cpp
   test_mbl_idf.cpp
   test_infiltration.cpp
+  test_simulate.cpp
+  test_zone_multiplier.cpp
   ${EMBEDDED_COMPILER_TESTS}
-  )
+)
 
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)

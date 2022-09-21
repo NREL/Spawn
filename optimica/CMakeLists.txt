@@ -33,15 +33,39 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Optimica.java ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class)
 
+# optimica-reflect is a target used to generate reflection information that is used by native-image
+configure_file(reflect.cpp.in reflect.cxx)
+add_executable(
+  optimica-reflect 
+  reflect.cxx
+  ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
+)
+target_include_directories(optimica-reflect PRIVATE ${PROJECT_SOURCE_DIR})
+target_link_libraries(
+  optimica-reflect
+  PRIVATE CONAN_PKG::nlohmann_json spawn_utils compile_options
+)
+set(reflect_config ${CMAKE_CURRENT_BINARY_DIR}/META-INF/native-image/reflect-config.json)
+add_custom_command(
+  OUTPUT ${reflect_config}
+  COMMAND optimica-reflect
+)
+
 # RPATH complications mean the library needs to be generated next to the spawn
 # executable Maybe this can be fixed
 set(optimica_lib_path "${PROJECT_BINARY_DIR}/cli/optimica${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 add_custom_command(
   OUTPUT ${optimica_lib_path}
-  COMMAND ${NATIVE_IMAGE_EXECUTABLE} -classpath ${classpath} -H:APIFunctionPrefix="optimica_" --shared Optimica
+  COMMAND ${NATIVE_IMAGE_EXECUTABLE} 
+  -classpath ${classpath} 
+  -H:APIFunctionPrefix="optimica_" --shared Optimica
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/cli"
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class)
+  DEPENDS
+  ${CMAKE_CURRENT_BINARY_DIR}/SpawnCompilerDelegator.class
+  ${CMAKE_CURRENT_BINARY_DIR}/Optimica.class
+  ${reflect_config}
+)
 
 add_custom_target(optimica-lib DEPENDS ${optimica_lib_path})
 

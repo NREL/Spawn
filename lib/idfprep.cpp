@@ -137,7 +137,7 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
                                                {"hourly_value", "1.0"}};
 
   jsonidf[scheduletype][activitySchedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
-                                                 {"hourly_value", "1.0"}};
+                                                 {"hourly_value", "100.0"}};
 
   for (const auto &zone : input.zones) {
     if (!zone.isconnected) {
@@ -154,9 +154,6 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
         {"fraction_radiant", "0"},
         {"sensible_heat_fraction", "autocalculate"},
         {"activity_level_schedule_name", activitySchedulename}};
-
-    // std::cout << "adding people: " << jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] <<
-    // std::endl;
 
     jsonidf[zone.ep_outputvariable_type][zone.ep_qpeo_flow_object_name] = {
         {"variable_name", zone.ep_qpeo_flow_output_var_name},
@@ -336,6 +333,34 @@ void prepare_idf(json &jsonidf, const Input &input)
   addOtherEquipment(jsonidf, input);
   addRequestedOutputVariables(jsonidf, input);
   addPeopleOutputVariables(jsonidf, input);
+}
+
+void validate_idf(json &jsonidf)
+{
+  std::vector<std::string> multiplier_zones;
+
+  auto &zone_objects = jsonidf["Zone"];
+  for (const auto &[name, fields] : zone_objects.items()) {
+    const auto multiplier = fields.value("multiplier", 1);
+    if (multiplier != 1) {
+      multiplier_zones.push_back(name);
+    }
+  }
+
+  if (!multiplier_zones.empty()) {
+    std::string names;
+    for (const auto &name : multiplier_zones) {
+      if (multiplier_zones.back() == name) {
+        // Each zone name except the last gets a comman and space appended
+        names.append(name);
+      } else {
+        names.append(name + ", ");
+      }
+    }
+    const auto message = fmt::format(
+        "The Spawn version of EnergyPlus does not support the zone multiplier input for the zones named: {}.", names);
+    throw std::runtime_error(message);
+  }
 }
 
 } // namespace spawn

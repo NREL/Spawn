@@ -1,16 +1,19 @@
+#include "../fmu/simulate.hpp"
 #include "../lib/actuatortypes.hpp"
 #include "../lib/fmugenerator.hpp"
 #include "../lib/outputtypes.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../util/config.hpp"
+#include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
-#include <config.hxx>
-
+#include <fstream>
 #include <iostream>
-
-#include <nlohmann/json.hpp>
+#include <iterator>
 #include <spdlog/spdlog.h>
+#include <stdlib.h>
+#include <vector>
 
 #if defined _WIN32
 #include <windows.h>
@@ -26,8 +29,6 @@
 #include <iterator>
 #include <vector>
 #endif
-
-#include "simulate.hpp"
 
 using json = nlohmann::json;
 
@@ -106,6 +107,10 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
   auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler");
   jmodelicaOption->needs(createModelicaFMUOption);
 
+  std::string fmuType = toString(spawn::FMUType::CS);
+  auto fmuTypeOption = modelicaCommand->add_option("--fmu-type", fmuType, "FMU Type, CS or ME");
+  fmuTypeOption->needs(createModelicaFMUOption);
+
   auto makeOption = app.add_flag("-f", "compile a Modelica external function, acting like 'make'");
 #endif
 
@@ -145,16 +150,16 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
           jsonInput, nozip, nocompress, outputPath, outputDir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
-      if (optimica) {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::ModelicaCompilerType::Optimica);
+      if (jmodelica) {
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType));
       } else {
-        spawn::modelicaToFMU(moinput, modelicaPaths);
+        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType), spawn::ModelicaCompilerType::Optimica);
       }
     } else if (*makeOption) {
       spawn::makeModelicaExternalFunction(app.remaining(true));
 #endif
     } else if (*versionOption) {
-      std::cout << "Spawn-" << spawn::VERSION_STRING << std::endl;
+      std::cout << "Spawn-" << spawn::version_string() << std::endl;
     } else if (*energyplusVersionOption) {
       std::cout << EnergyPlus::DataStringGlobals::VerString << std::endl;
     } else if (*outputVarsOption) {

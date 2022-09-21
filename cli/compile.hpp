@@ -13,13 +13,25 @@ enum class ModelicaCompilerType
   Optimica
 };
 
+enum class FMUType
+{
+  ME,
+  CS
+};
+
+const char *toString(FMUType t);
+
+FMUType toFMUType(const std::string &t);
+
 int modelicaToFMU(const std::string &moinput,
                   std::vector<std::string> modelicaPaths,
+                  const FMUType &fmuType = FMUType::CS,
                   const ModelicaCompilerType &moType = ModelicaCompilerType::JModelica);
 
 int compileMO(const std::string &moInput,
               const spawn_fs::path &outputDir,
               const std::vector<std::string> &modelicaPaths,
+              const FMUType &fmuType,
               const ModelicaCompilerType &moType);
 
 int compileC(const spawn_fs::path &output_dir,

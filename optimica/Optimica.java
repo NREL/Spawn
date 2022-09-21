@@ -19,6 +19,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.io.File;
+import java.nio.file.Path;
 
 // https://github.com/cliftonlabs/json-simple
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -26,29 +27,61 @@ import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
 interface Optimica {
+
+  // This function is only used to generate reflection information at build time
+  // The build system will compile a simple model using this interface
   static void main(String[] args) { 
+    String jsonOptions = args[0];
+    compile(jsonOptions);
   }
 
+  // This is the normal entry point for using the embedded Optimica compiler
   @CEntryPoint(name = "optimica_compile")
   static void compile(IsolateThread thread, CCharPointer args) { 
-    try {
-      String argsString = CTypeConversion.toJavaString(args);
+    String options = CTypeConversion.toJavaString(args);
+    compile(options);
+  }
 
-      JsonObject deserialized = (JsonObject)Jsoner.deserialize(argsString);
+  static void compile(String jsonOptions) { 
+    try {
+      JsonObject deserialized = (JsonObject)Jsoner.deserialize(jsonOptions);
       String model = (String)deserialized.get("model");
       String outputDir = (String)deserialized.get("outputDir");
       String mslDir = (String)deserialized.get("mslDir");
+      String fmuType = (String)deserialized.get("fmuType"); // options are "ME" or "CS"
       String[] modelicaPaths = ((JsonArray)deserialized.get("modelicaPaths")).toArray(new String[0]);
 
       OptionRegistry options = OptimicaCompiler.createOptions();
-      options.setStringOption("fmu_type", "FMUCS20");
+      if (fmuType.matches("ME")) {
+        options.setStringOption("fmu_type", "FMUME20");
+        options.setBooleanOption("generate_ode", true);
+        options.setBooleanOption("generate_dae", false);
+        options.setBooleanOption("equation_sorting", true);
+        options.setBooleanOption("generate_fmi_me_xml", true);
+        options.setBooleanOption("generate_fmi_cs_xml", false);
+        options.setBooleanOption("generate_xml_equations", false);
+      } else {
+        options.setStringOption("fmu_type", "FMUCS20");
+        options.setBooleanOption("generate_ode", true);
+        options.setBooleanOption("generate_dae", false);
+        options.setBooleanOption("equation_sorting", true);
+        options.setBooleanOption("generate_fmi_me_xml", false);
+        options.setBooleanOption("generate_fmi_cs_xml", true);
+        options.setBooleanOption("generate_xml_equations", false);
+      }
+
       OptimicaCompiler mc = new OptimicaCompiler(options);
       SpawnCompilerDelegator.register();
       mc.setDebugSrcIsHome(true);
-      mc.setOutDir(new File(outputDir));
+      mc.setOutDir(new File(outputDir).toPath());
       mc.setLogger("d:" + outputDir + "/out.log");
       mc.setModelicapath(mslDir);
-      OptimicaCompiler.TargetObject to = mc.createTargetObject("cs", "2.0");
+      OptimicaCompiler.TargetObject to;
+      if (fmuType.matches("ME")) {
+        to = mc.createTargetObject("me", "2.0");
+      } else {
+        to = mc.createTargetObject("cs", "2.0");
+      }
 
       System.out.println("Compiling Model with Optimica");
       System.out.println("Parse Model");

@@ -110,6 +110,7 @@ public:
 
   void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
   void logMessage(EnergyPlus::Error level, const std::string &message);
+  void emptyLogMessageQueue();
 
   void exchange(const bool force = false);
 
@@ -152,7 +153,6 @@ private:
 
   std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
   std::deque<std::pair<EnergyPlus::Error, std::string>> log_message_queue;
-  void emptyLogMessageQueue();
 
   // Given a surface name, return the index according to EnergyPlus
   [[nodiscard]] int surfaceNum(const std::string &surfaceName) const;
@@ -169,18 +169,25 @@ private:
 
   [[nodiscard]] ZoneSums zoneSums(const int zonenum);
   [[nodiscard]] double zoneHeatTransfer(const int zonenum);
+
   void setZoneTemperature(const int zonenum, const double temp);
   [[nodiscard]] double zoneTemperature(const int zonenum) const;
   void updateZoneTemperature(const int zonenum, const double dt);
-  void updateZoneTemperatures(bool skipConnectedZones = false);
+
+  void setZoneHumidityRatio(const int zonenum, const double ratio);
+  double zoneHumidityRatio(const int zonenum) const;
+  void updateZoneHumidityRatio(const int zonenum, const double dt);
+
+  void updateZoneConditions(bool skipConnectedZones = false);
+  // Time in seconds of the last zone update
+  // This is required for computing the dt in the
+  // updateZoneTemperature and updateZoneHumidityRatio calculations
+  double prevZoneUpdate{};
+  // State of the warmup flag during the previous zone update
+  bool prevWarmupFlag{false};
+
   void updateLatentGains();
   void initZoneEquip();
-  // Time in seconds of the last zone temperature update
-  // This is required for computing the dt in the
-  // updateZoneTemperature calculation
-  double prevZoneTempUpdate{};
-  // State of the warmup flag during the previous zone temp update
-  bool prevWarmupFlag{false};
 
   [[nodiscard]] int getVariableHandle(const std::string &name, const std::string &key);
   std::map<std::tuple<std::string, std::string>, int> variable_handle_cache;

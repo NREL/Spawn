@@ -1,6 +1,8 @@
 [submodule "submodules/EnergyPlus"]
 	path = submodules/EnergyPlus
 	url = https://github.com/NREL/EnergyPlus.git
+  ignore = dirty
 [submodule "submodules/modelica-buildings"]
 	path = submodules/modelica-buildings
 	url = https://github.com/lbl-srg/modelica-buildings.git
+  ignore = dirty
