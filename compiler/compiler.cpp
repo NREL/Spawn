@@ -54,6 +54,7 @@
 #include <stdexcept>
 
 #include "compiler.hpp"
+#include "compiler/embedded_files.hxx"
 
 std::string toString(const std::wstring &utf16_string)
 {
@@ -104,15 +105,65 @@ spawn_fs::path Compiler::shared_object_extension()
 #endif
 }
 
+Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
+                   std::vector<std::string> flags,
+                   bool use_cbridge_instead_of_stdlib)
+    : m_include_paths{std::move(include_paths)}, m_flags{std::move(flags)}, m_use_cbridge_instead_of_stdlib{
+                                                                                use_cbridge_instead_of_stdlib}
+{
+  for (const auto &file : spawnmodelica_compiler::embedded_files::fileNames()) {
+    spawnmodelica_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
+  }
+}
+
+void Compiler::add_c_bridge_to_path()
+{
+#ifdef _MSC_VER
+  constexpr std::size_t ENVSIZE = 2048;
+  TCHAR path[ENVSIZE];
+
+  const auto result = GetEnvironmentVariable("PATH", path, ENVSIZE);
+  if (result <= ENVSIZE) {
+    std::basic_string<TCHAR> newpath(path, result);
+    newpath = (m_embeddedFiles.dir() / "c_bridge").string() + ";" + newpath;
+    SetEnvironmentVariable("PATH", newpath.c_str());
+  }
+#endif
+}
+
+
 void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
-                                        const std::vector<spawn_fs::path> &additional_libs,
-                                        bool link_standard_libs)
+                                        const std::vector<spawn_fs::path> &additional_libs)
 {
+  {
+    spawn::util::Temp_Directory td;
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    std::ofstream test_file(test_file_path);
+    test_file <<
+        R"(
+#ifdef _MSC_VER
+#define BOOL int
+#define WINAPI __stdcall
+
+// just fake it
+BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lpReserved)
+{
+  return 1;
+}
+
+#undef WINAPI
+#undef BOOL
+#endif
+)" << std::flush;
+
+    compile_and_link(test_file_path);
+  }
+
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.obj";
   write_object_file(temporary_object_file_location);
-
 
   std::vector<std::string> str_args{
 #ifdef _MSC_VER
@@ -140,12 +191,21 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
     str_args.push_back(toString(lib));
   }
 
-  if (link_standard_libs) {
+  if (m_use_cbridge_instead_of_stdlib) {
+    str_args.insert(str_args.end(),
+                    {
+#ifdef _MSC_VER
+                        (m_embeddedFiles.dir() / "c_bridge"/"c_bridge.lib").string()
+#else
+                        (m_embeddedFiles.dir() / "c_bridge"/"c_bridge.so").string()
+#endif
+                    });
+
+  } else {
     str_args.insert(
         str_args.end(),
         {
 #ifdef _MSC_VER
-
             "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
             "c:/Program Files/Microsoft Visual "
             "Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
@@ -160,14 +220,6 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 
 #endif
         });
-  } else {
-    str_args.insert(str_args.end(),
-                    {
-#ifdef _MSC_VER
-                        "C:/Users/Jason/Spawn-build/compiler/Release/c_bridge.lib",
-#else
-#endif
-                    });
   }
 
   str_args.insert(str_args.end(),
@@ -203,7 +255,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
     llvm::raw_os_ostream out(out_ss);
 
 #ifdef _MSC_VER
-    //success = lld::coff::link(Args, false, out, err);
+    // success = lld::coff::link(Args, false, out, err);
     std::string lld_cmd = "\"C:/Program Files/LLVM/bin/lld-link.exe\"";
     auto newargs = str_args;
     newargs.erase(newargs.begin());
@@ -223,7 +275,6 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
     }
   }
 
-
   const auto errors = err_ss.str();
 
   if (!success) {
@@ -237,7 +288,18 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 
 void Compiler::compile_and_link(const spawn_fs::path &source)
 {
-  auto do_compile = [&]() { return compile(source, *m_context.getContext(), m_include_paths, m_flags); };
+  auto include_paths = m_include_paths;
+  if (m_use_cbridge_instead_of_stdlib) {
+    include_paths.insert(include_paths.begin(), (m_embeddedFiles.dir() / "c_bridge/include").string());
+  }
+
+  auto flags = m_flags;
+
+  if (m_use_cbridge_instead_of_stdlib) {
+    flags.insert(flags.begin(), "-nobuiltininc");
+  }
+
+  auto do_compile = [&]() { return compile(source, *m_context.getContext(), include_paths, m_flags); };
 
   if (!m_currentCompilation) {
     m_currentCompilation = do_compile();
@@ -307,6 +369,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
     return "-I" + toString(str);
   });
+
   str_args.emplace_back("-fsyntax-only");
   // str_args.emplace_back("-fPIC");
   str_args.emplace_back("-g");

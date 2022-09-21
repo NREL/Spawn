@@ -171,7 +171,7 @@ namespace embedded_files {
     }();
 
     spawn_fs::create_directories(spawn_fs::path{fullpath}.parent_path());
-    std::ofstream ofs(fullpath);
+    std::ofstream ofs(fullpath, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
     std::vector<uint8_t> inflated_data;
     if( inf(f,inflated_data) != Z_OK ) {

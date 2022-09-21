@@ -10,7 +10,49 @@ TEST_CASE("Sanity Test Embedded Compiler")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, false);
+
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << "int main() {}\n" << std::flush;
+  }
+
+  compiler.compile_and_link(test_file_path);
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
+
+  compiler.write_shared_object_file(object_path, td.dir(), {});
+
+  CHECK(spawn_fs::exists(object_path));
+  CHECK(spawn_fs::is_regular_file(object_path));
+
+  const auto file_size = spawn_fs::file_size(object_path);
+
+  CHECK(file_size > 0);
+}
+
+TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
+{
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  CHECK(spawn_fs::exists(compiler.get_cbridge_path()));
+  CHECK(spawn_fs::is_directory(compiler.get_cbridge_path()));
+  CHECK(spawn_fs::is_directory(compiler.get_cbridge_path() / "c_bridge"));
+
+  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib"));
+  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib") > 0);
+
+  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
+  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll") > 0);
+
 
   spawn::util::Temp_Directory td;
 
@@ -25,7 +67,7 @@ TEST_CASE("Sanity Test Embedded Compiler")
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, true);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -35,12 +77,13 @@ TEST_CASE("Sanity Test Embedded Compiler")
   CHECK(file_size > 0);
 }
 
+
 TEST_CASE("Test embedded compiler simple loadable module")
 {
   spdlog::set_level(spdlog::level::trace);
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, true);
 
   spawn::util::Temp_Directory td;
 
@@ -66,7 +109,7 @@ DLLEXPORT int get_value() {
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test_with_return");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, true);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -88,7 +131,7 @@ TEST_CASE("Test embedded compiler simple loadable module with param")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, true);
 
   spawn::util::Temp_Directory td;
 
@@ -113,7 +156,7 @@ DLLEXPORT int get_value_1(int input) {
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test_with_param");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, true);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -132,7 +175,7 @@ TEST_CASE("Test embedded compiler with loadable module with cmath")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, false);
 
   spawn::util::Temp_Directory td;
 
@@ -159,7 +202,7 @@ DLLEXPORT double get_cos(double input) { return cos(input); }
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, true);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -179,7 +222,7 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, true);
 
   const auto c = cos(42.0);
 
@@ -193,18 +236,6 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL")
         R"(
 #ifdef _MSC_VER
 #define DLLEXPORT __declspec(dllexport)
-
-#define BOOL int
-#define WINAPI __stdcall
-#define __cdecl __attribute__((__cdecl__))
-
-// just fake it
-BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lpReserved)
-{
-  return 1;
-}
-
-
 #else
 #define DLLEXPORT
 #endif
@@ -219,7 +250,7 @@ DLLEXPORT double get_val(double input) {
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-bootstrapped");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, false);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));
@@ -242,7 +273,9 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
       "C:/Users/Jason/Spawn/compiler",
   };
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  compiler.add_c_bridge_to_path();
 
   const auto c = cos(42.0);
 
@@ -262,13 +295,6 @@ TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 #define DLLEXPORT
 #endif
 
-#define BOOL int
-#define WINAPI __stdcall
-
-BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lpReserved)
-{
-  return 1;
-}
 
 DLLEXPORT double get_cos(double input) {
   return cos(input);
@@ -280,7 +306,7 @@ DLLEXPORT double get_cos(double input) {
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath-bootstrapped");
 
-  compiler.write_shared_object_file(object_path, td.dir(), {}, false);
+  compiler.write_shared_object_file(object_path, td.dir(), {});
 
   CHECK(spawn_fs::exists(object_path));
   CHECK(spawn_fs::is_regular_file(object_path));

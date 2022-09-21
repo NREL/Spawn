@@ -28,7 +28,7 @@ int main(int argc, const char *argv[])
 
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{"-v"};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, true);
 
   const std::vector<spawn_fs::path> source_files{std::next(argv), std::next(argv, argc)};
 

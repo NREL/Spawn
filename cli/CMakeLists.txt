@@ -13,14 +13,20 @@ if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
     embed_optimica(${optimica_path} optimica_files optimica_paths)
   endif()
 
-  include(embed_libc.cmake)
-  embed_libc(libc_files libc_paths)
+  #include(embed_libc.cmake)
+  #embed_libc(libc_files libc_paths)
 
-  list(APPEND embedded_files ${jmodelica_files} ${optimica_files} ${libc_files})
-  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths} ${libc_paths})
+  list(APPEND embedded_files ${jmodelica_files} ${optimica_files}) # ${libc_files})
+  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths}) # ${libc_paths})
 
-  list(APPEND embedded_files "${CMAKE_BINARY_DIR}/compiler/spawn_exe_launcher")
-  list(APPEND embedded_paths "spawn_exe_launcher")
+
+  set(embedded_files $<TARGET_FILE:spawn_exe_launcher>)
+
+  if (MSVC)
+    set(embedded_paths "spawn_exe_launcher")
+  else()
+    set(embedded_paths "spawn_exe_launcher.exe")
+  endif()
 
   if(ENABLE_BUILDINGS_LIBRARY)
     list(
@@ -29,7 +35,7 @@ if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
     list(APPEND embedded_paths "usr/lib/libfmilib.a")
   endif()
 
-  #embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
+  embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
   list(APPEND src compile.hpp compile.cpp ${embedded_output})
 endif()

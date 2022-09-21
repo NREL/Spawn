@@ -235,7 +235,7 @@ int compileC(const spawn_fs::path &output_dir,
       doc.child("fmiModelDescription").child("ModelExchange").attribute("modelIdentifier").as_string();
 
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, false);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
 
@@ -288,7 +288,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   const auto runtime_libs = modelicaLibs(jmodelica_dir, embedded_files_temp_dir);
 
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags);
+  spawn::Compiler compiler(include_paths, flags, false);
 
   compiler.compile_and_link(fileToCompile);
   spawn_fs::create_directories(spawn_fs::path{"binaries"});

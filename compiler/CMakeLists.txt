@@ -1,11 +1,67 @@
 add_executable(spawn_exe_launcher spawn_exe_launcher.c)
 target_link_libraries(spawn_exe_launcher ${CMAKE_DL_LIBS})
 
-add_library(compiler compiler.hpp compiler.cpp)
 
+
+add_library(c_bridge SHARED c_bridge/c_bridge.c)
+set_property(TARGET c_bridge PROPERTY
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if (MSVC)
+  set(embedded_files $<TARGET_FILE:c_bridge>)
+  set(embedded_paths c_bridge/c_bridge.dll)
+  list(APPEND embedded_files $<TARGET_LINKER_FILE:c_bridge>)
+  list(APPEND embedded_paths c_bridge/c_bridge.lib)
+else()
+  set(embedded_files $<TARGET_FILE:c_bridge>)
+  set(embedded_paths c_bridge/c_bridge.so)
+endif()
+
+list(APPEND embedded_files
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/assert.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/limits.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdio.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/c_bridge.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/locale.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdlib.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/complex.h   ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/math.h       ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdnoreturn.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/ctype.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/setjmp.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/string.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/dlfcn.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/signal.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/tgmath.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/errno.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdalign.h   ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/threads.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/fcntl.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdarg.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/time.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/fenv.h      ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdatomic.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/uchar.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/float.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdbool.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/wchar.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/inttypes.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stddef.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/wctype.h 
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/iso646.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdint.h)
+
+list(APPEND embedded_paths
+  c_bridge/include/assert.h    c_bridge/include/limits.h     c_bridge/include/stdio.h
+  c_bridge/include/c_bridge.h  c_bridge/include/locale.h     c_bridge/include/stdlib.h
+  c_bridge/include/complex.h   c_bridge/include/math.h       c_bridge/include/stdnoreturn.h
+  c_bridge/include/ctype.h     c_bridge/include/setjmp.h     c_bridge/include/string.h
+  c_bridge/include/dlfcn.h     c_bridge/include/signal.h     c_bridge/include/tgmath.h
+  c_bridge/include/errno.h     c_bridge/include/stdalign.h   c_bridge/include/threads.h
+  c_bridge/include/fcntl.h     c_bridge/include/stdarg.h     c_bridge/include/time.h
+  c_bridge/include/fenv.h      c_bridge/include/stdatomic.h  c_bridge/include/uchar.h
+  c_bridge/include/float.h     c_bridge/include/stdbool.h    c_bridge/include/wchar.h
+  c_bridge/include/inttypes.h  c_bridge/include/stddef.h     c_bridge/include/wctype.h
+  c_bridge/include/iso646.h    c_bridge/include/stdint.h)
+
+
+if (MSVC) 
+  find_program(LLD_PATH lld-link.exe PATHS ${LLVM_TOOLS_BINARY_DIR} REQUIRED)
+
+  list(APPEND embedded_files ${LLD_PATH})
+  list(APPEND embedded_paths "lld-link.exe")
+endif()
+
+embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica_compiler)
+
+
+
+
+add_library(compiler compiler.hpp compiler.cpp ${embedded_output})
+add_dependencies(compiler c_bridge)
 
 target_include_directories(compiler PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(compiler PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(compiler PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(compiler SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
 target_include_directories(compiler SYSTEM PUBLIC ${CLANG_INCLUDE_DIRS})
 
@@ -61,7 +117,7 @@ target_link_libraries(
          ${LLVM_AVAILABLE_LIBS}
          CONAN_PKG::fmt
          CONAN_PKG::spdlog
-  PRIVATE compile_options spawn_utils)
+ PRIVATE CONAN_PKG::zlib compile_options spawn_utils)
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT
@@ -78,6 +134,4 @@ else()
 endif()
 
 
-add_library(c_bridge SHARED c_bridge/c_bridge.c)
-set_property(TARGET c_bridge PROPERTY
-  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
