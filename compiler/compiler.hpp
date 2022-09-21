@@ -76,9 +76,9 @@ private:
   // we package and -I our own set of headers provided by the embedded clang
   // system -I headers are found automatically by the embedded clang
   [[nodiscard]] static std::unique_ptr<llvm::Module> compile(const spawn_fs::path &source,
-                                               llvm::LLVMContext &ctx,
-                                               const std::vector<spawn_fs::path> &include_paths,
-                                               const std::vector<std::string> &flags);
+                                                             llvm::LLVMContext &ctx,
+                                                             const std::vector<spawn_fs::path> &include_paths,
+                                                             const std::vector<std::string> &flags);
 
   [[nodiscard]] static std::string get_target_triple()
   {
