@@ -55,9 +55,9 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
   CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
   CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll") > 0);
 #else
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.so"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.so"));
-  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.so") > 0);
+  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
+  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so") > 0);
 
 #endif
 

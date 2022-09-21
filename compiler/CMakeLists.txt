@@ -14,7 +14,7 @@ if (MSVC)
   list(APPEND embedded_paths c_bridge/c_bridge.lib)
 else()
   set(embedded_files $<TARGET_FILE:c_bridge>)
-  set(embedded_paths c_bridge/c_bridge.so)
+  set(embedded_paths c_bridge/libc_bridge.so)
 endif()
 
 list(APPEND embedded_files

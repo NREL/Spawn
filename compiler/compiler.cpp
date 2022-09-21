@@ -128,6 +128,17 @@ void Compiler::add_c_bridge_to_path()
     newpath = (m_embeddedFiles.dir() / "c_bridge").string() + ";" + newpath;
     SetEnvironmentVariable("PATH", newpath.c_str());
   }
+#else
+  const auto library_path = []() -> std::string {
+    const char *path = getenv("LD_LIBRARY_PATH");
+    if (path != nullptr) {
+      return path;
+    } else {
+      return "";
+    }
+  }();
+
+  setenv("LD_LIBRARY_PATH", ((m_embeddedFiles.dir() / "c_bridge").string() + ":" + library_path).c_str(), 1);
 #endif
 }
 
@@ -196,7 +207,10 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 #ifdef _MSC_VER
                         (m_embeddedFiles.dir() / "c_bridge" / "c_bridge.lib").string()
 #else
-                        (m_embeddedFiles.dir() / "c_bridge" / "c_bridge.so").string()
+                        "-L" + (m_embeddedFiles.dir() / "c_bridge").string(),
+                        "-lc_bridge",
+                        "-rpath=" + (m_embeddedFiles.dir() / "c_bridge").string()
+
 #endif
                     });
 
