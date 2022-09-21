@@ -274,7 +274,8 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 
 #ifdef _MSC_VER
     // success = lld::coff::link(Args, false, out, err);
-    std::string lld_cmd = "\"C:/Program Files/LLVM/bin/lld-link.exe\"";
+    // For now we are calling into an embedded lld-link.exe
+    std::string lld_cmd = '\"' + (m_embeddedFiles.dir() / "lld-link.exe").string() + '\"';
     auto newargs = str_args;
     newargs.erase(newargs.begin());
     for (const auto &arg : newargs) {
