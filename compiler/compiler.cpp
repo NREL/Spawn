@@ -131,7 +131,6 @@ void Compiler::add_c_bridge_to_path()
 #endif
 }
 
-
 void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
                                         const std::vector<spawn_fs::path> &additional_libs)
@@ -195,9 +194,9 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
     str_args.insert(str_args.end(),
                     {
 #ifdef _MSC_VER
-                        (m_embeddedFiles.dir() / "c_bridge"/"c_bridge.lib").string()
+                        (m_embeddedFiles.dir() / "c_bridge" / "c_bridge.lib").string()
 #else
-                        (m_embeddedFiles.dir() / "c_bridge"/"c_bridge.so").string()
+                        (m_embeddedFiles.dir() / "c_bridge" / "c_bridge.so").string()
 #endif
                     });
 

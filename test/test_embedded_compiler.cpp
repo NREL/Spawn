@@ -53,7 +53,6 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
   CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
   CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll") > 0);
 
-
   spawn::util::Temp_Directory td;
 
   const spawn_fs::path test_file_path = td.dir() / "test.c";
@@ -76,7 +75,6 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
 
   CHECK(file_size > 0);
 }
-
 
 TEST_CASE("Test embedded compiler simple loadable module")
 {

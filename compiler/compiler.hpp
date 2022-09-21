@@ -24,7 +24,9 @@ public:
     executable
   };
 
-  explicit Compiler(std::vector<spawn_fs::path> include_paths, std::vector<std::string> flags, bool use_cbridge_instead_of_stdlib);
+  explicit Compiler(std::vector<spawn_fs::path> include_paths,
+                    std::vector<std::string> flags,
+                    bool use_cbridge_instead_of_stdlib);
 
   void add_c_bridge_to_path();
 
@@ -99,7 +101,7 @@ private:
   }
 
   [[nodiscard]] static std::unique_ptr<llvm::Module> initialize_module(llvm::orc::ThreadSafeContext ctx,
-                                                         llvm::TargetMachine *target_machine)
+                                                                       llvm::TargetMachine *target_machine)
   {
     assert(ctx.getContext());
     auto module = std::make_unique<llvm::Module>("Module", *ctx.getContext());
@@ -128,11 +130,11 @@ private:
   }
 
   [[nodiscard]] static llvm::TargetMachine *get_target_machine(const llvm::Target *target,
-                                                 const std::string &triple,
-                                                 const std::string &cpu,
-                                                 const std::string &features,
-                                                 const llvm::TargetOptions opt,
-                                                 const llvm::Optional<llvm::Reloc::Model> &reloc_model)
+                                                               const std::string &triple,
+                                                               const std::string &cpu,
+                                                               const std::string &features,
+                                                               const llvm::TargetOptions opt,
+                                                               const llvm::Optional<llvm::Reloc::Model> &reloc_model)
   {
     llvm::TargetMachine *machine = target->createTargetMachine(triple, cpu, features, opt, reloc_model);
     return machine;
