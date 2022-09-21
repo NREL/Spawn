@@ -212,6 +212,9 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
             "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
             "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",
 #else
+            "-L/usr/lib",
+            "-L/lib",
+            "-L/lib/x86_64-linux-gnu",
             "-lm",
             "-lc",
             "-ldl",
@@ -244,7 +247,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 
   bool success = true;
 
-  spdlog::trace("Temp obj file size: {}", std::filesystem::file_size(temporary_object_file_location));
+  spdlog::trace("Temp obj file size: {}", spawn_fs::file_size(temporary_object_file_location));
 
   std::stringstream out_ss;
   std::stringstream err_ss;

@@ -53,7 +53,7 @@ public:
                                 const spawn_fs::path &sysroot,
                                 const std::vector<spawn_fs::path> &additional_libs = {});
 
-  [[nosdiscard]] static spawn_fs::path append_shared_object_extension(spawn_fs::path path)
+  [[nodiscard]] static spawn_fs::path append_shared_object_extension(spawn_fs::path path)
   {
     return path += shared_object_extension();
   }
