@@ -263,16 +263,6 @@ int compileC(const spawn_fs::path &sources_dir,
   // include paths
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
-  const auto model_description_path = output_dir / "modelDescription.xml";
-
-  pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file(model_description_path.native().c_str());
-  if (!result) {
-    return 1;
-  }
-  std::string model_identifier =
-      doc.child("fmiModelDescription").child("ModelExchange").attribute("modelIdentifier").as_string();
-
   const std::vector<std::string> flags{
       "-Wno-enum-conversion", "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-logical-not-parentheses"};
   spawn::Compiler compiler(include_paths, flags, false);
@@ -416,7 +406,7 @@ int modelicaToFMU(const std::string &moinput,
     jmodelica_dir = temp_dir / "Optimica";
   }
 
-  modelicaPaths.push_back(spawn::msl_path());
+  modelicaPaths.push_back(spawn::msl_path().string());
   const auto mbl_path = mblPathInPaths(modelicaPaths);
   if (mbl_path.empty()) {
     modelicaPaths.push_back(mbl_home_dir().generic_string());
