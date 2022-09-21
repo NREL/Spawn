@@ -14,7 +14,6 @@
 #define C_BRIDGE_TEMPLATE_EXT
 #endif
 
-
 // stdio.h
 C_BRIDGE_API int snprintf_wrap(char *restrict buffer, unsigned long long bufsz, const char *restrict format, ...);
 

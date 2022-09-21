@@ -61,7 +61,6 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
 
 #endif
 
-
   spawn::util::Temp_Directory td;
 
   const spawn_fs::path test_file_path = td.dir() / "test.c";
