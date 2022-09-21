@@ -15,7 +15,7 @@
 #endif
 
 // stdio.h
-C_BRIDGE_API int snprintf_wrap( char *restrict buffer, size_t bufsz, const char *restrict format, ... );
+C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...);
 
 // string.h
 C_BRIDGE_API void *memset_wrap(void *dest, int ch, size_t count);

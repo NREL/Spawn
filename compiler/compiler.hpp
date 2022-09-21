@@ -12,7 +12,6 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 
-
 namespace spawn {
 
 class Compiler
