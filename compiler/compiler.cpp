@@ -57,32 +57,10 @@
 #include "compiler/embedded_files.hxx"
 
 // TODO:
-//  * I don't like the #ifdef's but honestly don't see a better way to handle it
-//  * We can probably get rid of the toString and use the u8String features of std::filesystem::path
+//  * I don't like the #ifdef's but honestly don't see a better way to handle it at the moment
 //  * Hardcoded library paths on Windows are unlikely to work in the long term
 //  * maybe we should just remove the ability to not use c_bridge (see above issue)
 
-std::string toString(const std::wstring &utf16_string)
-{
-#if _MSC_VER >= 1900
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-  return convert.to_bytes(utf16_string.data(), utf16_string.data() + utf16_string.size());
-#else
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  const std::u16string u16string{utf16_string.begin(), utf16_string.end()};
-  return convert.to_bytes(u16string);
-#endif
-}
-
-std::string toString(const std::string &str)
-{
-  return str;
-}
-
-std::string toString(const spawn_fs::path &path)
-{
-  return toString(path.native());
-}
 
 std::string getExecutablePath()
 {
@@ -205,10 +183,10 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
       fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
       "--allow-multiple-definition",
 #endif
-      toString(temporary_object_file_location)};
+      temporary_object_file_location.string()};
 
   for (const auto &lib : additional_libs) {
-    str_args.push_back(toString(lib));
+    str_args.push_back(lib.string());
   }
 
   if (m_use_c_bridge_instead_of_stdlib) {
@@ -252,7 +230,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
   str_args.insert(str_args.end(),
                   {
 #ifdef _MSC_VER
-                      fmt::format("/out:{}", toString(loc)),
+                      fmt::format("/out:{}", loc.string()),
 #else
                       "-o",
                       toString(loc),
@@ -268,7 +246,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
   std::transform(
       str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
-  spdlog::info("linking to: {}", toString(loc));
+  spdlog::info("linking to: {}", loc.string());
 
   bool success = true;
 
@@ -306,7 +284,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
   const auto errors = err_ss.str();
 
   if (!success) {
-    throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", toString(loc), errors));
+    throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", loc.string(), errors));
   }
 
   if (success && !errors.empty()) {
@@ -376,7 +354,7 @@ void Compiler::write_object_file(const spawn_fs::path &loc)
   llvm::CodeGenFileType ft = llvm::CGFT_ObjectFile;
 
   std::error_code EC;
-  std::string sloc = toString(loc);
+  std::string sloc(loc.string());
   llvm::raw_fd_ostream destination(sloc, EC, llvm::sys::fs::OF_None);
 
   if (m_target_machine->addPassesToEmitFile(pass, destination, nullptr, ft)) {
@@ -406,9 +384,9 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 
   // a place for the strings to live
   std::vector<std::string> str_args;
-  str_args.push_back(toString(source));
+  str_args.push_back(source.string());
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
-    return "-I" + toString(str);
+    return "-I" + str.string();
   });
 
   str_args.emplace_back("-fsyntax-only");
@@ -418,7 +396,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   str_args.emplace_back("-Wno-expansion-to-defined");
   str_args.emplace_back("-Wno-nullability-completeness");
   std::copy(flags.begin(), flags.end(), std::back_inserter(str_args));
-  str_args.push_back(toString(source));
+  str_args.push_back(source.string());
 
   // the strings to pass to the compiler driver
   clang::SmallVector<const char *, 64> Args; //(argv, argv + argc);
