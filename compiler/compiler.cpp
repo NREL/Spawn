@@ -58,8 +58,6 @@
 
 // TODO:
 //  * I don't like the #ifdef's but honestly don't see a better way to handle it at the moment
-//  * Hardcoded library paths on Windows are unlikely to work in the long term
-//  * maybe we should just remove the ability to not use c_bridge (see above issue)
 
 std::string getExecutablePath()
 {
@@ -88,6 +86,33 @@ spawn_fs::path Compiler::shared_object_extension()
 #endif
 }
 
+// finds a file and adds the directory in which the file was found to the front of the starting_dirs
+// searched on the next iteration.
+spawn_fs::path find_file(std::vector<spawn_fs::path> &starting_dirs, const spawn_fs::path &file_to_find)
+{
+  for (const auto &starting_dir : starting_dirs) {
+    try {
+      for (const auto &entry :
+           spawn_fs::recursive_directory_iterator(starting_dir, spawn_fs::directory_options::skip_permission_denied)) {
+        if (entry.is_directory()) {
+          const auto potential_path = entry.path() / file_to_find;
+          if (spawn_fs::exists(potential_path)) {
+            spdlog::info("File: '{}' found: '{}'", file_to_find.string(), potential_path.string());
+            starting_dirs.insert(starting_dirs.begin(), entry.path());
+            return potential_path;
+          }
+        }
+      }
+    } catch (const std::exception &e) {
+      spdlog::info("error during directory iteration: '{}'", e.what());
+    }
+  }
+
+  return {};
+}
+
+
+
 Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
                    std::vector<std::string> flags,
                    bool use_c_bridge_instead_of_stdlib)
@@ -97,6 +122,10 @@ Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
   for (const auto &file : spawnmodelica_compiler::embedded_files::fileNames()) {
     spawnmodelica_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
   }
+
+
+
+
 }
 
 void Compiler::add_c_bridge_to_path()
@@ -203,16 +232,23 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
                     });
 
   } else {
+
+      std::vector<spawn_fs::path> search_paths{
+        "c:/Program Files/Microsoft Visual Studio/2022",
+        "c:/Program Files/Microsoft Visual Studio",
+        "c:/Program Files (x86)/Windows Kits/10/Lib",
+        "c:/Program Files (x86)/Windows Kits"
+    };
+
     str_args.insert(
         str_args.end(),
         {
 #ifdef _MSC_VER
-            "c:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libcmt.lib",
-            "c:/Program Files/Microsoft Visual "
-            "Studio/2022/Community/VC/Tools/MSVC/14.31.31103/lib/x64/libvcruntime.lib",
-            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x64/libucrt.lib",
-            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/kernel32.lib",
-            "c:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64/uuid.lib",
+            find_file(search_paths, spawn_fs::path{"x64/libcmt.lib"}).string(),
+            find_file(search_paths, spawn_fs::path{"x64/libvcruntime.lib"}).string(),
+            find_file(search_paths, spawn_fs::path{"x64/libucrt.lib"}).string(),
+            find_file(search_paths, spawn_fs::path{"x64/kernel32.lib"}).string(),
+            find_file(search_paths, spawn_fs::path{"x64/uuid.lib"}).string(),
 #else
             "-L/usr/lib",
             "-L/lib",
