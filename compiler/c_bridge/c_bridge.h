@@ -29,7 +29,7 @@ C_BRIDGE_API double cos_wrap(double);
 #define snprintf snprintf_wrap
 
 // string.h
-#define memset cos_wrap
+#define memset memset_wrap
 
 // math.h
 #define cos cos_wrap

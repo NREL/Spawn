@@ -63,7 +63,6 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
   CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
   CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
   CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so") > 0);
-
 #endif
 
   spawn::util::Temp_Directory td;
@@ -275,12 +274,105 @@ DLLEXPORT double get_val(double input) {
   CHECK(func(42.0) == 42.0 * 3.2);
 }
 
+TEST_CASE("Test embedded compiler with reloaded DLL with same symbols")
+{
+  SECTION("First DLL")
+  {
+    const std::vector<spawn_fs::path> include_paths{};
+    const std::vector<std::string> flags{};
+    spawn::Compiler compiler(include_paths, flags, true);
+
+    spawn::util::Temp_Directory td;
+
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    {
+      std::ofstream test_file(test_file_path);
+      test_file <<
+          R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_val(double input) {
+  return input * 3.2;
+}
+)" << std::flush;
+    }
+
+    compiler.compile_and_link(test_file_path);
+
+    const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-dll1");
+
+    compiler.write_shared_object_file(object_path, {"/"}, {});
+
+    CHECK(spawn_fs::exists(object_path));
+    CHECK(spawn_fs::is_regular_file(object_path));
+
+    const auto file_size = spawn_fs::file_size(object_path);
+
+    CHECK(file_size > 0);
+
+    spawn::util::Dynamic_Library dl(object_path);
+    const auto func = dl.load_symbol<double(double)>("get_val");
+
+    CHECK(func(-42.0) == -42.0 * 3.2);
+    CHECK(func(42.0) == 42.0 * 3.2);
+  }
+
+  SECTION("Second DLL")
+  {
+    const std::vector<spawn_fs::path> include_paths{};
+    const std::vector<std::string> flags{};
+    spawn::Compiler compiler(include_paths, flags, true);
+
+    spawn::util::Temp_Directory td;
+
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    {
+      std::ofstream test_file(test_file_path);
+      test_file <<
+          R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_val(double input) {
+  return input * 2.3;
+}
+)" << std::flush;
+    }
+
+    compiler.compile_and_link(test_file_path);
+
+    const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-dll2");
+
+    compiler.write_shared_object_file(object_path, {"/"}, {});
+
+    CHECK(spawn_fs::exists(object_path));
+    CHECK(spawn_fs::is_regular_file(object_path));
+
+    const auto file_size = spawn_fs::file_size(object_path);
+
+    CHECK(file_size > 0);
+
+    spawn::util::Dynamic_Library dl(object_path);
+    const auto func = dl.load_symbol<double(double)>("get_val");
+
+    CHECK(func(-42.0) == -42.0 * 2.3);
+    CHECK(func(42.0) == 42.0 * 2.3);
+  }
+}
+
 TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
 {
   spdlog::set_level(spdlog::level::trace);
-  const std::vector<spawn_fs::path> include_paths{
-      "C:/Users/Jason/Spawn/compiler",
-  };
+  const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags, true);
 
@@ -328,3 +420,212 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
 }
+
+TEST_CASE("Test embedded compiler two different DLLs from one compiler")
+{
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  spawn::util::Temp_Directory td;
+
+  auto dll1 = [&]() {
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    {
+      std::ofstream test_file(test_file_path);
+      test_file <<
+          R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_val(double input) {
+  return input * 3.2;
+}
+)" << std::flush;
+    }
+
+    compiler.compile_and_link(test_file_path);
+    const auto object1_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-dll1");
+
+    compiler.write_shared_object_file(object1_path, {"/"}, {});
+
+    CHECK(spawn_fs::exists(object1_path));
+    CHECK(spawn_fs::is_regular_file(object1_path));
+
+    const auto file_size = spawn_fs::file_size(object1_path);
+
+    CHECK(file_size > 0);
+
+    return spawn::util::Dynamic_Library(object1_path);
+  }();
+
+  const auto func_1 = dll1.load_symbol<double(double)>("get_val");
+
+  CHECK(func_1(-42.0) == -42.0 * 3.2);
+  CHECK(func_1(42.0) == 42.0 * 3.2);
+
+  auto dll2 = [&]() {
+    spawn::util::Temp_Directory td;
+
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    {
+      std::ofstream test_file(test_file_path);
+      test_file <<
+          R"(
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_val(double input) {
+  return input * 2.3;
+}
+)" << std::flush;
+    }
+
+
+    // If we choose to reuse the same Compiler object, we must manually reset
+    // it to avoid multiply defined symbols
+    compiler.reset();
+
+    compiler.compile_and_link(test_file_path);
+
+    const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-dll2");
+
+    compiler.write_shared_object_file(object_path, {"/"}, {});
+
+    CHECK(spawn_fs::exists(object_path));
+    CHECK(spawn_fs::is_regular_file(object_path));
+
+    const auto file_size = spawn_fs::file_size(object_path);
+
+    CHECK(file_size > 0);
+
+    return spawn::util::Dynamic_Library(object_path);
+  }();
+
+  const auto func_2 = dll2.load_symbol<double(double)>("get_val");
+
+  CHECK(func_2(-42.0) == -42.0 * 2.3);
+  CHECK(func_2(42.0) == 42.0 * 2.3);
+
+  CHECK(func_1(-42.0) == -42.0 * 3.2);
+  CHECK(func_1(42.0) == 42.0 * 3.2);
+
+}
+
+
+
+
+TEST_CASE("Test embedded compiler source helper interface")
+{
+  spdlog::set_level(spdlog::level::trace);
+  spawn::Compiler compiler({}, {}, true);
+
+  compiler.add_c_bridge_to_path();
+
+  compiler.compile_and_link(std::string_view{R"(
+#include "c_bridge.h"
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+
+DLLEXPORT double get_cos(double input) {
+  return cos(input);
+}
+)"});
+
+  spawn::util::Temp_Directory td;
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath-bootstrapped");
+
+  compiler.write_shared_object_file(object_path, {"/"}, {});
+
+  CHECK(spawn_fs::exists(object_path));
+  CHECK(spawn_fs::is_regular_file(object_path));
+
+  const auto file_size = spawn_fs::file_size(object_path);
+
+  CHECK(file_size > 0);
+
+  spawn::util::Dynamic_Library dl(object_path);
+  const auto func = dl.load_symbol<double(double)>("get_cos");
+
+  CHECK(func(-42.0) == std::cos(-42.0));
+  CHECK(func(42.0) == std::cos(42.0));
+}
+
+
+
+TEST_CASE("Test embedded compiler c_bridge")
+{
+  spdlog::set_level(spdlog::level::trace);
+  spawn::Compiler compiler({}, {}, true);
+
+  compiler.add_c_bridge_to_path();
+
+  compiler.compile_and_link(std::string_view{R"(
+#include <math.h>
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_cos(double input) {
+  return cos(input);
+}
+)"});
+
+  compiler.compile_and_link(std::string_view{R"(
+#include <stdio.h>
+#include <string.h>
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+static char result_buffer[255];
+
+DLLEXPORT const char * get_hello_string(const char *name, int value) {
+  memset(result_buffer, 0, sizeof(result_buffer));
+  snprintf(result_buffer, sizeof(result_buffer), "Hello %s, %i!", name, value);
+  return result_buffer;
+}
+)"});
+
+
+  spawn::util::Temp_Directory td;
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test");
+
+  compiler.write_shared_object_file(object_path, {"/"}, {});
+
+  CHECK(spawn_fs::exists(object_path));
+  CHECK(spawn_fs::is_regular_file(object_path));
+  CHECK(spawn_fs::file_size(object_path) > 0);
+
+  spawn::util::Dynamic_Library dl(object_path);
+  const auto get_cos = dl.load_symbol<double(double)>("get_cos");
+  const auto get_hello_string = dl.load_symbol<const char *(const char *, int)>("get_hello_string");
+
+  CHECK(get_cos(-42.0) == std::cos(-42.0));
+  CHECK(get_cos(42.0) == std::cos(42.0));
+  CHECK(get_hello_string("Jason", 42) == std::string_view{"Hello Jason, 42!"});
+}
+
+
+

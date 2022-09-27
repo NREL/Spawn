@@ -305,6 +305,20 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
   }
 }
 
+void Compiler::compile_and_link(const std::string_view source)
+{
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << source << std::flush;
+  }
+
+  compile_and_link(test_file_path);
+}
+
 void Compiler::compile_and_link(const spawn_fs::path &source)
 {
   auto include_paths = m_include_paths;
@@ -377,7 +391,6 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
 
-  // Examples say to use ELF on Windows, but that doesn't actually work, so we are not
   clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);

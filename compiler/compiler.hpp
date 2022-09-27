@@ -30,7 +30,8 @@ public:
 
   void add_c_bridge_to_path();
 
-  void compile_and_link(const spawn_fs::path &source);
+  void compile_and_link(const std::string_view source);
+  void compile_and_link(const spawn_fs::path &source_file);
 
   [[nodiscard]] const spawn_fs::path &get_cbridge_path() const noexcept
   {
@@ -40,6 +41,11 @@ public:
   [[nodiscard]] std::unique_ptr<llvm::Module> take_compilation() noexcept
   {
     return std::move(m_currentCompilation);
+  }
+
+  void reset() noexcept
+  {
+    m_currentCompilation.reset();
   }
 
   [[nodiscard]] auto context() const
@@ -59,6 +65,7 @@ public:
   }
 
   [[nodiscard]] static spawn_fs::path shared_object_extension();
+
 
 private:
   std::string m_target_triple{get_target_triple()};
