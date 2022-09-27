@@ -61,7 +61,6 @@
 //  * Hardcoded library paths on Windows are unlikely to work in the long term
 //  * maybe we should just remove the ability to not use c_bridge (see above issue)
 
-
 std::string getExecutablePath()
 {
 #if defined _WIN32
