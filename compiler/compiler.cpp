@@ -56,6 +56,14 @@
 #include "compiler.hpp"
 #include "compiler/embedded_files.hxx"
 
+
+// TODO: 
+//  * I don't like the #ifdef's but honestly don't see a better way to handle it
+//  * We can probably get rid of the toString and use the u8String features of std::filesystem::path
+//  * Hardcoded library paths on Windows are unlikely to work in the long term
+//  * maybe we should just remove the ability to not use c_bridge (see above issue)
+
+
 std::string toString(const std::wstring &utf16_string)
 {
 #if _MSC_VER >= 1900
@@ -107,9 +115,9 @@ spawn_fs::path Compiler::shared_object_extension()
 
 Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
                    std::vector<std::string> flags,
-                   bool use_cbridge_instead_of_stdlib)
-    : m_include_paths{std::move(include_paths)}, m_flags{std::move(flags)}, m_use_cbridge_instead_of_stdlib{
-                                                                                use_cbridge_instead_of_stdlib}
+                   bool use_c_bridge_instead_of_stdlib)
+    : m_include_paths{std::move(include_paths)}, m_flags{std::move(flags)}, m_use_c_bridge_instead_of_stdlib{
+                                                                                use_c_bridge_instead_of_stdlib}
 {
   for (const auto &file : spawnmodelica_compiler::embedded_files::fileNames()) {
     spawnmodelica_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
@@ -146,7 +154,8 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
                                         const std::vector<spawn_fs::path> &additional_libs)
 {
-  {
+#ifdef _MSC_VER
+  if (m_use_c_bridge_instead_of_stdlib) {
     spawn::util::Temp_Directory td;
     const spawn_fs::path test_file_path = td.dir() / "test.c";
 
@@ -157,7 +166,7 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
 #define BOOL int
 #define WINAPI __stdcall
 
-// just fake it
+// stub in the missing _DllMainCRTStartup for windows
 BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lpReserved)
 {
   return 1;
@@ -170,6 +179,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 
     compile_and_link(test_file_path);
   }
+#endif
 
   util::Temp_Directory td;
   const auto temporary_object_file_location = td.dir() / "temporary_object.obj";
@@ -203,7 +213,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
     str_args.push_back(toString(lib));
   }
 
-  if (m_use_cbridge_instead_of_stdlib) {
+  if (m_use_c_bridge_instead_of_stdlib) {
     str_args.insert(str_args.end(),
                     {
 #ifdef _MSC_VER
@@ -211,6 +221,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 #else
                         "-L" + (m_embeddedFiles.dir() / "c_bridge").string(),
                         "-lc_bridge",
+                        // fix up rpath to installed c_bridge location
                         "-rpath=" + (m_embeddedFiles.dir() / "c_bridge").string()
 
 #endif
@@ -322,13 +333,13 @@ void Compiler::compile_and_link(const std::string_view source)
 void Compiler::compile_and_link(const spawn_fs::path &source)
 {
   auto include_paths = m_include_paths;
-  if (m_use_cbridge_instead_of_stdlib) {
+  if (m_use_c_bridge_instead_of_stdlib) {
     include_paths.insert(include_paths.begin(), (m_embeddedFiles.dir() / "c_bridge/include").string());
   }
 
   auto flags = m_flags;
 
-  if (m_use_cbridge_instead_of_stdlib) {
+  if (m_use_c_bridge_instead_of_stdlib) {
     flags.insert(flags.begin(), "-nobuiltininc");
   }
 

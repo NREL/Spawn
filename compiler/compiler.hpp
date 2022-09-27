@@ -17,44 +17,43 @@ namespace spawn {
 class Compiler
 {
 public:
-  enum struct Output_Type
-  {
-    object,
-    shared_object,
-    executable
-  };
-
+  // If use_c_bridge_instead_of_stdlib is `true`, then all standard system
+  // paths are ignored and only the embedded c_bridge library is available
   explicit Compiler(std::vector<spawn_fs::path> include_paths,
                     std::vector<std::string> flags,
-                    bool use_cbridge_instead_of_stdlib);
+                    bool use_c_bridge_instead_of_stdlib);
 
+  // Adds the c_bridge library (dll/so) to the current PATH/LD_LIBRARY_PATH
+  // to make it accessible to dynamically loaded libraries.
   void add_c_bridge_to_path();
 
+  // adds a string source to the current compilation unit
   void compile_and_link(const std::string_view source);
+
+  // adds a file source to the current compilation unit
   void compile_and_link(const spawn_fs::path &source_file);
 
-  [[nodiscard]] const spawn_fs::path &get_cbridge_path() const noexcept
+  // Return path to extracted c_bridge library
+  [[nodiscard]] const spawn_fs::path &get_c_bridge_path() const noexcept
   {
     return m_embeddedFiles.dir();
   }
 
-  [[nodiscard]] std::unique_ptr<llvm::Module> take_compilation() noexcept
-  {
-    return std::move(m_currentCompilation);
-  }
-
+  // Reset current compilation unit, necessary if writing multiple
+  // output files from one Compiler instance
   void reset() noexcept
   {
     m_currentCompilation.reset();
   }
 
-  [[nodiscard]] auto context() const
-  {
-    return m_context;
-  }
-
+  // write LLVM bitcode of current compilation unit
   void write_bitcode(const spawn_fs::path &loc);
+
+  // write platform specific object file for current compilation unit
   void write_object_file(const spawn_fs::path &loc);
+
+  // write platform specific DLL/so module for current compilation unit
+  // this is suitable for loading with dlopen / LoadLibrary
   void write_shared_object_file(const spawn_fs::path &loc,
                                 const spawn_fs::path &sysroot,
                                 const std::vector<spawn_fs::path> &additional_libs = {});
@@ -64,6 +63,7 @@ public:
     return path += shared_object_extension();
   }
 
+  // Helper utility to choose between .so and .dll for a loadable module
   [[nodiscard]] static spawn_fs::path shared_object_extension();
 
 
@@ -78,7 +78,7 @@ private:
   std::unique_ptr<llvm::Module> m_currentCompilation{initialize_module(m_context, m_target_machine)};
 
   spawn::util::Temp_Directory m_embeddedFiles;
-  bool m_use_cbridge_instead_of_stdlib = false;
+  bool m_use_c_bridge_instead_of_stdlib = false;
 
   // we package and -I our own set of headers provided by the embedded clang
   // system -I headers are found automatically by the embedded clang

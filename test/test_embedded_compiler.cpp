@@ -6,7 +6,7 @@
 #include <catch2/catch.hpp>
 #include <spdlog/spdlog.h>
 
-TEST_CASE("Sanity Test Embedded Compiler")
+TEST_CASE("Sanity Test Embedded Compiler", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
   const std::vector<spawn_fs::path> include_paths{};
@@ -36,33 +36,33 @@ TEST_CASE("Sanity Test Embedded Compiler")
   CHECK(file_size > 0);
 }
 
-TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
+TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags, true);
 
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path()));
-  CHECK(spawn_fs::is_directory(compiler.get_cbridge_path()));
-  CHECK(spawn_fs::is_directory(compiler.get_cbridge_path() / "c_bridge"));
+  CHECK(spawn_fs::exists(compiler.get_c_bridge_path()));
+  CHECK(spawn_fs::is_directory(compiler.get_c_bridge_path()));
+  CHECK(spawn_fs::is_directory(compiler.get_c_bridge_path() / "c_bridge"));
 
 #ifdef _MSC_VER
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib"));
-  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.lib") > 0);
+  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib"));
+  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib") > 0);
 
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll"));
-  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "c_bridge.dll") > 0);
+  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll"));
+  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll") > 0);
 
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "lld-link.exe"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "lld-link.exe"));
-  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "lld-link.exe") > 0);
+  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "lld-link.exe"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "lld-link.exe"));
+  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "lld-link.exe") > 0);
 
 #else
-  CHECK(spawn_fs::exists(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so"));
-  CHECK(spawn_fs::file_size(compiler.get_cbridge_path() / "c_bridge" / "libc_bridge.so") > 0);
+  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so"));
+  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so"));
+  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so") > 0);
 #endif
 
   spawn::util::Temp_Directory td;
@@ -88,7 +88,7 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge")
   CHECK(file_size > 0);
 }
 
-TEST_CASE("Test embedded compiler simple loadable module")
+TEST_CASE("Test embedded compiler simple loadable module", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
   const std::vector<spawn_fs::path> include_paths{};
@@ -137,7 +137,7 @@ DLLEXPORT int get_value() {
   CHECK(func() == 42);
 }
 
-TEST_CASE("Test embedded compiler simple loadable module with param")
+TEST_CASE("Test embedded compiler simple loadable module with param", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
@@ -181,7 +181,7 @@ DLLEXPORT int get_value_1(int input) {
   CHECK(func(4) == 42 * 4);
 }
 
-TEST_CASE("Test embedded compiler with loadable module with cmath")
+TEST_CASE("Test embedded compiler with loadable module with cmath", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
@@ -228,7 +228,7 @@ DLLEXPORT double get_cos(double input) { return cos(input); }
   CHECK(func(42.0) == std::cos(42.0));
 }
 
-TEST_CASE("Test embedded compiler with bootstrapped DLL")
+TEST_CASE("Test embedded compiler with bootstrapped DLL", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
@@ -274,7 +274,7 @@ DLLEXPORT double get_val(double input) {
   CHECK(func(42.0) == 42.0 * 3.2);
 }
 
-TEST_CASE("Test embedded compiler with reloaded DLL with same symbols")
+TEST_CASE("Test embedded compiler with reloaded DLL with same symbols", "[embedded_compiler]")
 {
   SECTION("First DLL")
   {
@@ -369,7 +369,7 @@ DLLEXPORT double get_val(double input) {
   }
 }
 
-TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib")
+TEST_CASE("Test embedded compiler with bootstrapped DLL and stdlib", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
   const std::vector<spawn_fs::path> include_paths{};
@@ -421,7 +421,7 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(42.0) == std::cos(42.0));
 }
 
-TEST_CASE("Test embedded compiler two different DLLs from one compiler")
+TEST_CASE("Test embedded compiler two different DLLs from one compiler", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
   const std::vector<std::string> flags{};
@@ -523,7 +523,7 @@ DLLEXPORT double get_val(double input) {
 
 
 
-TEST_CASE("Test embedded compiler source helper interface")
+TEST_CASE("Test embedded compiler source helper interface", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
   spawn::Compiler compiler({}, {}, true);
@@ -567,7 +567,7 @@ DLLEXPORT double get_cos(double input) {
 
 
 
-TEST_CASE("Test embedded compiler c_bridge")
+TEST_CASE("Test embedded compiler c_bridge", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
   spawn::Compiler compiler({}, {}, true);
