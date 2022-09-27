@@ -489,7 +489,6 @@ DLLEXPORT double get_val(double input) {
 )" << std::flush;
     }
 
-
     // If we choose to reuse the same Compiler object, we must manually reset
     // it to avoid multiply defined symbols
     compiler.reset();
@@ -517,11 +516,7 @@ DLLEXPORT double get_val(double input) {
 
   CHECK(func_1(-42.0) == -42.0 * 3.2);
   CHECK(func_1(42.0) == 42.0 * 3.2);
-
 }
-
-
-
 
 TEST_CASE("Test embedded compiler source helper interface", "[embedded_compiler]")
 {
@@ -565,8 +560,6 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(42.0) == std::cos(42.0));
 }
 
-
-
 TEST_CASE("Test embedded compiler c_bridge", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
@@ -607,7 +600,6 @@ DLLEXPORT const char * get_hello_string(const char *name, int value) {
 }
 )"});
 
-
   spawn::util::Temp_Directory td;
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test");
@@ -626,6 +618,3 @@ DLLEXPORT const char * get_hello_string(const char *name, int value) {
   CHECK(get_cos(42.0) == std::cos(42.0));
   CHECK(get_hello_string("Jason", 42) == std::string_view{"Hello Jason, 42!"});
 }
-
-
-

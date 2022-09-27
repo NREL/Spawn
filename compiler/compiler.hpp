@@ -66,7 +66,6 @@ public:
   // Helper utility to choose between .so and .dll for a loadable module
   [[nodiscard]] static spawn_fs::path shared_object_extension();
 
-
 private:
   std::string m_target_triple{get_target_triple()};
   const llvm::Target *m_target{get_target(m_target_triple)};

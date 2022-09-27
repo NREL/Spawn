@@ -56,13 +56,11 @@
 #include "compiler.hpp"
 #include "compiler/embedded_files.hxx"
 
-
-// TODO: 
+// TODO:
 //  * I don't like the #ifdef's but honestly don't see a better way to handle it
 //  * We can probably get rid of the toString and use the u8String features of std::filesystem::path
 //  * Hardcoded library paths on Windows are unlikely to work in the long term
 //  * maybe we should just remove the ability to not use c_bridge (see above issue)
-
 
 std::string toString(const std::wstring &utf16_string)
 {
