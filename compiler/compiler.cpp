@@ -178,9 +178,9 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
       "ld.lld-10",
       "-shared",
       "-rpath=$ORIGIN",
-      fmt::format("--sysroot={}", toString(sysroot)),
-      fmt::format("-L{}", toString(sysroot / "usr/lib/")),
-      fmt::format("-L{}", toString(sysroot / "usr/lib/x86_64-linux-gnu/")),
+      fmt::format("--sysroot={}", sysroot.string()),
+      fmt::format("-L{}", (sysroot / "usr/lib/").string()),
+      fmt::format("-L{}", (sysroot / "usr/lib/x86_64-linux-gnu/").string()),
       "--allow-multiple-definition",
 #endif
       temporary_object_file_location.string()};
@@ -233,7 +233,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
                       fmt::format("/out:{}", loc.string()),
 #else
                       "-o",
-                      toString(loc),
+                      loc.string(),
 #endif
                   });
 
