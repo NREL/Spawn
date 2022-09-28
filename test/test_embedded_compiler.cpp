@@ -128,7 +128,7 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
   check_c_bridge_file("c_bridge", "c_bridge.dll");
   check_c_bridge_file("lld-link.exe");
 #else
-  check_c_bridge_file("c_bridge/c_bridge.so");
+  check_c_bridge_file("c_bridge", "libc_bridge.so");
 #endif
 
   spawn::util::Temp_Directory td;
@@ -153,14 +153,16 @@ int main() {}
   const auto test_header = [&](std::string_view header_name) {
     spdlog::info("Testing header '{}'", header_name);
     check_c_bridge_file("c_bridge", "include", header_name);
-    compiler.compile_and_link(std::string_view{fmt::format(R"(
+    const std::string test_file = fmt::format(R"(
 #include <{}>
 
 #ifndef C_BRIDGE_STDLIB
 #error "wrong cstdlib!"
 #endif
 )",
-                                                           header_name)});
+                                              header_name);
+
+    compiler.compile_and_link(std::string_view(test_file));
   };
 
   test_header("assert.h");
