@@ -6,7 +6,6 @@
 #include <catch2/catch.hpp>
 #include <spdlog/spdlog.h>
 
-
 //// START HERE
 //
 // This is the closest to how an actual use case
@@ -73,8 +72,6 @@ DLLEXPORT const char * get_hello_string(const char *name, int value) {
   CHECK(get_cos(42.0) == std::cos(42.0));
   CHECK(get_hello_string("Jason", 42) == std::string_view{"Hello Jason, 42!"});
 }
-
-
 
 // This test makes sure that all of the little details are as
 // expected for the setup of the compiler
@@ -633,4 +630,3 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
 }
-
