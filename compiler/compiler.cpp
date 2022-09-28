@@ -111,8 +111,6 @@ spawn_fs::path find_file(std::vector<spawn_fs::path> &starting_dirs, const spawn
   return {};
 }
 
-
-
 Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
                    std::vector<std::string> flags,
                    bool use_c_bridge_instead_of_stdlib)
@@ -122,10 +120,6 @@ Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
   for (const auto &file : spawnmodelica_compiler::embedded_files::fileNames()) {
     spawnmodelica_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
   }
-
-
-
-
 }
 
 void Compiler::add_c_bridge_to_path()
@@ -233,33 +227,30 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 
   } else {
 
-      std::vector<spawn_fs::path> search_paths{
-        "c:/Program Files/Microsoft Visual Studio/2022",
-        "c:/Program Files/Microsoft Visual Studio",
-        "c:/Program Files (x86)/Windows Kits/10/Lib",
-        "c:/Program Files (x86)/Windows Kits"
-    };
+    std::vector<spawn_fs::path> search_paths{"c:/Program Files/Microsoft Visual Studio/2022",
+                                             "c:/Program Files/Microsoft Visual Studio",
+                                             "c:/Program Files (x86)/Windows Kits/10/Lib",
+                                             "c:/Program Files (x86)/Windows Kits"};
 
-    str_args.insert(
-        str_args.end(),
-        {
+    str_args.insert(str_args.end(),
+                    {
 #ifdef _MSC_VER
-            find_file(search_paths, spawn_fs::path{"x64/libcmt.lib"}).string(),
-            find_file(search_paths, spawn_fs::path{"x64/libvcruntime.lib"}).string(),
-            find_file(search_paths, spawn_fs::path{"x64/libucrt.lib"}).string(),
-            find_file(search_paths, spawn_fs::path{"x64/kernel32.lib"}).string(),
-            find_file(search_paths, spawn_fs::path{"x64/uuid.lib"}).string(),
+                        find_file(search_paths, spawn_fs::path{"x64/libcmt.lib"}).string(),
+                        find_file(search_paths, spawn_fs::path{"x64/libvcruntime.lib"}).string(),
+                        find_file(search_paths, spawn_fs::path{"x64/libucrt.lib"}).string(),
+                        find_file(search_paths, spawn_fs::path{"x64/kernel32.lib"}).string(),
+                        find_file(search_paths, spawn_fs::path{"x64/uuid.lib"}).string(),
 #else
-            "-L/usr/lib",
-            "-L/lib",
-            "-L/lib/x86_64-linux-gnu",
-            "-lm",
-            "-lc",
-            "-ldl",
-            "-lpthread",
+                        "-L/usr/lib",
+                        "-L/lib",
+                        "-L/lib/x86_64-linux-gnu",
+                        "-lm",
+                        "-lc",
+                        "-ldl",
+                        "-lpthread",
 
 #endif
-        });
+                    });
   }
 
   str_args.insert(str_args.end(),
