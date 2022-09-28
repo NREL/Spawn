@@ -6,6 +6,78 @@
 #include <catch2/catch.hpp>
 #include <spdlog/spdlog.h>
 
+
+//// START HERE
+//
+// This is the closest to how an actual use case
+// should look.
+//
+// We simply set up the compiler, throw some C files at it,
+// link those into a shared object, and load and use said
+// shared object
+TEST_CASE("Test embedded compiler c_bridge", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+  spawn::Compiler compiler({}, {}, true);
+
+  compiler.add_c_bridge_to_path();
+
+  compiler.compile_and_link(std::string_view{R"(
+#include <math.h>
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+DLLEXPORT double get_cos(double input) {
+  return cos(input);
+}
+)"});
+
+  compiler.compile_and_link(std::string_view{R"(
+#include <stdio.h>
+#include <string.h>
+
+#ifdef _MSC_VER
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+static char result_buffer[255];
+
+DLLEXPORT const char * get_hello_string(const char *name, int value) {
+  memset(result_buffer, 0, sizeof(result_buffer));
+  snprintf(result_buffer, sizeof(result_buffer), "Hello %s, %i!", name, value);
+  return result_buffer;
+}
+)"});
+
+  spawn::util::Temp_Directory td;
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test");
+
+  compiler.write_shared_object_file(object_path, {"/"}, {});
+
+  CHECK(spawn_fs::exists(object_path));
+  CHECK(spawn_fs::is_regular_file(object_path));
+  CHECK(spawn_fs::file_size(object_path) > 0);
+
+  spawn::util::Dynamic_Library dl(object_path);
+  const auto get_cos = dl.load_symbol<double(double)>("get_cos");
+  const auto get_hello_string = dl.load_symbol<const char *(const char *, int)>("get_hello_string");
+
+  CHECK(get_cos(-42.0) == std::cos(-42.0));
+  CHECK(get_cos(42.0) == std::cos(42.0));
+  CHECK(get_hello_string("Jason", 42) == std::string_view{"Hello Jason, 42!"});
+}
+
+
+
+// This test makes sure that all of the little details are as
+// expected for the setup of the compiler
 TEST_CASE("Sanity Test Embedded Compiler", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
@@ -36,6 +108,7 @@ TEST_CASE("Sanity Test Embedded Compiler", "[embedded_compiler]")
   CHECK(file_size > 0);
 }
 
+// Makes sure all of the c_bridge components are installed and sane
 TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
 {
   const std::vector<spawn_fs::path> include_paths{};
@@ -88,6 +161,7 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
   CHECK(file_size > 0);
 }
 
+// Tests loadable module that needs no dependencies, uses c_bridge
 TEST_CASE("Test embedded compiler simple loadable module", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
@@ -560,61 +634,3 @@ DLLEXPORT double get_cos(double input) {
   CHECK(func(42.0) == std::cos(42.0));
 }
 
-TEST_CASE("Test embedded compiler c_bridge", "[embedded_compiler]")
-{
-  spdlog::set_level(spdlog::level::trace);
-  spawn::Compiler compiler({}, {}, true);
-
-  compiler.add_c_bridge_to_path();
-
-  compiler.compile_and_link(std::string_view{R"(
-#include <math.h>
-
-#ifdef _MSC_VER
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
-DLLEXPORT double get_cos(double input) {
-  return cos(input);
-}
-)"});
-
-  compiler.compile_and_link(std::string_view{R"(
-#include <stdio.h>
-#include <string.h>
-
-#ifdef _MSC_VER
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
-static char result_buffer[255];
-
-DLLEXPORT const char * get_hello_string(const char *name, int value) {
-  memset(result_buffer, 0, sizeof(result_buffer));
-  snprintf(result_buffer, sizeof(result_buffer), "Hello %s, %i!", name, value);
-  return result_buffer;
-}
-)"});
-
-  spawn::util::Temp_Directory td;
-
-  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test");
-
-  compiler.write_shared_object_file(object_path, {"/"}, {});
-
-  CHECK(spawn_fs::exists(object_path));
-  CHECK(spawn_fs::is_regular_file(object_path));
-  CHECK(spawn_fs::file_size(object_path) > 0);
-
-  spawn::util::Dynamic_Library dl(object_path);
-  const auto get_cos = dl.load_symbol<double(double)>("get_cos");
-  const auto get_hello_string = dl.load_symbol<const char *(const char *, int)>("get_hello_string");
-
-  CHECK(get_cos(-42.0) == std::cos(-42.0));
-  CHECK(get_cos(42.0) == std::cos(42.0));
-  CHECK(get_hello_string("Jason", 42) == std::string_view{"Hello Jason, 42!"});
-}

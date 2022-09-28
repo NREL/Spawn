@@ -94,8 +94,8 @@ spawn_fs::path find_file(std::vector<spawn_fs::path> &starting_dirs, const spawn
     try {
       for (const auto &entry :
            spawn_fs::recursive_directory_iterator(starting_dir, spawn_fs::directory_options::skip_permission_denied)) {
-        if (entry.is_directory()) {
-          const auto potential_path = entry.path() / file_to_find;
+        if (spawn_fs::is_directory(entry.path())) {
+          auto potential_path = entry.path() / file_to_find;
           if (spawn_fs::exists(potential_path)) {
             spdlog::info("File: '{}' found: '{}'", file_to_find.string(), potential_path.string());
             starting_dirs.insert(starting_dirs.begin(), entry.path());
@@ -248,7 +248,6 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
                         "-lc",
                         "-ldl",
                         "-lpthread",
-
 #endif
                     });
   }
