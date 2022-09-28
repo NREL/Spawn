@@ -28,7 +28,10 @@ list(APPEND embedded_files
   ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/fenv.h      ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdatomic.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/uchar.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/float.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdbool.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/wchar.h 
   ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/inttypes.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stddef.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/wctype.h 
-  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/iso646.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdint.h)
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/iso646.h    ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/stdint.h     ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/linux/limits.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/sys/stat.h  ${CMAKE_CURRENT_SOURCE_DIR}/c_bridge/sys/types.h
+  )
+
 
 list(APPEND embedded_paths
   c_bridge/include/assert.h    c_bridge/include/limits.h     c_bridge/include/stdio.h
@@ -41,7 +44,9 @@ list(APPEND embedded_paths
   c_bridge/include/fenv.h      c_bridge/include/stdatomic.h  c_bridge/include/uchar.h
   c_bridge/include/float.h     c_bridge/include/stdbool.h    c_bridge/include/wchar.h
   c_bridge/include/inttypes.h  c_bridge/include/stddef.h     c_bridge/include/wctype.h
-  c_bridge/include/iso646.h    c_bridge/include/stdint.h)
+  c_bridge/include/iso646.h    c_bridge/include/stdint.h     c_bridge/include/linux/limits.h
+  c_bridge/include/sys/stat.h  c_bridge/include/sys/types.h
+)
 
 
 if (MSVC) 

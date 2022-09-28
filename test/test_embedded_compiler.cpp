@@ -116,23 +116,19 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
   CHECK(spawn_fs::is_directory(compiler.get_c_bridge_path()));
   CHECK(spawn_fs::is_directory(compiler.get_c_bridge_path() / "c_bridge"));
 
+  const auto check_c_bridge_file = [&](const auto ... components) {
+    const auto path = compiler.get_c_bridge_path() / (spawn_fs::path(components) / ...);
+    CHECK(spawn_fs::exists(path));
+    CHECK(spawn_fs::is_regular_file(path));
+    CHECK(spawn_fs::file_size(path) > 0);
+  };
+
 #ifdef _MSC_VER
-  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib"));
-  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.lib") > 0);
-
-  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll"));
-  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "c_bridge.dll") > 0);
-
-  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "lld-link.exe"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "lld-link.exe"));
-  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "lld-link.exe") > 0);
-
+  check_c_bridge_file("c_bridge","c_bridge.lib");
+  check_c_bridge_file("c_bridge","c_bridge.dll");
+  check_c_bridge_file("lld-link.exe");
 #else
-  CHECK(spawn_fs::exists(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so"));
-  CHECK(spawn_fs::is_regular_file(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so"));
-  CHECK(spawn_fs::file_size(compiler.get_c_bridge_path() / "c_bridge" / "libc_bridge.so") > 0);
+  check_c_bridge_file("c_bridge/c_bridge.so");
 #endif
 
   spawn::util::Temp_Directory td;
@@ -141,10 +137,69 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
 
   {
     std::ofstream test_file(test_file_path);
-    test_file << "int main() {}" << std::endl; // we want a flush here
+    test_file << R"(
+#include <linux/limits.h>
+
+#ifndef C_BRIDGE_STDLIB
+#error "wrong cstdlib!"
+#endif
+
+int main() {}
+)" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
+
+  const auto test_header = [&](std::string_view header_name) {
+    spdlog::info("Testing header '{}'", header_name);
+    check_c_bridge_file("c_bridge", "include", header_name);
+    compiler.compile_and_link(std::string_view{fmt::format(R"(
+#include <{}>
+
+#ifndef C_BRIDGE_STDLIB
+#error "wrong cstdlib!"
+#endif
+)",
+                                                           header_name)});
+  };
+
+      test_header("assert.h");
+      test_header("complex.h");
+      test_header("ctype.h");
+      test_header("c_bridge.h");
+      test_header("dlfcn.h");
+      test_header("errno.h");
+      test_header("fcntl.h");
+      test_header("fenv.h");
+      test_header("float.h");
+      test_header("inttypes.h");
+      test_header("iso646.h");
+      test_header("limits.h");
+      test_header("linux/limits.h");
+      test_header("locale.h");
+      test_header("math.h");
+      test_header("setjmp.h");
+      test_header("signal.h");
+      test_header("stdalign.h");
+      test_header("stdarg.h");
+      test_header("stdatomic.h");
+      test_header("stdbool.h");
+      test_header("stddef.h");
+      test_header("stdint.h");
+      test_header("stdio.h");
+      test_header("stdlib.h");
+      test_header("stdnoreturn.h");
+      test_header("string.h");
+      test_header("sys/stat.h");
+      test_header("sys/types.h");
+      test_header("tgmath.h");
+      test_header("threads.h");
+      test_header("time.h");
+      test_header("uchar.h");
+      test_header("wchar.h");
+      test_header("wctype.h");
+
+
 
   const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
 

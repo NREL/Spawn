@@ -1,6 +1,8 @@
 #ifndef C_BRIDGE_H
 #define C_BRIDGE_H
 
+#define C_BRIDGE_STDLIB
+
 #ifdef _MSC_VER
 #if defined(c_bridge_EXPORTS)
 #define C_BRIDGE_API __declspec(dllexport)
