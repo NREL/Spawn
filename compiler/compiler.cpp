@@ -133,8 +133,7 @@ void Compiler::add_c_bridge_to_path() const
     }
   }();
 
-  const auto new_ld_library_path =
-      fmt::format("{}:{}", (get_c_bridge_path() / "c_bridge").string(), library_path);
+  const auto new_ld_library_path = fmt::format("{}:{}", (get_c_bridge_path() / "c_bridge").string(), library_path);
   setenv("LD_LIBRARY_PATH", new_ld_library_path.c_str(), 1); // NOLINT
 #endif
 }
