@@ -77,17 +77,14 @@
 #endif
 
 #if !defined(_MSC_VER) && !defined(C_BRIDGE_IMPL)
-typedef unsigned long long size_t
+typedef unsigned long long size_t;
 #endif
 
-    /// TODO: We're probably going to have to deal with size_t at some point
+/// Note how the set of supported functions all have _wrap appended?
+/// they are implemented in c_bridge.c
 
-    /// Note how the set of supported functions all have _wrap appended?
-    /// they are implemented in c_bridge.c
-
-    // stdio.h
-    C_BRIDGE_API int
-    snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...);
+// stdio.h
+C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...);
 
 // string.h
 C_BRIDGE_API void *memset_wrap(void *dest, int ch, size_t count);
