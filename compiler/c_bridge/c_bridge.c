@@ -22,7 +22,7 @@
 
 // there is no way to forward a va_args, so we must dispatch to the version
 // that can take a va_list
-int snprintf_wrap(char *restrict buffer, unsigned long long bufsz, const char *restrict format, ...)
+int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...)
 {
   int ret = 0;
 
@@ -42,7 +42,7 @@ int snprintf_wrap(char *restrict buffer, unsigned long long bufsz, const char *r
 }
 
 // string.h
-void *memset_wrap(void *dest, int ch, unsigned long long count)
+void *memset_wrap(void *dest, int ch, size_t count)
 {
   return memset(dest, ch, count);
 }
