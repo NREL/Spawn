@@ -34,6 +34,8 @@
 #include "../util/temp_directory.hpp"
 
 #include <iostream>
+#include <sstream>
+
 #if defined _WIN32
 #include <windows.h>
 #else
