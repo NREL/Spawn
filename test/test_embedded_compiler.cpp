@@ -595,7 +595,6 @@ DLLEXPORT double get_val(double input) {
   CHECK(func_1(42.0) == 42.0 * 3.2);
 
   auto dll2 = [&]() {
-    spawn::util::Temp_Directory td;
 
     const spawn_fs::path test_file_path = td.dir() / "test.c";
 
