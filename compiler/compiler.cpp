@@ -1,14 +1,11 @@
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/CodeGen/CodeGenAction.h"
-#include "clang/CodeGen/ObjectFilePCHContainerOperations.h"
 #include "clang/Driver/Compilation.h"
 #include "clang/Driver/Driver.h"
-#include "clang/Driver/Options.h"
 #include "clang/Driver/Tool.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
-#include "clang/Frontend/TextDiagnosticBuffer.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/FrontendTool/Utils.h"
 
@@ -17,19 +14,15 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/PassManager.h"
 #include "llvm/Linker/Linker.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/Timer.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetMachine.h"
 
 #include "lld/Common/Driver.h"
 #include "lld/Common/ErrorHandler.h"
@@ -44,13 +37,9 @@
 #if defined _WIN32
 #include <windows.h>
 #else
-#include <cstdio>
 #include <dlfcn.h>
 #endif
 
-#include <codecvt>
-#include <iterator>
-#include <sstream>
 #include <stdexcept>
 
 #include "compiler.hpp"
@@ -69,10 +58,10 @@ std::string getExecutablePath()
 #else
   Dl_info info;
   if (dladdr("main", &info) == 0) {
-    return std::string(info.dli_fname);
+    return {info.dli_fname};
   }
 #endif
-  return std::string();
+  return {};
 }
 
 namespace spawn {
@@ -122,7 +111,7 @@ Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
   }
 }
 
-void Compiler::add_c_bridge_to_path()
+void Compiler::add_c_bridge_to_path() const
 {
 #ifdef _MSC_VER
   constexpr std::size_t ENVSIZE = 2048;
@@ -136,7 +125,7 @@ void Compiler::add_c_bridge_to_path()
   }
 #else
   const auto library_path = []() -> std::string {
-    const char *path = getenv("LD_LIBRARY_PATH");
+    const char *path = getenv("LD_LIBRARY_PATH"); // NOLINT function is thread unsafe
     if (path != nullptr) {
       return path;
     } else {
@@ -144,7 +133,9 @@ void Compiler::add_c_bridge_to_path()
     }
   }();
 
-  setenv("LD_LIBRARY_PATH", ((m_embeddedFiles.dir() / "c_bridge").string() + ":" + library_path).c_str(), 1);
+  const auto new_ld_library_path =
+      fmt::format("{}:{}", (get_c_bridge_path() / "c_bridge").string(), library_path);
+  setenv("LD_LIBRARY_PATH", new_ld_library_path.c_str(), 1); // NOLINT
 #endif
 }
 
@@ -296,7 +287,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
     lld_cmd = fmt::format("\"{}\"", lld_cmd);
 
     spdlog::trace("Calling: `{}`", lld_cmd);
-    system(lld_cmd.c_str());
+    success = (system(lld_cmd.c_str()) == 0);
 #else
     success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
 #endif
@@ -310,9 +301,7 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
 
   if (!success) {
     throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", loc.string(), errors));
-  }
-
-  if (success && !errors.empty()) {
+  } else if (!errors.empty()) {
     spdlog::warn("Linking warnings: '{}'", errors);
   }
 }
@@ -334,13 +323,10 @@ void Compiler::compile_and_link(const std::string_view source)
 void Compiler::compile_and_link(const spawn_fs::path &source)
 {
   auto include_paths = m_include_paths;
-  if (m_use_c_bridge_instead_of_stdlib) {
-    include_paths.insert(include_paths.begin(), (m_embeddedFiles.dir() / "c_bridge/include").string());
-  }
-
   auto flags = m_flags;
 
   if (m_use_c_bridge_instead_of_stdlib) {
+    include_paths.insert(include_paths.begin(), (m_embeddedFiles.dir() / "c_bridge/include").string());
     flags.insert(flags.begin(), "-nobuiltininc");
   }
 
@@ -371,17 +357,14 @@ void Compiler::write_object_file(const spawn_fs::path &loc)
     throw std::runtime_error("No current compilation available to write");
   }
 
-  std::string err;
-
   llvm::legacy::PassManager pass;
-  std::string error;
-
   llvm::CodeGenFileType ft = llvm::CGFT_ObjectFile;
 
   std::error_code EC;
   std::string sloc(loc.string());
   llvm::raw_fd_ostream destination(sloc, EC, llvm::sys::fs::OF_None);
 
+  // confusingly, addPassesToEmitFile returns `false` on success
   if (m_target_machine->addPassesToEmitFile(pass, destination, nullptr, ft)) {
     throw std::runtime_error("TargetMachine can't emit a file of this type");
   }
@@ -396,18 +379,20 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
                                                 const std::vector<std::string> &flags)
 {
   void *MainAddr = reinterpret_cast<void *>(getExecutablePath); // NOLINT we have to get a void * out of this somehow
-  std::string Path = getExecutablePath();
+
   clang::IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts{new clang::DiagnosticOptions()};
   clang::TextDiagnosticPrinter *DiagClient{new clang::TextDiagnosticPrinter(llvm::errs(), &*DiagOpts)};
 
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
 
+  const std::string Path = getExecutablePath();
   clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
+
   TheDriver.setTitle("clang interpreter");
   TheDriver.setCheckInputsExist(false);
 
-  // a place for the strings to live
+  // a place for the compiler arguments to live
   std::vector<std::string> str_args;
   str_args.push_back(source.string());
   std::transform(include_paths.begin(), include_paths.end(), std::back_inserter(str_args), [](const auto &str) {
@@ -428,29 +413,30 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   std::transform(
       str_args.begin(), str_args.end(), std::back_inserter(Args), [](const auto &str) { return str.c_str(); });
 
-  std::unique_ptr<clang::driver::Compilation> C(TheDriver.BuildCompilation(Args));
+  std::unique_ptr<clang::driver::Compilation> compilation(TheDriver.BuildCompilation(Args));
 
-  if (!C) {
-    return {};
+  if (!compilation) {
+    throw std::runtime_error("Unable to create compilation");
   }
 
   // FIXME: This is copied from ASTUnit.cpp; simplify and eliminate.
 
   // We expect to get back exactly one command job, if we didn't something
   // failed. Extract that job from the compilation.
-  const auto &Jobs = C->getJobs();
+  const auto &Jobs = compilation->getJobs();
   if (Jobs.size() != 1 || !clang::isa<clang::driver::Command>(*Jobs.begin())) {
     clang::SmallString<256> Msg;
     llvm::raw_svector_ostream OS(Msg);
     Jobs.Print(OS, "; ", true);
-    Diags.Report(clang::diag::err_fe_expected_compiler_job) << OS.str();
-    return {};
+    const auto job_string = OS.str();
+    Diags.Report(clang::diag::err_fe_expected_compiler_job) << job_string;
+    throw std::runtime_error(fmt::format("Failed to create exactly 1 compilation job '{}'", std::string(job_string)));
   }
 
   const auto &Cmd = clang::cast<clang::driver::Command>(*Jobs.begin());
   if (llvm::StringRef(Cmd.getCreator().getName()) != "clang") {
     Diags.Report(clang::diag::err_fe_expected_clang_command);
-    return {};
+    throw std::runtime_error(fmt::format("Unexpected compiler job creator '{}'", Cmd.getCreator().getName()));
   }
 
   // Initialize a compiler invocation object from the clang (-cc1) arguments.
@@ -474,7 +460,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   // Create the compilers actual diagnostics engine.
   Clang.createDiagnostics();
   if (!Clang.hasDiagnostics()) {
-    return {};
+    throw std::runtime_error("Unable to constructor clang diagnostics engine");
   }
 
   // Infer the builtin include path if unspecified.
@@ -485,8 +471,10 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 
   // Create and execute the frontend to generate an LLVM bitcode module.
   std::unique_ptr<clang::CodeGenAction> Act(new clang::EmitLLVMOnlyAction(&ctx));
+
+  // this one returns true on success
   if (!Clang.ExecuteAction(*Act)) {
-    return {};
+    throw std::runtime_error("Unable to execute compilation");
   }
 
   return Act->takeModule();

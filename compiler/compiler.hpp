@@ -17,7 +17,7 @@ namespace spawn {
 class Compiler
 {
 public:
-  // If use_c_bridge_instead_of_stdlib is `true`, then all standard system
+  // If `use_c_bridge_instead_of_stdlib` is `true`, then all standard system
   // paths are ignored and only the embedded c_bridge library is available
   explicit Compiler(std::vector<spawn_fs::path> include_paths,
                     std::vector<std::string> flags,
@@ -25,7 +25,7 @@ public:
 
   // Adds the c_bridge library (dll/so) to the current PATH/LD_LIBRARY_PATH
   // to make it accessible to dynamically loaded libraries.
-  void add_c_bridge_to_path();
+  void add_c_bridge_to_path() const;
 
   // adds a string source to the current compilation unit
   void compile_and_link(const std::string_view source);
@@ -116,12 +116,12 @@ private:
     return module;
   }
 
-  [[nodiscard]] static std::string get_CPU()
+  [[nodiscard]] constexpr static std::string_view get_CPU() noexcept
   {
     return "generic";
   }
 
-  [[nodiscard]] static std::string get_features()
+  [[nodiscard]] constexpr static std::string_view get_features() noexcept
   {
     return "";
   }
@@ -137,13 +137,17 @@ private:
   }
 
   [[nodiscard]] static llvm::TargetMachine *get_target_machine(const llvm::Target *target,
-                                                               const std::string &triple,
-                                                               const std::string &cpu,
-                                                               const std::string &features,
-                                                               const llvm::TargetOptions opt,
+                                                               const std::string_view triple,
+                                                               const std::string_view cpu,
+                                                               const std::string_view features,
+                                                               const llvm::TargetOptions &opt,
                                                                const llvm::Optional<llvm::Reloc::Model> &reloc_model)
   {
-    llvm::TargetMachine *machine = target->createTargetMachine(triple, cpu, features, opt, reloc_model);
+    llvm::TargetMachine *machine = target->createTargetMachine(llvm::StringRef{triple.data(), triple.size()},
+                                                               llvm::StringRef{cpu.data(), cpu.size()},
+                                                               llvm::StringRef{features.data(), features.size()},
+                                                               opt,
+                                                               reloc_model);
     return machine;
   }
 };

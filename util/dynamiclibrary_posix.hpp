@@ -6,11 +6,13 @@
 #include <fmt/format.h>
 #include <string>
 
-namespace spawn {
-namespace util {
+namespace spawn::util {
 
   struct Dynamic_Library
   {
+    // loads a symbol and casts it to the given type
+    // usage: `load_symbol<int (int)>("function_name")`
+    // returns a function pointer that takes and int and returns an int.
     template <typename Signature> [[nodiscard]] Signature *load_symbol(const std::string &name)
     {
       // reinterpret_cast is necessary here
@@ -32,17 +34,16 @@ namespace util {
       }
     }
 
-    static void m_handle_deleter(void *h)
+    static void m_handle_deleter(void *handle)
     {
-      if (h) {
-        dlclose(h);
+      if (handle != nullptr) {
+        dlclose(handle);
       }
     }
 
     spawn_fs::path m_location{};
     std::unique_ptr<void, decltype(&m_handle_deleter)> m_handle{nullptr, m_handle_deleter};
   };
-} // namespace util
 } // namespace spawn
 
 #endif
