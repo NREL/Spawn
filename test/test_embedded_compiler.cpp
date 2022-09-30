@@ -595,7 +595,6 @@ DLLEXPORT double get_val(double input) {
   CHECK(func_1(42.0) == 42.0 * 3.2);
 
   auto dll2 = [&]() {
-
     const spawn_fs::path test_file_path = td.dir() / "test.c";
 
     {
@@ -683,4 +682,154 @@ DLLEXPORT double get_cos(double input) {
 
   CHECK(func(-42.0) == std::cos(-42.0));
   CHECK(func(42.0) == std::cos(42.0));
+}
+
+TEST_CASE("Test compile error is catchable", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << "bassdf\n" << std::flush;
+  }
+
+  CHECK_THROWS(compiler.compile_and_link(test_file_path));
+}
+
+
+TEST_CASE("Test link error is catchable", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << "void func() {}\n" << std::flush;
+  }
+
+  CHECK_NOTHROW(compiler.compile_and_link(test_file_path));
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath-bootstrapped");
+
+  CHECK_THROWS(compiler.write_shared_object_file(object_path, {"/"}, {"missinglib"}));
+}
+
+TEST_CASE("Test link error is sane", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << "void func() {}\n" << std::flush;
+  }
+
+  CHECK_NOTHROW(compiler.compile_and_link(test_file_path));
+
+  const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test-cmath-bootstrapped");
+
+  try {
+    compiler.write_shared_object_file(object_path, {"/"}, {"missinglib"});
+    REQUIRE_FALSE(true); // should be unreachable
+  } catch (const std::exception &e) {
+    // make sure compile error contains the string we know is bad.
+    REQUIRE(std::string(e.what()).find("missinglib") != std::string::npos);
+  }
+}
+
+
+TEST_CASE("Test compile error is sane", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+
+  const std::vector<spawn_fs::path> include_paths{};
+  const std::vector<std::string> flags{};
+  spawn::Compiler compiler(include_paths, flags, true);
+
+  spawn::util::Temp_Directory td;
+
+  const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+  {
+    std::ofstream test_file(test_file_path);
+    test_file << "bassdf\n" << std::flush;
+  }
+
+
+  try {
+    compiler.compile_and_link(test_file_path);
+    REQUIRE_FALSE(true); // should be unreachable
+  } catch (const std::exception &e) {
+    // make sure compile error contains the string we know is bad.
+    REQUIRE(std::string(e.what()).find("bassdf") != std::string::npos);
+  }
+}
+
+
+
+// this tests that the library is properly unloaded as well
+TEST_CASE("Test Temp Directory Cleanup", "[embedded_compiler]")
+{
+  spdlog::set_level(spdlog::level::trace);
+
+  spawn_fs::path temp_directory;
+
+  {
+    const std::vector<spawn_fs::path> include_paths{};
+    const std::vector<std::string> flags{};
+    spawn::Compiler compiler(include_paths, flags, true);
+
+    spawn::util::Temp_Directory td;
+    temp_directory = td.dir();
+
+    const spawn_fs::path test_file_path = td.dir() / "test.c";
+
+    {
+      std::ofstream test_file(test_file_path);
+      test_file << "void func() {}\n" << std::flush;
+    }
+
+    compiler.compile_and_link(test_file_path);
+
+    const auto object_path =
+        spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
+
+    compiler.write_shared_object_file(object_path, {"/"}, {});
+
+    CHECK(spawn_fs::exists(object_path));
+    CHECK(spawn_fs::is_regular_file(object_path));
+
+    const auto file_size = spawn_fs::file_size(object_path);
+
+    CHECK(file_size > 0);
+
+    CHECK(spawn_fs::exists(temp_directory));
+    CHECK(spawn_fs::is_directory(temp_directory));
+
+    spawn::util::Dynamic_Library dl(object_path);
+  }
+
+  CHECK(!spawn_fs::exists(temp_directory));
 }

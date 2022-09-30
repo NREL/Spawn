@@ -285,10 +285,18 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
     for (const auto &arg : newargs) {
       lld_cmd += fmt::format(" \"{}\"", arg);
     }
-    lld_cmd = fmt::format("\"{}\"", lld_cmd);
+    const auto error_file_path = td.dir() / "error_file";
+    lld_cmd = fmt::format("\"{} 2> {}\"", lld_cmd, error_file_path.string());
+
 
     spdlog::trace("Calling: `{}`", lld_cmd);
     success = (system(lld_cmd.c_str()) == 0);
+
+    if (spawn_fs::exists(error_file_path)) {
+      std::ifstream error_file{error_file_path};
+      err_ss << error_file.rdbuf();
+    }
+
 #else
     success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
 #endif
@@ -381,12 +389,15 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 {
   void *MainAddr = reinterpret_cast<void *>(getExecutablePath); // NOLINT we have to get a void * out of this somehow
 
+  std::string output;
+  llvm::raw_string_ostream err_stream(output);
+
   clang::IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts{new clang::DiagnosticOptions()};
-  clang::TextDiagnosticPrinter *DiagClient{new clang::TextDiagnosticPrinter(llvm::errs(), &*DiagOpts)};
+  clang::TextDiagnosticPrinter *DiagClient{new clang::TextDiagnosticPrinter(err_stream, &*DiagOpts)};
 
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
-
+  
   const std::string Path = getExecutablePath();
   clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
 
@@ -460,6 +471,8 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 
   // Create the compilers actual diagnostics engine.
   Clang.createDiagnostics();
+  Clang.getDiagnostics().setClient(DiagClient, false);
+  //Clang.setDiagnostics(&Diags);
   if (!Clang.hasDiagnostics()) {
     throw std::runtime_error("Unable to constructor clang diagnostics engine");
   }
@@ -475,7 +488,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 
   // this one returns true on success
   if (!Clang.ExecuteAction(*Act)) {
-    throw std::runtime_error("Unable to execute compilation");
+    throw std::runtime_error("Unable to execute compilation " + output);
   }
 
   return Act->takeModule();
