@@ -288,7 +288,6 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
     const auto error_file_path = td.dir() / "error_file";
     lld_cmd = fmt::format("\"{} 2> {}\"", lld_cmd, error_file_path.string());
 
-
     spdlog::trace("Calling: `{}`", lld_cmd);
     success = (system(lld_cmd.c_str()) == 0);
 
@@ -397,7 +396,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
 
   clang::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID{new clang::DiagnosticIDs()};
   clang::DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
-  
+
   const std::string Path = getExecutablePath();
   clang::driver::Driver TheDriver(Path, llvm::sys::getProcessTriple(), Diags);
 
@@ -472,7 +471,7 @@ std::unique_ptr<llvm::Module> Compiler::compile(const spawn_fs::path &source,
   // Create the compilers actual diagnostics engine.
   Clang.createDiagnostics();
   Clang.getDiagnostics().setClient(DiagClient, false);
-  //Clang.setDiagnostics(&Diags);
+  // Clang.setDiagnostics(&Diags);
   if (!Clang.hasDiagnostics()) {
     throw std::runtime_error("Unable to constructor clang diagnostics engine");
   }

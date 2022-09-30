@@ -704,7 +704,6 @@ TEST_CASE("Test compile error is catchable", "[embedded_compiler]")
   CHECK_THROWS(compiler.compile_and_link(test_file_path));
 }
 
-
 TEST_CASE("Test link error is catchable", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
@@ -759,7 +758,6 @@ TEST_CASE("Test link error is sane", "[embedded_compiler]")
   }
 }
 
-
 TEST_CASE("Test compile error is sane", "[embedded_compiler]")
 {
   spdlog::set_level(spdlog::level::trace);
@@ -777,7 +775,6 @@ TEST_CASE("Test compile error is sane", "[embedded_compiler]")
     test_file << "bassdf\n" << std::flush;
   }
 
-
   try {
     compiler.compile_and_link(test_file_path);
     REQUIRE_FALSE(true); // should be unreachable
@@ -786,8 +783,6 @@ TEST_CASE("Test compile error is sane", "[embedded_compiler]")
     REQUIRE(std::string(e.what()).find("bassdf") != std::string::npos);
   }
 }
-
-
 
 // this tests that the library is properly unloaded as well
 TEST_CASE("Test Temp Directory Cleanup", "[embedded_compiler]")
