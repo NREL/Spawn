@@ -88,7 +88,7 @@ TEST_CASE("Sanity Test Embedded Compiler", "[embedded_compiler]")
 
   {
     std::ofstream test_file(test_file_path);
-    test_file << "int main() {}\n" << std::flush;
+    test_file << "int main() { return 0; }\n" << std::flush;
   }
 
   compiler.compile_and_link(test_file_path);
@@ -144,7 +144,7 @@ TEST_CASE("Sanity Test Embedded Compiler with c_bridge", "[embedded_compiler]")
 #error "wrong cstdlib!"
 #endif
 
-int main() {}
+int main() { return 0; }
 )" << std::flush;
   }
 
@@ -803,13 +803,12 @@ TEST_CASE("Test Temp Directory Cleanup", "[embedded_compiler]")
 
     {
       std::ofstream test_file(test_file_path);
-      test_file << "void func() {}\n" << std::flush;
+      test_file << "int main() { return 0; }\n" << std::flush;
     }
 
     compiler.compile_and_link(test_file_path);
 
-    const auto object_path =
-        spawn::Compiler::append_shared_object_extension(td.dir() / "sanity_test_embedded_compiler");
+    const auto object_path = spawn::Compiler::append_shared_object_extension(td.dir() / "test_directory_cleanup");
 
     compiler.write_shared_object_file(object_path, {"/"}, {});
 

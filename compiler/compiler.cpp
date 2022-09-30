@@ -144,6 +144,21 @@ void Compiler::write_shared_object_file(const spawn_fs::path &loc,
                                         const spawn_fs::path &sysroot,
                                         const std::vector<spawn_fs::path> &additional_libs)
 {
+  // lld uses global state for handling linker warnings in llvm-10
+  // lld carries global state across instances for warning/error count in llvm-10
+  // ld-lld on Windows carries global state, and is only usable once
+
+  // "Solutions"
+  //
+  // * Windows: we call into an embedded ld-lld executable, to make sure global state does not impact us
+  // * Linux: we reset state where we can and put a mutex around this function
+  //
+  // Both "solutions" == :(
+
+  static std::mutex lld_mutex;
+
+  std::lock_guard<std::mutex> guard(lld_mutex);
+
 #ifdef _MSC_VER
   if (m_use_c_bridge_instead_of_stdlib) {
     spawn::util::Temp_Directory td;
@@ -272,6 +287,9 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
   std::stringstream out_ss;
   std::stringstream err_ss;
 
+  // reset the error handler...
+  lld::errorHandler() = lld::ErrorHandler{};
+
   { // scope to ensure error stream buffer is flushed
     llvm::raw_os_ostream err(err_ss);
     llvm::raw_os_ostream out(out_ss);
@@ -295,17 +313,17 @@ BOOL WINAPI _DllMainCRTStartup(void *hinstDLL, unsigned long fdwReason, void *lp
       std::ifstream error_file{error_file_path};
       err_ss << error_file.rdbuf();
     }
-
 #else
     success = lld::elf::link(Args, false /*canExitEarly*/, out, err);
 #endif
-
-    if (!success) {
-      spdlog::error("Linking errors with {} errors", lld::errorHandler().errorCount);
-    }
   }
 
   const auto errors = err_ss.str();
+  const auto output = out_ss.str();
+
+  if (!success) {
+    spdlog::error("Linking errors with {} errors, '{}' stdout: '{}'", lld::errorHandler().errorCount, errors, output);
+  }
 
   if (!success) {
     throw std::runtime_error(fmt::format("Error with linking {}, errors '{}'", loc.string(), errors));
