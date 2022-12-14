@@ -264,7 +264,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
   COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
 
-set(mbl_spawn_root_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/${spawn_cli_name}/${os_prefix}")
+set(mbl_spawn_root_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/Spawn-light-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}/${os_prefix}")
 set(mbl_spawn_bin_path "${mbl_spawn_root_path}/bin/")
 set(mbl_spawn_lib_path "${mbl_spawn_root_path}/lib/")
 set(mbl_spawn_idd_path "${mbl_spawn_root_path}/etc/")

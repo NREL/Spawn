@@ -47,8 +47,7 @@ TEST_CASE("Test Resetting a Spawn based FMU")
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
-  const auto fmu_path = spawn::project_binary_dir() / fmu_name;
-  spawn::fmu::FMU fmu{fmu_path, false};
+  spawn::fmu::FMU fmu{fmu_name, false};
 
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
   const auto resource_path = std::string("file://") + (fmu.extractedFilesPath() / "resources").string();
@@ -105,8 +104,7 @@ TEST_CASE("Test Spawn log")
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
-  const auto fmu_path = spawn::project_binary_dir() / fmu_name;
-  spawn::fmu::FMU fmu{fmu_path, false};
+  spawn::fmu::FMU fmu{fmu_name, false};
 
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
   const auto resource_path = std::string("file://") + (fmu.extractedFilesPath() / "resources").string();
