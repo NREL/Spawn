@@ -6,7 +6,24 @@ else()
 endif()
 
 configure_file(paths.in.cpp paths.in2.cpp)
+
+# Configure files for ZoneMultiplier test
 configure_file(models/Zone_Multiplier.mo.in models/Zone_Multiplier.mo)
+
+# Configure files for ZoneCapacitanceMultiplier test
+file(READ ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf SmallOfficeIDFText)
+string(APPEND SmallOfficeIDFText 
+"
+ZoneCapacitanceMultiplier:ResearchSpecial,
+  Multiplier,              !- Name
+  Perimeter_ZN_1,                        !- Zone or ZoneList Name
+  2.0,                     !- Temperature Capacity Multiplier
+  2.0,                     !- Humidity Capacity Multiplier
+  2.0,                     !- Carbon Dioxide Capacity Multiplier
+  ;                        !- Generic Contaminant Capacity Multiplier
+"
+)
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf CONTENT "${SmallOfficeIDFText}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -32,6 +49,7 @@ add_executable(
   test_infiltration.cpp
   test_simulate.cpp
   test_zone_multiplier.cpp
+  test_zone_capacitance_multiplier.cpp
 )
 
 add_dependencies(tests example_fmu_lib)

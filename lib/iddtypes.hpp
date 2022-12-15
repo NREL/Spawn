@@ -7,7 +7,7 @@ namespace spawn {
 constexpr std::array<const char *, 4> supportedScheduleTypes = {
     "Schedule:Year", "Schedule:Compact", "Schedule:Constant", "Schedule:File"};
 
-constexpr std::array<const char *, 286> supportedIDDTypes = {
+constexpr std::array<const char *, 287> supportedIDDTypes = {
     "Version",
     "SimulationControl",
     "PerformancePrecisionTradeoffs",
@@ -293,7 +293,8 @@ constexpr std::array<const char *, 286> supportedIDDTypes = {
     "Output:PreprocessorMessage",
     "ZoneInfiltration:DesignFlowRate",
     "ZoneInfiltration:EffectiveLeakageArea",
-    "ZoneInfiltration:FlowCoefficient"};
+    "ZoneInfiltration:FlowCoefficient",
+    "ZoneCapacitanceMultiplier:ResearchSpecial"};
 } // namespace spawn
 
 #endif // IDDTYPES_HH_INCLUDED

@@ -732,7 +732,11 @@ void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once
   // during the simulation
-  EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints(sim_state);
+  if (sim_state.dataZoneCtrls->GetZoneAirStatsInputFlag) {
+    EnergyPlus::ZoneTempPredictorCorrector::GetZoneAirSetPoints(sim_state);
+    EnergyPlus::ZoneTempPredictorCorrector::InitZoneAirSetPoints(sim_state);
+    sim_state.dataZoneCtrls->GetZoneAirStatsInputFlag = false;
+  }
 
   // Likewise init zone equipment one time
   initZoneEquip();
