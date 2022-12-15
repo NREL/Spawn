@@ -18,7 +18,7 @@ Together the capabilities in this package, provide a single integrated environme
 and EnergyPlus simulations.
 
 ## Installation
-Binary packages for Ubuntu Linux 18.04 are published on GitHub, https://github.com/NREL/Spawn/releases.
+Binary packages are published on GitHub, https://github.com/NREL/Spawn/releases.
 Extract the package to a location of your choosing and optionally put the `bin/spawn` executable in your system path.
 
 Additional computer platforms, including versions of Mac OS and Windows will be supported in future releases.
