@@ -37,7 +37,8 @@ TEST_CASE("Test Zone Capacitance Multiplier")
       }}
     }}
   )",
-      fmt::arg("idfpath", (testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").string()),
+      fmt::arg("idfpath",
+               (testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").string()),
       fmt::arg("epwpath", chicago_epw_path().string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);
@@ -69,10 +70,9 @@ TEST_CASE("Test Zone Capacitance Multiplier")
 
   std::array<fmi2Real, output_refs.size()> output_values{};
 
-  status = fmu.fmi.fmi2GetReal(
-      comp, output_refs.data(), output_refs.size(), output_values.data());
+  status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2OK);
-  // Perimeter_ZN_1 is designed to have twice as much thermal capacity due to 
+  // Perimeter_ZN_1 is designed to have twice as much thermal capacity due to
   // ZoneCapacitanceMultiplier:ResearchSpecial input
   CHECK(output_values[0] / output_values[1] == Approx(2.0));
 
