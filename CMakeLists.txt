@@ -132,7 +132,7 @@ conan_cmake_run(
   catch2/2.13.7
   fmt/8.0.1
   nlohmann_json/3.10.2
-  spdlog/1.9.2
+  spdlog/1.11.0
   swig/4.0.2
   BASIC_SETUP
   CMAKE_TARGETS
