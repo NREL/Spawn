@@ -4,7 +4,7 @@ cmake_policy(SET CMP0087 NEW)
 
 set(src main.cpp)
 
-if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+if(ENABLE_MODELICA_COMPILER)
   if(ENABLE_MODELICA_COMPILER)
     include(embed_jmodelica.cmake)
     embed_jmodelica(${jmodelica_path} jmodelica_files jmodelica_paths)
@@ -13,12 +13,8 @@ if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
     embed_optimica(${optimica_path} optimica_files optimica_paths)
   endif()
 
-  #include(embed_libc.cmake)
-  #embed_libc(libc_files libc_paths)
-
-  list(APPEND embedded_files ${jmodelica_files} ${optimica_files}) # ${libc_files})
-  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths}) # ${libc_paths})
-
+  list(APPEND embedded_files ${jmodelica_files} ${optimica_files})
+  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths})
 
   set(embedded_files $<TARGET_FILE:spawn_exe_launcher>)
 

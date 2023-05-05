@@ -126,7 +126,7 @@ target_link_libraries(
 
 if(NOT MSVC)
   # necessary for making local symbols available to JIT
-  target_link_libraries(compiler PUBLIC -rdynamic)
+  # target_link_libraries(compiler PUBLIC -rdynamic)
 
   if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(
