@@ -1,14 +1,15 @@
 #include "compile.hpp"
-#include "../compiler/compiler.hpp"
-#include "../fmu/modeldescription.hpp"
-#include "../lib/ziputil.hpp"
-#include "../util/config.hpp"
-#include "cli/embedded_files.hxx"
-#include "jmodelica.h"
+#include "compiler/compiler.hpp"
+#include "fmu/modeldescription.hpp"
+#include "lib/ziputil.hpp"
+#include "mbl/config.hpp"
 #include "optimica.h"
+#include "optimica/config.hpp"
+#include "util/config.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <optimica/embedded_files.hxx>
 #include <pugixml.hpp>
 #include <spdlog/spdlog.h>
 
@@ -125,7 +126,8 @@ std::vector<spawn_fs::path> modelicaLibs(const spawn_fs::path &jmodelica_dir,
 {
   const auto msl = msl_path();
 
-  return {embedded_files_temp_dir / "usr/lib/libfmilib.a",
+  return {mbl_fmilib_path(),
+
           msl / "Modelica/Resources/Library/linux64/libzlib.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaMatIO.a",
           msl / "Modelica/Resources/Library/linux64/libModelicaExternalC.a",
@@ -189,6 +191,7 @@ int compileMO(const std::string &moInput,
     j["modelicaPaths"] = modelicaPaths;
 
     std::string params = j.dump();
+
     std::vector<char> cparams(params.begin(), params.end());
     cparams.resize(params.size() + 1, 0); // make sure we have a null terminator
 
@@ -200,9 +203,6 @@ int compileMO(const std::string &moInput,
     if (moType == ModelicaCompilerType::Optimica) {
       optimica_create_isolate(nullptr, &isolate, &thread);
       optimica_compile(thread, cparams.data());
-    } else {
-      jmodelica_create_isolate(nullptr, &isolate, &thread);
-      jmodelica_compile(thread, cparams.data());
     }
 
     return 0;
@@ -263,8 +263,10 @@ int compileC(const spawn_fs::path &sources_dir,
   // include paths
   auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
 
-  const std::vector<std::string> flags{
-      "-Wno-enum-conversion", "-Wno-incompatible-pointer-types-discards-qualifiers", "-Wno-logical-not-parentheses"};
+  const std::vector<std::string> flags{"-Wno-enum-conversion",
+                                       "-Wno-incompatible-pointer-types-discards-qualifiers",
+                                       "-Wno-logical-not-parentheses",
+                                       "-fPIC"};
   spawn::Compiler compiler(include_paths, flags, false);
 
   std::for_each(begin(sourcefiles), end(sourcefiles), [&](const auto &path) { compiler.compile_and_link(path); });
@@ -315,8 +317,6 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   const auto include_paths = includePaths(jmodelica_dir, embedded_files_temp_dir);
   const auto runtime_libs = modelicaLibs(jmodelica_dir, embedded_files_temp_dir);
 
-  std::cout << "jmodelica_dir: " << jmodelica_dir << std::endl;
-
   const std::vector<std::string> flags{};
   spawn::Compiler compiler(include_paths, flags, false);
 
@@ -336,7 +336,7 @@ void makeModelicaExternalFunction(const std::vector<std::string> &parameters)
   spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), spawn_fs::exists(soFileName));
 
   // To support Windows this needs to be configured for extension
-  spawnmodelica::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
+  spawn_optimica::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
   spawn_fs::rename(launcherFileName, exeFileName);
 
   spawn_fs::permissions(exeFileName, spawn_fs::perms::owner_exec);
@@ -348,8 +348,8 @@ void extractEmbeddedCompilerFiles(const spawn_fs::path &dir, const ModelicaCompi
 
   // TODO: This includes both jmodelica and optimica,
   // it would be better to select only the compiler files we need
-  for (const auto &file : spawnmodelica::embedded_files::fileNames()) {
-    spawnmodelica::embedded_files::extractFile(file, dir.string());
+  for (const auto &file : spawn_optimica::embedded_files::fileNames()) {
+    spawn_optimica::embedded_files::extractFile(file, dir.string());
   }
 
   // The embedded filesystem does not preserve permission so this is an ugly but important step

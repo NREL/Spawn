@@ -2,7 +2,9 @@ if(UNIX)
   add_definitions("-fPIC")
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# Sets the variable "platform" corresponding to the FMI conventions
+include(FMI-Platform.cmake)
+fmi_platform(FMI_PLATFORM)
 
 configure_file(config.cpp.in config.cxx)
 
@@ -22,6 +24,11 @@ add_library(
   unique_id.hpp
   unique_id.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
+)
+
+target_include_directories(
+  spawn_utils 
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(

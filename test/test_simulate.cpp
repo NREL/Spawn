@@ -1,7 +1,8 @@
-#include "../fmu/simulate.hpp"
-#include "../util/config.hpp"
-#include "../util/math.hpp"
+#include "fmu/simulate.hpp"
+#include "mbl/config.hpp"
 #include "paths.hpp"
+#include "util/config.hpp"
+#include "util/math.hpp"
 #include <catch2/catch.hpp>
 
 #if defined ENABLE_MODELICA_COMPILER

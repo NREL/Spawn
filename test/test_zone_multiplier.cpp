@@ -14,7 +14,7 @@ TEST_CASE("Test Zone Multiplier")
 {
   const std::string model_name = "Zone_Multiplier";
   const std::string fmu_name = "Zone_Multiplier.fmu";
-  const auto model_dir = spawn::project_binary_dir() / "test/models/Zone_Multiplier.mo";
+  const auto model_dir = spawn::project_binary_dir() / "mbl/test/models/Zone_Multiplier.mo";
 
   const auto cmd =
       spawnexe() + " modelica --modelica-path " + model_dir.string() + " --create-fmu " + model_name + " --fmu-type ME";

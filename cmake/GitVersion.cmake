@@ -1,0 +1,25 @@
+if(NOT GIT_FOUND)
+  find_program(GIT_EXECUTABLE git HINTS "$ENV{LOCALAPPDATA}/Programs/git/bin")
+  if(NOT GIT_EXECUTABLE_NOTFOUND)
+    set(GIT_FOUND TRUE)
+  endif()
+endif()
+
+if(GIT_FOUND)
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short=10" "HEAD"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    TIMEOUT 10
+    RESULT_VARIABLE RESULT
+    OUTPUT_VARIABLE GIT_VERSION
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL "${CMAKE_PROJECT_VERSION_BUILD}")
+    set(CMAKE_PROJECT_VERSION_BUILD
+        ${GIT_VERSION}
+        CACHE STRING "Build number" FORCE) # git sha
+  endif()
+
+  get_filename_component(GIT_DIR "${GIT_EXECUTABLE}" PATH)
+else()
+  set(GIT_DIR "")
+endif()

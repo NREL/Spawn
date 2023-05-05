@@ -108,8 +108,8 @@ Compiler::Compiler(std::vector<spawn_fs::path> include_paths,
     : m_include_paths{std::move(include_paths)}, m_flags{std::move(flags)}, m_use_c_bridge_instead_of_stdlib{
                                                                                 use_c_bridge_instead_of_stdlib}
 {
-  for (const auto &file : spawnmodelica_compiler::embedded_files::fileNames()) {
-    spawnmodelica_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
+  for (const auto &file : spawn_c_compiler::embedded_files::fileNames()) {
+    spawn_c_compiler::embedded_files::extractFile(file, m_embeddedFiles.dir().string());
   }
 }
 

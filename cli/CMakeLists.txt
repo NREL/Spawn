@@ -4,47 +4,23 @@ cmake_policy(SET CMP0087 NEW)
 
 set(src main.cpp)
 
-if(ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
-  if(ENABLE_MODELICA_COMPILER)
-    include(embed_jmodelica.cmake)
-    embed_jmodelica(${jmodelica_path} jmodelica_files jmodelica_paths)
+if(ENABLE_MODELICA_COMPILER)
+  #if(ENABLE_BUILDINGS_LIBRARY)
+  #  list(
+  #    APPEND embedded_files
+  #    "${CMAKE_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a")
+  #  list(APPEND embedded_paths "usr/lib/libfmilib.a")
+  #endif()
 
-    include(embed_optimica.cmake)
-    embed_optimica(${optimica_path} optimica_files optimica_paths)
-  endif()
+  #embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
 
-  #include(embed_libc.cmake)
-  #embed_libc(libc_files libc_paths)
-
-  list(APPEND embedded_files ${jmodelica_files} ${optimica_files}) # ${libc_files})
-  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths}) # ${libc_paths})
-
-
-  set(embedded_files $<TARGET_FILE:spawn_exe_launcher>)
-
-  if (MSVC)
-    set(embedded_paths "spawn_exe_launcher")
-  else()
-    set(embedded_paths "spawn_exe_launcher.exe")
-  endif()
-
-  if(ENABLE_BUILDINGS_LIBRARY)
-    list(
-      APPEND embedded_files
-      "${CMAKE_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a")
-    list(APPEND embedded_paths "usr/lib/libfmilib.a")
-  endif()
-
-  list(APPEND embedded_files ${GFORTRANLIB_REAL_PATH})
-  list(APPEND embedded_paths ${GFORTRANLIB_EMBEDDED_PATH})
-
-  embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
-
-  list(APPEND src compile.hpp compile.cpp ${embedded_output})
+  #list(APPEND src compile.hpp compile.cpp ${embedded_output})
+  list(APPEND src compile.hpp compile.cpp)
 endif()
 
 add_executable(spawn ${src})
 
+set(spawn_cli_name "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
 set_target_properties(spawn PROPERTIES OUTPUT_NAME ${spawn_cli_name})
 
 if (NOT WIN32)
@@ -65,6 +41,8 @@ target_link_libraries(
           libspawn
           #energypluslib
           spawn_utils
+          mbl_config
+          optimica_config
           CONAN_PKG::cli11
           CONAN_PKG::nlohmann_json
           CONAN_PKG::fmt
@@ -81,7 +59,7 @@ if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
 endif()
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE jmodelica optimica)
+  target_link_libraries(spawn PRIVATE optimica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)

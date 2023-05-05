@@ -62,7 +62,7 @@ target_include_directories(
 # S W I G                               #
 # ##############################################################################
 
-if(BUILD_PYTHON_BINDINGS)
+if(ENABLE_PYTHON_BINDINGS)
   set(target_name libspawn)
 
   # lib swig files

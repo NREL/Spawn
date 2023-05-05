@@ -68,7 +68,7 @@ TEST_CASE("Test two Spawns")
   spawn::util::Temp_Directory working_path1{};
   spawn::util::Temp_Directory working_path2{};
 
-  spawn::Spawn spawn1("spawn1", spawn_input, working_path2.dir());
+  spawn::Spawn spawn1("spawn1", spawn_input, working_path1.dir());
   spawn::Spawn spawn2("spawn2", spawn_input, working_path2.dir());
 
   spawn1.start();
