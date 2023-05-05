@@ -4,7 +4,6 @@
 #include "../lib/ziputil.hpp"
 #include "../util/config.hpp"
 #include "cli/embedded_files.hxx"
-#include "jmodelica.h"
 #include "optimica.h"
 #include <cstdlib>
 #include <iostream>
@@ -200,9 +199,6 @@ int compileMO(const std::string &moInput,
     if (moType == ModelicaCompilerType::Optimica) {
       optimica_create_isolate(nullptr, &isolate, &thread);
       optimica_compile(thread, cparams.data());
-    } else {
-      jmodelica_create_isolate(nullptr, &isolate, &thread);
-      jmodelica_compile(thread, cparams.data());
     }
 
     return 0;

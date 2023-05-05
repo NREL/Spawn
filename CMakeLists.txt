@@ -179,31 +179,6 @@ fmi_platform(FMI_PLATFORM)
 include(cmake/download_modelica.cmake)
 if(ENABLE_MODELICA_COMPILER)
 
-
-  if(APPLE)
-    set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  elseif(UNIX)
-    set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  else()
-    set(jmodelica_tar_root "Modelica-0.1.1-Linux")
-    set(jmodelica_url "https://modelica.s3.amazonaws.com/docker-build/Modelica-latest.tar.gz")
-    set(jmodelica_md5 "9798e0ca33160c5faefe3160d5a8b36b")
-  endif()
-
-  set(jmodelica_path "${PROJECT_BINARY_DIR}/JModelica/")
-
-  download_modelica(
-    ${jmodelica_path} # The final directory name
-    ${jmodelica_tar_root} # The directory name of the tarball root, this will be
-                          # moved / renamed to modelica_path
-    ${jmodelica_md5} # The md5 of the tarball
-    ${jmodelica_url} # The download url. Can be a local file:// url
-  )
-
   if(APPLE)
     set(optimica_tar_root "install")
     set(optimica_md5 "b3d2f4690c506753fdd9399ad1d3af6a")
@@ -240,7 +215,6 @@ enable_testing()
 
 add_subdirectory(util)
 if(ENABLE_MODELICA_COMPILER)
-  add_subdirectory(jmodelica)
   add_subdirectory(optimica)
 endif()
 

@@ -6,15 +6,12 @@ set(src main.cpp)
 
 if(ENABLE_MODELICA_COMPILER)
   if(ENABLE_MODELICA_COMPILER)
-    include(embed_jmodelica.cmake)
-    embed_jmodelica(${jmodelica_path} jmodelica_files jmodelica_paths)
-
     include(embed_optimica.cmake)
     embed_optimica(${optimica_path} optimica_files optimica_paths)
   endif()
 
-  list(APPEND embedded_files ${jmodelica_files} ${optimica_files})
-  list(APPEND embedded_paths ${jmodelica_paths} ${optimica_paths})
+  list(APPEND embedded_files ${optimica_files})
+  list(APPEND embedded_paths ${optimica_paths})
 
   set(embedded_files $<TARGET_FILE:spawn_exe_launcher>)
 
@@ -77,7 +74,7 @@ if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
 endif()
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE jmodelica optimica)
+  target_link_libraries(spawn PRIVATE optimica)
 endif()
 
 install(TARGETS spawn DESTINATION bin)
