@@ -9,7 +9,9 @@ if(ENABLE_BUILDINGS_LIBRARY)
 
   get_target_property(spawn_cli_name spawn OUTPUT_NAME)
   
-  set(mbl_spawn_root_path "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/bin/Spawn-light-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}/${os_prefix}")
+  set(mbl_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings")
+  set(mbl_home "${mbl_dir}/Buildings")
+  set(mbl_spawn_root_path "${mbl_home}/Resources/bin/Spawn-light-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}/${os_prefix}")
   set(mbl_spawn_bin_path "${mbl_spawn_root_path}/bin/")
   set(mbl_spawn_lib_path "${mbl_spawn_root_path}/lib/")
   set(mbl_spawn_idd_path "${mbl_spawn_root_path}/etc/")
@@ -19,8 +21,10 @@ if(ENABLE_BUILDINGS_LIBRARY)
   ExternalProject_Add(
     MBL
     BUILD_ALWAYS 1
-    BUILD_IN_SOURCE SOURCE_DIR
-    "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings"
+    BUILD_IN_SOURCE
+    GIT_REPOSITORY https://github.com/lbl-srg/modelica-buildings.git
+    GIT_TAG d34a259960
+    GIT_SHALLOW
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_bin_path}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_lib_path}
@@ -29,13 +33,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${mbl_spawn_lib_path}"
     COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${mbl_spawn_idd_path}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
-            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago")
+            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
+    )
 
   # The full spawn cli name is embedded in the MBL, here we update the name with the latest sha
 
   set(MBL_ENERGYPLUS_VERSION_STRING "EnergyPlus_${ENERGYPLUS_VERSION_MAJOR}_${ENERGYPLUS_VERSION_MINOR}_${ENERGYPLUS_VERSION_PATCH}")
-  set(mbl_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings")
-  set(mbl_home "${mbl_dir}/Buildings")
   set(building_mo_path "${mbl_home}/ThermalZones/${MBL_ENERGYPLUS_VERSION_STRING}/Building.mo")
   file(READ ${building_mo_path} building_mo_text)
   string(REGEX REPLACE "spawn-[0-9]\.[0-9]\.[0-9]-.........." ${spawn_cli_name} new_building_mo_text "${building_mo_text}")
