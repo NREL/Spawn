@@ -26,8 +26,6 @@ const char *toString(FMUType t)
   switch (t) {
   case FMUType::ME:
     return "ME";
-  case FMUType::CS:
-    return "CS";
   default:
     return "CS";
   }
@@ -37,8 +35,6 @@ FMUType toFMUType(const std::string &t)
 {
   if (t == "ME") {
     return FMUType::ME;
-  } else if (t == "CS") {
-    return FMUType::CS;
   } else {
     return FMUType::CS;
   }
@@ -57,7 +53,7 @@ spawn_fs::path mblPathInPaths(const std::vector<std::string> &modelicaPaths)
     }
   }
 
-  return spawn_fs::path();
+  return {};
 }
 
 // Convert a vector of paths to a colon deliminated path string
