@@ -76,7 +76,7 @@ if(ENABLE_MODELICA_COMPILER)
   target_include_directories(optimica-reflect PRIVATE ${PROJECT_SOURCE_DIR})
   target_link_libraries(
     optimica-reflect
-    PRIVATE CONAN_PKG::nlohmann_json spawn_utils mbl_config compile_options
+    PRIVATE CONAN_PKG::nlohmann_json spawn_utils spawn_mbl compile_options
   )
   set(reflect_config ${CMAKE_CURRENT_BINARY_DIR}/META-INF/native-image/reflect-config.json)
   add_custom_command(
@@ -127,17 +127,15 @@ if(ENABLE_MODELICA_COMPILER)
   list(APPEND embedded_paths ${optimica_paths})
   
   embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawn_optimica)
-  add_library(optimica-files ${embedded_output})
-  target_link_libraries(optimica-files PUBLIC spawn_utils compile_options)
-  target_link_libraries(optimica INTERFACE optimica-files)
-
   configure_file(config.cpp.in config.cxx)
 
-  add_library(
-    optimica_config
+  add_library(spawn_optimica 
+    ${embedded_output}
     config.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
+    optimica.hpp
+    optimica.cpp
   )
-
-  target_link_libraries(optimica_config PRIVATE spawn_utils compile_options)
+  target_link_libraries(spawn_optimica PUBLIC spawn_utils compiler spawn_mbl CONAN_PKG::nlohmann_json CONAN_PKG::pugixml compile_options)
+  target_link_libraries(optimica INTERFACE spawn_optimica)
 endif()

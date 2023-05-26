@@ -1,11 +1,11 @@
 #include "fmugenerator.hpp"
-#include "../util/fmi_paths.hpp"
-#include "../util/unique_id.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
 #include "modelDescription.xml.hpp"
-#include "ziputil.hpp"
+#include "util/fmi_paths.hpp"
+#include "util/unique_id.hpp"
+#include "util/ziputil.hpp"
 #include <pugixml.hpp>
 
 using json = nlohmann::json;

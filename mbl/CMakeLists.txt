@@ -9,7 +9,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
 
   get_target_property(spawn_cli_name spawn OUTPUT_NAME)
   
-  set(mbl_dir "${PROJECT_SOURCE_DIR}/submodules/modelica-buildings")
+  set(mbl_dir "${PROJECT_BINARY_DIR}/mbl/MBL-prefix/src/MBL")
   set(mbl_home "${mbl_dir}/Buildings")
   set(mbl_spawn_root_path "${mbl_home}/Resources/bin/Spawn-light-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}/${os_prefix}")
   set(mbl_spawn_bin_path "${mbl_spawn_root_path}/bin/")
@@ -66,12 +66,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
   configure_file(config.cpp.in config.cxx)
 
   add_library(
-    mbl_config
+    spawn_mbl
     config.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
   )
 
-  target_link_libraries(mbl_config PRIVATE spawn_utils compile_options)
+  target_link_libraries(spawn_mbl PRIVATE spawn_utils compile_options)
 
   configure_file(test/models/Zone_Multiplier.mo.in test/models/Zone_Multiplier.mo)
 endif()

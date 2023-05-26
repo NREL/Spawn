@@ -8,7 +8,7 @@ spawn_fs::path mbl_home_dir()
   if (is_installed()) {
     return exe_dir() / "../etc/modelica-buildings/Buildings";
   } else {
-    return project_source_dir() / "submodules/modelica-buildings/Buildings";
+    return project_binary_dir() / "mbl/MBL-prefix/src/MBL/Buildings";
   }
 }
 

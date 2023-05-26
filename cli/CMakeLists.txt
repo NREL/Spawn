@@ -4,20 +4,6 @@ cmake_policy(SET CMP0087 NEW)
 
 set(src main.cpp)
 
-if(ENABLE_MODELICA_COMPILER)
-  #if(ENABLE_BUILDINGS_LIBRARY)
-  #  list(
-  #    APPEND embedded_files
-  #    "${CMAKE_SOURCE_DIR}/submodules/modelica-buildings/Buildings/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/libfmilib.a")
-  #  list(APPEND embedded_paths "usr/lib/libfmilib.a")
-  #endif()
-
-  #embed_files("${embedded_files}" "${embedded_paths}" embedded_output spawnmodelica)
-
-  #list(APPEND src compile.hpp compile.cpp ${embedded_output})
-  list(APPEND src compile.hpp compile.cpp)
-endif()
-
 add_executable(spawn ${src})
 
 set(spawn_cli_name "spawn-${CMAKE_PROJECT_VERSION}-${CMAKE_PROJECT_VERSION_BUILD}")
@@ -41,12 +27,11 @@ target_link_libraries(
           libspawn
           #energypluslib
           spawn_utils
-          mbl_config
-          optimica_config
+          spawn_mbl
+          spawn_optimica
           CONAN_PKG::cli11
           CONAN_PKG::nlohmann_json
-          CONAN_PKG::fmt
-          CONAN_PKG::spdlog)
+          CONAN_PKG::fmt)
 
 target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 

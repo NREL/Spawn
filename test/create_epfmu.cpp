@@ -10,21 +10,21 @@ using json = nlohmann::json;
 
 spawn_fs::path single_family_house_idf_path()
 {
-  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones" /
+  return spawn::project_binary_dir() / "mbl/MBL-prefix/src/MBL/Buildings/Resources/Data/ThermalZones" /
          spawn::mbl_energyplus_version_string() / "Examples" /
          "SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
 }
 
 spawn_fs::path two_zones_idf_path()
 {
-  return spawn::project_source_dir() / "submodules/modelica-buildings/Buildings/Resources/Data/ThermalZones" /
+  return spawn::project_binary_dir() / "mbl/MBL-prefix/src/MBL/Buildings/Resources/Data/ThermalZones" /
          spawn::mbl_energyplus_version_string() / "Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
 }
 
 spawn_fs::path chicago_epw_path()
 {
-  return spawn::project_source_dir() /
-         "submodules/modelica-buildings/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+  return spawn::project_binary_dir() /
+         "mbl/MBL-prefix/src/MBL/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 }
 
 spawn_fs::path create_epfmu()

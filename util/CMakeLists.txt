@@ -23,6 +23,8 @@ add_library(
   dynamiclibrary_posix.hpp
   unique_id.hpp
   unique_id.cpp
+  ziputil.hpp
+  ziputil.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
 )
 
@@ -33,7 +35,7 @@ target_include_directories(
 
 target_link_libraries(
   spawn_utils
-  PRIVATE CONAN_PKG::libzip CONAN_PKG::fmt CONAN_PKG::spdlog compile_options)
+  PUBLIC CONAN_PKG::libzip CONAN_PKG::fmt CONAN_PKG::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)

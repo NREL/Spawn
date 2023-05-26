@@ -20,8 +20,6 @@ add_library(
   units.cpp
   variables.hpp
   variables.cpp
-  ziputil.hpp
-  ziputil.cpp
 
   warmupmanager.hpp
   warmupmanager.cpp
