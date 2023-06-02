@@ -19,4 +19,6 @@ include("${PROJECT_BINARY_DIR}/EnergyPlus/energyplus_version.cmake")
 # reset to OFF
 set(CPACK_BINARY_IFW OFF)
 
+set(energyplus_idd_path ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd)
+
 install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)

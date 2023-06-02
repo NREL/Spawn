@@ -44,8 +44,8 @@
 
 #include <stdexcept>
 
+#include "c_compiler/embedded_files.hxx"
 #include "compiler.hpp"
-#include "compiler/embedded_files.hxx"
 
 // TODO:
 //  * I don't like the #ifdef's but honestly don't see a better way to handle it at the moment

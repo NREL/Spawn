@@ -1,5 +1,5 @@
 #include "optimica/optimica.hpp"
-#include "compiler/compiler.hpp"
+#include "c_compiler/compiler.hpp"
 #include "fmu/modeldescription.hpp"
 #include "mbl/config.hpp"
 #include "nlohmann/json.hpp"
@@ -9,7 +9,7 @@
 #include "util/conversion.hpp"
 #include "util/env_vars.hpp"
 #include "util/ziputil.hpp"
-#include <compiler/embedded_files.hxx>
+#include <c_compiler/embedded_files.hxx>
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
 

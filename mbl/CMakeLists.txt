@@ -15,7 +15,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
   set(mbl_spawn_bin_path "${mbl_spawn_root_path}/bin/")
   set(mbl_spawn_lib_path "${mbl_spawn_root_path}/lib/")
   set(mbl_spawn_idd_path "${mbl_spawn_root_path}/etc/")
-  set(idd_path ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd)
+  set(MBL_ENERGYPLUS_VERSION_STRING "EnergyPlus_${ENERGYPLUS_VERSION_MAJOR}_${ENERGYPLUS_VERSION_MINOR}_${ENERGYPLUS_VERSION_PATCH}")
 
   include(ExternalProject)
   ExternalProject_Add(
@@ -26,23 +26,19 @@ if(ENABLE_BUILDINGS_LIBRARY)
     GIT_TAG d34a259960
     GIT_SHALLOW
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_bin_path}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_lib_path}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_idd_path}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spawn> ${idd_path} "${mbl_spawn_bin_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> "${mbl_spawn_lib_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} "${mbl_spawn_idd_path}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago"
-            "${PROJECT_BINARY_DIR}/RefBldgSmallOfficeNew2004_Chicago"
+    COMMAND ${CMAKE_COMMAND}
+            -D MBL_ENERGYPLUS_VERSION_STRING=${MBL_ENERGYPLUS_VERSION_STRING}
+            -D spawn_cli_name=${spawn_cli_name}
+            -D mbl_home=${mbl_home}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/update_mbl_version.cmake
     )
 
-  # The full spawn cli name is embedded in the MBL, here we update the name with the latest sha
-
-  set(MBL_ENERGYPLUS_VERSION_STRING "EnergyPlus_${ENERGYPLUS_VERSION_MAJOR}_${ENERGYPLUS_VERSION_MINOR}_${ENERGYPLUS_VERSION_PATCH}")
-  set(building_mo_path "${mbl_home}/ThermalZones/${MBL_ENERGYPLUS_VERSION_STRING}/Building.mo")
-  file(READ ${building_mo_path} building_mo_text)
-  string(REGEX REPLACE "spawn-[0-9]\.[0-9]\.[0-9]-.........." ${spawn_cli_name} new_building_mo_text "${building_mo_text}")
-  file(WRITE ${building_mo_path} "${new_building_mo_text}")
+  # cmake custom targets with post_build rules are used to copy spawn, epfmi, and the idd
+  # into the MBL directory. CMake requires that post_build rules reside in the same directory
+  # as the targets they depend on. This is the workaround to decouple MBL build rules 
+  # (and keep MBL an optional component)
+  configure_file(cmake/copy_spawn_to_mbl.cmake.in copy_spawn_to_mbl.cmake)
+  configure_file(cmake/copy_epfmi_to_mbl.cmake.in copy_epfmi_to_mbl.cmake)
 
   set(fmilib_project_source_dir "${mbl_home}/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
@@ -57,6 +53,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
 
   ExternalProject_Add(
     FMILIB
+    DEPENDS MBL
     SOURCE_DIR ${fmilib_project_source_dir}
     BINARY_DIR ${fmilib_project_build_dir}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>

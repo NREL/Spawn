@@ -1,6 +1,6 @@
+#include "../energyplus/actuatortypes.hpp"
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
-#include "../lib/actuatortypes.hpp"
 #include "../mbl/config.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include "../util/config.hpp"

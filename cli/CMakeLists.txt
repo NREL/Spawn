@@ -35,9 +35,9 @@ target_link_libraries(
 
 target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 
-if(ENABLE_BUILDINGS_LIBRARY)
-  add_dependencies(spawn FMILIB)
-endif()
+#if(ENABLE_BUILDINGS_LIBRARY)
+#  add_dependencies(spawn FMILIB)
+#endif()
 
 if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
   target_link_libraries(spawn PRIVATE compiler )
@@ -46,6 +46,12 @@ endif()
 if(ENABLE_MODELICA_COMPILER)
   target_link_libraries(spawn PRIVATE optimica)
 endif()
+
+include(${PROJECT_BINARY_DIR}/mbl/copy_spawn_to_mbl.cmake OPTIONAL)
+
+add_custom_command(TARGET spawn POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${energyplus_idd_path} $<TARGET_FILE_DIR:spawn>
+)
 
 install(TARGETS spawn DESTINATION bin)
 install(CODE "file(CREATE_LINK $<TARGET_FILE_NAME:spawn> \${CMAKE_INSTALL_PREFIX}/bin/spawn$<TARGET_FILE_SUFFIX:spawn> SYMBOLIC)")

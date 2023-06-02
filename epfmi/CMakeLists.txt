@@ -17,8 +17,8 @@ install(
   LIBRARY DESTINATION ./lib
   ARCHIVE DESTINATION ./lib)
 
-set(idd_path "${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd")
-add_custom_target(
-  copy_spawn_cli_depends ALL
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
-  COMMAND ${CMAKE_COMMAND} -E copy ${idd_path} $<TARGET_FILE_DIR:spawn>)
+include(${PROJECT_BINARY_DIR}/mbl/copy_epfmi_to_mbl.cmake OPTIONAL)
+
+add_custom_command(TARGET epfmi POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
+)

@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "../compiler/compiler.hpp"
+#include "../c_compiler/compiler.hpp"
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/Support/raw_os_ostream.h"
 

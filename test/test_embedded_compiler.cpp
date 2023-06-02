@@ -1,8 +1,7 @@
+#include "../c_compiler/compiler.hpp"
 #include "../util/dynamiclibrary.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/temp_directory.hpp"
-
-#include "../compiler/compiler.hpp"
 #include <catch2/catch.hpp>
 #include <spdlog/spdlog.h>
 
