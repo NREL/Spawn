@@ -9,9 +9,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 option(ENABLE_PYTHON_BINDINGS "Build Python bindings" FALSE)
-option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" FALSE)
+option(ENABLE_BUILDINGS_LIBRARY "Include the Modelica Buildings Library in the installer package" TRUE)
 option(ENABLE_MODELICA_COMPILER "Build and include the JModelica compiler" FALSE)
-option(ENABLE_COMPILER "Build compiler parts that don't require optimica/jmodelica" FALSE)
+option(ENABLE_COMPILER "Build compiler parts that don't require optimica/jmodelica" TRUE)
 
 include(cmake/CompileOptions.cmake)
 include(cmake/EnergyPlus.cmake)

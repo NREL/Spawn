@@ -25,26 +25,21 @@ target_link_libraries(
   PRIVATE compile_options
           fmu
           libspawn
-          #energypluslib
           spawn_utils
-          spawn_mbl
-          spawn_optimica
           CONAN_PKG::cli11
-          CONAN_PKG::nlohmann_json
-          CONAN_PKG::fmt)
-
+          )
 target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
-
-#if(ENABLE_BUILDINGS_LIBRARY)
-#  add_dependencies(spawn FMILIB)
-#endif()
 
 if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
   target_link_libraries(spawn PRIVATE compiler )
 endif()
 
+if(ENABLE_BUILDINGS_LIBRARY)
+  target_link_libraries(spawn PRIVATE spawn_mbl)
+endif()
+
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE optimica)
+  target_link_libraries(spawn PRIVATE spawn_optimica)
 endif()
 
 include(${PROJECT_BINARY_DIR}/mbl/copy_spawn_to_mbl.cmake OPTIONAL)
