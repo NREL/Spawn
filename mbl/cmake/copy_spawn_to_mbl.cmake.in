@@ -1,0 +1,7 @@
+add_custom_command(TARGET spawn POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_bin_path}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${mbl_spawn_idd_path}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:spawn> ${mbl_spawn_bin_path}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${energyplus_idd_path} ${mbl_spawn_bin_path}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${energyplus_idd_path} ${mbl_spawn_idd_path}
+)

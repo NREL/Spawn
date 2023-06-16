@@ -28,3 +28,13 @@ conan_cmake_run(
 # RPATH settings Conan set this to true, which is not the cmake default and not
 # what we want for the openstudio targets
 set(CMAKE_SKIP_RPATH FALSE)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+# automatically enable catch2 to generate ctest targets
+if(CONAN_CATCH2_ROOT_DEBUG)
+  include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
+else()
+  include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
+endif()

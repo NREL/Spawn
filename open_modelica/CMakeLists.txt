@@ -1,13 +1,22 @@
+include(cmake/build_and_import_open_modelica.cmake)
 
-  include(ExternalProject)
-  ExternalProject_Add(
-    OpenModelica
-    BUILD_ALWAYS 1
-    #BUILD_IN_SOURCE
-    GIT_REPOSITORY https://github.com/OpenModelica/OpenModelica.git
-    GIT_TAG v1.20.0
-    GIT_SHALLOW
-    GIT_SUBMODULES_RECURSE 1
-    #BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
-    #COMMAND ${CMAKE_COMMAND}
-    )
+add_executable(
+  test_open_modelica
+  test/catch.cpp
+  test/test_compiler.cpp
+)
+
+target_link_libraries(
+  test_open_modelica
+  PRIVATE
+  OpenModelicaCompiler
+  OpenModelicaRuntimeC
+  omcgc
+  Threads::Threads
+  CONAN_PKG::catch2
+  CONAN_PKG::fmt
+  CONAN_PKG::nlohmann_json
+  compile_options
+)
+
+catch_discover_tests(test_open_modelica TEST_PREFIX "spawn.open_modelica.")

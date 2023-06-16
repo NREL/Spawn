@@ -1,10 +1,3 @@
-# automatically enable catch2 to generate ctest targets
-if(CONAN_CATCH2_ROOT_DEBUG)
-  include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
-else()
-  include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
-endif()
-
 configure_file(paths.in.cpp paths.in2.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
