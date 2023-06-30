@@ -1,4 +1,4 @@
-#include "../lib/spawn.hpp"
+#include "../energyplus/spawn.hpp"
 #include "../util/config.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"

@@ -1,18 +1,19 @@
+#include "../energyplus/actuatortypes.hpp"
+#include "../energyplus/fmugenerator.hpp"
+#include "../energyplus/outputtypes.hpp"
 #include "../fmu/simulate.hpp"
-#include "../lib/actuatortypes.hpp"
-#include "../lib/fmugenerator.hpp"
-#include "../lib/outputtypes.hpp"
 #include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
 #include "../util/config.hpp"
 #include "../util/filesystem.hpp"
 #include "../util/fmi_paths.hpp"
 #include <CLI/CLI.hpp>
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
-#include <stdlib.h>
 #include <vector>
 
 #if defined _WIN32
@@ -22,12 +23,7 @@
 #endif
 
 #if defined ENABLE_MODELICA_COMPILER
-#include "compile.hpp"
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
-#include <iterator>
-#include <vector>
+#include "optimica/optimica.hpp"
 #endif
 
 using json = nlohmann::json;
@@ -46,6 +42,8 @@ void handle_eptr(std::exception_ptr eptr)
 int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 {
   CLI::App app{"Spawn of EnergyPlus"};
+
+  spdlog::cfg::load_env_levels();
 
   auto versionOption = app.add_flag("-v,--version", "Print version info and exit");
   auto verboseOption = app.add_flag("--verbose", "Use verbose logging");
@@ -94,7 +92,7 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
   auto createModelicaFMUOption =
       modelicaCommand->add_option("--create-fmu", moinput, "Compile Modelica model to FMU format", true);
 
-  std::vector<std::string> modelicaPaths;
+  std::vector<spawn_fs::path> modelicaPaths;
   auto modelicaPathsOption =
       modelicaCommand->add_option("--modelica-path", modelicaPaths, "Additional Modelica search paths");
   modelicaPathsOption->needs(createModelicaFMUOption);
@@ -102,10 +100,6 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
   bool optimica = false;
   auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler");
   optimicaOption->needs(createModelicaFMUOption);
-
-  bool jmodelica = false;
-  auto jmodelicaOption = modelicaCommand->add_flag("--jmodelica", jmodelica, "Use JModelica compiler");
-  jmodelicaOption->needs(createModelicaFMUOption);
 
   std::string fmuType = toString(spawn::FMUType::CS);
   auto fmuTypeOption = modelicaCommand->add_option("--fmu-type", fmuType, "FMU Type, CS or ME");
@@ -150,13 +144,11 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
           jsonInput, nozip, nocompress, outputPath, outputDir, spawn::idd_install_path(), spawn::epfmi_install_path());
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
-      if (jmodelica) {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType));
-      } else {
-        spawn::modelicaToFMU(moinput, modelicaPaths, spawn::toFMUType(fmuType), spawn::ModelicaCompilerType::Optimica);
-      }
+      auto optimica = spawn::Optimica();
+      std::ignore = optimica.generateFMU(moinput, spawn_fs::current_path(), modelicaPaths, spawn::toFMUType(fmuType));
     } else if (*makeOption) {
-      spawn::makeModelicaExternalFunction(app.remaining(true));
+      auto optimica = spawn::Optimica();
+      optimica.makeModelicaExternalFunction(app.remaining(true));
 #endif
     } else if (*versionOption) {
       std::cout << "Spawn-" << spawn::version_string() << std::endl;

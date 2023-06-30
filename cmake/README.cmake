@@ -1,0 +1,2 @@
+configure_file(README.md README.md)
+install(FILES ${PROJECT_BINARY_DIR}/README.md DESTINATION .)

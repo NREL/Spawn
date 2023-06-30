@@ -1,5 +1,5 @@
 #include "EPFMI.hpp"
-#include "../lib/spawn.hpp"
+#include "../energyplus/spawn.hpp"
 #include <fmi2Functions.h>
 #include <iostream>
 #include <list>

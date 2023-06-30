@@ -1,14 +1,4 @@
-# automatically enable catch2 to generate ctest targets
-if(CONAN_CATCH2_ROOT_DEBUG)
-  include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
-else()
-  include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
-endif()
-
 configure_file(paths.in.cpp paths.in2.cpp)
-
-# Configure files for ZoneMultiplier test
-configure_file(models/Zone_Multiplier.mo.in models/Zone_Multiplier.mo)
 
 # Configure files for ZoneCapacitanceMultiplier test
 file(READ ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf SmallOfficeIDFText)
@@ -28,6 +18,10 @@ file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/models/RefBldgSmallOfficeNew200
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
+
+if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+  set(EMBEDDED_COMPILER_TESTS test_embedded_compiler.cpp)
+endif ()
 
 add_executable(
   tests
@@ -50,10 +44,18 @@ add_executable(
   test_simulate.cpp
   test_zone_multiplier.cpp
   test_zone_capacitance_multiplier.cpp
+  ${EMBEDDED_COMPILER_TESTS}
 )
 
 add_dependencies(tests example_fmu_lib)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_mbl spawn_utils fmu libspawn compile_options)
+
+if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+  add_executable(test_compiler test_compiler.cpp)
+  target_link_libraries(test_compiler PRIVATE compile_options compiler)
+  target_link_libraries(tests PRIVATE compiler)
+endif()
+
 
 target_include_directories(tests SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 

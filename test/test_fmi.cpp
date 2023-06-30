@@ -1,11 +1,12 @@
-#include "../fmu/fmi2.hpp"
-#include "../fmu/fmu.hpp"
-#include "../fmu/logger.h"
-#include "../fmu/modeldescription.hpp"
-#include "../util/config.hpp"
-#include "../util/filesystem.hpp"
-#include "../util/math.hpp"
+#include "fmu/fmi2.hpp"
+#include "fmu/fmu.hpp"
+#include "fmu/logger.h"
+#include "fmu/modeldescription.hpp"
+#include "mbl/config.hpp"
 #include "paths.hpp"
+#include "util/config.hpp"
+#include "util/filesystem.hpp"
+#include "util/math.hpp"
 #include <catch2/catch.hpp>
 #include <iostream>
 

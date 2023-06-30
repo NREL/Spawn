@@ -16,3 +16,9 @@ install(
   RUNTIME DESTINATION ./bin
   LIBRARY DESTINATION ./lib
   ARCHIVE DESTINATION ./lib)
+
+include(${PROJECT_BINARY_DIR}/mbl/copy_epfmi_to_mbl.cmake OPTIONAL)
+
+add_custom_command(TARGET epfmi POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:epfmi> $<TARGET_FILE_DIR:spawn>
+)
