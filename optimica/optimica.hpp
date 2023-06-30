@@ -1,36 +1,12 @@
 #ifndef OPTIMICA_HPP_INCLUDED
 #define OPTIMICA_HPP_INCLUDED
 
+#include "fmu/fmu_type.hpp"
 #include "util/temp_directory.hpp"
 #include <optimica/embedded_files.hxx>
-#include <string_view>
+#include <string>
 
 namespace spawn {
-
-enum class FMUType
-{
-  ME,
-  CS
-};
-
-inline const char *toString(FMUType t)
-{
-  switch (t) {
-  case FMUType::ME:
-    return "ME";
-  default:
-    return "CS";
-  }
-}
-
-inline FMUType toFMUType(const std::string &t)
-{
-  if (t == "ME") {
-    return FMUType::ME;
-  } else {
-    return FMUType::CS;
-  }
-}
 
 class Optimica
 {

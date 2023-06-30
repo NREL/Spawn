@@ -1,19 +1,15 @@
-#ifndef spawn_fmu_hpp_INCLUDED
-#define spawn_fmu_hpp_INCLUDED
-
-#include "../util/dynamiclibrary.hpp"
-#include "../util/fmi_paths.hpp"
-#include "../util/temp_directory.hpp"
-#include "../util/unzipped_file.hpp"
-
-#include "../util/filesystem.hpp"
-#include "../util/fmi_paths.hpp"
+#ifndef FMU_FMU_HPP_INCLUDED
+#define FMU_FMU_HPP_INCLUDED
 
 #include "fmi2.hpp"
-
-#include <fmi2FunctionTypes.h>
+#include "fmi2/fmi2FunctionTypes.h"
+#include "fmu_type.hpp"
+#include "util/dynamiclibrary.hpp"
+#include "util/filesystem.hpp"
+#include "util/fmi_paths.hpp"
+#include "util/temp_directory.hpp"
+#include "util/unzipped_file.hpp"
 #include <functional>
-
 #include <optional>
 #include <pugixml.hpp>
 
@@ -180,4 +176,4 @@ public:
 
 } // namespace spawn::fmu
 
-#endif
+#endif // FMU_FMU_HPP_INCLUDED

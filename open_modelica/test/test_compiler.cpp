@@ -1,6 +1,5 @@
 #include "open_modelica/strings.hpp"
 #include "util/filesystem.hpp"
-
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -30,7 +29,7 @@ TEST_CASE("Test OpenModelica is able to compile a simple model")
   )";
 
   std::string command;
-  int response_code;
+  int response_code{0};
   void *response_data{nullptr};
   std::string response_string;
 
