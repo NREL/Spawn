@@ -136,6 +136,5 @@ if(ENABLE_MODELICA_COMPILER)
     optimica.hpp
     optimica.cpp
   )
-  target_link_libraries(spawn_optimica PUBLIC spawn_utils compiler spawn_mbl CONAN_PKG::nlohmann_json CONAN_PKG::pugixml compile_options)
-  target_link_libraries(optimica INTERFACE spawn_optimica)
+  target_link_libraries(spawn_optimica PUBLIC optimica spawn_utils compiler spawn_mbl CONAN_PKG::nlohmann_json CONAN_PKG::pugixml compile_options)
 endif()

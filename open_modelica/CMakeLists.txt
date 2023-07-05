@@ -13,7 +13,6 @@ if(ENABLE_MODELICA_COMPILER)
     OpenModelicaCompiler
     OpenModelicaRuntimeC
     omcgc
-    Threads::Threads
     CONAN_PKG::catch2
     CONAN_PKG::fmt
     CONAN_PKG::nlohmann_json

@@ -101,7 +101,7 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
   auto optimicaOption = modelicaCommand->add_flag("--optimica", optimica, "Use Optimica compiler");
   optimicaOption->needs(createModelicaFMUOption);
 
-  std::string fmuType = toString(spawn::FMUType::CS);
+  std::string fmuType = toString(spawn::fmu::FMUType::CS);
   auto fmuTypeOption = modelicaCommand->add_option("--fmu-type", fmuType, "FMU Type, CS or ME");
   fmuTypeOption->needs(createModelicaFMUOption);
 
@@ -145,7 +145,8 @@ int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 #if defined ENABLE_MODELICA_COMPILER
     } else if (*createModelicaFMUOption) {
       auto optimica = spawn::Optimica();
-      std::ignore = optimica.generateFMU(moinput, spawn_fs::current_path(), modelicaPaths, spawn::toFMUType(fmuType));
+      std::ignore =
+          optimica.generateFMU(moinput, spawn_fs::current_path(), modelicaPaths, spawn::fmu::toFMUType(fmuType));
     } else if (*makeOption) {
       auto optimica = spawn::Optimica();
       optimica.makeModelicaExternalFunction(app.remaining(true));

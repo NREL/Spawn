@@ -27,13 +27,13 @@ public:
   [[nodiscard]] spawn_fs::path generateFMU(std::string_view moInput,
                                            const spawn_fs::path &outputDir,
                                            std::vector<spawn_fs::path> modelicaPaths,
-                                           const FMUType &fmuType);
+                                           const fmu::FMUType &fmuType);
 
   // Not Implemented - Compile moInput to an executable
   [[nodiscard]] spawn_fs::path generateEXE(std::string_view moInput,
                                            const spawn_fs::path &outputDir,
                                            const std::vector<spawn_fs::path> &modelicaPaths,
-                                           const FMUType &fmuType);
+                                           const fmu::FMUType &fmuType);
 
   // Act like a c compiler with Optimica headers/libraries in the path
   void makeModelicaExternalFunction(const std::vector<std::string> &parameters);
@@ -80,7 +80,7 @@ private:
   [[nodiscard]] std::vector<spawn_fs::path> includePaths() const;
 
   // Use the Optimica compiler to generate C source code
-  void generateC(std::string_view moInput, const spawn_fs::path &outputDir, const FMUType &fmuType) const;
+  void generateC(std::string_view moInput, const spawn_fs::path &outputDir, const fmu::FMUType &fmuType) const;
 
   // Given a directory of generated C source code, compile to a shared library
   void generateBinary(const spawn_fs::path &sources_dir, const spawn_fs::path &output_lib_path) const;

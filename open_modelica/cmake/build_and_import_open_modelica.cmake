@@ -16,11 +16,18 @@ add_library(
   IMPORTED
 )
 
+set(omc_include_paths
+  ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/include
+  ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/include/omc/
+)
+
+# The target_include_directories need to actually exist in order to link to the target
+file(MAKE_DIRECTORY ${omc_include_paths})
+
 target_include_directories(
   OpenModelicaCompiler
   INTERFACE
-  ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/include
-  ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/include/omc/
+  ${omc_include_paths}
 )
 
 target_compile_options(OpenModelicaCompiler INTERFACE -fpermissive)
@@ -41,16 +48,34 @@ set_property(
   ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/${CMAKE_SHARED_LIBRARY_PREFIX}OpenModelicaCompiler${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
+target_link_libraries(
+  OpenModelicaCompiler
+  INTERFACE
+  Threads::Threads
+)
+
 set_property(
   TARGET OpenModelicaRuntimeC
   PROPERTY IMPORTED_LOCATION 
   ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/${CMAKE_SHARED_LIBRARY_PREFIX}OpenModelicaRuntimeC${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
+target_link_libraries(
+  OpenModelicaRuntimeC
+  INTERFACE
+  Threads::Threads
+)
+
 set_property(
   TARGET omcgc
   PROPERTY IMPORTED_LOCATION 
   ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/${CMAKE_SHARED_LIBRARY_PREFIX}omcgc${CMAKE_SHARED_LIBRARY_SUFFIX}
+)
+
+target_link_libraries(
+  omcgc
+  INTERFACE
+  Threads::Threads
 )
 
 add_dependencies(OpenModelicaCompiler OpenModelica)

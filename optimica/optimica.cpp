@@ -25,7 +25,7 @@ Optimica::Optimica()
 spawn_fs::path Optimica::generateEXE(std::string_view /*moInput*/,
                                      const spawn_fs::path & /*outputDir*/,
                                      const std::vector<spawn_fs::path> & /*modelicaPaths*/,
-                                     const FMUType & /*fmuType*/)
+                                     const fmu::FMUType & /*fmuType*/)
 {
   throw std::runtime_error("Spawn does not support generating executables with Optimica.");
 }
@@ -33,7 +33,7 @@ spawn_fs::path Optimica::generateEXE(std::string_view /*moInput*/,
 spawn_fs::path Optimica::generateFMU(std::string_view moInput,
                                      const spawn_fs::path &outputDir,
                                      std::vector<spawn_fs::path> modelicaPaths,
-                                     const FMUType &fmuType)
+                                     const fmu::FMUType &fmuType)
 {
   const auto output_model_name = modelicaModelToFileName(moInput);
   const auto model_staging_dir = outputDir / output_model_name;
@@ -349,7 +349,7 @@ void Optimica::extractEmbeddedFiles()
   spawn_fs::permissions(jmiEvaluatorExecutable, spawn_fs::perms::owner_exec | spawn_fs::perms::owner_read);
 }
 
-void Optimica::generateC(std::string_view moInput, const spawn_fs::path &outputDir, const FMUType &fmuType) const
+void Optimica::generateC(std::string_view moInput, const spawn_fs::path &outputDir, const fmu::FMUType &fmuType) const
 {
   try {
     // Only primitive data types can be passed from C++ to Java
