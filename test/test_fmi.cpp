@@ -44,7 +44,7 @@ TEST_CASE("Test Resetting a Spawn based FMU")
   const std::string fmu_name =
       "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Validation_ThermalZone_OneZoneOneYear.fmu";
 
-  const auto cmd = spawnexe() + " modelica --create-fmu " + model_name + " --fmu-type ME";
+  const auto cmd = spawnexe() + " modelica create-fmu --fmu-type ME " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
@@ -101,7 +101,7 @@ TEST_CASE("Test Spawn log")
   const std::string fmu_name =
       "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Examples_SingleFamilyHouse_AirHeating.fmu";
 
-  const auto cmd = spawnexe() + " modelica --create-fmu " + model_name + " --fmu-type ME";
+  const auto cmd = spawnexe() + " modelica create-fmu --fmu-type ME " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 

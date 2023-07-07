@@ -9,7 +9,7 @@
 #include "input/schedule.hpp"
 #include "input/surface.hpp"
 #include "input/zone.hpp"
-#include "outputtypes.hpp"
+#include "output_types.hpp"
 #include <fstream>
 #include <iostream>
 
@@ -57,11 +57,14 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input &input)
       var.outputvarname = outputVariable.idfname;
       var.outputvarkey = outputVariable.idfkey;
 
-      const auto &output = std::find_if(std::begin(outputtypes), std::end(outputtypes), [&](const OutputProperties &v) {
-        return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.name) == var.outputvarname;
-      });
+      const auto &output =
+          std::find_if(std::begin(spawn::energyplus::output_types),
+                       std::end(spawn::energyplus::output_types),
+                       [&](const spawn::energyplus::OutputType &v) {
+                         return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.name) == var.outputvarname;
+                       });
 
-      if (output != std::end(outputtypes)) {
+      if (output != std::end(spawn::energyplus::output_types)) {
         var.epunittype = output->epUnitType;
         var.mounittype = output->moUnitType;
       } else {

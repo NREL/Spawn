@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 cmake_policy(SET CMP0087 NEW)
 
-set(src main.cpp)
+set(src main.cpp cli.hpp cli.cpp)
 
 add_executable(spawn ${src})
 
@@ -39,7 +39,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
 endif()
 
 if(ENABLE_MODELICA_COMPILER)
-  target_link_libraries(spawn PRIVATE spawn_optimica)
+  target_link_libraries(spawn PRIVATE spawn_modelica)
 endif()
 
 include(${PROJECT_BINARY_DIR}/mbl/copy_spawn_to_mbl.cmake OPTIONAL)

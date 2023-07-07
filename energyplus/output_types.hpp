@@ -5,23 +5,25 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
-struct OutputProperties
+namespace spawn::energyplus {
+
+struct OutputType
 {
-  OutputProperties() = delete;
+  OutputType() = delete;
 
   std::string name;
   spawn::units::UnitType moUnitType;
   spawn::units::UnitType epUnitType;
 };
 
-[[maybe_unused]] static void to_json(nlohmann::json &j, const OutputProperties &p)
+[[maybe_unused]] static void to_json(nlohmann::json &j, const OutputType &p)
 {
   j = nlohmann::json{{"name", p.name},
                      {"modelicaUnit", spawn::units::toString(p.moUnitType)},
                      {"energyplusUnit", spawn::units::toString(p.epUnitType)}};
 }
 
-[[maybe_unused]] static void from_json(const nlohmann::json &j, OutputProperties &p)
+[[maybe_unused]] static void from_json(const nlohmann::json &j, OutputType &p)
 {
   p.name = j.at("name").get<std::string>();
   p.moUnitType = spawn::units::fromString(j.at("modelicaUnit").get<std::string>());
@@ -29,8 +31,8 @@ struct OutputProperties
 }
 
 // we might be able to make this a constexpr std::array if we
-// can make OutputProperties::name into a string_view safely
-const std::vector<OutputProperties> outputtypes{
+// can make OutputType::name into a string_view safely
+const std::vector<OutputType> output_types{
     {"Site Outdoor Air Drybulb Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Site Outdoor Air Dewpoint Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Site Outdoor Air Wetbulb Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
@@ -567,5 +569,15 @@ const std::vector<OutputProperties> outputtypes{
     {"Environmental Impact Total CO2 Emissions Carbon Equivalent Mass",
      spawn::units::UnitType::kg,
      spawn::units::UnitType::kg}};
+
+struct ListOutputTypes
+{
+  void operator()() const
+  {
+    std::cout << nlohmann::json(output_types).dump(4) << std::endl;
+  }
+};
+
+} // namespace spawn::energyplus
 
 #endif // OUTPUTTYPES_HH_INCLUDED

@@ -40,6 +40,7 @@ ExternalProject_Add(
   GIT_TAG v1.20.0
   GIT_SHALLOW
   GIT_SUBMODULES_RECURSE 1
+  # CMAKE_ARGS -DBLA_STATIC=1
 )
 
 set_property(

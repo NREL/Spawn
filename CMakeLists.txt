@@ -24,6 +24,7 @@ include(embedded/EmbedFiles.cmake)
 
 add_subdirectory(util)
 add_subdirectory(embedded)
+add_subdirectory(modelica)
 add_subdirectory(optimica)
 add_subdirectory(open_modelica)
 add_subdirectory(c_compiler)

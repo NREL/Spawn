@@ -1,4 +1,4 @@
-#include "../energyplus/actuatortypes.hpp"
+#include "../energyplus/actuator_types.hpp"
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
 #include "../mbl/config.hpp"
@@ -38,14 +38,14 @@ TEST_CASE("Spawn creates an FMU")
 #if defined ENABLE_MODELICA_COMPILER
 TEST_CASE("Spawn is able to compile a simple Modelica model")
 {
-  const auto cmd = spawnexe() + " modelica --create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
+  const auto cmd = spawnexe() + " modelica create-fmu Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
 
 TEST_CASE("Spawn is able to compile a Modelica model that uses external functions")
 {
-  const auto cmd = spawnexe() + " modelica --create-fmu " + one_zone_one_year;
+  const auto cmd = spawnexe() + " modelica create-fmu " + one_zone_one_year;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
@@ -143,7 +143,7 @@ TEST_CASE("Spawn lists the correct actuators")
   }
   edd_file.close();
 
-  const json json_actuators(actuatortypes);
+  const json json_actuators(spawn::energyplus::actuator_types);
   std::vector<std::string> actuators;
   for (const auto &a : json_actuators) {
     actuators.push_back(a["controlType"].get<std::string>());

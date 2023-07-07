@@ -8,111 +8,106 @@
 
 namespace spawn::fmu {
 
-Sim::Sim(spawn_fs::path fmu_path) : m_fmu_path(std::move(fmu_path))
+void Simulate::operator()() const
 {
-}
+  FMU fmu{fmu_path, false};
 
-std::vector<FMU::Variable> Sim::initContinuousVariables()
-{
-  auto vars = m_fmu.getVariables();
-  const auto end = std::remove_if(vars.begin(), vars.end(), [](const FMU::Variable &v) {
+  spawn_fs::path resource_path{fmu.extractedFilesPath() / "resources"};
+  std::string resource_url{std::string("file://") + resource_path.string()};
+
+  // All FMU variables
+  auto all_vars = fmu.getVariables();
+
+  // All continuous FMU variables
+  const auto cont_vars_end = std::remove_if(all_vars.begin(), all_vars.end(), [](const FMU::Variable &v) {
     return (v.variability != FMU::Variable::Variability::Continuous);
   });
-  return {vars.begin(), end};
-}
+  const decltype(all_vars) cont_vars = {all_vars.begin(), cont_vars_end};
 
-std::vector<fmi2ValueReference> Sim::initValueReferences()
-{
-  std::vector<fmi2ValueReference> vrs(m_continous_vars.size());
-  std::transform(m_continous_vars.begin(), m_continous_vars.end(), vrs.begin(), [](const FMU::Variable &v) {
-    return v.valueReference;
-  });
+  // Continuous variable value references
+  std::vector<fmi2ValueReference> value_refs(cont_vars.size());
+  std::transform(
+      cont_vars.begin(), cont_vars.end(), value_refs.begin(), [](const FMU::Variable &v) { return v.valueReference; });
 
-  return vrs;
-}
+  // Container for the continous variable's values
+  std::vector<double> values{value_refs.size(), 0.0, std::allocator<double>()};
 
-void Sim::run(const nlohmann::json &config)
-{
-  std::cout << "Simulating " << m_fmu_path << std::endl;
+  // Open output file
+  std::fstream csvout;
+  csvout.open(fmu.modelIdentifier() + ".csv", std::fstream::out | std::fstream::trunc);
+  csvout << "time,";
+  for (const auto &var : cont_vars) {
+    csvout << var.name << ",";
+  }
+  csvout << "\n";
 
-  double start = config["start"].get<double>();
-  double stop = config["stop"].get<double>();
-  double step = config["step"].get<double>();
+  // Function to write current variable values to file
+  auto writeLogs = [&](void *comp, const double &time) {
+    const auto flag = fmu.fmi.fmi2GetReal(comp, value_refs.data(), value_refs.size(), values.data());
+    if (flag == fmi2OK) {
+      csvout << time << ",";
+      for (const auto &value : values) {
+        csvout << value << ",";
+      }
+      csvout << "\n";
+    }
+  };
 
-  const auto guid = m_fmu.guid();
+  // Start simulation by going through initialization sequence
+  std::cout << "Simulating " << fmu_path << std::endl;
+
+  const auto guid = fmu.guid();
   fmi2CallbackFunctions callbacks = {
       fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
-  const auto comp = m_fmu.fmi.fmi2Instantiate(
-      "test-instance", fmi2CoSimulation, guid.c_str(), m_resource_url.c_str(), &callbacks, false, true);
+
+  const auto comp = fmu.fmi.fmi2Instantiate(
+      "test-instance", fmi2CoSimulation, guid.c_str(), resource_url.c_str(), &callbacks, false, true);
   if (comp == nullptr) {
     throw std::runtime_error("Could not instantiate FMU");
   }
 
-  const auto tolerance = m_fmu.defaultTolerance();
-  auto flag = m_fmu.fmi.fmi2SetupExperiment(comp, fmi2True, tolerance, start, fmi2True, stop);
+  const auto tolerance = fmu.defaultTolerance();
+  auto flag = fmu.fmi.fmi2SetupExperiment(comp, fmi2True, tolerance, start, fmi2True, stop);
   if (flag > fmi2Warning) {
     throw std::runtime_error("Could not FMI setupExperiment");
   }
 
-  flag = m_fmu.fmi.fmi2EnterInitializationMode(comp);
+  flag = fmu.fmi.fmi2EnterInitializationMode(comp);
   if (flag > fmi2Warning) {
     throw std::runtime_error("Could not FMI enterInitializationMode");
   }
 
-  flag = m_fmu.fmi.fmi2ExitInitializationMode(comp);
+  flag = fmu.fmi.fmi2ExitInitializationMode(comp);
   if (flag > fmi2Warning) {
     throw std::runtime_error("Could not FMI exitInitializationMode");
   }
 
-  openLogs();
-
   double time = start;
+  // current_step may be modified relative to the original user input
+  // so that we don't advance beyond the stop time
+  auto current_step_size = step;
+
   writeLogs(comp, time);
+
+  // Iterate through time
   while (time < stop) {
-    if (step > stop - time) {
-      step = stop - time;
+    if (current_step_size > stop - time) {
+      current_step_size = stop - time;
     }
-    flag = m_fmu.fmi.fmi2DoStep(comp, time, step, fmi2True);
+    flag = fmu.fmi.fmi2DoStep(comp, time, current_step_size, fmi2True);
     if (flag > fmi2Warning) {
-      throw std::runtime_error("Could not FMI doStep");
+      throw std::runtime_error("FMI 'doStep' failed");
     }
     writeLogs(comp, time);
     time += step;
   }
 
   // Close everything
-  m_fmu.fmi.fmi2Terminate(comp);
-  m_fmu.fmi.fmi2FreeInstance(comp);
-  closeLogs();
+  fmu.fmi.fmi2Terminate(comp);
+  fmu.fmi.fmi2FreeInstance(comp);
+  csvout.close();
 
   std::cout << "Simulation completed successfully " << std::endl;
-}
-
-void Sim::openLogs()
-{
-  m_csvout.open(m_fmu.modelIdentifier() + ".csv", std::fstream::out | std::fstream::trunc);
-  m_csvout << "time,";
-  for (const auto &var : m_continous_vars) {
-    m_csvout << var.name << ",";
-  }
-  m_csvout << "\n";
-}
-
-void Sim::writeLogs(void *comp, const double &time)
-{
-  const auto flag = m_fmu.fmi.fmi2GetReal(comp, m_var_references.data(), m_var_references.size(), m_var_values.data());
-  if (flag == fmi2OK) {
-    m_csvout << time << ",";
-    for (const auto &value : m_var_values) {
-      m_csvout << value << ",";
-    }
-    m_csvout << "\n";
-  }
-}
-
-void Sim::closeLogs()
-{
-  m_csvout.close();
 }
 
 } // namespace spawn::fmu

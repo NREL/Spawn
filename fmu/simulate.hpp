@@ -6,36 +6,17 @@
 #include "../util/filesystem.hpp"
 #include <fstream>
 #include <nlohmann/json.hpp>
-//#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 
 namespace spawn::fmu {
 
-class Sim
+struct Simulate
 {
-public:
-  explicit Sim(spawn_fs::path fmu_path);
-  void run(const nlohmann::json &config);
+  void operator()() const;
 
-private:
-  void openLogs();
-  void writeLogs(void *comp, const double &time);
-  void closeLogs();
-
-  std::vector<FMU::Variable> initContinuousVariables();
-  std::vector<fmi2ValueReference> initValueReferences();
-
-  spawn_fs::path m_fmu_path;
-  bool m_require_all_symbols{false};
-  FMU m_fmu{m_fmu_path, m_require_all_symbols};
-
-  spawn_fs::path m_resource_path{m_fmu.extractedFilesPath() / "resources"};
-  std::string m_resource_url{std::string("file://") + m_resource_path.string()};
-
-  std::vector<FMU::Variable> m_continous_vars{std::move(initContinuousVariables())};
-  std::vector<fmi2ValueReference> m_var_references{std::move(initValueReferences())};
-  std::vector<double> m_var_values{m_var_references.size(), 0.0, std::allocator<double>()};
-
-  std::fstream m_csvout;
+  spawn_fs::path fmu_path;
+  double start{0.0};
+  double stop{60.0};
+  double step{0.001};
 };
 
 } // namespace spawn::fmu

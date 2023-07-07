@@ -17,7 +17,7 @@ TEST_CASE("Test Zone Multiplier")
   const auto model_dir = spawn::project_binary_dir() / "mbl/test/models/Zone_Multiplier.mo";
 
   const auto cmd =
-      spawnexe() + " modelica --modelica-path " + model_dir.string() + " --create-fmu " + model_name + " --fmu-type ME";
+      spawnexe() + " modelica --modelica-path " + model_dir.string() + " create-fmu --fmu-type ME " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 

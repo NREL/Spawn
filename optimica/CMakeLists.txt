@@ -133,8 +133,8 @@ if(ENABLE_MODELICA_COMPILER)
     ${embedded_output}
     config.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
-    optimica.hpp
-    optimica.cpp
+    optimica_engine.hpp
+    optimica_engine.cpp
   )
   target_link_libraries(spawn_optimica PUBLIC optimica spawn_utils compiler spawn_mbl CONAN_PKG::nlohmann_json CONAN_PKG::pugixml compile_options)
 endif()

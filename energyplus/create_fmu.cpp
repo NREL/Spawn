@@ -1,4 +1,4 @@
-#include "fmugenerator.hpp"
+#include "create_fmu.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
@@ -15,15 +15,9 @@ namespace spawn {
 void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id);
 void copyIDFResourceFiles(const json &jsonidf, const spawn_fs::path &from, const spawn_fs::path &to);
 
-void energyplusToFMU(const std::string &jsoninput,
-                     bool nozip,
-                     bool nocompress,
-                     const std::string &outputpath,
-                     const std::string &outputdir,
-                     const spawn_fs::path &iddpath,
-                     const spawn_fs::path &epfmupath)
+void energyplus::CreateFMU::operator()() const
 {
-  spawn::Input input(jsoninput);
+  spawn::Input input(input_path);
 
   // We are going to copy the required files into an FMU staging directory,
   // also copy the json input file into root of the fmu staging directory,
@@ -34,10 +28,27 @@ void energyplusToFMU(const std::string &jsoninput,
   auto fmuPath = spawn_fs::current_path() / (input.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
-  if (!outputpath.empty()) {
-    fmuPath = spawn_fs::path(outputpath);
-  } else if (!outputdir.empty()) {
-    fmuPath = spawn_fs::path(outputdir) / (input.fmuBaseName() + ".fmu");
+  if (!output_path.empty()) {
+    fmuPath = output_path;
+  } else if (!output_dir.empty()) {
+    fmuPath = output_dir / (input.fmuBaseName() + ".fmu");
+  }
+
+  if (fmuPath.extension() != ".fmu") {
+    constexpr auto error = "FMU output file name must have the '.fmu' extension, but instead contains, '{}'";
+    throw std::runtime_error(fmt::format(error, fmuPath.extension()));
+  }
+
+  if (fmuPath.stem().string().empty()) {
+    constexpr auto error = "Given FMU output name cannot be an empty string";
+    throw std::runtime_error(fmt::format(error));
+  }
+
+  if (spawn_fs::exists(fmuPath)) {
+    if (spawn_fs::is_directory(fmuPath)) {
+      constexpr auto error = "FMU output path is the existing directory, {}";
+      throw std::runtime_error(fmt::format(error, fmuPath.string()));
+    }
   }
 
   const auto outputroot = fmuPath.parent_path();
@@ -54,7 +65,7 @@ void energyplusToFMU(const std::string &jsoninput,
   const auto fmuspawnPath = fmuResourcesPath / "model.spawn";
   const auto fmuidfPath = fmuResourcesPath / (input.idfInputPath().stem().string() + ".spawn.idf");
   const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
-  const auto fmuiddPath = fmuResourcesPath / iddpath.filename();
+  const auto fmuiddPath = fmuResourcesPath / idd_path.filename();
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(id);
 
   spawn_fs::remove_all(fmuPath);
@@ -70,8 +81,8 @@ void energyplusToFMU(const std::string &jsoninput,
   copyIDFResourceFiles(idfjson, input.idfInputPath().parent_path(), fmuResourcesPath);
   json_to_idf(idfjson, fmuidfPath);
 
-  spawn_fs::copy_file(epfmupath, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
-  spawn_fs::copy_file(iddpath, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(epfmu_path, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(idd_path, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(input.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
 
   createModelDescription(input, modelDescriptionPath, id);
@@ -82,8 +93,8 @@ void energyplusToFMU(const std::string &jsoninput,
   input.setIdfInputPath(relativeIdfPath);
   input.save(fmuspawnPath);
 
-  if (!nozip) {
-    zip_directory(fmuStagingPath.string(), fmuPath.string(), nocompress);
+  if (!no_zip) {
+    zip_directory(fmuStagingPath.string(), fmuPath.string(), no_compress);
     spawn_fs::remove_all(fmuStagingPath);
   }
 }

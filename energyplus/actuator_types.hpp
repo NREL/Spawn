@@ -5,9 +5,11 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
-struct ActuatorProperties
+namespace spawn::energyplus {
+
+struct ActuatorTypes
 {
-  ActuatorProperties() = delete;
+  ActuatorTypes() = delete;
 
   std::string componentType;
   std::string controlType;
@@ -15,7 +17,7 @@ struct ActuatorProperties
   spawn::units::UnitType epUnitType;
 };
 
-static void to_json(nlohmann::json &j, const ActuatorProperties &p)
+[[maybe_unused]] static void to_json(nlohmann::json &j, const ActuatorTypes &p)
 {
   j = nlohmann::json{{"componentType", p.componentType},
                      {"controlType", p.controlType},
@@ -23,7 +25,7 @@ static void to_json(nlohmann::json &j, const ActuatorProperties &p)
                      {"energyplusUnit", spawn::units::toString(p.epUnitType)}};
 }
 
-[[maybe_unused]] static void from_json(const nlohmann::json &j, ActuatorProperties &p)
+[[maybe_unused]] static void from_json(const nlohmann::json &j, ActuatorTypes &p)
 {
   p.componentType = j.at("componentType").get<std::string>();
   p.controlType = j.at("controlType").get<std::string>();
@@ -31,7 +33,7 @@ static void to_json(nlohmann::json &j, const ActuatorProperties &p)
   p.epUnitType = spawn::units::fromString(j.at("energyplusUnit").get<std::string>());
 }
 
-const std::vector<ActuatorProperties> actuatortypes{
+const std::vector<ActuatorTypes> actuator_types{
     {"Weather Data", "Outdoor Dry Bulb", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Weather Data", "Outdoor Dew Point", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Weather Data", "Outdoor Relative Humidity", spawn::units::UnitType::one, spawn::units::UnitType::percent},
@@ -68,5 +70,15 @@ const std::vector<ActuatorProperties> actuatortypes{
      "Air Exchange Flow Rate",
      spawn::units::UnitType::m3_per_s,
      spawn::units::UnitType::m3_per_s}};
+
+struct ListActuatorTypes
+{
+  void operator()() const
+  {
+    std::cout << nlohmann::json(actuator_types).dump(4) << std::endl;
+  }
+};
+
+} // namespace spawn::energyplus
 
 #endif // ACTUATORTYPES_HH_INCLUDED

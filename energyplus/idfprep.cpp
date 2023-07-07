@@ -106,11 +106,12 @@ json &removeUnusedObjects(json &jsonidf)
   if (outputvars != jsonidf.end()) {
     for (auto var = outputvars->cbegin(); var != outputvars->cend();) {
       const auto &name = var.value().at("variable_name").get<std::string>();
-      const auto &findit = std::find_if(std::begin(outputtypes), std::end(outputtypes), [&](const OutputProperties &v) {
-        return case_insensitive_compare(v.name, name);
-      });
+      const auto &findit =
+          std::find_if(std::begin(spawn::energyplus::output_types),
+                       std::end(spawn::energyplus::output_types),
+                       [&](const spawn::energyplus::OutputType &v) { return case_insensitive_compare(v.name, name); });
 
-      if (findit == std::end(outputtypes)) {
+      if (findit == std::end(spawn::energyplus::output_types)) {
         var = outputvars->erase(var);
       } else {
         ++var;

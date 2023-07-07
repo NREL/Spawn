@@ -3,7 +3,7 @@
 
 #include "../../util/filesystem.hpp"
 #include "../iddtypes.hpp"
-#include "../outputtypes.hpp"
+#include "../output_types.hpp"
 #include "../variables.hpp"
 #include "emsactuator.hpp"
 #include "outputvariable.hpp"

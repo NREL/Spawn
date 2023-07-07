@@ -4,16 +4,17 @@ endif()
 
 add_library(
   libspawn
-  actuatortypes.hpp
-  fmugenerator.hpp
-  fmugenerator.cpp
+  actuator_types.hpp
+  config.hpp
+  create_fmu.hpp
+  create_fmu.cpp
   idfprep.hpp
   idfprep.cpp
   idf_to_json.hpp
   idf_to_json.cpp
   manager.hpp
   manager.cpp
-  outputtypes.hpp
+  output_types.hpp
   spawn.hpp
   spawn.cpp
   units.hpp

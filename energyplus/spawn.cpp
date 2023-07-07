@@ -5,7 +5,7 @@
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/input.hpp"
-#include "outputtypes.hpp"
+#include "output_types.hpp"
 
 #include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"

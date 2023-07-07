@@ -1,4 +1,4 @@
-#include "optimica/optimica.hpp"
+#include "optimica/optimica_engine.hpp"
 #include "c_compiler/compiler.hpp"
 #include "fmu/modeldescription.hpp"
 #include "mbl/config.hpp"
@@ -13,34 +13,46 @@
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
 
-namespace spawn {
+namespace spawn::optimica {
 
-Optimica::Optimica()
+OptimicaEngine::OptimicaEngine()
 {
   spdlog::cfg::load_env_levels();
-  extractEmbeddedFiles();
-  setOptimicaHome();
+  extract_embedded_files();
+  set_optimica_home();
 }
 
-spawn_fs::path Optimica::generateEXE(std::string_view /*moInput*/,
-                                     const spawn_fs::path & /*outputDir*/,
-                                     const std::vector<spawn_fs::path> & /*modelicaPaths*/,
-                                     const fmu::FMUType & /*fmuType*/)
+spawn_fs::path OptimicaEngine::create_exe(std::string_view /*moInput*/,
+                                          const spawn_fs::path & /*outputDir*/,
+                                          const std::vector<spawn_fs::path> & /*modelicaPaths*/,
+                                          const fmu::FMUType & /*fmuType*/)
 {
   throw std::runtime_error("Spawn does not support generating executables with Optimica.");
 }
 
-spawn_fs::path Optimica::generateFMU(std::string_view moInput,
-                                     const spawn_fs::path &outputDir,
-                                     std::vector<spawn_fs::path> modelicaPaths,
-                                     const fmu::FMUType &fmuType)
+spawn_fs::path OptimicaEngine::create_fmu(std::string_view input,
+                                          const spawn_fs::path &output_dir,
+                                          std::vector<spawn_fs::path> modelica_paths,
+                                          const fmu::FMUType &fmu_type)
 {
-  const auto output_model_name = modelicaModelToFileName(moInput);
-  const auto model_staging_dir = outputDir / output_model_name;
+  const auto output_model_name = modelica_model_to_filename(input);
+  const auto model_staging_dir = output_dir / output_model_name;
   const auto sources_dir = model_staging_dir / "sources";
   const auto binary_dir = model_staging_dir / "binaries" / fmi_platform();
   const auto model_description_path = model_staging_dir / "modelDescription.xml";
-  auto fmu_path = outputDir / (output_model_name + ".fmu");
+  auto fmu_path = output_dir / (output_model_name + ".fmu");
+
+  if (input.empty()) {
+    constexpr auto error = "Given input model path cannot be an empty string";
+    throw std::runtime_error(fmt::format(error));
+  }
+
+  if (spawn_fs::exists(fmu_path)) {
+    if (spawn_fs::is_directory(fmu_path)) {
+      constexpr auto error = "FMU output path is the existing directory, {}";
+      throw std::runtime_error(fmt::format(error, fmu_path.string()));
+    }
+  }
 
   // Cleanup
   if (!model_staging_dir.empty()) {
@@ -50,17 +62,17 @@ spawn_fs::path Optimica::generateFMU(std::string_view moInput,
     spawn_fs::remove_all(fmu_path);
   }
 
-  setModelicaPaths(modelicaPaths);
+  set_modelica_paths(modelica_paths);
 
   // If MBL is not in the Modelica path,
   // then add the bundled version of MBL
-  if (currentMBLPath().empty()) {
-    modelicaPaths.push_back(mbl_home_dir());
-    setModelicaPaths(modelicaPaths);
+  if (current_mbl_path().empty()) {
+    modelica_paths.push_back(mbl_home_dir());
+    set_modelica_paths(modelica_paths);
   }
 
   // Invoke Optimica to generate C code
-  generateC(moInput, model_staging_dir, fmuType);
+  generate_c(input, model_staging_dir, fmu_type);
 
   // Get the generated model description file and use it to extract the model identifier
   spawn::fmu::ModelDescription md(model_description_path);
@@ -68,15 +80,15 @@ spawn_fs::path Optimica::generateFMU(std::string_view moInput,
   const auto model_lib_path = binary_dir / (md.modelIdentifier() + ".so");
 
   // Invoke C compiler to generate a binary
-  generateBinary(sources_dir, model_lib_path);
+  generate_binary(sources_dir, model_lib_path);
 
   // Bundle GFortran with the FMU, since it is a required dependency, but not provided out of the box on most systems
-  spawn_fs::copy(gfortranPath(), binary_dir);
+  spawn_fs::copy(gfortran_path(), binary_dir);
 
   // Update permissions to work in a variety of scenarios, including from within containers
   const auto perm = spawn_fs::perms::owner_all | spawn_fs::perms::group_read | spawn_fs::perms::group_exec |
                     spawn_fs::perms::others_read | spawn_fs::perms::others_exec;
-  chmodFilesInPath(binary_dir, perm);
+  chmod_files_in_path(binary_dir, perm);
 
   // Zip FMU and cleanup
   zip_directory(model_staging_dir.string(), fmu_path.string(), false);
@@ -84,12 +96,12 @@ spawn_fs::path Optimica::generateFMU(std::string_view moInput,
 
   spdlog::trace("Model Compiled");
 
-  resetModelicaPaths();
+  reset_modelica_paths();
 
   return fmu_path;
 }
 
-void Optimica::makeModelicaExternalFunction(const std::vector<std::string> &parameters)
+void OptimicaEngine::make_external_function(const std::vector<std::string> &parameters)
 {
   for (const auto &param : parameters) {
     spdlog::trace("makeModelicalExternalFunction parameter {}", param);
@@ -121,60 +133,60 @@ void Optimica::makeModelicaExternalFunction(const std::vector<std::string> &para
     spdlog::trace("Parsed make modelica arg '{}'='{}'", lhs, rhs);
   }
 
-  spawn_fs::path fileToCompile = spawn_fs::path{"sources"} / arguments["FILE_NAME"];
-  fileToCompile += ".c";
+  spawn_fs::path file_to_compile = spawn_fs::path{"sources"} / arguments["FILE_NAME"];
+  file_to_compile += ".c";
 
   const auto jmodelica_dir = spawn_fs::path{arguments["JMODELICA_HOME"]};
   // const auto embedded_files_temp_dir = jmodelica_dir.parent_path();
-  const auto include_paths = includePaths();
-  const auto runtime_libs = linkLibraries();
+  const auto t_include_paths = include_paths();
+  const auto t_link_libraries = link_libraries();
 
   const std::vector<std::string> flags{};
-  spawn::Compiler compiler(include_paths, flags, false);
+  spawn::Compiler compiler(t_include_paths, flags, false);
 
-  compiler.compile_and_link(fileToCompile);
+  compiler.compile_and_link(file_to_compile);
   spawn_fs::create_directories(spawn_fs::path{"binaries"});
 
   // we'll name it .so regardless of platform because it's only for our use anyhow
-  const auto launcherFileName = spawn_fs::path{"binaries"} / "spawn_exe_launcher";
-  const auto exeFileName = spawn_fs::path{"binaries"} / arguments["FILE_NAME"];
-  const auto soFileName = [&]() {
-    auto result = exeFileName;
-    result.replace_extension(exeFileName.extension().string() + ".so");
+  const auto launcher_filename = spawn_fs::path{"binaries"} / "spawn_exe_launcher";
+  const auto exe_filename = spawn_fs::path{"binaries"} / arguments["FILE_NAME"];
+  const auto so_filename = [&]() {
+    auto result = exe_filename;
+    result.replace_extension(exe_filename.extension().string() + ".so");
     return result;
   }();
 
-  compiler.write_shared_object_file(soFileName, "", runtime_libs);
-  spdlog::info("Modelical shared object output: {} exists {}", soFileName.string(), spawn_fs::exists(soFileName));
+  compiler.write_shared_object_file(so_filename, "", t_link_libraries);
+  spdlog::info("Modelical shared object output: {} exists {}", so_filename.string(), spawn_fs::exists(so_filename));
 
   // To support Windows this needs to be configured for extension
   spawn_c_compiler::embedded_files::extractFile(":/spawn_exe_launcher", "binaries");
-  spawn_fs::rename(launcherFileName, exeFileName);
+  spawn_fs::rename(launcher_filename, exe_filename);
 
-  spawn_fs::permissions(exeFileName, spawn_fs::perms::owner_exec);
+  spawn_fs::permissions(exe_filename, spawn_fs::perms::owner_exec);
 }
 
-void Optimica::setOptimicaHome()
+void OptimicaEngine::set_optimica_home()
 {
   // Confusingly, Optimica internally still depends on the JMODELICA_HOME variable
-  set_env("JMODELICA_HOME", optimicaHomeDir().string());
+  set_env("JMODELICA_HOME", optimica_home_dir().string());
 }
 
-void Optimica::setModelicaPaths(const std::vector<spawn_fs::path> &paths)
+void OptimicaEngine::set_modelica_paths(const std::vector<spawn_fs::path> &paths)
 {
   m_modelica_paths = paths;
   set_env("MODELICAPATH", pathVectorToPathString(m_modelica_paths));
 }
 
-void Optimica::resetModelicaPaths()
+void OptimicaEngine::reset_modelica_paths()
 {
-  setModelicaPaths(std::vector<spawn_fs::path>());
+  set_modelica_paths(std::vector<spawn_fs::path>());
 }
 
-std::string Optimica::modelicaModelToFileName(std::string_view modelName) const
+std::string OptimicaEngine::modelica_model_to_filename(std::string_view model_name) const
 {
   std::string output_name;
-  std::transform(begin(modelName), end(modelName), std::back_inserter(output_name), [](const auto &c) {
+  std::transform(begin(model_name), end(model_name), std::back_inserter(output_name), [](const auto &c) {
     if (c == '.') {
       return '_';
     } else {
@@ -184,7 +196,7 @@ std::string Optimica::modelicaModelToFileName(std::string_view modelName) const
   return output_name;
 }
 
-spawn_fs::path Optimica::currentMBLPath() const
+spawn_fs::path OptimicaEngine::current_mbl_path() const
 {
   for (const auto &p : m_modelica_paths) {
     auto path = spawn_fs::path(p);
@@ -199,17 +211,17 @@ spawn_fs::path Optimica::currentMBLPath() const
   return {};
 }
 
-spawn_fs::path Optimica::optimicaHomeDir() const
+spawn_fs::path OptimicaEngine::optimica_home_dir() const
 {
   return m_temp_dir.dir() / "Optimica";
 }
 
-spawn_fs::path Optimica::gfortranPath() const
+spawn_fs::path OptimicaEngine::gfortran_path() const
 {
   return m_temp_dir.dir() / spawn::gfortranlib_embedded_path();
 }
 
-std::vector<spawn_fs::path> Optimica::globSourceFiles(const spawn_fs::path &sources_dir) const
+std::vector<spawn_fs::path> OptimicaEngine::glob_source_files(const spawn_fs::path &sources_dir) const
 {
   std::vector<spawn_fs::path> result;
 
@@ -238,19 +250,19 @@ std::vector<spawn_fs::path> Optimica::globSourceFiles(const spawn_fs::path &sour
   return result;
 }
 
-void Optimica::chmodFilesInPath(const spawn_fs::path &path, const spawn_fs::perms perm) const
+void OptimicaEngine::chmod_files_in_path(const spawn_fs::path &path, const spawn_fs::perms perm) const
 {
   for (const auto &entry : spawn_fs::directory_iterator{path}) {
     spawn_fs::permissions(entry, perm);
   }
 }
 
-std::vector<spawn_fs::path> Optimica::additionalSource() const
+std::vector<spawn_fs::path> OptimicaEngine::additional_source() const
 {
   std::vector<spawn_fs::path> result;
 
   // TODO: Need to get the mbl_path
-  const auto mbl_path = currentMBLPath();
+  const auto mbl_path = current_mbl_path();
   for (const auto &entry : spawn_fs::directory_iterator(mbl_path / "Resources/src/ThermalZones" /
                                                         spawn::mbl_energyplus_version_string() / "C-Sources/")) {
     if (entry.path().extension() == ".c") {
@@ -261,10 +273,10 @@ std::vector<spawn_fs::path> Optimica::additionalSource() const
   return result;
 }
 
-std::vector<spawn_fs::path> Optimica::linkLibraries() const
+std::vector<spawn_fs::path> OptimicaEngine::link_libraries() const
 {
   const auto t_msl_path = msl_path();
-  const auto t_optimica_home = optimicaHomeDir();
+  const auto t_optimica_home = optimica_home_dir();
 
   return {mbl_fmilib_path(),
 
@@ -296,14 +308,14 @@ std::vector<spawn_fs::path> Optimica::linkLibraries() const
           t_optimica_home / "lib/RuntimeLibrary/liblapack.a",
           t_optimica_home / "lib/RuntimeLibrary/libModelicaUtilities.a",
 
-          gfortranPath()};
+          gfortran_path()};
 }
 
-std::vector<spawn_fs::path> Optimica::includePaths() const
+std::vector<spawn_fs::path> OptimicaEngine::include_paths() const
 {
   // TODO: Need to get the mbl_path
-  const auto mbl_path = currentMBLPath();
-  const auto t_optimica_home = optimicaHomeDir();
+  const auto mbl_path = current_mbl_path();
+  const auto t_optimica_home = optimica_home_dir();
 
   std::vector<spawn_fs::path> result = {t_optimica_home / "include/RuntimeLibrary/",
                                         t_optimica_home / "include/RuntimeLibrary/LazyEvaluation",
@@ -331,7 +343,7 @@ std::vector<spawn_fs::path> Optimica::includePaths() const
   return result;
 }
 
-void Optimica::extractEmbeddedFiles()
+void OptimicaEngine::extract_embedded_files()
 {
   // TODO: This includes both jmodelica and optimica,
   // it would be better to select only the compiler files we need
@@ -349,16 +361,18 @@ void Optimica::extractEmbeddedFiles()
   spawn_fs::permissions(jmiEvaluatorExecutable, spawn_fs::perms::owner_exec | spawn_fs::perms::owner_read);
 }
 
-void Optimica::generateC(std::string_view moInput, const spawn_fs::path &outputDir, const fmu::FMUType &fmuType) const
+void OptimicaEngine::generate_c(std::string_view input,
+                                const spawn_fs::path &output_dir,
+                                const fmu::FMUType &fmu_type) const
 {
   try {
     // Only primitive data types can be passed from C++ to Java
     // so JSON is serialized and converted to a raw character array
     nlohmann::json j;
-    j["model"] = moInput;
-    j["outputDir"] = outputDir.generic_string();
+    j["model"] = input;
+    j["outputDir"] = output_dir.generic_string();
     j["mslDir"] = msl_path().generic_string();
-    j["fmuType"] = toString(fmuType);
+    j["fmuType"] = toString(fmu_type);
     j["modelicaPaths"] = m_modelica_paths;
 
     std::string params = j.dump();
@@ -377,30 +391,30 @@ void Optimica::generateC(std::string_view moInput, const spawn_fs::path &outputD
   }
 }
 
-void Optimica::generateBinary(const spawn_fs::path &sources_dir, const spawn_fs::path &output_lib_path) const
+void OptimicaEngine::generate_binary(const spawn_fs::path &sources_dir, const spawn_fs::path &output_lib_path) const
 {
   if (!spawn_fs::is_directory(sources_dir)) {
     throw std::runtime_error("Attempt to compile Optimica generated C code from an unexpected path location.");
   }
 
   // Source files to compile
-  auto source_files = globSourceFiles(sources_dir);
+  auto source_files = glob_source_files(sources_dir);
 
-  const auto source_to_add = additionalSource();
+  const auto source_to_add = additional_source();
   source_files.insert(source_files.end(), source_to_add.begin(), source_to_add.end());
 
   // Libs to link
-  const auto link_libs = linkLibraries();
+  const auto link_libs = link_libraries();
 
   // include paths
-  auto include_paths = includePaths();
+  auto t_include_paths = include_paths();
 
   const std::vector<std::string> flags{"-Wno-enum-conversion",
                                        "-Wno-incompatible-pointer-types-discards-qualifiers",
                                        "-Wno-logical-not-parentheses",
                                        "-fPIC"};
 
-  spawn::Compiler compiler(include_paths, flags, false);
+  spawn::Compiler compiler(t_include_paths, flags, false);
 
   std::for_each(begin(source_files), end(source_files), [&](const auto &path) { compiler.compile_and_link(path); });
 
@@ -408,4 +422,4 @@ void Optimica::generateBinary(const spawn_fs::path &sources_dir, const spawn_fs:
   compiler.write_shared_object_file(output_lib_path, "", link_libs);
 }
 
-} // namespace spawn
+} // namespace spawn::optimica

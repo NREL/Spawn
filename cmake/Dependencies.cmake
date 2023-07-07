@@ -9,7 +9,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 conan_cmake_run(
   REQUIRES
   bzip2/1.0.8
-  zlib/1.2.11
+  zlib/1.2.13
   libzip/1.7.3
   pugixml/1.11
   cli11/1.9.1
@@ -17,7 +17,7 @@ conan_cmake_run(
   fmt/8.0.1
   nlohmann_json/3.10.2
   spdlog/1.9.2
-  swig/4.0.2
+  swig/4.1.0
   BASIC_SETUP
   CMAKE_TARGETS
   NO_OUTPUT_DIRS
