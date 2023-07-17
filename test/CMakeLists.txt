@@ -48,7 +48,12 @@ add_executable(
 )
 
 add_dependencies(tests example_fmu_lib)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_mbl spawn_utils fmu libspawn compile_options)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
+
+if(ENABLE_BUILDINGS_LIBRARY)
+  target_link_libraries(tests PRIVATE spawn_mbl)
+endif()
+
 
 if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
   add_executable(test_compiler test_compiler.cpp)

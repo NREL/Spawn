@@ -1,30 +1,42 @@
 #include "create_epfmu.hpp"
-#include "../mbl/config.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include "../util/config.hpp"
 #include "paths.hpp"
 #include <fmt/format.h>
 #include <fstream>
+#include "../mbl/config.hpp"
 
 using json = nlohmann::json;
 
 spawn_fs::path single_family_house_idf_path()
 {
+#if defined ENABLE_MODELICA_COMPILER
   return spawn::project_binary_dir() / "mbl/MBL-prefix/src/MBL/Buildings/Resources/Data/ThermalZones" /
          spawn::mbl_energyplus_version_string() / "Examples" /
          "SingleFamilyHouse_TwoSpeed_ZoneAirBalance/SingleFamilyHouse_TwoSpeed_ZoneAirBalance.idf";
+#else
+  return {};
+#endif
 }
 
 spawn_fs::path two_zones_idf_path()
 {
+#if defined ENABLE_MODELICA_COMPILER
   return spawn::project_binary_dir() / "mbl/MBL-prefix/src/MBL/Buildings/Resources/Data/ThermalZones" /
          spawn::mbl_energyplus_version_string() / "Validation/TwoIdenticalZones/TwoIdenticalZones.idf";
+#else
+  return {};
+#endif
 }
 
 spawn_fs::path chicago_epw_path()
 {
+#if defined ENABLE_MODELICA_COMPILER
   return spawn::project_binary_dir() /
          "mbl/MBL-prefix/src/MBL/Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+#else
+  return {};
+#endif
 }
 
 spawn_fs::path create_epfmu()

@@ -64,6 +64,11 @@ void modelica_command(CLI::App &app, nlohmann::json &user_input)
 
   create_fmu_command->callback(
       [&user_input]() { std::cout << "create-fmu callback input: " << user_input << std::endl; });
+#else
+  // get rid of the unused variable warning without breaking the check for the
+  // other ifdef'd block
+  [[maybe_unused]] const auto &app_ref = app;
+  [[maybe_unused]] const auto &user_input_ref = user_input;
 #endif
 }
 
