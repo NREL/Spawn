@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   unsigned length = 0;
 
   if (outstream.is_open()) {
-    outstream << "static const uint8_t embedded_file_" << filenum << "[] = {";
+    outstream << "static constexpr uint8_t embedded_file_" << filenum << "[] = {";
     do {
       strm.avail_in = static_cast<uInt>(fread(in.data(), 1, CHUNK, source));
       if (ferror(source) != 0) {
@@ -95,9 +95,9 @@ int main(int argc, char *argv[])
     outstream << "};";
 
     outstream << "\n";
-    outstream << "static const char *embedded_file_name_" << filenum << " = \"" << embeddedname << "\";";
+    outstream << "static constexpr const char *embedded_file_name_" << filenum << " = \"" << embeddedname << "\";";
     outstream << "\n";
-    outstream << "static const size_t embedded_file_len_" << filenum << " = " << std::dec << length << ";";
+    outstream << "static constexpr size_t embedded_file_len_" << filenum << " = " << std::dec << length << ";";
     outstream << std::endl;
 
     outstream.close();
