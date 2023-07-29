@@ -1,5 +1,5 @@
-#include <spdlog/spdlog.h>
 #include "spdlog_shared.hpp"
+#include <spdlog/spdlog.h>
 
 void test_logger_shared_lib()
 {
