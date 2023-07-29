@@ -92,4 +92,23 @@ else()
   target_link_libraries(tests PRIVATE paths)
 endif()
 
+
+add_library(spdlog_static STATIC spdlog_static.cpp)
+target_link_libraries(spdlog_static PRIVATE CONAN_PKG::spdlog compile_options)
+
+add_library(spdlog_shared SHARED spdlog_shared.cpp)
+target_link_libraries(spdlog_shared PRIVATE CONAN_PKG::spdlog compile_options)
+
+add_executable(
+  test_spdlog
+  test_spdlog.cpp
+  spdlog.cpp
+  spdlog2.cpp
+  catch.cpp
+  )
+target_link_libraries(test_spdlog PRIVATE CONAN_PKG::catch2 CONAN_PKG::spdlog compile_options spdlog_static spdlog_shared)
+
+
+
 catch_discover_tests(tests TEST_PREFIX "spawn.")
+catch_discover_tests(test_spdlog TEST_PREFIX "spawn.")
