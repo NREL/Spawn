@@ -1,10 +1,10 @@
 #include "create_epfmu.hpp"
+#include "../mbl/config.hpp"
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include "../util/config.hpp"
 #include "paths.hpp"
 #include <fmt/format.h>
 #include <fstream>
-#include "../mbl/config.hpp"
 
 using json = nlohmann::json;
 
