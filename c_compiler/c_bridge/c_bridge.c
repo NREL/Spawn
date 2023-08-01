@@ -41,14 +41,4 @@ int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict form
   return ret;
 }
 
-// string.h
-void *memset_wrap(void *dest, int ch, size_t count)
-{
-  return memset(dest, ch, count);
-}
-
-// math.h
-double cos_wrap(double input)
-{
-  return cos(input);
-}
+  
