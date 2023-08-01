@@ -108,7 +108,6 @@ C_BRIDGE_API double cos_wrap(double);
 
 C_BRIDGE_API void assert_wrap(int expression);
 
-
 ///
 /// ctype.h
 ///
@@ -129,13 +128,11 @@ C_BRIDGE_API int toascii_wrap(int c);
 C_BRIDGE_API int tolower_wrap(int c);
 C_BRIDGE_API int toupper_wrap(int c);
 
-
 ///
 /// langinfo.h
 ///
 
 C_BRIDGE_API char *nl_langinfo_wrap(nl_item item);
-
 
 ///
 /// locale.h
@@ -144,7 +141,6 @@ C_BRIDGE_API char *nl_langinfo_wrap(nl_item item);
 C_BRIDGE_API struct lconv *localeconv_wrap(void);
 C_BRIDGE_API char *setlocale_wrap(int category, const char *locale);
 C_BRIDGE_API struct wcslconv *wcslocaleconv_wrap(void);
-
 
 ///
 /// math.h
@@ -196,7 +192,6 @@ C_BRIDGE_API double y0_wrap(double x);
 C_BRIDGE_API double y1_wrap(double x);
 C_BRIDGE_API double yn_wrap(int n, double x);
 
-
 ///
 /// nl_types.h
 ///
@@ -205,16 +200,14 @@ C_BRIDGE_API int catclose_wrap(nl_catd catd);
 C_BRIDGE_API char *catgets_wrap(nl_catd catd, int set_id, int msg_id, const char *s);
 C_BRIDGE_API nl_catd catopen_wrap(const char *name, int oflag);
 
-
 ///
 /// regex.h
 ///
 
 // C_BRIDGE_API int regcomp_wrap(regex_t *preg, const char *pattern, int cflags);
 // C_BRIDGE_API size_t regerror_wrap(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size);
-// C_BRIDGE_API int regexec_wrap(const regex_t *preg, const char *string, size_t nmatch, regmatch_t *pmatch, int eflags);
-// C_BRIDGE_API void regfree_wrap(regex_t *preg);
-
+// C_BRIDGE_API int regexec_wrap(const regex_t *preg, const char *string, size_t nmatch, regmatch_t *pmatch, int
+// eflags); C_BRIDGE_API void regfree_wrap(regex_t *preg);
 
 ///
 /// setjmp.h
@@ -223,14 +216,12 @@ C_BRIDGE_API nl_catd catopen_wrap(const char *name, int oflag);
 C_BRIDGE_API void longjmp_wrap(jmp_buf env, int value);
 C_BRIDGE_API int setjmp_wrap(jmp_buf env);
 
-
 ///
 /// signal.h
 ///
 
 C_BRIDGE_API int raise_wrap(int sig);
 // C_BRIDGE_API void_wrap(*signal _wrap(int sig, void_wrap(*func)_wrap(int))) _wrap(int);
-
 
 ///
 /// stdarg.h
@@ -241,7 +232,6 @@ C_BRIDGE_API int raise_wrap(int sig);
 // C_BRIDGE_API void va_end_wrap(va_list arg_ptr);
 // C_BRIDGE_API void va_start_wrap(va_list arg_ptr, variable_name);
 
-
 ///
 /// wchar.h
 ///
@@ -250,7 +240,6 @@ C_BRIDGE_API int raise_wrap(int sig);
 // C_BRIDGE_API int vswprintf_wrap(wchar_t *wcsbuffer, size_t n, const wchar_t *format, va_list arg);
 // C_BRIDGE_API int vwprintf_wrap(const wchar_t *format, va_list arg);
 // C_BRIDGE_API int wctob_wrap(wint_t wc);
-
 
 ///
 /// stdio.h
@@ -276,7 +265,7 @@ C_BRIDGE_API FILE *freopen_wrap(const char *filename, const char *mode, FILE *st
 C_BRIDGE_API int fseek_wrap(FILE *stream, long int offset, int origin);
 C_BRIDGE_API int fsetpos_wrap(FILE *stream, const fpos_t *pos);
 C_BRIDGE_API long int ftell_wrap(FILE *stream);
-C_BRIDGE_API size_t fwrite_wrap(const void *buffer, size_t size,size_t count, FILE *stream);
+C_BRIDGE_API size_t fwrite_wrap(const void *buffer, size_t size, size_t count, FILE *stream);
 C_BRIDGE_API int getc_wrap(FILE *stream);
 C_BRIDGE_API int getchar_wrap(void);
 C_BRIDGE_API char *gets_wrap(char *buffer);
@@ -288,7 +277,7 @@ C_BRIDGE_API int puts_wrap(const char *string);
 C_BRIDGE_API int remove_wrap(const char *filename);
 C_BRIDGE_API int rename_wrap(const char *oldname, const char *newname);
 C_BRIDGE_API void rewind_wrap(FILE *stream);
-C_BRIDGE_API int scanf_wrap(const char *format-string, arg-list);
+C_BRIDGE_API int scanf_wrap(const char *format - string, arg - list);
 C_BRIDGE_API void setbuf_wrap(FILE *stream, char *buffer);
 C_BRIDGE_API int setvbuf_wrap(FILE *stream, char *buf, int type, size_t size);
 // C_BRIDGE_API int snprintf_wrap(char *outbuf, size_t n, const char*, ...);
@@ -297,8 +286,7 @@ C_BRIDGE_API int setvbuf_wrap(FILE *stream, char *buf, int type, size_t size);
 C_BRIDGE_API FILE *tmpfile_wrap(void);
 C_BRIDGE_API char *tmpnam_wrap(char *string);
 C_BRIDGE_API int ungetc_wrap(int c, FILE *stream);
-C_BRIDGE_API int vsnprintf_wrap(char *outbuf, size_t n, const char*, va_list);
-
+C_BRIDGE_API int vsnprintf_wrap(char *outbuf, size_t n, const char *, va_list);
 
 ///
 /// wchar.h
@@ -316,21 +304,19 @@ C_BRIDGE_API int fwide_wrap(FILE *stream, int mode);
 // C_BRIDGE_API wint_t putwchar_wrap(wchar_t wc, FILE *stream);
 // C_BRIDGE_API wint_t ungetwc_wrap(wint_t wc, FILE *stream);
 
-
 ///
 /// stdio.h
 ///
 
 C_BRIDGE_API int vfprintf_wrap(FILE *stream, const char *format, va_list arg_ptr);
 C_BRIDGE_API int vprintf_wrap(const char *format, va_list arg_ptr);
-C_BRIDGE_API int vsprintf_wrap(char *target-string, const char *format, va_list arg_ptr);
+C_BRIDGE_API int vsprintf_wrap(char *target - string, const char *format, va_list arg_ptr);
 C_BRIDGE_API int vfscanf_wrap(FILE *stream, const char *format, va_list arg_ptr);
 // C_BRIDGE_API int vfwscanf_wrap(FILE *stream, const wchar_t *format, va_list arg_ptr);
 C_BRIDGE_API int vscanf_wrap(const char *format, va_list arg_ptr);
-C_BRIDGE_API int vsscanf_wrap(const char*buffer, const char *format, va_list arg_ptr);
+C_BRIDGE_API int vsscanf_wrap(const char *buffer, const char *format, va_list arg_ptr);
 // C_BRIDGE_API int vswscanf_wrap(const wchar_t *buffer, const wchar_t *format, va_list arg_ptr);
 // C_BRIDGE_API int vwscanf_wrap(const wchar_t *format, va_list arg_ptr);
-
 
 ///
 /// stdlib.h
@@ -342,7 +328,8 @@ C_BRIDGE_API int abs_wrap(int n);
 C_BRIDGE_API double atof_wrap(const char *string);
 C_BRIDGE_API int atoi_wrap(const char *string);
 C_BRIDGE_API long int atol_wrap(const char *string);
-// C_BRIDGE_API void *bsearch_wrap(const void *key, const void *base, size_t num, size_t size, int _wrap(*compare) _wrap(const void *element1, const void *element2));
+// C_BRIDGE_API void *bsearch_wrap(const void *key, const void *base, size_t num, size_t size, int _wrap(*compare)
+// _wrap(const void *element1, const void *element2));
 C_BRIDGE_API void *calloc_wrap(size_t num, size_t size);
 C_BRIDGE_API div_t div_wrap(int numerator, int denominator);
 C_BRIDGE_API void exit_wrap(int status);
@@ -355,7 +342,8 @@ C_BRIDGE_API int mblen_wrap(const char *string, size_t n);
 // C_BRIDGE_API size_t mbstowcs_wrap(wchar_t *pwc, const char *string, size_t n);
 // C_BRIDGE_API int mbtowc_wrap(wchar_t *pwc, const char *string, size_t n);
 C_BRIDGE_API int *putenv_wrap(const char *varname);
-// C_BRIDGE_API void qsort_wrap(void *base, size_t num, size_t width, int_wrap(*compare)_wrap(const void *element1, const void *element2));
+// C_BRIDGE_API void qsort_wrap(void *base, size_t num, size_t width, int_wrap(*compare)_wrap(const void *element1,
+// const void *element2));
 C_BRIDGE_API int rand_wrap(void);
 C_BRIDGE_API int rand_r_wrap(void);
 C_BRIDGE_API void *realloc_wrap(void *ptr, size_t size);
@@ -371,7 +359,6 @@ C_BRIDGE_API unsigned long int strtoul_wrap(const char *string1, char **string2,
 C_BRIDGE_API int system_wrap(const char *string);
 // C_BRIDGE_API size_t wcstombs_wrap(char *dest, const wchar_t *string, size_t count);
 // C_BRIDGE_API int wctomb_wrap(char *string, wchar_t character);
-
 
 ///
 /// string.h
@@ -401,14 +388,12 @@ C_BRIDGE_API char *strtok_wrap(char *string1, const char *string2);
 C_BRIDGE_API char *strtok_r_wrap(char *string, const char *seps, char **lasts);
 C_BRIDGE_API size_t strxfrm_wrap(char *string1, const char *string2, size_t count);
 
-
 ///
 /// strings.h
 ///
 
 C_BRIDGE_API int srtcasecmp_wrap(const char *string1, const char *string2);
 C_BRIDGE_API int strncasecmp_wrap(const char *string1, const char *string2, size_t count);
-
 
 ///
 /// time.h
@@ -437,7 +422,6 @@ C_BRIDGE_API size_t strftime_wrap(char *dest, size_t maxsize, const char *format
 C_BRIDGE_API char *strptime_wrap(const char *buf, const char *format, struct tm *tm);
 C_BRIDGE_API time_t time_wrap(time_t *timeptr);
 // C_BRIDGE_API time64_t time64_wrap(time64_t *timeptr);
-
 
 ///
 /// wchar.h
@@ -489,7 +473,6 @@ C_BRIDGE_API wctype_t wctype_wrap(const char *property);
 // C_BRIDGE_API wchar_t *wmemset_wrap(wchar_t *s, wchar_t c, size_t n);
 // C_BRIDGE_API int wprintf_wrap(const wchar_t *format, ...);
 // C_BRIDGE_API int wscanf_wrap(const wchar_t *format, ...);
-
 
 ///
 /// wctype.h
