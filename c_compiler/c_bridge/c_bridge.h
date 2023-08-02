@@ -115,6 +115,7 @@ C_BRIDGE_API int toascii_wrap(int c);
 C_BRIDGE_API int tolower_wrap(int c);
 C_BRIDGE_API int toupper_wrap(int c);
 
+
 ///
 /// math.h
 ///
@@ -156,12 +157,12 @@ C_BRIDGE_API double y0_wrap(double x);
 C_BRIDGE_API double y1_wrap(double x);
 C_BRIDGE_API double yn_wrap(int n, double x);
 
+
 ///
 /// stdio.h
 ///
 
 C_BRIDGE_API int getchar_wrap(void);
-C_BRIDGE_API char *gets_wrap(char *buffer);
 C_BRIDGE_API void perror_wrap(const char *string);
 // C_BRIDGE_API int printf_wrap(const char *format_string, ...);
 C_BRIDGE_API int putchar_wrap(int c);
@@ -173,6 +174,7 @@ C_BRIDGE_API int rename_wrap(const char *oldname, const char *newname);
 // C_BRIDGE_API int sprintf_wrap(char *buffer, const char *format_string, ...);
 // C_BRIDGE_API int sscanf_wrap(const char *buffer, const char *format, ...);
 C_BRIDGE_API char *tmpnam_wrap(char *string);
+
 
 ///
 /// stdlib.h
@@ -191,9 +193,7 @@ C_BRIDGE_API long int labs_wrap(long int n);
 C_BRIDGE_API ldiv_t ldiv_wrap(long int numerator, long int denominator);
 C_BRIDGE_API void *malloc_wrap(size_t size);
 C_BRIDGE_API int mblen_wrap(const char *string, size_t n);
-C_BRIDGE_API int *putenv_wrap(const char *varname);
 C_BRIDGE_API int rand_wrap(void);
-C_BRIDGE_API int rand_r_wrap(void);
 C_BRIDGE_API void *realloc_wrap(void *ptr, size_t size);
 C_BRIDGE_API void srand_wrap(unsigned int seed);
 C_BRIDGE_API double strtod_wrap(const char *nptr, char **endptr);
@@ -202,6 +202,7 @@ C_BRIDGE_API long int strtol_wrap(const char *nptr, char **endptr, int base);
 C_BRIDGE_API long double strtold_wrap(const char *nptr, char **endptr);
 C_BRIDGE_API unsigned long int strtoul_wrap(const char *string1, char **string2, int base);
 C_BRIDGE_API int system_wrap(const char *string);
+
 
 ///
 /// string.h
@@ -283,7 +284,6 @@ C_BRIDGE_API size_t strxfrm_wrap(char *string1, const char *string2, size_t coun
 #define y1 y1_wrap
 #define yn yn_wrap
 #define getchar getchar_wrap
-#define gets gets_wrap
 #define perror perror_wrap
 // #define printf printf_wrap
 #define putchar putchar_wrap
@@ -308,9 +308,7 @@ C_BRIDGE_API size_t strxfrm_wrap(char *string1, const char *string2, size_t coun
 #define ldiv ldiv_wrap
 #define malloc malloc_wrap
 #define mblen mblen_wrap
-#define putenv putenv_wrap
 #define rand rand_wrap
-#define rand_r rand_r_wrap
 #define realloc realloc_wrap
 #define srand srand_wrap
 #define strtod strtod_wrap
