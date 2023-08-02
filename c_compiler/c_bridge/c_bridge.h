@@ -86,14 +86,12 @@ typedef unsigned long long size_t;
 // stdio.h
 C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...);
 
-
 /// if C_BRIDGE_IMPL is *not* defined (when this library is used, not being compiled)
 /// then we need to rename all of the functions we provide
 
 #ifndef C_BRIDGE_IMPL
 
 #define snprintf snprintf_wrap
-
 
 /// Created by: https://docs.google.com/spreadsheets/d/126iyiRC-fspn9O-0QV39JneEetiVtKzm_KmFJkNxPGo/edit?usp=sharing
 
@@ -116,7 +114,6 @@ C_BRIDGE_API int isupper_wrap(int c);
 C_BRIDGE_API int toascii_wrap(int c);
 C_BRIDGE_API int tolower_wrap(int c);
 C_BRIDGE_API int toupper_wrap(int c);
-
 
 ///
 /// math.h
@@ -159,7 +156,6 @@ C_BRIDGE_API double y0_wrap(double x);
 C_BRIDGE_API double y1_wrap(double x);
 C_BRIDGE_API double yn_wrap(int n, double x);
 
-
 ///
 /// stdio.h
 ///
@@ -177,7 +173,6 @@ C_BRIDGE_API int rename_wrap(const char *oldname, const char *newname);
 // C_BRIDGE_API int sprintf_wrap(char *buffer, const char *format_string, ...);
 // C_BRIDGE_API int sscanf_wrap(const char *buffer, const char *format, ...);
 C_BRIDGE_API char *tmpnam_wrap(char *string);
-
 
 ///
 /// stdlib.h
@@ -207,7 +202,6 @@ C_BRIDGE_API long int strtol_wrap(const char *nptr, char **endptr, int base);
 C_BRIDGE_API long double strtold_wrap(const char *nptr, char **endptr);
 C_BRIDGE_API unsigned long int strtoul_wrap(const char *string1, char **string2, int base);
 C_BRIDGE_API int system_wrap(const char *string);
-
 
 ///
 /// string.h
@@ -348,8 +342,6 @@ C_BRIDGE_API size_t strxfrm_wrap(char *string1, const char *string2, size_t coun
 #define strtok strtok_wrap
 #define strtok_r strtok_r_wrap
 #define strxfrm strxfrm_wrap
-
-
 
 #endif
 
