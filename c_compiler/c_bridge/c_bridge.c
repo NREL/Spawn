@@ -273,10 +273,6 @@ int getchar_wrap(void){
   return getchar();
 }
 
-char *gets_wrap(char *buffer){
-  return gets(buffer);
-}
-
 void perror_wrap(const char *string){
   return perror(string);
 }
@@ -380,16 +376,8 @@ int mblen_wrap(const char *string, size_t n){
   return mblen(string,n);
 }
 
-int *putenv_wrap(const char *varname){
-  return putenv(varname);
-}
-
 int rand_wrap(void){
   return rand();
-}
-
-int rand_r_wrap(void){
-  return rand_r();
 }
 
 void *realloc_wrap(void *ptr, size_t size){
@@ -401,23 +389,23 @@ void srand_wrap(unsigned int seed){
 }
 
 double strtod_wrap(const char *nptr, char **endptr){
-  return strtod(nptr, char **endptr);
+  return strtod(nptr,endptr);
 }
 
 float strtof_wrap(const char *nptr, char **endptr){
-  return strtof(nptr, char **endptr);
+  return strtof(nptr,endptr);
 }
 
 long int strtol_wrap(const char *nptr, char **endptr, int base){
-  return strtol(nptr, char **endptr,base);
+  return strtol(nptr,endptr,base);
 }
 
 long double strtold_wrap(const char *nptr, char **endptr){
-  return strtold(nptr, char **endptr);
+  return strtold(nptr,endptr);
 }
 
 unsigned long int strtoul_wrap(const char *string1, char **string2, int base){
-  return strtoul(string1, char **string2,base);
+  return strtoul(string1,string2,base);
 }
 
 int system_wrap(const char *string){
@@ -516,7 +504,7 @@ char *strtok_wrap(char *string1, const char *string2){
 }
 
 char *strtok_r_wrap(char *string, const char *seps, char **lasts){
-  return strtok_r(string,seps, char **lasts);
+  return strtok_r(string,seps,lasts);
 }
 
 size_t strxfrm_wrap(char *string1, const char *string2, size_t count){
