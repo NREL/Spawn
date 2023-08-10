@@ -7,9 +7,9 @@ C Standard Library
 * `calloc` *implemented*
 * `fprintf`
 * `fflush` 
-* `fmax`
-* `fmin`
-* `stderr`
+* `stderr` 
+* `fmax` *implemented*
+* `fmin` *implemented*
 * `free` *implemented*
 * `sizeof` *builtin*
 

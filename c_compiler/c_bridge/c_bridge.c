@@ -43,6 +43,16 @@ int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict form
 
 
 
+double fmin_wrap(double x, double y){
+  return fmin(x,y);
+}
+
+double fmax_wrap(double x, double y){
+  return fmax(x,y);
+}
+
+
+
 /// Created by: https://docs.google.com/spreadsheets/d/126iyiRC-fspn9O-0QV39JneEetiVtKzm_KmFJkNxPGo/edit?usp=sharing
 
 ///

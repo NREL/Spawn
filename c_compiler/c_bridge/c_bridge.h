@@ -85,6 +85,8 @@ typedef unsigned long long size_t;
 
 // stdio.h
 C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *restrict format, ...);
+C_BRIDGE_API double fmin_wrap(double x, double y);
+C_BRIDGE_API double fmax_wrap(double x, double y);
 
 /// if C_BRIDGE_IMPL is *not* defined (when this library is used, not being compiled)
 /// then we need to rename all of the functions we provide
@@ -92,6 +94,8 @@ C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *
 #ifndef C_BRIDGE_IMPL
 
 #define snprintf snprintf_wrap
+#define fmin fmin_wrap
+#define fmax fmax_wrap
 
 /// Created by: https://docs.google.com/spreadsheets/d/126iyiRC-fspn9O-0QV39JneEetiVtKzm_KmFJkNxPGo/edit?usp=sharing
 
