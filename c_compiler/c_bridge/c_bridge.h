@@ -115,7 +115,6 @@ extern FILE_wrap *stdin_wrap;
 #define fflush fflush_wrap
 #define fprintf fprintf_wrap
 
-
 /// Created by: https://docs.google.com/spreadsheets/d/126iyiRC-fspn9O-0QV39JneEetiVtKzm_KmFJkNxPGo/edit?usp=sharing
 
 ///
