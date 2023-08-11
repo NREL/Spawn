@@ -88,6 +88,18 @@ C_BRIDGE_API int snprintf_wrap(char *restrict buffer, size_t bufsz, const char *
 C_BRIDGE_API double fmin_wrap(double x, double y);
 C_BRIDGE_API double fmax_wrap(double x, double y);
 
+typedef struct C_BRIDGE_API FILE_wrap
+{
+  void *file_ptr;
+} FILE_wrap;
+
+C_BRIDGE_API int fflush_wrap(FILE_wrap *stream);
+C_BRIDGE_API int fprintf_wrap(FILE_wrap *stream, const char *format, ...);
+
+extern FILE_wrap *stderr_wrap;
+extern FILE_wrap *stdout_wrap;
+extern FILE_wrap *stdin_wrap;
+
 /// if C_BRIDGE_IMPL is *not* defined (when this library is used, not being compiled)
 /// then we need to rename all of the functions we provide
 
@@ -96,6 +108,13 @@ C_BRIDGE_API double fmax_wrap(double x, double y);
 #define snprintf snprintf_wrap
 #define fmin fmin_wrap
 #define fmax fmax_wrap
+#define stderr stderr_wrap
+#define stdout stdout_wrap
+#define stdin stdin_wrap
+#define FILE FILE_wrap
+#define fflush fflush_wrap
+#define fprintf fprintf_wrap
+
 
 /// Created by: https://docs.google.com/spreadsheets/d/126iyiRC-fspn9O-0QV39JneEetiVtKzm_KmFJkNxPGo/edit?usp=sharing
 

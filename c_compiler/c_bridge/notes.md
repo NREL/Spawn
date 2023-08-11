@@ -5,9 +5,9 @@ C Standard Library
 
 * `assert`
 * `calloc` *implemented*
-* `fprintf`
-* `fflush` 
-* `stderr` 
+* `fprintf` *implemented*
+* `fflush` *implemented*
+* `stderr` *implemented*
 * `fmax` *implemented*
 * `fmin` *implemented*
 * `free` *implemented*
