@@ -80,7 +80,7 @@ function(embed_files FILES EMBEDDED_LOCATIONS CXX_OUTPUT_FILES)
 
   # datas
   foreach (arg RANGE ${END})
-    set(EMBEDDED_FILES "${EMBEDDED_FILES}    embedded_file_${arg}")
+    set(EMBEDDED_FILES "${EMBEDDED_FILES}    static_cast<const uint8_t *>(embedded_file_${arg})")
     if (NOT arg EQUAL MAXFILECOUNT)
       set(EMBEDDED_FILES "${EMBEDDED_FILES},")
     endif()
@@ -92,6 +92,7 @@ function(embed_files FILES EMBEDDED_LOCATIONS CXX_OUTPUT_FILES)
   if( NAMESPACE )
     set(BEGIN_NAMESPACE "namespace ${NAMESPACE} {")
     set(END_NAMESPACE "}")
+    set(NESTED_NAMESPACE "${NAMESPACE}::")
   endif()
 
   configure_file("${PROJECT_SOURCE_DIR}/embedded/embedded_files.hxx.in" "${CMAKE_CURRENT_BINARY_DIR}/embedded_files.hxx")

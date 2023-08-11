@@ -15,7 +15,7 @@ struct ActuatorProperties
   spawn::units::UnitType epUnitType;
 };
 
-static void to_json(nlohmann::json &j, const ActuatorProperties &p)
+[[maybe_unused]] static void to_json(nlohmann::json &j, const ActuatorProperties &p)
 {
   j = nlohmann::json{{"componentType", p.componentType},
                      {"controlType", p.controlType},

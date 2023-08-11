@@ -1,35 +1,26 @@
 #include "embedded_files.hxx"
 
-@BEGIN_NAMESPACE@
 
-namespace embedded_files {
 
-  static const size_t embedded_file_count = @NUMFILES@;
+namespace @NESTED_NAMESPACE@embedded_files {
+
 
 @EMBEDDED_FILE_INCLUDES@
 
-  static const char *embedded_file_names[] = {
+  static constexpr std::array<const char *, @NUMFILES@> embedded_file_names{
 @EMBEDDED_FILE_NAMES@
   };
 
-  static const size_t embedded_file_lens[] = {
+  static constexpr std::array<size_t, @NUMFILES@> embedded_file_lens{
 @EMBEDDED_FILE_LENS@
   };
 
-  static const uint8_t *embedded_files[] = {
+  static constexpr std::array<const uint8_t *, @NUMFILES@> embedded_files{
 @EMBEDDED_FILES@
   };
 
   const std::vector<std::string> &fileNames() {
-    static const auto result = [](){
-      std::vector<std::string> vals;
-      vals.reserve(embedded_file_count);
-      for (size_t i = 0; i < embedded_file_count; ++i) {
-        vals.push_back(std::string(embedded_file_names[i]));
-      }
-      return vals;
-    }();
-
+    static const auto result  = std::vector<std::string>{embedded_file_names.begin(), embedded_file_names.end()};
     return result;
   }
 
@@ -38,10 +29,10 @@ namespace embedded_files {
     static const auto fs = [](){
       std::map<std::string, std::pair<size_t, const uint8_t *>> vals;
       if (vals.empty()){
-        for (size_t i = 0; i < embedded_file_count; ++i) {
-          vals.insert(std::make_pair(std::string(embedded_file_names[i]),
-                std::make_pair(embedded_file_lens[i],
-                  embedded_files[i])));
+        for (size_t i = 0; i < embedded_file_names.size(); ++i) {
+          vals.insert(std::make_pair(std::string(embedded_file_names.at(i)),
+                std::make_pair(embedded_file_lens.at(i),
+                  embedded_files.at(i))));
         }
       }
       return vals;
@@ -51,5 +42,4 @@ namespace embedded_files {
 
 }
 
-@END_NAMESPACE@
 

@@ -48,7 +48,12 @@ add_executable(
 )
 
 add_dependencies(tests example_fmu_lib)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_mbl spawn_utils fmu libspawn compile_options)
+target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_utils fmu libspawn compile_options)
+
+if(ENABLE_BUILDINGS_LIBRARY)
+  target_link_libraries(tests PRIVATE spawn_mbl)
+endif()
+
 
 if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
   add_executable(test_compiler test_compiler.cpp)
@@ -87,4 +92,23 @@ else()
   target_link_libraries(tests PRIVATE paths)
 endif()
 
+
+add_library(spdlog_static STATIC spdlog_static.cpp)
+target_link_libraries(spdlog_static PRIVATE CONAN_PKG::spdlog compile_options)
+
+add_library(spdlog_shared SHARED spdlog_shared.cpp)
+target_link_libraries(spdlog_shared PRIVATE CONAN_PKG::spdlog compile_options)
+
+add_executable(
+  test_spdlog
+  test_spdlog.cpp
+  spdlog.cpp
+  spdlog2.cpp
+  catch.cpp
+  )
+target_link_libraries(test_spdlog PRIVATE CONAN_PKG::catch2 CONAN_PKG::spdlog compile_options spdlog_static spdlog_shared)
+
+
+
 catch_discover_tests(tests TEST_PREFIX "spawn.")
+catch_discover_tests(test_spdlog TEST_PREFIX "spawn.")

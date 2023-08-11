@@ -15,8 +15,12 @@
 
 using json = nlohmann::json;
 
+#if defined ENABLE_MODELICA_COMPILER
 const std::string one_zone_one_year =
     "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Validation.ThermalZone.OneZoneOneYear";
+#else
+const std::string one_zone_one_year = "";
+#endif
 
 TEST_CASE("Spawn shows help")
 {
