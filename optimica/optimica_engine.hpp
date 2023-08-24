@@ -1,10 +1,9 @@
-#ifndef OPTIMICA_HPP_INCLUDED
-#define OPTIMICA_HPP_INCLUDED
+#ifndef OPTIMICA_OPTIMICA_ENGINE_HPP_INCLUDED
+#define OPTIMICA_OPTIMICA_ENGINE_HPP_INCLUDED
 
 #include "fmu/fmu_type.hpp"
 #include "modelica/modelica_engine.hpp"
 #include "util/temp_directory.hpp"
-#include <optimica/embedded_files.hxx>
 #include <string>
 
 namespace spawn::optimica {
@@ -25,16 +24,18 @@ public:
   ~OptimicaEngine() override = default;
 
   // Compile moInput to a Functional Mockup Unit
-  [[nodiscard]] spawn_fs::path create_fmu(std::string_view input,
-                                          const spawn_fs::path &output_dir,
-                                          std::vector<spawn_fs::path> modelica_paths,
-                                          const fmu::FMUType &fmu_type) override;
-
-  // Not Implemented - Compile moInput to an executable
-  [[nodiscard]] spawn_fs::path create_exe(std::string_view mo_input,
+  [[nodiscard]] spawn_fs::path create_fmu(const std::string_view mo_input,
                                           const spawn_fs::path &output_dir,
                                           const std::vector<spawn_fs::path> &modelica_paths,
-                                          const fmu::FMUType &fmu_type) override;
+                                          const std::vector<spawn_fs::path> &modelica_files,
+                                          const spawn::fmu::FMUType &fmu_type) override;
+
+  // Not Implemented - Compile moInput to an executable
+  [[nodiscard]] spawn_fs::path create_exe(const std::string_view mo_input,
+                                          const spawn_fs::path &output_dir,
+                                          const std::vector<spawn_fs::path> &modelica_paths,
+                                          const std::vector<spawn_fs::path> &modelica_files,
+                                          const spawn::fmu::FMUType &fmu_type) override;
 
   // Act like a C compiler with Optimica headers/libraries in the path
   void make_external_function(const std::vector<std::string> &parameters);
@@ -94,4 +95,4 @@ private:
 
 } // namespace spawn::optimica
 
-#endif // OPTIMICA_HPP_INCLUDED
+#endif // OPTIMICA_OPTIMICA_ENGINE_HPP_INCLUDED

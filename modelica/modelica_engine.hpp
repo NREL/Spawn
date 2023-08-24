@@ -24,16 +24,18 @@ public:
   virtual ~ModelicaEngine() = default;
 
   // Compile moInput to a Functional Mockup Unit
-  [[nodiscard]] virtual spawn_fs::path create_fmu(std::string_view moInput,
-                                                  const spawn_fs::path &outputDir,
-                                                  std::vector<spawn_fs::path> modelicaPaths,
-                                                  const spawn::fmu::FMUType &fmuType) = 0;
+  [[nodiscard]] virtual spawn_fs::path create_fmu(const std::string_view mo_input,
+                                                  const spawn_fs::path &output_dir,
+                                                  const std::vector<spawn_fs::path> &modelica_paths,
+                                                  const std::vector<spawn_fs::path> &modelica_files,
+                                                  const spawn::fmu::FMUType &fmu_type) = 0;
 
   // Not Implemented - Compile moInput to an executable
-  [[nodiscard]] virtual spawn_fs::path create_exe(std::string_view moInput,
-                                                  const spawn_fs::path &outputDir,
-                                                  const std::vector<spawn_fs::path> &modelicaPaths,
-                                                  const spawn::fmu::FMUType &fmuType) = 0;
+  [[nodiscard]] virtual spawn_fs::path create_exe(const std::string_view mo_input,
+                                                  const spawn_fs::path &output_dir,
+                                                  const std::vector<spawn_fs::path> &modelica_paths,
+                                                  const std::vector<spawn_fs::path> &modelica_files,
+                                                  const spawn::fmu::FMUType &fmu_type) = 0;
 };
 
 } // namespace spawn::modelica

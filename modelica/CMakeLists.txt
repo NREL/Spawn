@@ -14,6 +14,7 @@ target_include_directories(spawn_modelica
 target_link_libraries(spawn_modelica
   PUBLIC
   spawn_optimica
+  spawn_open_modelica
 )
 
 endif()

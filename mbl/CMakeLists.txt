@@ -46,10 +46,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
   set(fmilib_build_path "${mbl_home}/Resources/src/fmi-library/build/fmi-library-modelon/src/fmi-library-modelon-build/${fmilib_name}")
   set(fmilib_install_path "Resources/Library/${os_prefix}/${fmilib_name}")
 
+if(ENABLE_MODELICA_COMPILER)
   install(
     DIRECTORY "${mbl_dir}"
     DESTINATION etc/
     PATTERN ${fmilib_project_build_dir} EXCLUDE)
+endif()
 
   ExternalProject_Add(
     FMILIB

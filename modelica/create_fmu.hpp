@@ -13,6 +13,7 @@ struct CreateFMU
   void operator()() const;
 
   std::vector<spawn_fs::path> modelica_path;
+  std::vector<spawn_fs::path> modelica_files;
   bool optimica{false};
   std::string model;
   std::string fmu_type{"CS"};

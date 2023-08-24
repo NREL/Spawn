@@ -10,6 +10,7 @@
 #include "util/env_vars.hpp"
 #include "util/ziputil.hpp"
 #include <c_compiler/embedded_files.hxx>
+#include <optimica/embedded_files.hxx>
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
 
@@ -24,7 +25,8 @@ OptimicaEngine::OptimicaEngine()
 
 spawn_fs::path OptimicaEngine::create_exe(std::string_view /*moInput*/,
                                           const spawn_fs::path & /*outputDir*/,
-                                          const std::vector<spawn_fs::path> & /*modelicaPaths*/,
+                                          const std::vector<spawn_fs::path> & /*modelica_paths*/,
+                                          const std::vector<spawn_fs::path> & /*modelica_files*/,
                                           const fmu::FMUType & /*fmuType*/)
 {
   throw std::runtime_error("Spawn does not support generating executables with Optimica.");
@@ -32,7 +34,8 @@ spawn_fs::path OptimicaEngine::create_exe(std::string_view /*moInput*/,
 
 spawn_fs::path OptimicaEngine::create_fmu(std::string_view input,
                                           const spawn_fs::path &output_dir,
-                                          std::vector<spawn_fs::path> modelica_paths,
+                                          const std::vector<spawn_fs::path> &modelica_paths, // NOLINT
+                                          [[maybe_unused]] const std::vector<spawn_fs::path> &modelica_files,
                                           const fmu::FMUType &fmu_type)
 {
   const auto output_model_name = modelica_model_to_filename(input);
@@ -67,8 +70,10 @@ spawn_fs::path OptimicaEngine::create_fmu(std::string_view input,
   // If MBL is not in the Modelica path,
   // then add the bundled version of MBL
   if (current_mbl_path().empty()) {
-    modelica_paths.push_back(mbl_home_dir());
-    set_modelica_paths(modelica_paths);
+    // modelica_paths.push_back(mbl_home_dir());
+    auto paths = modelica_paths;
+    paths.push_back(mbl_home_dir());
+    set_modelica_paths(paths);
   }
 
   // Invoke Optimica to generate C code

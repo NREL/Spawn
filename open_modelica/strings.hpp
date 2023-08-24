@@ -1,3 +1,4 @@
+#include "util/strings.hpp"
 #include <string>
 #include <vector>
 
@@ -31,15 +32,7 @@ inline std::vector<std::string> parse_command_response(std::string_view response
 
   // Remove leading and trailing '"'
   for (auto &token : tokens) {
-    // Remove leading '"'
-    if (!token.empty() && token.front() == '"') {
-      token.erase(token.begin());
-    }
-
-    // Remove trailing '"'
-    if (!token.empty() && token.back() == '"') {
-      token.pop_back();
-    }
+    spawn::unquote(token);
   }
 
   return tokens;

@@ -10,8 +10,8 @@ configure_file(config.cpp.in config.cxx)
 
 add_library(
   spawn_utils
-  compare.hpp
-  compare.cpp
+  strings.hpp
+  strings.cpp
   filesystem.hpp
   fmi_paths.hpp
   temp_directory.cpp

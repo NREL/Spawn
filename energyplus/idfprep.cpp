@@ -1,6 +1,6 @@
 #include "idfprep.hpp"
-#include "../util/compare.hpp"
 #include "input/input.hpp"
+#include "util/strings.hpp"
 
 namespace spawn {
 

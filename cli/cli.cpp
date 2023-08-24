@@ -46,9 +46,11 @@ void CLI::modelica_command()
   auto modelica_command = app.add_subcommand("modelica", "Subcommand for Modelica operations");
 
   // Main Modelica options
-  modelica_command->add_option("--modelica-path",
-                               modelica_create_fmu.modelica_path,
-                               "Define the Modelica search path, using ':' as a path separator");
+  modelica_command->add_option(
+      "--modelica-path", modelica_create_fmu.modelica_path, "Value of the MODELICAPATH variable");
+  modelica_command->add_option("--modelica-files",
+                               modelica_create_fmu.modelica_files,
+                               "Space separated list of Modelica file paths to load into the Modelica environment");
   modelica_command->add_flag("--optimica", modelica_create_fmu.optimica, "Use Optimica compiler");
 
   // Modelica create FMU sub command
@@ -107,6 +109,7 @@ void CLI::energyplus_command()
 
 void CLI::cc_command()
 {
+#if defined ENABLE_MODELICA_COMPILER
   auto cc_command = app.add_subcommand("cc", "Subcommand for C compiler with a 'make' style interface");
   cc_command->allow_extras();
   auto callback = [&cc_command]() {
@@ -115,6 +118,7 @@ void CLI::cc_command()
     optimica.make_external_function(cc_command->remaining(true));
   };
   cc_command->callback(callback);
+#endif
 }
 
 void CLI::fmu_command()
