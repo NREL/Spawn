@@ -43,7 +43,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
   set(fmilib_project_source_dir "${mbl_home}/Resources/src/fmi-library/")
   set(fmilib_project_build_dir "${fmilib_project_source_dir}/build/")
   set(fmilib_name "${CMAKE_STATIC_LIBRARY_PREFIX}fmilib${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  set(fmilib_build_path "${mbl_home}/Resources/src/fmi-library/build/fmi-library-modelon/src/fmi-library-modelon-build/${fmilib_name}")
+  set(fmilib_build_path "${mbl_home}/Resources/src/fmi-library/build/fmi-library-modelon/src/install/lib/${fmilib_name}")
   set(fmilib_install_path "Resources/Library/${os_prefix}/${fmilib_name}")
 
 if(ENABLE_MODELICA_COMPILER)
@@ -52,6 +52,9 @@ if(ENABLE_MODELICA_COMPILER)
     DESTINATION etc/
     PATTERN ${fmilib_project_build_dir} EXCLUDE)
 endif()
+
+message("fmilib_project_source_dir: ${fmilib_project_source_dir}")
+message("fmilib_project_build_dir: ${fmilib_project_build_dir}")
 
   ExternalProject_Add(
     FMILIB

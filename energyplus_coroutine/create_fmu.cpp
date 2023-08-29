@@ -17,7 +17,7 @@ void copyIDFResourceFiles(const json &jsonidf, const spawn_fs::path &from, const
 
 void energyplus::CreateFMU::operator()() const
 {
-  spawn::Input input(input_path);
+  spawn::Input input(input_path.string());
 
   // We are going to copy the required files into an FMU staging directory,
   // also copy the json input file into root of the fmu staging directory,
@@ -35,18 +35,18 @@ void energyplus::CreateFMU::operator()() const
   }
 
   if (fmuPath.extension() != ".fmu") {
-    constexpr auto error = "FMU output file name must have the '.fmu' extension, but instead contains, '{}'";
-    throw std::runtime_error(fmt::format(error, fmuPath.extension()));
+    const std::string error = "FMU output file name must have the '.fmu' extension, but instead contains, '{}'";
+    throw std::runtime_error(fmt::format(error, fmuPath.extension().string()));
   }
 
   if (fmuPath.stem().string().empty()) {
-    constexpr auto error = "Given FMU output name cannot be an empty string";
+    const std::string error = "Given FMU output name cannot be an empty string";
     throw std::runtime_error(fmt::format(error));
   }
 
   if (spawn_fs::exists(fmuPath)) {
     if (spawn_fs::is_directory(fmuPath)) {
-      constexpr auto error = "FMU output path is the existing directory, {}";
+      const std::string error = "FMU output path is the existing directory, {}";
       throw std::runtime_error(fmt::format(error, fmuPath.string()));
     }
   }

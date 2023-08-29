@@ -17,9 +17,13 @@ inline std::size_t as_size_t(const long long value)
 inline std::string pathVectorToPathString(std::vector<spawn_fs::path> paths)
 {
   std::stringstream ss;
-  std::ostream_iterator<std::string> it(ss, ":");
-  std::copy(paths.begin(), paths.end(), it);
-  return ss.str();
+  for (const auto &path : paths) {
+    ss << path.string();
+    ss << ":";
+  }
+  auto result = ss.str();
+  result.pop_back();
+  return result;
 }
 
 #endif // SPAWN_CONVERSION_HPP

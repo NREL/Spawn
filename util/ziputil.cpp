@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 #if _MSC_VER
-#include "./msvc/dirent.h"
+#include "../energyplus_coroutine/msvc/dirent.h"
 #else
 #include <dirent.h>
 #endif

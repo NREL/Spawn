@@ -1,4 +1,4 @@
-#include "../energyplus/actuator_types.hpp"
+#include "../energyplus_coroutine/actuator_types.hpp"
 #include "../fmu/fmu.hpp"
 #include "../fmu/logger.h"
 #include "../mbl/config.hpp"

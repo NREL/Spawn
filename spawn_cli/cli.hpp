@@ -1,9 +1,9 @@
 #ifndef CLI_CLI_HPP_INCLUDED
 #define CLI_CLI_HPP_INCLUDED
 
-#include "energyplus/actuator_types.hpp"
-#include "energyplus/create_fmu.hpp"
-#include "energyplus/output_types.hpp"
+#include "energyplus_coroutine/actuator_types.hpp"
+#include "energyplus_coroutine/create_fmu.hpp"
+#include "energyplus_coroutine/output_types.hpp"
 #include "fmu/simulate.hpp"
 #include "modelica/create_fmu.hpp"
 #include <CLI/CLI.hpp>

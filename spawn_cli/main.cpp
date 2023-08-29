@@ -1,4 +1,4 @@
-#include "cli/cli.hpp"
+#include "spawn_cli/cli.hpp"
 #include <spdlog/cfg/env.h>
 
 void handle_eptr(std::exception_ptr eptr)
