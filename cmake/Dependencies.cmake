@@ -6,12 +6,10 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-
-
 conan_cmake_run(
   REQUIRES
   bzip2/1.0.8
-  zlib/1.2.13
+  zlib/1.2.12
   libzip/1.10.1
   pugixml/1.11
   cli11/1.9.1
