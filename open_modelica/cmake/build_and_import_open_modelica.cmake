@@ -37,7 +37,7 @@ ExternalProject_Add(
   OpenModelica
   BUILD_ALWAYS 1
   GIT_REPOSITORY https://github.com/OpenModelica/OpenModelica.git
-  GIT_TAG v1.20.0
+  GIT_TAG v1.22.0
   GIT_SHALLOW
   GIT_SUBMODULES_RECURSE 1
   # CMAKE_ARGS -DBLA_STATIC=1
