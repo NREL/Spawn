@@ -5,6 +5,7 @@
 #include "mbl/config.hpp"
 #include "paths.hpp"
 #include "util/config.hpp"
+#include "util/env_vars.hpp"
 #include "util/filesystem.hpp"
 #include "util/math.hpp"
 #include <catch2/catch.hpp>
@@ -35,16 +36,17 @@ TEST_CASE("Test loading of FMI missing symbols")
   REQUIRE_THROWS(spawn::fmu::FMI2{example_fmu_path(), true});
 }
 
-#if defined ENABLE_MODELICA_COMPILER
-
-TEST_CASE("Test Resetting a Spawn based FMU")
+#if defined ENABLE_COMPILER
+TEST_CASE("Test running a simple FMU")
 {
-  const std::string model_name =
-      "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Validation.ThermalZone.OneZoneOneYear";
-  const std::string fmu_name =
-      "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Validation_ThermalZone_OneZoneOneYear.fmu";
+  // const auto cmd = spawnexe() + " modelica create-fmu " + one_zone_one_year;
+  // const auto result = system(cmd.c_str()); // NOLINT
+  // REQUIRE(result == 0);
 
-  const auto cmd = spawnexe() + " modelica create-fmu --fmu-type ME " + model_name;
+  const std::string model_name = "Buildings.Controls.OBC.CDL.Continuous.Validation.Line";
+  const std::string fmu_name = model_name + ".fmu";
+
+  const auto cmd = spawnexe().string() + " modelica create-fmu " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
@@ -77,7 +79,6 @@ TEST_CASE("Test Resetting a Spawn based FMU")
   status = fmu.fmi.fmi2Terminate(comp);
   CHECK(status == fmi2OK);
 
-  // Reset
   status = fmu.fmi.fmi2Reset(comp);
   CHECK(status == fmi2OK);
 
@@ -94,18 +95,19 @@ TEST_CASE("Test Resetting a Spawn based FMU")
   CHECK(status == fmi2OK);
 }
 
-TEST_CASE("Test Spawn log")
+TEST_CASE("Test running a Spawn based FMU")
 {
-  const std::string model_name =
-      "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Examples.SingleFamilyHouse.AirHeating";
-  const std::string fmu_name =
-      "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Examples_SingleFamilyHouse_AirHeating.fmu";
+  spawn::set_env("SPAWNPATH", spawnexe().parent_path());
 
-  const auto cmd = spawnexe() + " modelica create-fmu --fmu-type ME " + model_name;
+  const std::string model_name =
+      "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Validation.ThermalZone.OneZoneOneYear";
+  const std::string fmu_name = model_name + ".fmu";
+
+  const auto cmd = spawnexe().string() + " modelica create-fmu " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
-  spawn::fmu::FMU fmu{fmu_name, false};
+  spawn::fmu::FMU fmu{fmu_name, false, spawn_fs::current_path()};
 
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
   const auto resource_path = std::string("file://") + (fmu.extractedFilesPath() / "resources").string();
@@ -121,6 +123,66 @@ TEST_CASE("Test Spawn log")
                                             &callbacks,
                                             false,
                                             true);
+
+  fmu.fmi.fmi2SetDebugLogging(comp, true, static_cast<unsigned long>(0), nullptr);
+
+  // Run the model for a day
+  fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2EnterInitializationMode(comp);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2Terminate(comp);
+  CHECK(status == fmi2OK);
+
+  // status = fmu.fmi.fmi2Reset(comp);
+  // CHECK(status == fmi2OK);
+
+  //// Run the model again for a day
+  // status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  // CHECK(status == fmi2OK);
+  // status = fmu.fmi.fmi2EnterInitializationMode(comp);
+  // CHECK(status == fmi2OK);
+  // status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  // CHECK(status == fmi2OK);
+  // status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
+  // CHECK(status == fmi2OK);
+  // status = fmu.fmi.fmi2Terminate(comp);
+  // CHECK(status == fmi2OK);
+}
+
+TEST_CASE("Test Spawn log")
+{
+  spawn::set_env("SPAWNPATH", spawnexe().parent_path());
+
+  const std::string model_name =
+      "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Examples.SingleFamilyHouse.AirHeating";
+  const std::string fmu_name =
+      "Buildings_ThermalZones_" + spawn::mbl_energyplus_version_string() + "_Examples_SingleFamilyHouse_AirHeating.fmu";
+
+  const auto cmd = spawnexe().string() + " modelica create-fmu --fmu-type ME " + model_name;
+  const auto result = system(cmd.c_str()); // NOLINT
+  REQUIRE(result == 0);
+
+  spawn::fmu::FMU fmu{fmu_name, false};
+
+  CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
+  const auto resource_path = std::string("file://") + (fmu.extractedFilesPath() / "resources").string();
+
+  spawn::fmu::ModelDescription modelDescription(fmu.extractedFilesPath() / fmu.modelDescriptionPath());
+
+  fmi2CallbackFunctions callbacks = {
+      fmuStdOutLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
+  [[maybe_unused]] const auto comp = fmu.fmi.fmi2Instantiate("test-instance",
+                                                             fmi2ModelExchange,
+                                                             modelDescription.guid().c_str(),
+                                                             resource_path.c_str(),
+                                                             &callbacks,
+                                                             false,
+                                                             true);
 
   // Turn logs up to ludicrous mode
   const auto log_level_ref = modelDescription.valueReference("_log_level");

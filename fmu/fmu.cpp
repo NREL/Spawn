@@ -83,7 +83,8 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
       }
     }
 
-    throw std::runtime_error(fmt::format("Unable to determine causality of variable {}", attribute.value()));
+    // FMI standard prescribes local as the default
+    return Variable::Causality::Local;
   };
 
   const auto getType = [](const pugi::xml_node &node) {
@@ -117,11 +118,12 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
       } else if (attribute.value() == std::string_view{"discrete"}) {
         return Variable::Variability::Discrete;
       } else {
-        std::cout << attribute.value() << std::endl;
+        throw std::runtime_error("Unable to determine variability of variable");
       }
     }
 
-    throw std::runtime_error("Unable to determine variability of variable");
+    // FMI standard prescribes continuous as the default
+    return Variable::Variability::Continuous;
   };
 
   for (const auto &variable : variables) {
@@ -141,7 +143,7 @@ std::vector<FMU::Variable> FMU::variables(const pugi::xml_document &model_descri
                                      getType(node),
                                      getCausality(node),
                                      getVariability(node)});
-      } catch (const std::exception &) {
+      } catch (const std::exception &e) {
         throw std::runtime_error(fmt::format("Error parsing '{}' as an integer for fmi2ValueReference", string));
       }
     }

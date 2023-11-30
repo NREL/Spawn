@@ -1,5 +1,5 @@
 set(package_variant "")
-if(NOT ENABLE_MODELICA_COMPILER)
+if(NOT ENABLE_COMPILER)
   set(package_variant "light-")
 endif()
 

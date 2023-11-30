@@ -44,7 +44,7 @@ OpenModelicaEngine::create_fmu([[maybe_unused]] const std::string_view mo_input,
     load_mbl();
   }
 
-  auto command = fmt::format("buildModel({})", mo_input);
+  auto command = fmt::format(R"(buildModelFMU({}, "2.0", "cs"))", mo_input);
   [[maybe_unused]] auto response = eval(command);
 
   return {};

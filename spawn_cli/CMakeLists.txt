@@ -30,15 +30,12 @@ target_link_libraries(
           )
 target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 
-if(ENABLE_MODELICA_COMPILER OR ENABLE_COMPILER)
-  target_link_libraries(spawn PRIVATE compiler )
-endif()
-
 if(ENABLE_BUILDINGS_LIBRARY)
   target_link_libraries(spawn PRIVATE spawn_mbl)
 endif()
 
-if(ENABLE_MODELICA_COMPILER)
+if(ENABLE_COMPILER)
+  target_link_libraries(spawn PRIVATE compiler )
   target_link_libraries(spawn PRIVATE spawn_modelica)
 endif()
 

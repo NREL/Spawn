@@ -5,12 +5,12 @@ spawn_fs::path testdir()
   return "${CMAKE_CURRENT_BINARY_DIR}";
 }
 
-std::string spawnexe()
+spawn_fs::path spawnexe()
 {
   return "$<TARGET_FILE:spawn>";
 }
 
-std::string testcase1()
+spawn_fs::path testcase1()
 {
   return "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn";
 }

@@ -19,3 +19,7 @@ check_include_file_cxx("experimental/filesystem" HAVE_EXP_FILESYSTEM_H)
 if(HAVE_EXP_FILESYSTEM_H)
   target_compile_definitions(compile_options INTERFACE "-DHAVE_EXP_FILESYSTEM_H")
 endif()
+
+if(ENABLE_COMPILER)
+  add_definitions("-DENABLE_COMPILER")
+endif()

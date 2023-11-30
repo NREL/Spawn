@@ -1,4 +1,4 @@
-if(ENABLE_MODELICA_COMPILER)
+if(ENABLE_COMPILER)
   include(cmake/build_and_import_open_modelica.cmake)
 
   add_library(

@@ -3,9 +3,9 @@
 
 spawn_fs::path testdir();
 
-std::string spawnexe();
+spawn_fs::path spawnexe();
 
-std::string testcase1();
+spawn_fs::path testcase1();
 
 spawn_fs::path testzip();
 

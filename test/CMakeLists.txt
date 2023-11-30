@@ -19,7 +19,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
 
-if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+if (ENABLE_COMPILER)
   set(EMBEDDED_COMPILER_TESTS test_embedded_compiler.cpp)
 endif ()
 
@@ -50,10 +50,10 @@ add_executable(
 add_dependencies(tests example_fmu_lib)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_mbl spawn_utils fmu libspawn compile_options)
 
-if (ENABLE_COMPILER OR ENABLE_MODELICA_COMPILER)
+if (ENABLE_COMPILER)
   add_executable(test_compiler test_compiler.cpp)
   target_link_libraries(test_compiler PRIVATE compile_options compiler)
-  target_link_libraries(tests PRIVATE compiler)
+  target_link_libraries(tests PRIVATE compile_options compiler)
 endif()
 
 

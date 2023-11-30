@@ -1,12 +1,7 @@
 #include "spawn_cli/cli.hpp"
 #include "energyplus_coroutine/config.hpp"
-#include "modelica/create_fmu.hpp"
 #include "util/config.hpp"
 #include <spdlog/spdlog.h>
-
-#if defined ENABLE_MODELICA_COMPILER
-#include "optimica/optimica_engine.hpp"
-#endif
 
 namespace spawn::cli {
 
@@ -41,7 +36,7 @@ void CLI::main_command()
 
 void CLI::modelica_command()
 {
-#if defined ENABLE_MODELICA_COMPILER
+#if defined ENABLE_COMPILER
   // Top level Modelica command
   auto modelica_command = app.add_subcommand("modelica", "Subcommand for Modelica operations");
 
@@ -51,7 +46,6 @@ void CLI::modelica_command()
   modelica_command->add_option("--modelica-files",
                                modelica_create_fmu.modelica_files,
                                "Space separated list of Modelica file paths to load into the Modelica environment");
-  modelica_command->add_flag("--optimica", modelica_create_fmu.optimica, "Use Optimica compiler");
 
   // Modelica create FMU sub command
   auto create_fmu_command = modelica_command->add_subcommand("create-fmu", "Compile Modelica model to FMU format");
@@ -109,15 +103,15 @@ void CLI::energyplus_command()
 
 void CLI::cc_command()
 {
-#if defined ENABLE_MODELICA_COMPILER
+#if defined ENABLE_COMPILER
   auto cc_command = app.add_subcommand("cc", "Subcommand for C compiler with a 'make' style interface");
   cc_command->allow_extras();
-  auto callback = [&cc_command]() {
-    std::cout << "cli cc_command" << std::endl;
-    auto optimica = spawn::optimica::OptimicaEngine();
-    optimica.make_external_function(cc_command->remaining(true));
-  };
-  cc_command->callback(callback);
+  // auto callback = [&cc_command]() {
+  //   std::cout << "cli cc_command" << std::endl;
+  //   auto optimica = spawn::optimica::OptimicaEngine();
+  //   optimica.make_external_function(cc_command->remaining(true));
+  // };
+  // cc_command->callback(callback);
 #endif
 }
 
