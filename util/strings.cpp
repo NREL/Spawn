@@ -1,5 +1,6 @@
 #include "util/strings.hpp"
 #include <algorithm>
+#include <map>
 
 namespace spawn {
 

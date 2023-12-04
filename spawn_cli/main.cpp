@@ -1,5 +1,6 @@
 #include "spawn_cli/cli.hpp"
 #include <spdlog/cfg/env.h>
+#include <spdlog/spdlog.h>
 
 void handle_eptr(std::exception_ptr eptr)
 {
@@ -14,6 +15,7 @@ void handle_eptr(std::exception_ptr eptr)
 
 int main(int argc, const char *argv[]) // NOLINT exception may escape from main
 {
+  spdlog::set_level(spdlog::level::err);
   spdlog::cfg::load_env_levels();
 
   std::exception_ptr eptr;

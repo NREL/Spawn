@@ -158,6 +158,5 @@ TEST_CASE("OpenModelicaEngine is able to compile the single family home example"
 {
   spawn::openmodelica::OpenModelicaEngine om;
 
-  [[maybe_unused]] auto result =
-      om.create_fmu(one_zone_one_year, spawn_fs::current_path(), {}, {}, spawn::fmu::FMUType::CS);
+  om.create_fmu(one_zone_one_year, spawn_fs::current_path(), {}, {}, spawn::fmu::FMUType::CS);
 }

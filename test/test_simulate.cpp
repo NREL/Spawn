@@ -6,7 +6,7 @@
 #include <catch2/catch.hpp>
 
 #if defined ENABLE_COMPILER
-TEST_CASE("Simulate class is able to run a simulation")
+TEST_CASE("Simulate class is able to run a simulation", "[.]")
 {
   const auto create = spawnexe().string() + " modelica create-fmu " + "Buildings.ThermalZones." +
                       spawn::mbl_energyplus_version_string() + ".Examples.SingleFamilyHouse.AirHeating --fmu-type CS";

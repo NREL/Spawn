@@ -24,18 +24,27 @@ public:
   virtual ~ModelicaEngine() = default;
 
   // Compile moInput to a Functional Mockup Unit
-  [[nodiscard]] virtual spawn_fs::path create_fmu(const std::string_view mo_input,
-                                                  const spawn_fs::path &output_dir,
-                                                  const std::vector<spawn_fs::path> &modelica_paths,
-                                                  const std::vector<spawn_fs::path> &modelica_files,
-                                                  const spawn::fmu::FMUType &fmu_type) = 0;
+  virtual void create_fmu(const std::string_view mo_input,
+                          const spawn_fs::path &output_dir,
+                          const std::string_view modelica_path,
+                          const std::vector<spawn_fs::path> &modelica_files,
+                          const spawn::fmu::FMUType &fmu_type) = 0;
 
-  // Not Implemented - Compile moInput to an executable
-  [[nodiscard]] virtual spawn_fs::path create_exe(const std::string_view mo_input,
-                                                  const spawn_fs::path &output_dir,
-                                                  const std::vector<spawn_fs::path> &modelica_paths,
-                                                  const std::vector<spawn_fs::path> &modelica_files,
-                                                  const spawn::fmu::FMUType &fmu_type) = 0;
+  // Compile moInput to an executable
+  virtual void create_exe(const std::string_view mo_input,
+                          const spawn_fs::path &output_dir,
+                          const std::string_view modelica_path,
+                          const std::vector<spawn_fs::path> &modelica_files) = 0;
+
+  // Compile and simulate a model
+  virtual void simulate(const std::string_view model,
+                        const std::string_view modelica_path,
+                        const std::vector<spawn_fs::path> &modelica_files,
+                        const double &start_time,
+                        double stop_time,
+                        unsigned number_of_intervals,
+                        const double &tolerance,
+                        const std::string_view method) = 0;
 };
 
 } // namespace spawn::modelica

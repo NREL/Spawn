@@ -40,18 +40,43 @@ void CLI::modelica_command()
   // Top level Modelica command
   auto modelica_command = app.add_subcommand("modelica", "Subcommand for Modelica operations");
 
-  // Main Modelica options
-  modelica_command->add_option(
-      "--modelica-path", modelica_create_fmu.modelica_path, "Value of the MODELICAPATH variable");
-  modelica_command->add_option("--modelica-files",
-                               modelica_create_fmu.modelica_files,
-                               "Space separated list of Modelica file paths to load into the Modelica environment");
-
   // Modelica create FMU sub command
   auto create_fmu_command = modelica_command->add_subcommand("create-fmu", "Compile Modelica model to FMU format");
   create_fmu_command->add_option("MODEL", modelica_create_fmu.model, "Modelica model path");
+  create_fmu_command->add_option("--modelica-files",
+                                 modelica_create_fmu.modelica_files,
+                                 "Space separated list of Modelica file paths to load into the Modelica environment");
+  create_fmu_command->add_option(
+      "--modelica-path", modelica_create_fmu.modelica_path, "Value of the MODELICAPATH variable");
   create_fmu_command->add_option("--fmu-type", modelica_create_fmu.fmu_type, "FMU Type, CS or ME");
   create_fmu_command->callback(std::ref(modelica_create_fmu));
+
+  // Modelica create exe sub command
+  auto create_exe_command =
+      modelica_command->add_subcommand("create-exe", "Compile Modelica model to an executable program");
+  create_exe_command->add_option("MODEL", modelica_create_exe.model, "Modelica model path");
+  create_exe_command->add_option("--modelica-files",
+                                 modelica_create_exe.modelica_files,
+                                 "Space separated list of Modelica file paths to load into the Modelica environment");
+  create_exe_command->add_option(
+      "--modelica-path", modelica_create_exe.modelica_path, "Value of the MODELICAPATH variable");
+  create_exe_command->callback(std::ref(modelica_create_exe));
+
+  // Modelica simulate sub command
+  auto simulate_command = modelica_command->add_subcommand("simulate", "Compile and simulate Modelica model");
+  simulate_command->add_option("MODEL", modelica_simulate.model, "Modelica model path");
+  simulate_command->add_option("--modelica-files",
+                               modelica_simulate.modelica_files,
+                               "Space separated list of Modelica file paths to load into the Modelica environment");
+  simulate_command->add_option(
+      "--modelica-path", modelica_simulate.modelica_path, "Value of the MODELICAPATH variable");
+  simulate_command->add_option("--start-time", modelica_simulate.start_time, "Start time");
+  simulate_command->add_option("--stop-time", modelica_simulate.stop_time, "Stop time");
+  simulate_command->add_option(
+      "--number-of-intervals", modelica_simulate.number_of_intervals, "Number of intervals in the result file");
+  simulate_command->add_option("--tolerance", modelica_simulate.tolerance, "Tolerance used by the integration method");
+  simulate_command->add_option("--method", modelica_simulate.method, "Tolerance used by the integration method");
+  simulate_command->callback(std::ref(modelica_simulate));
 #endif
 }
 

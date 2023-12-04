@@ -1,24 +1,21 @@
-#ifndef MODELICA_CREATE_FMU_HH_INCLUDED
-#define MODELICA_CREATE_FMU_HH_INCLUDED
+#ifndef MODELICA_CREATE_EXE_HH_INCLUDED
+#define MODELICA_CREATE_EXE_HH_INCLUDED
 
-#include "fmu/fmu_type.hpp"
 #include "util/filesystem.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
 namespace spawn::modelica {
 
-struct CreateFMU
+struct CreateEXE
 {
   void operator()() const;
 
   std::string modelica_path;
   std::vector<spawn_fs::path> modelica_files;
-  bool optimica{false};
   std::string model;
-  std::string fmu_type{"CS"};
 };
 
 } // namespace spawn::modelica
 
-#endif // MODELICA_CREATE_FMU_HH_INCLUDED
+#endif // MODELICA_CREATE_EXE_HH_INCLUDED

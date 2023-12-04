@@ -11,7 +11,7 @@
 
 #if defined ENABLE_COMPILER
 
-TEST_CASE("Test Zone Multiplier")
+TEST_CASE("Test Zone Multiplier", "[.]")
 {
   spawn::set_env("SPAWNPATH", spawnexe().parent_path());
 

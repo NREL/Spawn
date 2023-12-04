@@ -1,6 +1,7 @@
 #ifndef UTIL_STRINGS_HPP
 #define UTIL_STRINGS_HPP
 
+#include <spdlog/common.h>
 #include <string>
 
 namespace spawn {

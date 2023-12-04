@@ -2,8 +2,12 @@ if(ENABLE_COMPILER)
 
 add_library(spawn_modelica
   modelica_engine.hpp
+  create_exe.hpp
+  create_exe.cpp
   create_fmu.hpp
   create_fmu.cpp
+  simulate.hpp
+  simulate.cpp
 )
 
 target_include_directories(spawn_modelica

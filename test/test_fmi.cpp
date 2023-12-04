@@ -95,7 +95,7 @@ TEST_CASE("Test running a simple FMU")
   CHECK(status == fmi2OK);
 }
 
-TEST_CASE("Test running a Spawn based FMU")
+TEST_CASE("Test running a Spawn based FMU", "[.]")
 {
   spawn::set_env("SPAWNPATH", spawnexe().parent_path());
 
@@ -103,11 +103,13 @@ TEST_CASE("Test running a Spawn based FMU")
       "Buildings.ThermalZones." + spawn::mbl_energyplus_version_string() + ".Validation.ThermalZone.OneZoneOneYear";
   const std::string fmu_name = model_name + ".fmu";
 
+  std::cout << model_name << std::endl;
+
   const auto cmd = spawnexe().string() + " modelica create-fmu " + model_name;
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 
-  spawn::fmu::FMU fmu{fmu_name, false, spawn_fs::current_path()};
+  spawn::fmu::FMU fmu{fmu_name, false};
 
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
   const auto resource_path = std::string("file://") + (fmu.extractedFilesPath() / "resources").string();
@@ -133,28 +135,28 @@ TEST_CASE("Test running a Spawn based FMU")
   CHECK(status == fmi2OK);
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   CHECK(status == fmi2OK);
-  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
+  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(365));
   CHECK(status == fmi2OK);
   status = fmu.fmi.fmi2Terminate(comp);
   CHECK(status == fmi2OK);
 
-  // status = fmu.fmi.fmi2Reset(comp);
-  // CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2Reset(comp);
+  CHECK(status == fmi2OK);
 
-  //// Run the model again for a day
-  // status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
-  // CHECK(status == fmi2OK);
-  // status = fmu.fmi.fmi2EnterInitializationMode(comp);
-  // CHECK(status == fmi2OK);
-  // status = fmu.fmi.fmi2ExitInitializationMode(comp);
-  // CHECK(status == fmi2OK);
-  // status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
-  // CHECK(status == fmi2OK);
-  // status = fmu.fmi.fmi2Terminate(comp);
-  // CHECK(status == fmi2OK);
+  // Run the model again for a day
+  status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2EnterInitializationMode(comp);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2ExitInitializationMode(comp);
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(60));
+  CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2Terminate(comp);
+  CHECK(status == fmi2OK);
 }
 
-TEST_CASE("Test Spawn log")
+TEST_CASE("Test Spawn log", "[.]")
 {
   spawn::set_env("SPAWNPATH", spawnexe().parent_path());
 
