@@ -82,3 +82,26 @@ target_link_libraries(
 add_dependencies(OpenModelicaCompiler OpenModelica)
 add_dependencies(OpenModelicaRuntimeC OpenModelica)
 add_dependencies(omcgc OpenModelica)
+
+install(
+  DIRECTORY
+  ${CMAKE_CURRENT_BINARY_DIR}/OpenModelica-prefix/src/OpenModelica-build/install_cmake/
+  DESTINATION
+  etc/OpenModelica
+  PATTERN "bin"
+  EXCLUDE
+  PATTERN "doc"
+  EXCLUDE
+  PATTERN "share/cmake"
+  EXCLUDE
+  PATTERN "share/omnotebook"
+  EXCLUDE
+  PATTERN "share/omshell"
+  EXCLUDE
+  PATTERN "share/OMSimulator"
+  EXCLUDE
+  PATTERN "share/zmq"
+  EXCLUDE
+  PATTERN "etc/MBL/CMakeLists.txt"
+  EXCLUDE
+)

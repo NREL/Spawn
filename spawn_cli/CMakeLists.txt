@@ -47,3 +47,4 @@ add_custom_command(TARGET spawn POST_BUILD
 
 install(TARGETS spawn DESTINATION bin)
 install(CODE "file(CREATE_LINK $<TARGET_FILE_NAME:spawn> \${CMAKE_INSTALL_PREFIX}/bin/spawn$<TARGET_FILE_SUFFIX:spawn> SYMBOLIC)")
+set_target_properties(spawn PROPERTIES INSTALL_RPATH "$ORIGIN/../etc/OpenModelica/lib/x86_64-linux-gnu/omc/")
