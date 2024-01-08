@@ -82,16 +82,19 @@ TEST_CASE("Test SingleFamilyHouse")
   // Begin test lighting
   const auto lighting_input_ref = modelDescription.valueReference("lighting input");
   const auto lighting_output_ref = modelDescription.valueReference("lighting output");
+  const auto living_zone_heat_flow = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
 
   const std::array<fmi2ValueReference, 1> lighting_input_refs = {lighting_input_ref};
-  const std::array<fmi2ValueReference, 1> lighting_output_refs = {lighting_output_ref};
+  const std::array<fmi2ValueReference, 2> lighting_output_refs = {lighting_output_ref, living_zone_heat_flow};
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
+  // Test that the lighting power and the zone heat flows are updated when the lighting schedule is changed
   std::array<fmi2Real, lighting_output_refs.size()> lighting_output_values{};
   std::array<fmi2Real, lighting_input_refs.size()> lighting_input_values{};
 
+  // Turn the lights off via the lighting schedule
   lighting_input_values[0] = 0.0;
   status =
       fmu.fmi.fmi2SetReal(comp, lighting_input_refs.data(), lighting_input_refs.size(), lighting_input_values.data());
@@ -100,8 +103,12 @@ TEST_CASE("Test SingleFamilyHouse")
   status = fmu.fmi.fmi2GetReal(
       comp, lighting_output_refs.data(), lighting_output_refs.size(), lighting_output_values.data());
   CHECK(status == fmi2OK);
+  // Index 0 is the lighting output sensor and value should be zero when the lights are turned off via actuator
   CHECK(lighting_output_values[0] == Approx(0.0));
+  // Index 1 is the zone sensible heat gain
+  const auto zone_heat_with_lights_off = lighting_output_values[1];
 
+  // Turn the lights on via the lighting schedule
   lighting_input_values[0] = 1.0;
   status =
       fmu.fmi.fmi2SetReal(comp, lighting_input_refs.data(), lighting_input_refs.size(), lighting_input_values.data());
@@ -110,8 +117,13 @@ TEST_CASE("Test SingleFamilyHouse")
   status = fmu.fmi.fmi2GetReal(
       comp, lighting_output_refs.data(), lighting_output_refs.size(), lighting_output_values.data());
   CHECK(status == fmi2OK);
+  // Lighting power (from sensor) should be greater than zero
   CHECK(lighting_output_values[0] == Approx(1000.0));
+  // Zone sensible heat gain should increase due to lighting power, even without advancing time
+  const auto zone_heat_with_lights_100 = lighting_output_values[1];
+  CHECK(zone_heat_with_lights_100 > zone_heat_with_lights_off);
 
+  // Set lighting to 50% via the lighting schedule
   lighting_input_values[0] = 0.5;
   status =
       fmu.fmi.fmi2SetReal(comp, lighting_input_refs.data(), lighting_input_refs.size(), lighting_input_values.data());
@@ -120,8 +132,13 @@ TEST_CASE("Test SingleFamilyHouse")
   status = fmu.fmi.fmi2GetReal(
       comp, lighting_output_refs.data(), lighting_output_refs.size(), lighting_output_values.data());
   CHECK(status == fmi2OK);
+  // Lighting power (from sensor) should be greater than zero
   CHECK(lighting_output_values[0] == Approx(500.0));
+  // Zone sensible heat gain should be between lights off and 100% on, even without advancing time
+  CHECK(lighting_output_values[1] > zone_heat_with_lights_off);
+  CHECK(lighting_output_values[1] < zone_heat_with_lights_100);
 
+  // Turn the lights off again via the lighting schedule
   lighting_input_values[0] = 0.0;
   status =
       fmu.fmi.fmi2SetReal(comp, lighting_input_refs.data(), lighting_input_refs.size(), lighting_input_values.data());
@@ -130,9 +147,10 @@ TEST_CASE("Test SingleFamilyHouse")
   status = fmu.fmi.fmi2GetReal(
       comp, lighting_output_refs.data(), lighting_output_refs.size(), lighting_output_values.data());
   CHECK(status == fmi2OK);
+  // Lighting power (from sensor) should be zero
   CHECK(lighting_output_values[0] == Approx(0.0));
 
-  // Begin test latent heat
+  // Test that heat flows are updated when the number of people is changed via the people actuator
   const auto qlat_flow_ref = modelDescription.valueReference("LIVING ZONE_QLat_flow");
   const auto qpeo_flow_ref = modelDescription.valueReference("LIVING ZONE_QPeo_flow");
   const auto people_input_ref = modelDescription.valueReference("living zone people");
