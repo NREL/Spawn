@@ -43,8 +43,11 @@ ExternalProject_Add(
   CMAKE_ARGS
   -DOM_ENABLE_GUI_CLIENTS=OFF
   -DOM_OMC_ENABLE_IPOPT=OFF
-  -DBLA_STATIC=ON
+  -DBLA_STATIC=OFF
 )
+# Need to supplement LAPACK_LIBRARIES to get BLA_STATIC working.
+# Something along these lines, but it needs work
+# list(APPEND LAPACK_LIBRARIES -lgfortran;-lm;-static-libgfortran)
 
 set_property(
   TARGET OpenModelicaCompiler
