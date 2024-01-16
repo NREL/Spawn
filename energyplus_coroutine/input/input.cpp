@@ -39,6 +39,7 @@ Input::Input(const std::string &spawninput)
   outputVariables = OutputVariable::createOutputVariables(spawnjson, jsonidf);
   emsActuators = EMSActuator::createEMSActuators(spawnjson, jsonidf);
   surfaces = Surface::createSurfaces(spawnjson, jsonidf);
+  runPeriod = RunPeriod::create_run_period(spawnjson);
 }
 
 std::string Input::fmuname() const

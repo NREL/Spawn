@@ -41,6 +41,7 @@ add_executable(
   test_utils.cpp
   test_mbl_idf.cpp
   test_infiltration.cpp
+  test_run_period.cpp
   test_simulate.cpp
   test_zone_multiplier.cpp
   test_zone_capacitance_multiplier.cpp

@@ -15,9 +15,10 @@ std::vector<Surface> Surface::createSurfaces(const nlohmann::json &spawnjson, co
 {
   std::vector<Surface> result;
   constexpr auto *idftype = "BuildingSurface:Detailed";
-  const auto front_control_surfaces = spawnjson.value("model", json()).value("zoneSurfaces", std::vector<json>(0));
+  const auto front_control_surfaces =
+      spawnjson.value("model", json::object()).value("zoneSurfaces", std::vector<json>(0));
   const auto frontback_control_surfaces =
-      spawnjson.value("model", json()).value("buildingSurfaceDetailed", std::vector<json>(0));
+      spawnjson.value("model", json::object()).value("buildingSurfaceDetailed", std::vector<json>(0));
 
   auto surface_control_type = [&](const std::string &idfname) {
     const auto pred = [&](const nlohmann::json &modelicasurface) {

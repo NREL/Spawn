@@ -26,7 +26,7 @@ std::vector<Schedule> Schedule::createSchedules(const json &spawnjson, const nlo
     }
   }
 
-  const auto modelicaSchedules = spawnjson.value("model", json()).value("schedules", std::vector<json>(0));
+  const auto modelicaSchedules = spawnjson.value("model", json::object()).value("schedules", std::vector<json>(0));
   for (const auto &modelicaSchedule : modelicaSchedules) {
     const auto idfname = modelicaSchedule.value("name", "");
     const auto fminame = modelicaSchedule.value("fmiName", "");

@@ -18,7 +18,8 @@ std::vector<OutputVariable> OutputVariable::createOutputVariables(const nlohmann
 {
   std::vector<OutputVariable> result;
 
-  const auto spawnOutputVariables = spawnjson.value("model", json()).value("outputVariables", std::vector<json>(0));
+  const auto spawnOutputVariables =
+      spawnjson.value("model", json::object()).value("outputVariables", std::vector<json>(0));
   for (const auto &spawnOutputVariable : spawnOutputVariables) {
     const auto spawnname = spawnOutputVariable.value("fmiName", "");
     const auto idfname = spawnOutputVariable.value("name", "");

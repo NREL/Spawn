@@ -7,6 +7,7 @@
 #include "../variables.hpp"
 #include "emsactuator.hpp"
 #include "outputvariable.hpp"
+#include "runperiod.hpp"
 #include "schedule.hpp"
 #include "surface.hpp"
 #include "zone.hpp"
@@ -24,6 +25,7 @@ public:
   std::vector<OutputVariable> outputVariables;
   std::vector<EMSActuator> emsActuators;
   std::vector<Surface> surfaces;
+  RunPeriod runPeriod;
 
   [[nodiscard]] spawn_fs::path basepath() const;
 

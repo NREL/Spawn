@@ -21,7 +21,7 @@ std::vector<EMSActuator> EMSActuator::createEMSActuators(const nlohmann::json &s
 {
   std::vector<EMSActuator> result;
 
-  const auto spawnActuators = spawnjson.value("model", json()).value("emsActuators", std::vector<json>(0));
+  const auto spawnActuators = spawnjson.value("model", json::object()).value("emsActuators", std::vector<json>(0));
   for (const auto &spawnActuator : spawnActuators) {
     const auto spawnname = spawnActuator.value("fmiName", "");
     const auto idfname = spawnActuator.value("variableName", "");

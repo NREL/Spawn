@@ -14,7 +14,7 @@ std::vector<Zone> Zone::createZones(const nlohmann::json &spawnjson, const nlohm
 {
   std::vector<Zone> result;
   constexpr auto type = "Zone";
-  const auto modelicazones = spawnjson.value("model", json()).value("zones", std::vector<json>(0));
+  const auto modelicazones = spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
 
   auto getIsConnected = [&](const std::string &idfname) {
     const auto zit =

@@ -31,6 +31,8 @@ add_library(
   input/input.cpp
   input/outputvariable.hpp
   input/outputvariable.cpp
+  input/runperiod.hpp
+  input/runperiod.cpp
   input/schedule.hpp
   input/schedule.cpp
   input/surface.hpp

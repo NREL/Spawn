@@ -22,7 +22,7 @@ json &adjustSimulationControl(json &jsonidf)
   return jsonidf;
 }
 
-json &addRunPeriod(json &jsonidf)
+json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input)
 {
   constexpr auto runperiodtype = "RunPeriod";
   // Remove the existing run periods first
@@ -30,19 +30,20 @@ json &addRunPeriod(json &jsonidf)
 
   // Add a new run period just for spawn
   // 200 years should be plenty
-  jsonidf[runperiodtype] = {{"Spawn-RunPeriod",
-                             {{"apply_weekend_holiday_rule", "No"},
-                              {"begin_day_of_month", 1},
-                              {"begin_month", 1},
-                              {"begin_year", 2017},
-                              {"day_of_week_for_start_day", "Sunday"},
-                              {"end_day_of_month", 31},
-                              {"end_month", 12},
-                              {"end_year", 2217},
-                              {"use_weather_file_daylight_saving_period", "No"},
-                              {"use_weather_file_holidays_and_special_days", "No"},
-                              {"use_weather_file_rain_indicators", "Yes"},
-                              {"use_weather_file_snow_indicators", "Yes"}}}};
+  jsonidf[runperiodtype] = {
+      {"Spawn-RunPeriod",
+       {{"apply_weekend_holiday_rule", input.runPeriod.apply_weekend_holiday_rule},
+        {"begin_day_of_month", 1},
+        {"begin_month", 1},
+        {"begin_year", 2017},
+        {"day_of_week_for_start_day", input.runPeriod.day_of_week_for_start_day},
+        {"end_day_of_month", 31},
+        {"end_month", 12},
+        {"end_year", 2217},
+        {"use_weather_file_daylight_saving_period", input.runPeriod.use_weather_file_daylight_saving_period},
+        {"use_weather_file_holidays_and_special_days", input.runPeriod.use_weather_file_holidays_and_special_days},
+        {"use_weather_file_rain_indicators", input.runPeriod.use_weather_file_rain_indicators},
+        {"use_weather_file_snow_indicators", input.runPeriod.use_weather_file_snow_indicators}}}};
 
   return jsonidf;
 }
@@ -329,7 +330,7 @@ void prepare_idf(json &jsonidf, const Input &input)
 {
   adjustSimulationControl(jsonidf);
   removeUnusedObjects(jsonidf);
-  addRunPeriod(jsonidf);
+  addRunPeriod(jsonidf, input);
   removeInfiltration(jsonidf, input);
   addOtherEquipment(jsonidf, input);
   addRequestedOutputVariables(jsonidf, input);
