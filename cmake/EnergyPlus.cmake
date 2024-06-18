@@ -4,8 +4,14 @@ set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
 set(USE_OpenMP OFF CACHE BOOL "" FORCE)
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 
+#/home/kbenne/Development/Spawn/submodules/EnergyPlus/third_party/doj/alphanum.hpp:164:22: error: conversion from ‘long int’ to ‘int’ may change value [-Werror=conversion]
+
 add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
 include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
+#set_property(DIRECTORY submodules/EnergyPlus PROPERTY COMPILE_OPTIONS -Wno-error)
+#set_property(GLOBAL PROPERTY COMPILE_OPTIONS -Wno-error)
+#set_property(GLOBAL PROPERTY COMPILE_OPTIONS -Wno-error=conversion)
+
 # This is a method to capture the EnergyPlus version
 # See notes in make_energyplus_version.cmake
 execute_process(COMMAND ${CMAKE_COMMAND}

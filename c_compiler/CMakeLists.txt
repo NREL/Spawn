@@ -137,9 +137,9 @@ if(ENABLE_COMPILER)
            # with defined INTERFACE_LINK_LIBRARIES, so we just throw the whole set
            # of LLVM libs into the link path
            ${LLVM_AVAILABLE_LIBS}
-           CONAN_PKG::fmt
-           CONAN_PKG::spdlog
-   PRIVATE CONAN_PKG::zlib compile_options spawn_utils)
+           fmt::fmt
+           spdlog::spdlog
+   PRIVATE ZLIB::ZLIB compile_options spawn_utils)
   
   if(NOT MSVC)
     # necessary for making local symbols available to JIT

@@ -1,8 +1,8 @@
 #ifndef RunPeriod_hh_INCLUDED
 #define RunPeriod_hh_INCLUDED
 
-#include "../../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include <fmt/format.h>
+#include <nlohmann/json.hpp>
 
 namespace spawn {
 

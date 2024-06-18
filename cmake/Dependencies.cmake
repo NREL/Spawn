@@ -1,40 +1,21 @@
-# Download automatically, you can also just copy the conan.cmake file
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/release/0.18/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-conan_cmake_run(
-  REQUIRES
-  bzip2/1.0.8
-  zlib/1.2.12
-  libzip/1.10.1
-  pugixml/1.11
-  cli11/1.9.1
-  catch2/2.13.9
-  fmt/8.0.1
-  nlohmann_json/3.10.2
-  spdlog/1.9.2
-  swig/4.1.0
-  BASIC_SETUP
-  CMAKE_TARGETS
-  NO_OUTPUT_DIRS
-  BUILD
-  missing)
-
-# ##############################################################################
-# RPATH settings Conan set this to true, which is not the cmake default and not
-# what we want for the openstudio targets
-set(CMAKE_SKIP_RPATH FALSE)
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
-# automatically enable catch2 to generate ctest targets
-if(CONAN_CATCH2_ROOT_DEBUG)
-  include(${CONAN_CATCH2_ROOT_DEBUG}/lib/cmake/Catch2/Catch.cmake)
-else()
-  include(${CONAN_CATCH2_ROOT}/lib/cmake/Catch2/Catch.cmake)
-endif()
+find_package(Threads REQUIRED)
+find_package(BZip2)
+find_package(ZLIB)
+find_package(libzip)
+find_package(pugixml)
+find_package(CLI11)
+find_package(Catch2)
+find_package(nlohmann_json)
+find_package(Boost)
+
+# spdlog is included in the project as a git subtree, because
+# it depends on fmt, which is pulled in by the energyplus project.
+# Normally, we would use conan to pull in spdlog, but the conan build
+# is unaware of fmt provided by EnergyPlus
+set(SPDLOG_FMT_EXTERNAL ON)
+add_subdirectory(spdlog)
+
+# Provides the cmake macro, `catch_discover_tests`
+include(Catch)

@@ -35,7 +35,7 @@ target_include_directories(
 
 target_link_libraries(
   spawn_utils
-  PUBLIC CONAN_PKG::libzip CONAN_PKG::fmt CONAN_PKG::spdlog compile_options)
+  PUBLIC libzip::zip fmt::fmt spdlog::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)

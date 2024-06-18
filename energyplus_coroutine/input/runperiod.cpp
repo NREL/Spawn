@@ -1,5 +1,4 @@
 #include "runperiod.hpp"
-#include "bool.hpp"
 #include <fmt/format.h>
 #include <iostream>
 

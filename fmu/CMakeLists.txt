@@ -1,3 +1,5 @@
+add_compile_options(-Wno-conversion)
+
 add_library(
   fmu
   modeldescription.hpp
@@ -13,7 +15,7 @@ add_library(
 
 target_link_libraries(
   fmu
-  PUBLIC CONAN_PKG::pugixml spawn_utils
-  PRIVATE CONAN_PKG::fmt compile_options CONAN_PKG::nlohmann_json)
+  PUBLIC pugixml::pugixml spawn_utils
+  PRIVATE fmt::fmt compile_options nlohmann_json::nlohmann_json)
 
 target_include_directories(fmu PUBLIC "${PROJECT_SOURCE_DIR}/fmi2/")

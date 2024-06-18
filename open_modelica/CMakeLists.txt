@@ -21,9 +21,9 @@ if(ENABLE_COMPILER)
     OpenModelicaCompiler
     OpenModelicaRuntimeC
     omcgc
-    CONAN_PKG::catch2
-    CONAN_PKG::fmt
-    CONAN_PKG::nlohmann_json
+    Catch2::Catch2
+    fmt::fmt
+    nlohmann_json::nlohmann_json
     compile_options
   )
   

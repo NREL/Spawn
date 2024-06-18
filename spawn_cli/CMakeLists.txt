@@ -26,7 +26,7 @@ target_link_libraries(
           fmu
           libspawn
           spawn_utils
-          CONAN_PKG::cli11
+          CLI11::CLI11
           )
 target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
 

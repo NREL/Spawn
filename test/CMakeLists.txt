@@ -19,37 +19,47 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(example_fmu_lib MODULE example_fmu_lib.cpp)
 
-if (ENABLE_COMPILER)
+if(ENABLE_COMPILER)
   set(EMBEDDED_COMPILER_TESTS test_embedded_compiler.cpp)
-endif ()
+endif()
+
+if(ENABLE_BUILDINGS_LIBRARY)
+  set(MBL_TESTS
+    create_epfmu.hpp
+    create_epfmu.cpp
+    test_epfmi.cpp
+    test_example_files.cpp
+    test_spawn_cli.cpp
+    test_spawn_lib.cpp
+    test_temp_directory.cpp
+    test_unzip_file.cpp
+    test_floating_zone.cpp
+    test_single_family_house.cpp
+    test_fmi.cpp
+    test_utils.cpp
+    test_mbl_idf.cpp
+    test_infiltration.cpp
+    test_run_period.cpp
+    test_simulate.cpp
+    test_zone_multiplier.cpp
+    test_zone_capacitance_multiplier.cpp
+  )
+endif()
 
 add_executable(
   tests
   catch.cpp
-  create_epfmu.hpp
-  create_epfmu.cpp
   paths.hpp
-  test_epfmi.cpp
-  test_example_files.cpp
-  test_spawn_cli.cpp
-  test_spawn_lib.cpp
-  test_temp_directory.cpp
-  test_unzip_file.cpp
-  test_floating_zone.cpp
-  test_single_family_house.cpp
-  test_fmi.cpp
-  test_utils.cpp
-  test_mbl_idf.cpp
-  test_infiltration.cpp
-  test_run_period.cpp
-  test_simulate.cpp
-  test_zone_multiplier.cpp
-  test_zone_capacitance_multiplier.cpp
+  ${MBL_TESTS}
   ${EMBEDDED_COMPILER_TESTS}
 )
 
 add_dependencies(tests example_fmu_lib)
-target_link_libraries(tests PRIVATE CONAN_PKG::catch2 spawn_mbl spawn_utils fmu libspawn compile_options)
+target_link_libraries(tests PRIVATE Catch2::Catch2 spawn_utils fmu libspawn compile_options)
+
+if (ENABLE_BUILDINGS_LIBRARY)
+  target_link_libraries(tests PRIVATE spawn_mbl)
+endif()
 
 if (ENABLE_COMPILER)
   add_executable(test_compiler test_compiler.cpp)
