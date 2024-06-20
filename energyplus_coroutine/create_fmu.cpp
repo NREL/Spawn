@@ -3,6 +3,7 @@
 #include "idfprep.hpp"
 #include "input/input.hpp"
 #include "modelDescription.xml.hpp"
+#include "util/conversion.hpp"
 #include "util/fmi_paths.hpp"
 #include "util/unique_id.hpp"
 #include "util/ziputil.hpp"
@@ -77,7 +78,8 @@ void energyplus::CreateFMU::operator()() const
   spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
   auto idfjson = idf_to_json(input.idfInputPath());
-  prepare_idf(idfjson, input);
+  auto start_time = StartTime(day_from_string(input.runPeriod.day_of_week_for_start_day), 0.0);
+  prepare_idf(idfjson, input, start_time);
   copyIDFResourceFiles(idfjson, input.idfInputPath().parent_path(), fmuResourcesPath);
   json_to_idf(idfjson, fmuidfPath);
 

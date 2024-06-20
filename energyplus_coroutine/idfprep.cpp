@@ -22,7 +22,7 @@ json &adjustSimulationControl(json &jsonidf)
   return jsonidf;
 }
 
-json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input)
+json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const StartTime &start_time)
 {
   constexpr auto runperiodtype = "RunPeriod";
   // Remove the existing run periods first
@@ -33,9 +33,9 @@ json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input)
   jsonidf[runperiodtype] = {
       {"Spawn-RunPeriod",
        {{"apply_weekend_holiday_rule", input.runPeriod.apply_weekend_holiday_rule},
-        {"begin_day_of_month", 1},
-        {"begin_month", 1},
-        {"begin_year", 2017},
+        {"begin_day_of_month", int(start_time.EnergyPlusEpoch().day())},
+        {"begin_month", int(start_time.EnergyPlusEpoch().month())},
+        {"begin_year", int(start_time.EnergyPlusEpoch().year())},
         {"day_of_week_for_start_day", input.runPeriod.day_of_week_for_start_day},
         {"end_day_of_month", 31},
         {"end_month", 12},
@@ -326,11 +326,11 @@ json &removeInfiltration(json &jsonidf, const Input &input)
   return jsonidf;
 }
 
-void prepare_idf(json &jsonidf, const Input &input)
+void prepare_idf(json &jsonidf, const Input &input, const StartTime &start_time)
 {
   adjustSimulationControl(jsonidf);
   removeUnusedObjects(jsonidf);
-  addRunPeriod(jsonidf, input);
+  addRunPeriod(jsonidf, input, start_time);
   removeInfiltration(jsonidf, input);
   addOtherEquipment(jsonidf, input);
   addRequestedOutputVariables(jsonidf, input);

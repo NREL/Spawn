@@ -2,6 +2,7 @@
 #define idfprep_hh_INCLUDED
 
 #include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "start_time.hpp"
 
 using json = nlohmann::json;
 
@@ -10,7 +11,7 @@ class Input;
 
 // Reduce the jsonidf down to the EnergyPlus features that Spawn depends on,
 // and insert idf content that is required.
-void prepare_idf(json &jsonidf, const Input &input);
+void prepare_idf(json &jsonidf, const Input &input, const StartTime &start_time);
 
 // Validate the jsonidf to ensure that the user input is not requesting something
 // that Spawn does not support, such as zone multipliers.

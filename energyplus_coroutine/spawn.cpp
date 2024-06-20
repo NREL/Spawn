@@ -6,6 +6,7 @@
 #include "idfprep.hpp"
 #include "input/input.hpp"
 #include "output_types.hpp"
+#include "start_time.hpp"
 
 #include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
@@ -14,12 +15,13 @@
 #include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
 
 #include <array>
+#include <boost/date_time/gregorian/gregorian.hpp>
 #include <cmath>
 #include <limits>
 
 namespace spawn {
 
-Spawn::Spawn(std::string t_name, const std::string &t_input, spawn_fs::path t_workingdir)
+Spawn::Spawn(std::string t_name, const std::string &t_input, spawn_fs::path t_workingdir) // NOLINT
     : instanceName(std::move(t_name)), workingdir(std::move(t_workingdir)), input(t_input),
       variables(parseVariables(input))
 {
@@ -33,13 +35,13 @@ void Spawn::start()
     auto idfPath = input.idfInputPath();
     auto idfjson = idf_to_json(idfPath);
 
-    // Skip this step if the .spawn extension is present,
-    // which will indicate that the idf has already been "prepared"
-    if (idfPath.stem().extension() != ".spawn") {
-      prepare_idf(idfjson, input);
-      idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
-      json_to_idf(idfjson, idfPath);
-    }
+    //// Skip this step if the .spawn extension is present,
+    //// which will indicate that the idf has already been "prepared"
+    // if (idfPath.stem().extension() != ".spawn") {
+    prepare_idf(idfjson, input, start_time_);
+    idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+    json_to_idf(idfjson, idfPath);
+    //}
 
     // Will throw an exception if validation fails
     validate_idf(idfjson);
@@ -80,23 +82,21 @@ void Spawn::start()
       }
     };
 
-    requestedTime = 0.0;
+    requested_time_ = start_time_.Seconds();
     sim_thread = std::thread(simulation);
-    // This will make the EnergyPlus simulation thread go through startup/warmup etc
-    // and then go back to waiting
+    // This will make the EnergyPlus simulation thread go through startup/warmup,
+    // and reach the requested start time.
     iterate();
 
     // We might see isRunning return false, before
-    // the EnergyPlus thread is terminated.
+    // the EnergyPlus thread is terminated, therefore this check
+    // will wait for the EnergyPlus thread to finish.
     if (!isRunning()) {
       sim_thread.join();
     }
 
-    // Move to the requested start time
-    // This will throw if EnergyPlus is not running
-    // Because of the previous isRunning check and then join,
-    // EnergyPlus will have shutdown cleanly
-    setTime(m_startTime);
+    // This will make sure that we have a data exchange
+    setTime(start_time_.Seconds());
   }
 }
 
@@ -160,37 +160,32 @@ void Spawn::isRunningCheck() const
 
 double Spawn::startTime() const noexcept
 {
-  return m_startTime;
+  return start_time_.Seconds();
 }
 
-void Spawn::setStartTime(const double time) noexcept
+void Spawn::setStartTime(const double &time) noexcept
 {
-  if (time < 0.0) {
-    // If time is negative then apply an offset from the end of the year
-    // Consider the possibility that time could be more than a year negative
-    // Does not consider leap year
-    constexpr auto secondsInYear = spawn::days_to_seconds(365);
-    m_startTime = secondsInYear - std::fmod(std::abs(time), secondsInYear);
-  } else {
-    // Consider that time could be greater than one year,
-    // for now it is accepted.
-    // Would m_startTime = time % secondsInYear be more correct?
-    m_startTime = time;
-  }
+  start_time_ = StartTime(day_from_string(input.runPeriod.day_of_week_for_start_day), time);
 }
 
-void Spawn::setTime(const double time)
+void Spawn::setTime(const double &time)
 {
   isRunningCheck();
-  requestedTime = time;
+  requested_time_ = time;
   exchange(true);
 
-  if (requestedTime >= nextEventTime()) {
+  if (requested_time_ >= nextEventTime()) {
     iterate();
   }
 }
 
 double Spawn::currentTime() const
+{
+  isRunningCheck();
+  return start_time_.EnergyPlusTimeDifferential() + ElapsedEnergyPlusTime();
+}
+
+double Spawn::ElapsedEnergyPlusTime() const
 {
   isRunningCheck();
   return (sim_state.dataGlobal->SimTimeSteps - 1) * sim_state.dataGlobal->TimeStepZoneSec;
@@ -199,10 +194,10 @@ double Spawn::currentTime() const
 double Spawn::nextEventTime() const
 {
   isRunningCheck();
-  return sim_state.dataGlobal->SimTimeSteps * sim_state.dataGlobal->TimeStepZoneSec;
+  return currentTime() + sim_state.dataGlobal->TimeStepZoneSec;
 }
 
-void Spawn::setValue(const unsigned int index, const double value)
+void Spawn::setValue(const unsigned int index, const double value) // NOLINT
 {
   auto var = variables.find(index);
   if (var != variables.end()) {
@@ -374,14 +369,18 @@ void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
   double newHumidityRatio = humidityRatio + B / C;
 
   // Set the humidity ratio to zero if the zone has been dried out
-  if (newHumidityRatio < 0.0) newHumidityRatio = 0.0;
+  if (newHumidityRatio < 0.0) {
+    newHumidityRatio = 0.0;
+  }
 
   // Check to make sure that is saturated there is condensation in the zone
   // by resetting to saturation conditions.
   const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
       sim_state, ZT(zonenum), 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
 
-  if (newHumidityRatio > wzSat) newHumidityRatio = wzSat;
+  if (newHumidityRatio > wzSat) {
+    newHumidityRatio = wzSat;
+  }
 
   setZoneHumidityRatio(zonenum, newHumidityRatio);
 }
@@ -760,7 +759,7 @@ void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
 
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
-  if (currentTime() >= requestedTime) {
+  if (currentTime() >= requested_time_) {
     // Signal the end of the step
     {
       std::unique_lock<std::mutex> lk(sim_mutex);
