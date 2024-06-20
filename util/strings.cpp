@@ -4,6 +4,13 @@
 
 namespace spawn {
 
+std::string to_lower(const std::string_view s)
+{
+  std::string result(s);
+  std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
+  return result;
+}
+
 bool case_insensitive_compare(const std::string &s1, const std::string &s2)
 {
   return std::equal(begin(s1), end(s1), begin(s2), end(s2), [](const auto lhs, const auto rhs) {

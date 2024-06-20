@@ -6,7 +6,9 @@
 
 namespace spawn {
 
-[[nodiscard]] bool case_insensitive_compare(const std::string &s1, const std::string &s2);
+std::string to_lower(const std::string_view s);
+
+bool case_insensitive_compare(const std::string &s1, const std::string &s2);
 
 // Remove leading whitespace and newlines
 std::string &ltrim(std::string &s);

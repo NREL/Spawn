@@ -142,3 +142,13 @@ target_link_libraries(
   libspawn
   PUBLIC spawn_utils libzip::zip pugixml::pugixml energyplusapi
   PRIVATE compile_options)
+
+add_executable(
+  spawn_energyplus_coroutine_tests
+  test/spawn_energyplus_coroutine_tests.cpp
+  test/test_start_time.cpp
+)
+
+target_link_libraries(spawn_energyplus_coroutine_tests PRIVATE Catch2::Catch2 libspawn)
+
+catch_discover_tests(spawn_energyplus_coroutine_tests TEST_PREFIX "spawn.")

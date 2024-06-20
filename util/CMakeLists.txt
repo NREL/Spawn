@@ -25,6 +25,8 @@ add_library(
   unique_id.cpp
   ziputil.hpp
   ziputil.cpp
+  datetime.hpp
+  datetime.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/config.cxx
 )
 
@@ -35,10 +37,20 @@ target_include_directories(
 
 target_link_libraries(
   spawn_utils
-  PUBLIC libzip::zip fmt::fmt spdlog::spdlog compile_options)
+  PUBLIC Boost::date_time libzip::zip fmt::fmt spdlog::spdlog compile_options)
 
 include(CheckLinkerFlag)
 check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
 if(HAS_FS_FLAG)
   target_link_libraries(spawn_utils PUBLIC stdc++fs)
 endif()
+
+add_executable(
+  spawn_utils_tests
+  test/spawn_utils_tests.cpp
+  test/test_datetime.cpp
+)
+
+target_link_libraries(spawn_utils_tests PRIVATE Catch2::Catch2 spawn_utils)
+
+catch_discover_tests(spawn_utils_tests TEST_PREFIX "spawn.")
