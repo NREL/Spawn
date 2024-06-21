@@ -1,0 +1,8 @@
+eplUI = 78, 78, 1422, 998, , 0, 0, 0, 0, C
+frmAbout = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+crashMessage = 182, 262, 1313, 1182, , 26, 26, 927, 946, C
+frmNewQueue = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+frmRunStatus = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+frmOptions = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+frmDefineViewResults = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+MainModule = 0, 0, 0, 0, C
