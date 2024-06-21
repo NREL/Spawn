@@ -3,6 +3,7 @@
 #include "../util/filesystem.hpp"
 #include "../util/math.hpp"
 #include "../util/temp_directory.hpp"
+#include "create_epfmu.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -15,7 +16,7 @@ const auto idfpath = // NOLINT
 const auto epwpath = // NOLINT
     spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
-std::string spawn_input = fmt::format( // NOLINT
+const std::string spawn_input = fmt::format( // NOLINT
     R"(
   {{
     "version": "0.1",
@@ -24,11 +25,19 @@ std::string spawn_input = fmt::format( // NOLINT
       "weather": "{epwpath}"
     }},
     "model": {{
+      "zones": [
+         {{ "name": "Core_ZN" }}
+      ],
       "outputVariables": [
         {{
           "name":    "Lights Electricity Rate",
           "key":     "Core_ZN_Lights",
           "fmiName": "Core_Zone_Lights_Output"
+        }},
+        {{
+          "name":    "Zone Mean Air Temperature",
+          "key":     "Core_ZN",
+          "fmiName": "Core_ZN_Temp"
         }}
       ],
       "emsActuators": [
@@ -45,6 +54,37 @@ std::string spawn_input = fmt::format( // NOLINT
 )",
     fmt::arg("idfpath", idfpath.generic_string()),
     fmt::arg("epwpath", epwpath.generic_string()));
+
+const std::string spawn_sfh_input = fmt::format( // NOLINT
+    R"(
+  {{
+    "version": "0.1",
+    "EnergyPlus": {{
+      "idf": "{idfpath}",
+      "weather": "{epwpath}"
+    }},
+    "fmu": {{
+        "name": "MyBuilding.fmu",
+        "version": "2.0",
+        "kind"   : "ME"
+    }},
+    "model": {{
+      "zones": [
+         {{ "name": "LIVING ZONE" }},
+         {{ "name": "ATTIC ZONE" }}
+      ],
+      "outputVariables": [
+        {{
+          "name":    "Zone Mean Air Temperature",
+          "key":     "GARAGE ZONE",
+          "fmiName": "GARAGE ZONE Temp"
+        }}
+      ]
+    }}
+  }}
+)",
+    fmt::arg("idfpath", single_family_house_idf_path().generic_string()),
+    fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
 TEST_CASE("Test one Spawn")
 {
@@ -96,20 +136,33 @@ TEST_CASE("Test two Spawns")
 
 TEST_CASE("Test negative start time")
 {
-  // spawn::util::Temp_Directory working_path1{};
-  // spawn::Spawn spawn("spawn1", spawn_input, working_path1.dir());
+  spawn::util::Temp_Directory working_path1{};
+  spawn::util::Temp_Directory working_path2{};
 
-  // double time = spawn::days_to_seconds(1);
-  // spawn.setStartTime(time);
-  // CHECK(spawn.startTime() == Approx(time));
+  spawn::Spawn spawn1("spawn1", spawn_sfh_input, working_path1.dir());
+  spawn::Spawn spawn2("spawn2", spawn_sfh_input, working_path2.dir());
 
-  // time = spawn::days_to_seconds(365) * 2 + spawn::days_to_seconds(1);
-  // spawn.setStartTime(time);
-  // CHECK(spawn.startTime() == Approx(time));
+  spawn1.setStartTime(spawn::days_to_seconds(364));
+  spawn2.setStartTime(spawn::days_to_seconds(-1));
 
-  // time = spawn::days_to_seconds(1) * -1.0;
+  spawn1.start();
+  spawn2.start();
 
-  // time = ((spawn::days_to_seconds(365) * 2) + spawn::days_to_seconds(1)) * -1.0;
-  // spawn.setStartTime(time);
-  // CHECK(spawn.startTime() == Approx(time));
+  auto seconds_in_day = spawn::days_to_seconds(1);
+
+  for (int day = 0; day <= 365; ++day) {
+    spawn1.setTime(spawn1.currentTime() + seconds_in_day);
+    spawn2.setTime(spawn2.currentTime() + seconds_in_day);
+
+    const auto zone_temp_1 = spawn1.getValue("GARAGE ZONE Temp");
+    const auto zone_temp_2 = spawn2.getValue("GARAGE ZONE Temp");
+    CHECK_THAT(zone_temp_1, Catch::Matchers::WithinAbs(zone_temp_2, 0.1));
+
+    // const auto zone_heat_1 = spawn1.getValue("LIVING ZONE_QConSen_flow");
+    // const auto zone_heat_2 = spawn2.getValue("LIVING ZONE_QConSen_flow");
+    // CHECK(zone_heat_1 == Approx(zone_heat_2));
+  }
+
+  spawn1.stop();
+  spawn2.stop();
 }
