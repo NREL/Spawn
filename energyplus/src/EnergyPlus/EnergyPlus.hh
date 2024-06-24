@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -88,10 +88,8 @@ typedef std::int64_t Int64;
 #include <ObjexxFCL/Array2S.fwd.hh>
 #include <ObjexxFCL/Array3D.fwd.hh>
 #include <ObjexxFCL/Array4D.fwd.hh>
-#include <ObjexxFCL/Array5D.fwd.hh>
 #include <ObjexxFCL/MArray1.fwd.hh>
 #include <ObjexxFCL/Omit.hh>
-#include <ObjexxFCL/Optional.fwd.hh>
 #include <ObjexxFCL/Reference.fwd.hh>
 #include <ObjexxFCL/Vector2.fwd.hh>
 #include <ObjexxFCL/Vector3.fwd.hh>
@@ -131,18 +129,8 @@ using ObjexxFCL::Array3D_bool;
 using ObjexxFCL::Array3D_int;
 using ObjexxFCL::Array4D;
 using ObjexxFCL::Array4D_int;
-using ObjexxFCL::Array5D;
 using ObjexxFCL::MArray1;
-using ObjexxFCL::Optional;
-using ObjexxFCL::Optional_bool;
-using ObjexxFCL::Optional_bool_const;
-using ObjexxFCL::Optional_int;
-using ObjexxFCL::Optional_int_const;
-using ObjexxFCL::Optional_string;
-using ObjexxFCL::Optional_string_const;
 using ObjexxFCL::Reference;
-using ObjexxFCL::Reference_bool;
-using ObjexxFCL::Reference_int;
 using ObjexxFCL::Vector2;
 using ObjexxFCL::Vector3;
 using ObjexxFCL::Vector4;
@@ -158,8 +146,6 @@ using ObjexxFCL::Vector4;
 #include <ObjexxFCL/time.hh>
 
 using ObjexxFCL::CEILING;
-using ObjexxFCL::cosd;
-using ObjexxFCL::EPSILON;
 using ObjexxFCL::equali;
 using ObjexxFCL::floop_end;
 using ObjexxFCL::get_environment_variable;
@@ -172,7 +158,6 @@ using ObjexxFCL::HUGE_;
 using ObjexxFCL::index;
 using ObjexxFCL::is_any_of;
 using ObjexxFCL::is_blank;
-using ObjexxFCL::KIND;
 using ObjexxFCL::len;
 using ObjexxFCL::len_trim;
 using ObjexxFCL::lessthani;
@@ -190,17 +175,13 @@ using ObjexxFCL::pow_4;
 using ObjexxFCL::pow_5;
 using ObjexxFCL::pow_6;
 using ObjexxFCL::pow_7;
-using ObjexxFCL::PRECISION;
 using ObjexxFCL::RANDOM_NUMBER;
 using ObjexxFCL::RANDOM_SEED;
-using ObjexxFCL::reshape2;
 using ObjexxFCL::rjustified;
 using ObjexxFCL::root_4;
 using ObjexxFCL::rstrip;
 using ObjexxFCL::scan;
-using ObjexxFCL::SELECTED_INT_KIND;
 using ObjexxFCL::sign;
-using ObjexxFCL::sind;
 using ObjexxFCL::sized;
 using ObjexxFCL::square;
 using ObjexxFCL::strip;

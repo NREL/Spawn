@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -153,7 +153,7 @@ namespace MatrixDataManager {
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
             ++MatNum;
-            UtilityRoutines::IsNameEmpty(state, state.dataIPShortCut->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
+            Util::IsNameEmpty(state, state.dataIPShortCut->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
 
             state.dataMatrixDataManager->MatData(MatNum).Name = state.dataIPShortCut->cAlphaArgs(1);
             NumRows = std::floor(state.dataIPShortCut->rNumericArgs(1));
@@ -162,17 +162,19 @@ namespace MatrixDataManager {
 
             // test
             if (NumElements < 1) {
-                ShowSevereError(state, "GetMatrixInput: for " + cCurrentModuleObject + ": " + state.dataIPShortCut->cAlphaArgs(1));
+                ShowSevereError(state, format("GetMatrixInput: for {}: {}", cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
                 ShowContinueError(state,
-                                  "Check " + state.dataIPShortCut->cNumericFieldNames(1) + " and " + state.dataIPShortCut->cNumericFieldNames(2) +
-                                      " total number of elements in matrix must be 1 or more");
+                                  format("Check {} and {} total number of elements in matrix must be 1 or more",
+                                         state.dataIPShortCut->cNumericFieldNames(1),
+                                         state.dataIPShortCut->cNumericFieldNames(2)));
                 ErrorsFound = true;
             }
             if ((NumNumbers - 2) < NumElements) {
-                ShowSevereError(state, "GetMatrixInput: for " + cCurrentModuleObject + ": " + state.dataIPShortCut->cAlphaArgs(1));
+                ShowSevereError(state, format("GetMatrixInput: for {}: {}", cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
                 ShowContinueError(state,
-                                  "Check input, total number of elements does not agree with " + state.dataIPShortCut->cNumericFieldNames(1) +
-                                      " and " + state.dataIPShortCut->cNumericFieldNames(2));
+                                  format("Check input, total number of elements does not agree with {} and {}",
+                                         state.dataIPShortCut->cNumericFieldNames(1),
+                                         state.dataIPShortCut->cNumericFieldNames(2)));
                 ErrorsFound = true;
             }
             state.dataMatrixDataManager->MatData(MatNum).MatrixType = TwoDimensional;
@@ -207,21 +209,20 @@ namespace MatrixDataManager {
 
         // METHODOLOGY EMPLOYED:
         // inputs name of matrix and returns integer index
-        // currently uses UtilityRoutines::FindItemInList( which is case sensitive
+        // currently uses Util::FindItemInList( which is case sensitive
 
         // Return value
         int MatrixIndexPtr; // Function result
 
         // FUNCTION LOCAL VARIABLE DECLARATIONS:
-        auto &GetMatrixInputFlag = state.dataUtilityRoutines->GetMatrixInputFlag;
 
-        if (GetMatrixInputFlag) {
+        if (state.dataUtilityRoutines->GetMatrixInputFlag) {
             GetMatrixInput(state);
-            GetMatrixInputFlag = false;
+            state.dataUtilityRoutines->GetMatrixInputFlag = false;
         }
 
         if (state.dataMatrixDataManager->NumMats > 0) {
-            MatrixIndexPtr = UtilityRoutines::FindItemInList(MatrixName, state.dataMatrixDataManager->MatData);
+            MatrixIndexPtr = Util::FindItemInList(MatrixName, state.dataMatrixDataManager->MatData);
         } else {
             MatrixIndexPtr = 0;
         }

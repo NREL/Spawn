@@ -9,7 +9,7 @@
 #elseif(APPLE)
 #set(CPACK_GENERATOR "IFW;TGZ")
 #elseif(UNIX)
-#set(CPACK_GENERATOR "STGZ;TGZ")
+#set(CPACK_GENERATOR "IFW;STGZ;TGZ")
 #endif()
 
 # So instead, let's cache the default value we want for the individual options for CPACK_BINARY_<GenName>
@@ -34,24 +34,12 @@ if(UNIX)
     set(CPACK_BINARY_PRODUCTBUILD OFF CACHE BOOL "Recommended OFF")
 
   else()
-    # TODO: Make IFW recommended? Deprecate STGZ?
     set(CPACK_BINARY_IFW ON CACHE BOOL "Enable to build IFW package, which is the recommended method")
     set(CPACK_BINARY_STGZ ON CACHE BOOL "Enable to build a Linux sh installer script, which is the legacy method")
 
     # Unix (non Apple CACHE BOOL) specific option to turn off
     set(CPACK_BINARY_TZ OFF CACHE BOOL "Recommended OFF")
   endif()
-
-  # TODO: the "FORCE" is temporary to avoid people having an existing build directory miss the fact that the recommended method changed
-  # TODO: remove after next release
-  if(UNIX AND NOT APPLE)
-    if(NOT CPACK_BINARY_IFW)
-      set(CPACK_BINARY_STGZ OFF CACHE BOOL "This was the legacy method on Linux, superseded by IFW" FORCE)
-      set(CPACK_BINARY_IFW ON CACHE BOOL "Enable to build IFW package, which is the recommend method" FORCE)
-      message("Switching from STGZ to IFW as the supported generator has changed on Linux")
-    endif()
-  endif()
-  # END TODO
 
   # Tar.gz for inclusion in other programs for eg
   set(CPACK_BINARY_TGZ ON CACHE BOOL "Enable to build a tar.gz package, recommended for an official release")
@@ -203,6 +191,9 @@ endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "" OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}${SYSTEM_VERSION}-${TARGET_ARCH}")
+  if (ENABLE_HARDENED_RUNTIME)
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-HardenedRuntime")
+  endif()
 else()
   set(CPACK_PACKAGE_FILE_NAME
       "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}${SYSTEM_VERSION}-${TARGET_ARCH}-${CMAKE_BUILD_TYPE}")
@@ -246,6 +237,7 @@ install(CODE "execute_process(COMMAND \"${Python_EXECUTABLE}\" \"${PROJECT_SOURC
 install(FILES "${DOCS_OUT}/ExampleFiles-ObjectsLink.html" DESTINATION "./ExampleFiles/" COMPONENT ExampleFiles)
 
 option(BUILD_CHANGELOG "Build a changelog for this package -- requires GITHUB_TOKEN in environment" OFF)
+mark_as_advanced(FORCE BUILD_CHANGELOG)
 if(BUILD_CHANGELOG)
   # build the change log, only if we do have a github token in the environment
   # Watch out! GITHUB_TOKEN could go out of scope by the time install target is run.
@@ -268,6 +260,7 @@ install(FILES "${PROJECT_SOURCE_DIR}/datasets/ASHRAE_2005_HOF_Materials.idf" DES
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/Boilers.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/California_Title_24-2008.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/Chillers.idf" DESTINATION "./DataSets" COMPONENT Datasets)
+install(FILES "${PROJECT_SOURCE_DIR}/datasets/CodeCompliantEquipment.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/CompositeWallConstructions.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/DXCoolingCoil.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/ElectricGenerators.idf" DESTINATION "./DataSets" COMPONENT Datasets)
@@ -286,6 +279,9 @@ install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2016.i
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2017.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2018.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2019.idf" DESTINATION "./DataSets" COMPONENT Datasets)
+install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2020.idf" DESTINATION "./DataSets" COMPONENT Datasets)
+install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2021.idf" DESTINATION "./DataSets" COMPONENT Datasets)
+install(FILES "${PROJECT_SOURCE_DIR}/datasets/LCCusePriceEscalationDataSet2022.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/MoistureMaterials.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/PerfCurves.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/PrecipitationSchedulesUSA.idf" DESTINATION "./DataSets" COMPONENT Datasets)
@@ -299,6 +295,7 @@ install(FILES "${PROJECT_SOURCE_DIR}/datasets/SolarCollectors.idf" DESTINATION "
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/StandardReports.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/SurfaceColorSchemes.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/USHolidays-DST.idf" DESTINATION "./DataSets" COMPONENT Datasets)
+install(FILES "${PROJECT_SOURCE_DIR}/datasets/WaterToAirHeatPumps.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/Window5DataFile.dat" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/WindowBlindMaterials.idf" DESTINATION "./DataSets" COMPONENT Datasets)
 install(FILES "${PROJECT_SOURCE_DIR}/datasets/WindowConstructs.idf" DESTINATION "./DataSets" COMPONENT Datasets)
@@ -353,19 +350,20 @@ install(
 
 # TODO Remove version from file name or generate
 # These files names are stored in variables because they also appear as start menu shortcuts later.
-set(RULES_XLS Rules9-5-0-to-9-6-0.md)
 install(FILES "${PROJECT_SOURCE_DIR}/release/Bugreprt.txt" DESTINATION "./")
 install(FILES "${PROJECT_SOURCE_DIR}/release/favicon.png" DESTINATION "./")
-install(FILES "${PROJECT_SOURCE_DIR}/release/readme.html" DESTINATION "./")
-install(FILES "${PROJECT_SOURCE_DIR}/release/Deprecation.html" DESTINATION "./")
+configure_file("${PROJECT_SOURCE_DIR}/release/readme.in.html" "${PROJECT_BINARY_DIR}/release/readme.html" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/release/readme.html" DESTINATION "./")
+configure_file("${PROJECT_SOURCE_DIR}/release/Deprecation.in.html" "${PROJECT_BINARY_DIR}/release/Deprecation.html" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/release/Deprecation.html" DESTINATION "./")
 if(LINK_WITH_PYTHON)
   install(FILES "${PROJECT_SOURCE_DIR}/release/PythonLicense.txt" DESTINATION "./")
 endif()
-set(CPACK_RESOURCE_FILE_README "${PROJECT_SOURCE_DIR}/release/readme.html")
+set(CPACK_RESOURCE_FILE_README "${PROJECT_BINARY_DIR}/release/readme.html")
 
 install(FILES "${PROJECT_SOURCE_DIR}/bin/CurveFitTools/IceStorageCurveFitTool.xlsm" DESTINATION "PreProcess/HVACCurveFitTool/")
-install(FILES "${PROJECT_SOURCE_DIR}/idd/V9-5-0-Energy+.idd" DESTINATION "PreProcess/IDFVersionUpdater/")
-install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Energy+.idd" DESTINATION "PreProcess/IDFVersionUpdater/" RENAME "V9-6-0-Energy+.idd")
+install(FILES "${PROJECT_SOURCE_DIR}/bin/CurveFitTools/CurveFitTool.xlsm" DESTINATION "PreProcess/HVACCurveFitTool/")
+install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Energy+.idd" DESTINATION "PreProcess/IDFVersionUpdater/" RENAME "V${CMAKE_VERSION_MAJOR}-${CMAKE_VERSION_MINOR}-${CMAKE_VERSION_PATCH}-Energy+.idd")
 
 # Workflow stuff, takes about 40KB, so not worth it proposing to not install it
 install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/app_g_postprocess.py" DESTINATION "workflows/") # COMPONENT Workflows)
@@ -400,7 +398,6 @@ if(WIN32)
   install(FILES "${PROJECT_SOURCE_DIR}/bin/CoeffConv/ReadMe.txt" DESTINATION "PreProcess/CoeffConv/")
   install(FILES "${PROJECT_SOURCE_DIR}/src/Basement/RunBasement.bat" DESTINATION "PreProcess/GrndTempCalc/")
   install(FILES "${PROJECT_SOURCE_DIR}/src/Slab/RunSlab.bat" DESTINATION "PreProcess/GrndTempCalc/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/CurveFitTools/CurveFitTool.xlsm" DESTINATION "PreProcess/HVACCurveFitTool/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFEditor/IDFEditor.exe" DESTINATION "PreProcess/IDFEditor/")
   install(FILES "${PROJECT_SOURCE_DIR}/src/ParametricPreprocessor/RunParam.bat" DESTINATION "PreProcess/ParametricPreprocessor/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/ViewFactorCalculation/readme.txt" DESTINATION "PreProcess/ViewFactorCalculation/")
@@ -451,16 +448,36 @@ if(WIN32)
   install(FILES "${PROJECT_SOURCE_DIR}/src/Slab/slabexample.ger" DESTINATION "PreProcess/GrndTempCalc/")
   install(FILES "${PROJECT_SOURCE_DIR}/src/Slab/slabexample.gtp" DESTINATION "PreProcess/GrndTempCalc/")
   install(FILES "${PROJECT_SOURCE_DIR}/src/Slab/SlabExample.idf" DESTINATION "PreProcess/GrndTempCalc/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Appearance Pak.dll"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Appearance Pakx64.dll"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/RBGUIFramework.dll"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Cryptox64.dll"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/msvcp120.dll"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/GZipx64.dll"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/msvcr120.dll"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Internet Encodingsx64.dll"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Shell.dll"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater Libs/Shellx64.dll"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/icudt65.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/icuin65.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/icuuc65.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/msvcp120.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/msvcp140.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/msvcr120.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/vccorlib140.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/vcruntime140.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/vcruntime140_1.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/XojoGUIFramework64.dll"
+          DESTINATION "PreProcess/IDFVersionUpdater/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Win/IDFVersionUpdater.exe" DESTINATION "PreProcess/IDFVersionUpdater/")
   install(PROGRAMS "${PROJECT_SOURCE_DIR}/bin/EPMacro/Windows/EPMacro.exe" DESTINATION "./")
 
@@ -506,6 +523,7 @@ if(APPLE)
 
   # You need at least one "install(..." command for it to be registered as a component
   install(CODE "MESSAGE(\"Creating symlinks.\")" COMPONENT Symlinks)
+  install(FILES "${PROJECT_SOURCE_DIR}/doc/man/energyplus.1" DESTINATION "./" COMPONENT Symlinks)
 
   # Custom installer icon. Has to be .icns on mac, .ico on windows, not supported on Unix
   set(CPACK_IFW_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/release/ep.icns")
@@ -546,14 +564,24 @@ elseif(UNIX)
   install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/libRBAppearancePak.so"
           DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
 
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBAppearancePak.so"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBAppearancePak64.so"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBShell.so"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBCrypto64.so"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/RBGUIFramework.so"
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBInternetEncodings64.so"
+          DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBShell64.so"
+          DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/XojoGUIFramework64.so"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libc++.so.1"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libGZip64.so"
+          DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBRegEx64.so"
+          DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Resources/appicon_48.png"
+          DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Resources/")
   install(PROGRAMS "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater" DESTINATION "PreProcess/IDFVersionUpdater/")
 
   install(PROGRAMS "${PROJECT_SOURCE_DIR}/bin/EPMacro/Linux/EPMacro" DESTINATION "./")
@@ -565,7 +593,7 @@ elseif(UNIX)
 
   # You need at least one "install(..." command for it to be registered as a component
   install(CODE "MESSAGE(\"Creating symlinks.\")" COMPONENT Symlinks)
-  install(FILES doc/man/energyplus.1 DESTINATION "./")
+  install(FILES "${PROJECT_SOURCE_DIR}/doc/man/energyplus.1" DESTINATION "./" COMPONENT Symlinks)
 endif()
 
 # TODO: Unused now
@@ -630,7 +658,6 @@ if(BUILD_DOCS)
   install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/ModuleDeveloper.pdf" DESTINATION "./Documentation" COMPONENT Documentation)
   install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/OutputDetailsAndExamples.pdf" DESTINATION "./Documentation" COMPONENT Documentation)
   install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/PlantApplicationGuide.pdf" DESTINATION "./Documentation" COMPONENT Documentation)
-  install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/TipsAndTricksUsingEnergyPlus.pdf" DESTINATION "./Documentation" COMPONENT Documentation)
   install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/UsingEnergyPlusForCompliance.pdf" DESTINATION "./Documentation" COMPONENT Documentation)
   install(FILES "${PROJECT_BINARY_DIR}/doc/pdf/index.html" DESTINATION "./Documentation" COMPONENT Documentation)
 else()
@@ -647,6 +674,17 @@ if(WIN32 AND NOT UNIX)
   # Set to TRUE to install the Windows Universal CRT libraries for app-local deployment (e.g. to Windows XP, but apparently needed for Windows 8 too).
   # This is meaningful only with MSVC from Visual Studio 2015 or higher, which is our case
   set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+
+
+  # ConvertInputFormat is added via add_subdirectory, and in there we set CMAKE_INSTALL_OPENMP_LIBRARIES at parent scope already
+  # Otherwise, if either cpgfunctionEP (yes by default) or kiva (no by default) **actually** linked to OpenMP, we need to ship the libs
+  if (NOT ${CMAKE_INSTALL_OPENMP_LIBRARIES} AND (${USE_OpenMP} OR ${ENABLE_OPENMP}))
+    # Need to install vcomp140.dll or similar
+    find_package(OpenMP COMPONENTS CXX)
+    if(OpenMP_CXX_FOUND)
+      set(CMAKE_INSTALL_OPENMP_LIBRARIES TRUE)
+    endif()
+  endif()
 
   include(InstallRequiredSystemLibraries)
   if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)

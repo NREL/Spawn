@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -789,7 +789,8 @@ TEST_F(EnergyPlusFixture, OccupantDiversityManualTest)
         "	autosize,              !- Gross Rated Sensible Heat Ratio",
         "	4.40,                  !- Gross Rated Cooling COP { W / W }",
         "	autosize,              !- Rated Air Flow Rate { m3 / s }",
-        "	,                      !- Rated Evaporator Fan Power Per Volume Flow Rate { W / ( m3 / s ) }",
+        "	,                      !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "	,                      !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
         "	DOAS Mixed Air Outlet, !- Air Inlet Node Name",
         "	DOAS Cooling Coil Outlet,    !- Air Outlet Node Name",
         "	Biquadratic,           !- Total Cooling Capacity Function of Temperature Curve Name",
@@ -808,6 +809,7 @@ TEST_F(EnergyPlusFixture, OccupantDiversityManualTest)
         "	,                      !- Evaporative Condenser Air Flow Rate",
         "	autosize,              !- Evaporative Condenser Pump Rated Power Consumption",
         "	0.0,                   !- Crankcase Heater Capacity",
+        " ,                      !- Crankcase Heater Capacity Function of Temperature Curve Name",
         "	10.0;                  !- Maximum Outdoor DryBulb Temperature for Crankcase Heater Operation",
         " ",
         "Coil:Heating:Fuel,",
@@ -1800,7 +1802,8 @@ TEST_F(EnergyPlusFixture, OccupantDiversityAutoSizeTest)
         "	autosize,              !- Gross Rated Sensible Heat Ratio",
         "	4.40,                  !- Gross Rated Cooling COP { W / W }",
         "	autosize,              !- Rated Air Flow Rate { m3 / s }",
-        "	,                      !- Rated Evaporator Fan Power Per Volume Flow Rate { W / ( m3 / s ) }",
+        "	,                      !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "	,                      !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
         "	DOAS Mixed Air Outlet, !- Air Inlet Node Name",
         "	DOAS Cooling Coil Outlet,    !- Air Outlet Node Name",
         "	Biquadratic,           !- Total Cooling Capacity Function of Temperature Curve Name",
@@ -1819,6 +1822,7 @@ TEST_F(EnergyPlusFixture, OccupantDiversityAutoSizeTest)
         "	,                      !- Evaporative Condenser Air Flow Rate",
         "	autosize,              !- Evaporative Condenser Pump Rated Power Consumption",
         "	0.0,                   !- Crankcase Heater Capacity",
+        " ,                      !- Crankcase Heater Capacity Function of Temperature Curve Name",
         "	10.0;                  !- Maximum Outdoor DryBulb Temperature for Crankcase Heater Operation",
         " ",
         "Coil:Heating:Fuel,",

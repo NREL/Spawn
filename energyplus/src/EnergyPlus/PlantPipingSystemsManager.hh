@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -64,6 +64,8 @@
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 #include <EnergyPlus/GroundTemperatureModeling/GroundTemperatureModelManager.hh>
+#include <EnergyPlus/Plant/Enums.hh>
+#include <EnergyPlus/Plant/PlantLocation.hh>
 #include <EnergyPlus/PlantComponent.hh>
 
 namespace EnergyPlus {
@@ -86,19 +88,24 @@ namespace PlantPipingSystemsManager {
 
     enum class SegmentFlow
     {
+        Invalid = -1,
         IncreasingZ,
-        DecreasingZ
+        DecreasingZ,
+        Num
     };
 
     enum class MeshDistribution
     {
+        Invalid = -1,
         Uniform,
         SymmetricGeometric,
-        Geometric
+        Geometric,
+        Num
     };
 
     enum class RegionType
     {
+        Invalid = -1,
         Pipe,
         BasementWall,
         BasementFloor,
@@ -113,21 +120,25 @@ namespace PlantPipingSystemsManager {
         UnderFloor,
         HorizInsXSide,
         HorizInsZSide,
-        VertInsLowerEdge
+        VertInsLowerEdge,
+        Num
     };
 
     enum class Direction
     {
+        Invalid = -1,
         PositiveY,
         NegativeY,
         PositiveX,
         NegativeX,
         PositiveZ,
-        NegativeZ
+        NegativeZ,
+        Num
     };
 
     enum class PartitionType
     {
+        Invalid = -1,
         BasementWall,
         BasementFloor,
         Pipe,
@@ -140,12 +151,13 @@ namespace PlantPipingSystemsManager {
         UnderFloor,
         HorizInsXSide,
         VertInsLowerEdge,
-        HorizInsZSide
+        HorizInsZSide,
+        Num
     };
 
     enum class CellType
     {
-        Unknown,
+        Invalid = -1,
         Pipe,
         GeneralField,
         GroundSurface,
@@ -157,7 +169,8 @@ namespace PlantPipingSystemsManager {
         Slab,
         HorizInsulation,
         VertInsulation,
-        ZoneGroundInterface
+        ZoneGroundInterface,
+        Num
     };
 
     struct BaseThermalPropertySet
@@ -235,7 +248,7 @@ namespace PlantPipingSystemsManager {
         // Get the XY cross sectional area of the radial cell
         Real64 inline XY_CrossSectArea() const
         {
-            return DataGlobalConstants::Pi * (pow_2(this->OuterRadius) - pow_2(this->InnerRadius));
+            return Constant::Pi * (pow_2(this->OuterRadius) - pow_2(this->InnerRadius));
         }
     };
 
@@ -251,7 +264,7 @@ namespace PlantPipingSystemsManager {
         // Member Constructor
         FluidCellInformation(Real64 const m_PipeInnerRadius, Real64 const m_CellDepth)
         {
-            this->Volume = DataGlobalConstants::Pi * pow_2(m_PipeInnerRadius) * m_CellDepth;
+            this->Volume = Constant::Pi * pow_2(m_PipeInnerRadius) * m_CellDepth;
         }
     };
 
@@ -269,7 +282,7 @@ namespace PlantPipingSystemsManager {
         CartesianPipeCellInformation() = default;
 
         CartesianPipeCellInformation(Real64 GridCellWidth,
-                                     RadialSizing const &PipeSizes,
+                                     EnergyPlus::PlantPipingSystemsManager::RadialSizing PipeSizes,
                                      int NumRadialNodes,
                                      Real64 CellDepth,
                                      Real64 InsulationThickness,
@@ -402,7 +415,7 @@ namespace PlantPipingSystemsManager {
         {
         }
 
-        bool inline contains(PointF const &p) const
+        bool inline contains(EnergyPlus::PlantPipingSystemsManager::PointF p) const
         {
             return ((this->X_min <= p.X) && (p.X < (this->X_min + this->Width)) && (this->Y_min <= p.Y) && (p.Y < (this->Y_min + this->Height)));
         }
@@ -433,7 +446,7 @@ namespace PlantPipingSystemsManager {
         Real64 Z_min = 0.0;
         Real64 Z_max = 0.0;
         Point3DReal Centroid;
-        CellType cellType = CellType::Unknown;
+        CellType cellType = CellType::Invalid;
         std::map<Direction, NeighborInformation> NeighborInfo;
         CartesianPipeCellInformation PipeCellData;
 
@@ -477,7 +490,7 @@ namespace PlantPipingSystemsManager {
 
         Real64 normalArea(Direction direction) const;
 
-        void EvaluateNeighborCoordinates(Direction CurDirection, int &NX, int &NY, int &NZ);
+        void EvaluateNeighborCoordinates(Direction CurDirection, int &NX, int &NY, int &NZ) const;
     };
 
     struct MeshExtents
@@ -635,7 +648,7 @@ namespace PlantPipingSystemsManager {
             return this->Name == a;
         }
 
-        static Segment *factory(EnergyPlusData &state, std::string segmentName);
+        static Segment *factory(EnergyPlusData &state, const std::string &segmentName);
     };
 
     struct Circuit : public PlantComponent
@@ -671,10 +684,7 @@ namespace PlantPipingSystemsManager {
         bool NeedToFindOnPlantLoop = true;
         bool IsActuallyPartOfAHorizontalTrench = false;
         // Location of this pipe circuit in the PlantLoop topology
-        int LoopNum = 0;
-        int LoopSideNum = 0;
-        int BranchNum = 0;
-        int CompNum = 0;
+        PlantLocation plantLoc{};
         ExtendedFluidProperties CurFluidPropertySet; // is_used
         // Variables used to pass information from INIT-type routines to CALC-type routines
         Real64 CurCircuitInletTemp = 23.0;
@@ -692,7 +702,7 @@ namespace PlantPipingSystemsManager {
 
         void initInOutCells(CartesianCell const &in, CartesianCell const &out);
 
-        static PlantComponent *factory(EnergyPlusData &state, int, std::string objectName);
+        static PlantComponent *factory(EnergyPlusData &state, DataPlant::PlantEquipmentType, const std::string &objectName);
 
         void simulate([[maybe_unused]] EnergyPlusData &state,
                       const PlantLocation &calledFromLocation,
@@ -705,7 +715,7 @@ namespace PlantPipingSystemsManager {
             return this->Name == a;
         }
 
-        static Circuit *factory(EnergyPlusData &state, std::string circuit, bool &errorsFound);
+        static Circuit *factory(EnergyPlusData &state, const std::string &circuit, bool &errorsFound);
 
         void oneTimeInit(EnergyPlusData &state) override;
 
@@ -869,17 +879,17 @@ namespace PlantPipingSystemsManager {
                               Real64 DirExtentMax,
                               RegionType DirDirection,
                               bool PartitionsExist,
-                              Optional_int BasementWallXIndex = _,
-                              Optional_int BasementFloorYIndex = _,
-                              Optional_int XIndex = _,
-                              Optional_int XWallIndex = _,
-                              Optional_int InsulationXIndex = _,
-                              Optional_int YIndex = _,
-                              Optional_int YFloorIndex = _,
-                              Optional_int InsulationYIndex = _,
-                              Optional_int ZIndex = _,
-                              Optional_int ZWallIndex = _,
-                              Optional_int InsulationZIndex = _);
+                              ObjexxFCL::Optional_int BasementWallXIndex = _,
+                              ObjexxFCL::Optional_int BasementFloorYIndex = _,
+                              ObjexxFCL::Optional_int XIndex = _,
+                              ObjexxFCL::Optional_int XWallIndex = _,
+                              ObjexxFCL::Optional_int InsulationXIndex = _,
+                              ObjexxFCL::Optional_int YIndex = _,
+                              ObjexxFCL::Optional_int YFloorIndex = _,
+                              ObjexxFCL::Optional_int InsulationYIndex = _,
+                              ObjexxFCL::Optional_int ZIndex = _,
+                              ObjexxFCL::Optional_int ZWallIndex = _,
+                              ObjexxFCL::Optional_int InsulationZIndex = _);
 
         void createCellArray(std::vector<Real64> const &XBoundaryPoints,
                              std::vector<Real64> const &YBoundaryPoints,
@@ -889,9 +899,9 @@ namespace PlantPipingSystemsManager {
 
         void setupPipeCircuitInOutCells();
 
-        int getCellWidthsCount(RegionType dir);
+        int getCellWidthsCount(RegionType dir) const;
 
-        void getCellWidths(GridRegion &g, RegionType direction);
+        void getCellWidths(GridRegion &g, RegionType direction) const;
 
         void addNeighborInformation(int X,
                                     int Y,
@@ -911,11 +921,11 @@ namespace PlantPipingSystemsManager {
 
         void UpdateZoneSurfaceTemperatures(EnergyPlusData &state);
 
-        Real64 GetAverageTempByType(EnergyPlusData &state, CellType cellType);
+        Real64 GetAverageTempByType(EnergyPlusData &state, CellType cellType) const;
 
         void InitializeSoilMoistureCalcs();
 
-        void EvaluateSoilRhoCp(Real64 CellTemp, Real64 &rhoCp);
+        void EvaluateSoilRhoCp(Real64 CellTemp, Real64 &rhoCp) const;
 
         void ShiftTemperaturesForNewTimeStep();
 
@@ -923,7 +933,7 @@ namespace PlantPipingSystemsManager {
 
         bool IsConverged_CurrentToPrevIteration();
 
-        bool CheckForOutOfRangeTemps();
+        bool CheckForOutOfRangeTemps() const;
 
         void EvaluateNeighborCharacteristics(
             CartesianCell &ThisCell, Direction CurDirection, Real64 &NeighborTemp, Real64 &Resistance, Real64 &AdiabaticMultiplier);

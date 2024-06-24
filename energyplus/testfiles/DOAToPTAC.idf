@@ -108,7 +108,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,9.6;
+  Version,24.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -1628,60 +1628,60 @@
 
   People,
     SPACE1-1 People 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     11,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   People,
     SPACE2-1 People 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     5,                       !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   People,
     SPACE3-1 People 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     11,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   People,
     SPACE4-1 People 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     5,                       !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   People,
     SPACE5-1 People 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     20,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
@@ -1690,7 +1690,7 @@
 
   Lights,
     SPACE1-1 Lights 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     1584,                    !- Lighting Level {W}
@@ -1704,7 +1704,7 @@
 
   Lights,
     SPACE2-1 Lights 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     684,                     !- Lighting Level {W}
@@ -1718,7 +1718,7 @@
 
   Lights,
     SPACE3-1 Lights 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     1584,                    !- Lighting Level {W}
@@ -1732,7 +1732,7 @@
 
   Lights,
     SPACE4-1 Lights 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     684,                     !- Lighting Level {W}
@@ -1746,7 +1746,7 @@
 
   Lights,
     SPACE5-1 Lights 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     2964,                    !- Lighting Level {W}
@@ -1762,7 +1762,7 @@
 
   ElectricEquipment,
     SPACE1-1 ElecEq 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1056,                    !- Design Level {W}
@@ -1774,7 +1774,7 @@
 
   ElectricEquipment,
     SPACE2-1 ElecEq 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     456,                     !- Design Level {W}
@@ -1786,7 +1786,7 @@
 
   ElectricEquipment,
     SPACE3-1 ElecEq 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1056,                    !- Design Level {W}
@@ -1798,7 +1798,7 @@
 
   ElectricEquipment,
     SPACE4-1 ElecEq 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     456,                     !- Design Level {W}
@@ -1810,7 +1810,7 @@
 
   ElectricEquipment,
     SPACE5-1 ElecEq 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1976,                    !- Design Level {W}
@@ -1824,7 +1824,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE1-1 Infil 1,        !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.0167,                  !- Design Flow Rate {m3/s}
@@ -1838,7 +1838,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE2-1 Infil 1,        !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.00717,                 !- Design Flow Rate {m3/s}
@@ -1852,7 +1852,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE3-1 Infil 1,        !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.0167,                  !- Design Flow Rate {m3/s}
@@ -1866,7 +1866,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE4-1 Infil 1,        !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.00717,                 !- Design Flow Rate {m3/s}
@@ -1880,7 +1880,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE5-1 Infil 1,        !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.031089,                !- Design Flow Rate {m3/s}
@@ -2189,6 +2189,7 @@
     Autosize,                !- Cooling Supply Air Flow Rate {m3/s}
     Autosize,                !- Heating Supply Air Flow Rate {m3/s}
     ,                        !- No Load Supply Air Flow Rate {m3/s}
+    ,                        !- No Load Supply Air Flow Rate Control Set To Low Speed
     0,                       !- Cooling Outdoor Air Flow Rate {m3/s}
     0,                       !- Heating Outdoor Air Flow Rate {m3/s}
     0,                       !- No Load Outdoor Air Flow Rate {m3/s}
@@ -2211,6 +2212,7 @@
     3.0,                     !- Gross Rated Cooling COP {W/W}
     Autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     SPACE1-1 Zone Unit Fan Outlet,  !- Air Inlet Node Name
     SPACE1-1 Cooling Coil Outlet,  !- Air Outlet Node Name
     HPACCoolCapFT,           !- Total Cooling Capacity Function of Temperature Curve Name
@@ -2306,6 +2308,7 @@
     Autosize,                !- Cooling Supply Air Flow Rate {m3/s}
     Autosize,                !- Heating Supply Air Flow Rate {m3/s}
     ,                        !- No Load Supply Air Flow Rate {m3/s}
+    ,                        !- No Load Supply Air Flow Rate Control Set To Low Speed
     0,                       !- Cooling Outdoor Air Flow Rate {m3/s}
     0,                       !- Heating Outdoor Air Flow Rate {m3/s}
     0,                       !- No Load Outdoor Air Flow Rate {m3/s}
@@ -2328,6 +2331,7 @@
     3.0,                     !- Gross Rated Cooling COP {W/W}
     Autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     SPACE2-1 Zone Unit Fan Outlet,  !- Air Inlet Node Name
     SPACE2-1 Cooling Coil Outlet,  !- Air Outlet Node Name
     HPACCoolCapFT,           !- Total Cooling Capacity Function of Temperature Curve Name
@@ -2346,6 +2350,7 @@
     Autosize,                !- Cooling Supply Air Flow Rate {m3/s}
     Autosize,                !- Heating Supply Air Flow Rate {m3/s}
     ,                        !- No Load Supply Air Flow Rate {m3/s}
+    ,                        !- No Load Supply Air Flow Rate Control Set To Low Speed
     0,                       !- Cooling Outdoor Air Flow Rate {m3/s}
     0,                       !- Heating Outdoor Air Flow Rate {m3/s}
     0,                       !- No Load Outdoor Air Flow Rate {m3/s}
@@ -2368,6 +2373,7 @@
     3.0,                     !- Gross Rated Cooling COP {W/W}
     Autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     SPACE3-1 Zone Unit Fan Outlet,  !- Air Inlet Node Name
     SPACE3-1 Cooling Coil Outlet,  !- Air Outlet Node Name
     HPACCoolCapFT,           !- Total Cooling Capacity Function of Temperature Curve Name
@@ -2386,6 +2392,7 @@
     Autosize,                !- Cooling Supply Air Flow Rate {m3/s}
     Autosize,                !- Heating Supply Air Flow Rate {m3/s}
     ,                        !- No Load Supply Air Flow Rate {m3/s}
+    ,                        !- No Load Supply Air Flow Rate Control Set To Low Speed
     0,                       !- Cooling Outdoor Air Flow Rate {m3/s}
     0,                       !- Heating Outdoor Air Flow Rate {m3/s}
     0,                       !- No Load Outdoor Air Flow Rate {m3/s}
@@ -2408,6 +2415,7 @@
     3.0,                     !- Gross Rated Cooling COP {W/W}
     Autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     SPACE4-1 Zone Unit Fan Outlet,  !- Air Inlet Node Name
     SPACE4-1 Cooling Coil Outlet,  !- Air Outlet Node Name
     HPACCoolCapFT,           !- Total Cooling Capacity Function of Temperature Curve Name
@@ -2426,6 +2434,7 @@
     Autosize,                !- Cooling Supply Air Flow Rate {m3/s}
     Autosize,                !- Heating Supply Air Flow Rate {m3/s}
     ,                        !- No Load Supply Air Flow Rate {m3/s}
+    ,                        !- No Load Supply Air Flow Rate Control Set To Low Speed
     0,                       !- Cooling Outdoor Air Flow Rate {m3/s}
     0,                       !- Heating Outdoor Air Flow Rate {m3/s}
     0,                       !- No Load Outdoor Air Flow Rate {m3/s}
@@ -2448,6 +2457,7 @@
     3.0,                     !- Gross Rated Cooling COP {W/W}
     Autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     SPACE5-1 Zone Unit Fan Outlet,  !- Air Inlet Node Name
     SPACE5-1 Cooling Coil Outlet,  !- Air Outlet Node Name
     HPACCoolCapFT,           !- Total Cooling Capacity Function of Temperature Curve Name
@@ -2804,12 +2814,8 @@
     autosize,                !- Nominal Supply Air Flow Rate {m3/s}
     0.7,                     !- Sensible Effectiveness at 100% Heating Air Flow {dimensionless}
     0.65,                    !- Latent Effectiveness at 100% Heating Air Flow {dimensionless}
-    0.750000,                !- Sensible Effectiveness at 75% Heating Air Flow {dimensionless}
-    0.700000,                !- Latent Effectiveness at 75% Heating Air Flow {dimensionless}
     0.7,                     !- Sensible Effectiveness at 100% Cooling Air Flow {dimensionless}
     0.65,                    !- Latent Effectiveness at 100% Cooling Air Flow {dimensionless}
-    0.750000,                !- Sensible Effectiveness at 75% Cooling Air Flow {dimensionless}
-    0.700000,                !- Latent Effectiveness at 75% Cooling Air Flow {dimensionless}
     DOAS Outdoor Air Inlet,  !- Supply Air Inlet Node Name
     DOAS Heat Recovery Supply Outlet,  !- Supply Air Outlet Node Name
     DOAS Relief Air Outlet,  !- Exhaust Air Inlet Node Name
@@ -2821,7 +2827,57 @@
     1.7,                     !- Threshold Temperature {C}
     0.083,                   !- Initial Defrost Time Fraction {dimensionless}
     0.012,                   !- Rate of Defrost Time Fraction Increase {1/K}
-    Yes;                     !- Economizer Lockout
+    Yes,                     !- Economizer Lockout
+    SenEffectivenessTable,   !- Sensible Effectiveness of Heating Air Flow Curve Name
+    LatEffectivenessTable,   !- Latent Effectiveness of Heating Air Flow Curve Name
+    SenEffectivenessTable,   !- Sensible Effectiveness of Cooling Air Flow Curve Name
+    LatEffectivenessTable;   !- Latent Effectiveness of Cooling Air Flow Curve Name
+
+  Table:IndependentVariable,
+    airFlowRatio,  !- Name
+    Linear,                  !- Interpolation Method
+    Linear,                  !- Extrapolation Method
+    0.0,                     !- Minimum Value
+    10.0,                    !- Maximum Value
+    ,                        !- Normalization Reference Value
+    Dimensionless,           !- Unit Type
+    ,                        !- External File Name
+    ,                        !- External File Column Number
+    ,                        !- External File Starting Row Number
+    0.75,                    !- Value 1
+    1.0;                     !- Value 2
+
+  Table:IndependentVariableList,
+    effectiveness_IndependentVariableList,  !- Name
+    airFlowRatio;     !- Independent Variable 1 Name
+
+  Table:Lookup,
+    SenEffectivenessTable,   !- Name
+    effectiveness_IndependentVariableList,  !- Independent Variable List Name
+    DivisorOnly,             !- Normalization Method
+    0.7,                     !- Normalization Divisor
+    0.0,                     !- Minimum Output
+    10.0,                    !- Maximum Output
+    Dimensionless,           !- Output Unit Type
+    ,                        !- External File Name
+    ,                        !- External File Column Number
+    ,                        !- External File Starting Row Number
+    0.75,                    !- Output Value 1
+    0.70;                    !- Output Value 2
+
+  Table:Lookup,
+    LatEffectivenessTable,   !- Name
+    effectiveness_IndependentVariableList,  !- Independent Variable List Name
+    DivisorOnly,             !- Normalization Method
+    0.65,                    !- Normalization Divisor
+    0.0,                     !- Minimum Output
+    10.0,                    !- Maximum Output
+    Dimensionless,           !- Output Unit Type
+    ,                        !- External File Name
+    ,                        !- External File Column Number
+    ,                        !- External File Starting Row Number
+    0.70,                    !- Output Value 1
+    0.65;                    !- Output Value 2
 
 !-   ===========  ALL OBJECTS IN CLASS: CONTROLLER:OUTDOORAIR ===========
 
@@ -2876,9 +2932,9 @@
 !-   ===========  ALL OBJECTS IN CLASS: AIRLOOPHVAC:OUTDOORAIRSYSTEM ===========
 
   AirLoopHVAC:OutdoorAirSystem,
-    DOAS OA System,              !- Name
+    DOAS OA System,          !- Name
     DOAS OA System Controllers,  !- Controller List Name
-    DOAS OA System Equipment;    !- Outdoor Air Equipment List Name
+    DOAS OA System Equipment;!- Outdoor Air Equipment List Name
 
 !-   ===========  ALL OBJECTS IN CLASS: OUTDOORAIR:MIXER ===========
 

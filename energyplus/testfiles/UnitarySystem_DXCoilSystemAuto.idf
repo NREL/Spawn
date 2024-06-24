@@ -100,7 +100,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,9.6;
+  Version,24.1;
 
   Building,
     NONE,                    !- Name
@@ -963,18 +963,18 @@
 
   People,
     WestPeople,              !- Name
-    West Zone,               !- Zone or ZoneList Name
+    West Zone,               !- Zone or ZoneList or Space or SpaceList Name
     Office Occupancy,        !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     3.000000,                !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3000000,               !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     Activity Sch,            !- Activity Level Schedule Name
     3.82E-8,                 !- Carbon Dioxide Generation Rate {m3/s-W}
     ,                        !- Enable ASHRAE 55 Comfort Warnings
-    zoneaveraged,            !- Mean Radiant Temperature Calculation Type
+    EnclosureAveraged,       !- Mean Radiant Temperature Calculation Type
     ,                        !- Surface Name/Angle Factor List Name
     Work Eff Sch,            !- Work Efficiency Schedule Name
     ,                        !- Clothing Insulation Calculation Method
@@ -985,18 +985,18 @@
 
   People,
     EastPeople,              !- Name
-    EAST ZONE,               !- Zone or ZoneList Name
+    EAST ZONE,               !- Zone or ZoneList or Space or SpaceList Name
     Office Occupancy,        !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     3.000000,                !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3000000,               !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     Activity Sch,            !- Activity Level Schedule Name
     3.82E-8,                 !- Carbon Dioxide Generation Rate {m3/s-W}
     ,                        !- Enable ASHRAE 55 Comfort Warnings
-    zoneaveraged,            !- Mean Radiant Temperature Calculation Type
+    EnclosureAveraged,       !- Mean Radiant Temperature Calculation Type
     ,                        !- Surface Name/Angle Factor List Name
     Work Eff Sch,            !- Work Efficiency Schedule Name
     ,                        !- Clothing Insulation Calculation Method
@@ -1007,18 +1007,18 @@
 
   People,
     NorthPeople,             !- Name
-    NORTH ZONE,              !- Zone or ZoneList Name
+    NORTH ZONE,              !- Zone or ZoneList or Space or SpaceList Name
     Office Occupancy,        !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     4.000000,                !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3000000,               !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     Activity Sch,            !- Activity Level Schedule Name
     3.82E-8,                 !- Carbon Dioxide Generation Rate {m3/s-W}
     ,                        !- Enable ASHRAE 55 Comfort Warnings
-    zoneaveraged,            !- Mean Radiant Temperature Calculation Type
+    EnclosureAveraged,       !- Mean Radiant Temperature Calculation Type
     ,                        !- Surface Name/Angle Factor List Name
     Work Eff Sch,            !- Work Efficiency Schedule Name
     ,                        !- Clothing Insulation Calculation Method
@@ -1029,7 +1029,7 @@
 
   Lights,
     EAST ZONE Lights 1,      !- Name
-    EAST ZONE,               !- Zone or ZoneList Name
+    EAST ZONE,               !- Zone or ZoneList or Space or SpaceList Name
     Office Lighting,         !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     1464.375,                !- Lighting Level {W}
@@ -1043,7 +1043,7 @@
 
   Lights,
     NORTH ZONE Lights 1,     !- Name
-    NORTH ZONE,              !- Zone or ZoneList Name
+    NORTH ZONE,              !- Zone or ZoneList or Space or SpaceList Name
     Office Lighting,         !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     878.6252,                !- Lighting Level {W}
@@ -1057,7 +1057,7 @@
 
   ElectricEquipment,
     West Zone ElecEq 1,      !- Name
-    West Zone,               !- Zone or ZoneList Name
+    West Zone,               !- Zone or ZoneList or Space or SpaceList Name
     Intermittent,            !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     2928.751,                !- Design Level {W}
@@ -1069,7 +1069,7 @@
 
   ElectricEquipment,
     EAST ZONE ElecEq 1,      !- Name
-    EAST ZONE,               !- Zone or ZoneList Name
+    EAST ZONE,               !- Zone or ZoneList or Space or SpaceList Name
     Intermittent,            !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1464.375,                !- Design Level {W}
@@ -1081,7 +1081,7 @@
 
   ElectricEquipment,
     NORTH ZONE ElecEq 1,     !- Name
-    NORTH ZONE,              !- Zone or ZoneList Name
+    NORTH ZONE,              !- Zone or ZoneList or Space or SpaceList Name
     Intermittent,            !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     2928.751,                !- Design Level {W}
@@ -1730,6 +1730,7 @@
   Coil:Cooling:DX:CurveFit:Performance,
     Heat Pump ACDXCoil 1 Performance,  !- Name
     ,                        !- Crankcase Heater Capacity {W}
+    ,                        !- Crankcase Heater Capacity Function of Temperature Curve Name
     ,                        !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
     ,                        !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
     ,                        !- Unit Internal Static Air Pressure {Pa}
@@ -1764,6 +1765,7 @@
     3.0,                     !- Gross Cooling COP {W/W}
     1.0,                     !- Active Fraction of Coil Face Area
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     1.0,                     !- Evaporative Condenser Pump Power Fraction
     ,                        !- Evaporative Condenser Effectiveness {dimensionless}
     HPACCoolCapFT,           !- Total Cooling Capacity Modifier Function of Temperature Curve Name
@@ -1783,6 +1785,7 @@
     2.75,                    !- Gross Rated Heating COP {W/W}
     autosize,                !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Supply Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     Heating Coil Air Inlet Node,  !- Air Inlet Node Name
     SuppHeating Coil Air Inlet Node,  !- Air Outlet Node Name
     HPACHeatCapFT,           !- Heating Capacity Function of Temperature Curve Name
@@ -1795,6 +1798,7 @@
     ,                        !- Outdoor Dry-Bulb Temperature to Turn On Compressor {C}
     5.0,                     !- Maximum Outdoor Dry-Bulb Temperature for Defrost Operation {C}
     200.0,                   !- Crankcase Heater Capacity {W}
+    ,                        !- Crankcase Heater Capacity Function of Temperature Curve Name
     10.0,                    !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
     Resistive,               !- Defrost Strategy
     TIMED,                   !- Defrost Control

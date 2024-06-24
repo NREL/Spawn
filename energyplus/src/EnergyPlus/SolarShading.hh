@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -95,7 +95,11 @@ namespace SolarShading {
 
     void InitSolarCalculations(EnergyPlusData &state);
 
+    void checkShadingSurfaceSchedules(EnergyPlusData &state);
+
     void GetShadowingInput(EnergyPlusData &state);
+
+    void checkScheduledSurfacePresent(EnergyPlusData &state);
 
     void AllocateModuleArrays(EnergyPlusData &state);
 
@@ -337,22 +341,6 @@ namespace SolarShading {
 
 struct SolarShadingData : BaseGlobalStruct
 {
-
-    Real64 const SmallIncrement = 1.0e-10; // Small increment added for shading/sunlit area calculations.
-    Real64 const HCMULT = 100000.0;        // Multiplier used to change meters to .01 millimeters for homogeneous coordinates.
-                                    // Homogeneous Coordinates are represented in integers (64 bit). This changes the surface coordinates from meters
-                                    // to .01 millimeters -- making that the resolution for shadowing, polygon clipping, etc.
-    Real64 const sqHCMULT = (HCMULT * HCMULT);        // Square of HCMult used in Homogeneous coordinates
-    Real64 const sqHCMULT_fac = (0.5 / sqHCMULT);     // ( 0.5 / sqHCMULT ) factor
-    Real64 const kHCMULT = (1.0 / (HCMULT * HCMULT)); // half of inverse square of HCMult used in Homogeneous coordinates
-
-    // Parameters for use with the variable OverlapStatus...
-    int const NoOverlap = 1;
-    int const FirstSurfWithinSecond = 2;
-    int const SecondSurfWithinFirst = 3;
-    int const PartialOverlap = 4;
-    int const TooManyVertices = 5;
-    int const TooManyFigures = 6;
     Array1D_string const cOverLapStatus;
     int MaxHCV = 15;             // Maximum number of HC vertices
                                  // (needs to be based on maxnumvertices)
@@ -385,18 +373,18 @@ struct SolarShadingData : BaseGlobalStruct
     Array1D<Real64> SurfMultCircumSolar;        // Contribution to eff sky view factor from circumsolar brightening
     Array1D<Real64> SurfMultHorizonZenith;      // Contribution to eff sky view factor from horizon or zenith brightening
 
-    int FBKSHC;                     // HC location of first back surface
-    int FGSSHC;                     // HC location of first general shadowing surface
-    int FINSHC;                     // HC location of first back surface overlap
-    int FRVLHC;                     // HC location of first reveal surface
-    int FSBSHC;                     // HC location of first subsurface
+    int FBKSHC = 0;                 // HC location of first back surface
+    int FGSSHC = 0;                 // HC location of first general shadowing surface
+    int FINSHC = 0;                 // HC location of first back surface overlap
+    int FRVLHC = 0;                 // HC location of first reveal surface
+    int FSBSHC = 0;                 // HC location of first subsurface
     int LOCHCA = 0;                 // Location of highest data in the HC arrays
-    int NBKSHC;                     // Number of back surfaces in the HC arrays
-    int NGSSHC;                     // Number of general shadowing surfaces in the HC arrays
-    int NINSHC;                     // Number of back surface overlaps in the HC arrays
-    int NRVLHC;                     // Number of reveal surfaces in HC array
-    int NSBSHC;                     // Number of subsurfaces in the HC arrays
-    bool CalcSkyDifShading;         // True when sky diffuse solar shading is
+    int NBKSHC = 0;                 // Number of back surfaces in the HC arrays
+    int NGSSHC = 0;                 // Number of general shadowing surfaces in the HC arrays
+    int NINSHC = 0;                 // Number of back surface overlaps in the HC arrays
+    int NRVLHC = 0;                 // Number of reveal surfaces in HC array
+    int NSBSHC = 0;                 // Number of subsurfaces in the HC arrays
+    bool CalcSkyDifShading = false; // True when sky diffuse solar shading is
     int ShadowingCalcFrequency = 0; // Frequency for Shadowing Calculations
     int ShadowingDaysLeft = 0;      // Days left in current shadowing period
 
@@ -442,10 +430,12 @@ struct SolarShadingData : BaseGlobalStruct
 #ifdef EP_NO_OPENGL
     bool penumbra = false;
 #else
-    std::unique_ptr<Pumbra::Penumbra> penumbra = nullptr;
+    std::unique_ptr<Penumbra::Penumbra> penumbra = nullptr;
+    std::pair<EnergyPlusData *, std::string> LoggerContext;
 #endif
 
     bool GetInputFlag = true;
+    bool anyScheduledShadingSurface = false;
     bool firstTime = true;
     bool debugging = false;
     std::vector<unsigned> penumbraIDs;
@@ -481,8 +471,8 @@ struct SolarShadingData : BaseGlobalStruct
     Array1D<Real64> XVert;
     Array1D<Real64> YVert;
     Array1D<Real64> ZVert;
-    Array1D<Real64> AbsBeamWin;                                                               // Glass layer beam solar absorptance of a window
-    Array1D<Real64> AbsBeamWinEQL = Array1D<Real64>(DataWindowEquivalentLayer::CFSMAXNL + 1); // layers beam solar absorptance of a window
+    Array1D<Real64> SurfWinAbsBeam;                                                               // Glass layer beam solar absorptance of a window
+    Array1D<Real64> SurfWinAbsBeamEQL = Array1D<Real64>(DataWindowEquivalentLayer::CFSMAXNL + 1); // layers beam solar absorptance of a window
     Array1D<Real64> SurfWinExtBeamAbsByShadFac; // Factor for exterior beam radiation absorbed by shade (1/m2) (absorbed radation = beam incident *
                                                 // ExtBeamAbsByShad
     Array1D<Real64> SurfWinIntBeamAbsByShadFac; // Like SurfWinExtBeamAbsByShadFac, but for interior beam radiation.
@@ -558,6 +548,7 @@ struct SolarShadingData : BaseGlobalStruct
         this->ShadowingDaysLeft = 0;      // Days left in current shadowing period
         this->debugging = false;
         this->GetInputFlag = true;
+        this->anyScheduledShadingSurface = false;
         this->firstTime = true;
         this->HCNS.deallocate();
         this->HCNV.deallocate();
@@ -618,8 +609,8 @@ struct SolarShadingData : BaseGlobalStruct
         this->XVert.deallocate();
         this->YVert.deallocate();
         this->ZVert.deallocate();
-        this->AbsBeamWin.deallocate();
-        this->AbsBeamWinEQL = Array1D<Real64>(DataWindowEquivalentLayer::CFSMAXNL + 1);
+        this->SurfWinAbsBeam.deallocate();
+        this->SurfWinAbsBeamEQL = Array1D<Real64>(DataWindowEquivalentLayer::CFSMAXNL + 1);
         this->SurfWinExtBeamAbsByShadFac.deallocate();
         this->SurfWinIntBeamAbsByShadFac.deallocate();
         this->SurfWinTransBmSolar.deallocate();
@@ -652,6 +643,6 @@ struct SolarShadingData : BaseGlobalStruct
     {
     }
 };
-} // namespace EnergyPlus
 
+} // namespace EnergyPlus
 #endif

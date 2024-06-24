@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.17)
+
 # Use ccache if available, has to be before "project()"
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -9,7 +11,14 @@ cmake_policy(SET CMP0048 NEW) # handling project_version_* variables
 
 project(EnergyPlus)
 
-cmake_minimum_required(VERSION 3.17)
+# Raise an error if attempting to compile on macOS older than 10.15 - it does not work
+if (APPLE)
+  if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+    message(FATAL_ERROR "CMAKE_OSX_DEPLOYMENT_TARGET not set. Please set CMAKE_OSX_DEPLOYMENT_TARGET to 10.15 or greater and try again.")
+  elseif (CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.15")
+    message(FATAL_ERROR "The minimum required version for macOS is 10.15, however CMAKE_OSX_DEPLOYMENT_TARGET is set to ${CMAKE_OSX_DEPLOYMENT_TARGET}.")
+  endif()
+endif()
 
 if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_GREATER "3.0")
   cmake_policy(SET CMP0054 NEW) # CMake 3.1 added this policy
@@ -35,15 +44,22 @@ if(ENABLE_PCH)
   target_precompile_headers(
     cpp_pch_files
     INTERFACE
+    "${PROJECT_SOURCE_DIR}/src/EnergyPlus/DataGlobalConstants.hh"
+    "${PROJECT_SOURCE_DIR}/src/EnergyPlus/DataGlobals.hh"
     "${PROJECT_SOURCE_DIR}/src/EnergyPlus/Data/EnergyPlusData.hh"
     "${PROJECT_SOURCE_DIR}/third_party/ObjexxFCL/src/ObjexxFCL/Array.functions.hh"
+    "${PROJECT_SOURCE_DIR}/third_party/ObjexxFCL/src/ObjexxFCL/Array1D.hh"
     "${PROJECT_SOURCE_DIR}/third_party/nlohmann/json.hpp"
     )
 endif()
 
+option(ENABLE_UNITY "Enable Unity Build" OFF)
+
 add_library(project_fp_options INTERFACE)
 
 add_library(project_warnings INTERFACE)
+
+add_library(turn_off_warnings INTERFACE)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
@@ -141,6 +157,11 @@ option(ENABLE_GTEST_DEBUG_MODE "Enable options to help debug test failures" ON)
 option(ENABLE_GTEST_SHUFFLE "Enable shuffle to eliminate order dependency" ON)
 option(ENABLE_INSTALL_REMOTE "Enable install_remote and install_remote_plist commands to install files from remote resources on the internet" ON)
 
+
+if(MSVC AND NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel"))
+  option(ENABLE_HARDENED_RUNTIME "Enable Control Flow Guard and Buffer Security Check" OFF)
+endif()
+
 mark_as_advanced(ENABLE_INSTALL_REMOTE)
 
 # Set a default build type if none was specified
@@ -155,14 +176,26 @@ endif()
 
 # we are making *a Python 3.6 Interpreter* a required dependency, so find it here
 # If LINK_WITH_PYTHON, also request the Development (libs) at the same time, to ensure consistent version between interpreter and Development
+# and ask for at least 3.8 (for the PyConfig stuff).
 if(LINK_WITH_PYTHON)
-  find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
+  # find_package(Python) has the problem that on github actions in particular it'll pick up the most recent python (eg 3.9) from the tool cache
+  # even if you have used the setup-python action and set it to 3.8, so we make the exact version required
+  set(Python_REQUIRED_VERSION "" CACHE STRING "The specific Python version you want to link to (Optional)")
+  set(Python_ROOT_DIR "" CACHE PATH "The path to the root installation of your python version, if you want to explicitly set it (Optional)")
+  mark_as_advanced(Python_REQUIRED_VERSION)
+  mark_as_advanced(Python_ROOT_DIR)
+  if(Python_REQUIRED_VERSION)
+    find_package(Python ${Python_REQUIRED_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
+  else()
+    find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+  endif()
 else()
   find_package(Python 3.6 COMPONENTS Interpreter REQUIRED)
 endif()
 
 if(BUILD_TESTING)
   option(ENABLE_REGRESSION_TESTING "Enable Regression Tests" OFF)
+  option(ENABLE_REVERSE_DD_TESTING "Enable Reverse Design Day Tests" OFF)
   option(BUILD_WCE_TESTING "Build testing targets for Windows Calculation Engine" OFF)
   if(ENABLE_REGRESSION_TESTING)
     if(CMAKE_CL_64)
@@ -233,7 +266,8 @@ add_subdirectory(third_party)
 
 target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party)
-target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/btwxt/src)
+target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/fmt-8.0.1/include)
+target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/btwxt/include)
 target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/re2)
 target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/doj)
 target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/nlohmann)
@@ -259,15 +293,12 @@ set(SAMAPI_EXPORT OFF FORCE)
 if(OPENGL_FOUND)
   target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/penumbra/include)
 endif()
-target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/kiva-ep/src)
+target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/kiva/src)
 target_include_directories(project_options INTERFACE "${kiva_BINARY_DIR}/src/libkiva")
 target_include_directories(project_options SYSTEM INTERFACE "${kiva_SOURCE_DIR}/vendor/boost-1.61.0/")
 
-add_subdirectory(scripts/dev/generate_embeddable_epJSON_schema)
-set_target_properties(generate_embeddedable_epJSON_schema PROPERTIES FOLDER "Internal")
-
-target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/cpgfunctionEP-0.6)
-target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/cpgfunctionEP-0.6/include)
+target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/cpgfunctionEP)
+target_include_directories(project_options INTERFACE ${PROJECT_SOURCE_DIR}/third_party/cpgfunctionEP/include)
 
 if(OPENGL_FOUND)
   set(BUILD_PENUMBRA_TESTING
@@ -278,15 +309,6 @@ endif()
 # E+ required libraries
 add_subdirectory(idd)
 
-execute_process(
-  COMMAND ${Python_EXECUTABLE} "${PROJECT_SOURCE_DIR}/scripts/dev/generate_epJSON_schema/generate_epJSON_schema.py" "${PROJECT_SOURCE_DIR}"
-  TIMEOUT 30
-  RESULT_VARIABLE generate_epJSON_schema_result)
-if(${generate_epJSON_schema_result} MATCHES ".*timeout.*")
-  message(FATAL_ERROR "Generating epJSON Schema from IDD failed: ${generate_epJSON_schema_result}")
-endif()
-configure_file(idd/Energy+.idd.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Energy+.idd")
-configure_file(idd/Energy+.schema.epJSON.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Energy+.schema.epJSON")
 configure_file(idd/BasementGHT.idd "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/BasementGHT.idd")
 configure_file(idd/SlabGHT.idd "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/SlabGHT.idd")
 
@@ -295,13 +317,13 @@ configure_file("workflows/app_g_postprocess.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 configure_file("workflows/calc_soil_surface_temp.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/calc_soil_surface_temp.py")
 configure_file("workflows/coeff_check.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/coeff_check.py")
 configure_file("workflows/coeff_conv.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/coeff_conv.py")
+configure_file("workflows/convert_input_format.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/convert_input_format.py")
 configure_file("workflows/energyplus.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/energyplus.py")
 configure_file("workflows/transition.py" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/workflows/transition.py")
 
 # of course E+ itself
 add_subdirectory(src/EnergyPlus)
 set_target_properties(airflownetworklib PROPERTIES FOLDER "Internal")
-set_target_properties(GenerateEmbeddedEpJSONSchema PROPERTIES FOLDER "Internal")
 set_target_properties(energyplusparser PROPERTIES FOLDER "Internal")
 
 if(BUILD_TESTING)
@@ -314,6 +336,10 @@ if(BUILD_TESTING)
       if(VALGRIND_ANALYZE_PERFORMANCE_TESTS)
         find_program(VALGRIND NAMES valgrind PATH /usr/bin /usr/local/bin)
       endif()
+      option(PERF_STAT_ANALYZE_PERFORMANCE_TESTS "Analyze performance tests via `perf stat`" OFF)
+      if(PERF_STAT_ANALYZE_PERFORMANCE_TESTS)
+        find_program(PERF NAMES perf PATH /usr/bin /usr/local/bin)
+      endif()
     endif()
     add_subdirectory(performance_tests)
   endif()
@@ -323,12 +349,8 @@ if(BUILD_TESTING)
   set_target_properties(TestAPI_Runtime_C PROPERTIES FOLDER Testing)
   set_target_properties(TestAPI_Functional_C PROPERTIES FOLDER Testing)
   set_target_properties(TestEnergyPlusCallbacks PROPERTIES FOLDER Testing)
-
-  set_target_properties(btwxt_tests PROPERTIES FOLDER ThirdParty/Btwxt)
-  set_target_properties(kiva_tests PROPERTIES FOLDER ThirdParty/Kiva)
-  if(OPENGL_FOUND AND BUILD_PENUMBRA_TESTING)
-    set_target_properties(penumbra_tests PROPERTIES FOLDER ThirdParty/Penumbra)
-  endif()
+  set_target_properties(TestAPI_RuntimeDeleteState_C PROPERTIES FOLDER Testing)
+  set_target_properties(TestAPI_RuntimeResetState_C PROPERTIES FOLDER Testing)
 endif()
 
 add_subdirectory(src/ConvertInputFormat)
@@ -352,9 +374,9 @@ if(BUILD_FORTRAN)
     PROJECT Transition
     CMAKE_COMMAND_LINE ${TRANSITION_EXTRA_FLAGS}
     NO_EXTERNAL_INSTALL)
-  file(COPY "idd/V9-5-0-Energy+.idd" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-  configure_file(idd/Energy+.idd.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/V9-6-0-Energy+.idd")
-  file(COPY "src/Transition/SupportFiles/Report Variables 9-5-0 to 9-6-0.csv" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  file(COPY "${PREVIOUS_IDD}" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  configure_file(idd/Energy+.idd.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/V${CMAKE_VERSION_MAJOR}-${CMAKE_VERSION_MINOR}-${CMAKE_VERSION_PATCH}-Energy+.idd")
+  file(COPY "src/Transition/SupportFiles/Report Variables ${PREV_RELEASE_MAJOR}-${PREV_RELEASE_MINOR}-${PREV_RELEASE_PATCH} to ${CMAKE_VERSION_MAJOR}-${CMAKE_VERSION_MINOR}-${CMAKE_VERSION_PATCH}.csv" DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
   cmake_add_fortran_subdirectory(
     src/Basement
     PROJECT Basement
@@ -404,6 +426,7 @@ mark_as_advanced(ENABLE_GTEST_DEBUG_MODE)
 mark_as_advanced(ENABLE_GTEST_SHUFFLE)
 mark_as_advanced(ENABLE_MEMORY_SANITIZER)
 mark_as_advanced(ENABLE_OPENMP)
+mark_as_advanced(USE_OpenMP)
 mark_as_advanced(KIVA_3D)
 mark_as_advanced(KIVA_COVERAGE)
 mark_as_advanced(KIVA_EXE_BUILD)
@@ -431,6 +454,10 @@ mark_as_advanced(FMT_INSTALL)
 mark_as_advanced(FMT_PEDANTIC)
 mark_as_advanced(FMT_TEST)
 mark_as_advanced(FMT_WERROR)
+mark_as_advanced(FMT_DEBUG_POSTFIX)
+mark_as_advanced(FMT_INC_DIR)
+mark_as_advanced(FMT_MODULE)
+mark_as_advanced(FMT_OS)
 mark_as_advanced(GLFW_BUILD_DOCS)
 mark_as_advanced(GLFW_BUILD_EXAMPLES)
 mark_as_advanced(GLFW_BUILD_TESTS)
@@ -449,3 +476,11 @@ mark_as_advanced(USE_PSYCHROMETRICS_CACHING)
 mark_as_advanced(USE_GLYCOL_CACHING)
 mark_as_advanced(USE_PSYCH_STATS)
 mark_as_advanced(USE_PSYCH_ERRORS)
+mark_as_advanced(LSB_RELEASE)
+mark_as_advanced(LIBTK205_BUILD_TESTING)
+mark_as_advanced(libtk205_USE_SUBMODULES)
+mark_as_advanced(ENABLE_SANITIZER_ADDRESS)
+mark_as_advanced(ENABLE_SANITIZER_LEAK)
+mark_as_advanced(ENABLE_SANITIZER_MEMORY)
+mark_as_advanced(ENABLE_SANITIZER_THREAD)
+mark_as_advanced(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR)

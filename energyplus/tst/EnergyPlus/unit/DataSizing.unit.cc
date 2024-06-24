@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -52,9 +52,18 @@
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/EnergyPlusData.hh>
+#include <EnergyPlus/DataEnvironment.hh>
+#include <EnergyPlus/DataHeatBalance.hh>
+#include <EnergyPlus/DataIPShortCuts.hh>
 #include <EnergyPlus/DataSizing.hh>
+#include <EnergyPlus/DataZoneEquipment.hh>
+#include <EnergyPlus/HeatBalanceManager.hh>
+#include <EnergyPlus/InputProcessing/InputProcessor.hh>
+#include <EnergyPlus/SizingManager.hh>
+#include <EnergyPlus/ZoneEquipmentManager.hh>
 
 #include "Fixtures/EnergyPlusFixture.hh"
+#include <nlohmann/json_literals.hpp>
 
 using namespace EnergyPlus;
 
@@ -223,4 +232,309 @@ TEST_F(EnergyPlusFixture, DataSizingTest_resetHVACSizingGlobals)
     // call reset function
     DataSizing::resetHVACSizingGlobals(*state, state->dataSize->CurZoneEqNum, 0, FirstPass);
     EXPECT_FALSE(FirstPass);
+}
+
+TEST_F(EnergyPlusFixture, OARequirements_calcDesignSpecificationOutdoorAir)
+{
+    // Test OARequirements.calcDesignSpecificationOutdoorAir()
+
+    // GetZoneData uses GetObjectItem with ipshortcuts so these need to be allocated
+    int NumAlphas = 4;
+    int NumNumbers = 9;
+    state->dataIPShortCut->lNumericFieldBlanks.allocate(NumNumbers);
+    state->dataIPShortCut->lAlphaFieldBlanks.allocate(NumAlphas);
+    state->dataIPShortCut->cAlphaFieldNames.allocate(NumAlphas);
+    state->dataIPShortCut->cNumericFieldNames.allocate(NumNumbers);
+    state->dataIPShortCut->cAlphaArgs.allocate(NumAlphas);
+    state->dataIPShortCut->rNumericArgs.allocate(NumNumbers);
+    state->dataIPShortCut->lNumericFieldBlanks = false;
+    state->dataIPShortCut->lAlphaFieldBlanks = false;
+    state->dataIPShortCut->cAlphaFieldNames = " ";
+    state->dataIPShortCut->cNumericFieldNames = " ";
+    state->dataIPShortCut->cAlphaArgs = " ";
+    state->dataIPShortCut->rNumericArgs = 0.0;
+
+    // Original method of initializing epJSON input objects, but couldn't get this to work for extensible arrays
+    // state->dataInputProcessing->inputProcessor->epJSON["Zone"]["Zone 1"] = {};
+    // state->dataInputProcessing->inputProcessor->epJSON["Zone"]["Zone 2"] = {};
+    // state->dataInputProcessing->inputProcessor->epJSON["Space"]["Space 1a"] = {{"zone_name", "Zone 1"}};
+
+    // Using R_json raw string parsing to get the arrays processed correctly
+    // Reference https://github.com/nlohmann/json#json-as-first-class-data-type
+    state->dataInputProcessing->inputProcessor->epJSON = R"(
+    {
+        "Zone": {
+            "Zone 1" : {
+                 "volume": 1200.0,
+                 "floor_area": 400.0
+            },
+            "Zone 2" : {
+                 "volume": 1200.0,
+                 "floor_area": 400.0
+            }
+        },
+        "Space": {
+            "Space 1a" : {
+                 "zone_name": "Zone 1",
+                 "floor_area": 100.0
+            },
+            "Space 1b" : {
+                 "zone_name": "Zone 1",
+                 "floor_area": 100.0
+            },
+            "Space 1c" : {
+                 "zone_name": "Zone 1",
+                 "floor_area": 100.0
+            },
+            "Space 1d" : {
+                 "zone_name": "Zone 1",
+                 "floor_area": 100.0
+            }
+        },
+        "DesignSpecification:OutdoorAir": {
+            "DSOA Per Person": {
+                "outdoor_air_flow_per_person": 0.0125,
+                "outdoor_air_method": "Flow/Person"
+            },
+            "DSOA Per Area": {
+                "outdoor_air_flow_per_zone_floor_area": 0.001,
+                "outdoor_air_method": "Flow/Area"
+            },
+            "DSOA Per Zone": {
+                "outdoor_air_flow_per_zone": 1.0,
+                "outdoor_air_method": "Flow/Zone"
+            },
+            "DSOA ACH": {
+                "outdoor_air_flow_air_changes_per_hour": 0.1,
+                "outdoor_air_method": "AirChanges/Hour"
+            },
+            "DSOA Sum": {
+                "outdoor_air_method": "Sum",
+                "outdoor_air_flow_per_person": 0.0125,
+                "outdoor_air_flow_per_zone_floor_area": 0.00025,
+                "outdoor_air_flow_per_zone": 1.0,
+                "outdoor_air_flow_air_changes_per_hour": 0.025
+            }
+        },
+        "DesignSpecification:OutdoorAir:SpaceList": {
+            "DSOA Zone 1 Spaces" : {
+                 "space_specs": [
+                    {
+                        "space_name": "Space 1a",
+                        "space_design_specification_outdoor_air_object_name": "DSOA Per Person"
+                    },
+                    {
+                        "space_name": "Space 1b",
+                        "space_design_specification_outdoor_air_object_name": "DSOA Per Area"
+                    },
+                    {
+                        "space_name": "Space 1c",
+                        "space_design_specification_outdoor_air_object_name": "DSOA Per Zone"
+                    },
+                    {
+                        "space_name": "Space 1d",
+                        "space_design_specification_outdoor_air_object_name": "DSOA ACH"
+                    }
+                ]
+            }
+        }
+    }
+    )"_json;
+
+    state->dataGlobal->isEpJSON = true;
+    state->dataInputProcessing->inputProcessor->initializeMaps();
+
+    bool ErrorsFound = false;
+    HeatBalanceManager::GetZoneData(*state, ErrorsFound);
+    compare_err_stream("");
+    EXPECT_FALSE(ErrorsFound);
+
+    int zoneNum = 1;
+    EXPECT_EQ("ZONE 1", state->dataHeatBal->Zone(zoneNum).Name);
+    EXPECT_EQ(4, state->dataHeatBal->Zone(zoneNum).numSpaces);
+    EXPECT_EQ("SPACE 1A", state->dataHeatBal->space(state->dataHeatBal->Zone(zoneNum).spaceIndexes[0]).Name);
+    EXPECT_EQ("SPACE 1B", state->dataHeatBal->space(state->dataHeatBal->Zone(zoneNum).spaceIndexes[1]).Name);
+    EXPECT_EQ("SPACE 1C", state->dataHeatBal->space(state->dataHeatBal->Zone(zoneNum).spaceIndexes[2]).Name);
+    EXPECT_EQ("SPACE 1D", state->dataHeatBal->space(state->dataHeatBal->Zone(zoneNum).spaceIndexes[3]).Name);
+    zoneNum = 2;
+    EXPECT_EQ("ZONE 2", state->dataHeatBal->Zone(zoneNum).Name);
+    EXPECT_EQ(1, state->dataHeatBal->Zone(zoneNum).numSpaces);
+    EXPECT_EQ("ZONE 2", state->dataHeatBal->space(state->dataHeatBal->Zone(zoneNum).spaceIndexes[0]).Name);
+
+    SizingManager::GetOARequirements(*state);
+    state->dataZoneEquip->ZoneEquipConfig.allocate(state->dataGlobal->numSpaces);
+    ZoneEquipmentManager::SetUpZoneSizingArrays(*state);
+    compare_err_stream("");
+
+    std::string thisOAReqName = "DSOA ZONE 1 SPACES";
+    int oaNum = Util::FindItemInList(thisOAReqName, state->dataSize->OARequirements);
+    EXPECT_TRUE(oaNum > 0);
+    EXPECT_EQ(4, state->dataSize->OARequirements(oaNum).dsoaIndexes.size());
+
+    // Set zone and space occupants
+    state->dataHeatBal->spaceIntGain.allocate(state->dataGlobal->numSpaces);
+    state->dataHeatBal->ZoneIntGain.allocate(state->dataGlobal->NumOfZones);
+    std::string thisSpaceName = "SPACE 1A";
+    int spaceNum = Util::FindItemInList(thisSpaceName, state->dataHeatBal->space);
+    state->dataHeatBal->space(spaceNum).FloorArea = 100.0;
+    state->dataHeatBal->space(spaceNum).TotOccupants = 10;
+    state->dataHeatBal->spaceIntGain(spaceNum).NOFOCC = 1;
+    state->dataHeatBal->space(spaceNum).maxOccupants = 12;
+
+    thisSpaceName = "SPACE 1B";
+    spaceNum = Util::FindItemInList(thisSpaceName, state->dataHeatBal->space);
+    state->dataHeatBal->space(spaceNum).FloorArea = 100.0;
+
+    thisSpaceName = "SPACE 1C";
+    spaceNum = Util::FindItemInList(thisSpaceName, state->dataHeatBal->space);
+    state->dataHeatBal->space(spaceNum).FloorArea = 100.0;
+
+    thisSpaceName = "SPACE 1D";
+    spaceNum = Util::FindItemInList(thisSpaceName, state->dataHeatBal->space);
+    state->dataHeatBal->space(spaceNum).FloorArea = 100.0;
+
+    std::string thisZoneName = "ZONE 2";
+    zoneNum = Util::FindItemInList(thisZoneName, state->dataHeatBal->Zone);
+    state->dataHeatBal->Zone(zoneNum).FloorArea = 400.0;
+    state->dataHeatBal->Zone(zoneNum).TotOccupants = 10;
+    state->dataHeatBal->ZoneIntGain(zoneNum).NOFOCC = 1;
+    state->dataHeatBal->Zone(zoneNum).maxOccupants = 12;
+
+    bool UseOccSchFlag = false;
+    bool UseMinOASchFlag = false;
+
+    thisZoneName = "ZONE 1";
+    zoneNum = Util::FindItemInList(thisZoneName, state->dataHeatBal->Zone);
+    state->dataHeatBal->Zone(zoneNum).FloorArea = 400.0;
+    thisOAReqName = "DSOA ZONE 1 SPACES";
+    oaNum = Util::FindItemInList(thisOAReqName, state->dataSize->OARequirements);
+    Real64 zone1OA = DataSizing::calcDesignSpecificationOutdoorAir(*state, oaNum, zoneNum, UseOccSchFlag, UseMinOASchFlag);
+    // 0.0125/person * 10.0 + 0.001/area * 100.0 + 1.0/zone + 0.1ACH * 300.0 / 3600.0;
+    Real64 expectedOA = 0.0125 * 10.0 + 0.001 * 100.0 + 1.0 + 0.1 * 300.0 / 3600.0;
+    EXPECT_EQ(expectedOA, zone1OA);
+
+    thisZoneName = "ZONE 2";
+    zoneNum = Util::FindItemInList(thisZoneName, state->dataHeatBal->Zone);
+    state->dataHeatBal->Zone(zoneNum).FloorArea = 400.0;
+    thisOAReqName = "DSOA SUM";
+    oaNum = Util::FindItemInList(thisOAReqName, state->dataSize->OARequirements);
+    Real64 zone2OA = DataSizing::calcDesignSpecificationOutdoorAir(*state, oaNum, zoneNum, UseOccSchFlag, UseMinOASchFlag);
+    EXPECT_EQ(expectedOA, zone2OA);
+}
+
+TEST_F(EnergyPlusFixture, GetCoilDesFlowT_Test)
+{
+    state->dataEnvrn->StdRhoAir = 1.1;
+    state->dataSize->SysSizInput.allocate(1);
+    state->dataSize->FinalSysSizing.allocate(1);
+    state->dataSize->SysSizPeakDDNum.allocate(1);
+    state->dataSize->SysSizPeakDDNum(1).TimeStepAtTotCoolPk.allocate(2);
+    state->dataSize->SysSizPeakDDNum(1).TimeStepAtSensCoolPk.allocate(2);
+    state->dataSize->CalcSysSizing.allocate(1);
+    state->dataSize->CalcSysSizing(1).SumZoneCoolLoadSeq.allocate(2);
+    state->dataSize->CalcSysSizing(1).CoolZoneAvgTempSeq.allocate(2);
+    state->dataSize->SysSizInput(1).AirPriLoopName = "MyAirloop";
+    state->dataSize->FinalSysSizing(1).AirPriLoopName = "MyAirloop";
+    state->dataSize->FinalSysSizing(1).CoolSupTemp = 12.3;
+    state->dataSize->FinalSysSizing(1).CoolSupHumRat = 0.008;
+    state->dataSize->FinalSysSizing(1).DesCoolVolFlow = 1.0;
+    state->dataSize->FinalSysSizing(1).MassFlowAtCoolPeak = state->dataSize->FinalSysSizing(1).DesCoolVolFlow * state->dataEnvrn->StdRhoAir;
+    state->dataSize->SysSizPeakDDNum(1).TotCoolPeakDD = 1;
+    state->dataSize->SysSizPeakDDNum(1).SensCoolPeakDD = 1;
+    state->dataSize->SysSizPeakDDNum(1).TimeStepAtTotCoolPk(1) = 1;
+    state->dataSize->SysSizPeakDDNum(1).TimeStepAtSensCoolPk(1) = 2;
+    state->dataSize->CalcSysSizing(1).SumZoneCoolLoadSeq(1) = 1000.0;
+    state->dataSize->CalcSysSizing(1).CoolZoneAvgTempSeq(1) = 24.0;
+    state->dataSize->CalcSysSizing(1).SumZoneCoolLoadSeq(2) = 500.0;
+    state->dataSize->CalcSysSizing(1).CoolZoneAvgTempSeq(2) = 22.0;
+    state->dataSize->CalcSysSizing(1).MixTempAtCoolPeak = 30.0;
+    state->dataSize->DataAirFlowUsedForSizing = 0.5;
+
+    int curSysNum = 1;
+    Real64 CpAirStd = 1.1;
+    Real64 DesCoilAirFlow = 0.0;
+    Real64 DesCoilExitTemp = 0.0;
+    Real64 DesCoilExitHumRat = 0.0;
+
+    // design data are used
+    state->dataSize->SysSizInput(1).coolingPeakLoad = DataSizing::PeakLoad::TotalCooling;
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::VAV;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->FinalSysSizing(1).MassFlowAtCoolPeak / state->dataEnvrn->StdRhoAir, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, state->dataSize->FinalSysSizing(1).CoolSupHumRat, 0.00001);
+
+    // design data and DataAirFlowUsedForSizing are used
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::OnOff;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->DataAirFlowUsedForSizing, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, state->dataSize->FinalSysSizing(1).CoolSupHumRat, 0.00001);
+
+    // at high loads DesCoilExitTemp equals design
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::VT;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->FinalSysSizing(1).DesCoolVolFlow, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.008005, 0.00001);
+
+    // at low loads DesCoilExitTemp is higher than design
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    state->dataSize->CalcSysSizing(1).SumZoneCoolLoadSeq(1) = 10.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->FinalSysSizing(1).DesCoolVolFlow, 0.00001);
+    EXPECT_GT(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp);
+    EXPECT_NEAR(DesCoilExitTemp, 15.735537, 0.00001);
+    EXPECT_GT(DesCoilExitHumRat, state->dataSize->FinalSysSizing(1).CoolSupHumRat);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.01003, 0.00001);
+
+    // coil air flow and humrat are calculated
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::Bypass;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, 0.805901, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.008005, 0.00001);
+
+    // design data used, humrat is calculated.
+    // VT and Bypass used sequenced cooling load and zone cooling temp using DD timestep
+    state->dataSize->SysSizInput(1).coolingPeakLoad = DataSizing::PeakLoad::SensibleCooling;
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::VT;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->FinalSysSizing(1).DesCoolVolFlow, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.008005, 0.00001);
+
+    // design data used, humrat is calculated
+    state->dataSize->SysSizInput(1).CoolCapControl = DataSizing::CapacityControl::Bypass;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, state->dataSize->FinalSysSizing(1).DesCoolVolFlow, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.008005, 0.00001);
+
+    // DesCoilAirFlow will be calculated
+    state->dataSize->CalcSysSizing(1).SumZoneCoolLoadSeq(2) = 5.0;
+    DesCoilAirFlow = 0.0;
+    DesCoilExitTemp = 0.0;
+    DesCoilExitHumRat = 0.0;
+    DataSizing::GetCoilDesFlowT(*state, curSysNum, CpAirStd, DesCoilAirFlow, DesCoilExitTemp, DesCoilExitHumRat);
+    EXPECT_NEAR(DesCoilAirFlow, 0.685436, 0.00001);
+    EXPECT_NEAR(DesCoilExitTemp, state->dataSize->FinalSysSizing(1).CoolSupTemp, 0.00001);
+    EXPECT_NEAR(DesCoilExitHumRat, 0.008005, 0.00001);
 }

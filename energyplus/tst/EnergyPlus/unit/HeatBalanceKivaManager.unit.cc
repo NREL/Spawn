@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -194,7 +194,7 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_SetInitialBCs)
     ZoneTempPredictorCorrector::GetZoneAirSetPoints(*state);
 
     state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(DualZoneNum).CTSchedIndex).CurrentValue =
-        DataHVACGlobals::DualSetPointWithDeadBand;
+        static_cast<int>(DataHVACGlobals::ThermostatType::DualSetPointWithDeadBand);
 
     // Test Initial Indoor Temperature input of 15C with Cooling/Heating Setpoints of 24C/20C
 
@@ -208,11 +208,11 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_SetInitialBCs)
 
     Real64 expectedResult1 = kv1.instance.bcs->slabConvectiveTemp;
 
-    EXPECT_NEAR(expectedResult1, zoneAssumedTemperature1 + DataGlobalConstants::KelvinConv, 0.001);
+    EXPECT_NEAR(expectedResult1, zoneAssumedTemperature1 + Constant::Kelvin, 0.001);
 
     // Test using default Initial Indoor Temperature with Cooling/Heating Setpoints of 24C/20C
 
-    Real64 coolingSetpoint2 = 24.0;
+    Real64 heatingSetpoint2 = 20.0;
     Real64 zoneAssumedTemperature2 = -9999;
     HeatBalanceKivaManager::KivaInstanceMap kv2(*state, fnd, 0, {}, 0, zoneAssumedTemperature2, 1.0, 0, &km);
 
@@ -223,14 +223,14 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_SetInitialBCs)
 
     Real64 expectedResult2 = kv2.instance.bcs->slabConvectiveTemp;
 
-    EXPECT_NEAR(expectedResult2, coolingSetpoint2 + DataGlobalConstants::KelvinConv, 0.001);
+    EXPECT_NEAR(expectedResult2, heatingSetpoint2 + Constant::Kelvin, 0.001);
 
     // Test using default Initial Indoor Temperature with Cooling/Heating Setpoints of 100C/-100C
 
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).CoolTempSchedIndex = 4;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).HeatTempSchedIndex = 5;
+    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandCool = 4;
+    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandHeat = 5;
 
-    Real64 coolingSetpoint3 = 100.0;
+    Real64 heatingSetpoint3 = -100.0;
     Real64 zoneAssumedTemperature3 = -9999;
     HeatBalanceKivaManager::KivaInstanceMap kv3(*state, fnd, 0, {}, 0, zoneAssumedTemperature3, 1.0, 0, &km);
 
@@ -241,12 +241,12 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_SetInitialBCs)
 
     Real64 expectedResult3 = kv3.instance.bcs->slabConvectiveTemp;
 
-    EXPECT_NEAR(expectedResult3, coolingSetpoint3 + DataGlobalConstants::KelvinConv, 0.001);
+    EXPECT_NEAR(expectedResult3, heatingSetpoint3 + Constant::Kelvin, 0.001);
 
     // Test Initial Indoor Temperature input of 15C with Cooling/Heating Setpoints of 100C/-100C
 
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).CoolTempSchedIndex = 4;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).HeatTempSchedIndex = 5;
+    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandCool = 4;
+    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandHeat = 5;
 
     Real64 zoneAssumedTemperature4 = 15.0;
     HeatBalanceKivaManager::KivaInstanceMap kv4(*state, fnd, 0, {}, 0, zoneAssumedTemperature4, 1.0, 0, &km);
@@ -258,7 +258,7 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_SetInitialBCs)
 
     Real64 expectedResult4 = kv4.instance.bcs->slabConvectiveTemp;
 
-    EXPECT_NEAR(expectedResult4, zoneAssumedTemperature4 + DataGlobalConstants::KelvinConv, 0.001);
+    EXPECT_NEAR(expectedResult4, zoneAssumedTemperature4 + Constant::Kelvin, 0.001);
 }
 
 TEST_F(EnergyPlusFixture, HeatBalanceKiva_setupKivaInstances_ThermalComfort)
@@ -495,8 +495,9 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_setupKivaInstances_ThermalComfort)
         "  0.1,                     !- Sensible Heat Fraction",
         "  Core_bottom Activity,    !- Activity Level Schedule Name",
         "  3.82e-08,                !- Carbon Dioxide Generation Rate",
+
         "  Yes,                     !- Enable ASHRAE 55 Comfort Warnings",
-        "  ZoneAveraged,            !- Mean Radiant Temperature Calculation Type",
+        "  EnclosureAveraged,            !- Mean Radiant Temperature Calculation Type",
         "  ,                        !- Surface NameAngle Factor List Name",
         "  Work Eff Sched,          !- Work Efficiency Schedule Name",
         "  ClothingInsulationSchedule,  !- Clothing Insulation Calculation Method",
@@ -717,14 +718,14 @@ TEST_F(EnergyPlusFixture, OpaqueSkyCover_InterpretWeatherMissingOpaqueSkyCover)
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
     state->files.inputWeatherFilePath.filePath = configured_source_directory() / "tst/EnergyPlus/unit/Resources/HeatBalanceKivaManagerOSkyTest.epw";
-    state->dataWeatherManager->Missing.OpaqSkyCvr = 5;
+    state->dataWeather->wvarsMissing.OpaqueSkyCover = 5;
 
     HeatBalanceKivaManager::KivaManager km;
     km.readWeatherData(*state);
 
     Real64 TDewK = 264.25;
     Real64 expected_OSky = 5;
-    Real64 expected_ESky = (0.787 + 0.764 * std::log(TDewK / DataGlobalConstants::KelvinConv)) *
+    Real64 expected_ESky = (0.787 + 0.764 * std::log(TDewK / Constant::Kelvin)) *
                            (1.0 + 0.0224 * expected_OSky - 0.0035 * pow_2(expected_OSky) + 0.00028 * pow_3(expected_OSky));
 
     EXPECT_NEAR(expected_ESky, km.kivaWeather.skyEmissivity[0], 0.01);
@@ -802,6 +803,33 @@ TEST_F(EnergyPlusFixture, HeatBalanceKiva_GetAccDate)
 
     // Accelerated date should be greater than 0
     EXPECT_GT(accDate, 0);
+}
+
+TEST_F(EnergyPlusFixture, HeatBalanceKiva_setMessageCallback)
+{
+    // Unit test for Issue #9309
+
+    int SurfNum;
+
+    SurfNum = 1;
+    state->dataSurface->Surface.allocate(1);
+    state->dataSurface->Surface(SurfNum).ExtBoundCond = DataSurfaces::KivaFoundation;
+    state->dataSurface->Surface(SurfNum).Name = "Kiva Floor";
+    state->dataSurface->AllHTKivaSurfaceList = {1};
+    HeatBalanceKivaManager::KivaManager km;
+
+    EXPECT_THROW(km.calcKivaSurfaceResults(*state), std::runtime_error);
+
+    std::string const error_string = delimited_string({
+        "   ** Severe  ** Surface=\"Kiva Floor\": The weights of associated Kiva instances do not add to unity--check exposed perimeter values.",
+        "   **  Fatal  ** Kiva: Errors discovered, program terminates.",
+        "   ...Summary of Errors that led to program termination:",
+        "   ..... Reference severe error count=1",
+        "   ..... Last severe error=Surface=\"Kiva Floor\": The weights of associated Kiva instances do not add to "
+        "unity--check exposed perimeter values.",
+    });
+
+    EXPECT_TRUE(compare_err_stream(error_string, true));
 }
 
 } // namespace EnergyPlus

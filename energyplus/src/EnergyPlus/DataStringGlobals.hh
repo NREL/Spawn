@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -82,6 +82,8 @@ namespace DataStringGlobals {
     char constexpr CharSemicolon(';'); // semicolon
     char constexpr CharTab('\t');      // tab
     char constexpr CharSpace(' ');     // space
+    constexpr std::string_view zonePrefix = "Zone";
+    constexpr std::string_view spacePrefix = "Space";
 
     extern std::string const VerString;        // String that represents version information
     extern std::string const MatchVersion;     // String to be matched by Version object
@@ -113,19 +115,15 @@ struct DataStringGlobalsData : BaseGlobalStruct
 
     fs::path outputErrFilePath;
     fs::path eplusADSFilePath;
-    fs::path weatherFilePathNameOnly;
-    fs::path inputFilePath;
+    fs::path inputFilePath; // Full name of file to open, including path `/path/to/myfile.idf`
     fs::path inputIddFilePath;
     fs::path inputEpJSONSchemaFilePath;
-    fs::path idfDirPath;
     fs::path outDirPath;
-    fs::path idfFilePathNameOnly;
-    fs::path inputDirPath;
-    fs::path inputFilePathNameOnly;
+    fs::path inputDirPath;          // `/path/to/`
+    fs::path inputFilePathNameOnly; // `myfile.idf`
     fs::path exeDirectoryPath;
     fs::path ProgramPath;          // Path for Program from INI file
     fs::path CurrentWorkingFolder; // Current working directory for run
-    fs::path FullPath;             // Full name of file to open, including path
 
     std::string IDDVerString;    // Version information from the IDD (line 1)
     std::string CurrentDateTime; // For printing current date and time at start of run
@@ -135,8 +133,6 @@ struct DataStringGlobalsData : BaseGlobalStruct
     {
         outputErrFilePath.clear();
         eplusADSFilePath.clear();
-        idfFilePathNameOnly.clear();
-        idfDirPath.clear();
         outDirPath.clear();
         inputFilePathNameOnly.clear();
         inputDirPath.clear();
@@ -144,8 +140,6 @@ struct DataStringGlobalsData : BaseGlobalStruct
         inputFilePath.clear();
         inputIddFilePath.clear();
         inputEpJSONSchemaFilePath.clear();
-        FullPath.clear();
-        weatherFilePathNameOnly.clear();
         ProgramPath.clear();
         CurrentWorkingFolder.clear();
         CurrentDateTime.clear();

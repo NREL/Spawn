@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
+#include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 
@@ -65,29 +66,12 @@ struct EnergyPlusData;
 
 namespace ExteriorEnergyUse {
 
-    enum class ExteriorFuelUsage
-    {
-        Unknown = 0,
-        ElecUse = 1,
-        GasUse = 2,
-        WaterUse = 3,
-        CoalUse = 4,
-        FuelOil1Use = 5,
-        FuelOil2Use = 6,
-        PropaneUse = 7,
-        GasolineUse = 8,
-        DieselUse = 9,
-        SteamUse = 10,
-        DistrictCoolUse = 11,
-        DistrictHeatUse = 12,
-        OtherFuel1Use = 13,
-        OtherFuel2Use = 14
-    };
-
     enum class LightControlType
     {
-        ScheduleOnly = 1,      // exterior lights only on schedule
-        AstroClockOverride = 2 // exterior lights controlled to turn off during day.
+        Invalid = -1,
+        ScheduleOnly = 1,       // exterior lights only on schedule
+        AstroClockOverride = 2, // exterior lights controlled to turn off during day.
+        Num
     };
 
     struct ExteriorLightUsage
@@ -118,7 +102,7 @@ namespace ExteriorEnergyUse {
     {
         // Members
         std::string Name; // Descriptive name -- will show on reporting
-        ExteriorFuelUsage FuelType;
+        Constant::eFuel FuelType;
         int SchedPtr;       // Can be scheduled
         Real64 DesignLevel; // Design Consumption (Watts, except for Water Equipment)
         Real64 Power;       // Power = DesignLevel * ScheduleValue
@@ -128,7 +112,7 @@ namespace ExteriorEnergyUse {
 
         // Default Constructor
         ExteriorEquipmentUsage()
-            : FuelType(ExteriorFuelUsage::Unknown), SchedPtr(0), DesignLevel(0.0), Power(0.0), CurrentUse(0.0), ManageDemand(false), DemandLimit(0.0)
+            : FuelType(Constant::eFuel::Invalid), SchedPtr(0), DesignLevel(0.0), Power(0.0), CurrentUse(0.0), ManageDemand(false), DemandLimit(0.0)
         {
         }
     };
@@ -136,15 +120,6 @@ namespace ExteriorEnergyUse {
     void ManageExteriorEnergyUse(EnergyPlusData &state);
 
     void GetExteriorEnergyUseInput(EnergyPlusData &state);
-
-    void ValidateFuelType(EnergyPlusData &state,
-                          ExteriorEnergyUse::ExteriorFuelUsage &FuelTypeNumber, // Fuel Type to be set in structure.
-                          std::string const &FuelTypeAlpha,                     // Fuel Type String
-                          std::string &FuelTypeString,                          // Standardized Fuel Type String (for variable naming)
-                          std::string const &CurrentModuleObject,               // object being parsed
-                          std::string const &CurrentField,                      // current field being parsed
-                          std::string const &CurrentName                        // current object name being parsed
-    );
 
     void ReportExteriorEnergyUse(EnergyPlusData &state);
 

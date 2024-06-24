@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -54,10 +54,12 @@
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataBranchAirLoopPlant.hh>
+#include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
 #include <EnergyPlus/PlantComponent.hh>
+#include <EnergyPlus/UtilityRoutines.hh>
 
 namespace EnergyPlus {
 
@@ -95,14 +97,8 @@ namespace PlantChillers {
         Real64 CondVolFlowRate;                 // m**3/s - design nominal water volumetric flow rate through the condenser
         bool CondVolFlowRateWasAutoSized;       // true if previous was autosized
         Real64 CondMassFlowRateMax;             // kg/s - design water mass flow rate through condenser
-        int CWLoopNum;                          // chilled water plant loop index number
-        int CWLoopSideNum;                      // chilled water plant loop side index
-        int CWBranchNum;                        // chilled water plant loop branch index
-        int CWCompNum;                          // chilled water plant loop component index
-        int CDLoopNum;                          // condenser water plant loop index number
-        int CDLoopSideNum;                      // condenser water plant loop side index
-        int CDBranchNum;                        // condenser water plant loop branch index
-        int CDCompNum;                          // condenser water plant loop component index
+        PlantLocation CWPlantLoc;               // chilled water plant loop component index
+        PlantLocation CDPlantLoc;               // condenser water plant loop component index
         Real64 SizFac;                          // sizing factor
         Real64 BasinHeaterPowerFTempDiff;       // Basin heater capacity per degree C below setpoint (W/C)
         Real64 BasinHeaterSetPointTemp;         // Setpoint temperature for basin heater operation (C)
@@ -145,19 +141,18 @@ namespace PlantChillers {
         Real64 CondInletTemp;
         Real64 EvapInletTemp;
         Real64 BasinHeaterConsumption; // Basin heater energy consumption (J)
-        int plantTypeOfNum;
+        DataPlant::PlantEquipmentType ChillerType;
 
         // Default Constructor
         BaseChillerSpecs()
             : MinPartLoadRat(0.0), MaxPartLoadRat(1.0), OptPartLoadRat(1.0), TempDesCondIn(0.0), TempRiseCoef(0.0), TempDesEvapOut(0.0),
               CondenserType(DataPlant::CondenserType::WaterCooled), NomCap(0.0), NomCapWasAutoSized(false), COP(0.0),
-              FlowMode(DataPlant::FlowMode::Unassigned), ModulatedFlowSetToLoop(false), ModulatedFlowErrDone(false), HRSPErrDone(false),
+              FlowMode(DataPlant::FlowMode::Invalid), ModulatedFlowSetToLoop(false), ModulatedFlowErrDone(false), HRSPErrDone(false),
               EvapInletNodeNum(0), EvapOutletNodeNum(0), CondInletNodeNum(0), CondOutletNodeNum(0), EvapVolFlowRate(0.0),
               EvapVolFlowRateWasAutoSized(false), EvapMassFlowRateMax(0.0), CondVolFlowRate(0.0), CondVolFlowRateWasAutoSized(false),
-              CondMassFlowRateMax(0.0), CWLoopNum(0), CWLoopSideNum(0), CWBranchNum(0), CWCompNum(0), CDLoopNum(0), CDLoopSideNum(0), CDBranchNum(0),
-              CDCompNum(0), SizFac(0.0), BasinHeaterPowerFTempDiff(0.0), BasinHeaterSetPointTemp(0.0), BasinHeaterSchedulePtr(0), ErrCount1(0),
-              ErrCount2(0), MsgDataLast(0.0), PrintMessage(false), MsgErrorCount(0), CheckEquipName(true), PossibleSubcooling(false),
-              CondMassFlowIndex(0), FaultyChillerSWTFlag(false), FaultyChillerSWTIndex(0), FaultyChillerSWTOffset(0.0),
+              CondMassFlowRateMax(0.0), CWPlantLoc{}, CDPlantLoc{}, SizFac(0.0), BasinHeaterPowerFTempDiff(0.0), BasinHeaterSetPointTemp(0.0),
+              BasinHeaterSchedulePtr(0), ErrCount1(0), ErrCount2(0), MsgDataLast(0.0), PrintMessage(false), MsgErrorCount(0), CheckEquipName(true),
+              PossibleSubcooling(false), CondMassFlowIndex(0), FaultyChillerSWTFlag(false), FaultyChillerSWTIndex(0), FaultyChillerSWTOffset(0.0),
               FaultyChillerFoulingFlag(false), FaultyChillerFoulingIndex(0), FaultyChillerFoulingFactor(1.0), MyFlag(true), MyEnvrnFlag(true),
               TimeStepSysLast(0.0), CurrentEndTimeLast(0.0), CondMassFlowRate(0.0), EvapMassFlowRate(0.0), CondOutletTemp(0.0),
               EvapOutletTemp(0.0),    // C - evaporator outlet temperature, water side
@@ -170,7 +165,7 @@ namespace PlantChillers {
               HeatRecOutletTemp(0.0), // C - Heat Rec outlet temperature, water side
               AvgCondSinkTemp(0.0),   // condenser temperature value for use in curves [C]
               BasinHeaterPower(0.0),  // Basin heater power (W)
-              Power(0.0), CondInletTemp(0.0), EvapInletTemp(0.0), BasinHeaterConsumption(0.0), plantTypeOfNum(0)
+              Power(0.0), CondInletTemp(0.0), EvapInletTemp(0.0), BasinHeaterConsumption(0.0), ChillerType(DataPlant::PlantEquipmentType::Invalid)
 
         {
         }
@@ -210,17 +205,13 @@ namespace PlantChillers {
         Real64 HeatRecMaxCapacityLimit;            // Capacity limit for Heat recovery, one time calc [W]
         int HeatRecSetPointNodeNum;                // index for system node with the heat recover leaving setpoint
         int HeatRecInletLimitSchedNum;             // index for schedule for the inlet high limit for heat recovery operation
-        int HRLoopNum;                             // heat recovery water plant loop side index
-        int HRLoopSideNum;                         // heat recovery water plant loop side index
-        int HRBranchNum;                           // heat recovery water plant loop branch index
-        int HRCompNum;                             // heat recovery water plant loop component index
+        PlantLocation HRPlantLoc;                  // heat recovery water plant loop component index
         std::string EndUseSubcategory;             // identifier use for the end use subcategory
         Real64 CondOutletHumRat;                   // kg/kg - condenser outlet humditiy ratio, air side
         Real64 ActualCOP;
         Real64 QHeatRecovery;
         Real64 EnergyHeatRecovery;
-        Real64 HeatRecInletTemp;
-        Real64 HeatRecOutletTemp;
+        Real64 HeatRecInletTemp; // (HeatRecOutletTemp is in base already)
         Real64 HeatRecMdot;
         Real64 ChillerCondAvgTemp; // the effective condenser temperature for chiller performance [C]
 
@@ -229,8 +220,8 @@ namespace PlantChillers {
             : CapRatCoef(3, 0.0), PowerRatCoef(3, 0.0), FullLoadCoef(3, 0.0), TempLowLimitEvapOut(0.0), DesignHeatRecVolFlowRate(0.0),
               DesignHeatRecVolFlowRateWasAutoSized(false), DesignHeatRecMassFlowRate(0.0), HeatRecActive(false), HeatRecInletNodeNum(0),
               HeatRecOutletNodeNum(0), HeatRecCapacityFraction(0.0), HeatRecMaxCapacityLimit(0.0), HeatRecSetPointNodeNum(0),
-              HeatRecInletLimitSchedNum(0), HRLoopNum(0), HRLoopSideNum(0), HRBranchNum(0), HRCompNum(0), CondOutletHumRat(0.0), ActualCOP(0.0),
-              QHeatRecovery(0.0), EnergyHeatRecovery(0.0), HeatRecInletTemp(0.0), HeatRecOutletTemp(0.0), HeatRecMdot(0.0), ChillerCondAvgTemp(0.0)
+              HeatRecInletLimitSchedNum(0), HRPlantLoc{}, CondOutletHumRat(0.0), ActualCOP(0.0), QHeatRecovery(0.0), EnergyHeatRecovery(0.0),
+              HeatRecInletTemp(0.0), HeatRecMdot(0.0), ChillerCondAvgTemp(0.0)
         {
         }
 
@@ -251,9 +242,9 @@ namespace PlantChillers {
         void size(EnergyPlusData &state) override;
 
         void calculate(EnergyPlusData &state,
-                       Real64 &MyLoad,                                       // operating load
-                       bool RunFlag,                                         // TRUE when chiller operating
-                       DataBranchAirLoopPlant::ControlTypeEnum EquipFlowCtrl // Flow control mode for the equipment
+                       Real64 &MyLoad,                                   // operating load
+                       bool RunFlag,                                     // TRUE when chiller operating
+                       DataBranchAirLoopPlant::ControlType EquipFlowCtrl // Flow control mode for the equipment
         );
 
         void update(EnergyPlusData &state,
@@ -273,9 +264,8 @@ namespace PlantChillers {
 
     struct EngineDrivenChillerSpecs : BaseChillerSpecs
     {
-        // Members
-        std::string FuelType; // Type of Fuel - DIESEL, GASOLINE, GAS
         // temperature at the chiller evaporator side outlet
+        Constant::eFuel FuelType;
         Array1D<Real64> CapRatCoef;                // (EngineDriven RCAVC() ) coeff of cap ratio poly fit
         Array1D<Real64> PowerRatCoef;              // (EngineDriven ADJEC() ) coeff of power rat poly fit
         Array1D<Real64> FullLoadCoef;              // (EngineDriven RPWRC() ) coeff of full load poly. fit
@@ -299,10 +289,7 @@ namespace PlantChillers {
         int HeatRecOutletNodeNum;                  // Node number on the heat recovery outlet side of the condenser
         Real64 HeatRecCapacityFraction;            // user input for heat recovery capacity fraction []
         Real64 HeatRecMaxTemp;                     // Max Temp that can be produced in heat recovery
-        int HRLoopNum;                             // heat recovery water plant loop side index
-        int HRLoopSideNum;                         // heat recovery water plant loop side index
-        int HRBranchNum;                           // heat recovery water plant loop branch index
-        int HRCompNum;                             // heat recovery water plant loop component index
+        PlantLocation HRPlantLoc;                  // heat recovery water plant loop component index
 
         // engine driven:
         Real64 HeatRecInletTemp;    // Inlet Temperature of the heat recovery fluid
@@ -320,9 +307,8 @@ namespace PlantChillers {
         Real64 FuelMdot;            // Fuel Amount used (Kg/s)
         Real64 ExhaustStackTemp;    // Exhaust Stack Temperature (C)
 
-        Real64 HeatRecOutletTemp; // Heat Recovery Loop Outlet Temperature (C)
-        Real64 HeatRecMdot;       // Heat Recovery Loop Mass flow rate (kg/s)
-        Real64 FuelCOP;           // Fuel COP [delivered cooling rate/fuel energy input rate] (W/W)
+        Real64 HeatRecMdot; // Heat Recovery Loop Mass flow rate (kg/s)
+        Real64 FuelCOP;     // Fuel COP [delivered cooling rate/fuel energy input rate] (W/W)
 
         // Default Constructor
         EngineDrivenChillerSpecs()
@@ -330,13 +316,12 @@ namespace PlantChillers {
               RecJacHeattoFuelCurve(0), RecLubeHeattoFuelCurve(0), TotExhausttoFuelCurve(0), ExhaustTemp(0.0), ExhaustTempCurve(0), UA(0.0),
               UACoef(2, 0.0), MaxExhaustperPowerOutput(0.0), DesignMinExitGasTemp(0.0), FuelHeatingValue(0.0), DesignHeatRecVolFlowRate(0.0),
               DesignHeatRecVolFlowRateWasAutoSized(false), DesignHeatRecMassFlowRate(0.0), HeatRecActive(false), HeatRecInletNodeNum(0),
-              HeatRecOutletNodeNum(0), HeatRecCapacityFraction(0.0), HeatRecMaxTemp(0.0), HRLoopNum(0), HRLoopSideNum(0), HRBranchNum(0),
-              HRCompNum(0), HeatRecInletTemp(0.0), HeatRecMdotActual(0.0), QTotalHeatRecovered(0.0), QJacketRecovered(0.0),
+              HeatRecOutletNodeNum(0), HeatRecCapacityFraction(0.0), HeatRecMaxTemp(0.0), HRPlantLoc{}, HeatRecInletTemp(0.0), HeatRecMdotActual(0.0),
+              QTotalHeatRecovered(0.0), QJacketRecovered(0.0),
 
               // engine driven:
               QLubeOilRecovered(0.0), QExhaustRecovered(0.0), FuelEnergyUseRate(0.0), TotalHeatEnergyRec(0.0), JacketEnergyRec(0.0),
-              LubeOilEnergyRec(0.0), ExhaustEnergyRec(0.0), FuelEnergy(0.0), FuelMdot(0.0), ExhaustStackTemp(0.0), HeatRecOutletTemp(0.0),
-              HeatRecMdot(0.0), FuelCOP(0.0)
+              LubeOilEnergyRec(0.0), ExhaustEnergyRec(0.0), FuelEnergy(0.0), FuelMdot(0.0), ExhaustStackTemp(0.0), HeatRecMdot(0.0), FuelCOP(0.0)
         {
         }
 
@@ -357,9 +342,9 @@ namespace PlantChillers {
         void size(EnergyPlusData &state) override;
 
         void calculate(EnergyPlusData &state,
-                       Real64 &MyLoad,                                       // operating load
-                       bool RunFlag,                                         // TRUE when chiller operating
-                       DataBranchAirLoopPlant::ControlTypeEnum EquipFlowCtrl // Flow control mode for the equipment
+                       Real64 &MyLoad,                                   // operating load
+                       bool RunFlag,                                     // TRUE when chiller operating
+                       DataBranchAirLoopPlant::ControlType EquipFlowCtrl // Flow control mode for the equipment
         );
 
         void calcHeatRecovery(EnergyPlusData &state,
@@ -378,7 +363,7 @@ namespace PlantChillers {
     struct GTChillerSpecs : BaseChillerSpecs
     {
         // Members
-        std::string FuelType;         // Type of Fuel - DIESEL, GASOLINE, GAS
+        Constant::eFuel FuelType;
         Array1D<Real64> CapRatCoef;   // (GT RCAVC() ) coeff of cap ratio poly fit
         Array1D<Real64> PowerRatCoef; // (GT ADJEC() ) coeff of power rat poly fit
         Array1D<Real64> FullLoadCoef; // (GT RPWRC() ) coeff of full load poly. fit
@@ -405,8 +390,7 @@ namespace PlantChillers {
         Real64 ExhaustStackTemp;                   // Temperature of Exhaust Gases
         int HeatRecInletNodeNum;                   // Node number on the heat recovery inlet side of the condenser
         int HeatRecOutletNodeNum;                  // Node number on the heat recovery outlet side of the condenser
-        Real64 HeatRecInletTemp;                   // Inlet Temperature of the heat recovery fluid
-        Real64 HeatRecOutletTemp;                  // Outlet Temperature of the heat recovery fluid
+        Real64 HeatRecInletTemp;                   // Inlet Temperature of the heat recovery fluid (HeatRecOutletTemp is in base already)
         Real64 HeatRecMdot;                        // Heat Recovery Loop Mass flow rate
         Real64 DesignHeatRecVolFlowRate;           // m3/s, Design Water mass flow rate through heat recovery loop
         bool DesignHeatRecVolFlowRateWasAutoSized; // true if previous field was autosize on input
@@ -416,10 +400,7 @@ namespace PlantChillers {
         Real64 HeatRecCapacityFraction;            // user input for heat recovery capacity fraction []
         Real64 engineCapacityScalar;               // user input for engine efficiency for sizing GTEngineCapacity []
         Real64 HeatRecMaxTemp;                     // Max Temp that can be produced in heat recovery
-        int HRLoopNum;                             // heat recovery water plant loop side index
-        int HRLoopSideNum;                         // heat recovery water plant loop side index
-        int HRBranchNum;                           // heat recovery water plant loop branch index
-        int HRCompNum;                             // heat recovery water plant loop component index
+        PlantLocation HRPlantLoc;                  // heat recovery water plant loop component index
 
         Real64 FuelEnergyUsed;     // Fuel Energy used
         Real64 FuelEnergyUsedRate; // Fuel energy used rate (fuel consumption rate)
@@ -434,10 +415,9 @@ namespace PlantChillers {
               PLBasedExhaustTempCoef(3, 0.0), TempBasedExhaustTempCoef(3, 0.0), HeatRecLubeEnergy(0.0), HeatRecLubeRate(0.0),
               HeatRecLubeEnergyCoef(3, 0.0), UAtoCapRat(0.0), UAtoCapCoef(3, 0.0), GTEngineCapacity(0.0), GTEngineCapacityWasAutoSized(false),
               MaxExhaustperGTPower(0.0), DesignSteamSatTemp(0.0), ExhaustStackTemp(0.0), HeatRecInletNodeNum(0), HeatRecOutletNodeNum(0),
-              HeatRecInletTemp(0.0), HeatRecOutletTemp(0.0), HeatRecMdot(0.0), DesignHeatRecVolFlowRate(0.0),
-              DesignHeatRecVolFlowRateWasAutoSized(false), DesignHeatRecMassFlowRate(0.0), HeatRecActive(false), FuelHeatingValue(0.0),
-              HeatRecCapacityFraction(0.0), engineCapacityScalar(0.35), HeatRecMaxTemp(0.0), HRLoopNum(0), HRLoopSideNum(0), HRBranchNum(0),
-              HRCompNum(0), FuelEnergyUsed(0.0), FuelEnergyUsedRate(0.0), FuelMassUsed(0.0), FuelMassUsedRate(0.0), FuelCOP(0.0)
+              HeatRecInletTemp(0.0), HeatRecMdot(0.0), DesignHeatRecVolFlowRate(0.0), DesignHeatRecVolFlowRateWasAutoSized(false),
+              DesignHeatRecMassFlowRate(0.0), HeatRecActive(false), FuelHeatingValue(0.0), HeatRecCapacityFraction(0.0), engineCapacityScalar(0.35),
+              HeatRecMaxTemp(0.0), HRPlantLoc{}, FuelEnergyUsed(0.0), FuelEnergyUsedRate(0.0), FuelMassUsed(0.0), FuelMassUsedRate(0.0), FuelCOP(0.0)
         {
         }
 
@@ -458,9 +438,9 @@ namespace PlantChillers {
         void size(EnergyPlusData &state) override;
 
         void calculate(EnergyPlusData &state,
-                       Real64 &MyLoad,                                       // operating load
-                       bool RunFlag,                                         // TRUE when chiller operating
-                       DataBranchAirLoopPlant::ControlTypeEnum EquipFlowCtrl // Flow control mode for the equipment
+                       Real64 &MyLoad,                                   // operating load
+                       bool RunFlag,                                     // TRUE when chiller operating
+                       DataBranchAirLoopPlant::ControlType EquipFlowCtrl // Flow control mode for the equipment
         );
 
         void update(EnergyPlusData &state,
@@ -497,13 +477,12 @@ namespace PlantChillers {
 
         void size(EnergyPlusData &state) override;
 
-        void calculate(EnergyPlusData &state, Real64 &MyLoad, bool RunFlag, DataBranchAirLoopPlant::ControlTypeEnum EquipFlowCtrl);
+        void calculate(EnergyPlusData &state, Real64 &MyLoad, bool RunFlag, DataBranchAirLoopPlant::ControlType EquipFlowCtrl);
 
         void update(EnergyPlusData &state, Real64 MyLoad, bool RunFlag);
 
         void oneTimeInit(EnergyPlusData &state) override;
     };
-
 } // namespace PlantChillers
 
 struct PlantChillersData : BaseGlobalStruct

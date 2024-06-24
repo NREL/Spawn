@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,10 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataGlobals.hh>
+#include <EnergyPlus/DataHeatBalance.hh>
+#include <EnergyPlus/DataSizing.hh>
+#include <EnergyPlus/DataZoneEnergyDemands.hh>
+#include <EnergyPlus/DataZoneEquipment.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 
 namespace EnergyPlus {
@@ -67,90 +71,172 @@ namespace ZoneEquipmentManager {
 
     struct SimulationOrder
     {
-        // Members
-        std::string EquipType;
-        int EquipType_Num;
-        std::string EquipName;
-        int EquipPtr;
-        int CoolingPriority;
-        int HeatingPriority;
-
-        // Default Constructor
-        SimulationOrder() : EquipType_Num(0), EquipPtr(0), CoolingPriority(0), HeatingPriority(0)
-        {
-        }
+        std::string EquipTypeName = "";
+        DataZoneEquipment::ZoneEquipType equipType = DataZoneEquipment::ZoneEquipType::Invalid;
+        std::string EquipName = "";
+        int EquipPtr = 0;
+        int CoolingPriority = 0;
+        int HeatingPriority = 0;
     };
 
-    // Functions
-
     void ManageZoneEquipment(EnergyPlusData &state,
-                             bool const FirstHVACIteration,
+                             bool FirstHVACIteration,
                              bool &SimZone, // Set to false at the end of the routine
                              bool &SimAir   // Eventually set to true via SimZoneEquipment if AirLoop must be resimulated
     );
 
     void GetZoneEquipment(EnergyPlusData &state);
 
-    void InitZoneEquipment(EnergyPlusData &state, bool const FirstHVACIteration); // unused 1208
+    void InitZoneEquipment(EnergyPlusData &state, bool FirstHVACIteration); // unused 1208
+
+    void sizeZoneSpaceEquipmentPart1(EnergyPlusData &state,
+                                     DataZoneEquipment::EquipConfiguration &ZoneEquipConfig,
+                                     DataSizing::ZoneSizingData &zsCalcSizing,
+                                     DataZoneEnergyDemands::ZoneSystemSensibleDemand &zsEnergyDemand,
+                                     DataZoneEnergyDemands::ZoneSystemMoistureDemand &zsMoistureDemand,
+                                     DataHeatBalance::ZoneData &zoneOrSpace,
+                                     int zoneNum,
+                                     int spaceNum = 0);
+
+    void sizeZoneSpaceEquipmentPart2(EnergyPlusData &state,
+                                     DataZoneEquipment::EquipConfiguration &zoneEquipConfig,
+                                     DataSizing::ZoneSizingData &zsCalcSizing,
+                                     int zoneNum,
+                                     int spaceNum = 0);
 
     void SizeZoneEquipment(EnergyPlusData &state);
 
     void SetUpZoneSizingArrays(EnergyPlusData &state);
 
+    void fillZoneSizingFromInput(EnergyPlusData &state,
+                                 DataSizing::ZoneSizingInputData const &zoneSizingInput,
+                                 Array2D<DataSizing::ZoneSizingData> &zsSizing,
+                                 Array2D<DataSizing::ZoneSizingData> &zsCalcSizing,
+                                 DataSizing::ZoneSizingData &zsFinalSizing,
+                                 DataSizing::ZoneSizingData &zsCalcFinalSizing,
+                                 std::string_view const zoneOrSpaceName,
+                                 int const zoneOrSpaceNum);
+
     void RezeroZoneSizingArrays(EnergyPlusData &state);
 
-    void UpdateZoneSizing(EnergyPlusData &state, DataGlobalConstants::CallIndicator const CallIndicator);
+    void UpdateZoneSizing(EnergyPlusData &state, Constant::CallIndicator CallIndicator);
 
-    void SimZoneEquipment(EnergyPlusData &state, bool const FirstHVACIteration, bool &SimAir);
+    void updateZoneSizingBeginDay(EnergyPlusData &state, DataSizing::ZoneSizingData &zsCalcSizing);
 
-    void SetZoneEquipSimOrder(EnergyPlusData &state, int const ControlledZoneNum, int const ActualZoneNum);
+    void updateZoneSizingDuringDay(DataSizing::ZoneSizingData &zsSizing,
+                                   DataSizing::ZoneSizingData &zsCalcSizing,
+                                   Real64 const tstatHi,
+                                   Real64 const tstatLo,
+                                   Real64 &sizTstatHi,
+                                   Real64 &sizTstatLo,
+                                   int const timeStepInDay,
+                                   Real64 const fracTimeStepZone);
 
-    void InitSystemOutputRequired(EnergyPlusData &state, int const ZoneNum, bool const FirstHVACIteration, bool const ResetSimOrder = false);
+    void updateZoneSizingEndDayMovingAvg(DataSizing::ZoneSizingData &zsCalcSizing, int const numTimeStepsInAvg);
 
-    void DistributeSystemOutputRequired(EnergyPlusData &state, int const ActualZoneNum, bool const FirstHVACIteration);
+    void updateZoneSizingEndDay(DataSizing::ZoneSizingData &zsCalcSizing,
+                                DataSizing::ZoneSizingData &zsCalcFinalSizing,
+                                int const numTimeStepInDay,
+                                DataSizing::DesDayWeathData const &desDayWeath,
+                                Real64 const stdRhoAir);
 
-    void UpdateSystemOutputRequired(EnergyPlusData &state,
+    void updateZoneSizingEndZoneSizingCalc1(EnergyPlusData &state, DataSizing::ZoneSizingData const &zsCalcSizing);
+
+    void
+    updateZoneSizingEndZoneSizingCalc2(DataSizing::ZoneSizingData &zsCalcSizing, int const timeStepIndex, int const hourPrint, int const minutes);
+
+    void updateZoneSizingEndZoneSizingCalc3(DataSizing::ZoneSizingData &zsCalcFinalSizing,
+                                            Array2D<DataSizing::ZoneSizingData> &zsCalcSizing,
+                                            bool &anyLatentLoad,
+                                            int const zoneOrSpaceNum);
+
+    void updateZoneSizingEndZoneSizingCalc4(DataSizing::ZoneSizingData &zsSizing, DataSizing::ZoneSizingData const &zsCalcSizing);
+
+    void updateZoneSizingEndZoneSizingCalc5(DataSizing::ZoneSizingData &zsFinalSizing, DataSizing::ZoneSizingData const &zsCalcFinalSizing);
+
+    void updateZoneSizingEndZoneSizingCalc6(DataSizing::ZoneSizingData &zsSizing,
+                                            DataSizing::ZoneSizingData const &zsCalcSizing,
+                                            int const numTimeStepsInDay);
+
+    void updateZoneSizingEndZoneSizingCalc7(EnergyPlusData &state,
+                                            DataSizing::ZoneSizingData &zsFinalSizing,
+                                            DataSizing::ZoneSizingData &zsCalcFinalSizing,
+                                            Array2D<DataSizing::ZoneSizingData> &zsSizing,
+                                            Array2D<DataSizing::ZoneSizingData> &zsCalcSizing,
+                                            int const zoneOrSpaceNum);
+
+    void SimZoneEquipment(EnergyPlusData &state, bool FirstHVACIteration, bool &SimAir);
+
+    void SetZoneEquipSimOrder(EnergyPlusData &state, int ControlledZoneNum);
+
+    void InitSystemOutputRequired(EnergyPlusData &state, int ZoneNum, bool FirstHVACIteration, bool ResetSimOrder = false);
+
+    void initOutputRequired(EnergyPlusData &state,
+                            int const ZoneNum,
+                            DataZoneEnergyDemands::ZoneSystemSensibleDemand &energy,
+                            DataZoneEnergyDemands::ZoneSystemMoistureDemand &moisture,
+                            bool const FirstHVACIteration,
+                            bool const ResetSimOrder,
+                            int spaceNum = 0);
+
+    void DistributeSystemOutputRequired(EnergyPlusData &state, int ZoneNum, bool FirstHVACIteration);
+
+    void distributeOutputRequired(EnergyPlusData &state,
+                                  int const ZoneNum,
+                                  DataZoneEnergyDemands::ZoneSystemSensibleDemand &energy,
+                                  DataZoneEnergyDemands::ZoneSystemMoistureDemand &moisture);
+
+    void updateSystemOutputRequired(EnergyPlusData &state,
                                     int const ZoneNum,
-                                    Real64 const SysOutputProvided,         // sensible output provided by zone equipment (W)
-                                    Real64 const LatOutputProvided,         // latent output provided by zone equipment (kg/s)
-                                    Optional_int_const EquipPriorityNum = _ // index in PrioritySimOrder for this update
+                                    Real64 const SysOutputProvided, // sensible output provided by zone equipment (W)
+                                    Real64 const LatOutputProvided, // latent output provided by zone equipment (kg/s)
+                                    DataZoneEnergyDemands::ZoneSystemSensibleDemand &energy,
+                                    DataZoneEnergyDemands::ZoneSystemMoistureDemand &moisture,
+                                    int const EquipPriorityNum = -1 // optional index in PrioritySimOrder for this update
     );
 
-    void CalcZoneMassBalance(EnergyPlusData &state, bool const FirstHVACIteration);
+    void adjustSystemOutputRequired(Real64 const sensibleRatio, // sensible load adjustment
+                                    Real64 const latentRatio,   // latent load adjustment
+                                    DataZoneEnergyDemands::ZoneSystemSensibleDemand &energy,
+                                    DataZoneEnergyDemands::ZoneSystemMoistureDemand &moisture,
+                                    int const equipPriorityNum // index in PrioritySimOrder
+    );
+
+    void CalcZoneMassBalance(EnergyPlusData &state, bool FirstHVACIteration);
 
     void CalcZoneReturnFlows(EnergyPlusData &state,
-                             int const ZoneNum,
+                             int ZoneNum,
                              Real64 &ExpTotalReturnMassFlow,  // Expected total return air mass flow rate
                              Real64 &FinalTotalReturnMassFlow // Final total return air mass flow rate
     );
 
     void CalcZoneInfiltrationFlows(EnergyPlusData &state,
-                                   int const ZoneNum,                // current zone index
+                                   int ZoneNum,                      // current zone index
                                    Real64 &ZoneReturnAirMassFlowRate // zone total zone return air mass flow rate
     );
 
     void CalcAirFlowSimple(EnergyPlusData &state,
-                           int const SysTimestepLoop = 0,                    // System time step index
-                           bool const AdjustZoneMixingFlowFlag = false,      // flags to adjust zone mxing mass flow rate
-                           bool const AdjustZoneInfiltrationFlowFlag = false // flags to djust zone infiltration air flow rate
+                           int SysTimestepLoop = 0,                    // System time step index
+                           bool AdjustZoneMixingFlowFlag = false,      // flags to adjust zone mxing mass flow rate
+                           bool AdjustZoneInfiltrationFlowFlag = false // flags to djust zone infiltration air flow rate
     );
 
-    void GetStandAloneERVNodes(EnergyPlusData &state, int const OutdoorNum); // Zone Air Balance Outdoor index
+    void GetStandAloneERVNodes(EnergyPlusData &state, DataHeatBalance::ZoneAirBalanceData &thisZoneAirBalance);
 
-    void CalcZoneMixingFlowRateOfReceivingZone(EnergyPlusData &state, int const ZoneNum, Real64 &ZoneMixingAirMassFlowRate);
+    void CalcZoneMixingFlowRateOfReceivingZone(EnergyPlusData &state, int ZoneNum, Real64 &ZoneMixingAirMassFlowRate);
 
-    void CalcZoneMixingFlowRateOfSourceZone(EnergyPlusData &state, int const ZoneNum);
+    void CalcZoneMixingFlowRateOfSourceZone(EnergyPlusData &state, int ZoneNum);
 
-    void CalcZoneLeavingConditions(EnergyPlusData &state, bool const FirstHVACIteration);
+    void CalcZoneLeavingConditions(EnergyPlusData &state, bool FirstHVACIteration);
 
     void UpdateZoneEquipment(EnergyPlusData &state, bool &SimAir);
 
     void CalcDOASSupCondsForSizing(EnergyPlusData &state,
-                                   Real64 OutDB,        // outside air temperature [C]
-                                   Real64 OutHR,        // outside humidity ratio [kg Water / kg Dry Air]
-                                   int DOASControl,     // dedicated outside air control strategy
-                                   Real64 DOASLowTemp,  // DOAS low setpoint [C]
-                                   Real64 DOASHighTemp, // DOAS high setpoint [C]
+                                   Real64 OutDB,                        // outside air temperature [C]
+                                   Real64 OutHR,                        // outside humidity ratio [kg Water / kg Dry Air]
+                                   DataSizing::DOASControl DOASControl, // dedicated outside air control strategy
+                                   Real64 DOASLowTemp,                  // DOAS low setpoint [C]
+                                   Real64 DOASHighTemp,                 // DOAS high setpoint [C]
                                    Real64 W90H, // humidity ratio at DOAS high setpoint temperature and 90% relative humidity [kg Water / kg Dry Air]
                                    Real64 W90L, // humidity ratio at DOAS low setpoint temperature and 90% relative humidity [kg Water / kg Dry Air]
                                    Real64 &DOASSupTemp, // DOAS supply temperature [C]
@@ -164,45 +250,29 @@ namespace ZoneEquipmentManager {
     void ReportZoneSizingDOASInputs(EnergyPlusData &state,
                                     std::string const &ZoneName,         // the name of the zone
                                     std::string const &DOASCtrlStrategy, // DOAS control strategy
-                                    Real64 const DOASLowTemp,            // DOAS design low setpoint temperature [C]
-                                    Real64 const DOASHighTemp            // DOAS design high setpoint temperature [C]
-    );
+                                    Real64 DOASLowTemp,                  // DOAS design low setpoint temperature [C]
+                                    Real64 DOASHighTemp,                 // DOAS design high setpoint temperature [C]
+                                    bool &headerAlreadyPrinted);
 
 } // namespace ZoneEquipmentManager
 
 struct ZoneEquipmentManagerData : BaseGlobalStruct
 {
 
-    Array1D<Real64> AvgData; // scratch array for storing averaged data
-    int NumOfTimeStepInDay;  // number of zone time steps in a day
-    bool GetZoneEquipmentInputFlag;
-    bool SizeZoneEquipmentOneTimeFlag;
+    Array1D<Real64> AvgData;    // scratch array for storing averaged data -- keep on state to avoid it being recreated
+    int NumOfTimeStepInDay = 0; // number of zone time steps in a day
+    bool GetZoneEquipmentInputFlag = true;
+    bool SizeZoneEquipmentOneTimeFlag = true;
 
     Array1D<ZoneEquipmentManager::SimulationOrder> PrioritySimOrder;
 
-    bool reportDOASZoneSizingHeader;
-    bool InitZoneEquipmentOneTimeFlag;
-    bool InitZoneEquipmentEnvrnFlag;
-    bool FirstPassZoneEquipFlag; // indicates first pass through zone equipment, used to reset selected ZoneEqSizing variables
+    bool InitZoneEquipmentOneTimeFlag = true;
+    bool InitZoneEquipmentEnvrnFlag = true;
+    bool FirstPassZoneEquipFlag = true; // indicates first pass through zone equipment, used to reset selected ZoneEqSizing variables
 
     void clear_state() override
     {
-        this->SizeZoneEquipmentOneTimeFlag = true;
-        this->InitZoneEquipmentOneTimeFlag = true;
-        this->InitZoneEquipmentEnvrnFlag = true;
-        this->AvgData.deallocate();   // scratch array for storing averaged data
-        this->NumOfTimeStepInDay = 0; // number of zone time steps in a day
-        this->GetZoneEquipmentInputFlag = true;
-        this->PrioritySimOrder.deallocate();
-        this->FirstPassZoneEquipFlag = true;
-        this->reportDOASZoneSizingHeader = true;
-    }
-
-    // Default Constructor
-    ZoneEquipmentManagerData()
-        : NumOfTimeStepInDay(0), GetZoneEquipmentInputFlag(true), SizeZoneEquipmentOneTimeFlag(true), reportDOASZoneSizingHeader(true),
-          InitZoneEquipmentOneTimeFlag(true), InitZoneEquipmentEnvrnFlag(true), FirstPassZoneEquipFlag(true)
-    {
+        *this = ZoneEquipmentManagerData();
     }
 };
 

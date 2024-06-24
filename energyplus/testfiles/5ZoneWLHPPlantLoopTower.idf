@@ -103,7 +103,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,9.6;
+  Version,24.1;
 
   Building,
     Building,                !- Name
@@ -1027,7 +1027,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE1-1 Infil 1,        !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.0167,                  !- Design Flow Rate {m3/s}
@@ -1041,19 +1041,19 @@
 
   People,
     SPACE1-1 People 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     11,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   Lights,
     SPACE1-1 Lights 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     1584,                    !- Lighting Level {W}
@@ -1067,7 +1067,7 @@
 
   ElectricEquipment,
     SPACE1-1 ElecEq 1,       !- Name
-    SPACE1-1,                !- Zone or ZoneList Name
+    SPACE1-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1056,                    !- Design Level {W}
@@ -1242,7 +1242,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE2-1 Infil 1,        !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.00717,                 !- Design Flow Rate {m3/s}
@@ -1256,19 +1256,19 @@
 
   People,
     SPACE2-1 People 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     5,                       !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   Lights,
     SPACE2-1 Lights 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     684,                     !- Lighting Level {W}
@@ -1282,7 +1282,7 @@
 
   ElectricEquipment,
     SPACE2-1 ElecEq 1,       !- Name
-    SPACE2-1,                !- Zone or ZoneList Name
+    SPACE2-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     456,                     !- Design Level {W}
@@ -1422,7 +1422,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE3-1 Infil 1,        !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.0167,                  !- Design Flow Rate {m3/s}
@@ -1436,19 +1436,19 @@
 
   People,
     SPACE3-1 People 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     11,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   Lights,
     SPACE3-1 Lights 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     1584,                    !- Lighting Level {W}
@@ -1462,7 +1462,7 @@
 
   ElectricEquipment,
     SPACE3-1 ElecEq 1,       !- Name
-    SPACE3-1,                !- Zone or ZoneList Name
+    SPACE3-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1056,                    !- Design Level {W}
@@ -1617,7 +1617,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE4-1 Infil 1,        !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.00717,                 !- Design Flow Rate {m3/s}
@@ -1631,19 +1631,19 @@
 
   People,
     SPACE4-1 People 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     5,                       !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   Lights,
     SPACE4-1 Lights 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     684,                     !- Lighting Level {W}
@@ -1657,7 +1657,7 @@
 
   ElectricEquipment,
     SPACE4-1 ElecEq 1,       !- Name
-    SPACE4-1,                !- Zone or ZoneList Name
+    SPACE4-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     456,                     !- Design Level {W}
@@ -1797,7 +1797,7 @@
 
   ZoneInfiltration:DesignFlowRate,
     SPACE5-1 Infil 1,        !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     INFIL-SCH,               !- Schedule Name
     flow/zone,               !- Design Flow Rate Calculation Method
     0.031089,                !- Design Flow Rate {m3/s}
@@ -1811,19 +1811,19 @@
 
   People,
     SPACE5-1 People 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     OCCUPY-1,                !- Number of People Schedule Name
     people,                  !- Number of People Calculation Method
     20,                      !- Number of People
-    ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    ,                        !- People per Floor Area {person/m2}
+    ,                        !- Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ActSchd;                 !- Activity Level Schedule Name
 
   Lights,
     SPACE5-1 Lights 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     LIGHTS-1,                !- Schedule Name
     LightingLevel,           !- Design Level Calculation Method
     2964,                    !- Lighting Level {W}
@@ -1837,7 +1837,7 @@
 
   ElectricEquipment,
     SPACE5-1 ElecEq 1,       !- Name
-    SPACE5-1,                !- Zone or ZoneList Name
+    SPACE5-1,                !- Zone or ZoneList or Space or SpaceList Name
     EQUIP-1,                 !- Schedule Name
     EquipmentLevel,          !- Design Level Calculation Method
     1976,                    !- Design Level {W}
@@ -2138,10 +2138,6 @@
     Coil:Cooling:WaterToAirHeatPump:ParameterEstimation,  !- Cooling Coil Object Type
     Heat Pump Cooling Mode AHU1,  !- Cooling Coil Name
     0.001,                   !- Cooling Convergence
-    2.5,                     !- Maximum Cycling Rate {cycles/hr}
-    60,                      !- Heat Pump Time Constant {s}
-    0.01,                    !- Fraction of On-Cycle Power Use
-    60,                      !- Heat Pump Fan Delay Time {s}
     Coil:Heating:Fuel,       !- Supplemental Heating Coil Object Type
     Heat Pump DX Supp Heating Coil AHU1,  !- Supplemental Heating Coil Name
     50,                      !- Maximum Supply Air Temperature from Supplemental Heater {C}
@@ -2191,7 +2187,11 @@
     2.06530E-02,             !- Leak Rate Coefficient
     1.92757E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACCOOLPLFFPLR,         !- Part Load Fraction Correlation Curve Name
+    2.5,                     !- Maximum Cycling Rate {cycles/hr}
+    60,                      !- Latent Capacity Time Constant {s}
+    60;                      !- Fan Delay Time {s}
 
   Coil:Heating:WaterToAirHeatPump:ParameterEstimation,
     Heat Pump HEATING Mode AHU1,  !- Name
@@ -2217,7 +2217,8 @@
     2.07750E-06,             !- Leak Rate Coefficient {dimensionless}
     4.00322E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACHEATPLFFPLR;         !- Part Load Fraction Correlation Curve Name
 
   Coil:Heating:Fuel,
     Heat Pump DX Supp Heating Coil AHU1,  !- Name
@@ -2340,10 +2341,6 @@
     Coil:Cooling:WaterToAirHeatPump:ParameterEstimation,  !- Cooling Coil Object Type
     Heat Pump Cooling Mode AHU2,  !- Cooling Coil Name
     0.001,                   !- Cooling Convergence
-    2.5,                     !- Maximum Cycling Rate {cycles/hr}
-    60,                      !- Heat Pump Time Constant {s}
-    0.01,                    !- Fraction of On-Cycle Power Use
-    60,                      !- Heat Pump Fan Delay Time {s}
     Coil:Heating:Fuel,       !- Supplemental Heating Coil Object Type
     Heat Pump DX Supp Heating Coil AHU2,  !- Supplemental Heating Coil Name
     50,                      !- Maximum Supply Air Temperature from Supplemental Heater {C}
@@ -2390,7 +2387,11 @@
     2.06530E-02,             !- Leak Rate Coefficient
     1.92757E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACCOOLPLFFPLR,         !- Part Load Fraction Correlation Curve Name
+    2.5,                     !- Maximum Cycling Rate {cycles/hr}
+    60,                      !- Latent Capacity Time Constant {s}
+    60;                      !- Fan Delay Time {s}
 
   Coil:Heating:WaterToAirHeatPump:ParameterEstimation,
     Heat Pump HEATING Mode AHU2,  !- Name
@@ -2416,7 +2417,8 @@
     2.07750E-06,             !- Leak Rate Coefficient {dimensionless}
     4.00322E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACHEATPLFFPLR;         !- Part Load Fraction Correlation Curve Name
 
   Coil:Heating:Fuel,
     Heat Pump DX Supp Heating Coil AHU2,  !- Name
@@ -2539,10 +2541,6 @@
     Coil:Cooling:WaterToAirHeatPump:ParameterEstimation,  !- Cooling Coil Object Type
     Heat Pump Cooling Mode AHU3,  !- Cooling Coil Name
     0.001,                   !- Cooling Convergence
-    2.5,                     !- Maximum Cycling Rate {cycles/hr}
-    60,                      !- Heat Pump Time Constant {s}
-    0.01,                    !- Fraction of On-Cycle Power Use
-    60,                      !- Heat Pump Fan Delay Time {s}
     Coil:Heating:Fuel,       !- Supplemental Heating Coil Object Type
     Heat Pump DX Supp Heating Coil AHU3,  !- Supplemental Heating Coil Name
     50,                      !- Maximum Supply Air Temperature from Supplemental Heater {C}
@@ -2589,7 +2587,11 @@
     2.06530E-02,             !- Leak Rate Coefficient
     1.92757E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACCOOLPLFFPLR,         !- Part Load Fraction Correlation Curve Name
+    2.5,                     !- Maximum Cycling Rate {cycles/hr}
+    60,                      !- Latent Capacity Time Constant {s}
+    60;                      !- Fan Delay Time {s}
 
   Coil:Heating:WaterToAirHeatPump:ParameterEstimation,
     Heat Pump HEATING Mode AHU3,  !- Name
@@ -2615,7 +2617,8 @@
     2.07750E-06,             !- Leak Rate Coefficient {dimensionless}
     4.00322E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACHEATPLFFPLR;         !- Part Load Fraction Correlation Curve Name
 
   Coil:Heating:Fuel,
     Heat Pump DX Supp Heating Coil AHU3,  !- Name
@@ -2738,10 +2741,6 @@
     Coil:Cooling:WaterToAirHeatPump:ParameterEstimation,  !- Cooling Coil Object Type
     Heat Pump Cooling Mode AHU4,  !- Cooling Coil Name
     0.001,                   !- Cooling Convergence
-    2.5,                     !- Maximum Cycling Rate {cycles/hr}
-    60,                      !- Heat Pump Time Constant {s}
-    0.01,                    !- Fraction of On-Cycle Power Use
-    60,                      !- Heat Pump Fan Delay Time {s}
     Coil:Heating:Fuel,       !- Supplemental Heating Coil Object Type
     Heat Pump DX Supp Heating Coil AHU4,  !- Supplemental Heating Coil Name
     50,                      !- Maximum Supply Air Temperature from Supplemental Heater {C}
@@ -2788,7 +2787,11 @@
     2.06530E-02,             !- Leak Rate Coefficient
     1.92757E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACCOOLPLFFPLR,         !- Part Load Fraction Correlation Curve Name
+    2.5,                     !- Maximum Cycling Rate {cycles/hr}
+    60,                      !- Latent Capacity Time Constant {s}
+    60;                      !- Fan Delay Time {s}
 
   Coil:Heating:WaterToAirHeatPump:ParameterEstimation,
     Heat Pump HEATING Mode AHU4,  !- Name
@@ -2814,7 +2817,8 @@
     2.07750E-06,             !- Leak Rate Coefficient {dimensionless}
     4.00322E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACHEATPLFFPLR;         !- Part Load Fraction Correlation Curve Name
 
   Coil:Heating:Fuel,
     Heat Pump DX Supp Heating Coil AHU4,  !- Name
@@ -2937,10 +2941,6 @@
     Coil:Cooling:WaterToAirHeatPump:ParameterEstimation,  !- Cooling Coil Object Type
     Heat Pump Cooling Mode AHU5,  !- Cooling Coil Name
     0.001,                   !- Cooling Convergence
-    2.5,                     !- Maximum Cycling Rate {cycles/hr}
-    60,                      !- Heat Pump Time Constant {s}
-    0.01,                    !- Fraction of On-Cycle Power Use
-    60,                      !- Heat Pump Fan Delay Time {s}
     Coil:Heating:Fuel,       !- Supplemental Heating Coil Object Type
     Heat Pump DX Supp Heating Coil AHU5,  !- Supplemental Heating Coil Name
     50,                      !- Maximum Supply Air Temperature from Supplemental Heater {C}
@@ -2987,7 +2987,11 @@
     2.06530E-02,             !- Leak Rate Coefficient
     1.92757E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACCOOLPLFFPLR,         !- Part Load Fraction Correlation Curve Name
+    2.5,                     !- Maximum Cycling Rate {cycles/hr}
+    60,                      !- Latent Capacity Time Constant {s}
+    60;                      !- Fan Delay Time {s}
 
   Coil:Heating:WaterToAirHeatPump:ParameterEstimation,
     Heat Pump HEATING Mode AHU5,  !- Name
@@ -3013,7 +3017,8 @@
     2.07750E-06,             !- Leak Rate Coefficient {dimensionless}
     4.00322E+03,             !- Source Side Heat Transfer Coefficient {W/K}
     ,                        !- Source Side Heat Transfer Resistance1 {dimensionless}
-    ;                        !- Source Side Heat Transfer Resistance2 {W/K}
+    ,                        !- Source Side Heat Transfer Resistance2 {W/K}
+    HPACHEATPLFFPLR;         !- Part Load Fraction Correlation Curve Name
 
   Coil:Heating:Fuel,
     Heat Pump DX Supp Heating Coil AHU5,  !- Name
@@ -3378,7 +3383,19 @@
     ,                        !- Heat Rejection Capacity and Nominal Capacity Sizing Ratio
     ,                        !- Nominal Capacity {W}
     ,                        !- Free Convection Capacity {W}
-    ;                        !- Free Convection Nominal Capacity Sizing Factor
+    ,                        !- Free Convection Nominal Capacity Sizing Factor
+    ,                        !- Design Inlet Air Dry-Bulb Temperature {C}
+    ,                        !- Design Inlet Air Wet-Bulb Temperature {C}
+    ,                        !- Design Approach Temperature {deltaC}
+    ,                        !- Design Range Temperature {deltaC}
+    ,                        !- Basin Heater Capacity {W/K}
+    ,                        !- Basin Heater Setpoint Temperature {C}
+    ,                        !- Basin Heater Operating Schedule Name
+    ,                        !- Evaporation Loss Mode
+    ,                        !- Evaporation Loss Factor {percent/K}
+    ,                        !- Drift Loss Percent {percent}
+    ,                        !- Blowdown Calculation Mode
+    ;                        !- Blowdown Concentration Ratio
 
   Pump:ConstantSpeed,
     Plant Circ Pump,         !- Name

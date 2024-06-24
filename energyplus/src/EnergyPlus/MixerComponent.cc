@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -104,9 +104,9 @@ void SimAirMixer(EnergyPlusData &state, std::string_view CompName, int &CompInde
 
     // Find the correct MixerNumber
     if (CompIndex == 0) {
-        MixerNum = UtilityRoutines::FindItemInList(CompName, state.dataMixerComponent->MixerCond, &MixerConditions::MixerName);
+        MixerNum = Util::FindItemInList(CompName, state.dataMixerComponent->MixerCond, &MixerConditions::MixerName);
         if (MixerNum == 0) {
-            ShowFatalError(state, "SimAirLoopMixer: Mixer not found=" + std::string{CompName});
+            ShowFatalError(state, format("SimAirLoopMixer: Mixer not found={}", CompName));
         }
         CompIndex = MixerNum;
     } else {
@@ -211,18 +211,18 @@ void GetMixerInput(EnergyPlusData &state)
                                                                  lAlphaBlanks,
                                                                  cAlphaFields,
                                                                  cNumericFields);
-        UtilityRoutines::IsNameEmpty(state, AlphArray(1), CurrentModuleObject, ErrorsFound);
+        Util::IsNameEmpty(state, AlphArray(1), CurrentModuleObject, ErrorsFound);
 
         state.dataMixerComponent->MixerCond(MixerNum).MixerName = AlphArray(1);
 
         state.dataMixerComponent->MixerCond(MixerNum).OutletNode = GetOnlySingleNode(state,
                                                                                      AlphArray(2),
                                                                                      ErrorsFound,
-                                                                                     CurrentModuleObject,
+                                                                                     DataLoopNode::ConnectionObjectType::AirLoopHVACZoneMixer,
                                                                                      AlphArray(1),
                                                                                      DataLoopNode::NodeFluidType::Air,
-                                                                                     DataLoopNode::NodeConnectionType::Outlet,
-                                                                                     NodeInputManager::compFluidStream::Primary,
+                                                                                     DataLoopNode::ConnectionType::Outlet,
+                                                                                     NodeInputManager::CompFluidStream::Primary,
                                                                                      ObjectIsNotParent);
         state.dataMixerComponent->MixerCond(MixerNum).NumInletNodes = NumAlphas - 2;
 
@@ -256,17 +256,18 @@ void GetMixerInput(EnergyPlusData &state)
 
         for (NodeNum = 1; NodeNum <= state.dataMixerComponent->MixerCond(MixerNum).NumInletNodes; ++NodeNum) {
 
-            state.dataMixerComponent->MixerCond(MixerNum).InletNode(NodeNum) = GetOnlySingleNode(state,
-                                                                                                 AlphArray(2 + NodeNum),
-                                                                                                 ErrorsFound,
-                                                                                                 CurrentModuleObject,
-                                                                                                 AlphArray(1),
-                                                                                                 DataLoopNode::NodeFluidType::Air,
-                                                                                                 DataLoopNode::NodeConnectionType::Inlet,
-                                                                                                 NodeInputManager::compFluidStream::Primary,
-                                                                                                 ObjectIsNotParent);
+            state.dataMixerComponent->MixerCond(MixerNum).InletNode(NodeNum) =
+                GetOnlySingleNode(state,
+                                  AlphArray(2 + NodeNum),
+                                  ErrorsFound,
+                                  DataLoopNode::ConnectionObjectType::AirLoopHVACZoneMixer,
+                                  AlphArray(1),
+                                  DataLoopNode::NodeFluidType::Air,
+                                  DataLoopNode::ConnectionType::Inlet,
+                                  NodeInputManager::CompFluidStream::Primary,
+                                  ObjectIsNotParent);
             if (lAlphaBlanks(2 + NodeNum)) {
-                ShowSevereError(state, cAlphaFields(2 + NodeNum) + " is Blank, " + CurrentModuleObject + " = " + AlphArray(1));
+                ShowSevereError(state, format("{} is Blank, {} = {}", cAlphaFields(2 + NodeNum), CurrentModuleObject, AlphArray(1)));
                 ErrorsFound = true;
             }
         }
@@ -279,9 +280,10 @@ void GetMixerInput(EnergyPlusData &state)
         for (InNodeNum1 = 1; InNodeNum1 <= state.dataMixerComponent->MixerCond(MixerNum).NumInletNodes; ++InNodeNum1) {
             if (NodeNum != state.dataMixerComponent->MixerCond(MixerNum).InletNode(InNodeNum1)) continue;
             ShowSevereError(state,
-                            CurrentModuleObject + " = " + state.dataMixerComponent->MixerCond(MixerNum).MixerName +
-                                " specifies an inlet node name the same as the outlet node.");
-            ShowContinueError(state, ".." + cAlphaFields(2) + " = " + state.dataLoopNodes->NodeID(NodeNum));
+                            format("{} = {} specifies an inlet node name the same as the outlet node.",
+                                   CurrentModuleObject,
+                                   state.dataMixerComponent->MixerCond(MixerNum).MixerName));
+            ShowContinueError(state, format("..{} = {}", cAlphaFields(2), state.dataLoopNodes->NodeID(NodeNum)));
             ShowContinueError(state, format("..Inlet Node #{} is duplicate.", InNodeNum1));
             ErrorsFound = true;
         }
@@ -291,8 +293,9 @@ void GetMixerInput(EnergyPlusData &state)
                     state.dataMixerComponent->MixerCond(MixerNum).InletNode(InNodeNum2))
                     continue;
                 ShowSevereError(state,
-                                CurrentModuleObject + " = " + state.dataMixerComponent->MixerCond(MixerNum).MixerName +
-                                    " specifies duplicate inlet nodes in its inlet node list.");
+                                format("{} = {} specifies duplicate inlet nodes in its inlet node list.",
+                                       CurrentModuleObject,
+                                       state.dataMixerComponent->MixerCond(MixerNum).MixerName));
                 ShowContinueError(state, format("..Inlet Node #{} Name={}", InNodeNum1, state.dataLoopNodes->NodeID(InNodeNum1)));
                 ShowContinueError(state, format("..Inlet Node #{} is duplicate.", InNodeNum2));
                 ErrorsFound = true;
@@ -308,7 +311,7 @@ void GetMixerInput(EnergyPlusData &state)
     lNumericBlanks.deallocate();
 
     if (ErrorsFound) {
-        ShowFatalError(state, std::string{RoutineName} + "Errors found in getting input.");
+        ShowFatalError(state, format("{}Errors found in getting input.", RoutineName));
     }
 }
 
@@ -615,43 +618,36 @@ void GetZoneMixerIndex(EnergyPlusData &state, std::string const &MixerName, int 
         state.dataMixerComponent->GetZoneMixerIndexInputFlag = false;
     }
 
-    MixerIndex = UtilityRoutines::FindItemInList(MixerName, state.dataMixerComponent->MixerCond, &MixerConditions::MixerName);
+    MixerIndex = Util::FindItemInList(MixerName, state.dataMixerComponent->MixerCond, &MixerConditions::MixerName);
     if (MixerIndex == 0) {
         if (!ThisObjectType.empty()) {
-            ShowSevereError(state, ThisObjectType + ", GetZoneMixerIndex: Zone Mixer not found=" + MixerName);
+            ShowSevereError(state, format("{}, GetZoneMixerIndex: Zone Mixer not found={}", ThisObjectType, MixerName));
         } else {
-            ShowSevereError(state, "GetZoneMixerIndex: Zone Mixer not found=" + MixerName);
+            ShowSevereError(state, format("GetZoneMixerIndex: Zone Mixer not found={}", MixerName));
         }
         ErrorsFound = true;
     }
 }
 
-int getZoneMixerIndexFromInletNode(EnergyPlusData &state, int const &InNodeNum)
+int getZoneMixerIndexFromInletNode(EnergyPlusData &state, int const InNodeNum)
 {
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int MixerNum;  // loop counter
-    int InNodeCtr; // loop counter
-    int thisMixer;
 
     if (state.dataMixerComponent->GetZoneMixerIndexInputFlag) { // First time subroutine has been entered
         GetMixerInput(state);
         state.dataMixerComponent->GetZoneMixerIndexInputFlag = false;
     }
 
-    thisMixer = 0;
     if (state.dataMixerComponent->NumMixers > 0) {
-        for (MixerNum = 1; MixerNum <= state.dataMixerComponent->NumMixers; ++MixerNum) {
-            for (InNodeCtr = 1; InNodeCtr <= state.dataMixerComponent->MixerCond(MixerNum).NumInletNodes; ++InNodeCtr) {
-                if (InNodeNum != state.dataMixerComponent->MixerCond(MixerNum).InletNode(InNodeCtr)) continue;
-                thisMixer = MixerNum;
-                break;
+        for (int MixerNum = 1; MixerNum <= state.dataMixerComponent->NumMixers; ++MixerNum) {
+            for (int InNodeCtr = 1; InNodeCtr <= state.dataMixerComponent->MixerCond(MixerNum).NumInletNodes; ++InNodeCtr) {
+                if (InNodeNum == state.dataMixerComponent->MixerCond(MixerNum).InletNode(InNodeCtr)) {
+                    return MixerNum;
+                }
             }
-            if (thisMixer > 0) break;
         }
     }
 
-    return thisMixer;
+    return 0;
 }
 
 // End of Utility subroutines for the Mixer Component

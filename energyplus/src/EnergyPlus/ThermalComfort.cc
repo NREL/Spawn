@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -66,6 +66,7 @@
 #include <EnergyPlus/DataIPShortCuts.hh>
 #include <EnergyPlus/DataPrecisionGlobals.hh>
 #include <EnergyPlus/DataRoomAirModel.hh>
+#include <EnergyPlus/DataViewFactorInformation.hh>
 #include <EnergyPlus/DataZoneEnergyDemands.hh>
 #include <EnergyPlus/FileSystem.hh>
 #include <EnergyPlus/General.hh>
@@ -169,24 +170,25 @@ namespace ThermalComfort {
             CurrentGroupName = state.dataHeatBal->People(Loop).Name;
 
             // CurrentModuleObject='People'
+            // MJW MRT ToDo: Rename most Zone Therml Comfort output varibles to People Thermal Comfort ('cause they're keyed by People name)
             if (state.dataHeatBal->People(Loop).Fanger) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Fanger Model PMV",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).FangerPMV,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Fanger Model PPD",
-                                    OutputProcessor::Unit::Perc,
+                                    Constant::Units::Perc,
                                     state.dataThermalComforts->ThermalComfortData(Loop).FangerPPD,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Clothing Surface Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).CloSurfTemp,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -196,35 +198,35 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).Pierce) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Pierce Model Effective Temperature PMV",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).PiercePMVET,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Pierce Model Standard Effective Temperature PMV",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).PiercePMVSET,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Pierce Model Discomfort Index",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).PierceDISC,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Pierce Model Thermal Sensation Index",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).PierceTSENS,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Pierce Model Standard Effective Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).PierceSET,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -234,7 +236,7 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).KSU) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort KSU Model Thermal Sensation Vote",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).KsuTSV,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -244,21 +246,21 @@ namespace ThermalComfort {
             if ((state.dataHeatBal->People(Loop).Fanger) || (state.dataHeatBal->People(Loop).Pierce) || (state.dataHeatBal->People(Loop).KSU)) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Mean Radiant Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortMRT,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Operative Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortOpTemp,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort Clothing Value",
-                                    OutputProcessor::Unit::clo,
+                                    Constant::Units::clo,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ClothingValue,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -268,28 +270,28 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).AdaptiveASH55) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Adaptive Model 90% Acceptability Status",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortAdaptiveASH5590,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Adaptive Model 80% Acceptability Status",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortAdaptiveASH5580,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Adaptive Model Running Average Outdoor Air Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ASHRAE55RunningMeanOutdoorTemp,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Adaptive Model Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).TComfASH55,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -299,35 +301,35 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).AdaptiveCEN15251) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort CEN 15251 Adaptive Model Category I Status",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortAdaptiveCEN15251CatI,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort CEN 15251 Adaptive Model Category II Status",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortAdaptiveCEN15251CatII,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort CEN 15251 Adaptive Model Category III Status",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).ThermalComfortAdaptiveCEN15251CatIII,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort CEN 15251 Adaptive Model Running Average Outdoor Air Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).CEN15251RunningMeanOutdoorTemp,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort CEN 15251 Adaptive Model Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).TComfCEN15251,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -336,21 +338,21 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).CoolingEffectASH55) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Elevated Air Speed Cooling Effect",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataThermalComforts->ThermalComfortData(Loop).CoolingEffectASH55,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Elevated Air Speed Cooling Effect Adjusted PMV",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).CoolingEffectAdjustedPMVASH55,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
                                     state.dataHeatBal->People(Loop).Name);
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Elevated Air Speed Cooling Effect Adjusted PPD",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).CoolingEffectAdjustedPPDASH55,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -359,7 +361,7 @@ namespace ThermalComfort {
             if (state.dataHeatBal->People(Loop).AnkleDraftASH55) {
                 SetupOutputVariable(state,
                                     "Zone Thermal Comfort ASHRAE 55 Ankle Draft PPD",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     state.dataThermalComforts->ThermalComfortData(Loop).AnkleDraftPPDASH55,
                                     OutputProcessor::SOVTimeStepType::Zone,
                                     OutputProcessor::SOVStoreType::State,
@@ -379,21 +381,21 @@ namespace ThermalComfort {
         for (Loop = 1; Loop <= state.dataGlobal->NumOfZones; ++Loop) {
             SetupOutputVariable(state,
                                 "Zone Thermal Comfort ASHRAE 55 Simple Model Summer Clothes Not Comfortable Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortInASH55(Loop).timeNotSummer,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataHeatBal->Zone(Loop).Name);
             SetupOutputVariable(state,
                                 "Zone Thermal Comfort ASHRAE 55 Simple Model Winter Clothes Not Comfortable Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortInASH55(Loop).timeNotWinter,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataHeatBal->Zone(Loop).Name);
             SetupOutputVariable(state,
                                 "Zone Thermal Comfort ASHRAE 55 Simple Model Summer or Winter Clothes Not Comfortable Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortInASH55(Loop).timeNotEither,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
@@ -401,21 +403,21 @@ namespace ThermalComfort {
         }
         SetupOutputVariable(state,
                             "Facility Thermal Comfort ASHRAE 55 Simple Model Summer Clothes Not Comfortable Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneTimeNotSimpleASH55Summer,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
                             "Facility");
         SetupOutputVariable(state,
                             "Facility Thermal Comfort ASHRAE 55 Simple Model Winter Clothes Not Comfortable Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneTimeNotSimpleASH55Winter,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
                             "Facility");
         SetupOutputVariable(state,
                             "Facility Thermal Comfort ASHRAE 55 Simple Model Summer or Winter Clothes Not Comfortable Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneTimeNotSimpleASH55Either,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
@@ -425,28 +427,28 @@ namespace ThermalComfort {
         for (Loop = 1; Loop <= state.dataGlobal->NumOfZones; ++Loop) {
             SetupOutputVariable(state,
                                 "Zone Heating Setpoint Not Met Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortSetPoint(Loop).notMetHeating,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataHeatBal->Zone(Loop).Name);
             SetupOutputVariable(state,
                                 "Zone Heating Setpoint Not Met While Occupied Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortSetPoint(Loop).notMetHeatingOccupied,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataHeatBal->Zone(Loop).Name);
             SetupOutputVariable(state,
                                 "Zone Cooling Setpoint Not Met Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortSetPoint(Loop).notMetCooling,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataHeatBal->Zone(Loop).Name);
             SetupOutputVariable(state,
                                 "Zone Cooling Setpoint Not Met While Occupied Time",
-                                OutputProcessor::Unit::hr,
+                                Constant::Units::hr,
                                 state.dataThermalComforts->ThermalComfortSetPoint(Loop).notMetCoolingOccupied,
                                 OutputProcessor::SOVTimeStepType::Zone,
                                 OutputProcessor::SOVStoreType::Summed,
@@ -455,28 +457,28 @@ namespace ThermalComfort {
 
         SetupOutputVariable(state,
                             "Facility Heating Setpoint Not Met Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneNotMetHeating,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
                             "Facility");
         SetupOutputVariable(state,
                             "Facility Cooling Setpoint Not Met Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneNotMetCooling,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
                             "Facility");
         SetupOutputVariable(state,
                             "Facility Heating Setpoint Not Met While Occupied Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneNotMetHeatingOccupied,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
                             "Facility");
         SetupOutputVariable(state,
                             "Facility Cooling Setpoint Not Met While Occupied Time",
-                            OutputProcessor::Unit::hr,
+                            Constant::Units::hr,
                             state.dataThermalComforts->AnyZoneNotMetCoolingOccupied,
                             OutputProcessor::SOVTimeStepType::Zone,
                             OutputProcessor::SOVStoreType::Summed,
@@ -488,9 +490,9 @@ namespace ThermalComfort {
     }
 
     void CalcThermalComfortFanger(EnergyPlusData &state,
-                                  Optional_int_const PNum,     // People number for thermal comfort control
-                                  Optional<Real64 const> Tset, // Temperature setpoint for thermal comfort control
-                                  Optional<Real64> PMVResult   // PMV value for thermal comfort control
+                                  ObjexxFCL::Optional_int_const PNum,     // People number for thermal comfort control
+                                  ObjexxFCL::Optional<Real64 const> Tset, // Temperature setpoint for thermal comfort control
+                                  ObjexxFCL::Optional<Real64> PMVResult   // PMV value for thermal comfort control
     )
     {
 
@@ -529,62 +531,73 @@ namespace ThermalComfort {
             if ((!state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Fanger) && (!present(PNum))) continue;
 
             state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
-            if (state.dataRoomAirMod->IsZoneDV(state.dataThermalComforts->ZoneNum) ||
-                state.dataRoomAirMod->IsZoneUI(state.dataThermalComforts->ZoneNum)) {
-                state.dataThermalComforts->AirTemp = state.dataRoomAirMod->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
-                // UCSD-CV
-            } else if (state.dataRoomAirMod->IsZoneCV(state.dataThermalComforts->ZoneNum)) {
-                if (state.dataRoomAirMod->ZoneUCSDCV(state.dataThermalComforts->ZoneNum).VforComfort == DataRoomAirModel::Comfort::VComfort_Jet) {
-                    state.dataThermalComforts->AirTemp = state.dataRoomAirMod->ZTJET(state.dataThermalComforts->ZoneNum);
-                } else if (state.dataRoomAirMod->ZoneUCSDCV(state.dataThermalComforts->ZoneNum).VforComfort ==
-                           DataRoomAirModel::Comfort::VComfort_Recirculation) {
-                    state.dataThermalComforts->AirTemp = state.dataRoomAirMod->ZTJET(state.dataThermalComforts->ZoneNum);
-                } else {
-                    // Thermal comfort control uses Tset to determine PMV setpoint value, otherwise use zone temp
-                    if (present(PNum)) {
-                        state.dataThermalComforts->AirTemp = Tset;
-                    } else {
-                        state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
-                    }
-                }
+            auto &thisZoneHB = state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum);
+            if (present(PNum)) {
+                state.dataThermalComforts->AirTemp = Tset;
             } else {
-                if (present(PNum)) {
-                    state.dataThermalComforts->AirTemp = Tset;
-                } else {
-                    state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
+                state.dataThermalComforts->AirTemp = thisZoneHB.ZTAVComf;
+            }
+            if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+                state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
+                if (state.dataRoomAir->IsZoneDispVent3Node(state.dataThermalComforts->ZoneNum) ||
+                    state.dataRoomAir->IsZoneUFAD(state.dataThermalComforts->ZoneNum)) {
+                    state.dataThermalComforts->AirTemp = state.dataRoomAir->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
+                    // UCSD-CV
+                } else if (state.dataRoomAir->IsZoneCrossVent(state.dataThermalComforts->ZoneNum)) {
+                    if (state.dataRoomAir->ZoneCrossVent(state.dataThermalComforts->ZoneNum).VforComfort == RoomAir::Comfort::Jet) {
+                        state.dataThermalComforts->AirTemp = state.dataRoomAir->ZTJET(state.dataThermalComforts->ZoneNum);
+                    } else if (state.dataRoomAir->ZoneCrossVent(state.dataThermalComforts->ZoneNum).VforComfort == RoomAir::Comfort::Recirculation) {
+                        state.dataThermalComforts->AirTemp = state.dataRoomAir->ZTJET(state.dataThermalComforts->ZoneNum);
+                    }
                 }
             }
             state.dataThermalComforts->RadTemp = CalcRadTemp(state, state.dataThermalComforts->PeopleNum);
             // Use mean air temp for calculating RH when thermal comfort control is used
             if (present(PNum)) {
-                state.dataThermalComforts->RelHum = PsyRhFnTdbWPb(state,
-                                                                  state.dataHeatBalFanSys->MAT(state.dataThermalComforts->ZoneNum),
-                                                                  state.dataHeatBalFanSys->ZoneAirHumRatAvgComf(state.dataThermalComforts->ZoneNum),
-                                                                  state.dataEnvrn->OutBaroPress);
+                state.dataThermalComforts->RelHum =
+                    PsyRhFnTdbWPb(state,
+                                  state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum).MAT,
+                                  thisZoneHB.airHumRatAvgComf,
+                                  state.dataEnvrn->OutBaroPress);
             } else {
-                state.dataThermalComforts->RelHum = PsyRhFnTdbWPb(state,
-                                                                  state.dataThermalComforts->AirTemp,
-                                                                  state.dataHeatBalFanSys->ZoneAirHumRatAvgComf(state.dataThermalComforts->ZoneNum),
-                                                                  state.dataEnvrn->OutBaroPress);
+                state.dataThermalComforts->RelHum =
+                    PsyRhFnTdbWPb(state, state.dataThermalComforts->AirTemp, thisZoneHB.airHumRatAvgComf, state.dataEnvrn->OutBaroPress);
             }
             state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).TemperatureInZone = state.dataThermalComforts->AirTemp;
             state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).RelativeHumidityInZone = state.dataThermalComforts->RelHum * 100.0;
 
             // Metabolic rate of body (W/m2)
             state.dataThermalComforts->ActLevel =
-                GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) /
-                state.dataThermalComforts->BodySurfArea;
+                GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) / BodySurfArea;
             // Energy consumption by external work (W/m2)
             state.dataThermalComforts->WorkEff =
                 GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).WorkEffPtr) *
                 state.dataThermalComforts->ActLevel;
             // Clothing unit
-            {
-                auto const SELECT_CASE_var(state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingType);
-                if (SELECT_CASE_var == 1) {
+            Real64 IntermediateClothing;
+            switch (state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).clothingType) {
+            case DataHeatBalance::ClothingType::InsulationSchedule:
+                state.dataThermalComforts->CloUnit =
+                    GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
+                break;
+            case DataHeatBalance::ClothingType::DynamicAshrae55:
+                state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
+                    (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
+                state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
+                    state.dataThermalComforts->CloUnit;
+                DynamicClothingModel(state);
+                state.dataThermalComforts->CloUnit =
+                    state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
+                break;
+            case DataHeatBalance::ClothingType::CalculationSchedule:
+                IntermediateClothing =
+                    GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
+                if (IntermediateClothing == 1.0) {
                     state.dataThermalComforts->CloUnit =
                         GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                } else if (SELECT_CASE_var == 2) {
+                    state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
+                        state.dataThermalComforts->CloUnit;
+                } else if (IntermediateClothing == 2.0) {
                     state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
                         (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
                     state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
@@ -592,41 +605,24 @@ namespace ThermalComfort {
                     DynamicClothingModel(state);
                     state.dataThermalComforts->CloUnit =
                         state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
-                } else if (SELECT_CASE_var == 3) {
-                    Real64 IntermediateClothing =
-                        GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
-                    if (IntermediateClothing == 1.0) {
-                        state.dataThermalComforts->CloUnit =
-                            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
-                            state.dataThermalComforts->CloUnit;
-                    } else if (IntermediateClothing == 2.0) {
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
-                            (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
-                            state.dataThermalComforts->CloUnit;
-                        DynamicClothingModel(state);
-                        state.dataThermalComforts->CloUnit =
-                            state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
-                    } else {
-                        state.dataThermalComforts->CloUnit =
-                            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                        ShowWarningError(state,
-                                         "PEOPLE=\"" + state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name +
-                                             "\", Scheduled clothing value will be used rather than clothing calculation method.");
-                    }
                 } else {
-                    ShowSevereError(
-                        state, "PEOPLE=\"" + state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name + "\", Incorrect Clothing Type");
+                    state.dataThermalComforts->CloUnit =
+                        GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
+                    ShowWarningError(state,
+                                     format("PEOPLE=\"{}\", Scheduled clothing value will be used rather than clothing calculation method.",
+                                            state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name));
                 }
+                break;
+            default:
+                ShowSevereError(
+                    state, format("PEOPLE=\"{}\", Incorrect Clothing Type", state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name));
             }
 
-            if (state.dataRoomAirMod->IsZoneCV(state.dataThermalComforts->ZoneNum)) {
-                if (state.dataRoomAirMod->ZoneUCSDCV(state.dataThermalComforts->ZoneNum).VforComfort == DataRoomAirModel::Comfort::VComfort_Jet) {
-                    state.dataThermalComforts->AirVel = state.dataRoomAirMod->Ujet(state.dataThermalComforts->ZoneNum);
-                } else if (state.dataRoomAirMod->ZoneUCSDCV(state.dataThermalComforts->ZoneNum).VforComfort ==
-                           DataRoomAirModel::Comfort::VComfort_Recirculation) {
-                    state.dataThermalComforts->AirVel = state.dataRoomAirMod->Urec(state.dataThermalComforts->ZoneNum);
+            if (state.dataRoomAir->anyNonMixingRoomAirModel && state.dataRoomAir->IsZoneCrossVent(state.dataThermalComforts->ZoneNum)) {
+                if (state.dataRoomAir->ZoneCrossVent(state.dataThermalComforts->ZoneNum).VforComfort == RoomAir::Comfort::Jet) {
+                    state.dataThermalComforts->AirVel = state.dataRoomAir->Ujet(state.dataThermalComforts->ZoneNum);
+                } else if (state.dataRoomAir->ZoneCrossVent(state.dataThermalComforts->ZoneNum).VforComfort == RoomAir::Comfort::Recirculation) {
+                    state.dataThermalComforts->AirVel = state.dataRoomAir->Urec(state.dataThermalComforts->ZoneNum);
                 } else {
                     state.dataThermalComforts->AirVel = 0.2;
                 }
@@ -637,8 +633,8 @@ namespace ThermalComfort {
                 if (present(PNum) && (state.dataThermalComforts->AirVel < 0.1 || state.dataThermalComforts->AirVel > 0.5)) {
                     if (state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).AirVelErrIndex == 0) {
                         ShowWarningMessage(state,
-                                           "PEOPLE=\"" + state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name +
-                                               "\", Air velocity is beyond the reasonable range (0.1,0.5) for thermal comfort control.");
+                                           format("PEOPLE=\"{}\", Air velocity is beyond the reasonable range (0.1,0.5) for thermal comfort control.",
+                                                  state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name));
                         ShowContinueErrorTimeStamp(state, "");
                     }
                     ShowRecurringWarningErrorAtEnd(state,
@@ -688,8 +684,8 @@ namespace ThermalComfort {
         using Psychrometrics::PsyPsatFnTemp;
 
         // SUBROUTINE PARAMETER DEFINITIONS:
-        int const MaxIter(150);             // Limit of iteration
-        Real64 const StopIterCrit(0.00015); // Stop criteria for iteration
+        int constexpr MaxIter(150);             // Limit of iteration
+        Real64 constexpr StopIterCrit(0.00015); // Stop criteria for iteration
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 P1;  // Intermediate variables to calculate clothed body ratio and clothing temperature
@@ -714,8 +710,8 @@ namespace ThermalComfort {
 
         if (CloUnit < 0.5) state.dataThermalComforts->CloBodyRat = state.dataThermalComforts->CloBodyRat - 0.05 + 0.1 * CloUnit;
 
-        state.dataThermalComforts->AbsRadTemp = RadTemp + state.dataThermalComforts->TAbsConv;
-        state.dataThermalComforts->AbsAirTemp = AirTemp + state.dataThermalComforts->TAbsConv;
+        state.dataThermalComforts->AbsRadTemp = RadTemp + TAbsConv;
+        state.dataThermalComforts->AbsAirTemp = AirTemp + TAbsConv;
 
         state.dataThermalComforts->CloInsul = CloUnit * state.dataThermalComforts->CloBodyRat * 0.155; // Thermal resistance of the clothing // icl
 
@@ -745,7 +741,7 @@ namespace ThermalComfort {
             }
         }
         state.dataThermalComforts->AbsCloSurfTemp = 100.0 * XN;
-        state.dataThermalComforts->CloSurfTemp = state.dataThermalComforts->AbsCloSurfTemp - state.dataThermalComforts->TAbsConv;
+        state.dataThermalComforts->CloSurfTemp = state.dataThermalComforts->AbsCloSurfTemp - TAbsConv;
 
         // COMPUTE PREDICTED MEAN VOTE
         // Sensible heat loss
@@ -766,8 +762,7 @@ namespace ThermalComfort {
         // Heat loss by regulatory sweating
         state.dataThermalComforts->EvapHeatLossRegComf = 0.0;
         if (state.dataThermalComforts->IntHeatProd > 58.2) {
-            state.dataThermalComforts->EvapHeatLossRegComf =
-                0.42 * (state.dataThermalComforts->IntHeatProd - state.dataThermalComforts->ActLevelConv);
+            state.dataThermalComforts->EvapHeatLossRegComf = 0.42 * (state.dataThermalComforts->IntHeatProd - ActLevelConv);
         }
         // SkinTempComf = 35.7 - 0.028*IntHeatProd ! Skin temperature required to achieve thermal comfort
         // SatSkinVapPress = 1.92*SkinTempComf - 25.3 ! Water vapor pressure at required skin temperature
@@ -829,43 +824,44 @@ namespace ThermalComfort {
     void GetThermalComfortInputsASHRAE(EnergyPlusData &state)
     {
         state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
+        auto &thisZoneHB = state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum);
         // (var TA)
-        if (state.dataRoomAirMod->IsZoneDV(state.dataThermalComforts->ZoneNum) ||
-            state.dataRoomAirMod->IsZoneUI(state.dataThermalComforts->ZoneNum)) {
-            state.dataThermalComforts->AirTemp = state.dataRoomAirMod->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
-        } else {
-            state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
+        state.dataThermalComforts->AirTemp = thisZoneHB.ZTAVComf;
+        if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+            if (state.dataRoomAir->IsZoneDispVent3Node(state.dataThermalComforts->ZoneNum) ||
+                state.dataRoomAir->IsZoneUFAD(state.dataThermalComforts->ZoneNum)) {
+                state.dataThermalComforts->AirTemp = state.dataRoomAir->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
+            }
         }
         // (var TR)
         state.dataThermalComforts->RadTemp = CalcRadTemp(state, state.dataThermalComforts->PeopleNum);
         // (var RH)
-        state.dataThermalComforts->RelHum = PsyRhFnTdbWPb(state,
-                                                          state.dataThermalComforts->AirTemp,
-                                                          state.dataHeatBalFanSys->ZoneAirHumRatAvgComf(state.dataThermalComforts->ZoneNum),
-                                                          state.dataEnvrn->OutBaroPress);
+        state.dataThermalComforts->RelHum =
+            PsyRhFnTdbWPb(state, state.dataThermalComforts->AirTemp, thisZoneHB.airHumRatAvgComf, state.dataEnvrn->OutBaroPress);
         // Metabolic rate of body (W/m2) (var RM, M)
         state.dataThermalComforts->ActLevel =
-            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) /
-            state.dataThermalComforts->BodySurfAreaPierce;
+            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) / BodySurfAreaPierce;
         // Energy consumption by external work (W/m2) (var WME)
         state.dataThermalComforts->WorkEff =
             GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).WorkEffPtr) *
             state.dataThermalComforts->ActLevel;
 
         // Clothing unit  (var CLO)
-        auto const SELECT_CASE_var(state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingType);
-        if (SELECT_CASE_var == 1) {
+        Real64 IntermediateClothing;
+        switch (state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).clothingType) {
+        case DataHeatBalance::ClothingType::InsulationSchedule:
             state.dataThermalComforts->CloUnit =
                 GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-        } else if (SELECT_CASE_var == 2) {
+            break;
+        case DataHeatBalance::ClothingType::DynamicAshrae55:
             state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
                 (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
             state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue = state.dataThermalComforts->CloUnit;
             DynamicClothingModel(state);
             state.dataThermalComforts->CloUnit = state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
-        } else if (SELECT_CASE_var == 3) {
-            Real64 IntermediateClothing =
-                GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
+            break;
+        case DataHeatBalance::ClothingType::CalculationSchedule:
+            IntermediateClothing = GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
             if (IntermediateClothing == 1.0) {
                 state.dataThermalComforts->CloUnit =
                     GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
@@ -884,14 +880,15 @@ namespace ThermalComfort {
                     GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
                 ShowWarningError(state, "Scheduled clothing value will be used rather than clothing calculation method.");
             }
-        } else {
+            break;
+        default:
             ShowSevereError(state, "Incorrect Clothing Type");
         }
         // (var VEL)
         state.dataThermalComforts->AirVel =
             GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).AirVelocityPtr);
         // (var MET)
-        state.dataThermalComforts->ActMet = state.dataThermalComforts->ActLevel / state.dataThermalComforts->ActLevelConv;
+        state.dataThermalComforts->ActMet = state.dataThermalComforts->ActLevel / ActLevelConv;
     }
 
     Real64 CalcStandardEffectiveTemp(
@@ -922,7 +919,7 @@ namespace ThermalComfort {
 
         // (var VaporPressure)
         state.dataThermalComforts->VapPress = RelHum * CalcSatVapPressFromTempTorr(AirTemp);
-        Real64 ActLevel = state.dataThermalComforts->ActLevelConv * ActMet;
+        Real64 ActLevel = ActLevelConv * ActMet;
         state.dataThermalComforts->IntHeatProd = ActLevel - WorkEff;
 
         // Step 1: CALCULATE VARIABLESS THAT REMAIN CONSTANT FOR AN HOUR
@@ -969,8 +966,8 @@ namespace ThermalComfort {
                 (RAir * state.dataThermalComforts->SkinTemp + RClo * state.dataThermalComforts->OpTemp) / (RAir + RClo);
             bool converged = false;
             while (!converged) {
-                state.dataThermalComforts->Hr = 4.0 * state.dataThermalComforts->StefanBoltz *
-                                                std::pow((state.dataThermalComforts->CloSurfTemp + RadTemp) / 2.0 + 273.15, 3) * 0.72;
+                state.dataThermalComforts->Hr =
+                    4.0 * StefanBoltz * std::pow((state.dataThermalComforts->CloSurfTemp + RadTemp) / 2.0 + 273.15, 3) * 0.72;
                 RAir = 1.0 / (TotCloFac * (state.dataThermalComforts->Hc + state.dataThermalComforts->Hr));
                 state.dataThermalComforts->OpTemp = (state.dataThermalComforts->Hr * RadTemp + state.dataThermalComforts->Hc * AirTemp) /
                                                     (state.dataThermalComforts->Hc + state.dataThermalComforts->Hr);
@@ -1007,10 +1004,8 @@ namespace ThermalComfort {
             state.dataThermalComforts->SkinThermCap = 0.97 * SkinMassRat * BodyWeight;
 
             // Temperature changes in 1 minute
-            state.dataThermalComforts->CoreTempChange =
-                (CoreHeatStorage * state.dataThermalComforts->BodySurfAreaPierce / (state.dataThermalComforts->CoreThermCap * 60.0));
-            state.dataThermalComforts->SkinTempChange =
-                (SkinHeatStorage * state.dataThermalComforts->BodySurfAreaPierce) / (state.dataThermalComforts->SkinThermCap * 60.0);
+            state.dataThermalComforts->CoreTempChange = (CoreHeatStorage * BodySurfAreaPierce / (state.dataThermalComforts->CoreThermCap * 60.0));
+            state.dataThermalComforts->SkinTempChange = (SkinHeatStorage * BodySurfAreaPierce) / (state.dataThermalComforts->SkinThermCap * 60.0);
 
             state.dataThermalComforts->CoreTemp += state.dataThermalComforts->CoreTempChange;
             state.dataThermalComforts->SkinTemp += state.dataThermalComforts->SkinTempChange;
@@ -1145,10 +1140,10 @@ namespace ThermalComfort {
         if (StdHc <= 3.0) StdHc = 3.0;
         Real64 StdH = StdHc + StdHr; // StdH Standard combined heat transfer coefficient
         // standard MET - StdCloUnit relation gives SET* = 24 C when PMV = 0
-        Real64 StdCloUnit = 1.52 / (ActMet - WorkEff / state.dataThermalComforts->ActLevelConv + 0.6944) - 0.1835; // RCLOS
-        Real64 StdRClo = 0.155 * StdCloUnit;                                                                       // RCLS
-        Real64 StdCloBodyRat = 1.0 + CloFac * StdCloUnit;                                                          // FACLS
-        Real64 StdEffectCloThermEff = 1.0 / (1.0 + 0.155 * StdCloBodyRat * StdH * StdCloUnit);                     // FCLS
+        Real64 StdCloUnit = 1.52 / (ActMet - WorkEff / ActLevelConv + 0.6944) - 0.1835;        // RCLOS
+        Real64 StdRClo = 0.155 * StdCloUnit;                                                   // RCLS
+        Real64 StdCloBodyRat = 1.0 + CloFac * StdCloUnit;                                      // FACLS
+        Real64 StdEffectCloThermEff = 1.0 / (1.0 + 0.155 * StdCloBodyRat * StdH * StdCloUnit); // FCLS
         Real64 StdCloInsul = state.dataThermalComforts->CloInsul * StdHc / StdH * (1 - StdEffectCloThermEff) /
                              (StdHc / StdH - state.dataThermalComforts->CloInsul * StdEffectCloThermEff);
         Real64 StdREvap = 1.0 / (LewisRatio * StdCloBodyRat * StdHc);
@@ -1210,8 +1205,7 @@ namespace ThermalComfort {
             // Fanger's comfort equation. Thermal transfer coefficient to calculate PMV
             state.dataThermalComforts->ThermSensTransCoef = 0.303 * std::exp(-0.036 * state.dataThermalComforts->ActLevel) + 0.028;
             // Fanger's reg. sweating at comfort threshold (PMV=0) is:
-            state.dataThermalComforts->EvapHeatLossRegComf =
-                (state.dataThermalComforts->IntHeatProd - state.dataThermalComforts->ActLevelConv) * 0.42;
+            state.dataThermalComforts->EvapHeatLossRegComf = (state.dataThermalComforts->IntHeatProd - ActLevelConv) * 0.42;
             state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).PiercePMVET =
                 state.dataThermalComforts->ThermSensTransCoef *
                 (state.dataThermalComforts->IntHeatProd - state.dataThermalComforts->RespHeatLoss - state.dataThermalComforts->DryHeatLossET -
@@ -1229,13 +1223,9 @@ namespace ThermalComfort {
 
             // Thermal sensation TSENS as function of mean body temp.-
             // AvgBodyTempLow is AvgBodyTemp when DISC is 0. (lower limit of zone of evap. regul.)
-            Real64 AvgBodyTempLow =
-                (0.185 / state.dataThermalComforts->ActLevelConv) * (state.dataThermalComforts->ActLevel - state.dataThermalComforts->WorkEff) +
-                36.313;
+            Real64 AvgBodyTempLow = (0.185 / ActLevelConv) * (state.dataThermalComforts->ActLevel - state.dataThermalComforts->WorkEff) + 36.313;
             // AvgBodyTempHigh is AvgBodyTemp when HSI=100 (upper limit of zone of evap. regul.)
-            Real64 AvgBodyTempHigh =
-                (0.359 / state.dataThermalComforts->ActLevelConv) * (state.dataThermalComforts->ActLevel - state.dataThermalComforts->WorkEff) +
-                36.664;
+            Real64 AvgBodyTempHigh = (0.359 / ActLevelConv) * (state.dataThermalComforts->ActLevel - state.dataThermalComforts->WorkEff) + 36.664;
 
             // TSENS=DISC=4.7 when HSI =1 00 (HSI is Belding's classic heat stress index)
             // In cold, DISC &TSENS are the same and neg. fct of AvgBodyTemp
@@ -1438,7 +1428,7 @@ namespace ThermalComfort {
         // Maloney, Dan, M.S. Thesis, University of Illinois at Urbana-Champaign
 
         // SUBROUTINE PARAMETER DEFINITIONS:
-        Real64 const CloEmiss(0.8); // Clothing Emissivity
+        Real64 constexpr CloEmiss(0.8); // Clothing Emissivity
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 BodyWt;            // Weight of body, kg
@@ -1482,29 +1472,47 @@ namespace ThermalComfort {
             if (!state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).KSU) continue;
 
             state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
-            if (state.dataRoomAirMod->IsZoneDV(state.dataThermalComforts->ZoneNum) ||
-                state.dataRoomAirMod->IsZoneUI(state.dataThermalComforts->ZoneNum)) {
-                state.dataThermalComforts->AirTemp = state.dataRoomAirMod->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
-            } else {
-                state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
+            auto &thisZoneHB = state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum);
+
+            state.dataThermalComforts->AirTemp = thisZoneHB.ZTAVComf;
+            if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+                if (state.dataRoomAir->IsZoneDispVent3Node(state.dataThermalComforts->ZoneNum) ||
+                    state.dataRoomAir->IsZoneUFAD(state.dataThermalComforts->ZoneNum)) {
+                    state.dataThermalComforts->AirTemp = state.dataRoomAir->TCMF(state.dataThermalComforts->ZoneNum); // PH 3/7/04
+                }
             }
             state.dataThermalComforts->RadTemp = CalcRadTemp(state, state.dataThermalComforts->PeopleNum);
-            state.dataThermalComforts->RelHum = PsyRhFnTdbWPb(state,
-                                                              state.dataThermalComforts->AirTemp,
-                                                              state.dataHeatBalFanSys->ZoneAirHumRatAvgComf(state.dataThermalComforts->ZoneNum),
-                                                              state.dataEnvrn->OutBaroPress);
+            state.dataThermalComforts->RelHum =
+                PsyRhFnTdbWPb(state, state.dataThermalComforts->AirTemp, thisZoneHB.airHumRatAvgComf, state.dataEnvrn->OutBaroPress);
             state.dataThermalComforts->ActLevel =
-                GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) /
-                state.dataThermalComforts->BodySurfArea;
+                GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ActivityLevelPtr) / BodySurfArea;
             state.dataThermalComforts->WorkEff =
                 GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).WorkEffPtr) *
                 state.dataThermalComforts->ActLevel;
-            {
-                auto const SELECT_CASE_var(state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingType);
-                if (SELECT_CASE_var == 1) {
+
+            switch (state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).clothingType) {
+            case DataHeatBalance::ClothingType::InsulationSchedule:
+                state.dataThermalComforts->CloUnit =
+                    GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
+                break;
+            case DataHeatBalance::ClothingType::DynamicAshrae55:
+                state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
+                    (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
+                state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
+                    state.dataThermalComforts->CloUnit;
+                DynamicClothingModel(state);
+                state.dataThermalComforts->CloUnit =
+                    state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
+                break;
+            case DataHeatBalance::ClothingType::CalculationSchedule:
+                IntermediateClothing =
+                    GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
+                if (IntermediateClothing == 1.0) {
                     state.dataThermalComforts->CloUnit =
                         GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                } else if (SELECT_CASE_var == 2) {
+                    state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
+                        state.dataThermalComforts->CloUnit;
+                } else if (IntermediateClothing == 2.0) {
                     state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
                         (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
                     state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
@@ -1512,33 +1520,17 @@ namespace ThermalComfort {
                     DynamicClothingModel(state);
                     state.dataThermalComforts->CloUnit =
                         state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
-                } else if (SELECT_CASE_var == 3) {
-                    IntermediateClothing =
-                        GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingMethodPtr);
-                    if (IntermediateClothing == 1.0) {
-                        state.dataThermalComforts->CloUnit =
-                            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
-                            state.dataThermalComforts->CloUnit;
-                    } else if (IntermediateClothing == 2.0) {
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ThermalComfortOpTemp =
-                            (state.dataThermalComforts->RadTemp + state.dataThermalComforts->AirTemp) / 2.0;
-                        state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue =
-                            state.dataThermalComforts->CloUnit;
-                        DynamicClothingModel(state);
-                        state.dataThermalComforts->CloUnit =
-                            state.dataThermalComforts->ThermalComfortData(state.dataThermalComforts->PeopleNum).ClothingValue;
-                    } else {
-                        state.dataThermalComforts->CloUnit =
-                            GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
-                        ShowWarningError(state,
-                                         "PEOPLE=\"" + state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name +
-                                             "\", Scheduled clothing value will be used rather than clothing calculation method.");
-                    }
                 } else {
-                    ShowSevereError(
-                        state, "PEOPLE=\"" + state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name + "\", Incorrect Clothing Type");
+                    state.dataThermalComforts->CloUnit =
+                        GetCurrentScheduleValue(state, state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ClothingPtr);
+                    ShowWarningError(state,
+                                     format("PEOPLE=\"{}\", Scheduled clothing value will be used rather than clothing calculation method.",
+                                            state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name));
                 }
+                break;
+            default:
+                ShowSevereError(
+                    state, format("PEOPLE=\"{}\", Incorrect Clothing Type", state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).Name));
             }
 
             state.dataThermalComforts->AirVel =
@@ -1551,12 +1543,12 @@ namespace ThermalComfort {
             state.dataThermalComforts->SkinTemp = 31.0;
 
             //   CALCULATIONS NEEDED FOR THE PASSIVE STATE EQUATIONS
-            state.dataThermalComforts->CoreThermCap = 0.9 * BodyWt * 0.97 / state.dataThermalComforts->BodySurfArea;
-            state.dataThermalComforts->SkinThermCap = 0.1 * BodyWt * 0.97 / state.dataThermalComforts->BodySurfArea;
+            state.dataThermalComforts->CoreThermCap = 0.9 * BodyWt * 0.97 / BodySurfArea;
+            state.dataThermalComforts->SkinThermCap = 0.1 * BodyWt * 0.97 / BodySurfArea;
             //   KERSLAKE'S FORMULA (0.05<AirVel<5. M/S)
             if (state.dataThermalComforts->AirVel < 0.137) state.dataThermalComforts->AirVel = 0.137;
             state.dataThermalComforts->Hc = 8.3 * std::sqrt(state.dataThermalComforts->AirVel);
-            EmissAvg = state.dataThermalComforts->RadSurfEff * CloEmiss + (1.0 - state.dataThermalComforts->RadSurfEff) * 1.0;
+            EmissAvg = RadSurfEff * CloEmiss + (1.0 - RadSurfEff) * 1.0;
             //   IBERALL EQUATION
             state.dataThermalComforts->Hr = EmissAvg * (3.87 + 0.031 * state.dataThermalComforts->RadTemp);
             state.dataThermalComforts->H = state.dataThermalComforts->Hr + state.dataThermalComforts->Hc;
@@ -1570,7 +1562,7 @@ namespace ThermalComfort {
                 1.0 / (1.0 + 0.155 * state.dataThermalComforts->H * state.dataThermalComforts->CloBodyRat * state.dataThermalComforts->CloUnit);
             state.dataThermalComforts->CloPermeatEff = 1.0 / (1.0 + 0.143 * state.dataThermalComforts->Hc * state.dataThermalComforts->CloUnit);
             //  BASIC INFORMATION FOR THERMAL SENSATION.
-            IntHeatProdMet = state.dataThermalComforts->IntHeatProd / state.dataThermalComforts->ActLevelConv;
+            IntHeatProdMet = state.dataThermalComforts->IntHeatProd / ActLevelConv;
             IntHeatProdMetMax = max(1.0, IntHeatProdMet);
             ThermCndctNeut = 12.05 * std::exp(0.2266 * (IntHeatProdMetMax - 1.0));
             SkinWetNeut = 0.02 + 0.4 * (1.0 - std::exp(-0.6 * (IntHeatProdMetMax - 1.0)));
@@ -1880,7 +1872,7 @@ namespace ThermalComfort {
         int J;
         Real64 B;
         Real64 H2;
-        static Array1D<Real64> const A(2, {0.29289321881345, 1.70710678118654});
+        static constexpr std::array<Real64, 2> A = {0.29289321881345, 1.70710678118654};
 
         H2 = 0.5 * H;
 
@@ -1893,12 +1885,12 @@ namespace ThermalComfort {
 
         X += H2;
 
-        for (J = 1; J <= 2; ++J) {
+        for (J = 0; J < 2; ++J) {
             DERIV(state, NEQ, Y, DY);
             for (I = 1; I <= NEQ; ++I) {
-                B = A(J) * (H * DY(I) - C(I));
+                B = A[J] * (H * DY(I) - C(I));
                 Y(I) += B;
-                C(I) += 3.0 * B - A(J) * H * DY(I);
+                C(I) += 3.0 * B - A[J] * H * DY(I);
             }
         }
 
@@ -1921,35 +1913,22 @@ namespace ThermalComfort {
         //     AUTHOR         Jaewook Lee
         //     DATE WRITTEN   July 2001
 
-        // Using/Aliasing
-        using namespace DataHeatBalance;
+        static constexpr std::string_view routineName("GetAngleFactorList: "); // include trailing blank space
+        Real64 constexpr AngleFacLimit(0.01);                                  // To set the limit of sum of angle factors
 
-        // SUBROUTINE PARAMETER DEFINITIONS:
-        Real64 const AngleFacLimit(0.01); // To set the limit of sum of angle factors
-
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        Real64 AllAngleFacSummed; // Sum of angle factors in each zone
-        bool ErrorsFound(false);  // Set to true if errors in input, fatal at end of routine
+        bool ErrorsFound(false); // Set to true if errors in input, fatal at end of routine
         int IOStatus;
-        int Item;                  // Item to be "gotten"
-        int NumAlphas;             // Number of Alphas from InputProcessor
-        int NumNumbers;            // Number of Numbers from Input Processor
-        int NumOfAngleFactorLists; // Number of Angle Factor Lists found in IDF
-        int SurfNum;               // Surface number DO loop counter
-        int WhichAFList;           // Used in validating AngleFactorList
+        int NumAlphas;  // Number of Alphas from InputProcessor
+        int NumNumbers; // Number of Numbers from Input Processor
         auto &cCurrentModuleObject = state.dataIPShortCut->cCurrentModuleObject;
+
         cCurrentModuleObject = "ComfortViewFactorAngles";
-        NumOfAngleFactorLists = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
+        int NumOfAngleFactorLists = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
         state.dataThermalComforts->AngleFactorList.allocate(NumOfAngleFactorLists);
-        for (auto &e : state.dataThermalComforts->AngleFactorList) {
-            e.Name.clear();
-            e.ZoneName.clear();
-            e.ZonePtr = 0;
-        }
 
-        for (Item = 1; Item <= NumOfAngleFactorLists; ++Item) {
+        for (int Item = 1; Item <= NumOfAngleFactorLists; ++Item) {
 
-            AllAngleFacSummed = 0.0;
+            Real64 AllAngleFacSummed = 0.0; // Sum of angle factors in each zone
             auto &thisAngFacList(state.dataThermalComforts->AngleFactorList(Item));
 
             state.dataInputProcessing->inputProcessor->getObjectItem(state,
@@ -1966,49 +1945,48 @@ namespace ThermalComfort {
                                                                      state.dataIPShortCut->cNumericFieldNames);
 
             thisAngFacList.Name = state.dataIPShortCut->cAlphaArgs(1); // no need for verification/uniqueness.
-            thisAngFacList.ZoneName = state.dataIPShortCut->cAlphaArgs(2);
-            thisAngFacList.ZonePtr = UtilityRoutines::FindItemInList(state.dataIPShortCut->cAlphaArgs(2), state.dataHeatBal->Zone);
-            if (thisAngFacList.ZonePtr == 0) {
-                ShowSevereError(state, cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", invalid - not found");
-                ShowContinueError(state,
-                                  "...invalid " + state.dataIPShortCut->cAlphaFieldNames(2) + "=\"" + state.dataIPShortCut->cAlphaArgs(2) + "\".");
-                ErrorsFound = true;
-            }
 
             thisAngFacList.TotAngleFacSurfaces = NumNumbers;
             thisAngFacList.SurfaceName.allocate(thisAngFacList.TotAngleFacSurfaces);
             thisAngFacList.SurfacePtr.allocate(thisAngFacList.TotAngleFacSurfaces);
             thisAngFacList.AngleFactor.allocate(thisAngFacList.TotAngleFacSurfaces);
 
-            for (SurfNum = 1; SurfNum <= thisAngFacList.TotAngleFacSurfaces; ++SurfNum) {
-                thisAngFacList.SurfaceName(SurfNum) = state.dataIPShortCut->cAlphaArgs(SurfNum + 2);
-                thisAngFacList.SurfacePtr(SurfNum) =
-                    UtilityRoutines::FindItemInList(state.dataIPShortCut->cAlphaArgs(SurfNum + 2), state.dataSurface->Surface);
+            for (int SurfNum = 1; SurfNum <= thisAngFacList.TotAngleFacSurfaces; ++SurfNum) {
+                thisAngFacList.SurfaceName(SurfNum) = state.dataIPShortCut->cAlphaArgs(SurfNum + 1);
+                thisAngFacList.SurfacePtr(SurfNum) = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(SurfNum + 1), state.dataSurface->Surface);
                 thisAngFacList.AngleFactor(SurfNum) = state.dataIPShortCut->rNumericArgs(SurfNum);
                 // Error trap for surfaces that do not exist or surfaces not in the zone
                 if (thisAngFacList.SurfacePtr(SurfNum) == 0) {
                     ShowSevereError(state,
-                                    cCurrentModuleObject + ": invalid " + state.dataIPShortCut->cAlphaFieldNames(SurfNum + 2) +
-                                        ", entered value=" + state.dataIPShortCut->cAlphaArgs(SurfNum + 2));
+                                    format("{}: invalid {}, entered value={}",
+                                           cCurrentModuleObject,
+                                           state.dataIPShortCut->cAlphaFieldNames(SurfNum + 1),
+                                           state.dataIPShortCut->cAlphaArgs(SurfNum + 1)));
                     ShowContinueError(state,
-                                      "ref " + state.dataIPShortCut->cAlphaFieldNames(1) + '=' + state.dataIPShortCut->cAlphaArgs(1) +
-                                          " not found in " + state.dataIPShortCut->cAlphaFieldNames(2) + '=' + state.dataIPShortCut->cAlphaArgs(2));
+                                      format("ref {}={} not found in {}={}",
+                                             state.dataIPShortCut->cAlphaFieldNames(1),
+                                             state.dataIPShortCut->cAlphaArgs(1),
+                                             state.dataIPShortCut->cAlphaFieldNames(2),
+                                             state.dataIPShortCut->cAlphaArgs(2)));
                     ErrorsFound = true;
-                } else if (thisAngFacList.ZonePtr != 0) { // don't look at invalid zones
-                    // Found Surface, is it in same zone tagged for Angle Factor List?
-                    if (thisAngFacList.ZonePtr != state.dataSurface->Surface(thisAngFacList.SurfacePtr(SurfNum)).Zone) {
-                        ShowSevereError(state,
-                                        cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", invalid - mismatch " +
-                                            state.dataIPShortCut->cAlphaFieldNames(2) + "=\"" + state.dataIPShortCut->cAlphaArgs(2) + "\"");
-                        ShowContinueError(
-                            state,
-                            "... does not match " + state.dataIPShortCut->cAlphaFieldNames(2) + "=\"" +
-                                state.dataHeatBal
-                                    ->Zone(state.dataSurface->Surface(state.dataThermalComforts->AngleFactorList(Item).SurfacePtr(SurfNum)).Zone)
-                                    .Name +
-                                "\" for " + state.dataIPShortCut->cAlphaFieldNames(SurfNum + 2) + "=\"" +
-                                state.dataIPShortCut->cAlphaArgs(SurfNum + 2) + "\".");
-                        ErrorsFound = true;
+                } else {
+                    // Found Surface, is it in same enclosure?
+                    auto &thisSurf = state.dataSurface->Surface(thisAngFacList.SurfacePtr(SurfNum));
+                    if (SurfNum == 1) thisAngFacList.EnclosurePtr = thisSurf.RadEnclIndex; // Save enclosure num of first surface
+                    if (thisAngFacList.EnclosurePtr != thisSurf.RadEnclIndex) {
+                        ShowWarningError(state,
+                                         format("{}: For {}=\"{}\", surfaces are not all in the same radiant enclosure.",
+                                                routineName,
+                                                cCurrentModuleObject,
+                                                thisAngFacList.Name));
+                        ShowContinueError(state,
+                                          format("... Surface=\"{}\" is in enclosure=\"{}\"",
+                                                 state.dataSurface->Surface(thisAngFacList.SurfacePtr(1)).Name,
+                                                 state.dataViewFactor->EnclRadInfo(thisAngFacList.EnclosurePtr).Name));
+                        ShowContinueError(state,
+                                          format("... Surface=\"{}\" is in enclosure=\"{}\"",
+                                                 thisSurf.Name,
+                                                 state.dataViewFactor->EnclRadInfo(thisSurf.RadEnclIndex).Name));
                     }
                 }
 
@@ -2016,7 +1994,7 @@ namespace ThermalComfort {
             }
 
             if (std::abs(AllAngleFacSummed - 1.0) > AngleFacLimit) {
-                ShowSevereError(state, cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", invalid - Sum[AngleFactors]");
+                ShowSevereError(state, format("{}=\"{}\", invalid - Sum[AngleFactors]", cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
                 ShowContinueError(state,
                                   format("...Sum of Angle Factors [{:.3R}] should not deviate from expected sum [1.0] by more than limit [{:.3R}].",
                                          AllAngleFacSummed,
@@ -2029,25 +2007,28 @@ namespace ThermalComfort {
             ShowFatalError(state, "GetAngleFactorList: Program terminated due to preceding errors.");
         }
 
-        for (Item = 1; Item <= state.dataHeatBal->TotPeople; ++Item) {
-            if (state.dataHeatBal->People(Item).MRTCalcType != DataHeatBalance::CalcMRT::AngleFactor) continue;
-            state.dataHeatBal->People(Item).AngleFactorListPtr =
-                UtilityRoutines::FindItemInList(state.dataHeatBal->People(Item).AngleFactorListName, state.dataThermalComforts->AngleFactorList);
-            WhichAFList = state.dataHeatBal->People(Item).AngleFactorListPtr;
-            if (WhichAFList == 0 &&
-                (state.dataHeatBal->People(Item).Fanger || state.dataHeatBal->People(Item).Pierce || state.dataHeatBal->People(Item).KSU)) {
-                ShowSevereError(state, cCurrentModuleObject + "=\"" + state.dataHeatBal->People(Item).AngleFactorListName + "\", invalid");
-                ShowSevereError(state, "... Angle Factor List Name not found for PEOPLE= " + state.dataHeatBal->People(Item).Name);
+        for (int Item = 1; Item <= state.dataHeatBal->TotPeople; ++Item) {
+            auto &thisPeople = state.dataHeatBal->People(Item);
+            if (thisPeople.MRTCalcType != DataHeatBalance::CalcMRT::AngleFactor) continue;
+            thisPeople.AngleFactorListPtr = Util::FindItemInList(thisPeople.AngleFactorListName, state.dataThermalComforts->AngleFactorList);
+            int WhichAFList = thisPeople.AngleFactorListPtr;
+            if (WhichAFList == 0 && (thisPeople.Fanger || thisPeople.Pierce || thisPeople.KSU)) {
+                ShowSevereError(state, format("{}{}=\"{}\", invalid", routineName, cCurrentModuleObject, thisPeople.AngleFactorListName));
+                ShowSevereError(state, format("... Angle Factor List Name not found for PEOPLE=\"{}\"", thisPeople.Name));
                 ErrorsFound = true;
-            } else if (state.dataHeatBal->People(Item).ZonePtr != state.dataThermalComforts->AngleFactorList(WhichAFList).ZonePtr &&
-                       (state.dataHeatBal->People(Item).Fanger || state.dataHeatBal->People(Item).Pierce || state.dataHeatBal->People(Item).KSU)) {
-                ShowSevereError(state,
-                                cCurrentModuleObject + "=\"" + state.dataThermalComforts->AngleFactorList(WhichAFList).Name + " mismatch Zone Name");
-                ShowContinueError(state,
-                                  "...Zone=\"" + state.dataThermalComforts->AngleFactorList(WhichAFList).ZoneName + " does not match Zone=\"" +
-                                      state.dataHeatBal->Zone(state.dataHeatBal->People(Item).ZonePtr).Name + "\" in PEOPLE=\"" +
-                                      state.dataHeatBal->People(Item).Name + "\".");
-                ErrorsFound = true;
+            } else {
+                auto &thisAngFacList = state.dataThermalComforts->AngleFactorList(WhichAFList);
+                if (state.dataHeatBal->space(thisPeople.spaceIndex).radiantEnclosureNum != thisAngFacList.EnclosurePtr &&
+                    (thisPeople.Fanger || thisPeople.Pierce || thisPeople.KSU)) {
+                    ShowWarningError(state,
+                                     format("{}{}=\"{}\", radiant enclosure mismatch.", routineName, cCurrentModuleObject, thisAngFacList.Name));
+                    ShowContinueError(
+                        state,
+                        format("...Enclosure=\"{}\" doe not match enclosure=\"{}\" for PEOPLE=\"{}\"",
+                               state.dataViewFactor->EnclRadInfo(thisAngFacList.EnclosurePtr).Name,
+                               state.dataViewFactor->EnclRadInfo(state.dataHeatBal->space(thisPeople.spaceIndex).radiantEnclosureNum).Name,
+                               thisPeople.Name));
+                }
             }
         }
 
@@ -2067,42 +2048,32 @@ namespace ThermalComfort {
         // Return value
         Real64 CalcAngleFactorMRT;
 
-        // Locals
-        Real64 SurfaceTemp;
-
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        int SurfNum;
-        Real64 SurfTempEmissAngleFacSummed;
-        Real64 SumSurfaceEmissAngleFactor;
-        Real64 SurfEAF;
-
-        SurfTempEmissAngleFacSummed = 0.0;
-        SumSurfaceEmissAngleFactor = 0.0;
-        SurfEAF = 0.0;
+        Real64 SurfTempEmissAngleFacSummed = 0.0;
+        Real64 SumSurfaceEmissAngleFactor = 0.0;
 
         auto &thisAngFacList(state.dataThermalComforts->AngleFactorList(AngleFacNum));
 
-        for (SurfNum = 1; SurfNum <= thisAngFacList.TotAngleFacSurfaces; ++SurfNum) {
-            SurfaceTemp = state.dataHeatBalSurf->SurfInsideTempHist(1)(thisAngFacList.SurfacePtr(SurfNum)) + DataGlobalConstants::KelvinConv;
-            SurfEAF =
+        for (int SurfNum = 1; SurfNum <= thisAngFacList.TotAngleFacSurfaces; ++SurfNum) {
+            Real64 SurfaceTemp = state.dataHeatBalSurf->SurfInsideTempHist(1)(thisAngFacList.SurfacePtr(SurfNum)) + Constant::Kelvin;
+            Real64 SurfEAF =
                 state.dataConstruction->Construct(state.dataSurface->Surface(thisAngFacList.SurfacePtr(SurfNum)).Construction).InsideAbsorpThermal *
                 thisAngFacList.AngleFactor(SurfNum);
             SurfTempEmissAngleFacSummed += SurfEAF * pow_4(SurfaceTemp);
             SumSurfaceEmissAngleFactor += SurfEAF;
         }
 
-        CalcAngleFactorMRT = root_4(SurfTempEmissAngleFacSummed / SumSurfaceEmissAngleFactor) - DataGlobalConstants::KelvinConv;
+        CalcAngleFactorMRT = root_4(SurfTempEmissAngleFacSummed / SumSurfaceEmissAngleFactor) - Constant::Kelvin;
 
         return CalcAngleFactorMRT;
     }
 
-    Real64 CalcSurfaceWeightedMRT(EnergyPlusData &state, int const ZoneNum, int const SurfNum)
+    Real64 CalcSurfaceWeightedMRT(EnergyPlusData &state, int const SurfNum, bool AverageWithSurface)
     {
 
         // Purpose: Calculate a modified zone MRT that excludes the Surface( SurfNum ).
         //          This is necessary for the surface weighted option to not in essence
-        //          double count SurfNum in the MRT calculation.  Other than that, the
-        //          method here is the same as CalculateZoneMRT.  Once a modified zone
+        //          double count SurfNum in the MRT calculation when averaged with the Surface( SurfNum ).
+        //          Other than that, the method here is the same as CalculateZoneMRT.  Once a modified zone
         //          MRT is calculated, the subroutine then calculates and returns the
         //          RadTemp (radiant temperature) for use by the thermal comfort routines
         //          that is the average of the surface temperature to be weighted and
@@ -2111,58 +2082,73 @@ namespace ThermalComfort {
         // Return value
         Real64 CalcSurfaceWeightedMRT = 0.0;
 
-        // Local variables
-        int SurfNum2;  // surface number used in "for" loop
-        int ZoneNum2;  // zone number index
-        Real64 SumAET; // Intermediate calculational variable (area*emissivity*T) sum
-
         // Initialize ZoneAESum for all zones and SurfaceAE for all surfaces at the start of the simulation
         if (state.dataThermalComforts->FirstTimeSurfaceWeightedFlag) {
             state.dataThermalComforts->FirstTimeError = true;
             state.dataThermalComforts->FirstTimeSurfaceWeightedFlag = false;
-            state.dataThermalComforts->SurfaceAE.allocate(state.dataSurface->TotSurfaces);
-            state.dataThermalComforts->ZoneAESum.allocate(state.dataGlobal->NumOfZones);
-            state.dataThermalComforts->SurfaceAE = 0.0;
-            state.dataThermalComforts->ZoneAESum = 0.0;
-            for (SurfNum2 = 1; SurfNum2 <= state.dataSurface->TotSurfaces; ++SurfNum2) {
-                if (state.dataSurface->Surface(SurfNum2).HeatTransSurf) {
-                    state.dataThermalComforts->SurfaceAE(SurfNum2) =
-                        state.dataSurface->Surface(SurfNum2).Area *
-                        state.dataConstruction->Construct(state.dataSurface->Surface(SurfNum2).Construction).InsideAbsorpThermal;
-                    ZoneNum2 = state.dataSurface->Surface(SurfNum2).Zone;
-                    // Do NOT include the contribution of the Surface that is being surface weighted in this calculation since it will already be
-                    // accounted for
-                    if ((ZoneNum2 > 0) && (SurfNum2 != SurfNum))
-                        state.dataThermalComforts->ZoneAESum(ZoneNum2) += state.dataThermalComforts->SurfaceAE(SurfNum2);
+            for (auto const &thisRadEnclosure : state.dataViewFactor->EnclRadInfo) {
+                for (int const SurfNum2 : thisRadEnclosure.SurfacePtr) {
+                    auto &thisSurface2 = state.dataSurface->Surface(SurfNum2);
+                    thisSurface2.AE = thisSurface2.Area * state.dataConstruction->Construct(thisSurface2.Construction).InsideAbsorpThermal;
+                }
+                // Do NOT include the contribution of the Surface that is being surface weighted in this calculation since it will already be
+                // accounted for
+                for (int const SurfNum1 : thisRadEnclosure.SurfacePtr) {
+                    auto &thisSurface1 = state.dataSurface->Surface(SurfNum1);
+                    thisSurface1.enclAESum = 0.0;
+                    for (int const SurfNum2 : thisRadEnclosure.SurfacePtr) {
+                        if (SurfNum2 == SurfNum1) continue;
+                        auto &thisSurface2 = state.dataSurface->Surface(SurfNum2);
+                        thisSurface1.enclAESum += thisSurface2.AE;
+                    }
                 }
             }
         }
 
         // Calculate the sum of area*emissivity and area*emissivity*temperature for all surfaces in the zone EXCEPT the surface being weighted
-        // Note that area*emissivity needs to be recalculated because of the possibility of changes to the emissivity via the EMS
-        SumAET = 0.0;
-        state.dataThermalComforts->ZoneAESum(ZoneNum) = 0.0;
-        for (SurfNum2 = state.dataHeatBal->Zone(ZoneNum).HTSurfaceFirst; SurfNum2 <= state.dataHeatBal->Zone(ZoneNum).HTSurfaceLast; ++SurfNum2) {
-            if (SurfNum2 != SurfNum) {
-                state.dataThermalComforts->SurfaceAE(SurfNum2) =
-                    state.dataSurface->Surface(SurfNum2).Area *
-                    state.dataConstruction->Construct(state.dataSurface->Surface(SurfNum2).Construction).InsideAbsorpThermal;
-                SumAET += state.dataThermalComforts->SurfaceAE(SurfNum2) * state.dataHeatBalSurf->SurfInsideTempHist(1)(SurfNum2);
-                state.dataThermalComforts->ZoneAESum(ZoneNum) += state.dataThermalComforts->SurfaceAE(SurfNum2);
+        Real64 sumAET = 0.0; // Intermediate calculational variable (area*emissivity*T) sum
+
+        auto &thisSurface = state.dataSurface->Surface(SurfNum);
+        auto &thisRadEnclosure = state.dataViewFactor->EnclRadInfo(thisSurface.RadEnclIndex);
+        // Recalc SurfaceEnclAESum only if needed due to window shades or EMS
+        if (thisRadEnclosure.radReCalc) {
+            thisSurface.enclAESum = 0.0;
+            for (int const SurfNum2 : thisRadEnclosure.SurfacePtr) {
+                if (SurfNum2 == SurfNum) continue;
+                auto &thisSurface2 = state.dataSurface->Surface(SurfNum2);
+                thisSurface2.AE = thisSurface2.Area * state.dataConstruction->Construct(thisSurface2.Construction).InsideAbsorpThermal;
+                thisSurface.enclAESum += thisSurface2.AE;
             }
         }
+        for (int const SurfNum2 : thisRadEnclosure.SurfacePtr) {
+            if (SurfNum2 == SurfNum) continue;
+            sumAET += state.dataSurface->Surface(SurfNum2).AE * state.dataHeatBalSurf->SurfInsideTempHist(1)(SurfNum2);
+        }
 
-        // Now weight the MRT--half comes from the surface used for weighting (SurfNum) and the rest from the adjusted MRT that excludes this surface
-        if (state.dataThermalComforts->ZoneAESum(ZoneNum) > 0.01) {
-            CalcSurfaceWeightedMRT =
-                0.5 * (state.dataHeatBalSurf->SurfInsideTempHist(1)(SurfNum) + (SumAET / state.dataThermalComforts->ZoneAESum(ZoneNum)));
+        // Now weight the MRT
+        auto &thisSurfaceTemp = state.dataHeatBalSurf->SurfInsideTempHist(1)(SurfNum);
+        if (thisSurface.enclAESum > 0.01) {
+            CalcSurfaceWeightedMRT = sumAET / thisSurface.enclAESum;
+            // if averaged with surface--half comes from the surface used for weighting (SurfNum) and the rest from the calculated MRT that excludes
+            // this surface
+            if (AverageWithSurface) {
+                CalcSurfaceWeightedMRT = 0.5 * (thisSurfaceTemp + CalcSurfaceWeightedMRT);
+            }
         } else {
             if (state.dataThermalComforts->FirstTimeError) {
-                ShowWarningError(
-                    state, "Zone areas*inside surface emissivities are summing to zero, for Zone=\"" + state.dataHeatBal->Zone(ZoneNum).Name + "\"");
-                ShowContinueError(state, "As a result, MAT will be used for MRT when calculating a surface weighted MRT for this zone.");
+                int spaceNum = thisSurface.spaceNum;
+                ShowWarningError(state,
+                                 format("CalcSurfaceWeightedMRT: Areas*Inside surface emissivities are summing to zero for Enclosure=\"{}\"",
+                                        thisRadEnclosure.Name));
+                ShowContinueError(state,
+                                  format("As a result, the MAT for Space={} will be used for MRT when calculating the surface weighted MRT.",
+                                         state.dataHeatBal->space(spaceNum).Name));
+                ShowContinueError(state, format("for Surface={}", thisSurface.Name));
                 state.dataThermalComforts->FirstTimeError = false;
-                CalcSurfaceWeightedMRT = 0.5 * (state.dataHeatBalSurf->SurfInsideTempHist(1)(SurfNum) + state.dataHeatBalFanSys->MAT(ZoneNum));
+                CalcSurfaceWeightedMRT = state.dataZoneTempPredictorCorrector->spaceHeatBalance(spaceNum).MAT;
+                if (AverageWithSurface) {
+                    CalcSurfaceWeightedMRT = 0.5 * (thisSurfaceTemp + CalcSurfaceWeightedMRT);
+                }
             }
         }
 
@@ -2200,7 +2186,7 @@ namespace ThermalComfort {
         return std::exp(18.6686 - 4030.183 / (Temp + 235.0));
     }
 
-    Real64 CalcRadTemp(EnergyPlusData &state, int const PeopleListNum) // Type of MRT calculation (zone averaged or surface weighted)
+    Real64 CalcRadTemp(EnergyPlusData &state, int const PeopleListNum)
     {
 
         // FUNCTION INFORMATION:
@@ -2234,35 +2220,28 @@ namespace ThermalComfort {
         // within a space.  Future additions might include the effect of direct
         // solar energy on occupants.
 
-        // Return value
-        Real64 CalcRadTemp;
+        Real64 CalcRadTemp = 0.0;
+        Real64 constexpr AreaEff = 1.8;                    // Effective area of a "standard" person in meters squared
+        Real64 constexpr StefanBoltzmannConst = 5.6697e-8; // Stefan-Boltzmann constant in W/(m2*K4)
 
-        // Locals
-        Real64 SurfaceTemp;
-
-        // FUNCTION PARAMETER DEFINITIONS:
-        Real64 const AreaEff(1.8);                    // Effective area of a "standard" person in meters squared
-        Real64 const StefanBoltzmannConst(5.6697e-8); // Stefan-Boltzmann constant in W/(m2*K4)
-
-        // FUNCTION LOCAL VARIABLE DECLARATIONS:
-        Real64 ZoneRadTemp;
-
-        {
-            auto const SELECT_CASE_var(state.dataHeatBal->People(PeopleListNum).MRTCalcType);
-
-            if (SELECT_CASE_var == DataHeatBalance::CalcMRT::ZoneAveraged) {
-                state.dataThermalComforts->RadTemp = state.dataHeatBal->ZoneMRT(state.dataThermalComforts->ZoneNum);
-            } else if (SELECT_CASE_var == DataHeatBalance::CalcMRT::SurfaceWeighted) {
-                ZoneRadTemp = state.dataHeatBal->ZoneMRT(state.dataThermalComforts->ZoneNum);
-                SurfaceTemp = state.dataHeatBalSurf->SurfInsideTempHist(1)(state.dataHeatBal->People(PeopleListNum).SurfacePtr);
-                state.dataThermalComforts->RadTemp =
-                    CalcSurfaceWeightedMRT(state, state.dataThermalComforts->ZoneNum, state.dataHeatBal->People(PeopleListNum).SurfacePtr);
-            } else if (SELECT_CASE_var == DataHeatBalance::CalcMRT::AngleFactor) {
-                state.dataThermalComforts->RadTemp = CalcAngleFactorMRT(state, state.dataHeatBal->People(PeopleListNum).AngleFactorListPtr);
-            }
+        auto &thisPeople = state.dataHeatBal->People(PeopleListNum);
+        switch (thisPeople.MRTCalcType) {
+        case DataHeatBalance::CalcMRT::EnclosureAveraged: {
+            int enclNum = state.dataHeatBal->space(thisPeople.spaceIndex).radiantEnclosureNum;
+            state.dataThermalComforts->RadTemp = state.dataViewFactor->EnclRadInfo(enclNum).MRT;
+        } break;
+        case DataHeatBalance::CalcMRT::SurfaceWeighted: {
+            state.dataThermalComforts->RadTemp = CalcSurfaceWeightedMRT(state, thisPeople.SurfacePtr);
+        } break;
+        case DataHeatBalance::CalcMRT::AngleFactor: {
+            state.dataThermalComforts->RadTemp = CalcAngleFactorMRT(state, thisPeople.AngleFactorListPtr);
+        } break;
+        default:
+            break;
         }
 
         // If high temperature radiant heater present and on, then must account for this in MRT calculation
+        // MJW MRT ToDo: Think about what happens here - at a minimum, set a flag to skip this if there isn't any radiant HVAC
         state.dataHeatBalFanSys->ZoneQdotRadHVACToPerson(state.dataThermalComforts->ZoneNum) =
             state.dataHeatBalFanSys->ZoneQHTRadSysToPerson(state.dataThermalComforts->ZoneNum) +
             state.dataHeatBalFanSys->ZoneQCoolingPanelToPerson(state.dataThermalComforts->ZoneNum) +
@@ -2270,11 +2249,11 @@ namespace ThermalComfort {
             state.dataHeatBalFanSys->ZoneQSteamBaseboardToPerson(state.dataThermalComforts->ZoneNum) +
             state.dataHeatBalFanSys->ZoneQElecBaseboardToPerson(state.dataThermalComforts->ZoneNum);
         if (state.dataHeatBalFanSys->ZoneQdotRadHVACToPerson(state.dataThermalComforts->ZoneNum) > 0.0) {
-            state.dataThermalComforts->RadTemp += DataGlobalConstants::KelvinConv; // Convert to Kelvin
+            state.dataThermalComforts->RadTemp += Constant::Kelvin; // Convert to Kelvin
             state.dataThermalComforts->RadTemp =
                 root_4(pow_4(state.dataThermalComforts->RadTemp) +
                        (state.dataHeatBalFanSys->ZoneQdotRadHVACToPerson(state.dataThermalComforts->ZoneNum) / AreaEff / StefanBoltzmannConst));
-            state.dataThermalComforts->RadTemp -= DataGlobalConstants::KelvinConv; // Convert back to Celsius
+            state.dataThermalComforts->RadTemp -= Constant::Kelvin; // Convert back to Celsius
         }
 
         CalcRadTemp = state.dataThermalComforts->RadTemp;
@@ -2298,9 +2277,6 @@ namespace ThermalComfort {
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 OperTemp;
-        Real64 HumidRatio;
-        Real64 CurAirTemp;
-        Real64 CurMeanRadiantTemp;
         Real64 NumberOccupants;
         bool isComfortableWithSummerClothes;
         bool isComfortableWithWinterClothes;
@@ -2326,18 +2302,20 @@ namespace ThermalComfort {
             }
         }
         // loop through the zones and determine if in simple ashrae 55 comfort regions
+        // MJW MRT ToDo: Extend ASHRAE 55 to spaces?
         for (iZone = 1; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
             if (state.dataThermalComforts->ThermalComfortInASH55(iZone).ZoneIsOccupied) {
+                auto &thisZoneHB = state.dataZoneTempPredictorCorrector->zoneHeatBalance(iZone);
                 // keep track of occupied hours
                 state.dataThermalComforts->ZoneOccHrs(iZone) += state.dataGlobal->TimeStepZone;
-                if (state.dataRoomAirMod->IsZoneDV(iZone) || state.dataRoomAirMod->IsZoneUI(iZone)) {
-                    CurAirTemp = state.dataRoomAirMod->TCMF(iZone);
-                } else {
-                    CurAirTemp = state.dataHeatBalFanSys->ZTAVComf(iZone);
+                Real64 CurAirTemp = thisZoneHB.ZTAVComf;
+                if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+                    if (state.dataRoomAir->IsZoneDispVent3Node(iZone) || state.dataRoomAir->IsZoneUFAD(iZone)) {
+                        CurAirTemp = state.dataRoomAir->TCMF(iZone);
+                    }
                 }
-                CurMeanRadiantTemp = state.dataHeatBal->ZoneMRT(iZone);
+                Real64 CurMeanRadiantTemp = thisZoneHB.MRT;
                 OperTemp = CurAirTemp * 0.5 + CurMeanRadiantTemp * 0.5;
-                HumidRatio = state.dataHeatBalFanSys->ZoneAirHumRatAvgComf(iZone);
                 // for debugging
                 // ThermalComfortInASH55(iZone)%dCurAirTemp = CurAirTemp
                 // ThermalComfortInASH55(iZone)%dCurMeanRadiantTemp = CurMeanRadiantTemp
@@ -2366,9 +2344,11 @@ namespace ThermalComfort {
                 //   7       28.3        Summer    0.000
                 //   8       25.1        Summer    0.000
                 // check summer clothing conditions
-                isComfortableWithSummerClothes = isInQuadrilateral(OperTemp, HumidRatio, 25.1, 0.0, 23.6, 0.012, 26.8, 0.012, 28.3, 0.0);
+                isComfortableWithSummerClothes =
+                    isInQuadrilateral(OperTemp, thisZoneHB.airHumRatAvgComf, 25.1, 0.0, 23.6, 0.012, 26.8, 0.012, 28.3, 0.0);
                 // check winter clothing conditions
-                isComfortableWithWinterClothes = isInQuadrilateral(OperTemp, HumidRatio, 21.7, 0.0, 19.6, 0.012, 23.9, 0.012, 26.3, 0.0);
+                isComfortableWithWinterClothes =
+                    isInQuadrilateral(OperTemp, thisZoneHB.airHumRatAvgComf, 21.7, 0.0, 19.6, 0.012, 23.9, 0.012, 26.3, 0.0);
                 if (isComfortableWithSummerClothes) {
                     state.dataThermalComforts->ThermalComfortInASH55(iZone).timeNotSummer = 0.0;
                 } else {
@@ -2419,10 +2399,11 @@ namespace ThermalComfort {
                 ShowContinueError(state, "Based on ASHRAE 55-2004 graph (Section 5.2.1.1)");
                 if (state.dataEnvrn->RunPeriodEnvironment) {
                     ShowContinueError(state,
-                                      "During Environment [" + state.dataEnvrn->EnvironmentStartEnd + "]: " + state.dataEnvrn->EnvironmentName);
+                                      format("During Environment [{}]: {}", state.dataEnvrn->EnvironmentStartEnd, state.dataEnvrn->EnvironmentName));
                 } else {
                     ShowContinueError(
-                        state, "During SizingPeriod Environment [" + state.dataEnvrn->EnvironmentStartEnd + "]: " + state.dataEnvrn->EnvironmentName);
+                        state,
+                        format("During SizingPeriod Environment [{}]: {}", state.dataEnvrn->EnvironmentStartEnd, state.dataEnvrn->EnvironmentName));
                 }
                 for (iZone = 1; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
                     if (state.dataThermalComforts->ThermalComfortInASH55(iZone).Enable55Warning) {
@@ -2468,15 +2449,18 @@ namespace ThermalComfort {
             state.dataThermalComforts->TotalAnyZoneTimeNotSimpleASH55Summer = 0.0;
             state.dataThermalComforts->TotalAnyZoneTimeNotSimpleASH55Either = 0.0;
             // report how the aggregation is conducted
-            {
-                auto const SELECT_CASE_var(state.dataGlobal->KindOfSim);
-                if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::DesignDay) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the Design Days");
-                } else if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::RunPeriodDesign) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the RunPeriods for Design");
-                } else if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::RunPeriodWeather) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the RunPeriods for Weather");
-                }
+            switch (state.dataGlobal->KindOfSim) {
+            case Constant::KindOfSim::DesignDay: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the Design Days");
+            } break;
+            case Constant::KindOfSim::RunPeriodDesign: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the RunPeriods for Design");
+            } break;
+            case Constant::KindOfSim::RunPeriodWeather: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstSimpleComfort, "Aggregated over the RunPeriods for Weather");
+            } break;
+            default:
+                break;
             }
             // report number of occupied hours per week for LEED report
             for (iZone = 1; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
@@ -2519,10 +2503,6 @@ namespace ThermalComfort {
         using namespace OutputReportPredefined;
         auto &deviationFromSetPtThresholdClg = state.dataHVACGlobal->deviationFromSetPtThresholdClg;
         auto &deviationFromSetPtThresholdHtg = state.dataHVACGlobal->deviationFromSetPtThresholdHtg;
-        using DataHVACGlobals::DualSetPointWithDeadBand;
-        using DataHVACGlobals::SingleCoolingSetPoint;
-        using DataHVACGlobals::SingleHeatCoolSetPoint;
-        using DataHVACGlobals::SingleHeatingSetPoint;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 SensibleLoadPredictedNoAdj;
@@ -2544,33 +2524,20 @@ namespace ThermalComfort {
             state.dataThermalComforts->ThermalComfortSetPoint(iZone).notMetHeating = 0.0;
             state.dataThermalComforts->ThermalComfortSetPoint(iZone).notMetCoolingOccupied = 0.0;
             state.dataThermalComforts->ThermalComfortSetPoint(iZone).notMetHeatingOccupied = 0.0;
-            {
-                auto const SELECT_CASE_var(state.dataHeatBalFanSys->TempControlType(iZone));
-                if (SELECT_CASE_var == SingleHeatingSetPoint) {
-                    testHeating = true;
-                    testCooling = false;
-                } else if (SELECT_CASE_var == SingleCoolingSetPoint) {
-                    testHeating = false;
-                    testCooling = true;
-                } else if (SELECT_CASE_var == SingleHeatCoolSetPoint) {
-                    testHeating = true;
-                    testCooling = true;
-                } else if (SELECT_CASE_var == DualSetPointWithDeadBand) {
-                    testHeating = true;
-                    testCooling = true;
-                } else {
-                    testHeating = true;
-                    testCooling = true;
-                }
-            }
+
+            testHeating = (state.dataHeatBalFanSys->TempControlType(iZone) != DataHVACGlobals::ThermostatType::SingleCooling);
+            testCooling = (state.dataHeatBalFanSys->TempControlType(iZone) != DataHVACGlobals::ThermostatType::SingleHeating);
+
             if (testHeating && (SensibleLoadPredictedNoAdj > 0)) { // heating
-                if (state.dataRoomAirMod->AirModel(iZone).AirModelType != DataRoomAirModel::RoomAirModel::Mixing) {
+                if (state.dataRoomAir->AirModel(iZone).AirModel != RoomAir::RoomAirModel::Mixing) {
                     deltaT = state.dataHeatBalFanSys->TempTstatAir(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointLo(iZone);
                 } else {
                     if (state.dataZoneTempPredictorCorrector->NumOnOffCtrZone > 0) {
-                        deltaT = state.dataHeatBalFanSys->ZTAV(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointLoAver(iZone);
+                        deltaT = state.dataZoneTempPredictorCorrector->zoneHeatBalance(iZone).ZTAV -
+                                 state.dataHeatBalFanSys->ZoneThermostatSetPointLoAver(iZone);
                     } else {
-                        deltaT = state.dataHeatBalFanSys->ZTAV(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointLo(iZone);
+                        deltaT = state.dataZoneTempPredictorCorrector->zoneHeatBalance(iZone).ZTAV -
+                                 state.dataHeatBalFanSys->ZoneThermostatSetPointLo(iZone);
                     }
                 }
                 if (deltaT < deviationFromSetPtThresholdHtg) {
@@ -2588,13 +2555,15 @@ namespace ThermalComfort {
                     }
                 }
             } else if (testCooling && (SensibleLoadPredictedNoAdj < 0)) { // cooling
-                if (state.dataRoomAirMod->AirModel(iZone).AirModelType != DataRoomAirModel::RoomAirModel::Mixing) {
+                if (state.dataRoomAir->AirModel(iZone).AirModel != RoomAir::RoomAirModel::Mixing) {
                     deltaT = state.dataHeatBalFanSys->TempTstatAir(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointHi(iZone);
                 } else {
                     if (state.dataZoneTempPredictorCorrector->NumOnOffCtrZone > 0) {
-                        deltaT = state.dataHeatBalFanSys->ZTAV(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointHiAver(iZone);
+                        deltaT = state.dataZoneTempPredictorCorrector->zoneHeatBalance(iZone).ZTAV -
+                                 state.dataHeatBalFanSys->ZoneThermostatSetPointHiAver(iZone);
                     } else {
-                        deltaT = state.dataHeatBalFanSys->ZTAV(iZone) - state.dataHeatBalFanSys->ZoneThermostatSetPointHi(iZone);
+                        deltaT = state.dataZoneTempPredictorCorrector->zoneHeatBalance(iZone).ZTAV -
+                                 state.dataHeatBalFanSys->ZoneThermostatSetPointHi(iZone);
                     }
                 }
 
@@ -2666,15 +2635,18 @@ namespace ThermalComfort {
             state.dataThermalComforts->TotalAnyZoneNotMetCoolingOccupied = 0.0;
             state.dataThermalComforts->TotalAnyZoneNotMetOccupied = 0.0;
             // report how the aggregation is conducted
-            {
-                auto const SELECT_CASE_var(state.dataGlobal->KindOfSim);
-                if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::DesignDay) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the Design Days");
-                } else if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::RunPeriodDesign) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the RunPeriods for Design");
-                } else if (SELECT_CASE_var == DataGlobalConstants::KindOfSim::RunPeriodWeather) {
-                    addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the RunPeriods for Weather");
-                }
+            switch (state.dataGlobal->KindOfSim) {
+            case Constant::KindOfSim::DesignDay: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the Design Days");
+            } break;
+            case Constant::KindOfSim::RunPeriodDesign: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the RunPeriods for Design");
+            } break;
+            case Constant::KindOfSim::RunPeriodWeather: {
+                addFootNoteSubTable(state, state.dataOutRptPredefined->pdstUnmetLoads, "Aggregated over the RunPeriods for Weather");
+            } break;
+            default:
+                break;
             }
         }
     }
@@ -2700,9 +2672,9 @@ namespace ThermalComfort {
 
     void CalcThermalComfortAdaptiveASH55(
         EnergyPlusData &state,
-        bool const initiate,              // true if supposed to initiate
-        Optional_bool_const wthrsim,      // true if this is a weather simulation
-        Optional<Real64 const> avgdrybulb // approximate avg drybulb for design day.  will be used as previous period in design day
+        bool const initiate,                         // true if supposed to initiate
+        ObjexxFCL::Optional_bool_const wthrsim,      // true if this is a weather simulation
+        ObjexxFCL::Optional<Real64 const> avgdrybulb // approximate avg drybulb for design day.  will be used as previous period in design day
     )
     {
 
@@ -2723,7 +2695,7 @@ namespace ThermalComfort {
         // the relevant file once to initialize, and then operates within the loop.
 
         // Using/Aliasing
-        auto &SysTimeElapsed = state.dataHVACGlobal->SysTimeElapsed;
+        Real64 SysTimeElapsed = state.dataHVACGlobal->SysTimeElapsed;
         using OutputReportTabular::GetColumnUsingTabs;
         using OutputReportTabular::StrToReal;
 
@@ -2894,11 +2866,12 @@ namespace ThermalComfort {
              ++state.dataThermalComforts->PeopleNum) {
             if (!state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).AdaptiveASH55) continue;
             state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
-            if (state.dataRoomAirMod->IsZoneDV(state.dataThermalComforts->ZoneNum) ||
-                state.dataRoomAirMod->IsZoneUI(state.dataThermalComforts->ZoneNum)) {
-                state.dataThermalComforts->AirTemp = state.dataRoomAirMod->TCMF(state.dataThermalComforts->ZoneNum);
-            } else {
-                state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
+            state.dataThermalComforts->AirTemp = state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum).ZTAVComf;
+            if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+                if (state.dataRoomAir->IsZoneDispVent3Node(state.dataThermalComforts->ZoneNum) ||
+                    state.dataRoomAir->IsZoneUFAD(state.dataThermalComforts->ZoneNum)) {
+                    state.dataThermalComforts->AirTemp = state.dataRoomAir->TCMF(state.dataThermalComforts->ZoneNum);
+                }
             }
             state.dataThermalComforts->RadTemp = CalcRadTemp(state, state.dataThermalComforts->PeopleNum);
             state.dataThermalComforts->OpTemp = (state.dataThermalComforts->AirTemp + state.dataThermalComforts->RadTemp) / 2.0;
@@ -2945,9 +2918,9 @@ namespace ThermalComfort {
 
     void CalcThermalComfortAdaptiveCEN15251(
         EnergyPlusData &state,
-        bool const initiate,              // true if supposed to initiate
-        Optional_bool_const wthrsim,      // true if this is a weather simulation
-        Optional<Real64 const> avgdrybulb // approximate avg drybulb for design day.  will be used as previous period in design day
+        bool const initiate,                         // true if supposed to initiate
+        ObjexxFCL::Optional_bool_const wthrsim,      // true if this is a weather simulation
+        ObjexxFCL::Optional<Real64 const> avgdrybulb // approximate avg drybulb for design day.  will be used as previous period in design day
     )
     {
 
@@ -2962,13 +2935,13 @@ namespace ThermalComfort {
         // moving average of the outdoor air temperature.
 
         // Using/Aliasing
-        auto &SysTimeElapsed = state.dataHVACGlobal->SysTimeElapsed;
+        Real64 SysTimeElapsed = state.dataHVACGlobal->SysTimeElapsed;
         using OutputReportTabular::GetColumnUsingTabs;
         using OutputReportTabular::StrToReal;
 
         // SUBROUTINE PARAMETER DEFINITIONS:
-        static Real64 const alpha(0.8);
-        static Array1D<Real64> const alpha_pow({pow_6(alpha), pow_5(alpha), pow_4(alpha), pow_3(alpha), pow_2(alpha), alpha, 1.0}); // alpha^(7-i)
+        static Real64 constexpr alpha(0.8);
+        static constexpr std::array<Real64, 7> alpha_pow = {0.262144, 0.32768, 0.4096, 0.512, 0.64, 0.8, 1.0}; // alpha^(6-0)
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         std::string epwLine;
@@ -2988,7 +2961,7 @@ namespace ThermalComfort {
         int j;
         bool weathersimulation;
         Real64 inavgdrybulb;
-        int const numHeaderRowsInEpw = 8;
+        int constexpr numHeaderRowsInEpw = 8;
 
         if (initiate) { // not optional on initiate=true.  would otherwise check for presence
             weathersimulation = wthrsim;
@@ -3024,7 +2997,7 @@ namespace ThermalComfort {
                         epwFile.readLine();
                     }
                     state.dataThermalComforts->runningAverageCEN = 0.0;
-                    for (i = 1; i <= 7; ++i) {
+                    for (i = 0; i < 7; ++i) {
                         state.dataThermalComforts->avgDryBulbCEN = 0.0;
                         for (j = 1; j <= 24; ++j) {
                             epwLine = epwFile.readLine().data;
@@ -3036,7 +3009,7 @@ namespace ThermalComfort {
                             dryBulb = StrToReal(epwLine.substr(0, pos));
                             state.dataThermalComforts->avgDryBulbCEN += (dryBulb / 24.0);
                         }
-                        state.dataThermalComforts->runningAverageCEN += alpha_pow(i) * state.dataThermalComforts->avgDryBulbCEN;
+                        state.dataThermalComforts->runningAverageCEN += alpha_pow[i] * state.dataThermalComforts->avgDryBulbCEN;
                     }
                 } else { // Do special things for wrapping the epw
                     calcEndDay = jStartDay;
@@ -3060,7 +3033,7 @@ namespace ThermalComfort {
                     for (i = calcEndHr + 1; i <= calcStartHr - 1; ++i) {
                         epwFile.readLine();
                     }
-                    for (i = 1; i <= 7 - calcEndDay; ++i) {
+                    for (i = 0; i < 7 - calcEndDay; ++i) {
                         state.dataThermalComforts->avgDryBulbCEN = 0.0;
                         for (j = 1; j <= 24; ++j) {
                             epwLine = epwFile.readLine().data;
@@ -3072,7 +3045,7 @@ namespace ThermalComfort {
                             dryBulb = StrToReal(epwLine.substr(0, pos));
                             state.dataThermalComforts->avgDryBulbCEN += (dryBulb / 24.0);
                         }
-                        state.dataThermalComforts->runningAverageCEN += alpha_pow(i) * state.dataThermalComforts->avgDryBulbCEN;
+                        state.dataThermalComforts->runningAverageCEN += alpha_pow[i] * state.dataThermalComforts->avgDryBulbCEN;
                     }
                 }
                 state.dataThermalComforts->runningAverageCEN *= (1.0 - alpha);
@@ -3104,11 +3077,12 @@ namespace ThermalComfort {
              ++state.dataThermalComforts->PeopleNum) {
             if (!state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).AdaptiveCEN15251) continue;
             state.dataThermalComforts->ZoneNum = state.dataHeatBal->People(state.dataThermalComforts->PeopleNum).ZonePtr;
-            if (state.dataRoomAirMod->IsZoneDV(state.dataThermalComforts->ZoneNum) ||
-                state.dataRoomAirMod->IsZoneUI(state.dataThermalComforts->ZoneNum)) {
-                state.dataThermalComforts->AirTemp = state.dataRoomAirMod->TCMF(state.dataThermalComforts->ZoneNum);
-            } else {
-                state.dataThermalComforts->AirTemp = state.dataHeatBalFanSys->ZTAVComf(state.dataThermalComforts->ZoneNum);
+            state.dataThermalComforts->AirTemp = state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataThermalComforts->ZoneNum).ZTAVComf;
+            if (state.dataRoomAir->anyNonMixingRoomAirModel) {
+                if (state.dataRoomAir->IsZoneDispVent3Node(state.dataThermalComforts->ZoneNum) ||
+                    state.dataRoomAir->IsZoneUFAD(state.dataThermalComforts->ZoneNum)) {
+                    state.dataThermalComforts->AirTemp = state.dataRoomAir->TCMF(state.dataThermalComforts->ZoneNum);
+                }
             }
             state.dataThermalComforts->RadTemp = CalcRadTemp(state, state.dataThermalComforts->PeopleNum);
             state.dataThermalComforts->OpTemp = (state.dataThermalComforts->AirTemp + state.dataThermalComforts->RadTemp) / 2.0;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2020, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,7 @@
 
 int numWarnings = 0;
 int oneTimeHalfway = 0;
+int progressValue = 0;
 
 void BeginNewEnvironmentHandler(EnergyPlusState state)
 {
@@ -124,6 +125,10 @@ void UnitarySystemSizingHandler(EnergyPlusState state)
 {
     printf("CALLBACK: %s\n", __PRETTY_FUNCTION__);
 }
+void UserDefinedCallback(EnergyPlusState state)
+{
+    printf("CALLBACK: %s\n", __PRETTY_FUNCTION__);
+}
 void stdOutHandler(const char *message)
 {
     printf("STANDARD OUTPUT CALLBACK: %s\n", message);
@@ -134,21 +139,27 @@ void newEnvrnHandler(EnergyPlusState state)
     printf("NEW ENVIRONMENT CALLBACK: Starting a new environment\n");
 }
 
-void progressHandler(EnergyPlusState state, int const progress)
+void progressHandler(int const progress)
 {
+    progressValue = progress;
     if (oneTimeHalfway == 0 && progress > 50) {
         printf("Were halfway there!\n");
         oneTimeHalfway = 1;
     }
 }
 
-void errorHandler(EnergyPlusState state, int level, const char *message)
+void ShouldStopHandler(EnergyPlusState state)
 {
-    char *warning = strstr(message, "Warning");
-    if (warning) {
-        numWarnings++;
-    }
+    stopSimulation(state);
 }
+
+// void errorHandler(EnergyPlusState state, int level, const char *message)
+//{
+//    char *warning = strstr(message, "Warning");
+//    if (warning) {
+//        numWarnings++;
+//    }
+//}
 
 void externalHVAC(EnergyPlusState state)
 {
@@ -157,35 +168,42 @@ void externalHVAC(EnergyPlusState state)
 
 int main(int argc, const char *argv[])
 {
-    //    callbackBeginNewEnvironment(BeginNewEnvironmentHandler);
-    //    callbackAfterNewEnvironmentWarmupComplete(AfterNewEnvironmentWarmupCompleteHandler);
-    //    callbackBeginZoneTimeStepBeforeInitHeatBalance(state, BeginZoneTimeStepBeforeInitHeatBalanceHandler);
-    //    callbackBeginZoneTimeStepAfterInitHeatBalance(state, BeginZoneTimeStepAfterInitHeatBalanceHandler);
-    //    callbackBeginTimeStepBeforePredictor(BeginTimeStepBeforePredictorHandler);
-    //    callbackAfterPredictorBeforeHVACManagers(AfterPredictorBeforeHVACManagersHandler);
-    //    callbackAfterPredictorAfterHVACManagers(AfterPredictorAfterHVACManagersHandler);
-    //    callbackInsideSystemIterationLoop(InsideSystemIterationLoopHandler);
-    //    callbackEndOfZoneTimeStepBeforeZoneReporting(EndOfZoneTimeStepBeforeZoneReportingHandler);
-    //    callbackEndOfZoneTimeStepAfterZoneReporting(EndOfZoneTimeStepAfterZoneReportingHandler);
-    //    callbackEndOfSystemTimeStepBeforeHVACReporting(EndOfSystemTimeStepBeforeHVACReportingHandler);
-    //    callbackEndOfSystemTimeStepAfterHVACReporting(EndOfSystemTimeStepAfterHVACReportingHandler);
-    //    callbackEndOfZoneSizing(EndOfZoneSizingHandler);
-    //    callbackEndOfSystemSizing(EndOfSystemSizingHandler);
-    //    callbackEndOfAfterComponentGetInput(EndOfAfterComponentGetInputHandler);
-    //    callbackUnitarySystemSizing(UnitarySystemSizingHandler);
-    //    registerProgressCallback(progressHandler);
-    //    registerErrorCallback(errorHandler);
     EnergyPlusState state = stateNew();
+    callbackBeginNewEnvironment(state, BeginNewEnvironmentHandler);
+    callbackAfterNewEnvironmentWarmupComplete(state, AfterNewEnvironmentWarmupCompleteHandler);
+    callbackBeginZoneTimeStepBeforeInitHeatBalance(state, BeginZoneTimeStepBeforeInitHeatBalanceHandler);
+    callbackBeginZoneTimeStepAfterInitHeatBalance(state, BeginZoneTimeStepAfterInitHeatBalanceHandler);
+    callbackBeginTimeStepBeforePredictor(state, BeginTimeStepBeforePredictorHandler);
+    callbackAfterPredictorBeforeHVACManagers(state, AfterPredictorBeforeHVACManagersHandler);
+    callbackAfterPredictorAfterHVACManagers(state, AfterPredictorAfterHVACManagersHandler);
+    callbackInsideSystemIterationLoop(state, InsideSystemIterationLoopHandler);
+    callbackEndOfZoneTimeStepBeforeZoneReporting(state, EndOfZoneTimeStepBeforeZoneReportingHandler);
+    callbackEndOfZoneTimeStepAfterZoneReporting(state, EndOfZoneTimeStepAfterZoneReportingHandler);
+    callbackEndOfSystemTimeStepBeforeHVACReporting(state, EndOfSystemTimeStepBeforeHVACReportingHandler);
+    callbackEndOfSystemTimeStepAfterHVACReporting(state, EndOfSystemTimeStepAfterHVACReportingHandler);
+    callbackEndOfZoneSizing(state, EndOfZoneSizingHandler);
+    callbackEndOfSystemSizing(state, EndOfSystemSizingHandler);
+    callbackEndOfAfterComponentGetInput(state, EndOfAfterComponentGetInputHandler);
+    callbackUnitarySystemSizing(state, UnitarySystemSizingHandler);
+    callbackUserDefinedComponentModel(state, UserDefinedCallback, "Hello");
+    registerProgressCallback(state, progressHandler);
+    // registerErrorCallback(errorHandler);
     energyplus(state, argc, argv);
     if (numWarnings > 0) {
         printf("There were %d warnings!\n", numWarnings);
         numWarnings = 0;
+    }
+    if (progressValue != 100) {
+        return 1;
     }
     oneTimeHalfway = 0;
     // reset and run again
     EnergyPlusState state2 = stateNew(); // stateReset(state); // note previous callbacks are cleared here
     callbackAfterNewEnvironmentWarmupComplete(state2, newEnvrnHandler);
     registerStdOutCallback(state2, stdOutHandler);
+    // have fun toggling the console print status off/on/off
+    setConsoleOutputState(state2, 0);
+    setConsoleOutputState(state2, 1);
     setConsoleOutputState(state2, 0);
     printf("Running EnergyPlus with Console Output Muted...\n");
     energyplus(state2, argc, argv);
@@ -207,5 +225,15 @@ int main(int argc, const char *argv[])
     printf("Setting EnergyPlus root directory for potential runs with auxiliary tools...\n");
     EnergyPlusState state4 = stateNew();
     setEnergyPlusRootDirectory(state4, "/path/to/EnergyPlus/Root");
+
+    // OK, now just try to run one of the dirty states and it should fail
+    int bad = energyplus(state3, argc, argv);
+    if (bad == 0) return 1;
+
+    // OK, so now let's run with a callback that stops the simulation
+    EnergyPlusState state5 = stateNew();
+    callbackBeginNewEnvironment(state, ShouldStopHandler);
+    energyplus(state5, argc, argv);
+
     return 0;
 }

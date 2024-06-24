@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -53,6 +53,8 @@
 #include <ObjexxFCL/Optional.hh>
 
 // EnergyPlus Headers
+#include <EnergyPlus/Coils/CoilCoolingDXCurveFitOperatingMode.hh>
+#include <EnergyPlus/DataHeatBalance.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 
@@ -63,101 +65,54 @@ struct EnergyPlusData;
 
 namespace StandardRatings {
 
-    // Data
-    extern Real64 const IndoorCoilInletAirWetBulbTempRated;   // 19.44C (67F)  Tests A2, B2, B1, and F1
-    extern Real64 const OutdoorCoilInletAirDryBulbTempRated;  // 35.00C (95F)  Tests A2, B2, B1, and F1
-    extern Real64 const OutdoorCoilInletAirDryBulbTempTestA2; // 35.00C (95F)  Test A2 (high speed)
-    extern Real64 const OutdoorCoilInletAirDryBulbTempTestB2; // 27.78C (82F)  Test B2 (high speed)
-    extern Real64 const OutdoorCoilInletAirDryBulbTempTestB1; // 27.78C (82F)  Test B1 (Low speed)
-    extern Real64 const OutdoorCoilInletAirDryBulbTempTestF1; // 19.44C (67F)  Test B1 (Low speed)
+    Real64 constexpr ConvFromSIToIP(3.412141633); // Conversion from SI to IP [3.412 Btu/hr-W]
 
-    // AHRI Standard 210/240-2008 Performance Test Conditions for Unitary Air-to-Air Air-Conditioning and Heat Pump Equipment
-    extern Real64 const CoolingCoilInletAirWetBulbTempRated; // 19.44C (67F)  Tests A and B
-    extern Real64 const OutdoorUnitInletAirDryBulbTemp;      // 27.78C (82F)  Test B (for SEER)
-    extern Real64 const OutdoorUnitInletAirDryBulbTempRated; // 35.00C (95F)  Test A (rated capacity)
-    extern Real64 const AirMassFlowRatioRated;               // AHRI test is at the design flow rate
-    // and hence AirMassFlowRatio is 1.0
-    extern Real64 const ConvFromSIToIP;                    // Conversion from SI to IP [3.412 Btu/hr-W]
-    extern Real64 const DefaultFanPowerPerEvapAirFlowRate; // 365 W/1000 scfm or 773.3 W/(m3/s). The AHRI standard
-    // specifies a nominal/default fan electric power consumption per rated air
-    // volume flow rate to account for indoor fan electric power consumption
-    // when the standard tests are conducted on units that do not have an
-    // indoor air circulting fan. Used if user doesn't enter a specific value.
-    extern Real64 const PLRforSEER;                     // Part-load ratio for SEER calculation (single speed DX cooling coils)
-    extern Array1D<Real64> const ReducedPLR;            // Reduced Capacity part-load conditions
-    extern Array1D<Real64> const IEERWeightingFactor;   // EER Weighting factors (IEER)
-    extern Real64 const OADBTempLowReducedCapacityTest; // Outdoor air dry-bulb temp in degrees C (65F)
-    // Std. AHRI AHRI 340/360 Dry-bulb Temp at reduced capacity, <= 0.444
+    Real64 constexpr HeatingOutdoorCoilInletAirDBTempRated(8.33); // Outdoor air dry-bulb temp in degrees C (47F)
+    // Test H1 or rated (low and High Speed) Std. AHRI 210/240
+
+    Real64 constexpr HeatingOutdoorCoilInletAirDBTempH2Test(1.67); // Outdoor air dry-bulb temp in degrees C (35F)
+    // Test H2 (low and High Speed) Std. AHRI 210/240
+
+    Real64 constexpr HeatingOutdoorCoilInletAirDBTempH3Test(-8.33); // Outdoor air dry-bulb temp in degrees C (17F)
+    // Test H3 (low and High Speed) Std. AHRI 210/240
 
     // Defrost strategy (heat pump only)
     enum class DefrostStrat
     {
-        Unassigned = -1,
+        Invalid = -1,
         ReverseCycle, // uses reverse cycle defrost strategy
-        Resistive     // uses electric resistance heater for defrost
+        Resistive,    // uses electric resistance heater for defrost
+        Num,
     };
+
+    static constexpr std::array<std::string_view, static_cast<int>(DefrostStrat::Num)> DefrostStratUC = {"REVERSECYCLE", "RESISTIVE"};
 
     // Defrost control  (heat pump only)
     enum class HPdefrostControl : int
     {
-        Unassigned = -1,
-        Timed,   // defrost cycle is timed
-        OnDemand // defrost cycle occurs only when required
+        Invalid = -1,
+        Timed,    // defrost cycle is timed
+        OnDemand, // defrost cycle occurs only when required
+        Num
     };
 
-    extern Array1D_int const TotalNumOfTemperatureBins; // Total number of temperature
-    // bins for a region
-    extern Array1D<Real64> const StandardDesignHeatingRequirement;
-    // Standardized DHRs from ANSI/AHRI 210/240
-    extern Real64 const CorrectionFactor; // A correction factor which tends to improve the agreement
-    // between calculated and measured building loads, dimensionless.
-    extern Real64 const CyclicDegradationCoeff;
-    extern Array1D<Real64> const OutdoorDesignTemperature;
-    // Outdoor design temperature for a region from ANSI/AHRI 210/240
-    extern Array1D<Real64> const OutdoorBinTemperature;
-    // Fractional bin hours for different bin temperatures for region one, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionOneFracBinHoursAtOutdoorBinTemp;
-    // Fractional bin hours for different bin temperatures for region two, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionTwoFracBinHoursAtOutdoorBinTemp;
-    // Fractional bin hours for different bin temperatures for region three, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionThreeFracBinHoursAtOutdoorBinTemp;
-    // Fractional bin hours for different bin temperatures for region four, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionFourFracBinHoursAtOutdoorBinTemp;
-    // Fractional bin hours for different bin temperatures for region five, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionFiveFracBinHoursAtOutdoorBinTemp;
-    // Fractional bin hours for different bin temperatures for region six, from ANSI/AHRI 210/240
-    extern Array1D<Real64> const RegionSixFracBinHoursAtOutdoorBinTemp;
+    static constexpr std::array<std::string_view, static_cast<int>(HPdefrostControl::Num)> HPdefrostControlUC = {"TIMED", "ONDEMAND"};
 
-    // Representative cooling season Outdoor air temperature bin from ANSI/AHRI 210/240-2008
-    extern Array1D<Real64> const OutdoorBinTemperatureSEER;
-    // Fractional bin hours for different bin temperatures for cooling, from ANSI/AHRI 210/240 - 2008
-    extern Array1D<Real64> const CoolFracBinHoursAtOutdoorBinTemp;
+    enum class AhriChillerStd
+    {
+        Invalid = -1,
+        AHRI550_590,
+        AHRI551_591,
+        Num
+    };
 
-    extern Real64 const HeatingIndoorCoilInletAirDBTempRated; // Heating coil entering air dry-bulb temperature in
-    // degrees C (70F) Test H1, H2 and H3
-    // (low and High Speed) Std. AHRI 210/240
-    extern Real64 const HeatingOutdoorCoilInletAirDBTempH0Test; // Outdoor air dry-bulb temp in degrees C (47F)
-    // Test H0 (low and High Speed) Std. AHRI 210/240
-    extern Real64 const HeatingOutdoorCoilInletAirDBTempRated; // Outdoor air dry-bulb temp in degrees C (47F)
-    // Test H1 or rated (low and High Speed) Std. AHRI 210/240
-    extern Real64 const HeatingOutdoorCoilInletAirDBTempH2Test; // Outdoor air dry-bulb temp in degrees C (35F)
-    // Test H2 (low and High Speed) Std. AHRI 210/240
-    extern Real64 const HeatingOutdoorCoilInletAirDBTempH3Test; // Outdoor air dry-bulb temp in degrees C (17F)
-    // Test H3 (low and High Speed) Std. AHRI 210/240
-
-    // ANSI/ASHRAE Standard 127-2012 -Method of Testing for Rating Computer and Data Processing Room Unitary Air Conditioners
-    // indoor dry bulb temperatures for tests A, B, C and D and Classes I, II, III, and IV
-    extern Array1D<Real64> const IndoorDBTempClassI2IV;
-    // indoor dew point temperature
-    extern Real64 const IndoorTDPA2D;
-    // outdoor dry bulb temperatures for tests A, B, C and D
-    extern Array1D<Real64> const OutdoorDBTempAllClassA2D;
+    constexpr std::array<std::string_view, static_cast<int>(AhriChillerStd::Num)> AhriChillerStdNamesUC{"AHRI550_590", "AHRI551_591"};
 
     // Functions
 
     void CalcChillerIPLV(EnergyPlusData &state,
                          std::string const &ChillerName,               // Name of Chiller for which IPLV is calculated
-                         int const ChillerType,                        // Type of Chiller - EIR or Reformulated EIR
+                         DataPlant::PlantEquipmentType ChillerType,    // Type of Chiller - EIR or Reformulated EIR
                          Real64 const RefCap,                          // Reference capacity of chiller [W]
                          Real64 const RefCOP,                          // Reference coefficient of performance [W/W]
                          DataPlant::CondenserType const CondenserType, // Type of Condenser - Air Cooled, Water Cooled or Evap Cooled
@@ -165,27 +120,22 @@ namespace StandardRatings {
                          int const EIRFTempCurveIndex,                 // Index for the energy input ratio modifier curve
                          int const EIRFPLRCurveIndex,                  // Index for the EIR vs part-load ratio curve
                          Real64 const MinUnloadRat,                    // Minimum unloading ratio
-                         Real64 &IPLV,
-                         Optional<Real64 const> EvapVolFlowRate,
-                         Optional_int_const CondLoopNum,
-                         Optional<Real64 const> OpenMotorEff);
-
-    Real64
-    ReformEIRChillerCondInletTempResidual(EnergyPlusData &state,
-                                          Real64 const CondenserOutletTemp, // Condenser outlet temperature (boundary condition or guess value) [C]
-                                          Array1<Real64> const &Par         // par(1)  = Condenser inlet temperature at AHRI Standard
-    );
+                         Real64 &IPLVSI,                               // IPLV.SI determined using AHRI Std 551/591 (SI)
+                         Real64 &IPLVIP,                               // IPLV.IP determined using AHRI Std 550/590 (IP)
+                         ObjexxFCL::Optional<Real64 const> CondVolFlowRate,
+                         ObjexxFCL::Optional_int_const CondLoopNum,
+                         ObjexxFCL::Optional<Real64 const> OpenMotorEff);
 
     void ReportChillerIPLV(EnergyPlusData &state,
-                           std::string const &ChillerName, // Name of Chiller for which IPLV is calculated
-                           int const ChillerType,          // Type of Chiller - EIR or Reformulated EIR
-                           Real64 const IPLVValueSI,       // IPLV value in SI units {W/W}
-                           Real64 const IPLVValueIP        // IPLV value in IP units {Btu/W-h}
+                           std::string const &ChillerName,            // Name of Chiller for which IPLV is calculated
+                           DataPlant::PlantEquipmentType ChillerType, // Type of Chiller - EIR or Reformulated EIR
+                           Real64 const IPLVValueSI,                  // IPLV value in SI units {W/W}
+                           Real64 const IPLVValueIP                   // IPLV value in IP units {Btu/W-h}
     );
 
     void CheckCurveLimitsForIPLV(EnergyPlusData &state,
                                  std::string const &ChillerName,               // Name of Chiller
-                                 int const ChillerType,                        // Type of Chiller - EIR or ReformulatedEIR
+                                 DataPlant::PlantEquipmentType ChillerType,    // Type of Chiller - EIR or ReformulatedEIR
                                  DataPlant::CondenserType const CondenserType, // Type of Condenser - Air Cooled, Water Cooled or Evap Cooled
                                  int const CapFTempCurveIndex,                 // Index for the total cooling capacity modifier curve
                                  int const EIRFTempCurveIndex                  // Index for the energy input ratio modifier curve
@@ -206,58 +156,237 @@ namespace StandardRatings {
         Array1A_int const PLFFPLRCurveIndex,                       // Index for the PLF vs part-load ratio curve
         Array1A<Real64> const RatedAirVolFlowRate,                 // Reference air flow rate of DX coil [m3/s]
         Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput, // Reference fan power per evap air flow rate [W/(m3/s)]
-        Optional_int_const RegionNum =
+        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInputSEER2,
+        Array1D<DataHeatBalance::RefrigCondenserType> CondenserType,
+        ObjexxFCL::Optional_int_const RegionNum =
             _, // Region number for calculating HSPF of single speed DX heating coil //Autodesk:OPTIONAL Used without PRESENT check
-        Optional<Real64 const> MinOATCompressor =
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor =
             _, // Minimum OAT for heat pump compressor operation [C] //Autodesk:OPTIONAL Used without PRESENT check
-        Optional<Real64 const> OATempCompressorOn =
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn =
             _, // The outdoor temperature when the compressor is automatically turned //Autodesk:OPTIONAL Used without PRESENT check
-        Optional_bool_const OATempCompressorOnOffBlank =
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank =
             _, // Flag used to determine low temperature cut out factor //Autodesk:OPTIONAL Used without PRESENT check
-        Optional<HPdefrostControl const> DefrostControl = _, // defrost control; 1=timed, 2=on-demand //Autodesk:OPTIONAL Used without PRESENT check
-        Optional_bool_const ASHRAE127StdRprt = _             // true if user wishes to report ASHRAE 127 standard ratings
+        ObjexxFCL::Optional<HPdefrostControl const> DefrostControl =
+            _,                                              // defrost control; 1=timed, 2=on-demand //Autodesk:OPTIONAL Used without PRESENT check
+        ObjexxFCL::Optional_bool_const ASHRAE127StdRprt = _ // true if user wishes to report ASHRAE 127 standard ratings
     );
 
-    void SingleSpeedDXHeatingCoilStandardRatings(
+    void CalcTwoSpeedDXCoilRating(EnergyPlusData &state,
+                                  std::string const &DXCoilName,
+                                  std::string const &DXCoilType,
+                                  int const &DXCoilType_Num,
+                                  Array1A<Real64> const &RatedTotalCapacity,
+                                  Real64 const &RatedTotCap2,
+                                  Array1A<Real64> const &RatedCOP,
+                                  Real64 const &RatedCOP2,
+                                  Array1A_int const &CapFFlowCurveIndex, // only hs
+                                  Array1A_int const &CapFTempCurveIndex,
+                                  int const &CCapFTemp2,
+                                  Array1A_int const &EIRFFlowCurveIndex, // only hs
+                                  Array1A_int const &EIRFTempCurveIndex,
+                                  int const &EIRFTemp2,
+                                  Array1A<Real64> const &RatedAirVolFlowRate,
+                                  Real64 const &RatedAirVolFlowRate2,
+                                  Array1A<Real64> const &FanPowerPerEvapAirFlowRate_2023,
+                                  Array1A<Real64> const &FanPowerPerEvapAirFlowRate_2023_LowSpeed,
+                                  Array1D<DataHeatBalance::RefrigCondenserType> const &CondenserType,
+                                  int const &PLFFPLRCurveIndex);
+
+    // Real64 NetHeatingCapRated <- Net Heating Coil capacity at Rated conditions,
+    // Real64 NetHeatingCapH3Test <- Net Heating Coil capacity at H3 test conditions
+    // Real64 HSPF <- seasonale energy efficiency ratio of multi speed DX cooling coil
+    // ANSI/AHRI 210/240 Standard 2023
+    // Real64 NetHeatingCapRated2023 <- Net Heating Coil capacity at Rated conditions,
+    // Real64 NetHeatingCapH3Test2023 <- Net Heating Coil capacity at H3 test conditions
+    // Real64 HSPF_2023 <- seasonale energy efficiency ratio of multi speed DX cooling coil
+    std::map<std::string, Real64> SingleSpeedDXHeatingCoilStandardRatings(
         EnergyPlusData &state,
-        Real64 const RatedTotalCapacity,                    // Reference capacity of DX coil [W]
-        Real64 const RatedCOP,                              // Reference coefficient of performance [W/W]
-        int const CapFFlowCurveIndex,                       // Index for the capacity as a function of flow fraction modifier curve
-        int const CapFTempCurveIndex,                       // Index for the capacity as a function of temperature modifier curve
-        int const EIRFFlowCurveIndex,                       // Index for the EIR as a function of flow fraction modifier curve
-        int const EIRFTempCurveIndex,                       // Index for the EIR as a function of temperature modifier curve
-        Real64 const RatedAirVolFlowRate,                   // Rated air volume flow rate [m3/s]
-        Real64 const FanPowerPerEvapAirFlowRateFromInput,   // Fan power per air volume flow rate [W/(m3/s)]
-        Real64 &NetHeatingCapRated,                         // Net Heating Coil capacity at Rated conditions,
-        Real64 &NetHeatingCapH3Test,                        // Net Heating Coil capacity at H3 test conditions
-        Real64 &HSPF,                                       // seasonale energy efficiency ratio of multi speed DX cooling coil
-        Optional_int_const RegionNum = _,                   // Region number for calculating HSPF of single speed DX heating coil
-        Optional<Real64 const> MinOATCompressor = _,        // Minimum OAT for heat pump compressor operation [C]
-        Optional<Real64 const> OATempCompressorOn = _,      // The outdoor temperature when the compressor is automatically turned
-        Optional_bool_const OATempCompressorOnOffBlank = _, // Flag used to determine low temperature cut out factor
-        Optional<HPdefrostControl const> DefrostControl = _ // defrost control; 1=timed, 2=on-demand
+        std::string const &DXCoilType,                                 // Type of DX coil for which HSPF is calculated
+        Real64 const RatedTotalCapacity,                               // Reference capacity of DX coil [W]
+        Real64 const RatedCOP,                                         // Reference coefficient of performance [W/W]
+        int const CapFFlowCurveIndex,                                  // Index for the capacity as a function of flow fraction modifier curve
+        int const CapFTempCurveIndex,                                  // Index for the capacity as a function of temperature modifier curve
+        int const EIRFFlowCurveIndex,                                  // Index for the EIR as a function of flow fraction modifier curve
+        int const EIRFTempCurveIndex,                                  // Index for the EIR as a function of temperature modifier curve
+        Real64 const RatedAirVolFlowRate,                              // Rated air volume flow rate [m3/s]
+        Real64 const FanPowerPerEvapAirFlowRateFromInput,              // 2017 Fan power per air volume flow rate [W/(m3/s)]
+        Real64 const FanPowerPerEvapAirFlowRateFromInput_2023,         // 2023 Fan power per air volume flow rate [W/(m3/s)]
+        ObjexxFCL::Optional_int_const RegionNum = _,                   // Region number for calculating HSPF of single speed DX heating coil
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor = _,        // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn = _,      // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank = _, // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<HPdefrostControl const> DefrostControl = _ // defrost control; 1=timed, 2=on-demand
     );
 
-    void SingleSpeedDXCoolingCoilStandardRatings(
+    Real64 SingleSpeedHeatingHSPF(
+        const Real64 NetHeatingCapRated,                    // Net Heating Coil capacity at Rated conditions,
+        ObjexxFCL::Optional_int_const RegionNum,            // Region number for calculating HSPF of single speed DX heating coil
+        const Real64 NetHeatingCapH3Test,                   // Net Heating Coil capacity at H3 test conditions
+        const Real64 ElecPowerH3Test,                       // Total system power at H3 test conditions accounting for supply fan heat [W]
+        const Real64 ElecPowerRated,                        // Total system power at Rated conditions accounting for supply fan heat [W]
+        const Real64 NetHeatingCapH2Test,                   // Net Heating Coil capacity at H2 test conditions accounting for supply fan heat [W]
+        const Real64 ElecPowerH2Test,                       // Total system power at H2 test conditions accounting for supply fan heat [W]
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor, // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank,   // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn,        // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional<const HPdefrostControl> DefrostControl); // defrost control; 1=timed, 2=on-demand
+
+    Real64 SingleSpeedHeatingHSPF2(
+        const Real64 NetHeatingCapRated_2023,                        // Net Heating Coil capacity at Rated conditions,
+        ObjexxFCL::Optional_int_const RegionNum,                     // Region number for calculating HSPF of single speed DX heating coil
+        const Real64 NetHeatingCapH3Test_2023,                       // Net Heating Coil capacity at H3 test conditions
+        const Real64 ElecPowerH3Test2023,                            // Total system power at H3 test conditions accounting for supply fan heat [W]
+        const Real64 ElecPowerRated2023,                             // Total system power at Rated conditions accounting for supply fan heat [W]
+        const Real64 NetHeatingCapH2Test2023,                        // (for 2023 Standard) Net Heating Coil capacity at H2 test conditions
+                                                                     // accounting for supply fan heat [W]
+        const Real64 ElecPowerH2Test2023,                            // Total system power at H2 test conditions accounting for supply fan heat [W]
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor,          // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank,   // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn,        // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional<const HPdefrostControl> DefrostControl); // defrost control; 1=timed, 2=on-demand
+
+    // Real64 NetCoolingCapRated -> net cooling capacity of single speed DX cooling coil
+    // Real64 SEER_User ->  seasonal energy efficiency ratio of single speed DX cooling coil, from user PLF curve
+    // Real64 SEER_Standard -> seasonal energy efficiency ratio of single speed DX cooling coil,
+    //                        from AHRI Std 210/240-2008 default PLF curve and C_D value
+    // Real64 EER -> energy efficiency ratio of single speed DX cooling coil
+    // Real64 IEER -> Integareted energy efficiency ratio of single speed DX cooling coil
+
+    // #Calculations as per ANSI/AHRI 210/240 Standard 2023
+    // Real64 NetCoolingCapRated_2023
+    // Real64 EER_2023
+    // Real64 IEER_2023
+    // Real64 SEER2_User
+    // Real64 SEER2_Standard
+    std::map<std::string, Real64> SingleSpeedDXCoolingCoilStandardRatings(
         EnergyPlusData &state,
-        std::string const &DXCoilName,                    // Name of DX coil for which HSPF is calculated
-        std::string const &DXCoilType,                    // Type of DX coil - heating or cooling
-        int const CapFTempCurveIndex,                     // Index for the capacity as a function of temperature modifier curve
-        int const CapFFlowCurveIndex,                     // Index for the capacity as a function of flow fraction modifier curve
-        int const EIRFTempCurveIndex,                     // Index for the EIR as a function of temperature modifier curve
-        int const EIRFFlowCurveIndex,                     // Index for the EIR as a function of flow fraction modifier curve
-        int const PLFFPLRCurveIndex,                      // Index for the EIR vs part-load ratio curve
-        Real64 const RatedTotalCapacity,                  // Rated gross total cooling capacity
-        Real64 const RatedCOP,                            // Rated gross COP
-        Real64 const RatedAirVolFlowRate,                 // air flow rate through the coil at rated condition
-        Real64 const FanPowerPerEvapAirFlowRateFromInput, // Fan power per air volume flow rate through the evaporator coil
-        Real64 &NetCoolingCapRated,                       // net cooling capacity of single speed DX cooling coil
-        Real64 &SEER_User,                                // seasonal energy efficiency ratio of single speed DX cooling coil, from user PLF curve
-        Real64 &SEER_Standard, // seasonal energy efficiency ratio of single speed DX cooling coil, from AHRI Std 210/240-2008 default PLF curve and
-                               // C_D value
-        Real64 &EER,           // energy efficiency ratio of single speed DX cooling coil
-        Real64 &IEER           // Integareted energy efficiency ratio of single speed DX cooling coil
+        std::string const &DXCoilName,                         // Name of DX coil for which HSPF is calculated
+        std::string const &DXCoilType,                         // Type of DX coil - heating or cooling
+        int const CapFTempCurveIndex,                          // Index for the capacity as a function of temperature modifier curve
+        int const CapFFlowCurveIndex,                          // Index for the capacity as a function of flow fraction modifier curve
+        int const EIRFTempCurveIndex,                          // Index for the EIR as a function of temperature modifier curve
+        int const EIRFFlowCurveIndex,                          // Index for the EIR as a function of flow fraction modifier curve
+        int const PLFFPLRCurveIndex,                           // Index for the EIR vs part-load ratio curve
+        Real64 const RatedTotalCapacity,                       // Rated gross total cooling capacity
+        Real64 const RatedCOP,                                 // Rated gross COP
+        Real64 const RatedAirVolFlowRate,                      // air flow rate through the coil at rated condition
+        Real64 const FanPowerPerEvapAirFlowRateFromInput,      // 2017 Rated Fan power per air volume flow rate through the evaporator coil
+        Real64 const FanPowerPerEvapAirFlowRateFromInput_2023, // 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        DataHeatBalance::RefrigCondenserType CondenserType);
+
+    std::tuple<Real64, Real64> IEERSingleSpeedCooling(
+        EnergyPlusData &state,
+        const int CapFTempCurveIndex,            // Index for the capacity as a function of temperature modifier curve
+        const Real64 RatedTotalCapacity,         // Rated gross total cooling capacity
+        const Real64 TotCapFlowModFac,           // Total capacity modifier f(actual flow vs rated flow) for each speed [-]
+        const Real64 FanPowerPerEvapAirFlowRate, // either of the 2017 or 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        const Real64 RatedAirVolFlowRate,        // air flow rate through the coil at rated condition
+        const int EIRFTempCurveIndex,            // Index for the EIR as a function of temperature modifier curve
+        const Real64 RatedCOP,                   // Rated gross COP
+        const Real64 EIRFlowModFac);             // EIR modifier f(actual supply air flow vs rated flow) for each speed [-]
+
+    // Calculations as per AHRI 340/360 Standard 2022
+    // Real64 NetCoolingCapRated -> Net cooling capacity at high speed for CurveFit DX Cooling Coil
+    // Real64 IEER -> Integareted energy efficiency ratio of CurveFit DX cooling coil
+    // Real64 EER -> Energy efficiency ratio at high speed for CurveFit DX cooling coil
+    std::tuple<Real64, Real64, Real64>
+    IEERCalulcationCurveFit(EnergyPlusData &state, std::string const &CoilType, EnergyPlus::CoilCoolingDXCurveFitOperatingMode operatingMode);
+
+    // Calculations as per AHRI 340/360 Standard 2022
+    // Real64 NetCoolingCapRated -> Net cooling capacity at high speed for Variable Speed DX Cooling Coil
+    // Real64 IEER -> Integareted energy efficiency ratio of Variable Speed DX cooling coil
+    // Real64 EER -> Energy efficiency ratio at high speed for Variable Speed DX cooling coil
+    std::tuple<Real64, Real64, Real64> IEERCalculationVariableSpeed(
+        EnergyPlusData &state,
+        std::string const &VSCoilType, //
+        int const &nsp,
+        Array1A_int const &CapFTempCurveIndex,
+        Array1A<Real64> const &RatedTotalCapacity, // Rated gross total cooling capacity
+        Array1A_int const &CapFFlowCurveIndex,
+        Array1A<Real64> const &FanPowerPerEvapAirFlowRate, // 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        Array1A<Real64> const &RatedAirVolFlowRate,
+        Array1A_int const &EIRFTempCurveIndex,
+        Array1A<Real64> const &RatedCOP, // Reference coefficient of performance [W/W]
+        Array1A_int const &EIRFFlowCurveIndex,
+        DataHeatBalance::RefrigCondenserType const &CondenserType); // Type of condenser user by the DX Cooling Coil
+
+    // Calculations as per AHRI 340/360 Standard 2022
+    // Real64 NetCoolingCapRated -> Net cooling capacity at high speed for MultiSpeed DX Cooling Coil
+    // Real64 IEER -> Integareted energy efficiency ratio of MultiSpeed DX cooling coil
+    // Real64 EER -> Energy efficiency ratio at high speed for MultiSpeed DX cooling coil
+    std::tuple<Real64, Real64, Real64> IEERCalculationMultiSpeed(
+        EnergyPlusData &state,
+        std::string const &DXCoilType, // Type of DX coil
+        int const &nsp,                // Number of Speeds
+        Array1A_int const &CapFTempCurveIndex,
+        Array1A<Real64> const &RatedTotalCapacity, // Rated gross total cooling capacity
+        Array1A_int const &CapFFlowCurveIndex,
+        Array1A<Real64> const &FanPowerPerEvapAirFlowRate, // 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        Array1A<Real64> const &RatedAirVolFlowRate,
+        Array1A_int const &EIRFTempCurveIndex,
+        Array1A<Real64> const &RatedCOP, // Reference coefficient of performance [W/W]
+        Array1A_int const &EIRFFlowCurveIndex,
+        Array1D<DataHeatBalance::RefrigCondenserType> const &CondenserType); // Type of condenser user by the DX Cooling Coil
+
+    // Calculations as per AHRI 340/360 Standard 2022
+    // Real64 NetCoolingCapRated -> Net cooling capacity at high speed for Two Speed DX Cooling Coil
+    // Real64 IEER -> Integareted energy efficiency ratio of Two Speed DX cooling coil
+    // Real64 EER -> Energy efficiency ratio at high speed for Two Speed DX cooling coil
+    std::tuple<Real64, Real64, Real64> IEERCalculationTwoSpeed(
+        EnergyPlusData &state,
+        std::string const &DXCoilType,                                      // Type of DX coil
+        Array1D<DataHeatBalance::RefrigCondenserType> const &CondenserType, // Type of condenser user by the DX Cooling Coil
+        Array1A_int const &CapFTempCurveIndex,
+        Array1A<Real64> const &RatedTotalCapacity,         // Rated gross total cooling capacity
+        Array1A_int const &HSCCapFFlowCurveIndex,          //  | Only for HIGH SPEED
+        Array1A<Real64> const &FanPowerPerEvapAirFlowRate, // 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        Array1A<Real64> const &RatedAirVolFlowRate,
+        Array1A_int const &EIRFTempCurveIndex,
+        Array1A<Real64> const &RatedCOP,        // Reference coefficient of performance [W/W]
+        Array1A_int const &HSEIRFFlowCurveIndex //  | Only for HIGH SPEED
     );
+
+    // Calculations as per AHRI 340/360 Standard 2022
+    // Real64 NetCoolingCapRated -> Net cooling capacity for Single Speed DX Cooling Coil
+    // Real64 IEER -> Integareted energy efficiency ratio for Single Speed DX cooling coil
+    // Real64 EER -> Energy efficiency ratio for Single Speed DX cooling coil
+    std::tuple<Real64, Real64, Real64> IEERCalculationSingleSpeed(
+        EnergyPlus::EnergyPlusData &state,
+        std::string const &DXCoilType,            // Type of DX coil
+        const int &CapFTempCurveIndex,            // Index for the capacity as a function of temperature modifier curve
+        const Real64 &RatedTotalCapacity,         // Rated gross total cooling capacity
+        const Real64 &TotCapFlowModFac,           // Total capacity modifier f(actual flow vs rated flow) for each speed [-]
+        const Real64 &FanPowerPerEvapAirFlowRate, // either of the 2017 or 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        const Real64 &RatedAirVolFlowRate,        // air flow rate through the coil at rated condition
+        const int &EIRFTempCurveIndex,            // Index for the EIR as a function of temperature modifier curve
+        const Real64 &RatedCOP,                   // Rated gross COP
+        const Real64 &EIRFlowModFac,              // EIR modifier f(actual supply air flow vs rated flow) for each speed [-]
+        DataHeatBalance::RefrigCondenserType const &CondenserType); // Type of condenser user by the DX Cooling Coil
+
+    Real64 EERSingleSpeedCooling(
+        EnergyPlus::EnergyPlusData &state,
+        const int CapFTempCurveIndex,            // Index for the capacity as a function of temperature modifier curve
+        const Real64 RatedTotalCapacity,         // Rated gross total cooling capacity
+        const Real64 TotCapFlowModFac,           // Total capacity modifier f(actual flow vs rated flow) for each speed [-]
+        const Real64 FanPowerPerEvapAirFlowRate, // either of the 2017 or 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        const Real64 RatedAirVolFlowRate,        // air flow rate through the coil at rated condition
+        const int EIRFTempCurveIndex,            // Index for the EIR as a function of temperature modifier curve
+        const Real64 RatedCOP,                   // Rated gross COP
+        const Real64 EIRFlowModFac);             // EIR modifier f(actual supply air flow vs rated flow) for each speed [-]
+
+    std::tuple<Real64, Real64> SEERSingleStageCalculation(
+        EnergyPlusData &state,
+        const int CapFTempCurveIndex,               // Index for the capacity as a function of temperature modifier curve
+        const Real64 RatedTotalCapacity,            // Rated gross total cooling capacity
+        const Real64 TotCapFlowModFac,              // Total capacity modifier f(actual flow vs rated flow) for each speed [-]
+        const int EIRFTempCurveIndex,               // Index for the EIR as a function of temperature modifier curve
+        Real64 EIRFlowModFac,                       // EIR modifier f(actual supply air flow vs rated flow) for each speed [-]
+        const int EIRFFlowCurveIndex,               // Index for the EIR as a function of flow fraction modifier curve
+        const Real64 RatedCOP,                      // Rated gross COP
+        const Real64 FanPowerPerEvapAirFlowRate,    // either of the 2017 or 2023 Rated Fan Power per air volume flow rate through the evaporator coil
+        const Real64 RatedAirVolFlowRate,           // air flow rate through the coil at rated condition
+        const int PLFFPLRCurveIndex,                // Index for the EIR vs part-load ratio curve
+        Real64 const CyclicDegradationCoefficient); // Cyclic Degradation Coefficient either for ANSI/AHRI 2017 or 2023
 
     void DXCoolingCoilDataCenterStandardRatings(
         EnergyPlusData &state,
@@ -276,46 +405,132 @@ namespace StandardRatings {
         Array1D<Real64> &TotElectricPowerRated            // total electric power including supply fan
     );
 
-    void MultiSpeedDXCoolingCoilStandardRatings(
-        EnergyPlusData &state,
-        Array1A_int const CapFTempCurveIndex,                      // Index for the capacity as a function of temperature modifier curve
-        Array1A_int const CapFFlowCurveIndex,                      // Index for the capacity as a function of flow fraction modifier curve
-        Array1A_int const EIRFTempCurveIndex,                      // Index for the EIR as a function of temperature modifier curve
-        Array1A_int const EIRFFlowCurveIndex,                      // Index for the EIR as a function of flow fraction modifier curve
-        Array1A_int const PLFFPLRCurveIndex,                       // Index for the PLF vs part-load ratio curve
-        Array1A<Real64> const RatedTotalCapacity,                  // Reference capacity of DX coil [W]
-        Array1A<Real64> const RatedCOP,                            // Reference coefficient of performance [W/W]
-        Array1A<Real64> const RatedAirVolFlowRate,                 // Reference air flow rate of DX coil [m3/s]
-        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput, // rated fan power per evap air flow rate [W/(m3/s)]
-        int const nsp,                                             // Number of compressor speeds
-        Real64 &NetCoolingCapRatedMaxSpeed,                        // net cooling capacity at maximum speed
-        Real64 &SEER_User,    // seasonal energy efficiency ratio of multi speed DX cooling coil, from user PLF curve
-        Real64 &SEER_Standard // seasonal energy efficiency ratio of multi speed DX cooling coil, from AHRI Std 210/240-2008 default PLF curve and
-                              // default C_D value
-    );
+    // NetCoolingCapRatedMaxSpeed --> net cooling capacity at maximum speed
+    // SEER_User --> seasonal energy efficiency ratio of multi speed DX cooling coil, from user-input PLF curve and C_D value
+    // SEER_Standard --> seasonal energy efficiency ratio of multi speed DX cooling coil, from AHRI Std 210/240-2008 default PLF
+    // curve and C_D value
+    std::tuple<Real64, Real64, Real64>
+    MultiSpeedDXCoolingCoilSEER(EnergyPlusData &state,
+                                int const nsp,                            // Number of compressor speeds
+                                Array1A_int const CapFFlowCurveIndex,     // Index for the capacity as a function of flow fraction modifier curve
+                                Array1A<Real64> const RatedTotalCapacity, // Reference capacity of DX coil [W]
+                                Array1A_int const CapFTempCurveIndex,     // Index for the capacity as a function of temperature modifier curve
+                                Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput, // 2017 rated fan power per evap air flow rate [W/(m3/s)]
+                                Array1A<Real64> const RatedAirVolFlowRate,                 // Reference air flow rate of DX coil [m3/s]
+                                Array1A_int const EIRFFlowCurveIndex, // Index for the EIR as a function of flow fraction modifier curve
+                                Array1A<Real64> const RatedCOP,       // Reference coefficient of performance [W/W]
+                                Array1A_int EIRFTempCurveIndex,       // Index for the EIR as a function of temperature modifier curve
+                                Array1A_int const PLFFPLRCurveIndex); // Index for the PLF vs part-load ratio curve
 
-    void MultiSpeedDXHeatingCoilStandardRatings(
+    // NetCoolingCapRatedMaxSpeed2023 --> net cooling capacity at maximum speed
+    // SEER2_User --> seasonal energy efficiency ratio of multi speed DX cooling coil, from user-input PLF curve and C_D value
+    // SEER2_Standard --> seasonal energy efficiency ratio of multi speed DX cooling coil, from AHRI Std 210/240-2023 default PLF
+    // curve and  C_D value
+    std::tuple<Real64, Real64, Real64> MultiSpeedDXCoolingCoilSEER2(
         EnergyPlusData &state,
-        std::string const &DXCoilName,                             // Name of DX coil for which HSPF is calculated
-        std::string const &DXCoilType,                             // Type of DX coil for which HSPF is calculated
-        Array1A_int const CapFTempCurveIndex,                      // Index for the capacity as a function of temperature modifier curve
-        Array1A_int const CapFFlowCurveIndex,                      // Index for the capacity as a function of flow fraction modifier curve
-        Array1A_int const EIRFTempCurveIndex,                      // Index for the EIR as a function of temperature modifier curve
-        Array1A_int const EIRFFlowCurveIndex,                      // Index for the EIR as a function of flow fraction modifier curve
-        Array1A_int const PLFFPLRCurveIndex,                       // Index for the PLF vs part-load ratio curve
-        Array1A<Real64> const RatedTotalCapacity,                  // Reference capacity of DX coil [W]
-        Array1A<Real64> const RatedCOP,                            // Reference coefficient of performance [W/W]
-        Array1A<Real64> const RatedAirVolFlowRate,                 // Reference air flow rate of DX coil [m3/s]
-        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput, // rated fan power per evap air flow rate [W/(m3/s)]
-        int const nsp,                                             // Number of compressor speeds
-        Real64 &NetHeatingCapRatedHighTemp,                        // net heating capacity at maximum speed and High Temp
-        Real64 &NetHeatingCapRatedLowTemp,                         // net heating capacity at maximum speed and low Temp
-        Real64 &HSPF,                                              // seasonale energy efficiency ratio of multi speed DX cooling coil
-        Optional_int_const RegionNum = _,                          // Region number for calculating HSPF of single speed DX heating coil
-        Optional<Real64 const> MinOATCompressor = _,               // Minimum OAT for heat pump compressor operation [C]
-        Optional<Real64 const> OATempCompressorOn = _,             // The outdoor temperature when the compressor is automatically turned
-        Optional_bool_const OATempCompressorOnOffBlank = _,        // Flag used to determine low temperature cut out factor
-        Optional<HPdefrostControl const> DefrostControl = _        // defrost control; 1=timed, 2=on-demand
+        int const nsp,                                                  // Number of compressor speeds
+        Array1A_int const CapFFlowCurveIndex,                           // Index for the capacity as a function of flow fraction modifier curve
+        Array1A<Real64> const RatedTotalCapacity,                       // Reference capacity of DX coil [W]
+        Array1A_int const CapFTempCurveIndex,                           // Index for the capacity as a function of temperature modifier curve
+        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput_2023, // 2023 rated fan power per evap air flow rate [W/(m3/s)]
+        Array1A<Real64> const RatedAirVolFlowRate,                      // Reference air flow rate of DX coil [m3/s]
+        Array1A_int const EIRFFlowCurveIndex,                           // Index for the EIR as a function of flow fraction modifier curve
+        Array1A<Real64> const RatedCOP,                                 // Reference coefficient of performance [W/W]
+        Array1A_int EIRFTempCurveIndex,                                 // Index for the EIR as a function of temperature modifier curve
+        Array1A_int const PLFFPLRCurveIndex);                           // Index for the PLF vs part-load ratio curve
+
+    // Real64 NetCoolingCapRatedMaxSpeed -> net cooling capacity at maximum speed
+    // Real64 SEER_User -> seasonal energy efficiency ratio of multi speed DX cooling coil, from user PLF curve
+    // Real64 SEER_Standard -> seasonal energy efficiency ratio of multi speed DX cooling coil, from AHRI Std 210/240-2008 default PLF curve and
+    //                        default C_D value
+    // Ratings based on ANSI/AHRI 210.240 2023 Standard
+    // Real64 NetCoolingCapRatedMaxSpeed -> net cooling capacity at maximum speed
+    // Real64 SEER_User -> seasonal energy efficiency ratio of multi speed DX cooling coil, from user PLF curve
+    // Real64 SEER_Standard -> seasonal energy efficiency ratio of multi speed DX cooling coil, from AHRI Std 210/240-2008 default PLF curve and
+    //                       default C_D value
+    std::map<std::string, Real64> MultiSpeedDXCoolingCoilStandardRatings(
+        EnergyPlusData &state,
+        std::string const &DXCoilType,                                  // Type of DX coil for which HSPF is calculated
+        Array1A_int const CapFTempCurveIndex,                           // Index for the capacity as a function of temperature modifier curve
+        Array1A_int const CapFFlowCurveIndex,                           // Index for the capacity as a function of flow fraction modifier curve
+        Array1A_int const EIRFTempCurveIndex,                           // Index for the EIR as a function of temperature modifier curve
+        Array1A_int const EIRFFlowCurveIndex,                           // Index for the EIR as a function of flow fraction modifier curve
+        Array1A_int const PLFFPLRCurveIndex,                            // Index for the PLF vs part-load ratio curve
+        Array1A<Real64> const RatedTotalCapacity,                       // Reference capacity of DX coil [W]
+        Array1A<Real64> const RatedCOP,                                 // Reference coefficient of performance [W/W]
+        Array1A<Real64> const RatedAirVolFlowRate,                      // Reference air flow rate of DX coil [m3/s]
+        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput,      // 2017 rated fan power per evap air flow rate [W/(m3/s)]
+        Array1A<Real64> const FanPowerPerEvapAirFlowRateFromInput_2023, // 2023 rated fan power per evap air flow rate [W/(m3/s)]
+        int const nsp,                                                  // Number of compressor speeds
+        Array1D<DataHeatBalance::RefrigCondenserType> const &CondenserType);
+
+    // Real64 NetHeatingCapRatedHighTemp --> net heating capacity at maximum speed and High Temp
+    // Real64 NetHeatingCapRatedLowTemp --> net heating capacity at maximum speed and low Temp
+    // Real64 HSPF --> seasonale energy efficiency ratio of multi speed DX cooling coil | 2017
+    std::tuple<Real64, Real64, Real64> MultiSpedDXHeatingCoilHSPF(
+        EnergyPlusData &state,
+        int const nsp,                                                   // Number of compressor speed
+        Array1A<Real64> const MSFanPowerPerEvapAirFlowRateInput,         // 2017 rated fan power per evap air flow rate [W/(m3/s)]
+        Array1A_int const CapFTempCurveIndex,                            // Index for the capacity as a function of temperature modifier curve
+        Array1A_int const CapFFlowCurveIndex,                            // Index for the capacity as a function of flow fraction modifier curve
+        Array1A<Real64> const RatedTotalCapacity,                        // Reference capacity of DX coil [W]
+        Array1A<Real64> const RatedAirVolFlowRate,                       // Reference air flow rate of DX coil [m3/s]
+        Array1A_int const EIRFFlowCurveIndex,                            // Index for the EIR as a function of flow fraction modifier curve
+        Array1A_int const EIRFTempCurveIndex,                            // Index for the EIR as a function of temperature modifier curve
+        Array1A<Real64> const RatedCOP,                                  // Reference coefficient of performance [W/W]
+        ObjexxFCL::Optional_int_const RegionNum = _,                     // Region number for calculating HSPF of single speed DX heating coil
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor = _,          // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn = _,        // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank = _,   // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<HPdefrostControl const> DefrostControl = _); // defrost control; 1=timed, 2=on-demand
+
+    // Real64 NetHeatingCapRatedHighTemp_2023 --> net heating capacity at maximum speed and High Temp
+    // Real64 NetHeatingCapRatedLowTemp_2023 --> net heating capacity at maximum speed and low Temp
+    // Real64 HSPF2_2023 --> seasonale energy efficiency ratio of multi speed DX cooling coil | 2023
+    std::tuple<Real64, Real64, Real64> MultiSpedDXHeatingCoilHSPF2(
+        EnergyPlusData &state,
+        int const nsp,                                                // Number of compressor speed
+        Array1A<Real64> const MSFanPowerPerEvapAirFlowRateInput_2023, // 2023 rated fan power per evap air flow rate [W/(m3/s)]
+        Array1A_int const CapFTempCurveIndex,                         // Index for the capacity as a function of temperature modifier curve
+        Array1A_int const CapFFlowCurveIndex,                         // Index for the capacity as a function of flow fraction modifier curve
+        Array1A<Real64> const RatedTotalCapacity,                     // Reference capacity of DX coil [W]
+        Array1A<Real64> const RatedAirVolFlowRate,                    // Reference air flow rate of DX coil [m3/s]
+        Array1A_int const EIRFFlowCurveIndex,                         // Index for the EIR as a function of flow fraction modifier curve
+        Array1A_int const EIRFTempCurveIndex,                         // Index for the EIR as a function of temperature modifier curve
+        Array1A<Real64> const RatedCOP,                               // Reference coefficient of performance [W/W]
+        ObjexxFCL::Optional_int_const RegionNum,                      // Region number for calculating HSPF of single speed DX heating coil
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor,           // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn,         // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank,    // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<HPdefrostControl const> DefrostControl);  // defrost control; 1=timed, 2=on-demand
+
+    // Real64 NetHeatingCapRatedHighTemp --> net heating capacity at maximum speed and High Temp
+    // Real64 NetHeatingCapRatedLowTemp --> net heating capacity at maximum speed and low Temp
+    // Real64 HSPF --> seasonale energy efficiency ratio of multi speed DX cooling coil
+    // AHRI 210/240 2023 Std. Ratings
+    // Real64 NetHeatingCapRatedHighTemp2023 --> net heating capacity at maximum speed and High Temp
+    // Real64 NetHeatingCapRatedLowTemp2023 --> net heating capacity at maximum speed and low Temp
+    // Real64 HSPF2_2023 --> seasonale energy efficiency ratio of multi speed DX cooling coil
+    std::map<std::string, Real64> MultiSpeedDXHeatingCoilStandardRatings(
+        EnergyPlusData &state,
+        std::string const &DXCoilName,                                 // Name of DX coil for which HSPF is calculated
+        std::string const &DXCoilType,                                 // Type of DX coil for which HSPF is calculated
+        Array1A_int const CapFTempCurveIndex,                          // Index for the capacity as a function of temperature modifier curve
+        Array1A_int const CapFFlowCurveIndex,                          // Index for the capacity as a function of flow fraction modifier curve
+        Array1A_int const EIRFTempCurveIndex,                          // Index for the EIR as a function of temperature modifier curve
+        Array1A_int const EIRFFlowCurveIndex,                          // Index for the EIR as a function of flow fraction modifier curve
+        Array1A_int const PLFFPLRCurveIndex,                           // Index for the PLF vs part-load ratio curve
+        Array1A<Real64> const RatedTotalCapacity,                      // Reference capacity of DX coil [W]
+        Array1A<Real64> const RatedCOP,                                // Reference coefficient of performance [W/W]
+        Array1A<Real64> const RatedAirVolFlowRate,                     // Reference air flow rate of DX coil [m3/s]
+        Array1A<Real64> const MSFanPowerPerEvapAirFlowRate,            // 2017 rated fan power per evap air flow rate [W/(m3/s)]
+        Array1A<Real64> const MSFanPowerPerEvapAirFlowRate_2023,       // 2023 rated fan power per evap air flow rate [W/(m3/s)]
+        int const nsp,                                                 // Number of compressor speed
+        ObjexxFCL::Optional_int_const RegionNum = _,                   // Region number for calculating HSPF of single speed DX heating coil
+        ObjexxFCL::Optional<Real64 const> MinOATCompressor = _,        // Minimum OAT for heat pump compressor operation [C]
+        ObjexxFCL::Optional<Real64 const> OATempCompressorOn = _,      // The outdoor temperature when the compressor is automatically turned
+        ObjexxFCL::Optional_bool_const OATempCompressorOnOffBlank = _, // Flag used to determine low temperature cut out factor
+        ObjexxFCL::Optional<HPdefrostControl const> DefrostControl = _ // defrost control; 1=timed, 2=on-demand
     );
 
     void ReportDXCoilRating(EnergyPlusData &state,
@@ -331,8 +546,8 @@ namespace StandardRatings {
                             Real64 const HighHeatingCapVal,  // High Temperature Heating Standard (Net) Rating Capacity
                             Real64 const LowHeatingCapVal,   // Low Temperature Heating Standard (Net) Rating Capacity
                             Real64 const HSPFValueIP,        // IEER value in IP units {Btu/W-h}
-                            int const RegionNum              // Region Number for which HSPF is calculated
-    );
+                            int const RegionNum,             // Region Number for which HSPF is calculated
+                            bool const AHRI2023StandardRatings = false); // True if required AHRI/ANSI 210/240 Std. 2023 SEER2,HSPF2 Ratings.
 
     void ReportDXCoolCoilDataCenterApplication(EnergyPlusData &state,
                                                std::string const &CompType,           // Type of component
@@ -351,6 +566,12 @@ namespace StandardRatings {
                                             int const EIRFTempCurveIndex,  // Index for the EIR as a function of temperature modifier curve
                                             int const EIRFFlowCurveIndex,  // Index for the EIR as a function of flow fraction modifier curve
                                             int const PLFFPLRCurveIndex    // Index for the EIR vs part-load ratio curve
+    );
+
+    Real64 CondenserEnteringFluidTemperature(
+        DataPlant::CondenserType const CondenserType,     // Chiller Condenser Type: AirCooled, WaterCooled, or EvaporativelyCooled
+        StandardRatings::AhriChillerStd const ChillerStd, // AHRI Std 550/590 (IP), or AHRI Std 551/591 (SI)
+        Real64 LoadRatio                                  // AHRI Std test load ratio: 1.0, 0.75, 0.5, 0.25
     );
 
 } // namespace StandardRatings

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -455,9 +455,11 @@ struct EnergyPlusData;
 
 enum class FormatSyntax
 {
+    Invalid = -1,
     Fortran,
     FMT,
-    Printf
+    Printf,
+    Num
 };
 
 inline constexpr bool is_fortran_syntax(const std::string_view format_str)
@@ -529,6 +531,9 @@ public:
     };
 
     void close();
+
+    // This is different from istream::good(), which is false if EOF is true while there were no errors (happens when no EOL at end of file)
+    // this operate like `operator bool(istream& is)` <=> `!is.bad() && !is.fail()`
     bool good() const noexcept;
 
     bool is_open() const noexcept;
@@ -549,7 +554,7 @@ public:
     void rewind() noexcept
     {
         if (is) {
-            is->clear(); // clear eofbit and potentially failbit
+            is->clear(); // clear potentially failbit and badbit (seekg would only clear eofbit)
             is->seekg(0, std::ios::beg);
         }
     }
@@ -561,7 +566,8 @@ public:
         if (is) {
             T result;
             *is >> result;
-            return ReadResult<T>{result, is->eof(), is->good()};
+            // Use operator bool, see ReadResult::good() docstring
+            return ReadResult<T>{result, is->eof(), bool(is)};
         } else {
             return ReadResult<T>{T{}, true, false};
         }
@@ -667,6 +673,7 @@ public:
         OutputControl() = default;
 
         void getInput(EnergyPlusData &state);
+        bool writeTabular(EnergyPlusData &state);
 
         bool csv = false;
         bool mtr = true;
@@ -900,5 +907,55 @@ template <FormatSyntax formatSyntax = FormatSyntax::Fortran, typename... Args> s
 }
 
 } // namespace EnergyPlus
+
+// extern template the most commonly used format function calls
+// to save on compilation time. They will be explicitly instantiated
+// in IOFiles.cc
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int>(std::string_view, int &&);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const char *const &>(std::string_view, const char *const &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, std::string &>(std::string_view, int &, std::string &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, std::string &, std::string &, double &>(
+    std::string_view, std::string &, std::string &, std::string &, double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const std::string_view &>(std::string_view,
+                                                                                                            const std::string_view &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const std::string_view &, std::string &>(std::string_view,
+                                                                                                                           const std::string_view &,
+                                                                                                                           std::string &);
+extern template std::string
+EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, double &, double &>(std::string_view, std::string &, double &, double &);
+extern template std::string
+EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, std::string &, int &>(std::string_view, std::string &, std::string &, int &);
+extern template std::string
+EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, double &, double &, double &>(std::string_view, double &, double &, double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, double &, std::string &>(std::string_view, double &, std::string &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &>(std::string_view, std::string &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const int &, int &>(std::string_view, const int &, int &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, double>(std::string_view, double &&);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, int &>(std::string_view, int &, int &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const double &>(std::string_view, const double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, int &>(std::string_view, std::string &, int &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, std::string &, double &>(std::string_view,
+                                                                                                                          std::string &,
+                                                                                                                          std::string &,
+                                                                                                                          double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, double &, std::string &, double &>(
+    std::string_view, std::string &, double &, std::string &, double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, const int &>(std::string_view, const int &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, const std::string &, std::string &>(std::string_view,
+                                                                                                                             int &,
+                                                                                                                             const std::string &,
+                                                                                                                             std::string &);
+extern template std::string
+EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, int &, const std::string &>(std::string_view, int &, int &, const std::string &);
+extern template std::string
+EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, int &, std::string_view &>(std::string_view, int &, int &, std::string_view &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &, std::string_view &, std::string &>(std::string_view,
+                                                                                                                            int &,
+                                                                                                                            std::string_view &,
+                                                                                                                            std::string &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, double &, double &>(std::string_view, double &, double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, int &>(std::string_view, int &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, std::string &, double &>(std::string_view, std::string &, double &);
+extern template std::string EnergyPlus::format<EnergyPlus::FormatSyntax::Fortran, double &>(std::string_view, double &);
 
 #endif

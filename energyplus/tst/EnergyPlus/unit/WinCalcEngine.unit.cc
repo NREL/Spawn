@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -59,6 +59,7 @@
 #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataIPShortCuts.hh>
 #include <EnergyPlus/HeatBalanceManager.hh>
+#include <EnergyPlus/Material.hh>
 #include <EnergyPlus/WindowManager.hh>
 #include <EnergyPlus/WindowManagerExteriorData.hh>
 #include <WCEMultiLayerOptics.hpp>
@@ -94,37 +95,37 @@ TEST_F(EnergyPlusFixture, DISABLED_WCEClear)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    HeatBalanceManager::GetMaterialData(*state, ErrorsFound);
+    Material::GetMaterialData(*state, ErrorsFound);
     HeatBalanceManager::GetConstructData(*state, ErrorsFound);
     WindowManager::initWindowModel(*state);
     WindowManager::InitWindowOpticalCalculations(*state);
     HeatBalanceManager::InitHeatBalance(*state);
 
-    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance();
+    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance(*state);
     auto solarLayer = aWinConstSimp.getEquivalentLayer(*state, FenestrationCommon::WavelengthRange::Solar, 1);
 
-    const auto minLambda{0.3};
-    const auto maxLambda{2.5};
+    constexpr Real64 minLambda{0.3};
+    constexpr Real64 maxLambda{2.5};
 
     // Transmittance Front
     const auto Tfront = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::T, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.8239, Tfront, 1e-6);
+    EXPECT_NEAR(0.833848, Tfront, 1e-6);
 
     // Reflectance Front
     const auto Rfront = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::R, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.073578, Rfront, 1e-6);
+    EXPECT_NEAR(0.074764, Rfront, 1e-6);
 
     // Transmittance Back
     const auto Tback = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::T, FenestrationCommon::Side::Back, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.8239, Tback, 1e-6);
+    EXPECT_NEAR(0.833848, Tback, 1e-6);
 
     // Reflectance Back
     const auto Rback = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::R, FenestrationCommon::Side::Back, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.073682, Rback, 1e-6);
+    EXPECT_NEAR(0.074854, Rback, 1e-6);
 }
 
 TEST_F(EnergyPlusFixture, DISABLED_WCEVenetian)
@@ -154,6 +155,9 @@ TEST_F(EnergyPlusFixture, DISABLED_WCEVenetian)
                                                       "GlzSys_1_withShade,      !- Name",
                                                       "Glass_102_LayerAvg,      !- Outside Layer",
                                                       "VenBlind_ShdDvc_25;      !- Layer 2",
+                                                      "CONSTRUCTION,",
+                                                      "GlzSys_1,                !- Name",
+                                                      "Glass_102_LayerAvg;      !- Outside Layer",
                                                       "WindowMaterial:Blind,",
                                                       "VenBlind_ShdDvc_25,      !- Name",
                                                       "HORIZONTAL,              !- Slat Orientation",
@@ -187,37 +191,37 @@ TEST_F(EnergyPlusFixture, DISABLED_WCEVenetian)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    HeatBalanceManager::GetMaterialData(*state, ErrorsFound);
+    Material::GetMaterialData(*state, ErrorsFound);
     HeatBalanceManager::GetConstructData(*state, ErrorsFound);
     WindowManager::initWindowModel(*state);
     WindowManager::InitWindowOpticalCalculations(*state);
     HeatBalanceManager::InitHeatBalance(*state);
 
-    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance();
+    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance(*state);
     auto solarLayer = aWinConstSimp.getEquivalentLayer(*state, FenestrationCommon::WavelengthRange::Solar, 1);
 
-    const auto minLambda{0.3};
-    const auto maxLambda{2.5};
+    constexpr Real64 minLambda{0.3};
+    constexpr Real64 maxLambda{2.5};
 
     // Transmittance Front
     const auto Tfront = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::T, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.823880, Tfront, 1e-6);
+    EXPECT_NEAR(0.833829, Tfront, 1e-6);
 
     // Reflectance Front
     const auto Rfront = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::R, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.073578, Rfront, 1e-6);
+    EXPECT_NEAR(0.074764, Rfront, 1e-6);
 
     // Transmittance Back
     const auto Tback = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::T, FenestrationCommon::Side::Back, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.823900, Tback, 1e-6);
+    EXPECT_NEAR(0.833848, Tback, 1e-6);
 
     // Reflectance Back
     const auto Rback = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::R, FenestrationCommon::Side::Back, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.073680, Rback, 1e-6);
+    EXPECT_NEAR(0.074853, Rback, 1e-6);
 }
 
 TEST_F(EnergyPlusFixture, DISABLED_WCEShade)
@@ -266,17 +270,17 @@ TEST_F(EnergyPlusFixture, DISABLED_WCEShade)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    HeatBalanceManager::GetMaterialData(*state, ErrorsFound);
+    Material::GetMaterialData(*state, ErrorsFound);
     HeatBalanceManager::GetConstructData(*state, ErrorsFound);
     WindowManager::initWindowModel(*state);
     WindowManager::InitWindowOpticalCalculations(*state);
     HeatBalanceManager::InitHeatBalance(*state);
 
-    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance();
+    auto aWinConstSimp = WindowManager::CWindowConstructionsSimplified::instance(*state);
     auto solarLayer = aWinConstSimp.getEquivalentLayer(*state, FenestrationCommon::WavelengthRange::Solar, 1);
 
-    const auto minLambda{0.3};
-    const auto maxLambda{2.5};
+    constexpr Real64 minLambda{0.3};
+    constexpr Real64 maxLambda{2.5};
 
     // Transmittance Front
     const auto Tfront_dir_dir = solarLayer->getPropertySimple(
@@ -285,12 +289,12 @@ TEST_F(EnergyPlusFixture, DISABLED_WCEShade)
 
     const auto Tfront_dif = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::T, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DiffuseDiffuse);
-    EXPECT_NEAR(0.267510, Tfront_dif, 1e-6);
+    EXPECT_NEAR(0.296282, Tfront_dif, 1e-6);
 
     // Reflectance Front
     const auto Rfront = solarLayer->getPropertySimple(
         minLambda, maxLambda, FenestrationCommon::PropertySimple::R, FenestrationCommon::Side::Front, FenestrationCommon::Scattering::DirectDirect);
-    EXPECT_NEAR(0.073578, Rfront, 1e-6);
+    EXPECT_NEAR(0.074764, Rfront, 1e-6);
 
     // Transmittance Back
     const auto Tback = solarLayer->getPropertySimple(

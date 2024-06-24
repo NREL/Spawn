@@ -1313,16 +1313,11 @@ Begin VB.Form eplUI
    End
    Begin VB.Menu mnuHelp 
       Caption         =   "&Help"
-      Begin VB.Menu mnuHelpEPDocs 
-         Caption         =   "EnergyPlus Documentation Menu"
-         Enabled         =   0   'False
-         Visible         =   0   'False
+      Begin VB.Menu mnuHelpQuickstart 
+         Caption         =   "EnergyPlus QuickStart Webpage"
       End
       Begin VB.Menu mnuHelpEssentials 
          Caption         =   "EnergyPlus Essentials"
-      End
-      Begin VB.Menu mnuHelpGettingStarted 
-         Caption         =   "EnergyPlus Getting Started"
       End
       Begin VB.Menu mnuHelpIORef 
          Caption         =   "EnergyPlus Input/Output Reference"
@@ -1334,14 +1329,14 @@ Begin VB.Form eplUI
       Begin VB.Menu mnuHelpEngRef 
          Caption         =   "EnergyPlus Engineering Reference"
       End
-      Begin VB.Menu mnuHelpAuxProgs 
-         Caption         =   "EnergyPlus Auxiliary Programs"
+      Begin VB.Menu mnuHelpSep2 
+         Caption         =   "-"
       End
       Begin VB.Menu mnuHelpPlantAppl 
-         Caption         =   "Application Guide for Plant Loops"
+         Caption         =   "Plant Application Guide"
       End
       Begin VB.Menu mnuHelpEMS 
-         Caption         =   "Application Guide for EMS"
+         Caption         =   "EMS Application Guide"
       End
       Begin VB.Menu mnuHelpCompliance 
          Caption         =   "Using EnergyPlus for Compliance"
@@ -1349,8 +1344,14 @@ Begin VB.Form eplUI
       Begin VB.Menu mnuHelpExtInterface 
          Caption         =   "External Interface Application Guide"
       End
-      Begin VB.Menu mnuHelpTips 
-         Caption         =   "Tips and Tricks Using EnergyPlus"
+      Begin VB.Menu mnuHelpSep3 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuHelpGettingStarted 
+         Caption         =   "EnergyPlus Getting Started"
+      End
+      Begin VB.Menu mnuHelpAuxProgs 
+         Caption         =   "EnergyPlus Auxiliary Programs"
       End
       Begin VB.Menu mnuHelpAcknowledge 
          Caption         =   "EnergyPlus Acknowledgments"
@@ -1778,7 +1779,6 @@ End Function
 
 
 
-
 Private Sub cmdViewDefine_Click()
 frmDefineViewResults.Show vbModal
 Call checkOutputButtonsFiles
@@ -2081,6 +2081,7 @@ End Sub
 
 
 
+
 ' View
 Private Sub mnuViewDrawing_Click()
 Call viewOutputSet(outSetDrawingFiles)
@@ -2305,6 +2306,10 @@ End Sub
 Private Sub mnuHelpViewUpdateList_Click()
 Call viewWebPage(updatePageURL)
 End Sub
+Private Sub mnuHelpQuickstart_Click()
+Call viewWebPage("https://energyplus.net/quick-start")
+End Sub
+
 
 '=======================================================
 ' Start Adobe Acrobat Reader With a File
@@ -3242,10 +3247,16 @@ Dim extraRviNewName As String
 Dim oldMviName As String
 Dim oldMviNameWithSuffix As String
 Dim extraMviNewName As String
+Dim firstPeriodPos As Long
 
 On Error Resume Next
 'create the file suffix for the old version
-oldVerSuffix = "_V" & Left(previousVersion, 1) & Mid(previousVersion, 3, 1) & Mid(previousVersion, 5, 1)
+firstPeriodPos = InStr(previousVersion, ".")
+If firstPeriodPos = 2 Then
+    oldVerSuffix = "_V" & Left(previousVersion, 1) & Mid(previousVersion, 3, 1) & Mid(previousVersion, 5, 1)
+Else
+    oldVerSuffix = "_V" & Left(previousVersion, 2) & Mid(previousVersion, 4, 1) & Mid(previousVersion, 6, 1)
+End If
 'save current directory
 currentDirectory = CurDir
 ChDir appPath & "PreProcess\IDFVersionUpdater"
@@ -4662,6 +4673,8 @@ On Error GoTo ErrorSkip
 fl = FreeFile
 Open appPath & "energy+.idd" For Input As fl
 Line Input #fl, verLine
+' 12345678901234567890
+' !IDD_Version 22.1.0
 If Left(verLine, 12) = "!IDD_Version" Then
   lblIDDVersion.Caption = "EnergyPlus " & Mid(verLine, 14)
   iddVersion = Mid(verLine, 14)
@@ -5664,10 +5677,21 @@ End Sub
 Sub getTransitionVersions()
 Dim transProg As String
 Dim shortIDDversion
+Dim iddFirstPeriodPos As Integer
+Dim toPos As Integer
+Dim exePos As Integer
 Dim i As Integer
-'make short version using dashes
-shortIDDversion = Left(iddVersion, 1) & "-" & Mid(iddVersion, 3, 1) & "-" & Mid(iddVersion, 5, 1)
+iddFirstPeriodPos = InStr(iddVersion, ".")
+'make short version using dashes depending on version in format 9.6.1 or 22.1.0
+If iddFirstPeriodPos = 3 Then
+    shortIDDversion = Left(iddVersion, 2) & "-" & Mid(iddVersion, 4, 1) & "-" & Mid(iddVersion, 6, 1)
+Else
+    shortIDDversion = Left(iddVersion, 1) & "-" & Mid(iddVersion, 3, 1) & "-" & Mid(iddVersion, 5, 1)
+End If
 transProg = dir(appPath & "PreProcess\IDFVersionUpdater\Transition-V?-?-?-to-V" & shortIDDversion & ".exe")
+If transProg = "" Then
+    transProg = dir(appPath & "PreProcess\IDFVersionUpdater\Transition-V??-?-?-to-V" & shortIDDversion & ".exe")
+End If
 transitionFileName = transProg
 If transProg <> "" Then
   'convert dashes to periods
@@ -5676,12 +5700,13 @@ If transProg <> "" Then
       Mid(transProg, i) = "."
     End If
   Next i
+  toPos = InStr(transProg, "to")
+  exePos = InStr(transProg, "exe")
   '  Transition-V1-2-1-to-V1-2-2.exe
   '  12345678901234567890123456789012
-  previousVersion = Mid(transProg, 13, 5)
-  currentVersion = Mid(transProg, 23, 5)
-  'MsgBox previousVersion & vbCrLf & vbCrLf & currentVersion, vbExclamation
-
+  previousVersion = Mid(transProg, 13, toPos - 14)
+  currentVersion = Mid(transProg, toPos + 4, exePos - (toPos + 5))
+  'MsgBox previousVersion & vbCrLf & vbCrLf & currentVersion, vbExclamation, "getTransitionVersions debug"
 End If
 End Sub
 
@@ -5698,6 +5723,7 @@ Dim objString As String
 Dim flv As Integer
 Dim semiPos As Integer
 Dim commaPos As Integer
+Dim firstPeriodPos As Integer
 Dim versionFound As String
 Dim i As Integer
 Dim startTime As Single
@@ -5728,10 +5754,18 @@ Do
       If semiPos > commaPos Then
         versionFound = Mid(objString, commaPos + 1, (semiPos - commaPos) - 1)
         versionFound = Trim(versionFound)
-        If Len(versionFound) = 3 Then
-          versionFound = versionFound & ".0"
+        firstPeriodPos = InStr(versionFound, ".")
+        If firstPeriodPos = 3 Then 'such as version "22.1"
+            If Len(versionFound) = 4 Then
+              versionFound = versionFound & ".0"
+            End If
+            versionFound = Left(versionFound, 6) 'trim build number if included, such as: 22.0.0.028 to 22.0.0 CR7622
+        Else 'such as version "9.6"
+            If Len(versionFound) = 3 Then
+              versionFound = versionFound & ".0"
+            End If
+            versionFound = Left(versionFound, 5) 'trim build number if included, such as: 3.0.0.028 to 3.0.0 CR7622
         End If
-        versionFound = Left(versionFound, 5) 'trim build number if included, such as: 3.0.0.028 to 3.0.0 CR7622
       Else
         versionFound = ""
       End If
@@ -5748,7 +5782,7 @@ Close flv
 If Not versionObjectFound Then
   checkIDFVersion = "VERSION NOT FOUND"
 End If
-'MsgBox "Version of IDF: " & checkIDFVersion & " -- " & lineCount & " -- " & Timer - startTime, vbOKOnly, "CheckIDFVersion"
+'MsgBox "Version of IDF: " & checkIDFVersion & " -- " & lineCount & " -- " & Timer - startTime, vbOKOnly, "CheckIDFVersion debug"
 Debug.Print "Time to check for version: "; Timer - startTime
 End Function
 

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -74,15 +74,14 @@ namespace RuntimeLanguageProcessor {
     enum class Token
     {
         Invalid = -1,
-        Unassigned = 0,
-        Number = 1,           // matches the ValueNumber
-        Variable = 4,         // matches the ValueVariable
-        Expression = 5,       // matches the ValueExpression
-        Operator = 7,         // includes basic operators and built-in functions.
-        Parenthesis = 9,      // parenthesis token
-        ParenthesisLeft = 10, // indicates left side parenthesis found in parsing
-        ParenthesisRight = 11 // indicates right side parenthesis found in parsing
-
+        Number = 1,            // matches the ValueNumber
+        Variable = 4,          // matches the ValueVariable
+        Expression = 5,        // matches the ValueExpression
+        Operator = 7,          // includes basic operators and built-in functions.
+        Parenthesis = 9,       // parenthesis token
+        ParenthesisLeft = 10,  // indicates left side parenthesis found in parsing
+        ParenthesisRight = 11, // indicates right side parenthesis found in parsing
+        Num
     };
 
     struct TokenType
@@ -99,7 +98,7 @@ namespace RuntimeLanguageProcessor {
         std::string Error;  // holds token processing error message content
 
         // Default Constructor
-        TokenType() : Type(Token::Unassigned), Number(0.0), Operator(ErlFunc::Unassigned), Variable(0), Parenthesis(Token::Unassigned), Expression(0)
+        TokenType() : Type(Token::Invalid), Number(0.0), Operator(ErlFunc::Invalid), Variable(0), Parenthesis(Token::Invalid), Expression(0)
         {
         }
     };
@@ -127,8 +126,8 @@ namespace RuntimeLanguageProcessor {
                        int StackNum,
                        int LineNum,
                        DataRuntimeLanguage::ErlKeywordParam Keyword,
-                       Optional_int_const Argument1 = _, // Erl variable index
-                       Optional_int_const Argument2 = _);
+                       ObjexxFCL::Optional_int_const Argument1 = _, // Erl variable index
+                       ObjexxFCL::Optional_int_const Argument2 = _);
 
     void AddError(EnergyPlusData &state,
                   int StackNum,            // index pointer to location in ErlStack structure
@@ -153,29 +152,11 @@ namespace RuntimeLanguageProcessor {
 
     ErlValueType EvaluateExpression(EnergyPlusData &state, int ExpressionNum, bool &seriousErrorFound);
 
-    void TodayTomorrowWeather(EnergyPlusData &state,
-                              ErlFunc FunctionCode,
-                              Real64 Operand1,
-                              Real64 Operand2,
-                              Array2D<Real64> &TodayTomorrowWeatherSource,
-                              ErlValueType &ReturnVal);
-
-    void TodayTomorrowWeather(EnergyPlusData &state,
-                              ErlFunc FunctionCode,
-                              Real64 Operand1,
-                              Real64 Operand2,
-                              Array2D_bool &TodayTomorrowWeatherSource,
-                              ErlValueType &ReturnVal);
-
-    int TodayTomorrowWeather(EnergyPlusData &state, int hour, int timestep, Array2D<Real64> &TodayTomorrowWeatherSource, Real64 &value);
-
-    int TodayTomorrowWeather(EnergyPlusData &state, int hour, int timestep, Array2D<bool> &TodayTomorrowWeatherSource, int &value);
-
     void GetRuntimeLanguageUserInput(EnergyPlusData &state);
 
     void ReportRuntimeLanguage(EnergyPlusData &state);
 
-    ErlValueType SetErlValueNumber(Real64 Number, Optional<ErlValueType const> OrigValue = _);
+    ErlValueType SetErlValueNumber(Real64 Number, ObjexxFCL::Optional<ErlValueType const> OrigValue = _);
 
     ErlValueType StringValue(std::string const &String);
 
@@ -185,9 +166,7 @@ namespace RuntimeLanguageProcessor {
                         std::string const &VariableName, // variable name in Erl
                         int StackNum);
 
-    int NewEMSVariable(EnergyPlusData &state, std::string const &VariableName, int StackNum, Optional<ErlValueType const> Value = _);
-
-    void SetupPossibleOperators(EnergyPlusData &state);
+    int NewEMSVariable(EnergyPlusData &state, std::string const &VariableName, int StackNum, ObjexxFCL::Optional<ErlValueType const> Value = _);
 
     void ExternalInterfaceSetErlVariable(EnergyPlusData &state,
                                          int varNum,  // The variable index to be written during run time
@@ -219,6 +198,7 @@ struct RuntimeLanguageProcessorData : BaseGlobalStruct
     Array1D_int CurveIndexVariableNums;
     Array1D_int ConstructionIndexVariableNums;
     int YearVariableNum = 0;
+    int CalendarYearVariableNum = 0;
     int MonthVariableNum = 0;
     int DayOfMonthVariableNum = 0;
     int DayOfWeekVariableNum = 0;
@@ -260,6 +240,7 @@ struct RuntimeLanguageProcessorData : BaseGlobalStruct
         this->CurveIndexVariableNums.clear();
         this->ConstructionIndexVariableNums.clear();
         this->YearVariableNum = 0;
+        this->CalendarYearVariableNum = 0;
         this->MonthVariableNum = 0;
         this->DayOfMonthVariableNum = 0;
         this->DayOfWeekVariableNum = 0;

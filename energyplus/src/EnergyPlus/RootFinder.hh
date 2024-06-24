@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -48,9 +48,6 @@
 #ifndef RootFinder_hh_INCLUDED
 #define RootFinder_hh_INCLUDED
 
-// ObjexxFCL Headers
-#include <ObjexxFCL/Optional.hh>
-
 // EnergyPlus Headers
 #include <EnergyPlus/DataRootFinder.hh>
 #include <EnergyPlus/EnergyPlus.hh>
@@ -63,12 +60,12 @@ using DataRootFinder::PointType;
 using DataRootFinder::RootFinderDataType;
 
 void SetupRootFinder(EnergyPlusData &state,
-                     RootFinderDataType &RootFinderData, // Data used by root finding algorithm
-                     DataRootFinder::Slope SlopeType,    // Either iSlopeIncreasing or iSlopeDecreasing
-                     DataRootFinder::iMethod MethodType, // Any of the iMethod<name> code but iMethodNone
-                     Real64 TolX,                        // Relative tolerance for X variables
-                     Real64 ATolX,                       // Absolute tolerance for X variables
-                     Real64 ATolY                        // Absolute tolerance for Y variables
+                     RootFinderDataType &RootFinderData,          // Data used by root finding algorithm
+                     DataRootFinder::Slope SlopeType,             // Either iSlopeIncreasing or iSlopeDecreasing
+                     DataRootFinder::RootFinderMethod MethodType, // Any of the iMethod<name> code but iMethodNone
+                     Real64 TolX,                                 // Relative tolerance for X variables
+                     Real64 ATolX,                                // Absolute tolerance for X variables
+                     Real64 ATolY                                 // Absolute tolerance for Y variables
 );
 
 void ResetRootFinder(RootFinderDataType &RootFinderData, // Data used by root finding algorithm
@@ -89,8 +86,8 @@ void IterateRootFinder(EnergyPlusData &state,
                        bool &IsDoneFlag                    // If TRUE indicates that the iteration should be stopped
 );
 
-DataRootFinder::iStatus CheckInternalConsistency(EnergyPlusData &state,
-                                                 RootFinderDataType const &RootFinderData); // Data used by root finding algorithm
+DataRootFinder::RootFinderStatus CheckInternalConsistency(EnergyPlusData &state,
+                                                          RootFinderDataType const &RootFinderData); // Data used by root finding algorithm
 
 bool CheckRootFinderCandidate(RootFinderDataType const &RootFinderData, // Data used by root finding algorithm
                               Real64 X                                  // X value for current iterate

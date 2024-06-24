@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -98,12 +98,10 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
     for (int l = 1; l <= state->dataPlnt->TotNumLoops; ++l) {
-        auto &loop(state->dataPlnt->PlantLoop(l));
-        loop.LoopSide.allocate(2);
-        auto &loopside(state->dataPlnt->PlantLoop(l).LoopSide(1));
+        auto &loopside(state->dataPlnt->PlantLoop(l).LoopSide(DataPlant::LoopSideLocation::Demand));
         loopside.TotalBranches = 1;
         loopside.Branch.allocate(1);
-        auto &loopsidebranch(state->dataPlnt->PlantLoop(l).LoopSide(1).Branch(1));
+        auto &loopsidebranch(state->dataPlnt->PlantLoop(l).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1));
         loopsidebranch.TotalComponents = 1;
         loopsidebranch.Comp.allocate(1);
     }
@@ -117,20 +115,22 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).PlantSizNum = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).LoopSide(1).Branch(1).Comp(1).Name = thisChiller.Name;
-    state->dataPlnt->PlantLoop(1).LoopSide(1).Branch(1).Comp(1).TypeOf_Num = DataPlant::TypeOf_Chiller_ConstCOP;
-    state->dataPlnt->PlantLoop(1).LoopSide(1).Branch(1).Comp(1).NodeNumIn = thisChiller.EvapInletNodeNum;
-    state->dataPlnt->PlantLoop(1).LoopSide(1).Branch(1).Comp(1).NodeNumOut = thisChiller.EvapOutletNodeNum;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = thisChiller.Name;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
+        DataPlant::PlantEquipmentType::Chiller_ConstCOP;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = thisChiller.EvapInletNodeNum;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumOut = thisChiller.EvapOutletNodeNum;
 
     state->dataPlnt->PlantLoop(2).Name = "CondenserWaterLoop";
     state->dataPlnt->PlantLoop(2).FluidName = "CondenserWater";
     state->dataPlnt->PlantLoop(2).FluidIndex = 1;
     state->dataPlnt->PlantLoop(2).PlantSizNum = 2;
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(2).LoopSide(1).Branch(1).Comp(1).Name = thisChiller.Name;
-    state->dataPlnt->PlantLoop(2).LoopSide(1).Branch(1).Comp(1).TypeOf_Num = DataPlant::TypeOf_Chiller_ConstCOP;
-    state->dataPlnt->PlantLoop(2).LoopSide(1).Branch(1).Comp(1).NodeNumIn = thisChiller.CondInletNodeNum;
-    state->dataPlnt->PlantLoop(2).LoopSide(1).Branch(1).Comp(1).NodeNumOut = thisChiller.CondOutletNodeNum;
+    state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = thisChiller.Name;
+    state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
+        DataPlant::PlantEquipmentType::Chiller_ConstCOP;
+    state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = thisChiller.CondInletNodeNum;
+    state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumOut = thisChiller.CondOutletNodeNum;
 
     state->dataSize->PlantSizData.allocate(2);
     state->dataSize->PlantSizData(1).DesVolFlowRate = 0.001;
@@ -162,4 +162,95 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     // check autocalculate chiller side cond water flow rate
     EXPECT_NEAR(thisChiller.CondVolFlowRate, 0.0012606164769923673, 0.0000001);
     EXPECT_NEAR(thisChiller.CondMassFlowRateMax, 1.2604878941117141, 0.0000001);
+}
+
+TEST_F(EnergyPlusFixture, ChillerConstantCOP_Default_Des_Cond_Evap_Temps)
+{
+    // Unit test for PR 10158 that fixes Issue 10157)
+    state->dataPlnt->TotNumLoops = 12;
+    state->dataEnvrn->OutBaroPress = 101325.0;
+    state->dataEnvrn->StdRhoAir = 1.20;
+    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStep = 1;
+    state->dataGlobal->MinutesPerTimeStep = 60;
+
+    std::string const idf_objects = delimited_string({
+        "  Chiller:ConstantCOP,",
+        "    Chiller_1_WaterCooled,   !- Name",
+        "    autosize,                !- Nominal Capacity {W}",
+        "    4.0,                     !- Nominal COP {W/W}",
+        "    autosize,                !- Design Chilled Water Flow Rate {m3/s}",
+        "    autosize,                !- Design Condenser Water Flow Rate {m3/s}",
+        "    Chiller 1 ChW Inlet,     !- Chilled Water Inlet Node Name",
+        "    Chiller 1 ChW Outlet,    !- Chilled Water Outlet Node Name",
+        "    Chiller 1 Cnd Inlet,     !- Condenser Inlet Node Name",
+        "    Chiller 1 Cnd Outlet,    !- Condenser Outlet Node Name",
+        "    WaterCooled,             !- Condenser Type",
+        "    ConstantFlow,            !- Chiller Flow Mode",
+        "    1,                       !- Sizing Factor",
+        "    ,                        !- Basin Heater Capacity {W/K}",
+        "    2;                       !- Basin Heater Setpoint Temperature {C}",
+
+        "  Chiller:ConstantCOP,",
+        "    Chiller_2_AirCooled,     !- Name",
+        "    autosize,                !- Nominal Capacity {W}",
+        "    4.0,                     !- Nominal COP {W/W}",
+        "    autosize,                !- Design Chilled Water Flow Rate {m3/s}",
+        "    autosize,                !- Design Condenser Water Flow Rate {m3/s}",
+        "    Chiller 2 ChW Inlet,     !- Chilled Water Inlet Node Name",
+        "    Chiller 2 ChW Outlet,    !- Chilled Water Outlet Node Name",
+        "    Chiller 2 Cnd Inlet,     !- Condenser Inlet Node Name",
+        "    Chiller 2 Cnd Outlet,    !- Condenser Outlet Node Name",
+        "    AirCooled,               !- Condenser Type",
+        "    ConstantFlow,            !- Chiller Flow Mode",
+        "    1,                       !- Sizing Factor",
+        "    ,                        !- Basin Heater Capacity {W/K}",
+        "    2;                       !- Basin Heater Setpoint Temperature {C}",
+
+        "  Chiller:ConstantCOP,",
+        "    Chiller_3_EvapCooled,    !- Name",
+        "    autosize,                !- Nominal Capacity {W}",
+        "    4.0,                     !- Nominal COP {W/W}",
+        "    autosize,                !- Design Chilled Water Flow Rate {m3/s}",
+        "    autosize,                !- Design Condenser Water Flow Rate {m3/s}",
+        "    Chiller 3 ChW Inlet,     !- Chilled Water Inlet Node Name",
+        "    Chiller 3 ChW Outlet,    !- Chilled Water Outlet Node Name",
+        "    Chiller 3 Cnd Inlet,     !- Condenser Inlet Node Name",
+        "    Chiller 3 Cnd Outlet,    !- Condenser Outlet Node Name",
+        "    EvaporativelyCooled,     !- Condenser Type",
+        "    ConstantFlow,            !- Chiller Flow Mode",
+        "    1,                       !- Sizing Factor",
+        "    ,                        !- Basin Heater Capacity {W/K}",
+        "    2;                       !- Basin Heater Setpoint Temperature {C}",
+    });
+
+    EXPECT_TRUE(process_idf(idf_objects, false));
+
+    state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
+
+    for (int l = 1; l <= state->dataPlnt->TotNumLoops; ++l) {
+        auto &loopside(state->dataPlnt->PlantLoop(l).LoopSide(DataPlant::LoopSideLocation::Demand));
+        loopside.TotalBranches = 1;
+        loopside.Branch.allocate(1);
+        auto &loopsidebranch(state->dataPlnt->PlantLoop(l).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1));
+        loopsidebranch.TotalComponents = 1;
+        loopsidebranch.Comp.allocate(1);
+    }
+
+    ConstCOPChillerSpecs::getInput(*state);
+
+    auto &thisChiller_1 = state->dataPlantChillers->ConstCOPChiller(1);
+
+    EXPECT_NEAR(thisChiller_1.TempDesCondIn, 29.44, 1e-3);
+    EXPECT_NEAR(thisChiller_1.TempDesEvapOut, 6.67, 1e-3);
+
+    auto &thisChiller_2 = state->dataPlantChillers->ConstCOPChiller(2);
+
+    EXPECT_NEAR(thisChiller_2.TempDesCondIn, 35.0, 1e-3);
+    EXPECT_NEAR(thisChiller_2.TempDesEvapOut, 6.67, 1e-3);
+
+    auto &thisChiller_3 = state->dataPlantChillers->ConstCOPChiller(3);
+
+    EXPECT_NEAR(thisChiller_3.TempDesCondIn, 35.0, 1e-3);
+    EXPECT_NEAR(thisChiller_3.TempDesEvapOut, 6.67, 1e-3);
 }

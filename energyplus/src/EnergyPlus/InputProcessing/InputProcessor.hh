@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -117,7 +117,7 @@ public:
 
     int getNumSectionsFound(std::string const &SectionWord);
 
-    int getNumObjectsFound(EnergyPlusData &state, std::string const &ObjectWord);
+    int getNumObjectsFound(EnergyPlusData &state, std::string_view const ObjectWord);
 
     bool findDefault(std::string &default_value, json const &schema_field_obj);
 
@@ -137,54 +137,43 @@ public:
 
     std::pair<std::string, bool> getObjectItemValue(std::string const &field_value, json const &schema_field_obj);
 
+    const json &getJSONObjectItem(EnergyPlusData &state, std::string_view ObjType, std::string_view ObjName);
+
     void getObjectItem(EnergyPlusData &state,
-                       std::string const &Object,
+                       std::string_view Object,
                        int const Number,
                        Array1S_string Alphas,
                        int &NumAlphas,
                        Array1D<Real64> &Numbers,
                        int &NumNumbers,
                        int &Status,
-                       Optional<Array1D_bool> NumBlank = _,
-                       Optional<Array1D_bool> AlphaBlank = _,
-                       Optional<Array1D_string> AlphaFieldNames = _,
-                       Optional<Array1D_string> NumericFieldNames = _);
+                       ObjexxFCL::Optional<Array1D_bool> NumBlank = _,
+                       ObjexxFCL::Optional<Array1D_bool> AlphaBlank = _,
+                       ObjexxFCL::Optional<Array1D_string> AlphaFieldNames = _,
+                       ObjexxFCL::Optional<Array1D_string> NumericFieldNames = _);
 
-    int getIDFObjNum(EnergyPlusData &state, std::string const &Object, int const Number);
+    int getIDFObjNum(EnergyPlusData &state, std::string_view Object, int const Number);
 
     int getJSONObjNum(EnergyPlusData &state, std::string const &Object, int const Number);
 
     int getObjectItemNum(EnergyPlusData &state,
-                         std::string const &ObjType, // Object Type (ref: IDD Objects)
-                         std::string const &ObjName  // Name of the object type
+                         std::string_view ObjType, // Object Type (ref: IDD Objects)
+                         std::string_view ObjName  // Name of the object type
     );
 
     int getObjectItemNum(EnergyPlusData &state,
-                         std::string const &ObjType,     // Object Type (ref: IDD Objects)
+                         std::string_view ObjType,       // Object Type (ref: IDD Objects)
                          std::string const &NameTypeVal, // Object "name" field type ( used as search key )
                          std::string const &ObjName      // Name of the object type
-    );
-
-    void rangeCheck(EnergyPlusData &state,
-                    bool &ErrorsFound,                           // Set to true if error detected
-                    std::string const &WhatFieldString,          // Descriptive field for string
-                    std::string const &WhatObjectString,         // Descriptive field for object, Zone Name, etc.
-                    std::string const &ErrorLevel,               // 'Warning','Severe','Fatal')
-                    Optional_string_const LowerBoundString = _,  // String for error message, if applicable
-                    Optional_bool_const LowerBoundCondition = _, // Condition for error condition, if applicable
-                    Optional_string_const UpperBoundString = _,  // String for error message, if applicable
-                    Optional_bool_const UpperBoundCondition = _, // Condition for error condition, if applicable
-                    Optional_string_const ValueString = _,       // Value with digits if to be displayed with error
-                    Optional_string_const WhatObjectName = _     // ObjectName -- used for error messages
     );
 
     void getMaxSchemaArgs(int &NumArgs, int &NumAlpha, int &NumNumeric);
 
     void getObjectDefMaxArgs(EnergyPlusData &state,
-                             std::string const &ObjectWord, // Object for definition
-                             int &NumArgs,                  // How many arguments (max) this Object can have
-                             int &NumAlpha,                 // How many Alpha arguments (max) this Object can have
-                             int &NumNumeric                // How many Numeric arguments (max) this Object can have
+                             std::string_view const ObjectWord, // Object for definition
+                             int &NumArgs,                      // How many arguments (max) this Object can have
+                             int &NumAlpha,                     // How many Alpha arguments (max) this Object can have
+                             int &NumNumeric                    // How many Numeric arguments (max) this Object can have
     );
 
     void preProcessorCheck(EnergyPlusData &state, bool &PreP_Fatal); // True if a preprocessor flags a fatal error
@@ -269,10 +258,10 @@ private:
                             int &NumAlphas,
                             Array1D<Real64> &Numbers,
                             int &NumNumbers,
-                            Optional<Array1D_bool> NumBlank = _,
-                            Optional<Array1D_bool> AlphaBlank = _,
-                            Optional<Array1D_string> AlphaFieldNames = _,
-                            Optional<Array1D_string> NumericFieldNames = _);
+                            ObjexxFCL::Optional<Array1D_bool> NumBlank = _,
+                            ObjexxFCL::Optional<Array1D_bool> AlphaBlank = _,
+                            ObjexxFCL::Optional<Array1D_string> AlphaFieldNames = _,
+                            ObjexxFCL::Optional<Array1D_string> NumericFieldNames = _);
 
     void addVariablesForMonthlyReport(EnergyPlusData &state, std::string const &reportName);
 
@@ -292,14 +281,17 @@ private:
 
     json const &getPatternProperties(EnergyPlusData &state, json const &schema_obj);
 
-    inline std::string convertToUpper(std::string s)
+    inline std::string convertToUpper(std::string_view s)
     {
+        std::string s2;
         size_t len = s.size();
+        s2.resize(len);
         for (size_t i = 0; i < len; ++i) {
             char c = s[i];
-            s[i] = ('a' <= c && c <= 'z') ? c ^ 0x20 : c; // ASCII only
+            s2[i] = ('a' <= c && c <= 'z') ? c ^ 0x20 : c; // ASCII only
         }
-        return s;
+        s2[len] = '\0';
+        return s2;
     }
 
     using UnorderedObjectTypeMap = std::unordered_map<std::string, std::string>;
@@ -309,14 +301,18 @@ private:
     std::unique_ptr<IdfParser> idf_parser;
     std::unique_ptr<Validation> validation;
     std::unique_ptr<DataStorage> data;
-    json schema;
+    static const json &schema();
 
 public:
     json epJSON;
 
 private:
+    // Maps OBJECTTYPE to ObjectType (example entry: {"ZONEHVAC:EQUIPMENTLIST", "ZoneHVAC:EquipmentList"})
     UnorderedObjectTypeMap caseInsensitiveObjectMap;
+    // Maps ObjectType to ObjectCache (json::const_iterator const &schemaIterator, std::vector<json::const_iterator> const &inputObjectIterators)
     UnorderedObjectCacheMap objectCacheMap;
+
+    // ObjectType to vector of ObjectName
     UnusedObjectSet unusedInputs;
     char s[129] = {0};
 
@@ -325,6 +321,7 @@ private:
 struct DataInputProcessing : BaseGlobalStruct
 {
     std::unique_ptr<InputProcessor> inputProcessor = InputProcessor::factory();
+
     void clear_state() override
     {
         inputProcessor.reset();

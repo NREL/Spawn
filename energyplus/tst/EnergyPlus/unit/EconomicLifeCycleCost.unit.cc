@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -58,13 +58,14 @@
 #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/EconomicLifeCycleCost.hh>
 #include <EnergyPlus/EconomicTariff.hh>
+#include <EnergyPlus/InputProcessing/InputProcessor.hh>
 
 #include "Fixtures/EnergyPlusFixture.hh"
 
+#include <nlohmann/json.hpp>
+
 using namespace EnergyPlus;
 using namespace EnergyPlus::EconomicLifeCycleCost;
-
-using namespace EnergyPlus::DataGlobalConstants;
 using namespace EnergyPlus::EconomicTariff;
 
 TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_GetInput)
@@ -256,25 +257,25 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_GetInput)
 
     GetInputForLifeCycleCost(*state);
 
-    EXPECT_TRUE(compare_enums(iDiscConv::EndOfYear, state->dataEconLifeCycleCost->discountConvention));
-    EXPECT_TRUE(compare_enums(iInflAppr::ConstantDollar, state->dataEconLifeCycleCost->inflationApproach));
+    EXPECT_TRUE(compare_enums(DiscConv::EndOfYear, state->dataEconLifeCycleCost->discountConvention));
+    EXPECT_TRUE(compare_enums(InflAppr::ConstantDollar, state->dataEconLifeCycleCost->inflationApproach));
     EXPECT_EQ(0.03, state->dataEconLifeCycleCost->realDiscountRate);
-    EXPECT_EQ(1, state->dataEconLifeCycleCost->baseDateMonth);
+    EXPECT_EQ(0, state->dataEconLifeCycleCost->baseDateMonth);
     EXPECT_EQ(2012, state->dataEconLifeCycleCost->baseDateYear);
     EXPECT_EQ(22 * 12, state->dataEconLifeCycleCost->lengthStudyTotalMonths);
 
     EXPECT_EQ(5, state->dataEconLifeCycleCost->numNonrecurringCost);
-    EXPECT_EQ("RESIDUALVALUE", state->dataEconLifeCycleCost->NonrecurringCost(5).name);
-    EXPECT_EQ(costCatSalvage, state->dataEconLifeCycleCost->NonrecurringCost(5).category);
-    EXPECT_TRUE(compare_enums(iStartCosts::BasePeriod, state->dataEconLifeCycleCost->NonrecurringCost(5).startOfCosts));
-    EXPECT_EQ(-20000., state->dataEconLifeCycleCost->NonrecurringCost(5).cost);
+    EXPECT_EQ("RESIDUALVALUE", state->dataEconLifeCycleCost->NonrecurringCost[4].name);
+    EXPECT_EQ(CostCategory::Salvage, state->dataEconLifeCycleCost->NonrecurringCost[4].category);
+    EXPECT_TRUE(compare_enums(StartCosts::BasePeriod, state->dataEconLifeCycleCost->NonrecurringCost[4].startOfCosts));
+    EXPECT_EQ(-20000., state->dataEconLifeCycleCost->NonrecurringCost[4].cost);
 
     EXPECT_EQ(1, state->dataEconLifeCycleCost->numRecurringCosts);
-    EXPECT_EQ("ANNUALMAINT", state->dataEconLifeCycleCost->RecurringCosts(1).name);
-    EXPECT_EQ(costCatMaintenance, state->dataEconLifeCycleCost->RecurringCosts(1).category);
-    EXPECT_EQ(7000., state->dataEconLifeCycleCost->RecurringCosts(1).cost);
-    EXPECT_TRUE(compare_enums(iStartCosts::ServicePeriod, state->dataEconLifeCycleCost->RecurringCosts(1).startOfCosts));
-    EXPECT_EQ(1, state->dataEconLifeCycleCost->RecurringCosts(1).repeatPeriodYears);
+    EXPECT_EQ("ANNUALMAINT", state->dataEconLifeCycleCost->RecurringCosts[0].name);
+    EXPECT_EQ(CostCategory::Maintenance, state->dataEconLifeCycleCost->RecurringCosts[0].category);
+    EXPECT_EQ(7000., state->dataEconLifeCycleCost->RecurringCosts[0].cost);
+    EXPECT_TRUE(compare_enums(StartCosts::ServicePeriod, state->dataEconLifeCycleCost->RecurringCosts[0].startOfCosts));
+    EXPECT_EQ(1, state->dataEconLifeCycleCost->RecurringCosts[0].repeatPeriodYears);
 
     EXPECT_EQ(3, state->dataEconLifeCycleCost->numUsePriceEscalation);
     EXPECT_EQ("MIDWEST  COMMERCIAL-NATURAL GAS", state->dataEconLifeCycleCost->UsePriceEscalation(3).name);
@@ -393,10 +394,10 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ProcessMaxInput)
 
     GetInputForLifeCycleCost(*state);
 
-    EXPECT_TRUE(compare_enums(iDiscConv::EndOfYear, state->dataEconLifeCycleCost->discountConvention));
-    EXPECT_TRUE(compare_enums(iInflAppr::ConstantDollar, state->dataEconLifeCycleCost->inflationApproach));
+    EXPECT_TRUE(compare_enums(DiscConv::EndOfYear, state->dataEconLifeCycleCost->discountConvention));
+    EXPECT_TRUE(compare_enums(InflAppr::ConstantDollar, state->dataEconLifeCycleCost->inflationApproach));
     EXPECT_EQ(0.03, state->dataEconLifeCycleCost->realDiscountRate);
-    EXPECT_EQ(1, state->dataEconLifeCycleCost->baseDateMonth);
+    EXPECT_EQ(0, state->dataEconLifeCycleCost->baseDateMonth);
     EXPECT_EQ(2012, state->dataEconLifeCycleCost->baseDateYear);
     EXPECT_EQ(100 * 12, state->dataEconLifeCycleCost->lengthStudyTotalMonths);
 
@@ -423,35 +424,33 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ComputeEscalatedEnergyCosts)
     state->dataEconLifeCycleCost->lengthStudyYears = 5;
 
     state->dataEconLifeCycleCost->numCashFlow = 1;
-    state->dataEconLifeCycleCost->CashFlow.allocate(state->dataEconLifeCycleCost->numCashFlow);
-    state->dataEconLifeCycleCost->CashFlow(1).pvKind = iPrValKind::Energy;
-    state->dataEconLifeCycleCost->CashFlow(1).Resource = DataGlobalConstants::ResourceType::Electricity;
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount.allocate(state->dataEconLifeCycleCost->lengthStudyYears);
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount(1) = 100;
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount(2) = 110;
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount(3) = 120;
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount(4) = 130;
-    state->dataEconLifeCycleCost->CashFlow(1).yrAmount(5) = 140;
+    state->dataEconLifeCycleCost->CashFlow.resize(state->dataEconLifeCycleCost->numCashFlow);
+    state->dataEconLifeCycleCost->CashFlow[0].pvKind = PrValKind::Energy;
+    state->dataEconLifeCycleCost->CashFlow[0].Resource = Constant::eResource::Electricity;
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount.allocate(state->dataEconLifeCycleCost->lengthStudyYears);
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount(1) = 100;
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount(2) = 110;
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount(3) = 120;
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount(4) = 130;
+    state->dataEconLifeCycleCost->CashFlow[0].yrAmount(5) = 140;
 
     state->dataEconLifeCycleCost->numResourcesUsed = 1;
 
     for (int year = 1; year <= state->dataEconLifeCycleCost->lengthStudyYears; ++year) {
-        std::map<DataGlobalConstants::ResourceType, Real64> yearMap;
-        for (auto iResource : state->dataGlobalConst->AllResourceTypes) {
-            yearMap.insert(std::pair<DataGlobalConstants::ResourceType, Real64>(iResource, 0.0));
-        }
-        state->dataEconLifeCycleCost->EscalatedEnergy.insert(std::pair<int, std::map<DataGlobalConstants::ResourceType, Real64>>(year, yearMap));
+        std::array<Real64, static_cast<int>(Constant::eResource::Num)> yearMap;
+        std::fill(yearMap.begin(), yearMap.end(), 0.0);
+        state->dataEconLifeCycleCost->EscalatedEnergy[year] = yearMap;
     }
 
     state->dataEconLifeCycleCost->EscalatedTotEnergy.allocate(state->dataEconLifeCycleCost->lengthStudyYears);
     state->dataEconLifeCycleCost->EscalatedTotEnergy = 0.0;
 
     ComputeEscalatedEnergyCosts(*state);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(1).at(DataGlobalConstants::ResourceType::Electricity), 100., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(2).at(DataGlobalConstants::ResourceType::Electricity), 110., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(3).at(DataGlobalConstants::ResourceType::Electricity), 120., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(4).at(DataGlobalConstants::ResourceType::Electricity), 130., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(5).at(DataGlobalConstants::ResourceType::Electricity), 140., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(1)[static_cast<int>(Constant::eResource::Electricity)], 100., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(2)[static_cast<int>(Constant::eResource::Electricity)], 110., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(3)[static_cast<int>(Constant::eResource::Electricity)], 120., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(4)[static_cast<int>(Constant::eResource::Electricity)], 130., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(5)[static_cast<int>(Constant::eResource::Electricity)], 140., 0.001);
 
     EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedTotEnergy(1), 100., 0.001);
     EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedTotEnergy(2), 110., 0.001);
@@ -461,7 +460,7 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ComputeEscalatedEnergyCosts)
 
     state->dataEconLifeCycleCost->numUsePriceEscalation = 1;
     state->dataEconLifeCycleCost->UsePriceEscalation.allocate(state->dataEconLifeCycleCost->numUsePriceEscalation);
-    state->dataEconLifeCycleCost->UsePriceEscalation(1).resource = DataGlobalConstants::ResourceType::Electricity;
+    state->dataEconLifeCycleCost->UsePriceEscalation(1).resource = Constant::eResource::Electricity;
     state->dataEconLifeCycleCost->UsePriceEscalation(1).Escalation.allocate(state->dataEconLifeCycleCost->lengthStudyYears);
     state->dataEconLifeCycleCost->UsePriceEscalation(1).Escalation(1) = 1.03;
     state->dataEconLifeCycleCost->UsePriceEscalation(1).Escalation(2) = 1.05;
@@ -473,11 +472,11 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ComputeEscalatedEnergyCosts)
     state->dataEconLifeCycleCost->EscalatedTotEnergy = 0.0;
 
     ComputeEscalatedEnergyCosts(*state);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(1).at(DataGlobalConstants::ResourceType::Electricity), 103.0, 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(2).at(DataGlobalConstants::ResourceType::Electricity), 115.5, 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(3).at(DataGlobalConstants::ResourceType::Electricity), 128.4, 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(4).at(DataGlobalConstants::ResourceType::Electricity), 144.3, 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(5).at(DataGlobalConstants::ResourceType::Electricity), 161.0, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(1)[static_cast<int>(Constant::eResource::Electricity)], 103.0, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(2)[static_cast<int>(Constant::eResource::Electricity)], 115.5, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(3)[static_cast<int>(Constant::eResource::Electricity)], 128.4, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(4)[static_cast<int>(Constant::eResource::Electricity)], 144.3, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedEnergy.at(5)[static_cast<int>(Constant::eResource::Electricity)], 161.0, 0.001);
 
     EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedTotEnergy(1), 103., 0.001);
     EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedTotEnergy(2), 115.5, 0.001);
@@ -486,30 +485,30 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ComputeEscalatedEnergyCosts)
     EXPECT_NEAR(state->dataEconLifeCycleCost->EscalatedTotEnergy(5), 161.0, 0.001);
 }
 
-TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_MonthToMonthNumber)
+TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_GetMonthNumber)
 {
-    EXPECT_EQ(1, MonthToMonthNumber("January", 1));
-    EXPECT_EQ(2, MonthToMonthNumber("February", 1));
-    EXPECT_EQ(3, MonthToMonthNumber("March", 1));
-    EXPECT_EQ(4, MonthToMonthNumber("April", 1));
-    EXPECT_EQ(5, MonthToMonthNumber("May", 1));
-    EXPECT_EQ(6, MonthToMonthNumber("June", 1));
-    EXPECT_EQ(7, MonthToMonthNumber("July", 1));
-    EXPECT_EQ(8, MonthToMonthNumber("August", 1));
-    EXPECT_EQ(9, MonthToMonthNumber("September", 1));
-    EXPECT_EQ(10, MonthToMonthNumber("October", 1));
-    EXPECT_EQ(11, MonthToMonthNumber("November", 1));
-    EXPECT_EQ(12, MonthToMonthNumber("December", 1));
-    EXPECT_EQ(99, MonthToMonthNumber("Hexember", 99));
+    EXPECT_EQ(0, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("January")));
+    EXPECT_EQ(1, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("February")));
+    EXPECT_EQ(2, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("March")));
+    EXPECT_EQ(3, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("April")));
+    EXPECT_EQ(4, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("May")));
+    EXPECT_EQ(5, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("June")));
+    EXPECT_EQ(6, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("July")));
+    EXPECT_EQ(7, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("August")));
+    EXPECT_EQ(8, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("September")));
+    EXPECT_EQ(9, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("October")));
+    EXPECT_EQ(10, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("November")));
+    EXPECT_EQ(11, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("December")));
+    EXPECT_EQ(-1, getEnumValue(Util::MonthNamesUC, Util::makeUPPER("Hexember")));
 }
 
 TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ExpressAsCashFlows)
 {
     state->dataEconLifeCycleCost->baseDateYear = 2020;
-    state->dataEconLifeCycleCost->baseDateMonth = 1;
+    state->dataEconLifeCycleCost->baseDateMonth = 0;
 
     state->dataEconLifeCycleCost->serviceDateYear = 2023;
-    state->dataEconLifeCycleCost->serviceDateMonth = 1;
+    state->dataEconLifeCycleCost->serviceDateMonth = 0;
 
     state->dataEconLifeCycleCost->lengthStudyYears = 5;
     state->dataEconLifeCycleCost->lengthStudyTotalMonths = state->dataEconLifeCycleCost->lengthStudyYears * 12;
@@ -517,7 +516,7 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ExpressAsCashFlows)
     state->dataEconTariff->numTariff = 1;
     state->dataEconTariff->tariff.allocate(1);
     state->dataEconTariff->tariff(1).isSelected = true;
-    state->dataEconTariff->tariff(1).resourceNum = DataGlobalConstants::ResourceType::Electricity;
+    state->dataEconTariff->tariff(1).resource = Constant::eResource::Electricity;
     state->dataEconTariff->tariff(1).ptTotal = 1;
     state->dataEconTariff->econVar.allocate(1);
     state->dataEconTariff->econVar(1).values.allocate(12);
@@ -535,57 +534,127 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ExpressAsCashFlows)
     state->dataEconTariff->econVar(1).values(12) = 112.;
 
     state->dataEconLifeCycleCost->numNonrecurringCost = 1;
-    state->dataEconLifeCycleCost->NonrecurringCost.allocate(1);
-    state->dataEconLifeCycleCost->NonrecurringCost(1).name = "MiscConstruction";
-    state->dataEconLifeCycleCost->NonrecurringCost(1).name = "MiscConstruction";
-    state->dataEconLifeCycleCost->NonrecurringCost(1).category = costCatConstruction;
-    state->dataEconLifeCycleCost->NonrecurringCost(1).cost = 123456.;
-    state->dataEconLifeCycleCost->NonrecurringCost(1).startOfCosts = iStartCosts::ServicePeriod;
-    state->dataEconLifeCycleCost->NonrecurringCost(1).totalMonthsFromStart = 10;
+    state->dataEconLifeCycleCost->NonrecurringCost.resize(1);
+    state->dataEconLifeCycleCost->NonrecurringCost[0].name = "MiscConstruction";
+    state->dataEconLifeCycleCost->NonrecurringCost[0].name = "MiscConstruction";
+    state->dataEconLifeCycleCost->NonrecurringCost[0].category = CostCategory::Construction;
+    state->dataEconLifeCycleCost->NonrecurringCost[0].cost = 123456.;
+    state->dataEconLifeCycleCost->NonrecurringCost[0].startOfCosts = StartCosts::ServicePeriod;
+    state->dataEconLifeCycleCost->NonrecurringCost[0].totalMonthsFromStart = 10;
 
     ExpressAsCashFlows(*state);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(17).mnAmount(47), 123456., 0.001); // 36 months plus 10 months plus one month
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[16].mnAmount(47), 123456., 0.001); // 36 months plus 10 months plus one month
 
     // first year
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(37), 101., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(38), 102., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(39), 103., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(40), 104., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(41), 105., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(42), 106., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(43), 107., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(44), 108., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(45), 109., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(46), 110., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(47), 111., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(48), 112., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(37), 101., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(38), 102., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(39), 103., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(40), 104., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(41), 105., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(42), 106., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(43), 107., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(44), 108., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(45), 109., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(46), 110., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(47), 111., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(48), 112., 0.001);
     // second  year
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(49), 101., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(50), 102., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(51), 103., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(52), 104., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(53), 105., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(54), 106., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(55), 107., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(56), 108., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(57), 109., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(58), 110., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(59), 111., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).mnAmount(60), 112., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(49), 101., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(50), 102., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(51), 103., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(52), 104., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(53), 105., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(54), 106., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(55), 107., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(56), 108., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(57), 109., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(58), 110., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(59), 111., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].mnAmount(60), 112., 0.001);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).yrAmount(4), 1278., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(18).yrAmount(5), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].yrAmount(4), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[17].yrAmount(5), 1278., 0.001);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatEnergy).yrAmount(4), 1278., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatEnergy).yrAmount(5), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::Energy].yrAmount(4), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::Energy].yrAmount(5), 1278., 0.001);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatTotEnergy).yrAmount(4), 1278., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatTotEnergy).yrAmount(5), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::TotEnergy].yrAmount(4), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::TotEnergy].yrAmount(5), 1278., 0.001);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatConstruction).yrAmount(4), 123456, 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatTotCaptl).yrAmount(4), 123456, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::Construction].yrAmount(4), 123456, 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::TotCaptl].yrAmount(4), 123456, 0.001);
 
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatTotGrand).yrAmount(4), 1278. + 123456., 0.001);
-    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow(costCatTotGrand).yrAmount(5), 1278., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::TotGrand].yrAmount(4), 1278. + 123456., 0.001);
+    EXPECT_NEAR(state->dataEconLifeCycleCost->CashFlow[CostCategory::TotGrand].yrAmount(5), 1278., 0.001);
+}
+
+TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_GetInput_EnsureFuelTypesAllRecognized)
+{
+    using json = nlohmann::json;
+    const json &lcc_useprice_props = state->dataInputProcessing->inputProcessor->getObjectSchemaProps(*state, "LifeCycleCost:UsePriceEscalation");
+    const json &resource_field = lcc_useprice_props.at("resource");
+    const json &enum_values = resource_field.at("enum");
+
+    // Should support all fuels + ElectricityXXX (Purchased, Produced, SurplusSold, Net)
+    // THIS IS BRITTLE AS HECK.  DON'T RELY ON SUBSETS OF ENUMERATIONS BEING IN SOME ORDER.
+    constexpr size_t numResources = static_cast<size_t>(Constant::eFuel::Num) + 3;
+    // Constant::eFuel::Num has 15 fuel types including "None" (which is a fuel type for "OtherEquipment")
+    // "LifeCycleCost:UsePriceEscalation" has 18 fuel types including  ElectricityXXX (Purchased, Produced, SurplusSold, Net)
+    EXPECT_EQ(numResources, enum_values.size());
+    std::string idf_objects = delimited_string({
+        "LifeCycleCost:Parameters,",
+        "  TypicalLCC,              !- Name",
+        "  EndOfYear,               !- Discounting Convention",
+        "  ConstantDollar,          !- Inflation Approach",
+        "  0.03,                    !- Real Discount Rate",
+        "  ,                        !- Nominal Discount Rate",
+        "  ,                        !- Inflation",
+        "  January,                 !- Base Date Month",
+        "  2012,                    !- Base Date Year",
+        "  January,                 !- Service Date Month",
+        "  2014,                    !- Service Date Year",
+        "  100,                     !- Length of Study Period in Years",
+        "  0,                       !- Tax rate",
+        "  ;                        !- Depreciation Method",
+    });
+    // All should be valid resources
+    for (const auto &enum_value : enum_values) {
+        const std::string enum_string = Util::makeUPPER(enum_value.get<std::string>());
+
+        const auto resource = static_cast<Constant::eResource>(getEnumValue(Constant::eResourceNamesUC, enum_string));
+        // WHY IS COMPARE ENUMS THIS WAY?
+        EXPECT_FALSE(compare_enums(Constant::eResource::Invalid, resource, false)) << "Failed for " << enum_string;
+
+        idf_objects += fmt::format(R"idf(
+LifeCycleCost:UsePriceEscalation,
+  LCCUsePriceEscalation {0},             !- Name
+  {0},                                   !- Resource
+  2009,                                   !- Escalation Start Year
+  January,                                !- Escalation Start Month
+  1,                                      !- Year Escalation 1
+  1.01,                                   !- Year Escalation 2
+  1.02;                                   !- Year Escalation 3
+
+LifeCycleCost:UseAdjustment,
+  LCCUseAdjustment {0},              !- Name
+  {0},                               !- Resource
+  1,                                      !- Year Multiplier 1
+  1.005,                                  !- Year Multiplier 2
+  1.01;                                   !- Year Multiplier 3
+  )idf",
+                                   enum_string);
+    }
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    GetInputForLifeCycleCost(*state);
+
+    EXPECT_EQ(numResources, state->dataEconLifeCycleCost->numUsePriceEscalation);
+    for (const auto &lcc : state->dataEconLifeCycleCost->UsePriceEscalation) {
+        EXPECT_FALSE(compare_enums(lcc.resource, Constant::eResource::Invalid, false)) << "Failed for " << lcc.name;
+    }
+    EXPECT_EQ(numResources, state->dataEconLifeCycleCost->numUseAdjustment);
+    for (const auto &lcc : state->dataEconLifeCycleCost->UseAdjustment) {
+        EXPECT_FALSE(compare_enums(lcc.resource, Constant::eResource::Invalid, false)) << "Failed for " << lcc.name;
+    }
 }

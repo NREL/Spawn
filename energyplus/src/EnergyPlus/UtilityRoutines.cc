@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -64,21 +64,21 @@ extern "C" {
 // EnergyPlus Headers
 #include <EnergyPlus/BranchInputManager.hh>
 #include <EnergyPlus/BranchNodeConnections.hh>
-#include <EnergyPlus/Data/EnergyPlusData.hh>
+// #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataErrorTracking.hh>
-#include <EnergyPlus/DataGlobalConstants.hh>
+// #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataReportingFlags.hh>
 #include <EnergyPlus/DataStringGlobals.hh>
 #include <EnergyPlus/DataSystemVariables.hh>
-#include <EnergyPlus/DataTimings.hh>
+// #include <EnergyPlus/DataTimings.hh>
 #include <EnergyPlus/DaylightingManager.hh>
-#include <EnergyPlus/DisplayRoutines.hh>
+// #include <EnergyPlus/DisplayRoutines.hh>
 #include <EnergyPlus/ExternalInterface.hh>
-#include <EnergyPlus/FileSystem.hh>
+// #include <EnergyPlus/FileSystem.hh>
 #include <EnergyPlus/General.hh>
 #include <EnergyPlus/GeneralRoutines.hh>
-#include <EnergyPlus/IOFiles.hh>
+// #include <EnergyPlus/IOFiles.hh>
 #include <EnergyPlus/NodeInputManager.hh>
 #include <EnergyPlus/OutputReports.hh>
 #include <EnergyPlus/Plant/PlantManager.hh>
@@ -88,13 +88,12 @@ extern "C" {
 #include <EnergyPlus/SolarShading.hh>
 #include <EnergyPlus/SystemReports.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
-
 // Third Party Headers
 #include <fast_float/fast_float.h>
 
 namespace EnergyPlus {
 
-namespace UtilityRoutines {
+namespace Util {
 
     Real64 ProcessNumber(std::string_view String, bool &ErrorFlag)
     {
@@ -127,15 +126,15 @@ namespace UtilityRoutines {
 
         if (String.empty()) return rProcessNumber;
 
-        auto const front_trim(String.find_first_not_of(' '));
-        auto const back_trim(String.find_last_not_of(' '));
+        size_t const front_trim = String.find_first_not_of(' ');
+        size_t const back_trim = String.find_last_not_of(' ');
         if (front_trim == std::string::npos || back_trim == std::string::npos) {
             return rProcessNumber;
         } else {
             String = String.substr(front_trim, back_trim - front_trim + 1);
         }
 
-        auto result = fast_float::from_chars(String.data(), String.data() + String.size(), rProcessNumber);
+        auto result = fast_float::from_chars(String.data(), String.data() + String.size(), rProcessNumber); // (AUTO_OK_OBJ)
         size_t remaining_size = result.ptr - String.data();
         if (result.ec == std::errc::result_out_of_range || result.ec == std::errc::invalid_argument) {
             rProcessNumber = 0.0;
@@ -194,8 +193,6 @@ namespace UtilityRoutines {
         // for most inputs -- they are automatically turned to UPPERCASE.
         // If you need case insensitivity use FindItem.
 
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-
         for (int Count = 1; Count <= NumItems; ++Count) {
             if (String == ListOfItems(Count)) return Count;
         }
@@ -217,8 +214,6 @@ namespace UtilityRoutines {
         // found.  This routine is not case insensitive and doesn't need
         // for most inputs -- they are automatically turned to UPPERCASE.
         // If you need case insensitivity use FindItem.
-
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
         for (int Count = 1; Count <= NumItems; ++Count) {
             if (String == ListOfItems(Count)) return Count;
@@ -278,7 +273,7 @@ namespace UtilityRoutines {
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
-        int FindItem = UtilityRoutines::FindItemInList(String, ListOfItems, NumItems);
+        int FindItem = Util::FindItemInList(String, ListOfItems, NumItems);
         if (FindItem != 0) return FindItem;
 
         for (int Count = 1; Count <= NumItems; ++Count) {
@@ -303,43 +298,13 @@ namespace UtilityRoutines {
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
-        int FindItem = UtilityRoutines::FindItemInList(String, ListOfItems, NumItems);
+        int FindItem = Util::FindItemInList(String, ListOfItems, NumItems);
         if (FindItem != 0) return FindItem;
 
         for (int Count = 1; Count <= NumItems; ++Count) {
             if (equali(String, ListOfItems(Count))) return Count;
         }
         return 0; // Not found
-    }
-
-    std::string MakeUPPERCase(std::string_view const InputString)
-    {
-
-        // FUNCTION INFORMATION:
-        //       AUTHOR         Linda K. Lawrie
-        //       DATE WRITTEN   September 1997
-        //       MODIFIED       na
-        //       RE-ENGINEERED  na
-
-        // PURPOSE OF THIS SUBROUTINE:
-        // This function returns the Upper Case representation of the InputString.
-
-        // METHODOLOGY EMPLOYED:
-        // Uses the Intrinsic SCAN function to scan the lowercase representation of
-        // characters (DataStringGlobals) for each character in the given string.
-
-        // FUNCTION LOCAL VARIABLE DECLARATIONS:
-
-        std::string ResultString(InputString);
-
-        for (std::string::size_type i = 0, e = len(InputString); i < e; ++i) {
-            int const curCharVal = int(InputString[i]);
-            if ((97 <= curCharVal && curCharVal <= 122) || (224 <= curCharVal && curCharVal <= 255)) { // lowercase ASCII and accented characters
-                ResultString[i] = char(curCharVal - 32);
-            }
-        }
-
-        return ResultString;
     }
 
     void VerifyName(EnergyPlusData &state,
@@ -369,13 +334,13 @@ namespace UtilityRoutines {
         if (NumOfNames > 0) {
             Found = FindItem(NameToVerify, NamesList, NumOfNames);
             if (Found != 0) {
-                ShowSevereError(state, StringToDisplay + ", duplicate name=" + NameToVerify);
+                ShowSevereError(state, format("{}, duplicate name={}", StringToDisplay, NameToVerify));
                 ErrorFound = true;
             }
         }
 
         if (NameToVerify.empty()) {
-            ShowSevereError(state, StringToDisplay + ", cannot be blank");
+            ShowSevereError(state, format("{}, cannot be blank", StringToDisplay));
             ErrorFound = true;
             IsBlank = true;
         } else {
@@ -403,20 +368,17 @@ namespace UtilityRoutines {
         // list of names for this item (i.e., that there isn't one of that
         // name already and that this name is not blank).
 
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        int Found;
-
         ErrorFound = false;
         if (NumOfNames > 0) {
-            Found = FindItem(NameToVerify, NamesList, NumOfNames);
+            int Found = FindItem(NameToVerify, NamesList, NumOfNames);
             if (Found != 0) {
-                ShowSevereError(state, StringToDisplay + ", duplicate name=" + NameToVerify);
+                ShowSevereError(state, format("{}, duplicate name={}", StringToDisplay, NameToVerify));
                 ErrorFound = true;
             }
         }
 
         if (NameToVerify.empty()) {
-            ShowSevereError(state, StringToDisplay + ", cannot be blank");
+            ShowSevereError(state, format("{}, cannot be blank", StringToDisplay));
             ErrorFound = true;
             IsBlank = true;
         } else {
@@ -427,7 +389,7 @@ namespace UtilityRoutines {
     bool IsNameEmpty(EnergyPlusData &state, std::string &NameToVerify, std::string_view StringToDisplay, bool &ErrorFound)
     {
         if (NameToVerify.empty()) {
-            ShowSevereError(state, std::string{StringToDisplay} + " Name, cannot be blank");
+            ShowSevereError(state, format("{} Name, cannot be blank", StringToDisplay));
             ErrorFound = true;
             NameToVerify = "xxxxx";
             return true;
@@ -435,15 +397,15 @@ namespace UtilityRoutines {
         return false;
     }
 
-    size_t case_insensitive_hasher::operator()(const std::string_view key) const noexcept
+    size_t case_insensitive_hasher::operator()(std::string_view const key) const noexcept
     {
-        std::string keyCopy = MakeUPPERCase(key);
+        std::string keyCopy = makeUPPER(key);
         return std::hash<std::string>()(keyCopy);
     }
 
-    bool case_insensitive_comparator::operator()(const std::string_view a, const std::string_view b) const noexcept
+    bool case_insensitive_comparator::operator()(std::string_view const a, std::string_view const b) const noexcept
     {
-        return SameString(a, b);
+        return lessthani(a, b); // SameString(a, b);
     }
 
     void appendPerfLog(EnergyPlusData &state, std::string const &colHeader, std::string const &colValue, bool finalColumn)
@@ -458,7 +420,7 @@ namespace UtilityRoutines {
             return;
         }
 
-        // accumuate the row until ready to be written to the file.
+        // accumulate the row until ready to be written to the file.
         state.dataUtilityRoutines->appendPerfLog_headerRow = state.dataUtilityRoutines->appendPerfLog_headerRow + colHeader + ",";
         state.dataUtilityRoutines->appendPerfLog_valuesRow = state.dataUtilityRoutines->appendPerfLog_valuesRow + colValue + ",";
 
@@ -469,8 +431,8 @@ namespace UtilityRoutines {
                     fsPerfLog.open(state.dataStrGlobals->outputPerfLogFilePath, std::fstream::out); // open file normally
                     if (!fsPerfLog) {
                         ShowFatalError(state,
-                                       "appendPerfLog: Could not open file \"" + state.dataStrGlobals->outputPerfLogFilePath.string() +
-                                           "\" for output (write).");
+                                       format("appendPerfLog: Could not open file \"{}\" for output (write).",
+                                              state.dataStrGlobals->outputPerfLogFilePath.string()));
                     }
                     fsPerfLog << state.dataUtilityRoutines->appendPerfLog_headerRow << std::endl;
                     fsPerfLog << state.dataUtilityRoutines->appendPerfLog_valuesRow << std::endl;
@@ -480,8 +442,8 @@ namespace UtilityRoutines {
                     fsPerfLog.open(state.dataStrGlobals->outputPerfLogFilePath, std::fstream::app); // append to already existing file
                     if (!fsPerfLog) {
                         ShowFatalError(state,
-                                       "appendPerfLog: Could not open file \"" + state.dataStrGlobals->outputPerfLogFilePath.string() +
-                                           "\" for output (append).");
+                                       format("appendPerfLog: Could not open file \"{}\" for output (append).",
+                                              state.dataStrGlobals->outputPerfLogFilePath.string()));
                     }
                     fsPerfLog << state.dataUtilityRoutines->appendPerfLog_valuesRow << std::endl;
                 }
@@ -490,132 +452,40 @@ namespace UtilityRoutines {
         }
     }
 
-    bool ValidateFuelType([[maybe_unused]] EnergyPlusData &state,
-                          std::string const &FuelTypeInput,
-                          std::string &FuelTypeOutput,
-                          bool &FuelTypeErrorsFound,
-                          bool const &AllowSteamAndDistrict)
+    Real64 epElapsedTime()
     {
+
         // FUNCTION INFORMATION:
-        //       AUTHOR         Dareum Nam
-        //       DATE WRITTEN   May 2020
+        //       AUTHOR         Linda Lawrie
+        //       DATE WRITTEN   February 2012
+        //       MODIFIED       na
+        //       RE-ENGINEERED  na
 
         // PURPOSE OF THIS FUNCTION:
-        // Validates fuel types and sets output strings
+        // An alternative method for timing elapsed times is to call the standard
+        // Date_And_Time routine and set the "time".
 
-        auto const SELECT_CASE_var(UtilityRoutines::MakeUPPERCase(FuelTypeInput));
+        // Return value
+        Real64 calctime; // calculated time based on hrs, minutes, seconds, milliseconds
 
-        if (SELECT_CASE_var == "ELECTRICITY") {
-            FuelTypeOutput = "Electricity";
+        // FUNCTION LOCAL VARIABLE DECLARATIONS:
+        Array1D<Int32> clockvalues(8);
+        // value(1)   Current year
+        // value(2)   Current month
+        // value(3)   Current day
+        // value(4)   Time difference with respect to UTC in minutes (0-59)
+        // value(5)   Hour of the day (0-23)
+        // value(6)   Minutes (0-59)
+        // value(7)   Seconds (0-59)
+        // value(8)   Milliseconds (0-999)
 
-        } else if (SELECT_CASE_var == "NATURALGAS") {
-            FuelTypeOutput = "NaturalGas";
+        date_and_time(_, _, _, clockvalues);
+        calctime = clockvalues(5) * 3600.0 + clockvalues(6) * 60.0 + clockvalues(7) + clockvalues(8) / 1000.0;
 
-        } else if (SELECT_CASE_var == "DIESEL") {
-            FuelTypeOutput = "Diesel";
-
-        } else if (SELECT_CASE_var == "GASOLINE") {
-            FuelTypeOutput = "Gasoline";
-
-        } else if (SELECT_CASE_var == "COAL") {
-            FuelTypeOutput = "Coal";
-
-        } else if (SELECT_CASE_var == "FUELOILNO1") {
-            FuelTypeOutput = "FuelOilNo1";
-
-        } else if (SELECT_CASE_var == "FUELOILNO2") {
-            FuelTypeOutput = "FuelOilNo2";
-
-        } else if (SELECT_CASE_var == "PROPANE") {
-            FuelTypeOutput = "Propane";
-
-        } else if (SELECT_CASE_var == "OTHERFUEL1") {
-            FuelTypeOutput = "OtherFuel1";
-
-        } else if (SELECT_CASE_var == "OTHERFUEL2") {
-            FuelTypeOutput = "OtherFuel2";
-
-        } else {
-            if (AllowSteamAndDistrict) {
-                if (SELECT_CASE_var == "STEAM") {
-                    FuelTypeOutput = "Steam";
-                } else if (SELECT_CASE_var == "DISTRICTHEATING") {
-                    FuelTypeOutput = "DistrictHeating";
-                } else if (SELECT_CASE_var == "DISTRICTCOOLING") {
-                    FuelTypeOutput = "DistrictCooling";
-                } else {
-                    FuelTypeErrorsFound = true;
-                }
-            } else {
-                FuelTypeErrorsFound = true;
-            }
-        }
-
-        return FuelTypeErrorsFound;
+        return calctime;
     }
 
-    bool ValidateFuelTypeWithAssignResourceTypeNum(std::string const &FuelTypeInput,
-                                                   std::string &FuelTypeOutput,
-                                                   DataGlobalConstants::ResourceType &FuelTypeNum,
-                                                   bool &FuelTypeErrorsFound)
-    {
-        // FUNCTION INFORMATION:
-        //       AUTHOR         Dareum Nam
-        //       DATE WRITTEN   May 2020
-
-        // PURPOSE OF THIS FUNCTION:
-        // Validates fuel types and sets output strings with DataGlobalConstants::AssignResourceTypeNum() (Boilers.cc and boilerSteam.cc)
-
-        auto const SELECT_CASE_var(FuelTypeInput);
-
-        if (SELECT_CASE_var == "ELECTRICITY") {
-            FuelTypeOutput = "Electricity";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("ELECTRICITY");
-
-        } else if (SELECT_CASE_var == "NATURALGAS") {
-            FuelTypeOutput = "NaturalGas";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("NATURALGAS");
-
-        } else if (SELECT_CASE_var == "DIESEL") {
-            FuelTypeOutput = "Diesel";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("DIESEL");
-
-        } else if (SELECT_CASE_var == "GASOLINE") {
-            FuelTypeOutput = "Gasoline";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("GASOLINE");
-
-        } else if (SELECT_CASE_var == "COAL") {
-            FuelTypeOutput = "Coal";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("COAL");
-
-        } else if (SELECT_CASE_var == "FUELOILNO1") {
-            FuelTypeOutput = "FuelOilNo1";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("FUELOILNO1");
-
-        } else if (SELECT_CASE_var == "FUELOILNO2") {
-            FuelTypeOutput = "FuelOilNo2";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("FUELOILNO2");
-
-        } else if (SELECT_CASE_var == "PROPANE") {
-            FuelTypeOutput = "Propane";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("PROPANE");
-
-        } else if (SELECT_CASE_var == "OTHERFUEL1") {
-            FuelTypeOutput = "OtherFuel1";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("OTHERFUEL1");
-
-        } else if (SELECT_CASE_var == "OTHERFUEL2") {
-            FuelTypeOutput = "OtherFuel2";
-            FuelTypeNum = DataGlobalConstants::AssignResourceTypeNum("OTHERFUEL2");
-
-        } else {
-            FuelTypeErrorsFound = true;
-        }
-
-        return FuelTypeErrorsFound;
-    }
-
-} // namespace UtilityRoutines
+} // namespace Util
 
 int AbortEnergyPlus(EnergyPlusData &state)
 {
@@ -636,7 +506,6 @@ int AbortEnergyPlus(EnergyPlusData &state)
 
     // Using/Aliasing
     using namespace DataSystemVariables;
-    using namespace DataTimings;
     using namespace DataErrorTracking;
     using BranchInputManager::TestBranchIntegrity;
     using BranchNodeConnections::CheckNodeConnections;
@@ -718,12 +587,9 @@ int AbortEnergyPlus(EnergyPlusData &state)
     NumSevereDuringSizing = fmt::to_string(state.dataErrTracking->TotalSevereErrorsDuringSizing);
 
     // catch up with timings if in middle
-    state.dataSysVars->Time_Finish = epElapsedTime();
+    state.dataSysVars->Time_Finish = Util::epElapsedTime();
     if (state.dataSysVars->Time_Finish < state.dataSysVars->Time_Start) state.dataSysVars->Time_Finish += 24.0 * 3600.0;
     state.dataSysVars->Elapsed_Time = state.dataSysVars->Time_Finish - state.dataSysVars->Time_Start;
-#ifdef EP_Detailed_Timings
-    epStopTime("EntireRun=");
-#endif
     if (state.dataSysVars->Elapsed_Time < 0.0) state.dataSysVars->Elapsed_Time = 0.0;
     Hours = state.dataSysVars->Elapsed_Time / 3600.0;
     state.dataSysVars->Elapsed_Time -= Hours * 3600.0;
@@ -731,21 +597,21 @@ int AbortEnergyPlus(EnergyPlusData &state)
     state.dataSysVars->Elapsed_Time -= Minutes * 60.0;
     Seconds = state.dataSysVars->Elapsed_Time;
     if (Seconds < 0.0) Seconds = 0.0;
-    const auto Elapsed = format("{:02}hr {:02}min {:5.2F}sec", Hours, Minutes, Seconds);
+    const std::string Elapsed = format("{:02}hr {:02}min {:5.2F}sec", Hours, Minutes, Seconds);
 
     state.dataResultsFramework->resultsFramework->SimulationInformation.setRunTime(Elapsed);
     state.dataResultsFramework->resultsFramework->SimulationInformation.setNumErrorsWarmup(NumWarningsDuringWarmup, NumSevereDuringWarmup);
     state.dataResultsFramework->resultsFramework->SimulationInformation.setNumErrorsSizing(NumWarningsDuringSizing, NumSevereDuringSizing);
     state.dataResultsFramework->resultsFramework->SimulationInformation.setNumErrorsSummary(NumWarnings, NumSevere);
 
-    ShowMessage(state,
-                "EnergyPlus Warmup Error Summary. During Warmup: " + NumWarningsDuringWarmup + " Warning; " + NumSevereDuringWarmup +
-                    " Severe Errors.");
-    ShowMessage(state,
-                "EnergyPlus Sizing Error Summary. During Sizing: " + NumWarningsDuringSizing + " Warning; " + NumSevereDuringSizing +
-                    " Severe Errors.");
-    ShowMessage(state,
-                "EnergyPlus Terminated--Fatal Error Detected. " + NumWarnings + " Warning; " + NumSevere + " Severe Errors; Elapsed Time=" + Elapsed);
+    ShowMessage(
+        state,
+        format("EnergyPlus Warmup Error Summary. During Warmup: {} Warning; {} Severe Errors.", NumWarningsDuringWarmup, NumSevereDuringWarmup));
+    ShowMessage(
+        state,
+        format("EnergyPlus Sizing Error Summary. During Sizing: {} Warning; {} Severe Errors.", NumWarningsDuringSizing, NumSevereDuringSizing));
+    ShowMessage(
+        state, format("EnergyPlus Terminated--Fatal Error Detected. {} Warning; {} Severe Errors; Elapsed Time={}", NumWarnings, NumSevere, Elapsed));
     DisplayString(state, "EnergyPlus Run Time=" + Elapsed);
 
     {
@@ -760,9 +626,6 @@ int AbortEnergyPlus(EnergyPlusData &state)
 
     state.dataResultsFramework->resultsFramework->writeOutputs(state);
 
-#ifdef EP_Detailed_Timings
-    epSummaryTimes(state.files.audit, Time_Finish - Time_Start);
-#endif
     std::cerr << "Program terminated: "
               << "EnergyPlus Terminated--Error(s) Detected." << std::endl;
     // Close the socket used by ExternalInterface. This call also sends the flag "-1" to the ExternalInterface,
@@ -772,6 +635,10 @@ int AbortEnergyPlus(EnergyPlusData &state)
     if (state.dataGlobal->eplusRunningViaAPI) {
         state.files.flushAll();
     }
+
+    // The audit file seems to be held open in some cases, make sure it is closed before leaving.
+    // EnergyPlus can close through two paths: EndEnergyPlus and AbortEnergyPlus, so do the same thing there.
+    state.files.audit.close();
 
     return EXIT_FAILURE;
 }
@@ -793,8 +660,8 @@ void CloseMiscOpenFiles(EnergyPlusData &state)
     // Use INQUIRE to determine if file is open.
 
     // Using/Aliasing
-    using DaylightingManager::CloseDFSFile;
-    using DaylightingManager::CloseReportIllumMaps;
+    using Dayltg::CloseDFSFile;
+    using Dayltg::CloseReportIllumMaps;
 
     CloseReportIllumMaps(state);
     CloseDFSFile(state);
@@ -824,7 +691,6 @@ int EndEnergyPlus(EnergyPlusData &state)
     // Stops the program.
 
     using namespace DataSystemVariables;
-    using namespace DataTimings;
     using namespace DataErrorTracking;
     using ExternalInterface::CloseSocket;
 
@@ -861,22 +727,19 @@ int EndEnergyPlus(EnergyPlusData &state)
     NumSevereDuringSizing = fmt::to_string(state.dataErrTracking->TotalSevereErrorsDuringSizing);
     strip(NumSevereDuringSizing);
 
-    state.dataSysVars->Time_Finish = epElapsedTime();
+    state.dataSysVars->Time_Finish = Util::epElapsedTime();
     if (state.dataSysVars->Time_Finish < state.dataSysVars->Time_Start) state.dataSysVars->Time_Finish += 24.0 * 3600.0;
     state.dataSysVars->Elapsed_Time = state.dataSysVars->Time_Finish - state.dataSysVars->Time_Start;
     if (state.dataGlobal->createPerfLog) {
-        UtilityRoutines::appendPerfLog(state, "Run Time [seconds]", format("{:.2R}", state.dataSysVars->Elapsed_Time));
+        Util::appendPerfLog(state, "Run Time [seconds]", format("{:.2R}", state.dataSysVars->Elapsed_Time));
     }
-#ifdef EP_Detailed_Timings
-    epStopTime("EntireRun=");
-#endif
     Hours = state.dataSysVars->Elapsed_Time / 3600.0;
     state.dataSysVars->Elapsed_Time -= Hours * 3600.0;
     Minutes = state.dataSysVars->Elapsed_Time / 60.0;
     state.dataSysVars->Elapsed_Time -= Minutes * 60.0;
     Seconds = state.dataSysVars->Elapsed_Time;
     if (Seconds < 0.0) Seconds = 0.0;
-    const auto Elapsed = format("{:02}hr {:02}min {:5.2F}sec", Hours, Minutes, Seconds);
+    const std::string Elapsed = format("{:02}hr {:02}min {:5.2F}sec", Hours, Minutes, Seconds);
 
     state.dataResultsFramework->resultsFramework->SimulationInformation.setRunTime(Elapsed);
     state.dataResultsFramework->resultsFramework->SimulationInformation.setNumErrorsWarmup(NumWarningsDuringWarmup, NumSevereDuringWarmup);
@@ -884,17 +747,17 @@ int EndEnergyPlus(EnergyPlusData &state)
     state.dataResultsFramework->resultsFramework->SimulationInformation.setNumErrorsSummary(NumWarnings, NumSevere);
 
     if (state.dataGlobal->createPerfLog) {
-        UtilityRoutines::appendPerfLog(state, "Run Time [string]", Elapsed);
-        UtilityRoutines::appendPerfLog(state, "Number of Warnings", NumWarnings);
-        UtilityRoutines::appendPerfLog(state, "Number of Severe", NumSevere, true); // last item so write the perfLog file
+        Util::appendPerfLog(state, "Run Time [string]", Elapsed);
+        Util::appendPerfLog(state, "Number of Warnings", NumWarnings);
+        Util::appendPerfLog(state, "Number of Severe", NumSevere, true); // last item so write the perfLog file
     }
-    ShowMessage(state,
-                "EnergyPlus Warmup Error Summary. During Warmup: " + NumWarningsDuringWarmup + " Warning; " + NumSevereDuringWarmup +
-                    " Severe Errors.");
-    ShowMessage(state,
-                "EnergyPlus Sizing Error Summary. During Sizing: " + NumWarningsDuringSizing + " Warning; " + NumSevereDuringSizing +
-                    " Severe Errors.");
-    ShowMessage(state, "EnergyPlus Completed Successfully-- " + NumWarnings + " Warning; " + NumSevere + " Severe Errors; Elapsed Time=" + Elapsed);
+    ShowMessage(
+        state,
+        format("EnergyPlus Warmup Error Summary. During Warmup: {} Warning; {} Severe Errors.", NumWarningsDuringWarmup, NumSevereDuringWarmup));
+    ShowMessage(
+        state,
+        format("EnergyPlus Sizing Error Summary. During Sizing: {} Warning; {} Severe Errors.", NumWarningsDuringSizing, NumSevereDuringSizing));
+    ShowMessage(state, format("EnergyPlus Completed Successfully-- {} Warning; {} Severe Errors; Elapsed Time={}", NumWarnings, NumSevere, Elapsed));
     DisplayString(state, "EnergyPlus Run Time=" + Elapsed);
 
     {
@@ -907,17 +770,25 @@ int EndEnergyPlus(EnergyPlusData &state)
 
     state.dataResultsFramework->resultsFramework->writeOutputs(state);
 
-#ifdef EP_Detailed_Timings
-    epSummaryTimes(Time_Finish - Time_Start);
-#endif
     if (state.dataGlobal->printConsoleOutput) std::cerr << "EnergyPlus Completed Successfully." << std::endl;
     // Close the ExternalInterface socket. This call also sends the flag "1" to the ExternalInterface,
     // indicating that E+ finished its simulation
     if ((state.dataExternalInterface->NumExternalInterfaces > 0) && state.dataExternalInterface->haveExternalInterfaceBCVTB) CloseSocket(state, 1);
 
+    if (state.dataGlobal->fProgressPtr) {
+        state.dataGlobal->fProgressPtr(100);
+    }
+    if (state.dataGlobal->progressCallback) {
+        state.dataGlobal->progressCallback(100);
+    }
+
     if (state.dataGlobal->eplusRunningViaAPI) {
         state.files.flushAll();
     }
+
+    // The audit file seems to be held open in some cases, make sure it is closed before leaving.
+    // EnergyPlus can close through two paths: EndEnergyPlus and AbortEnergyPlus, so do the same thing there.
+    state.files.audit.close();
 
     return EXIT_SUCCESS;
 }
@@ -1067,12 +938,12 @@ void ShowFatalError(EnergyPlusData &state, std::string const &ErrorMessage, Opti
 
     using namespace DataErrorTracking;
 
-    ShowErrorMessage(state, " **  Fatal  ** " + ErrorMessage, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" **  Fatal  ** {}", ErrorMessage), OutUnit1, OutUnit2);
     DisplayString(state, "**FATAL:" + ErrorMessage);
 
     ShowErrorMessage(state, " ...Summary of Errors that led to program termination:", OutUnit1, OutUnit2);
     ShowErrorMessage(state, format(" ..... Reference severe error count={}", state.dataErrTracking->TotalSevereErrors), OutUnit1, OutUnit2);
-    ShowErrorMessage(state, " ..... Last severe error=" + state.dataErrTracking->LastSevereError, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" ..... Last severe error={}", state.dataErrTracking->LastSevereError), OutUnit1, OutUnit2);
     if (state.dataSQLiteProcedures->sqlite) {
         state.dataSQLiteProcedures->sqlite->createSQLiteErrorRecord(1, 2, ErrorMessage, 1);
         if (state.dataSQLiteProcedures->sqlite->sqliteWithinTransaction()) state.dataSQLiteProcedures->sqlite->sqliteCommit();
@@ -1112,7 +983,7 @@ void ShowSevereError(EnergyPlusData &state, std::string const &ErrorMessage, Opt
         !state.dataErrTracking->AbortProcessing)
         ++state.dataErrTracking->TotalSevereErrorsDuringWarmup;
     if (state.dataGlobal->DoingSizing) ++state.dataErrTracking->TotalSevereErrorsDuringSizing;
-    ShowErrorMessage(state, " ** Severe  ** " + ErrorMessage, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" ** Severe  ** {}", ErrorMessage), OutUnit1, OutUnit2);
     state.dataErrTracking->LastSevereError = ErrorMessage;
 
     //  Could set a variable here that gets checked at some point?
@@ -1152,7 +1023,7 @@ void ShowSevereMessage(EnergyPlusData &state, std::string const &ErrorMessage, O
         if (has(ErrorMessage, MessageSearch[Loop])) ++state.dataErrTracking->MatchCounts(Loop);
     }
 
-    ShowErrorMessage(state, " ** Severe  ** " + ErrorMessage, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" ** Severe  ** {}", ErrorMessage), OutUnit1, OutUnit2);
     state.dataErrTracking->LastSevereError = ErrorMessage;
 
     //  Could set a variable here that gets checked at some point?
@@ -1180,7 +1051,7 @@ void ShowContinueError(EnergyPlusData &state, std::string const &Message, Option
     // METHODOLOGY EMPLOYED:
     // Calls ShowErrorMessage utility routine.
 
-    ShowErrorMessage(state, " **   ~~~   ** " + Message, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" **   ~~~   ** {}", Message), OutUnit1, OutUnit2);
     if (state.dataSQLiteProcedures->sqlite) {
         state.dataSQLiteProcedures->sqlite->updateSQLiteErrorRecord(Message);
     }
@@ -1224,9 +1095,14 @@ void ShowContinueErrorTimeStamp(EnergyPlusData &state, std::string const &Messag
     }
 
     if (len(Message) < 50) {
-        const auto m = Message + cEnvHeader + state.dataEnvrn->EnvironmentName + ", at Simulation time=" + state.dataEnvrn->CurMnDy + ' ' +
-                       CreateSysTimeIntervalString(state);
-        ShowErrorMessage(state, " **   ~~~   ** " + m, OutUnit1, OutUnit2);
+        const std::string m = format("{}{}{}, at Simulation time={} {}",
+                                     Message,
+                                     cEnvHeader,
+                                     state.dataEnvrn->EnvironmentName,
+                                     state.dataEnvrn->CurMnDy,
+                                     CreateSysTimeIntervalString(state));
+
+        ShowErrorMessage(state, format(" **   ~~~   ** {}", m), OutUnit1, OutUnit2);
         if (state.dataSQLiteProcedures->sqlite) {
             state.dataSQLiteProcedures->sqlite->updateSQLiteErrorRecord(m);
         }
@@ -1234,16 +1110,18 @@ void ShowContinueErrorTimeStamp(EnergyPlusData &state, std::string const &Messag
             state.dataGlobal->errorCallback(Error::Continue, m);
         }
     } else {
-        const auto m = " **   ~~~   ** " + Message;
-        const auto postfix = " **   ~~~   ** " + cEnvHeader + state.dataEnvrn->EnvironmentName + ", at Simulation time=" + state.dataEnvrn->CurMnDy +
-                             ' ' + CreateSysTimeIntervalString(state);
-        ShowErrorMessage(state, m);
-        ShowErrorMessage(state, postfix, OutUnit1, OutUnit2);
+        const std::string postfix = format("{}{}, at Simulation time={} {}",
+                                           cEnvHeader,
+                                           state.dataEnvrn->EnvironmentName,
+                                           state.dataEnvrn->CurMnDy,
+                                           CreateSysTimeIntervalString(state));
+        ShowErrorMessage(state, format(" **   ~~~   ** {}", Message));
+        ShowErrorMessage(state, format(" **   ~~~   ** {}", postfix), OutUnit1, OutUnit2);
         if (state.dataSQLiteProcedures->sqlite) {
-            state.dataSQLiteProcedures->sqlite->updateSQLiteErrorRecord(m);
+            state.dataSQLiteProcedures->sqlite->updateSQLiteErrorRecord(Message);
         }
         if (state.dataGlobal->errorCallback) {
-            state.dataGlobal->errorCallback(Error::Continue, m);
+            state.dataGlobal->errorCallback(Error::Continue, Message);
             state.dataGlobal->errorCallback(Error::Continue, postfix);
         }
     }
@@ -1267,7 +1145,7 @@ void ShowMessage(EnergyPlusData &state, std::string const &Message, OptionalOutp
     if (Message.empty()) {
         ShowErrorMessage(state, " *************", OutUnit1, OutUnit2);
     } else {
-        ShowErrorMessage(state, " ************* " + Message, OutUnit1, OutUnit2);
+        ShowErrorMessage(state, format(" ************* {}", Message), OutUnit1, OutUnit2);
         if (state.dataSQLiteProcedures->sqlite) {
             state.dataSQLiteProcedures->sqlite->createSQLiteErrorRecord(1, -1, Message, 0);
         }
@@ -1306,7 +1184,7 @@ void ShowWarningError(EnergyPlusData &state, std::string const &ErrorMessage, Op
         !state.dataErrTracking->AbortProcessing)
         ++state.dataErrTracking->TotalWarningErrorsDuringWarmup;
     if (state.dataGlobal->DoingSizing) ++state.dataErrTracking->TotalWarningErrorsDuringSizing;
-    ShowErrorMessage(state, " ** Warning ** " + ErrorMessage, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" ** Warning ** {}", ErrorMessage), OutUnit1, OutUnit2);
 
     if (state.dataSQLiteProcedures->sqlite) {
         state.dataSQLiteProcedures->sqlite->createSQLiteErrorRecord(1, 0, ErrorMessage, 1);
@@ -1340,7 +1218,7 @@ void ShowWarningMessage(EnergyPlusData &state, std::string const &ErrorMessage, 
         if (has(ErrorMessage, MessageSearch[Loop])) ++state.dataErrTracking->MatchCounts(Loop);
     }
 
-    ShowErrorMessage(state, " ** Warning ** " + ErrorMessage, OutUnit1, OutUnit2);
+    ShowErrorMessage(state, format(" ** Warning ** {}", ErrorMessage), OutUnit1, OutUnit2);
     if (state.dataSQLiteProcedures->sqlite) {
         state.dataSQLiteProcedures->sqlite->createSQLiteErrorRecord(1, 0, ErrorMessage, 0);
     }
@@ -1350,14 +1228,14 @@ void ShowWarningMessage(EnergyPlusData &state, std::string const &ErrorMessage, 
 }
 
 void ShowRecurringSevereErrorAtEnd(EnergyPlusData &state,
-                                   std::string const &Message,         // Message automatically written to "error file" at end of simulation
-                                   int &MsgIndex,                      // Recurring message index, if zero, next available index is assigned
-                                   Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
-                                   Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
-                                   Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
-                                   std::string const &ReportMaxUnits,  // optional char string (<=15 length) of units for max value
-                                   std::string const &ReportMinUnits,  // optional char string (<=15 length) of units for min value
-                                   std::string const &ReportSumUnits   // optional char string (<=15 length) of units for sum value
+                                   std::string const &Message, // Message automatically written to "error file" at end of simulation
+                                   int &MsgIndex,              // Recurring message index, if zero, next available index is assigned
+                                   ObjexxFCL::Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
+                                   ObjexxFCL::Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
+                                   ObjexxFCL::Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
+                                   std::string const &ReportMaxUnits,             // optional char string (<=15 length) of units for max value
+                                   std::string const &ReportMinUnits,             // optional char string (<=15 length) of units for min value
+                                   std::string const &ReportSumUnits              // optional char string (<=15 length) of units for sum value
 )
 {
 
@@ -1389,7 +1267,7 @@ void ShowRecurringSevereErrorAtEnd(EnergyPlusData &state,
     }
     bool bNewMessageFound = true;
     for (int Loop = 1; Loop <= state.dataErrTracking->NumRecurringErrors; ++Loop) {
-        if (UtilityRoutines::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " ** Severe  ** " + Message)) {
+        if (Util::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " ** Severe  ** " + Message)) {
             bNewMessageFound = false;
             MsgIndex = Loop;
             break;
@@ -1405,14 +1283,14 @@ void ShowRecurringSevereErrorAtEnd(EnergyPlusData &state,
 }
 
 void ShowRecurringWarningErrorAtEnd(EnergyPlusData &state,
-                                    std::string const &Message,         // Message automatically written to "error file" at end of simulation
-                                    int &MsgIndex,                      // Recurring message index, if zero, next available index is assigned
-                                    Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
-                                    Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
-                                    Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
-                                    std::string const &ReportMaxUnits,  // optional char string (<=15 length) of units for max value
-                                    std::string const &ReportMinUnits,  // optional char string (<=15 length) of units for min value
-                                    std::string const &ReportSumUnits   // optional char string (<=15 length) of units for sum value
+                                    std::string const &Message, // Message automatically written to "error file" at end of simulation
+                                    int &MsgIndex,              // Recurring message index, if zero, next available index is assigned
+                                    ObjexxFCL::Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
+                                    ObjexxFCL::Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
+                                    ObjexxFCL::Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
+                                    std::string const &ReportMaxUnits,             // optional char string (<=15 length) of units for max value
+                                    std::string const &ReportMinUnits,             // optional char string (<=15 length) of units for min value
+                                    std::string const &ReportSumUnits              // optional char string (<=15 length) of units for sum value
 )
 {
 
@@ -1444,7 +1322,7 @@ void ShowRecurringWarningErrorAtEnd(EnergyPlusData &state,
     }
     bool bNewMessageFound = true;
     for (int Loop = 1; Loop <= state.dataErrTracking->NumRecurringErrors; ++Loop) {
-        if (UtilityRoutines::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " ** Warning ** " + Message)) {
+        if (Util::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " ** Warning ** " + Message)) {
             bNewMessageFound = false;
             MsgIndex = Loop;
             break;
@@ -1460,14 +1338,14 @@ void ShowRecurringWarningErrorAtEnd(EnergyPlusData &state,
 }
 
 void ShowRecurringContinueErrorAtEnd(EnergyPlusData &state,
-                                     std::string const &Message,         // Message automatically written to "error file" at end of simulation
-                                     int &MsgIndex,                      // Recurring message index, if zero, next available index is assigned
-                                     Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
-                                     Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
-                                     Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
-                                     std::string const &ReportMaxUnits,  // optional char string (<=15 length) of units for max value
-                                     std::string const &ReportMinUnits,  // optional char string (<=15 length) of units for min value
-                                     std::string const &ReportSumUnits   // optional char string (<=15 length) of units for sum value
+                                     std::string const &Message, // Message automatically written to "error file" at end of simulation
+                                     int &MsgIndex,              // Recurring message index, if zero, next available index is assigned
+                                     ObjexxFCL::Optional<Real64 const> ReportMaxOf, // Track and report the max of the values passed to this argument
+                                     ObjexxFCL::Optional<Real64 const> ReportMinOf, // Track and report the min of the values passed to this argument
+                                     ObjexxFCL::Optional<Real64 const> ReportSumOf, // Track and report the sum of the values passed to this argument
+                                     std::string const &ReportMaxUnits,             // optional char string (<=15 length) of units for max value
+                                     std::string const &ReportMinUnits,             // optional char string (<=15 length) of units for min value
+                                     std::string const &ReportSumUnits              // optional char string (<=15 length) of units for sum value
 )
 {
 
@@ -1499,7 +1377,7 @@ void ShowRecurringContinueErrorAtEnd(EnergyPlusData &state,
     }
     bool bNewMessageFound = true;
     for (int Loop = 1; Loop <= state.dataErrTracking->NumRecurringErrors; ++Loop) {
-        if (UtilityRoutines::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " **   ~~~   ** " + Message)) {
+        if (Util::SameString(state.dataErrTracking->RecurringErrors(Loop).Message, " **   ~~~   ** " + Message)) {
             bNewMessageFound = false;
             MsgIndex = Loop;
             break;
@@ -1514,14 +1392,14 @@ void ShowRecurringContinueErrorAtEnd(EnergyPlusData &state,
 }
 
 void StoreRecurringErrorMessage(EnergyPlusData &state,
-                                std::string const &ErrorMessage,         // Message automatically written to "error file" at end of simulation
-                                int &ErrorMsgIndex,                      // Recurring message index, if zero, next available index is assigned
-                                Optional<Real64 const> ErrorReportMaxOf, // Track and report the max of the values passed to this argument
-                                Optional<Real64 const> ErrorReportMinOf, // Track and report the min of the values passed to this argument
-                                Optional<Real64 const> ErrorReportSumOf, // Track and report the sum of the values passed to this argument
-                                std::string const &ErrorReportMaxUnits,  // Units for "max" reporting
-                                std::string const &ErrorReportMinUnits,  // Units for "min" reporting
-                                std::string const &ErrorReportSumUnits   // Units for "sum" reporting
+                                std::string const &ErrorMessage, // Message automatically written to "error file" at end of simulation
+                                int &ErrorMsgIndex,              // Recurring message index, if zero, next available index is assigned
+                                ObjexxFCL::Optional<Real64 const> ErrorReportMaxOf, // Track and report the max of the values passed to this argument
+                                ObjexxFCL::Optional<Real64 const> ErrorReportMinOf, // Track and report the min of the values passed to this argument
+                                ObjexxFCL::Optional<Real64 const> ErrorReportSumOf, // Track and report the sum of the values passed to this argument
+                                std::string const &ErrorReportMaxUnits,             // Units for "max" reporting
+                                std::string const &ErrorReportMinUnits,             // Units for "min" reporting
+                                std::string const &ErrorReportSumUnits              // Units for "sum" reporting
 )
 {
 
@@ -1629,11 +1507,11 @@ void ShowErrorMessage(EnergyPlusData &state, std::string const &ErrorMessage, Op
         // ObjexxFCL::gio::write(CacheIPErrorFile, fmtA) << ErrorMessage;
         if (state.dataGlobal->printConsoleOutput) std::cout << ErrorMessage << '\n';
     }
-    if (present(OutUnit1)) {
-        print(OutUnit1(), "  {}", ErrorMessage);
+    if (OutUnit1) {
+        print(OutUnit1.value(), "  {}", ErrorMessage);
     }
-    if (present(OutUnit2)) {
-        print(OutUnit2(), "  {}", ErrorMessage);
+    if (OutUnit2) {
+        print(OutUnit2.value(), "  {}", ErrorMessage);
     }
     // std::string tmp = "  " + ErrorMessage + '\n';
     // if (errorCallback) DataGlobals::errorCallback(tmp.c_str());
@@ -1670,7 +1548,7 @@ void SummarizeErrors(EnergyPlusData &state)
                     EndC = len(thisMoreDetails) - 1;
                     while (EndC != std::string::npos) {
                         EndC = index(thisMoreDetails.substr(StartC), "<CR");
-                        ShowMessage(state, ".." + thisMoreDetails.substr(StartC, EndC));
+                        ShowMessage(state, format("..{}", thisMoreDetails.substr(StartC, EndC)));
                         if (thisMoreDetails.substr(StartC + EndC, 5) == "<CRE>") break;
                         StartC += EndC + 4;
                         EndC = len(thisMoreDetails.substr(StartC)) - 1;
@@ -1698,8 +1576,6 @@ void ShowRecurringErrors(EnergyPlusData &state)
     // Using/Aliasing
     using namespace DataErrorTracking;
 
-    using General::strip_trailing_zeros;
-
     static constexpr std::string_view StatMessageStart(" **   ~~~   ** ");
 
     int Loop;
@@ -1713,7 +1589,7 @@ void ShowRecurringErrors(EnergyPlusData &state)
         ShowMessage(state, "===== Recurring Error Summary =====");
         ShowMessage(state, "The following recurring error messages occurred.");
         for (Loop = 1; Loop <= state.dataErrTracking->NumRecurringErrors; ++Loop) {
-            auto const &error(state.dataErrTracking->RecurringErrors(Loop));
+            auto const &error = state.dataErrTracking->RecurringErrors(Loop);
             // Suppress reporting the count if it is a continue error
             if (has_prefix(error.Message, " **   ~~~   ** ")) {
                 ShowMessage(state, error.Message);
@@ -1724,8 +1600,8 @@ void ShowRecurringErrors(EnergyPlusData &state)
                     state.dataGlobal->errorCallback(Error::Continue, error.Message);
                 }
             } else {
-                const auto warning = has_prefix(error.Message, " ** Warning ** ");
-                const auto severe = has_prefix(error.Message, " ** Severe  ** ");
+                const bool warning = has_prefix(error.Message, " ** Warning ** ");
+                const bool severe = has_prefix(error.Message, " ** Severe  ** ");
 
                 ShowMessage(state, "");
                 ShowMessage(state, error.Message);
@@ -1750,29 +1626,111 @@ void ShowRecurringErrors(EnergyPlusData &state)
             }
             StatMessage = "";
             if (error.ReportMax) {
-                MaxOut = format("{:.6R}", error.MaxValue);
-                strip_trailing_zeros(MaxOut);
+                MaxOut = format("{:.6f}", error.MaxValue);
                 StatMessage += "  Max=" + MaxOut;
                 if (!error.MaxUnits.empty()) StatMessage += ' ' + error.MaxUnits;
             }
             if (error.ReportMin) {
-                MinOut = format("{:.6R}", error.MinValue);
-                strip_trailing_zeros(MinOut);
+                MinOut = format("{:.6f}", error.MinValue);
                 StatMessage += "  Min=" + MinOut;
                 if (!error.MinUnits.empty()) StatMessage += ' ' + error.MinUnits;
             }
             if (error.ReportSum) {
-                SumOut = format("{:.6R}", error.SumValue);
-                strip_trailing_zeros(SumOut);
+                SumOut = format("{:.6f}", error.SumValue);
                 StatMessage += "  Sum=" + SumOut;
                 if (!error.SumUnits.empty()) StatMessage += ' ' + error.SumUnits;
             }
             if (error.ReportMax || error.ReportMin || error.ReportSum) {
-                ShowMessage(state, std::string{StatMessageStart} + StatMessage);
+                ShowMessage(state, format("{}{}", StatMessageStart, StatMessage));
             }
         }
         ShowMessage(state, "");
     }
+}
+
+void ShowSevereDuplicateName(EnergyPlusData &state, ErrorObjectHeader const &eoh)
+{
+    ShowSevereError(state, format("{}: {} = {}, duplicate name.", eoh.routineName, eoh.objectType, eoh.objectName));
+}
+
+void ShowSevereEmptyField(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view depFieldName, std::string_view depFieldVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state,
+                      format("{} cannot be empty{}.", fieldName, depFieldName.empty() ? "" : format(" when {} = {}", depFieldName, depFieldVal)));
+}
+
+void ShowSevereItemNotFound(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, item not found.", fieldName, fieldVal));
+}
+
+void ShowSevereInvalidKey(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, invalid key.", fieldName, fieldVal));
+}
+
+void ShowSevereInvalidBool(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, invalid boolean (\"Yes\"/\"No\").", fieldName, fieldVal));
+}
+
+void ShowSevereCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{}", msg));
+}
+
+void ShowWarningItemNotFound(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal)
+{
+    ShowWarningError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, item not found", fieldName, fieldVal));
+}
+
+void ShowWarningCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg)
+{
+    ShowWarningError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{}", msg));
+}
+
+void ShowWarningInvalidKey(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal, std::string_view defaultVal)
+{
+    ShowWarningError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, invalid key, {} will be used.", fieldName, fieldVal, defaultVal));
+}
+
+void ShowWarningInvalidBool(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal, std::string_view defaultVal)
+{
+    ShowWarningError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, invalid boolean (\"Yes\"/\"No\"), {} will be used.", fieldName, fieldVal, defaultVal));
+}
+
+void ShowWarningEmptyField(EnergyPlusData &state,
+                           ErrorObjectHeader const &eoh,
+                           std::string_view fieldName,
+                           std::string_view defaultVal,
+                           std::string_view depFieldName,
+                           std::string_view depFieldVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state,
+                      format("{} cannot be empty{}, {} will be used.",
+                             fieldName,
+                             depFieldName.empty() ? "" : format(" when {} = {}", depFieldName, depFieldVal),
+                             defaultVal));
+}
+
+void ShowWarningItemNotFound(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldVal, std::string_view defaultVal)
+{
+    ShowSevereError(state, format("{}: {} = {}", eoh.routineName, eoh.objectType, eoh.objectName));
+    ShowContinueError(state, format("{} = {}, item not found, {} will be used.", fieldName, fieldVal, defaultVal));
 }
 
 } // namespace EnergyPlus

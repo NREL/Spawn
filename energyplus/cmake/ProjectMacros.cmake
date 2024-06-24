@@ -135,12 +135,20 @@ function(ADD_SIMULATION_TEST)
     set(RUN_CALLGRIND FALSE)
   endif()
 
+  if(ADD_SIM_TEST_PERFORMANCE AND PERF_STAT_ANALYZE_PERFORMANCE_TESTS)
+    set(RUN_PERF_STAT TRUE)
+  else()
+    set(RUN_PERF_STAT FALSE)
+  endif()
+
+
   add_test(
     NAME "${TEST_CATEGORY}.${IDF_NAME}"
     COMMAND
       ${CMAKE_COMMAND} -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DBINARY_DIR=${PROJECT_BINARY_DIR} -DENERGYPLUS_EXE=$<TARGET_FILE:energyplus>
       -DIDF_FILE=${ADD_SIM_TEST_IDF_FILE} -DEPW_FILE=${ADD_SIM_TEST_EPW_FILE} -DENERGYPLUS_FLAGS=${ENERGYPLUS_FLAGS} -DBUILD_FORTRAN=${BUILD_FORTRAN}
-      -DTEST_FILE_FOLDER=${TEST_FILE_FOLDER} -DRUN_CALLGRIND:BOOL=${RUN_CALLGRIND} -DVALGRIND=${VALGRIND} -P
+      -DTEST_FILE_FOLDER=${TEST_FILE_FOLDER} -DRUN_CALLGRIND:BOOL=${RUN_CALLGRIND} -DVALGRIND=${VALGRIND} -DRUN_PERF_STAT:BOOL=${RUN_PERF_STAT}
+      -DPERF=${PERF} -P
       ${PROJECT_SOURCE_DIR}/cmake/RunSimulation.cmake)
 
   if(ADD_SIM_TEST_COST AND NOT ADD_SIM_TEST_COST STREQUAL "")
@@ -171,6 +179,38 @@ function(ADD_SIMULATION_TEST)
     set_tests_properties("regression.${IDF_NAME}" PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR;FAIL;Test Failed")
   endif()
 
+  if(ENABLE_REVERSE_DD_TESTING AND (NOT ADD_SIM_TEST_EXPECT_FATAL))
+    set(TEST_FILE_FOLDER "testfiles")
+    set(ENERGYPLUS_FLAGS "-D -r")
+    add_test(
+            NAME "reverseDD.${IDF_NAME}"
+            COMMAND
+            ${CMAKE_COMMAND} -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DBINARY_DIR=${PROJECT_BINARY_DIR} -DPYTHON_EXECUTABLE=${Python_EXECUTABLE} -DENERGYPLUS_EXE=$<TARGET_FILE:energyplus>
+            -DIDF_FILE=${ADD_SIM_TEST_IDF_FILE} -DENERGYPLUS_FLAGS=${ENERGYPLUS_FLAGS} -DBUILD_FORTRAN=${BUILD_FORTRAN} -DTEST_FILE_FOLDER=${TEST_FILE_FOLDER} -P
+            ${PROJECT_SOURCE_DIR}/cmake/RunReverseDD.cmake)
+    set_tests_properties("reverseDD.${IDF_NAME}" PROPERTIES PASS_REGULAR_EXPRESSION "Success;Test Passed")
+    set_tests_properties("reverseDD.${IDF_NAME}" PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR;FAIL;Test Failed")
+  endif()
+
+endfunction()
+
+function(ADD_API_SIMULATION_TEST)
+  # Used for running API tests in the testfiles/API folder
+  # The only argument should be the Python file that drives the simulation run
+  # The Python file should expect a single argument - the build/Products directory where
+  # energyplus(.exe) and pyenergyplus/ live.  The Python script should be able to locate
+  # the associated IDF(s) and run successfully
+  set(options)
+  set(oneValueArgs PYTHON_FILE)
+  set(multiValueArgs)
+  cmake_parse_arguments(ADD_API_SIMULATION_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  if(NOT ADD_API_SIMULATION_TEST_PYTHON_FILE)
+    message(FATAL_ERROR "You must provide a PYTHON_FILE argument to ADD_API_SIMULATION_TEST")
+  endif()
+  set(DIR_WITH_PY_ENERGYPLUS $<TARGET_FILE_DIR:energyplusapi>)
+  add_test(
+          NAME "APISimulation.${ADD_API_SIMULATION_TEST_PYTHON_FILE}"
+          COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/testfiles/API/${ADD_API_SIMULATION_TEST_PYTHON_FILE} ${DIR_WITH_PY_ENERGYPLUS})
 endfunction()
 
 function(fixup_executable EXECUTABLE_PATH)

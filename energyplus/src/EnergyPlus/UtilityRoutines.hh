@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,12 +50,12 @@
 
 // C++ Headers
 #include <functional>
+#include <optional>
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array1D.hh>
 #include <ObjexxFCL/Array1S.fwd.hh>
 #include <ObjexxFCL/MArray1.fwd.hh>
-#include <ObjexxFCL/Optional.hh>
 #include <ObjexxFCL/string.functions.hh>
 
 #include <GSL/span.h>
@@ -63,6 +63,7 @@
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobalConstants.hh>
+#include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 
 namespace EnergyPlus {
@@ -129,84 +130,136 @@ template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>> inli
 
 bool env_var_on(std::string const &env_var_str);
 
-using OptionalOutputFileRef = Optional<std::reference_wrapper<EnergyPlus::InputOutputFile>>;
+using OptionalOutputFileRef = std::optional<std::reference_wrapper<EnergyPlus::InputOutputFile>>;
 
-void ShowFatalError(EnergyPlusData &state, std::string const &ErrorMessage, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowFatalError(EnergyPlusData &state, std::string const &ErrorMessage, OptionalOutputFileRef OutUnit1 = {}, OptionalOutputFileRef OutUnit2 = {});
 
-void ShowSevereError(EnergyPlusData &state, std::string const &ErrorMessage, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowSevereError(EnergyPlusData &state,
+                     std::string const &ErrorMessage,
+                     OptionalOutputFileRef OutUnit1 = {},
+                     OptionalOutputFileRef OutUnit2 = {});
 
 void ShowSevereMessage(EnergyPlusData &state,
                        std::string const &ErrorMessage,
-                       OptionalOutputFileRef OutUnit1 = _,
-                       OptionalOutputFileRef OutUnit2 = _);
+                       OptionalOutputFileRef OutUnit1 = {},
+                       OptionalOutputFileRef OutUnit2 = {});
 
-void ShowContinueError(EnergyPlusData &state, std::string const &Message, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowContinueError(EnergyPlusData &state, std::string const &Message, OptionalOutputFileRef OutUnit1 = {}, OptionalOutputFileRef OutUnit2 = {});
 
 void ShowContinueErrorTimeStamp(EnergyPlusData &state,
                                 std::string const &Message,
-                                OptionalOutputFileRef OutUnit1 = _,
-                                OptionalOutputFileRef OutUnit2 = _);
+                                OptionalOutputFileRef OutUnit1 = {},
+                                OptionalOutputFileRef OutUnit2 = {});
 
-void ShowMessage(EnergyPlusData &state, std::string const &Message, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowMessage(EnergyPlusData &state, std::string const &Message, OptionalOutputFileRef OutUnit1 = {}, OptionalOutputFileRef OutUnit2 = {});
 
-void ShowWarningError(EnergyPlusData &state, std::string const &ErrorMessage, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowWarningError(EnergyPlusData &state,
+                      std::string const &ErrorMessage,
+                      OptionalOutputFileRef OutUnit1 = {},
+                      OptionalOutputFileRef OutUnit2 = {});
 
 void ShowWarningMessage(EnergyPlusData &state,
                         std::string const &ErrorMessage,
-                        OptionalOutputFileRef OutUnit1 = _,
-                        OptionalOutputFileRef OutUnit2 = _);
+                        OptionalOutputFileRef OutUnit1 = {},
+                        OptionalOutputFileRef OutUnit2 = {});
 
-void ShowRecurringSevereErrorAtEnd(EnergyPlusData &state,
-                                   std::string const &Message,             // Message automatically written to "error file" at end of simulation
-                                   int &MsgIndex,                          // Recurring message index, if zero, next available index is assigned
-                                   Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
-                                   Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
-                                   Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
-                                   std::string const &ReportMaxUnits = "", // optional char string (<=15 length) of units for max value
-                                   std::string const &ReportMinUnits = "", // optional char string (<=15 length) of units for min value
-                                   std::string const &ReportSumUnits = ""  // optional char string (<=15 length) of units for sum value
+void ShowRecurringSevereErrorAtEnd(
+    EnergyPlusData &state,
+    std::string const &Message,                        // Message automatically written to "error file" at end of simulation
+    int &MsgIndex,                                     // Recurring message index, if zero, next available index is assigned
+    ObjexxFCL::Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
+    std::string const &ReportMaxUnits = "",            // optional char string (<=15 length) of units for max value
+    std::string const &ReportMinUnits = "",            // optional char string (<=15 length) of units for min value
+    std::string const &ReportSumUnits = ""             // optional char string (<=15 length) of units for sum value
 );
 
-void ShowRecurringWarningErrorAtEnd(EnergyPlusData &state,
-                                    std::string const &Message,             // Message automatically written to "error file" at end of simulation
-                                    int &MsgIndex,                          // Recurring message index, if zero, next available index is assigned
-                                    Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
-                                    Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
-                                    Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
-                                    std::string const &ReportMaxUnits = "", // optional char string (<=15 length) of units for max value
-                                    std::string const &ReportMinUnits = "", // optional char string (<=15 length) of units for min value
-                                    std::string const &ReportSumUnits = ""  // optional char string (<=15 length) of units for sum value
+void ShowRecurringWarningErrorAtEnd(
+    EnergyPlusData &state,
+    std::string const &Message,                        // Message automatically written to "error file" at end of simulation
+    int &MsgIndex,                                     // Recurring message index, if zero, next available index is assigned
+    ObjexxFCL::Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
+    std::string const &ReportMaxUnits = "",            // optional char string (<=15 length) of units for max value
+    std::string const &ReportMinUnits = "",            // optional char string (<=15 length) of units for min value
+    std::string const &ReportSumUnits = ""             // optional char string (<=15 length) of units for sum value
 );
 
-void ShowRecurringContinueErrorAtEnd(EnergyPlusData &state,
-                                     std::string const &Message,             // Message automatically written to "error file" at end of simulation
-                                     int &MsgIndex,                          // Recurring message index, if zero, next available index is assigned
-                                     Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
-                                     Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
-                                     Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
-                                     std::string const &ReportMaxUnits = "", // optional char string (<=15 length) of units for max value
-                                     std::string const &ReportMinUnits = "", // optional char string (<=15 length) of units for min value
-                                     std::string const &ReportSumUnits = ""  // optional char string (<=15 length) of units for sum value
+void ShowRecurringContinueErrorAtEnd(
+    EnergyPlusData &state,
+    std::string const &Message,                        // Message automatically written to "error file" at end of simulation
+    int &MsgIndex,                                     // Recurring message index, if zero, next available index is assigned
+    ObjexxFCL::Optional<Real64 const> ReportMaxOf = _, // Track and report the max of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportMinOf = _, // Track and report the min of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ReportSumOf = _, // Track and report the sum of the values passed to this argument
+    std::string const &ReportMaxUnits = "",            // optional char string (<=15 length) of units for max value
+    std::string const &ReportMinUnits = "",            // optional char string (<=15 length) of units for min value
+    std::string const &ReportSumUnits = ""             // optional char string (<=15 length) of units for sum value
 );
 
-void StoreRecurringErrorMessage(EnergyPlusData &state,
-                                std::string const &ErrorMessage,             // Message automatically written to "error file" at end of simulation
-                                int &ErrorMsgIndex,                          // Recurring message index, if zero, next available index is assigned
-                                Optional<Real64 const> ErrorReportMaxOf = _, // Track and report the max of the values passed to this argument
-                                Optional<Real64 const> ErrorReportMinOf = _, // Track and report the min of the values passed to this argument
-                                Optional<Real64 const> ErrorReportSumOf = _, // Track and report the sum of the values passed to this argument
-                                std::string const &ErrorReportMaxUnits = "", // Units for "max" reporting
-                                std::string const &ErrorReportMinUnits = "", // Units for "min" reporting
-                                std::string const &ErrorReportSumUnits = ""  // Units for "sum" reporting
+void StoreRecurringErrorMessage(
+    EnergyPlusData &state,
+    std::string const &ErrorMessage,                        // Message automatically written to "error file" at end of simulation
+    int &ErrorMsgIndex,                                     // Recurring message index, if zero, next available index is assigned
+    ObjexxFCL::Optional<Real64 const> ErrorReportMaxOf = _, // Track and report the max of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ErrorReportMinOf = _, // Track and report the min of the values passed to this argument
+    ObjexxFCL::Optional<Real64 const> ErrorReportSumOf = _, // Track and report the sum of the values passed to this argument
+    std::string const &ErrorReportMaxUnits = "",            // Units for "max" reporting
+    std::string const &ErrorReportMinUnits = "",            // Units for "min" reporting
+    std::string const &ErrorReportSumUnits = ""             // Units for "sum" reporting
 );
 
-void ShowErrorMessage(EnergyPlusData &state, std::string const &ErrorMessage, OptionalOutputFileRef OutUnit1 = _, OptionalOutputFileRef OutUnit2 = _);
+void ShowErrorMessage(EnergyPlusData &state,
+                      std::string const &ErrorMessage,
+                      OptionalOutputFileRef OutUnit1 = {},
+                      OptionalOutputFileRef OutUnit2 = {});
 
 void SummarizeErrors(EnergyPlusData &state);
 
 void ShowRecurringErrors(EnergyPlusData &state);
 
-namespace UtilityRoutines {
+struct ErrorObjectHeader
+{
+    std::string_view routineName;
+    std::string_view objectType;
+    std::string_view objectName;
+};
+
+void ShowSevereDuplicateName(EnergyPlusData &state, ErrorObjectHeader const &eoh);
+void ShowSevereEmptyField(EnergyPlusData &state,
+                          ErrorObjectHeader const &eoh,
+                          std::string_view fieldName,
+                          std::string_view depFieldName = {},
+                          std::string_view depFieldValue = {});
+void ShowSevereItemNotFound(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
+void ShowSevereInvalidKey(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
+void ShowSevereInvalidBool(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
+
+void ShowSevereCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+void ShowWarningDuplicateName(EnergyPlusData &state, ErrorObjectHeader const &eoh);
+void ShowWarningEmptyField(EnergyPlusData &state,
+                           ErrorObjectHeader const &eoh,
+                           std::string_view fieldName,
+                           std::string_view defaultValue,
+                           std::string_view depFieldName = {},
+                           std::string_view depFieldValue = {});
+void ShowWarningItemNotFound(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue);
+void ShowWarningInvalidKey(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue);
+void ShowWarningInvalidBool(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue);
+void ShowWarningCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+
+namespace Util {
+
+    static constexpr std::array<std::string_view, 12> MonthNamesCC{
+        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+
+    static constexpr std::array<std::string_view, 12> MonthNamesUC{
+        "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"};
 
     template <class T> struct is_shared_ptr : std::false_type
     {
@@ -215,13 +268,15 @@ namespace UtilityRoutines {
     {
     };
 
+    Real64 epElapsedTime();
+
     Real64 ProcessNumber(std::string_view String, bool &ErrorFlag);
 
     int FindItemInList(std::string_view const String, Array1_string const &ListOfItems, int NumItems);
 
     inline int FindItemInList(std::string_view const String, Array1_string const &ListOfItems)
     {
-        return UtilityRoutines::FindItemInList(String, ListOfItems, ListOfItems.isize());
+        return Util::FindItemInList(String, ListOfItems, ListOfItems.isize());
     }
 
     int FindItemInList(std::string_view const String, Array1S_string const ListOfItems, int NumItems);
@@ -238,7 +293,7 @@ namespace UtilityRoutines {
 
     inline int FindItemInList(std::string_view const String, Array1S_string const ListOfItems)
     {
-        return UtilityRoutines::FindItemInList(String, ListOfItems, ListOfItems.isize());
+        return Util::FindItemInList(String, ListOfItems, ListOfItems.isize());
     }
 
     template <typename A> inline int FindItemInList(std::string_view const String, MArray1<A, std::string> const &ListOfItems, int const NumItems)
@@ -251,7 +306,7 @@ namespace UtilityRoutines {
 
     template <typename A> inline int FindItemInList(std::string_view const String, MArray1<A, std::string> const &ListOfItems)
     {
-        return UtilityRoutines::FindItemInList(String, ListOfItems, ListOfItems.isize());
+        return Util::FindItemInList(String, ListOfItems, ListOfItems.isize());
     }
 
     template <typename Container, class = typename std::enable_if<!std::is_same<typename Container::value_type, std::string>::value>::type>
@@ -265,10 +320,27 @@ namespace UtilityRoutines {
     }
 
     template <typename Container, class = typename std::enable_if<!std::is_same<typename Container::value_type, std::string>::value>::type>
+    // Container needs and operator[i] and elements need Name
+    inline int FindItemInPtrList(std::string_view const String, Container const &ListOfItems, int const NumItems)
+    {
+        for (typename Container::size_type i = 0, e = NumItems; i < e; ++i) {
+            if (String == ListOfItems[i]->Name) return int(i + 1); // 1-based return index
+        }
+        return 0; // Not found
+    }
+
+    template <typename Container, class = typename std::enable_if<!std::is_same<typename Container::value_type, std::string>::value>::type>
+    // Container needs and operator[i] and elements need Name
+    inline int FindItemInPtrList(std::string_view const String, Container const &ListOfItems)
+    {
+        return Util::FindItemInPtrList(String, ListOfItems, ListOfItems.isize());
+    }
+
+    template <typename Container, class = typename std::enable_if<!std::is_same<typename Container::value_type, std::string>::value>::type>
     // Container needs isize() and operator[i] and elements need Name
     inline int FindItemInList(std::string_view const String, Container const &ListOfItems)
     {
-        return UtilityRoutines::FindItemInList(String, ListOfItems, ListOfItems.isize());
+        return Util::FindItemInList(String, ListOfItems, ListOfItems.isize());
     }
 
     template <typename Container, class = typename std::enable_if<!std::is_same<typename Container::value_type, std::string>::value>::type>
@@ -286,7 +358,7 @@ namespace UtilityRoutines {
     // Container needs isize() and operator[i] and value_type
     inline int FindItemInList(std::string_view const String, Container const &ListOfItems, std::string Container::value_type::*name_p)
     {
-        return UtilityRoutines::FindItemInList(String, ListOfItems, name_p, ListOfItems.isize());
+        return Util::FindItemInList(String, ListOfItems, name_p, ListOfItems.isize());
     }
 
     int FindItemInSortedList(std::string_view const string, Array1S_string const ListOfItems, int NumItems);
@@ -354,7 +426,7 @@ namespace UtilityRoutines {
         return 0; // Not found
     }
 
-    template <typename InputIterator> inline int FindItem(InputIterator first, InputIterator last, std::string_view const &str)
+    template <typename InputIterator> inline int FindItem(InputIterator first, InputIterator last, std::string_view str)
     {
         return FindItem(first, last, str, is_shared_ptr<typename std::iterator_traits<InputIterator>::value_type>{});
     }
@@ -375,7 +447,7 @@ namespace UtilityRoutines {
 
     template <typename A> inline int FindItem(std::string_view const String, MArray1<A, std::string> const &ListOfItems, int const NumItems)
     {
-        int const item_number(UtilityRoutines::FindItemInList(String, ListOfItems, NumItems));
+        int const item_number(Util::FindItemInList(String, ListOfItems, NumItems));
         if (item_number != 0) return item_number;
         for (int Count = 1; Count <= NumItems; ++Count) {
             if (equali(String, ListOfItems(Count))) return Count;
@@ -392,7 +464,7 @@ namespace UtilityRoutines {
     // Container needs size() and operator[i] and elements need Name
     inline int FindItem(std::string_view const String, Container const &ListOfItems, int const NumItems)
     {
-        int const item_number(UtilityRoutines::FindItemInList(String, ListOfItems, NumItems));
+        int const item_number(Util::FindItemInList(String, ListOfItems, NumItems));
         if (item_number != 0) return item_number;
         for (typename Container::size_type i = 0, e = NumItems; i < e; ++i) {
             if (equali(String, ListOfItems[i].Name)) return i + 1; // 1-based return index
@@ -411,7 +483,7 @@ namespace UtilityRoutines {
     // Container needs size() and operator[i] and value_type
     inline int FindItem(std::string_view const String, Container const &ListOfItems, std::string Container::value_type::*name_p, int const NumItems)
     {
-        int const item_number(UtilityRoutines::FindItemInList(String, ListOfItems, name_p, NumItems));
+        int const item_number(Util::FindItemInList(String, ListOfItems, name_p, NumItems));
         if (item_number != 0) return item_number;
         for (typename Container::size_type i = 0, e = NumItems; i < e; ++i) {
             if (equali(String, ListOfItems[i].*name_p)) return i + 1; // 1-based return index
@@ -426,7 +498,35 @@ namespace UtilityRoutines {
         return FindItem(String, ListOfItems, name_p, ListOfItems.isize());
     }
 
-    std::string MakeUPPERCase(std::string_view const InputString); // Input String
+    inline std::string makeUPPER(std::string_view const InputString) // Input String
+    {
+
+        // FUNCTION INFORMATION:
+        //       AUTHOR         Linda K. Lawrie
+        //       DATE WRITTEN   September 1997
+        //       MODIFIED       na
+        //       RE-ENGINEERED  na
+
+        // PURPOSE OF THIS SUBROUTINE:
+        // This function returns the Upper Case representation of the InputString.
+
+        // METHODOLOGY EMPLOYED:
+        // Uses the Intrinsic SCAN function to scan the lowercase representation of
+        // characters (DataStringGlobals) for each character in the given string.
+
+        // FUNCTION LOCAL VARIABLE DECLARATIONS:
+
+        std::string ResultString(InputString);
+
+        for (std::string::size_type i = 0, e = len(InputString); i < e; ++i) {
+            int const curCharVal = int(InputString[i]);
+            if ((97 <= curCharVal && curCharVal <= 122) || (224 <= curCharVal && curCharVal <= 255)) { // lowercase ASCII and accented characters
+                ResultString[i] = char(curCharVal - 32);
+            }
+        }
+
+        return ResultString;
+    }
 
     constexpr bool SameString(std::string_view const s, std::string_view const t)
     {
@@ -568,35 +668,32 @@ namespace UtilityRoutines {
     // For map, you'd only need the comparator
     struct case_insensitive_hasher
     {
-        size_t operator()(const std::string_view key) const noexcept;
+        using is_transparent = void;
+        size_t operator()(std::string_view key) const noexcept;
     };
 
     struct case_insensitive_comparator
     {
-        bool operator()(const std::string_view a, const std::string_view b) const noexcept;
+        using is_transparent = void;
+        bool operator()(std::string_view a, std::string_view b) const noexcept;
     };
 
     void appendPerfLog(EnergyPlusData &state, std::string const &colHeader, std::string const &colValue, bool finalColumn = false);
 
-    bool ValidateFuelType(EnergyPlusData &state,
-                          std::string const &FuelTypeInput,
-                          std::string &FuelTypeOutput,
-                          bool &FuelTypeErrorsFound,
-                          bool const &AllowSteamAndDistrict = false);
+} // namespace Util
 
-    bool ValidateFuelTypeWithAssignResourceTypeNum(std::string const &FuelTypeInput,
-                                                   std::string &FuelTypeOutput,
-                                                   DataGlobalConstants::ResourceType &FuelTypeNum,
-                                                   bool &FuelTypeErrorsFound);
-
-} // namespace UtilityRoutines
-
-constexpr int getEnumerationValue(const gsl::span<const std::string_view> sList, const std::string_view s)
+constexpr int getEnumValue(const gsl::span<const std::string_view> sList, const std::string_view s)
 {
     for (unsigned int i = 0; i < sList.size(); ++i) {
-        if (UtilityRoutines::SameString(sList[i], s)) return i;
+        if (sList[i] == s) return i;
     }
     return -1;
+}
+
+constexpr BooleanSwitch getYesNoValue(const std::string_view s)
+{
+    constexpr std::array<std::string_view, 2> yesNo = {"NO", "YES"};
+    return static_cast<BooleanSwitch>(getEnumValue(yesNo, s));
 }
 
 struct UtilityRoutinesData : BaseGlobalStruct
