@@ -1,7 +1,7 @@
 #ifndef Zone_hh_INCLUDED
 #define Zone_hh_INCLUDED
 
-#include "../../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "../../energyplus/third_party/nlohmann/json.hpp"
 #include <fmt/format.h>
 
 namespace spawn {

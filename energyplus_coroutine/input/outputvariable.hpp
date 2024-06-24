@@ -1,7 +1,7 @@
 #ifndef outputvariable_hh_INCLUDED
 #define outputvariable_hh_INCLUDED
 
-#include "../../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "../../energyplus/third_party/nlohmann/json.hpp"
 
 namespace spawn {
 

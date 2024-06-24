@@ -4,19 +4,14 @@ set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
 set(USE_OpenMP OFF CACHE BOOL "" FORCE)
 set(BUILD_STATIC_ENERGYPLUS_API TRUE)
 
-#/home/kbenne/Development/Spawn/submodules/EnergyPlus/third_party/doj/alphanum.hpp:164:22: error: conversion from ‘long int’ to ‘int’ may change value [-Werror=conversion]
-
-add_subdirectory(submodules/EnergyPlus EnergyPlus EXCLUDE_FROM_ALL)
-include(submodules/EnergyPlus/cmake/CompilerFlags.cmake)
-#set_property(DIRECTORY submodules/EnergyPlus PROPERTY COMPILE_OPTIONS -Wno-error)
-#set_property(GLOBAL PROPERTY COMPILE_OPTIONS -Wno-error)
-#set_property(GLOBAL PROPERTY COMPILE_OPTIONS -Wno-error=conversion)
+add_subdirectory(energyplus EXCLUDE_FROM_ALL)
+include(energyplus/cmake/CompilerFlags.cmake)
 
 # This is a method to capture the EnergyPlus version
 # See notes in make_energyplus_version.cmake
 execute_process(COMMAND ${CMAKE_COMMAND}
-  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}/submodules/EnergyPlus
-  -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}/EnergyPlus
+  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}/energyplus
+  -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}/energyplus
   -DSpawn_SOURCE_DIR=${Spawn_SOURCE_DIR}
   -P ${PROJECT_SOURCE_DIR}/cmake/create_energyplus_version.cmake)
 include("${PROJECT_BINARY_DIR}/EnergyPlus/energyplus_version.cmake")
@@ -25,6 +20,6 @@ include("${PROJECT_BINARY_DIR}/EnergyPlus/energyplus_version.cmake")
 # reset to OFF
 set(CPACK_BINARY_IFW OFF)
 
-set(energyplus_idd_path ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd)
+set(energyplus_idd_path ${PROJECT_BINARY_DIR}/energyplus/Products/Energy+.idd)
 
-install(FILES ${PROJECT_BINARY_DIR}/EnergyPlus/Products/Energy+.idd DESTINATION etc/)
+install(FILES ${PROJECT_BINARY_DIR}/energyplus/Products/Energy+.idd DESTINATION etc/)

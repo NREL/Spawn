@@ -1,7 +1,7 @@
 #ifndef ENERGYPLUS_CONFIG_HPP
 #define ENERGYPLUS_CONFIG_HPP
 
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
+#include "../energyplus/src/EnergyPlus/DataStringGlobals.hh"
 
 namespace spawn::energyplus {
 

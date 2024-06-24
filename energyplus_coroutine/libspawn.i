@@ -7,9 +7,9 @@
 #include "input/input.hpp"
 #include "variables.hpp"
 #include "warmupmanager.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/Data/CommonIncludes.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/state.h"
+#include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../energyplus/src/EnergyPlus/Data/CommonIncludes.hh"
+#include "../energyplus/src/EnergyPlus/api/state.h"
 #include "../util/filesystem.hpp"
 #include <deque>
 #include <string>

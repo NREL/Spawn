@@ -1,5 +1,5 @@
 #include "./manager.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/PluginManager.hh"
+#include "../energyplus/src/EnergyPlus/PluginManager.hh"
 
 namespace spawn {
 

@@ -28,7 +28,7 @@ target_link_libraries(
           spawn_utils
           CLI11::CLI11
           )
-target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
+target_include_directories(spawn SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/energyplus/third_party/)
 
 if(ENABLE_BUILDINGS_LIBRARY)
   target_link_libraries(spawn PRIVATE spawn_mbl)

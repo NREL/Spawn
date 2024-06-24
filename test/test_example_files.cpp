@@ -61,9 +61,9 @@ constexpr std::array<const char *, 27> ignorelist = {
                                         // found
 };
 
-TEST_CASE("Test example file", "[!hide]")
+TEST_CASE("Test example file", "[!hide]") // NOLINT
 {
-  const auto testfileDirectory = spawn::project_source_dir() / "submodules/EnergyPlus/testfiles";
+  const auto testfileDirectory = spawn::project_source_dir() / "energyplus/testfiles";
   const auto simulationDirectory = spawn::project_binary_dir() / "testfile-simulations";
 
   SECTION("clean simulation working directory")

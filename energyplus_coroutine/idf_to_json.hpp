@@ -1,12 +1,12 @@
 #ifndef idf_to_json_hh_INCLUDED
 #define idf_to_json_hh_INCLUDED
 
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataStringGlobals.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/InputProcessing/IdfParser.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/UtilityRoutines.hh"
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
 #include "../util/filesystem.hpp"
+#include "energyplus/src/EnergyPlus/DataStringGlobals.hh"
+#include "energyplus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
+#include "energyplus/src/EnergyPlus/InputProcessing/IdfParser.hh"
+#include "energyplus/src/EnergyPlus/UtilityRoutines.hh"
+#include "energyplus/third_party/nlohmann/json.hpp"
 
 namespace spawn {
 

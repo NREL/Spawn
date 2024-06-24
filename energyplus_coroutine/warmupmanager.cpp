@@ -1,8 +1,8 @@
 #include "./warmupmanager.hpp"
-#include "../submodules/EnergyPlus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalSurface.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/DataHeatBalance.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/EMSManager.hh"
+#include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../energyplus/src/EnergyPlus/DataHeatBalSurface.hh"
+#include "../energyplus/src/EnergyPlus/DataHeatBalance.hh"
+#include "../energyplus/src/EnergyPlus/EMSManager.hh"
 
 namespace spawn {
 

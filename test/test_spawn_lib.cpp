@@ -12,9 +12,9 @@
 using json = nlohmann::json;
 
 const auto idfpath = // NOLINT
-    spawn::project_source_dir() / "submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
+    spawn::project_source_dir() / "energyplus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
 const auto epwpath = // NOLINT
-    spawn::project_source_dir() / "submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
+    spawn::project_source_dir() / "energyplus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
 
 const std::string spawn_input = fmt::format( // NOLINT
     R"(

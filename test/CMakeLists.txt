@@ -1,7 +1,7 @@
 configure_file(paths.in.cpp paths.in2.cpp)
 
 # Configure files for ZoneCapacitanceMultiplier test
-file(READ ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf SmallOfficeIDFText)
+file(READ ${PROJECT_SOURCE_DIR}/energyplus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf SmallOfficeIDFText)
 string(APPEND SmallOfficeIDFText 
 "
 ZoneCapacitanceMultiplier:ResearchSpecial,
@@ -68,7 +68,7 @@ if (ENABLE_COMPILER)
 endif()
 
 
-target_include_directories(tests SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/)
+target_include_directories(tests SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/energyplus/third_party/)
 
 # Make this better
 if(WIN32)

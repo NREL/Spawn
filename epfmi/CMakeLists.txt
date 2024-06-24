@@ -8,8 +8,8 @@ target_link_libraries(
   PUBLIC libspawn
   PRIVATE compile_options)
 target_include_directories(epfmi PUBLIC ${PROJECT_SOURCE_DIR}/fmi2/)
-target_include_directories(epfmi SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/
-                                                ${PROJECT_SOURCE_DIR}/submodules/EnergyPlus/third_party/btwxt/src/)
+target_include_directories(epfmi SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/energyplus/third_party/
+                                                ${PROJECT_SOURCE_DIR}/energyplus/third_party/btwxt/src/)
 
 install(
   TARGETS epfmi

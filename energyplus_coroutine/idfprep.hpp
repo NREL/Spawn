@@ -1,7 +1,7 @@
 #ifndef idfprep_hh_INCLUDED
 #define idfprep_hh_INCLUDED
 
-#include "../submodules/EnergyPlus/third_party/nlohmann/json.hpp"
+#include "../energyplus/third_party/nlohmann/json.hpp"
 #include "start_time.hpp"
 
 using json = nlohmann::json;

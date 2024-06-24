@@ -8,11 +8,11 @@
 #include "output_types.hpp"
 #include "start_time.hpp"
 
-#include "../submodules/EnergyPlus/src/EnergyPlus/CommandLineInterface.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/EnergyPlusPgm.hh"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/datatransfer.h"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/func.h"
-#include "../submodules/EnergyPlus/src/EnergyPlus/api/runtime.h"
+#include "../energyplus/src/EnergyPlus/CommandLineInterface.hh"
+#include "../energyplus/src/EnergyPlus/api/EnergyPlusPgm.hh"
+#include "../energyplus/src/EnergyPlus/api/datatransfer.h"
+#include "../energyplus/src/EnergyPlus/api/func.h"
+#include "../energyplus/src/EnergyPlus/api/runtime.h"
 
 #include <array>
 #include <boost/date_time/gregorian/gregorian.hpp>

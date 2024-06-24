@@ -11,8 +11,8 @@ import libspawn
 
 source_dir = libspawn.path("${PROJECT_SOURCE_DIR}")
 
-idfpath = source_dir.append(libspawn.path("submodules/EnergyPlus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf"))
-epwpath = source_dir.append(libspawn.path("submodules/EnergyPlus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"))
+idfpath = source_dir.append(libspawn.path("energyplus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf"))
+epwpath = source_dir.append(libspawn.path("energyplus/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"))
 
 
 spawn_input = R'''{

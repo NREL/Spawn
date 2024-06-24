@@ -1,4 +1,0 @@
-[submodule "submodules/EnergyPlus"]
-	path = submodules/EnergyPlus
-	url = https://github.com/NREL/EnergyPlus.git
-  ignore = dirty
