@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,8 +70,8 @@ TEST_F(EnergyPlusFixture, GTChiller_HeatRecoveryAutosizeTest)
     state->dataPlantChillers->GTChiller(1).HeatRecCapacityFraction = 0.5;
     state->dataPlantChillers->GTChiller(1).HeatRecActive = true;
     state->dataPlantChillers->GTChiller(1).CondenserType = DataPlant::CondenserType::WaterCooled;
-    state->dataPlantChillers->GTChiller(1).CWLoopNum = 1;
-    state->dataPlantChillers->GTChiller(1).CDLoopNum = 2;
+    state->dataPlantChillers->GTChiller(1).CWPlantLoc.loopNum = 1;
+    state->dataPlantChillers->GTChiller(1).CDPlantLoc.loopNum = 2;
     state->dataPlantChillers->GTChiller(1).EvapVolFlowRate = 1.0;
     state->dataPlantChillers->GTChiller(1).CondVolFlowRate = 1.0;
     state->dataPlantChillers->GTChiller(1).NomCap = 10000;
@@ -107,8 +107,8 @@ TEST_F(EnergyPlusFixture, EngineDrivenChiller_HeatRecoveryAutosizeTest)
     state->dataPlantChillers->EngineDrivenChiller(1).HeatRecCapacityFraction = 0.5;
     state->dataPlantChillers->EngineDrivenChiller(1).HeatRecActive = true;
     state->dataPlantChillers->EngineDrivenChiller(1).CondenserType = DataPlant::CondenserType::WaterCooled;
-    state->dataPlantChillers->EngineDrivenChiller(1).CWLoopNum = 1;
-    state->dataPlantChillers->EngineDrivenChiller(1).CDLoopNum = 2;
+    state->dataPlantChillers->EngineDrivenChiller(1).CWPlantLoc.loopNum = 1;
+    state->dataPlantChillers->EngineDrivenChiller(1).CDPlantLoc.loopNum = 2;
     state->dataPlantChillers->EngineDrivenChiller(1).EvapVolFlowRate = 1.0;
     state->dataPlantChillers->EngineDrivenChiller(1).CondVolFlowRate = 1.0;
     state->dataPlantChillers->EngineDrivenChiller(1).NomCap = 10000;
@@ -226,7 +226,7 @@ TEST_F(EnergyPlusFixture, EngineDrivenChiller_Fueltype)
     EngineDrivenChillerSpecs::getInput(*state);
 
     EXPECT_EQ(1, state->dataPlantChillers->NumEngineDrivenChillers);
-    EXPECT_EQ(state->dataPlantChillers->EngineDrivenChiller(1).FuelType, "Diesel");
+    EXPECT_TRUE(compare_enums(state->dataPlantChillers->EngineDrivenChiller(1).FuelType, Constant::eFuel::Diesel));
 }
 
 TEST_F(EnergyPlusFixture, CombustionTurbineChiller_Fueltype)
@@ -295,5 +295,5 @@ TEST_F(EnergyPlusFixture, CombustionTurbineChiller_Fueltype)
     GTChillerSpecs::getInput(*state);
 
     EXPECT_EQ(1, state->dataPlantChillers->NumGTChillers);
-    EXPECT_EQ(state->dataPlantChillers->GTChiller(1).FuelType, "NaturalGas");
+    EXPECT_TRUE(compare_enums(state->dataPlantChillers->GTChiller(1).FuelType, Constant::eFuel::NaturalGas));
 }

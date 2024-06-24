@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,8 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/Plant/Enums.hh>
+#include <EnergyPlus/Plant/PlantLocation.hh>
 
 namespace EnergyPlus {
 
@@ -66,30 +68,34 @@ namespace DesiccantDehumidifiers {
 
     enum class DesicDehumType // Desiccant dehumidifier type
     {
-        Unassigned,
+        Invalid = -1,
         Solid,
-        Generic
+        Generic,
+        Num
     };
 
     enum class DesicDehumCtrlType
     {
-        Unassigned,
+        Invalid = -1,
         FixedHumratBypass, // FIXED LEAVING HUMRAT SETPOINT:BYPASS
-        NodeHumratBypass   // NODE LEAVING HUMRAT SETPOINT:BYPASS
+        NodeHumratBypass,  // NODE LEAVING HUMRAT SETPOINT:BYPASS
+        Num
     };
 
     enum class Selection
     {
-        Unassigned,
-        No, // Condenser waste heat NOT reclaimed for desiccant regeneration
-        Yes // Condenser waste heat reclaimed for desiccant regeneration
+        Invalid = -1,
+        No,  // Condenser waste heat NOT reclaimed for desiccant regeneration
+        Yes, // Condenser waste heat reclaimed for desiccant regeneration
+        Num
     };
 
     enum class PerformanceModel
     {
-        Unassigned,
+        Invalid = -1,
         Default,
-        UserCurves
+        UserCurves,
+        Num
     };
 
     //  Desiccant heat exchanger type
@@ -112,7 +118,7 @@ namespace DesiccantDehumidifiers {
         // (initially set to conditions entering regen heating coil)
         int RegenAirOutNode;            // regen air outlet node of dehumidifier
         int RegenFanInNode;             // regen fan inlet node
-        DesicDehumCtrlType ControlType; // type of controls
+        DesicDehumCtrlType controlType; // type of controls
         Real64 HumRatSet;               // humidity ratio setpoint [kg water / kg air]
         Real64 NomProcAirVolFlow;       // nominal process air flow rate [m3/s]
         Real64 NomProcAirVel;           // nominal process air velocity [m/s]
@@ -206,10 +212,7 @@ namespace DesiccantDehumidifiers {
         int RegenCoilType_Num;               // type number of regen coil
         int CoilControlNode;                 // heating coil hot water or steam inlet node
         int CoilOutletNode;                  // outlet node for water coil
-        int LoopNum;                         // plant loop index for water heating coil
-        int LoopSide;                        // plant loop side  index for water heating coil
-        int BranchNum;                       // plant loop branch index for water heating coil
-        int CompNum;                         // plant loop component index for water heating coil
+        PlantLocation plantLoc;              // plant loop component location for water heating coil
         int HotWaterCoilMaxIterIndex;        // Index to recurring warning message
         int HotWaterCoilMaxIterIndex2;       // Index to recurring warning message
         Real64 MaxCoilFluidFlow;             // hot water or steam mass flow rate regen. heating coil [kg/s]
@@ -217,24 +220,24 @@ namespace DesiccantDehumidifiers {
 
         // Default Constructor
         DesiccantDehumidifierData()
-            : PerformanceModel_Num(PerformanceModel::Unassigned), ProcAirInNode(0), ProcAirOutNode(0), RegenAirInNode(0), RegenAirOutNode(0),
-              RegenFanInNode(0), ControlType(DesicDehumCtrlType::Unassigned), HumRatSet(0.0), NomProcAirVolFlow(0.0), NomProcAirVel(0.0),
+            : PerformanceModel_Num(PerformanceModel::Invalid), ProcAirInNode(0), ProcAirOutNode(0), RegenAirInNode(0), RegenAirOutNode(0),
+              RegenFanInNode(0), controlType(DesicDehumCtrlType::Invalid), HumRatSet(0.0), NomProcAirVolFlow(0.0), NomProcAirVel(0.0),
               NomRotorPower(0.0), RegenCoilIndex(0), RegenFanIndex(0), regenFanType_Num(0), ProcDryBulbCurvefTW(0), ProcDryBulbCurvefV(0),
               ProcHumRatCurvefTW(0), ProcHumRatCurvefV(0), RegenEnergyCurvefTW(0), RegenEnergyCurvefV(0), RegenVelCurvefTW(0), RegenVelCurvefV(0),
               NomRegenTemp(121.0), MinProcAirInTemp(-73.3), MaxProcAirInTemp(65.6), MinProcAirInHumRat(0.0), MaxProcAirInHumRat(0.21273), SchedPtr(0),
               NomProcAirMassFlow(0.0), NomRegenAirMassFlow(0.0), ProcAirInTemp(0.0), ProcAirInHumRat(0.0), ProcAirInEnthalpy(0.0),
               ProcAirInMassFlowRate(0.0), ProcAirOutTemp(0.0), ProcAirOutHumRat(0.0), ProcAirOutEnthalpy(0.0), ProcAirOutMassFlowRate(0.0),
               RegenAirInTemp(0.0), RegenAirInHumRat(0.0), RegenAirInEnthalpy(0.0), RegenAirInMassFlowRate(0.0), RegenAirVel(0.0),
-              DehumTypeCode(DesicDehumType::Unassigned), WaterRemove(0.0), WaterRemoveRate(0.0), SpecRegenEnergy(0.0), QRegen(0.0), RegenEnergy(0.0),
+              DehumTypeCode(DesicDehumType::Invalid), WaterRemove(0.0), WaterRemoveRate(0.0), SpecRegenEnergy(0.0), QRegen(0.0), RegenEnergy(0.0),
               ElecUseEnergy(0.0), ElecUseRate(0.0), PartLoad(0.0), RegenCapErrorIndex1(0), RegenCapErrorIndex2(0), RegenCapErrorIndex3(0),
               RegenCapErrorIndex4(0), RegenFanErrorIndex1(0), RegenFanErrorIndex2(0), RegenFanErrorIndex3(0), RegenFanErrorIndex4(0), HXTypeNum(0),
-              coolingCoil_TypeNum(0), Preheat(Selection::Unassigned), RegenSetPointTemp(0.0), ExhaustFanMaxVolFlowRate(0.0),
+              coolingCoil_TypeNum(0), Preheat(Selection::Invalid), RegenSetPointTemp(0.0), ExhaustFanMaxVolFlowRate(0.0),
               ExhaustFanMaxMassFlowRate(0.0), ExhaustFanMaxPower(0.0), ExhaustFanPower(0.0), ExhaustFanElecConsumption(0.0),
               CompanionCoilCapacity(0.0), RegenFanPlacement(0), ControlNodeNum(0), ExhaustFanCurveIndex(0), CompIndex(0), CoolingCoilOutletNode(0),
               RegenFanOutNode(0), RegenCoilInletNode(0), RegenCoilOutletNode(0), HXProcInNode(0), HXProcOutNode(0), HXRegenInNode(0),
-              HXRegenOutNode(0), CondenserInletNode(0), DXCoilIndex(0), ErrCount(0), ErrIndex1(0), CoilUpstreamOfProcessSide(Selection::Unassigned),
-              RegenInletIsOutsideAirNode(false), RegenCoilType_Num(0), CoilControlNode(0), CoilOutletNode(0), LoopNum(0), LoopSide(0), BranchNum(0),
-              CompNum(0), HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0), MaxCoilFluidFlow(0.0), RegenCoilCapacity(0.0)
+              HXRegenOutNode(0), CondenserInletNode(0), DXCoilIndex(0), ErrCount(0), ErrIndex1(0), CoilUpstreamOfProcessSide(Selection::Invalid),
+              RegenInletIsOutsideAirNode(false), RegenCoilType_Num(0), CoilControlNode(0), CoilOutletNode(0), HotWaterCoilMaxIterIndex(0),
+              HotWaterCoilMaxIterIndex2(0), MaxCoilFluidFlow(0.0), RegenCoilCapacity(0.0)
         {
         }
     };
@@ -276,46 +279,15 @@ namespace DesiccantDehumidifiers {
     void ReportDesiccantDehumidifier(EnergyPlusData &state, int DesicDehumNum); // number of the current dehumidifier being simulated
 
     void CalcNonDXHeatingCoils(EnergyPlusData &state,
-                               int DesicDehumNum,                    // Desiccant dehumidifier unit index
-                               bool FirstHVACIteration,              // flag for first HVAC iteration in the time step
-                               Real64 RegenCoilLoad,                 // heating coil load to be met (Watts)
-                               Optional<Real64> RegenCoilLoadmet = _ // heating load met
-    );
-
-    Real64 HotWaterCoilResidual(EnergyPlusData &state,
-                                Real64 HWFlow,                   // hot water flow rate in kg/s
-                                std::array<Real64, 3> const &Par // Par(5) is the requested coil load
+                               int DesicDehumNum,                               // Desiccant dehumidifier unit index
+                               bool FirstHVACIteration,                         // flag for first HVAC iteration in the time step
+                               Real64 RegenCoilLoad,                            // heating coil load to be met (Watts)
+                               ObjexxFCL::Optional<Real64> RegenCoilLoadmet = _ // heating load met
     );
 
     int GetProcAirInletNodeNum(EnergyPlusData &state, std::string const &DesicDehumName, bool &ErrorsFound);
 
     int GetProcAirOutletNodeNum(EnergyPlusData &state, std::string const &DesicDehumName, bool &ErrorsFound);
-
-    int GetRegAirInletNodeNum(EnergyPlusData &state, std::string const &DesicDehumName, bool &ErrorsFound);
-
-    int GetRegAirOutletNodeNum(EnergyPlusData &state, std::string const &DesicDehumName, bool &ErrorsFound);
-
-    //        End of Reporting subroutines for the SimAir Module
-    // *****************************************************************************
-
-    //                                 COPYRIGHT NOTICE
-
-    //     Portions Copyright (c) Gas Research Institute 2001.  All rights reserved.
-
-    //     GRI LEGAL NOTICE
-    //     Neither GRI, members of GRI nor any person or organization acting on behalf
-    //     of either:
-
-    //     A. Makes any warranty of representation, express or implied with respect to
-    //        the accuracy, completness, or usefulness of the information contained in
-    //        in this program, including any warranty of merchantability or fitness of
-    //        any purpose with respoect to the program, or that the use of any
-    //        information disclosed in this program may not infringe privately-owned
-    //        rights, or
-
-    //     B.  Assumes any liability with respoct to the use of, or for any and all
-    //         damages resulting from the use of the program or any portion thereof or
-    //         any information disclosed therein.
 
 } // namespace DesiccantDehumidifiers
 
@@ -325,47 +297,19 @@ struct DesiccantDehumidifiersData : BaseGlobalStruct
     int NumDesicDehums = 0;                    // number of desiccant dehumidifiers of all types
     int NumSolidDesicDehums = 0;               // number of solid desiccant dehumidifiers
     int NumGenericDesicDehums = 0;             // number of generic desiccant dehumidifiers
-    Real64 TempSteamIn = 100.0;                // steam coil steam inlet temperature
     bool GetInputDesiccantDehumidifier = true; // First time, input is "gotten"
     bool InitDesiccantDehumidifierOneTimeFlag = true;
     bool MySetPointCheckFlag = true; // I think this actually needs to be a vector or a member variable on the struct, not just a single bool
-    bool CalcSolidDesiccantDehumidifierMyOneTimeFlag = true; // one time flag
-    bool CalcGenericDesiccantDehumidifierMyOneTimeFlag = true;
     Array1D<DesiccantDehumidifiers::DesiccantDehumidifierData> DesicDehum;
     std::unordered_map<std::string, std::string> UniqueDesicDehumNames;
 
-    int MaxNums = 0;           // Maximum number of numeric input fields
-    int MaxAlphas = 0;         // Maximum number of alpha input fields
-    int TotalArgs = 0;         // Total number of alpha and numeric arguments (max) for a certain object in the input file
-    Real64 SteamDensity = 0.0; // density of steam at 100C
     Array1D_bool MyEnvrnFlag;
     Array1D_bool MyPlantScanFlag; // Used for init plant component for heating coils
-    Real64 RhoAirStdInit = 0.0;
-    Real64 QRegen = 0.0;            // required coil load passed to sim heating coil routine (W)
-    Real64 RhoAirStdInitCGDD = 0.0; // standard air density (kg/m3)
+    Real64 QRegen = 0.0;          // required coil load passed to sim heating coil routine (W)
 
     void clear_state() override
     {
-        this->NumDesicDehums = 0;
-        this->NumSolidDesicDehums = 0;
-        this->NumGenericDesicDehums = 0;
-        this->TempSteamIn = 100.0;
-        this->GetInputDesiccantDehumidifier = true;
-        this->InitDesiccantDehumidifierOneTimeFlag = true;
-        this->DesicDehum.deallocate();
-        this->UniqueDesicDehumNames.clear();
-        this->MySetPointCheckFlag = true;
-        this->CalcSolidDesiccantDehumidifierMyOneTimeFlag = true;
-        this->CalcGenericDesiccantDehumidifierMyOneTimeFlag = true;
-        this->MaxNums = 0;
-        this->MaxAlphas = 0;
-        this->TotalArgs = 0;
-        this->SteamDensity = 0.0;
-        this->MyEnvrnFlag.deallocate();
-        this->MyPlantScanFlag.deallocate();
-        this->RhoAirStdInit = 0.0;
-        this->QRegen = 0.0;
-        this->RhoAirStdInitCGDD = 0.0;
+        new (this) DesiccantDehumidifiersData();
     }
 };
 

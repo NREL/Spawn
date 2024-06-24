@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -224,18 +224,18 @@ TEST_F(EnergyPlusFixture, Beam_FactoryAllAutosize)
 
     state->dataZoneEquip->ZoneEquipConfig(1).InletNode(1) = 3;
     bool ErrorsFound = false;
-    state->dataZoneEquip->ZoneEquipConfig(1).ZoneNode = NodeInputManager::GetOnlySingleNode(*state,
-                                                                                            "Zone 1 Node",
-                                                                                            ErrorsFound,
-                                                                                            "Zone",
-                                                                                            "BeamTest",
-                                                                                            DataLoopNode::NodeFluidType::Air,
-                                                                                            DataLoopNode::NodeConnectionType::ZoneNode,
-                                                                                            NodeInputManager::compFluidStream::Primary,
-                                                                                            DataLoopNode::ObjectIsNotParent,
-                                                                                            "Test zone node");
+    state->dataZoneEquip->ZoneEquipConfig(1).ZoneNode =
+        NodeInputManager::GetOnlySingleNode(*state,
+                                            "Zone 1 Node",
+                                            ErrorsFound,
+                                            DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeFourPipeBeam,
+                                            "BeamTest",
+                                            DataLoopNode::NodeFluidType::Air,
+                                            DataLoopNode::ConnectionType::ZoneNode,
+                                            NodeInputManager::CompFluidStream::Primary,
+                                            DataLoopNode::ObjectIsNotParent,
+                                            "Test zone node");
 
-    state->dataDefineEquipment->NumAirDistUnits = 1;
     state->dataDefineEquipment->AirDistUnit.allocate(1);
     state->dataDefineEquipment->AirDistUnit(1).EquipName(1) =
         "PERIMETER_TOP_ZN_4 4PIPE BEAM"; // needs to be uppercased, or item will not be found at line 2488 in IP
@@ -260,7 +260,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "    YES,                     !- Do System Sizing Calculation",
                           "    YES,                     !- Do Plant Sizing Calculation",
                           "    Yes,                     !- Run Simulation for Sizing Periods",
-                          "    yes;                     !- Run Simulation for Weather File Run Periods",
+                          "    No;                      !- Run Simulation for Weather File Run Periods",
 
                           "    Building,",
                           "    Simple One Zone (Wireframe DXF),  !- Name",
@@ -585,7 +585,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "    ACTIVITY_SCH,            !- Activity Level Schedule Name",
                           "    ,                        !- Carbon Dioxide Generation Rate {m3/s-W}",
                           "    No,                      !- Enable ASHRAE 55 Comfort Warnings",
-                          "    ZoneAveraged,            !- Mean Radiant Temperature Calculation Type",
+                          "    EnclosureAveraged,            !- Mean Radiant Temperature Calculation Type",
                           "    ,                        !- Surface Name/Angle Factor List Name",
                           "    WORK_EFF_SCH,            !- Work Efficiency Schedule Name",
                           "    ClothingInsulationSchedule,  !- Clothing Insulation Calculation Method",
@@ -1427,7 +1427,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  PlantEquipmentList,",
                           "    HeatSys1 Heating Plant,    !- Name",
-                          "    DistrictHeating,         !- Equipment 1 Object Type",
+                          "    DistrictHeating:Water,         !- Equipment 1 Object Type",
                           "    HeatSys1 Purchased Heating;!- Equipment 1 Name",
 
                           "  BranchList,",
@@ -1480,12 +1480,12 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "  Branch,",
                           "    HeatSys1 Heating Branch,   !- Name",
                           "    ,                        !- Pressure Drop Curve Name",
-                          "    DistrictHeating,         !- Component 1 Object Type",
+                          "    DistrictHeating:Water,         !- Component 1 Object Type",
                           "    HeatSys1 Purchased Heating,!- Component 1 Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Component 1 Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node;  !- Component 1 Outlet Node Name",
 
-                          "  DistrictHeating,",
+                          "  DistrictHeating:Water,",
                           "    HeatSys1 Purchased Heating,!- Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Hot Water Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node,  !- Hot Water Outlet Node Name",
@@ -1741,7 +1741,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
     state->dataGlobal->DoingSizing = false;
     state->dataGlobal->KickOffSimulation = true;
 
-    WeatherManager::ResetEnvironmentCounter(*state);
+    Weather::ResetEnvironmentCounter(*state);
     TestAirPathIntegrity(*state, ErrorsFound); // Needed to initialize return node connections to airloops and inlet nodes
     SimulationManager::SetupSimulation(*state, ErrorsFound);
     state->dataGlobal->KickOffSimulation = false;
@@ -1754,7 +1754,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
     bool FirstHVACIteration = true;
 
     // PlantManager::InitializeLoops( FirstHVACIteration );
-    PlantUtilities::SetAllFlowLocks(*state, DataPlant::iFlowLock::Unlocked);
+    PlantUtilities::SetAllFlowLocks(*state, DataPlant::FlowLock::Unlocked);
     // first run with a sensible cooling load of 5000 W and cold supply air
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -5000.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToHeatSP = -4000.0;
@@ -2164,7 +2164,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
                           "    ACTIVITY_SCH,            !- Activity Level Schedule Name",
                           "    ,                        !- Carbon Dioxide Generation Rate {m3/s-W}",
                           "    No,                      !- Enable ASHRAE 55 Comfort Warnings",
-                          "    ZoneAveraged,            !- Mean Radiant Temperature Calculation Type",
+                          "    EnclosureAveraged,            !- Mean Radiant Temperature Calculation Type",
                           "    ,                        !- Surface Name/Angle Factor List Name",
                           "    WORK_EFF_SCH,            !- Work Efficiency Schedule Name",
                           "    ClothingInsulationSchedule,  !- Clothing Insulation Calculation Method",
@@ -3006,7 +3006,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  PlantEquipmentList,",
                           "    HeatSys1 Heating Plant,    !- Name",
-                          "    DistrictHeating,         !- Equipment 1 Object Type",
+                          "    DistrictHeating:Water,         !- Equipment 1 Object Type",
                           "    HeatSys1 Purchased Heating;!- Equipment 1 Name",
 
                           "  BranchList,",
@@ -3059,12 +3059,12 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
                           "  Branch,",
                           "    HeatSys1 Heating Branch,   !- Name",
                           "    ,                        !- Pressure Drop Curve Name",
-                          "    DistrictHeating,         !- Component 1 Object Type",
+                          "    DistrictHeating:Water,         !- Component 1 Object Type",
                           "    HeatSys1 Purchased Heating,!- Component 1 Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Component 1 Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node;  !- Component 1 Outlet Node Name",
 
-                          "  DistrictHeating,",
+                          "  DistrictHeating:Water,",
                           "    HeatSys1 Purchased Heating,!- Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Hot Water Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node,  !- Hot Water Outlet Node Name",
@@ -3320,7 +3320,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
     state->dataGlobal->DoingSizing = false;
     state->dataGlobal->KickOffSimulation = true;
 
-    WeatherManager::ResetEnvironmentCounter(*state);
+    Weather::ResetEnvironmentCounter(*state);
 
     ASSERT_ANY_THROW(SimulationManager::SetupSimulation(*state, ErrorsFound));
 }
@@ -3333,7 +3333,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "    YES,                     !- Do System Sizing Calculation",
                           "    YES,                     !- Do Plant Sizing Calculation",
                           "    Yes,                     !- Run Simulation for Sizing Periods",
-                          "    yes;                     !- Run Simulation for Weather File Run Periods",
+                          "    No;                      !- Run Simulation for Weather File Run Periods",
 
                           "    Building,",
                           "    Simple One Zone (Wireframe DXF),  !- Name",
@@ -3658,7 +3658,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "    ACTIVITY_SCH,            !- Activity Level Schedule Name",
                           "    ,                        !- Carbon Dioxide Generation Rate {m3/s-W}",
                           "    No,                      !- Enable ASHRAE 55 Comfort Warnings",
-                          "    ZoneAveraged,            !- Mean Radiant Temperature Calculation Type",
+                          "    EnclosureAveraged,            !- Mean Radiant Temperature Calculation Type",
                           "    ,                        !- Surface Name/Angle Factor List Name",
                           "    WORK_EFF_SCH,            !- Work Efficiency Schedule Name",
                           "    ClothingInsulationSchedule,  !- Clothing Insulation Calculation Method",
@@ -4503,7 +4503,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  PlantEquipmentList,",
                           "    HeatSys1 Heating Plant,    !- Name",
-                          "    DistrictHeating,         !- Equipment 1 Object Type",
+                          "    DistrictHeating:Water,         !- Equipment 1 Object Type",
                           "    HeatSys1 Purchased Heating;!- Equipment 1 Name",
 
                           "  BranchList,",
@@ -4556,12 +4556,12 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "  Branch,",
                           "    HeatSys1 Heating Branch,   !- Name",
                           "    ,                        !- Pressure Drop Curve Name",
-                          "    DistrictHeating,         !- Component 1 Object Type",
+                          "    DistrictHeating:Water,         !- Component 1 Object Type",
                           "    HeatSys1 Purchased Heating,!- Component 1 Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Component 1 Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node;  !- Component 1 Outlet Node Name",
 
-                          "  DistrictHeating,",
+                          "  DistrictHeating:Water,",
                           "    HeatSys1 Purchased Heating,!- Name",
                           "    HeatSys1 Supply Heating Inlet Node,  !- Hot Water Inlet Node Name",
                           "    HeatSys1 Supply Heating Outlet Node,  !- Hot Water Outlet Node Name",
@@ -4817,7 +4817,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
     state->dataGlobal->DoingSizing = false;
     state->dataGlobal->KickOffSimulation = true;
 
-    WeatherManager::ResetEnvironmentCounter(*state);
+    Weather::ResetEnvironmentCounter(*state);
     TestAirPathIntegrity(*state, ErrorsFound); // Needed to initialize return node connections to airloops and inlet nodes
     SimulationManager::SetupSimulation(*state, ErrorsFound);
     state->dataGlobal->KickOffSimulation = false;
@@ -4830,7 +4830,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
     bool FirstHVACIteration = true;
 
     // PlantManager::InitializeLoops( FirstHVACIteration );
-    PlantUtilities::SetAllFlowLocks(*state, DataPlant::iFlowLock::Unlocked);
+    PlantUtilities::SetAllFlowLocks(*state, DataPlant::FlowLock::Unlocked);
     // next run with heating load and neutral supply air
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = 5000.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToHeatSP = 5000.0;

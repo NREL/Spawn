@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -48,6 +48,8 @@
 // Google Test Headers
 #include <gtest/gtest.h>
 
+#include "../Fixtures/SQLiteFixture.hh"
+
 // EnergyPlus Headers
 #include <EnergyPlus/Coils/CoilCoolingDX.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -58,7 +60,9 @@
 // For tests of new coil vs old coil
 #include <EnergyPlus/CurveManager.hh>
 #include <EnergyPlus/DXCoils.hh>
+#include <EnergyPlus/DataAirSystems.hh>
 #include <EnergyPlus/DataHVACGlobals.hh>
+#include <EnergyPlus/DataSizing.hh>
 #include <EnergyPlus/General.hh>
 
 using namespace EnergyPlus;
@@ -84,7 +88,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
                                                 "    ,;",
 
                                                 "  Coil:Cooling:DX:CurveFit:Performance,",
-                                                "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1,Coil Mode 2;",
+                                                "    Coil Performance,,,,,,,,,,Electricity,Coil Mode 1,Coil Mode 2;",
 
                                                 "  Coil:Cooling:DX:CurveFit:OperatingMode,",
                                                 "    Coil Mode 1,",
@@ -220,7 +224,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
                                                 "    ,;",
 
                                                 "  Coil:Cooling:DX:CurveFit:Performance,",
-                                                "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1,Coil Mode 2;",
+                                                "    Coil Performance,,,,,,,,,,Electricity,Coil Mode 1,Coil Mode 2;",
 
                                                 "  Coil:Cooling:DX:CurveFit:OperatingMode,",
                                                 "    Coil Mode 1,",
@@ -362,7 +366,6 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
 
     int DXCoilNum(1);
     state->dataDXCoils->NumDXCoils = 1;
-    state->dataCurveManager->NumCurves = 2;
     state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
     state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
@@ -375,7 +378,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
     state->dataDXCoils->DXCoilFanOpMode.allocate(1);
-    state->dataCurveManager->PerfCurve.allocate(state->dataCurveManager->NumCurves);
+    state->dataCurveManager->allocateCurveVector(2);
 
     auto &Coil = state->dataDXCoils->DXCoil(1);
     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
@@ -391,8 +394,8 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
 
     Coil.DXCoilType_Num = DataHVACGlobals::CoilDX_MultiSpeedCooling;
     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelTypeNum = DataGlobalConstants::ResourceType::Electricity;
-    Coil.SchedPtr = DataGlobalConstants::ScheduleAlwaysOn;
+    Coil.FuelType = Constant::eFuel::Electricity;
+    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
     Coil.NumOfSpeeds = 2;
     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
@@ -423,34 +426,32 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     Coil.AirOutNode = 2;
     Coil.AirInNode = 1;
     // biquadratic curve
-    constantcurve1.Name = "constant biquadratic curve";
-    constantcurve1.CurveType = CurveManager::CurveTypeEnum::BiQuadratic;
-    constantcurve1.ObjectType = "Curve:Biquadratic";
-    constantcurve1.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve1.Coeff1 = 1.0;
-    constantcurve1.Coeff2 = 0.0;
-    constantcurve1.Coeff3 = 0.0;
-    constantcurve1.Coeff4 = 0.0;
-    constantcurve1.Coeff5 = 0.0;
-    constantcurve1.Coeff6 = 0.0;
-    constantcurve1.Var1Min = 10.0;
-    constantcurve1.Var1Max = 25.0;
-    constantcurve1.Var2Min = 0.0;
-    constantcurve1.Var2Max = 100.0;
-    constantcurve1.CurveMin = 1.0;
-    constantcurve1.CurveMax = 1.0;
+    constantcurve1->Name = "constant biquadratic curve";
+    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve1->coeff[0] = 1.0;
+    constantcurve1->coeff[1] = 0.0;
+    constantcurve1->coeff[2] = 0.0;
+    constantcurve1->coeff[3] = 0.0;
+    constantcurve1->coeff[4] = 0.0;
+    constantcurve1->coeff[5] = 0.0;
+    constantcurve1->inputLimits[0].min = 10.0;
+    constantcurve1->inputLimits[0].max = 25.0;
+    constantcurve1->inputLimits[1].min = 0.0;
+    constantcurve1->inputLimits[1].max = 100.0;
+    constantcurve1->outputLimits.min = 1.0;
+    constantcurve1->outputLimits.max = 1.0;
     // quadratic curve
-    constantcurve2.Name = "constant quadratic curve";
-    constantcurve2.CurveType = CurveManager::CurveTypeEnum::Quadratic;
-    constantcurve2.ObjectType = "Curve:Quadratic";
-    constantcurve2.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve2.Coeff1 = 1.0;
-    constantcurve2.Coeff2 = 0.0;
-    constantcurve2.Coeff3 = 0.0;
-    constantcurve2.Var1Min = 0.0;
-    constantcurve2.Var1Max = 1.0;
-    constantcurve2.CurveMin = 1.0;
-    constantcurve2.CurveMax = 1.0;
+    constantcurve2->Name = "constant quadratic curve";
+    constantcurve2->curveType = Curve::CurveType::Quadratic;
+    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve2->coeff[0] = 1.0;
+    constantcurve2->coeff[1] = 0.0;
+    constantcurve2->coeff[2] = 0.0;
+    constantcurve2->inputLimits[0].min = 0.0;
+    constantcurve2->inputLimits[0].max = 1.0;
+    constantcurve2->outputLimits.min = 1.0;
+    constantcurve2->outputLimits.max = 1.0;
     // set coil parameter
     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
@@ -487,13 +488,13 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     state->dataEnvrn->WindDir = 0.0;
     int SpeedNum = 2;
     int FanOpMode = DataHVACGlobals::CycFanCycCoil;
-    int CompOp = 1;
+    DataHVACGlobals::CompressorOperation CompressorOp = DataHVACGlobals::CompressorOperation::On;
     int SingleMode = 0;
     // Test 1 - dry coil - run the coil at low speed
     Real64 SpeedRatio = 0.0;
     Real64 CycRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
@@ -513,7 +514,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     // run the coil at high speed
     SpeedRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
     EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
@@ -534,7 +535,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     SpeedRatio = 0.75;
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
@@ -563,7 +564,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     SpeedRatio = 0.0;
     CycRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
@@ -583,7 +584,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     // Test 5 - wet coil - run the coil at high speed
     SpeedRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
     EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
     EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
@@ -604,7 +605,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
     SpeedRatio = 0.75;
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
     EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
     EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
@@ -781,7 +782,6 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
 
     int DXCoilNum(1);
     state->dataDXCoils->NumDXCoils = 1;
-    state->dataCurveManager->NumCurves = 2;
     state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
     state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
@@ -794,7 +794,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
     state->dataDXCoils->DXCoilFanOpMode.allocate(1);
-    state->dataCurveManager->PerfCurve.allocate(state->dataCurveManager->NumCurves);
+    state->dataCurveManager->allocateCurveVector(2);
 
     auto &Coil = state->dataDXCoils->DXCoil(1);
     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
@@ -810,8 +810,8 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
 
     Coil.DXCoilType_Num = DataHVACGlobals::CoilDX_MultiSpeedCooling;
     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelTypeNum = DataGlobalConstants::ResourceType::Electricity;
-    Coil.SchedPtr = DataGlobalConstants::ScheduleAlwaysOn;
+    Coil.FuelType = Constant::eFuel::Electricity;
+    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
     Coil.NumOfSpeeds = 2;
     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
@@ -842,34 +842,32 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     Coil.AirOutNode = 2;
     Coil.AirInNode = 1;
     // biquadratic curve
-    constantcurve1.Name = "constant biquadratic curve";
-    constantcurve1.CurveType = CurveManager::CurveTypeEnum::BiQuadratic;
-    constantcurve1.ObjectType = "Curve:Biquadratic";
-    constantcurve1.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve1.Coeff1 = 1.0;
-    constantcurve1.Coeff2 = 0.0;
-    constantcurve1.Coeff3 = 0.0;
-    constantcurve1.Coeff4 = 0.0;
-    constantcurve1.Coeff5 = 0.0;
-    constantcurve1.Coeff6 = 0.0;
-    constantcurve1.Var1Min = 10.0;
-    constantcurve1.Var1Max = 25.0;
-    constantcurve1.Var2Min = 0.0;
-    constantcurve1.Var2Max = 100.0;
-    constantcurve1.CurveMin = 1.0;
-    constantcurve1.CurveMax = 1.0;
+    constantcurve1->Name = "constant biquadratic curve";
+    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve1->coeff[0] = 1.0;
+    constantcurve1->coeff[1] = 0.0;
+    constantcurve1->coeff[2] = 0.0;
+    constantcurve1->coeff[3] = 0.0;
+    constantcurve1->coeff[4] = 0.0;
+    constantcurve1->coeff[5] = 0.0;
+    constantcurve1->inputLimits[0].min = 10.0;
+    constantcurve1->inputLimits[0].max = 25.0;
+    constantcurve1->inputLimits[1].min = 0.0;
+    constantcurve1->inputLimits[1].max = 100.0;
+    constantcurve1->outputLimits.min = 1.0;
+    constantcurve1->outputLimits.max = 1.0;
     // quadratic curve
-    constantcurve2.Name = "constant quadratic curve";
-    constantcurve2.CurveType = CurveManager::CurveTypeEnum::Quadratic;
-    constantcurve2.ObjectType = "Curve:Quadratic";
-    constantcurve2.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve2.Coeff1 = 1.0;
-    constantcurve2.Coeff2 = 0.0;
-    constantcurve2.Coeff3 = 0.0;
-    constantcurve2.Var1Min = 0.0;
-    constantcurve2.Var1Max = 1.0;
-    constantcurve2.CurveMin = 1.0;
-    constantcurve2.CurveMax = 1.0;
+    constantcurve2->Name = "constant quadratic curve";
+    constantcurve2->curveType = Curve::CurveType::Quadratic;
+    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve2->coeff[0] = 1.0;
+    constantcurve2->coeff[1] = 0.0;
+    constantcurve2->coeff[2] = 0.0;
+    constantcurve2->inputLimits[0].min = 0.0;
+    constantcurve2->inputLimits[0].max = 1.0;
+    constantcurve2->outputLimits.min = 1.0;
+    constantcurve2->outputLimits.max = 1.0;
     // set coil parameter
     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
@@ -907,13 +905,13 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     state->dataEnvrn->WindDir = 0.0;
     int SpeedNum = 2;
     int FanOpMode = DataHVACGlobals::ContFanCycCoil;
-    int CompOp = 1;
+    DataHVACGlobals::CompressorOperation CompressorOp = DataHVACGlobals::CompressorOperation::On;
     int SingleMode = 0;
     // Test 1 - dry coil - run the coil at low speed
     Real64 SpeedRatio = 0.0;
     Real64 CycRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
@@ -933,7 +931,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     // run the coil at high speed
     SpeedRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
     EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
@@ -954,7 +952,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     SpeedRatio = 0.75;
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
@@ -983,7 +981,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     SpeedRatio = 0.0;
     CycRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
@@ -1003,7 +1001,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     // Test 5 - wet coil - run the coil at high speed
     SpeedRatio = 1.0;
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
     EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
     EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
@@ -1024,7 +1022,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
     SpeedRatio = 0.75;
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
     EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
     EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
@@ -1202,7 +1200,6 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
 
     int DXCoilNum(1);
     state->dataDXCoils->NumDXCoils = 1;
-    state->dataCurveManager->NumCurves = 2;
     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
     state->dataLoopNodes->Node.allocate(2);
     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
@@ -1213,7 +1210,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
     state->dataDXCoils->DXCoilFanOpMode.allocate(1);
-    state->dataCurveManager->PerfCurve.allocate(state->dataCurveManager->NumCurves);
+    state->dataCurveManager->allocateCurveVector(2);
 
     auto &Coil = state->dataDXCoils->DXCoil(1);
     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
@@ -1229,8 +1226,8 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
 
     Coil.DXCoilType_Num = DataHVACGlobals::CoilDX_MultiSpeedCooling;
     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelTypeNum = DataGlobalConstants::ResourceType::Electricity;
-    Coil.SchedPtr = DataGlobalConstants::ScheduleAlwaysOn;
+    Coil.FuelType = Constant::eFuel::Electricity;
+    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
     Coil.NumOfSpeeds = 2;
     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
@@ -1261,34 +1258,32 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     Coil.AirOutNode = 2;
     Coil.AirInNode = 1;
     // biquadratic curve
-    constantcurve1.Name = "constant biquadratic curve";
-    constantcurve1.CurveType = CurveManager::CurveTypeEnum::BiQuadratic;
-    constantcurve1.ObjectType = "Curve:Biquadratic";
-    constantcurve1.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve1.Coeff1 = 1.0;
-    constantcurve1.Coeff2 = 0.0;
-    constantcurve1.Coeff3 = 0.0;
-    constantcurve1.Coeff4 = 0.0;
-    constantcurve1.Coeff5 = 0.0;
-    constantcurve1.Coeff6 = 0.0;
-    constantcurve1.Var1Min = 10.0;
-    constantcurve1.Var1Max = 25.0;
-    constantcurve1.Var2Min = 0.0;
-    constantcurve1.Var2Max = 100.0;
-    constantcurve1.CurveMin = 1.0;
-    constantcurve1.CurveMax = 1.0;
+    constantcurve1->Name = "constant biquadratic curve";
+    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve1->coeff[0] = 1.0;
+    constantcurve1->coeff[1] = 0.0;
+    constantcurve1->coeff[2] = 0.0;
+    constantcurve1->coeff[3] = 0.0;
+    constantcurve1->coeff[4] = 0.0;
+    constantcurve1->coeff[5] = 0.0;
+    constantcurve1->inputLimits[0].min = 10.0;
+    constantcurve1->inputLimits[0].max = 25.0;
+    constantcurve1->inputLimits[1].min = 0.0;
+    constantcurve1->inputLimits[1].max = 100.0;
+    constantcurve1->outputLimits.min = 1.0;
+    constantcurve1->outputLimits.max = 1.0;
     // quadratic curve
-    constantcurve2.Name = "constant quadratic curve";
-    constantcurve2.CurveType = CurveManager::CurveTypeEnum::Quadratic;
-    constantcurve2.ObjectType = "Curve:Quadratic";
-    constantcurve2.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve2.Coeff1 = 1.0;
-    constantcurve2.Coeff2 = 0.0;
-    constantcurve2.Coeff3 = 0.0;
-    constantcurve2.Var1Min = 0.0;
-    constantcurve2.Var1Max = 1.0;
-    constantcurve2.CurveMin = 1.0;
-    constantcurve2.CurveMax = 1.0;
+    constantcurve2->Name = "constant quadratic curve";
+    constantcurve2->curveType = Curve::CurveType::Quadratic;
+    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve2->coeff[0] = 1.0;
+    constantcurve2->coeff[1] = 0.0;
+    constantcurve2->coeff[2] = 0.0;
+    constantcurve2->inputLimits[0].min = 0.0;
+    constantcurve2->inputLimits[0].max = 1.0;
+    constantcurve2->outputLimits.min = 1.0;
+    constantcurve2->outputLimits.max = 1.0;
     // set coil parameter
     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
@@ -1324,7 +1319,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataEnvrn->WindSpeed = 5.0;
     state->dataEnvrn->WindDir = 0.0;
     int FanOpMode = DataHVACGlobals::CycFanCycCoil;
-    int CompOp = 1;
+    DataHVACGlobals::CompressorOperation CompressorOp = DataHVACGlobals::CompressorOperation::On;
     int SingleMode = 0;
     // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
     int SpeedNum = 2;
@@ -1333,7 +1328,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
@@ -1356,7 +1351,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
@@ -1381,7 +1376,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
@@ -1404,7 +1399,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
@@ -1421,7 +1416,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
@@ -1436,7 +1431,6 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
 
     int DXCoilNum(1);
     state->dataDXCoils->NumDXCoils = 1;
-    state->dataCurveManager->NumCurves = 2;
     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
     state->dataLoopNodes->Node.allocate(2);
     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
@@ -1447,7 +1441,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
     state->dataDXCoils->DXCoilFanOpMode.allocate(1);
-    state->dataCurveManager->PerfCurve.allocate(state->dataCurveManager->NumCurves);
+    state->dataCurveManager->allocateCurveVector(2);
 
     auto &Coil = state->dataDXCoils->DXCoil(1);
     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
@@ -1463,8 +1457,8 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
 
     Coil.DXCoilType_Num = DataHVACGlobals::CoilDX_MultiSpeedCooling;
     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelTypeNum = DataGlobalConstants::ResourceType::Electricity;
-    Coil.SchedPtr = DataGlobalConstants::ScheduleAlwaysOn;
+    Coil.FuelType = Constant::eFuel::Electricity;
+    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
     Coil.NumOfSpeeds = 2;
     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
@@ -1495,34 +1489,32 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     Coil.AirOutNode = 2;
     Coil.AirInNode = 1;
     // biquadratic curve
-    constantcurve1.Name = "constant biquadratic curve";
-    constantcurve1.CurveType = CurveManager::CurveTypeEnum::BiQuadratic;
-    constantcurve1.ObjectType = "Curve:Biquadratic";
-    constantcurve1.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve1.Coeff1 = 1.0;
-    constantcurve1.Coeff2 = 0.0;
-    constantcurve1.Coeff3 = 0.0;
-    constantcurve1.Coeff4 = 0.0;
-    constantcurve1.Coeff5 = 0.0;
-    constantcurve1.Coeff6 = 0.0;
-    constantcurve1.Var1Min = 10.0;
-    constantcurve1.Var1Max = 25.0;
-    constantcurve1.Var2Min = 0.0;
-    constantcurve1.Var2Max = 100.0;
-    constantcurve1.CurveMin = 1.0;
-    constantcurve1.CurveMax = 1.0;
+    constantcurve1->Name = "constant biquadratic curve";
+    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve1->coeff[0] = 1.0;
+    constantcurve1->coeff[1] = 0.0;
+    constantcurve1->coeff[2] = 0.0;
+    constantcurve1->coeff[3] = 0.0;
+    constantcurve1->coeff[4] = 0.0;
+    constantcurve1->coeff[5] = 0.0;
+    constantcurve1->inputLimits[0].min = 10.0;
+    constantcurve1->inputLimits[0].max = 25.0;
+    constantcurve1->inputLimits[1].min = 0.0;
+    constantcurve1->inputLimits[1].max = 100.0;
+    constantcurve1->outputLimits.min = 1.0;
+    constantcurve1->outputLimits.max = 1.0;
     // quadratic curve
-    constantcurve2.Name = "constant quadratic curve";
-    constantcurve2.CurveType = CurveManager::CurveTypeEnum::Quadratic;
-    constantcurve2.ObjectType = "Curve:Quadratic";
-    constantcurve2.InterpolationType = CurveManager::InterpTypeEnum::EvaluateCurveToLimits;
-    constantcurve2.Coeff1 = 1.0;
-    constantcurve2.Coeff2 = 0.0;
-    constantcurve2.Coeff3 = 0.0;
-    constantcurve2.Var1Min = 0.0;
-    constantcurve2.Var1Max = 1.0;
-    constantcurve2.CurveMin = 1.0;
-    constantcurve2.CurveMax = 1.0;
+    constantcurve2->Name = "constant quadratic curve";
+    constantcurve2->curveType = Curve::CurveType::Quadratic;
+    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+    constantcurve2->coeff[0] = 1.0;
+    constantcurve2->coeff[1] = 0.0;
+    constantcurve2->coeff[2] = 0.0;
+    constantcurve2->inputLimits[0].min = 0.0;
+    constantcurve2->inputLimits[0].max = 1.0;
+    constantcurve2->outputLimits.min = 1.0;
+    constantcurve2->outputLimits.max = 1.0;
     // set coil parameter
     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
@@ -1558,7 +1550,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataEnvrn->WindSpeed = 5.0;
     state->dataEnvrn->WindDir = 0.0;
     int FanOpMode = DataHVACGlobals::ContFanCycCoil;
-    int CompOp = 1;
+    DataHVACGlobals::CompressorOperation CompressorOp = DataHVACGlobals::CompressorOperation::On;
     int SingleMode = 0;
     // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
     int SpeedNum = 2;
@@ -1567,7 +1559,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
@@ -1590,7 +1582,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
@@ -1615,7 +1607,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
@@ -1638,7 +1630,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
@@ -1655,7 +1647,7 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
     Coil.InletAirMassFlowRate =
         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompOp, SingleMode);
+    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, FanOpMode, CompressorOp, SingleMode);
     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
@@ -1664,4 +1656,286 @@ TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                               // inlet dry bulb
     EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.01);               // outlet dry bulb
     EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.1);
+}
+
+TEST_F(CoilCoolingDXTest, CoilCoolingDX_LowerSpeedFlowSizingTest)
+{
+    // issue #9100
+    std::string const idf_objects = delimited_string({
+
+        "  Coil:Cooling:DX,",
+        "    DX Cooling Coil,                 !- Name",
+        "    DX Cooling Coil Air Inlet Node,  !- Evaporator Inlet Node Name",
+        "    DX Cooling Coil Air Outlet Node, !- Evaporator Outlet Node Name",
+        "    ,                                !- Availability Schedule Name",
+        "    ,                                !- Condenser Zone Name",
+        "    DX Cooling Coil Condenser Inlet Node,   !- Condenser Inlet Node Name",
+        "    DX Cooling Coil Condenser Outlet Node,  !- Condenser Outlet Node Name",
+        "    DX Cooling Coil Performance,     !- Performance Object Name",
+        "    ,                                !- Condensate Collection Water Storage Tank Name",
+        "    ;                                !- Evaporative Condenser Supply Water Storage Tank Name",
+
+        "  Coil:Cooling:DX:CurveFit:Performance,",
+        "    DX Cooling Coil Performance,  !- Name",
+        "    0,                       !- Crankcase Heater Capacity {W}",
+        "    ,                        !- Crankcase Heater Capacity Function of Temperature Curve Name",
+        "    ,                        !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}",
+        "    10,                      !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}",
+        "    ,                        !- Unit Internal Static Air Pressure {Pa}",
+        "    ,                        !- Capacity Control Method",
+        "    ,                        !- Evaporative Condenser Basin Heater Capacity {W/K}",
+        "    ,                        !- Evaporative Condenser Basin Heater Setpoint Temperature {C}",
+        "    ,                        !- Evaporative Condenser Basin Heater Operating Schedule Name",
+        "    Electricity,             !- Compressor Fuel Type",
+        "    DX Cooling Coil Operating Mode,  !- Base Operating Mode",
+        "    ,                        !- Alternative Operating Mode 1",
+        "    ;                        !- Alternative Operating Mode 2",
+
+        "  Coil:Cooling:DX:CurveFit:OperatingMode,",
+        "    DX Cooling Coil Operating Mode,  !- Name",
+        "    15000,                   !- Rated Gross Total Cooling Capacity {W}",
+        "    0.95,                    !- Rated Evaporator Air Flow Rate {m3/s}",
+        "    ,                        !- Rated Condenser Air Flow Rate {m3/s}",
+        "    0,                       !- Maximum Cycling Rate {cycles/hr}",
+        "    0,                       !- Ratio of Initial Moisture Evaporation Rate and Steady State Latent Capacity {dimensionless}",
+        "    0,                       !- Latent Capacity Time Constant {s}",
+        "    0,                       !- Nominal Time for Condensate Removal to Begin {s}",
+        "    ,                        !- Apply Latent Degradation to Speeds Greater than 1",
+        "    AirCooled,               !- Condenser Type",
+        "    0,                       !- Nominal Evaporative Condenser Pump Power {W}",
+        "    4,                       !- Nominal Speed Number",
+        "    DX Cooling Coil Speed 1 Performance,  !- Speed 1 Name",
+        "    DX Cooling Coil Speed 2 Performance,  !- Speed 2 Name",
+        "    DX Cooling Coil Speed 3 Performance,  !- Speed 3 Name",
+        "    DX Cooling Coil Speed 4 Performance;  !- Speed 4 Name",
+
+        "  Coil:Cooling:DX:CurveFit:Speed,",
+        "    DX Cooling Coil Speed 1 Performance,  !- Name",
+        "    0.25,                    !- Gross Total Cooling Capacity Fraction",
+        "    0.25,                    !- Evaporator Air Flow Rate Fraction",
+        "    0.25,                    !- Condenser Air Flow Rate Fraction",
+        "    0.77,                    !- Gross Sensible Heat Ratio",
+        "    4.17,                    !- Gross Cooling COP {W/W}",
+        "    1.0,                     !- Active Fraction of Coil Face Area",
+        "    ,                        !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- Evaporative Condenser Pump Power Fraction",
+        "    0,                       !- Evaporative Condenser Effectiveness {dimensionless}",
+        "    CAPFT,                   !- Total Cooling Capacity Modifier Function of Temperature Curve Name",
+        "    CAPFF,                   !- Total Cooling Capacity Modifier Function of Air Flow Fraction Curve Name",
+        "    EIRFT,                   !- Energy Input Ratio Modifier Function of Temperature Curve Name",
+        "    EIRFF,                   !- Energy Input Ratio Modifier Function of Air Flow Fraction Curve Name",
+        "    PLFFPLR,                 !- Part Load Fraction Correlation Curve Name",
+        "    ,                        !- Rated Waste Heat Fraction of Power Input {dimensionless}",
+        "    ,                        !- Waste Heat Modifier Function of Temperature Curve Name",
+        "    ,                        !- Sensible Heat Ratio Modifier Function of Temperature Curve Name",
+        "    ;                        !- Sensible Heat Ratio Modifier Function of Flow Fraction Curve Name",
+
+        "  Coil:Cooling:DX:CurveFit:Speed,",
+        "    DX Cooling Coil Speed 2 Performance,  !- Name",
+        "    0.50,                    !- Gross Total Cooling Capacity Fraction",
+        "    0.50,                    !- Evaporator Air Flow Rate Fraction",
+        "    0.50,                    !- Condenser Air Flow Rate Fraction",
+        "    0.77,                    !- Gross Sensible Heat Ratio",
+        "    4.17,                    !- Gross Cooling COP {W/W}",
+        "    1.0,                     !- Active Fraction of Coil Face Area",
+        "    ,                        !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- Evaporative Condenser Pump Power Fraction",
+        "    0,                       !- Evaporative Condenser Effectiveness {dimensionless}",
+        "    CAPFT,                   !- Total Cooling Capacity Modifier Function of Temperature Curve Name",
+        "    CAPFF,                   !- Total Cooling Capacity Modifier Function of Air Flow Fraction Curve Name",
+        "    EIRFT,                   !- Energy Input Ratio Modifier Function of Temperature Curve Name",
+        "    EIRFF,                   !- Energy Input Ratio Modifier Function of Air Flow Fraction Curve Name",
+        "    PLFFPLR,                 !- Part Load Fraction Correlation Curve Name",
+        "    ,                        !- Rated Waste Heat Fraction of Power Input {dimensionless}",
+        "    ,                        !- Waste Heat Modifier Function of Temperature Curve Name",
+        "    ,                        !- Sensible Heat Ratio Modifier Function of Temperature Curve Name",
+        "    ;                        !- Sensible Heat Ratio Modifier Function of Flow Fraction Curve Name",
+
+        "  Coil:Cooling:DX:CurveFit:Speed,",
+        "    DX Cooling Coil Speed 3 Performance,  !- Name",
+        "    0.75,                    !- Gross Total Cooling Capacity Fraction",
+        "    0.75,                    !- Evaporator Air Flow Rate Fraction",
+        "    0.75,                    !- Condenser Air Flow Rate Fraction",
+        "    0.77,                    !- Gross Sensible Heat Ratio",
+        "    4.17,                    !- Gross Cooling COP {W/W}",
+        "    1.0,                     !- Active Fraction of Coil Face Area",
+        "    ,                        !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- Evaporative Condenser Pump Power Fraction",
+        "    0,                       !- Evaporative Condenser Effectiveness {dimensionless}",
+        "    CAPFT,                   !- Total Cooling Capacity Modifier Function of Temperature Curve Name",
+        "    CAPFF,                   !- Total Cooling Capacity Modifier Function of Air Flow Fraction Curve Name",
+        "    EIRFT,                   !- Energy Input Ratio Modifier Function of Temperature Curve Name",
+        "    EIRFF,                   !- Energy Input Ratio Modifier Function of Air Flow Fraction Curve Name",
+        "    PLFFPLR,                 !- Part Load Fraction Correlation Curve Name",
+        "    ,                        !- Rated Waste Heat Fraction of Power Input {dimensionless}",
+        "    ,                        !- Waste Heat Modifier Function of Temperature Curve Name",
+        "    ,                        !- Sensible Heat Ratio Modifier Function of Temperature Curve Name",
+        "    ;                        !- Sensible Heat Ratio Modifier Function of Flow Fraction Curve Name",
+
+        "  Coil:Cooling:DX:CurveFit:Speed,",
+        "    DX Cooling Coil Speed 4 Performance,  !- Name",
+        "    1.0,                     !- Gross Total Cooling Capacity Fraction",
+        "    1.0,                     !- Evaporator Air Flow Rate Fraction",
+        "    1.0,                     !- Condenser Air Flow Rate Fraction",
+        "    0.77,                    !- Gross Sensible Heat Ratio",
+        "    4.17,                    !- Gross Cooling COP {W/W}",
+        "    1.0,                     !- Active Fraction of Coil Face Area",
+        "    ,                        !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}",
+        "    ,                        !- Evaporative Condenser Pump Power Fraction",
+        "    0,                       !- Evaporative Condenser Effectiveness {dimensionless}",
+        "    CAPFT,                   !- Total Cooling Capacity Modifier Function of Temperature Curve Name",
+        "    CAPFF,                   !- Total Cooling Capacity Modifier Function of Air Flow Fraction Curve Name",
+        "    EIRFT,                   !- Energy Input Ratio Modifier Function of Temperature Curve Name",
+        "    EIRFF,                   !- Energy Input Ratio Modifier Function of Air Flow Fraction Curve Name",
+        "    PLFFPLR,                 !- Part Load Fraction Correlation Curve Name",
+        "    ,                        !- Rated Waste Heat Fraction of Power Input {dimensionless}",
+        "    ,                        !- Waste Heat Modifier Function of Temperature Curve Name",
+        "    ,                        !- Sensible Heat Ratio Modifier Function of Temperature Curve Name",
+        "    ;                        !- Sensible Heat Ratio Modifier Function of Flow Fraction Curve Name",
+
+        "Curve:Quadratic, PLFFPLR, 0.85, 0.83, 0.0, 0.0, 0.3, 0.85, 1.0, Dimensionless, Dimensionless; ",
+        "Curve:Cubic, CAPFF, 1, 0, 0, 0, 0, 1, , , Dimensionless, Dimensionless; ",
+        "Curve:Cubic, EIRFF, 1, 0, 0, 0, 0, 1, , , Dimensionless, Dimensionless; ",
+        "Curve:Biquadratic, CAPFT, 1, 0, 0, 0, 0, 0, 0, 100, 0, 100, , , Temperature, Temperature, Dimensionless;",
+        "Curve:Biquadratic, EIRFT, 1, 0, 0, 0, 0, 0, 0, 100, 0, 100, , , Temperature, Temperature, Dimensionless;",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    int coilIndex = CoilCoolingDX::factory(*state, "DX Cooling Coil");
+    auto &this_dx_clg_coil = state->dataCoilCooingDX->coilCoolingDXs[coilIndex];
+    // check dx cooling coil inputs
+    EXPECT_EQ(this_dx_clg_coil.name, "DX COOLING COIL");
+
+    // set dx cooling coil condenser inlet air conditions
+    state->dataEnvrn->OutDryBulbTemp = 35.0;
+    state->dataEnvrn->OutHumRat = 0.0196;
+    state->dataEnvrn->OutBaroPress = 101325.0;
+    state->dataEnvrn->OutWetBulbTemp = 27.0932;
+    state->dataSize->CurZoneEqNum = 0;
+    state->dataSize->CurOASysNum = 0;
+    state->dataSize->CurSysNum = 1;
+    state->dataSize->CurDuctType = DataHVACGlobals::AirDuctType::Cooling;
+    state->dataSize->FinalSysSizing.allocate(1);
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).CoolSupTemp = 12.0;
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).CoolSupHumRat = 0.0085;
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixTempAtCoolPeak = 28.0;
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixHumRatAtCoolPeak = 0.0075;
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).DesCoolVolFlow = 0.80;
+    state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).DesOutAirVolFlow = 0.2;
+    state->dataHVACGlobal->NumPrimaryAirSys = 1;
+    state->dataAirSystemsData->PrimaryAirSystems.allocate(1);
+    state->dataAirSystemsData->PrimaryAirSystems(state->dataSize->CurSysNum).NumOACoolCoils = 0;
+    state->dataAirSystemsData->PrimaryAirSystems(state->dataSize->CurSysNum).SupFanNum = 0;
+    state->dataAirSystemsData->PrimaryAirSystems(state->dataSize->CurSysNum).RetFanNum = 0;
+    state->dataSize->SysSizingRunDone = true;
+    state->dataSize->SysSizInput.allocate(1);
+    state->dataSize->SysSizInput(1).AirLoopNum = state->dataSize->CurSysNum;
+    state->dataSize->NumSysSizInput = 1;
+    state->dataEnvrn->StdBaroPress = 101325.0;
+    state->dataEnvrn->StdRhoAir = 1.0;
+    state->dataSize->DataAirFlowUsedForSizing = state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).DesCoolVolFlow;
+
+    // size cooling coil dx
+    this_dx_clg_coil.size(*state);
+
+    // check the normal operating mode names
+    EXPECT_EQ(this_dx_clg_coil.performance.normalMode.speeds[0].name, "DX COOLING COIL SPEED 1 PERFORMANCE");
+    EXPECT_EQ(this_dx_clg_coil.performance.normalMode.speeds[1].name, "DX COOLING COIL SPEED 2 PERFORMANCE");
+    EXPECT_EQ(this_dx_clg_coil.performance.normalMode.speeds[2].name, "DX COOLING COIL SPEED 3 PERFORMANCE");
+    EXPECT_EQ(this_dx_clg_coil.performance.normalMode.speeds[3].name, "DX COOLING COIL SPEED 4 PERFORMANCE");
+
+    struct TestQuery
+    {
+        TestQuery(std::string t_description, std::string t_units, Real64 t_value)
+            : description(t_description), units(t_units), expectedValue(t_value),
+              displayString("Description='" + description + "'; Units='" + units + "'"){};
+
+        const std::string description;
+        const std::string units;
+        const Real64 expectedValue;
+        const std::string displayString;
+    };
+
+    // test 1: speed 1 cooling coil dx
+    std::string compType = "Coil:Cooling:DX:CurveFit:Speed";
+    std::string compName = "DX COOLING COIL SPEED 1 PERFORMANCE"; // this_dx_clg_coil.performance.normalMode.speeds[0].name;
+    // expected results
+    std::vector<TestQuery> speed1_testQueries(
+        {TestQuery("Design Size Rated Air Flow Rate", "m3/s", 0.2000), TestQuery("Design Size Gross Cooling Capacity", "W", 3260.1028)});
+
+    for (auto &testQuery : speed1_testQueries) {
+        std::string query("SELECT Value From ComponentSizes"
+                          "  WHERE CompType = '" +
+                          compType +
+                          "'"
+                          "  AND CompName = '" +
+                          compName +
+                          "'"
+                          "  AND Description = '" +
+                          testQuery.description + "'" + "  AND Units = '" + testQuery.units + "'");
+
+        Real64 return_val = SQLiteFixture::execAndReturnFirstDouble(query);
+        if (return_val < 0) {
+            EXPECT_TRUE(false) << "Query returned nothing for " << testQuery.displayString;
+        } else {
+            EXPECT_NEAR(testQuery.expectedValue, return_val, 0.0001) << "Failed for " << testQuery.displayString;
+        }
+    }
+
+    // test 2: speed 2 cooling coil dx
+    compType = "Coil:Cooling:DX:CurveFit:Speed";
+    compName = this_dx_clg_coil.performance.normalMode.speeds[1].name;
+    // expected results
+    std::vector<TestQuery> speed2_testQueries(
+        {TestQuery("Design Size Rated Air Flow Rate", "m3/s", 0.4000), TestQuery("Design Size Gross Cooling Capacity", "W", 6520.2056)});
+
+    for (auto &testQuery : speed2_testQueries) {
+        std::string query("SELECT Value From ComponentSizes"
+                          "  WHERE CompType = '" +
+                          compType +
+                          "'"
+                          "  AND CompName = '" +
+                          compName +
+                          "'"
+                          "  AND Description = '" +
+                          testQuery.description + "'" + "  AND Units = '" + testQuery.units + "'");
+
+        Real64 return_val = SQLiteFixture::execAndReturnFirstDouble(query);
+        if (return_val < 0) {
+            EXPECT_TRUE(false) << "Query returned nothing for " << testQuery.displayString;
+        } else {
+            EXPECT_NEAR(testQuery.expectedValue, return_val, 0.0001) << "Failed for " << testQuery.displayString;
+        }
+    }
+
+    // test 3: speed 3 cooling coil dx
+    compType = "Coil:Cooling:DX:CurveFit:Speed";
+    compName = this_dx_clg_coil.performance.normalMode.speeds[2].name;
+    // expected results
+    std::vector<TestQuery> speed3_testQueries(
+        {TestQuery("Design Size Rated Air Flow Rate", "m3/s", 0.6000), TestQuery("Design Size Gross Cooling Capacity", "W", 9780.3084)});
+
+    for (auto &testQuery : speed3_testQueries) {
+        std::string query("SELECT Value From ComponentSizes"
+                          "  WHERE CompType = '" +
+                          compType +
+                          "'"
+                          "  AND CompName = '" +
+                          compName +
+                          "'"
+                          "  AND Description = '" +
+                          testQuery.description + "'" + "  AND Units = '" + testQuery.units + "'");
+
+        Real64 return_val = SQLiteFixture::execAndReturnFirstDouble(query);
+        if (return_val < 0) {
+            EXPECT_TRUE(false) << "Query returned nothing for " << testQuery.displayString;
+        } else {
+            EXPECT_NEAR(testQuery.expectedValue, return_val, 0.0001) << "Failed for " << testQuery.displayString;
+        }
+    }
 }

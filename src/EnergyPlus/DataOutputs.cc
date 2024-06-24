@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -135,33 +135,38 @@ Array1D_string const MonthlyNamedReports(NumMonthlyReports,
                                           "MECHANICALVENTILATIONLOADSMONTHLY",
                                           "HEATEMISSIONSREPORTMONTHLY"});
 
-OutputReportingVariables::OutputReportingVariables(EnergyPlusData &state, std::string const &KeyValue, std::string const &VariableName)
-    : key(KeyValue), variableName(VariableName)
+bool isKeyRegexLike(std::string_view key)
 {
-    if (KeyValue == "*") return;
-    for (auto const &c : KeyValue) {
-        if (c == ' ' || c == '_' || std::isalnum(c)) continue;
-        is_simple_string = false;
-        break;
+    if (key == "*") {
+        return false;
     }
-    if (is_simple_string) return;
+
+    return key.find_first_of("*+?()|[]\\.") != std::string_view::npos;
+}
+
+OutputReportingVariables::OutputReportingVariables(EnergyPlusData &state, std::string const &KeyValue, std::string const &VariableName)
+    : key(KeyValue), variableName(VariableName), is_simple_string(!DataOutputs::isKeyRegexLike(KeyValue))
+{
+
+    if (is_simple_string) {
+        return;
+    }
     pattern = std::make_shared<RE2>(KeyValue);
     case_insensitive_pattern = std::make_shared<RE2>("(?i)" + KeyValue);
     if (!pattern->ok()) {
-        ShowSevereError(state, "Regular expression \"" + KeyValue + "\" for variable name \"" + VariableName + "\" in input file is incorrect");
+        ShowSevereError(state, format("Regular expression \"{}\" for variable name \"{}\" in input file is incorrect", KeyValue, VariableName));
         ShowContinueError(state, pattern->error());
         ShowFatalError(state, "Error found in regular expression. Previous error(s) cause program termination.");
     }
 }
 
-bool FindItemInVariableList(EnergyPlusData &state, std::string const &KeyedValue, std::string const &VariableName)
+bool FindItemInVariableList(const EnergyPlusData &state, std::string_view const KeyedValue, std::string_view const VariableName)
 {
 
     // FUNCTION INFORMATION:
     //       AUTHOR         Linda Lawrie
     //       DATE WRITTEN   July 2010
     //       MODIFIED       December 2016
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS FUNCTION:
     // This function looks up a key and variable name value and determines if they are
@@ -179,9 +184,9 @@ bool FindItemInVariableList(EnergyPlusData &state, std::string const &KeyedValue
     for (auto it = found_variable->second.begin(); it != found_variable->second.end(); ++it) {
         if (equali(KeyedValue, it->second.key)) return true;
         if (it->second.is_simple_string) continue;
-        if ((it->second.pattern != nullptr && RE2::FullMatch(KeyedValue, *it->second.pattern)) || // match against regex as written
+        if ((it->second.pattern != nullptr && RE2::FullMatch(std::string{KeyedValue}, *it->second.pattern)) || // match against regex as written
             (it->second.case_insensitive_pattern != nullptr &&
-             RE2::FullMatch(KeyedValue, *it->second.case_insensitive_pattern)) // attempt case-insensitive regex comparison
+             RE2::FullMatch(std::string{KeyedValue}, *it->second.case_insensitive_pattern)) // attempt case-insensitive regex comparison
         ) {
             return true;
         }

@@ -98,7 +98,7 @@ It is possible future versions of the program will expose additional calling poi
 Note: a single class can override multiple functions, so that the same class instance is called at multiple points in a simulation.
 
 Once this plugin is created, it can be placed in a number of locations on the filesystem, as described in the PythonPlugin:SearchPaths section~\ref{subsec:plugin-search-paths}.
-The plugin instance, along with any other plugin related obejcts are declared in the input file, and then EnergyPlus is executed.
+The plugin instance, along with any other plugin related objects are declared in the input file, and then EnergyPlus is executed.
 More data is provided in each of the specific object sections below.
 
 \subsection{PythonPlugin:SearchPaths}\label{subsec:plugin-search-paths}
@@ -126,6 +126,12 @@ Turning this field to Yes will add the current working directory to the list of 
 In a lot of cases, it is expected that the plugin will be tied closely to a specific input file.
 In these cases, it may be useful to keep plugin files right next to the input file, regardless of the current working directory.
 Turning this field to Yes will add the directory where the input file is located to the list of search paths.
+
+\paragraph{Field: Add epin Environment Variable to Search Path}
+
+Some interfaces to EnergyPlus set an environment variable named "epin" to a path on the system where auxiliary files will be placed for a simulation run.
+If this input field is set to Yes, EnergyPlus will check to see if the "epin" variable has been set, and if the path exists, the path will be added to the list of search paths for Python Plugins.
+This field is defaulted to Yes, so that input files should work with tools like EPLaunch directly.
 
 \paragraph{Field: Search Path N}
 

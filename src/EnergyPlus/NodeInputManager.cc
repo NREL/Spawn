@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -72,8 +72,6 @@ namespace EnergyPlus::NodeInputManager {
 // MODULE INFORMATION:
 //       AUTHOR         Linda K. Lawrie
 //       DATE WRITTEN   September 1999
-//       MODIFIED       na
-//       RE-ENGINEERED  na
 
 // PURPOSE OF THIS MODULE:
 // To provide utilities for reading and assigning indices for the
@@ -85,18 +83,18 @@ using namespace BranchNodeConnections;
 constexpr const char *fluidNameSteam("STEAM");
 
 void GetNodeNums(EnergyPlusData &state,
-                 std::string const &Name,                                   // Name for which to obtain information
-                 int &NumNodes,                                             // Number of nodes accompanying this Name
-                 Array1D_int &NodeNumbers,                                  // Node Numbers accompanying this Name
-                 bool &ErrorsFound,                                         // True when errors are found...
-                 DataLoopNode::NodeFluidType NodeFluidType,                 // Fluidtype for checking/setting node FluidType
-                 std::string const &NodeObjectType,                         // Node Object Type (i.e. "Chiller:Electric")
-                 std::string const &NodeObjectName,                         // Node Object Name (i.e. "MyChiller")
-                 DataLoopNode::NodeConnectionType const NodeConnectionType, // Node Connection Type (see DataLoopNode)
-                 compFluidStream const NodeFluidStream,                     // Which Fluid Stream (1,2,3,...)
-                 bool const ObjectIsParent,                                 // True/False
-                 Optional_bool_const IncrementFluidStream,                  // True/False
-                 Optional_string_const InputFieldName                       // Input Field Name
+                 std::string const &Name,                                 // Name for which to obtain information
+                 int &NumNodes,                                           // Number of nodes accompanying this Name
+                 Array1D_int &NodeNumbers,                                // Node Numbers accompanying this Name
+                 bool &ErrorsFound,                                       // True when errors are found...
+                 DataLoopNode::NodeFluidType nodeFluidType,               // Fluidtype for checking/setting node FluidType
+                 DataLoopNode::ConnectionObjectType const NodeObjectType, // Node Object Type (i.e. "Chiller:Electric")
+                 std::string const &NodeObjectName,                       // Node Object Name (i.e. "MyChiller")
+                 DataLoopNode::ConnectionType const nodeConnectionType,   // Node Connection Type (see DataLoopNode)
+                 CompFluidStream const NodeFluidStream,                   // Which Fluid Stream (1,2,3,...)
+                 bool const ObjectIsParent,                               // True/False
+                 bool const IncrementFluidStream,                         // True/False
+                 std::string_view const InputFieldName                    // Input Field Name
 )
 {
 
@@ -104,7 +102,6 @@ void GetNodeNums(EnergyPlusData &state,
     //       AUTHOR         Linda K. Lawrie
     //       DATE WRITTEN   September 1999
     //       MODIFIED       February 2004, Fluid Type checking/setting
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine calls the Node Manager to determine if the
@@ -116,54 +113,54 @@ void GetNodeNums(EnergyPlusData &state,
     // SUBROUTINE PARAMETER DEFINITIONS:
     static constexpr std::string_view RoutineName("GetNodeNums: ");
 
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int ThisOne; // Indicator for this Name
-    std::string ConnectionType;
-    int Loop;
-    NodeInputManager::compFluidStream FluidStreamNum; // Fluid stream number passed to RegisterNodeConnection
+    std::string_view const objTypeStr = BranchNodeConnections::ConnectionObjectTypeNames[static_cast<int>(NodeObjectType)];
 
     if (state.dataNodeInputMgr->GetNodeInputFlag) {
         GetNodeListsInput(state, ErrorsFound);
         state.dataNodeInputMgr->GetNodeInputFlag = false;
     }
 
-    if (NodeFluidType != DataLoopNode::NodeFluidType::Air && NodeFluidType != DataLoopNode::NodeFluidType::Water &&
-        NodeFluidType != DataLoopNode::NodeFluidType::Electric && NodeFluidType != DataLoopNode::NodeFluidType::Steam &&
-        NodeFluidType != DataLoopNode::NodeFluidType::blank) {
-        ShowSevereError(state, std::string{RoutineName} + NodeObjectType + "=\"" + NodeObjectName + "\", invalid fluid type.");
-        ShowContinueError(state, format("..Invalid FluidType={}", NodeFluidType));
+    if (nodeFluidType != DataLoopNode::NodeFluidType::Air && nodeFluidType != DataLoopNode::NodeFluidType::Water &&
+        nodeFluidType != DataLoopNode::NodeFluidType::Electric && nodeFluidType != DataLoopNode::NodeFluidType::Steam &&
+        nodeFluidType != DataLoopNode::NodeFluidType::Blank) {
+        ShowSevereError(state, format("{}{}=\"{}=\", invalid fluid type.", RoutineName, objTypeStr, NodeObjectName));
+        ShowContinueError(state, format("..Invalid FluidType={}", nodeFluidType));
         ErrorsFound = true;
         ShowFatalError(state, "Preceding issue causes termination.");
     }
 
-    if (not_blank(Name)) {
-        ThisOne = UtilityRoutines::FindItemInList(Name, state.dataNodeInputMgr->NodeLists);
+    if (!Name.empty()) {
+        int ThisOne = Util::FindItemInList(Name, state.dataNodeInputMgr->NodeLists);
         if (ThisOne != 0) {
             NumNodes = state.dataNodeInputMgr->NodeLists(ThisOne).NumOfNodesInList;
             NodeNumbers({1, NumNodes}) = state.dataNodeInputMgr->NodeLists(ThisOne).NodeNumbers({1, NumNodes});
-            for (Loop = 1; Loop <= NumNodes; ++Loop) {
-                if (NodeFluidType != DataLoopNode::NodeFluidType::blank &&
-                    state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType != DataLoopNode::NodeFluidType::blank) {
-                    if (state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType != NodeFluidType) {
-                        ShowSevereError(state, std::string{RoutineName} + NodeObjectType + "=\"" + NodeObjectName + "\", invalid data.");
-                        if (present(InputFieldName)) ShowContinueError(state, "...Ref field=" + InputFieldName);
-                        ShowContinueError(
-                            state, "Existing Fluid type for node, incorrect for request. Node=" + state.dataLoopNodes->NodeID(NodeNumbers(Loop)));
+            for (int Loop = 1; Loop <= NumNodes; ++Loop) {
+                if (nodeFluidType != DataLoopNode::NodeFluidType::Blank &&
+                    state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType != DataLoopNode::NodeFluidType::Blank) {
+                    if (state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType != nodeFluidType) {
+                        ShowSevereError(state, format("{}{}=\"{}=\", invalid data.", RoutineName, objTypeStr, NodeObjectName));
+                        if (!InputFieldName.empty()) {
+                            ShowContinueError(state, fmt::format("...Ref field={}", InputFieldName));
+                        }
                         ShowContinueError(
                             state,
-                            "Existing Fluid type=" +
-                                format("{}", DataLoopNode::ValidNodeFluidTypes(state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType)) +
-                                ", Requested Fluid Type=" + format("{}", DataLoopNode::ValidNodeFluidTypes(NodeFluidType)));
+                            format("Existing Fluid type for node, incorrect for request. Node={}", state.dataLoopNodes->NodeID(NodeNumbers(Loop))));
+                        ShowContinueError(
+                            state,
+                            format("Existing Fluid type={}, Requested Fluid Type={}",
+                                   format("{}",
+                                          DataLoopNode::NodeFluidTypeNames[static_cast<int>(state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType)]),
+                                   format("{}", DataLoopNode::NodeFluidTypeNames[static_cast<int>(nodeFluidType)])));
                         ErrorsFound = true;
                     }
                 }
-                if (state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType == DataLoopNode::NodeFluidType::blank) {
-                    state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType = NodeFluidType;
+                if (state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType == DataLoopNode::NodeFluidType::Blank) {
+                    state.dataLoopNodes->Node(NodeNumbers(Loop)).FluidType = nodeFluidType;
                 }
                 ++state.dataNodeInputMgr->NodeRef(NodeNumbers(Loop));
             }
         } else {
-            ThisOne = AssignNodeNumber(state, Name, NodeFluidType, ErrorsFound);
+            ThisOne = AssignNodeNumber(state, Name, nodeFluidType, ErrorsFound);
             NumNodes = 1;
             NodeNumbers(1) = ThisOne;
         }
@@ -173,24 +170,20 @@ void GetNodeNums(EnergyPlusData &state,
     }
 
     // Most calls to this routine use a fixed fluid stream number for all nodes, this is the default
-    FluidStreamNum = NodeFluidStream;
-    for (Loop = 1; Loop <= NumNodes; ++Loop) {
-        if (static_cast<int>(NodeConnectionType) >= 1 && static_cast<int>(NodeConnectionType) <= NumValidConnectionTypes) {
-            ConnectionType = DataLoopNode::ValidConnectionTypes(NodeConnectionType);
-        } else {
-            ConnectionType = format("{}-unknown", NodeConnectionType);
-        }
+    NodeInputManager::CompFluidStream FluidStreamNum = NodeFluidStream;
+    for (int Loop = 1; Loop <= NumNodes; ++Loop) {
         // If requested, assign NodeFluidStream to the first node and increment the fluid stream number
         // for each remaining node in the list
-        if (present(IncrementFluidStream)) {
-            if (IncrementFluidStream) FluidStreamNum = static_cast<NodeInputManager::compFluidStream>(static_cast<int>(NodeFluidStream) + (Loop - 1));
+        if (IncrementFluidStream) {
+            FluidStreamNum = static_cast<NodeInputManager::CompFluidStream>(static_cast<int>(NodeFluidStream) + (Loop - 1));
         }
+
         RegisterNodeConnection(state,
                                NodeNumbers(Loop),
                                state.dataLoopNodes->NodeID(NodeNumbers(Loop)),
                                NodeObjectType,
                                NodeObjectName,
-                               ConnectionType,
+                               nodeConnectionType,
                                FluidStreamNum,
                                ObjectIsParent,
                                ErrorsFound,
@@ -204,16 +197,14 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Linda K. Lawrie
     //       DATE WRITTEN   September
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine is called when the indicated number of
     // Nodes have been found (TOTAL NODE NUMBER) or when HVAC warmup is
     // complete, whichever condition is reached first.
 
-    auto &Node(state.dataLoopNodes->Node);
-    auto &NodeID(state.dataLoopNodes->NodeID);
+    auto &Node = state.dataLoopNodes->Node;
+    auto &NodeID = state.dataLoopNodes->NodeID;
 
     if (!state.dataNodeInputMgr->NodeVarsSetup) {
         if (!state.dataErrTracking->AbortProcessing) {
@@ -222,84 +213,84 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                 // Setup Report variables for the Nodes for HVAC Reporting, CurrentModuleObject='Node Name'
                 SetupOutputVariable(state,
                                     "System Node Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataLoopNodes->Node(NumNode).Temp,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Mass Flow Rate",
-                                    OutputProcessor::Unit::kg_s,
+                                    Constant::Units::kg_s,
                                     Node(NumNode).MassFlowRate,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Humidity Ratio",
-                                    OutputProcessor::Unit::kgWater_kgDryAir,
+                                    Constant::Units::kgWater_kgDryAir,
                                     Node(NumNode).HumRat,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     Node(NumNode).TempSetPoint,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint High Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     Node(NumNode).TempSetPointHi,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint Low Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     Node(NumNode).TempSetPointLo,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint Humidity Ratio",
-                                    OutputProcessor::Unit::kgWater_kgDryAir,
+                                    Constant::Units::kgWater_kgDryAir,
                                     Node(NumNode).HumRatSetPoint,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint Minimum Humidity Ratio",
-                                    OutputProcessor::Unit::kgWater_kgDryAir,
+                                    Constant::Units::kgWater_kgDryAir,
                                     Node(NumNode).HumRatMin,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Setpoint Maximum Humidity Ratio",
-                                    OutputProcessor::Unit::kgWater_kgDryAir,
+                                    Constant::Units::kgWater_kgDryAir,
                                     Node(NumNode).HumRatMax,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Relative Humidity",
-                                    OutputProcessor::Unit::Perc,
+                                    Constant::Units::Perc,
                                     state.dataLoopNodes->MoreNodeInfo(NumNode).RelHumidity,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Pressure",
-                                    OutputProcessor::Unit::Pa,
+                                    Constant::Units::Pa,
                                     Node(NumNode).Press,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Standard Density Volume Flow Rate",
-                                    OutputProcessor::Unit::m3_s,
+                                    Constant::Units::m3_s,
                                     state.dataLoopNodes->MoreNodeInfo(NumNode).VolFlowRateStdRho,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
@@ -308,21 +299,21 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                     Node(NumNode).FluidType == DataLoopNode::NodeFluidType::Water) { // setup volume flow rate report for actual/current density
                     SetupOutputVariable(state,
                                         "System Node Current Density Volume Flow Rate",
-                                        OutputProcessor::Unit::m3_s,
+                                        Constant::Units::m3_s,
                                         state.dataLoopNodes->MoreNodeInfo(NumNode).VolFlowRateCrntRho,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Current Density",
-                                        OutputProcessor::Unit::kg_m3,
+                                        Constant::Units::kg_m3,
                                         state.dataLoopNodes->MoreNodeInfo(NumNode).Density,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Specific Heat",
-                                        OutputProcessor::Unit::J_kgK,
+                                        Constant::Units::J_kgK,
                                         state.dataLoopNodes->MoreNodeInfo(NumNode).SpecificHeat,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
@@ -331,49 +322,49 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
 
                 SetupOutputVariable(state,
                                     "System Node Enthalpy",
-                                    OutputProcessor::Unit::J_kg,
+                                    Constant::Units::J_kg,
                                     state.dataLoopNodes->MoreNodeInfo(NumNode).ReportEnthalpy,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Wetbulb Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataLoopNodes->MoreNodeInfo(NumNode).WetBulbTemp,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Dewpoint Temperature",
-                                    OutputProcessor::Unit::C,
+                                    Constant::Units::C,
                                     state.dataLoopNodes->MoreNodeInfo(NumNode).AirDewPointTemp,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Wind Speed",
-                                    OutputProcessor::Unit::m_s,
+                                    Constant::Units::m_s,
                                     Node(NumNode).OutAirWindSpeed,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Wind Direction",
-                                    OutputProcessor::Unit::deg,
+                                    Constant::Units::deg,
                                     Node(NumNode).OutAirWindDir,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Quality",
-                                    OutputProcessor::Unit::None,
+                                    Constant::Units::None,
                                     Node(NumNode).Quality,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     NodeID(NumNode));
                 SetupOutputVariable(state,
                                     "System Node Height",
-                                    OutputProcessor::Unit::m,
+                                    Constant::Units::m,
                                     Node(NumNode).Height,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
@@ -381,70 +372,70 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                 if (state.dataGlobal->DisplayAdvancedReportVariables) {
                     SetupOutputVariable(state,
                                         "System Node Minimum Temperature",
-                                        OutputProcessor::Unit::C,
+                                        Constant::Units::C,
                                         Node(NumNode).TempMin,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Maximum Temperature",
-                                        OutputProcessor::Unit::C,
+                                        Constant::Units::C,
                                         Node(NumNode).TempMax,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Minimum Limit Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateMin,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Maximum Limit Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateMax,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Minimum Available Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateMinAvail,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Maximum Available Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateMaxAvail,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Setpoint Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateSetPoint,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Requested Mass Flow Rate",
-                                        OutputProcessor::Unit::kg_s,
+                                        Constant::Units::kg_s,
                                         Node(NumNode).MassFlowRateRequest,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Last Timestep Temperature",
-                                        OutputProcessor::Unit::C,
+                                        Constant::Units::C,
                                         Node(NumNode).TempLastTimestep,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
                                         NodeID(NumNode));
                     SetupOutputVariable(state,
                                         "System Node Last Timestep Enthalpy",
-                                        OutputProcessor::Unit::J_kg,
+                                        Constant::Units::J_kg,
                                         Node(NumNode).EnthalpyLastTimestep,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
@@ -453,7 +444,7 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                 if (state.dataContaminantBalance->Contaminant.CO2Simulation) {
                     SetupOutputVariable(state,
                                         "System Node CO2 Concentration",
-                                        OutputProcessor::Unit::ppm,
+                                        Constant::Units::ppm,
                                         Node(NumNode).CO2,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
@@ -462,7 +453,7 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                 if (state.dataContaminantBalance->Contaminant.GenericContamSimulation) {
                     SetupOutputVariable(state,
                                         "System Node Generic Air Contaminant Concentration",
-                                        OutputProcessor::Unit::ppm,
+                                        Constant::Units::ppm,
                                         Node(NumNode).GenContam,
                                         OutputProcessor::SOVTimeStepType::System,
                                         OutputProcessor::SOVStoreType::Average,
@@ -495,7 +486,7 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                   " Node,{},{},{},{}\n",
                   NumNode,
                   NodeID(NumNode),
-                  DataLoopNode::ValidNodeFluidTypes(Node(NumNode).FluidType),
+                  DataLoopNode::NodeFluidTypeNames[static_cast<int>(Node(NumNode).FluidType)],
                   state.dataNodeInputMgr->NodeRef(NumNode));
             if (state.dataNodeInputMgr->NodeRef(NumNode) == 0) ++Count0;
         }
@@ -513,7 +504,7 @@ void SetupNodeVarsForReporting(EnergyPlusData &state)
                       " Suspicious Node,{},{},{},{}\n",
                       NumNode,
                       NodeID(NumNode),
-                      DataLoopNode::ValidNodeFluidTypes(Node(NumNode).FluidType),
+                      DataLoopNode::NodeFluidTypeNames[static_cast<int>(Node(NumNode).FluidType)],
                       state.dataNodeInputMgr->NodeRef(NumNode));
             }
         }
@@ -538,9 +529,6 @@ void GetNodeListsInput(EnergyPlusData &state, bool &ErrorsFound) // Set to true 
     static std::string const CurrentModuleObject("NodeList");
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int Loop;       // Loop Variable
-    int Loop1;      // Loop Variable
-    int Loop2;      // Loop Variable
     int NumAlphas;  // Number of alphas in IDF item
     int NumNumbers; // Number of numerics in IDF item
     int IOStatus;   // IOStatus for IDF item (not checked)
@@ -561,10 +549,10 @@ void GetNodeListsInput(EnergyPlusData &state, bool &ErrorsFound) // Set to true 
     }
 
     NCount = 0;
-    for (Loop = 1; Loop <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop) {
+    for (int Loop = 1; Loop <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop) {
         state.dataInputProcessing->inputProcessor->getObjectItem(
             state, CurrentModuleObject, Loop, cAlphas, NumAlphas, rNumbers, NumNumbers, IOStatus);
-        if (UtilityRoutines::IsNameEmpty(state, cAlphas(1), CurrentModuleObject, localErrorsFound)) continue;
+        if (Util::IsNameEmpty(state, cAlphas(1), CurrentModuleObject, localErrorsFound)) continue;
 
         ++NCount;
         state.dataNodeInputMgr->NodeLists(NCount).Name = cAlphas(1);
@@ -575,43 +563,42 @@ void GetNodeListsInput(EnergyPlusData &state, bool &ErrorsFound) // Set to true 
         state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList = NumAlphas - 1;
         if (NumAlphas <= 1) {
             if (NumAlphas == 1) {
-                ShowSevereError(state, std::string{RoutineName} + CurrentModuleObject + "=\"" + cAlphas(1) + "\" does not have any nodes.");
+                ShowSevereError(state, format("{}{}=\"{}\" does not have any nodes.", RoutineName, CurrentModuleObject, cAlphas(1)));
             } else {
-                ShowSevereError(state, std::string{RoutineName} + CurrentModuleObject + "=<blank> does not have any nodes or nodelist name.");
+                ShowSevereError(state, format("{}{}=<blank> does not have any nodes or nodelist name.", RoutineName, CurrentModuleObject));
             }
             localErrorsFound = true;
             continue;
         }
         //  Put all in, then determine unique
-        for (Loop1 = 1; Loop1 <= NumAlphas - 1; ++Loop1) {
+        for (int Loop1 = 1; Loop1 <= NumAlphas - 1; ++Loop1) {
             state.dataNodeInputMgr->NodeLists(NCount).NodeNames(Loop1) = cAlphas(Loop1 + 1);
             if (cAlphas(Loop1 + 1).empty()) {
-                ShowWarningError(state, std::string{RoutineName} + CurrentModuleObject + "=\"" + cAlphas(1) + "\", blank node name in list.");
+                ShowWarningError(state, format("{}{}=\"{}\", blank node name in list.", RoutineName, CurrentModuleObject, cAlphas(1)));
                 --state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList;
                 if (state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList <= 0) {
-                    ShowSevereError(state, std::string{RoutineName} + CurrentModuleObject + "=\"" + cAlphas(1) + "\" does not have any nodes.");
+                    ShowSevereError(state, format("{}{}=\"{}\" does not have any nodes.", RoutineName, CurrentModuleObject, cAlphas(1)));
                     localErrorsFound = true;
                     break;
                 }
                 continue;
             }
             state.dataNodeInputMgr->NodeLists(NCount).NodeNumbers(Loop1) = AssignNodeNumber(
-                state, state.dataNodeInputMgr->NodeLists(NCount).NodeNames(Loop1), DataLoopNode::NodeFluidType::blank, localErrorsFound);
-            if (UtilityRoutines::SameString(state.dataNodeInputMgr->NodeLists(NCount).NodeNames(Loop1),
-                                            state.dataNodeInputMgr->NodeLists(NCount).Name)) {
-                ShowSevereError(state, std::string{RoutineName} + CurrentModuleObject + "=\"" + cAlphas(1) + "\", invalid node name in list.");
+                state, state.dataNodeInputMgr->NodeLists(NCount).NodeNames(Loop1), DataLoopNode::NodeFluidType::Blank, localErrorsFound);
+            if (Util::SameString(state.dataNodeInputMgr->NodeLists(NCount).NodeNames(Loop1), state.dataNodeInputMgr->NodeLists(NCount).Name)) {
+                ShowSevereError(state, format("{}{}=\"{}\", invalid node name in list.", RoutineName, CurrentModuleObject, cAlphas(1)));
                 ShowContinueError(state, format("... Node {} Name=\"{}\", duplicates NodeList Name.", Loop1, cAlphas(Loop1 + 1)));
                 localErrorsFound = true;
             }
         }
         // Error on any duplicates
         flagError = true;
-        for (Loop1 = 1; Loop1 <= state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList; ++Loop1) {
-            for (Loop2 = Loop1 + 1; Loop2 <= state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList; ++Loop2) {
+        for (int Loop1 = 1; Loop1 <= state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList; ++Loop1) {
+            for (int Loop2 = Loop1 + 1; Loop2 <= state.dataNodeInputMgr->NodeLists(NCount).NumOfNodesInList; ++Loop2) {
                 if (state.dataNodeInputMgr->NodeLists(NCount).NodeNumbers(Loop1) != state.dataNodeInputMgr->NodeLists(NCount).NodeNumbers(Loop2))
                     continue;
                 if (flagError) { // only list nodelist name once
-                    ShowSevereError(state, std::string{RoutineName} + CurrentModuleObject + "=\"" + cAlphas(1) + "\" has duplicate nodes:");
+                    ShowSevereError(state, format("{}{}=\"{}\" has duplicate nodes:", RoutineName, CurrentModuleObject, cAlphas(1)));
                     flagError = false;
                 }
                 ShowContinueError(state,
@@ -625,20 +612,20 @@ void GetNodeListsInput(EnergyPlusData &state, bool &ErrorsFound) // Set to true 
         }
     }
 
-    for (Loop = 1; Loop <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop) {
-        for (Loop2 = 1; Loop2 <= state.dataNodeInputMgr->NodeLists(Loop).NumOfNodesInList; ++Loop2) {
-            for (Loop1 = 1; Loop1 <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop1) {
+    for (int Loop = 1; Loop <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop) {
+        for (int Loop2 = 1; Loop2 <= state.dataNodeInputMgr->NodeLists(Loop).NumOfNodesInList; ++Loop2) {
+            for (int Loop1 = 1; Loop1 <= state.dataNodeInputMgr->NumOfNodeLists; ++Loop1) {
                 if (Loop == Loop1) continue; // within a nodelist have already checked to see if node name duplicates nodelist name
-                if (!UtilityRoutines::SameString(state.dataNodeInputMgr->NodeLists(Loop).NodeNames(Loop2),
-                                                 state.dataNodeInputMgr->NodeLists(Loop1).Name))
+                if (!Util::SameString(state.dataNodeInputMgr->NodeLists(Loop).NodeNames(Loop2), state.dataNodeInputMgr->NodeLists(Loop1).Name))
                     continue;
-                ShowSevereError(state,
-                                std::string{RoutineName} + CurrentModuleObject + "=\"" + state.dataNodeInputMgr->NodeLists(Loop1).Name +
-                                    "\", invalid node name in list.");
+                ShowSevereError(
+                    state,
+                    format(
+                        "{}{}=\"{}\", invalid node name in list.", RoutineName, CurrentModuleObject, state.dataNodeInputMgr->NodeLists(Loop1).Name));
                 ShowContinueError(
                     state,
                     format("... Node {} Name=\"{}\", duplicates NodeList Name.", Loop2, state.dataNodeInputMgr->NodeLists(Loop).NodeNames(Loop2)));
-                ShowContinueError(state, "... NodeList=\"" + state.dataNodeInputMgr->NodeLists(Loop1).Name + "\", is duplicated.");
+                ShowContinueError(state, format("... NodeList=\"{}\", is duplicated.", state.dataNodeInputMgr->NodeLists(Loop1).Name));
                 ShowContinueError(state, "... Items in NodeLists must not be the name of another NodeList.");
                 localErrorsFound = true;
             }
@@ -649,14 +636,14 @@ void GetNodeListsInput(EnergyPlusData &state, bool &ErrorsFound) // Set to true 
     rNumbers.deallocate();
 
     if (localErrorsFound) {
-        ShowFatalError(state, std::string{RoutineName} + CurrentModuleObject + ": Error getting input - causes termination.");
+        ShowFatalError(state, format("{}{}: Error getting input - causes termination.", RoutineName, CurrentModuleObject));
         ErrorsFound = true;
     }
 }
 
 int AssignNodeNumber(EnergyPlusData &state,
                      std::string const &Name,                         // Name for assignment
-                     DataLoopNode::NodeFluidType const NodeFluidType, // must be valid
+                     DataLoopNode::NodeFluidType const nodeFluidType, // must be valid
                      bool &ErrorsFound)
 {
 
@@ -676,34 +663,36 @@ int AssignNodeNumber(EnergyPlusData &state,
     // Return value
     int AssignNodeNumber;
 
-    if (NodeFluidType != DataLoopNode::NodeFluidType::Air && NodeFluidType != DataLoopNode::NodeFluidType::Water &&
-        NodeFluidType != DataLoopNode::NodeFluidType::Electric && NodeFluidType != DataLoopNode::NodeFluidType::Steam &&
-        NodeFluidType != DataLoopNode::NodeFluidType::blank) {
-        ShowSevereError(state, format("AssignNodeNumber: Invalid FluidType={}", NodeFluidType));
+    if (nodeFluidType != DataLoopNode::NodeFluidType::Air && nodeFluidType != DataLoopNode::NodeFluidType::Water &&
+        nodeFluidType != DataLoopNode::NodeFluidType::Electric && nodeFluidType != DataLoopNode::NodeFluidType::Steam &&
+        nodeFluidType != DataLoopNode::NodeFluidType::Blank) {
+        ShowSevereError(state, format("AssignNodeNumber: Invalid FluidType={}", nodeFluidType));
         ErrorsFound = true;
         ShowFatalError(state, "AssignNodeNumber: Preceding issue causes termination.");
     }
 
     int NumNode = 0;
     if (state.dataNodeInputMgr->NumOfUniqueNodeNames > 0) {
-        NumNode = UtilityRoutines::FindItemInList(
+        NumNode = Util::FindItemInList(
             Name, state.dataLoopNodes->NodeID({1, state.dataNodeInputMgr->NumOfUniqueNodeNames}), state.dataNodeInputMgr->NumOfUniqueNodeNames);
         if (NumNode > 0) {
             AssignNodeNumber = NumNode;
             ++state.dataNodeInputMgr->NodeRef(NumNode);
-            if (NodeFluidType != DataLoopNode::NodeFluidType::blank) {
-                if (state.dataLoopNodes->Node(NumNode).FluidType != NodeFluidType &&
-                    state.dataLoopNodes->Node(NumNode).FluidType != DataLoopNode::NodeFluidType::blank) {
-                    ShowSevereError(state, "Existing Fluid type for node, incorrect for request. Node=" + state.dataLoopNodes->NodeID(NumNode));
+            if (nodeFluidType != DataLoopNode::NodeFluidType::Blank) {
+                if (state.dataLoopNodes->Node(NumNode).FluidType != nodeFluidType &&
+                    state.dataLoopNodes->Node(NumNode).FluidType != DataLoopNode::NodeFluidType::Blank) {
+                    ShowSevereError(state,
+                                    format("Existing Fluid type for node, incorrect for request. Node={}", state.dataLoopNodes->NodeID(NumNode)));
                     ShowContinueError(
                         state,
-                        "Existing Fluid type=" + format("{}", DataLoopNode::ValidNodeFluidTypes(state.dataLoopNodes->Node(NumNode).FluidType)) +
-                            ", Requested Fluid Type=" + format("{}", DataLoopNode::ValidNodeFluidTypes(NodeFluidType)));
+                        format("Existing Fluid type={}, Requested Fluid Type={}",
+                               format("{}", DataLoopNode::NodeFluidTypeNames[static_cast<int>(state.dataLoopNodes->Node(NumNode).FluidType)]),
+                               format("{}", DataLoopNode::NodeFluidTypeNames[static_cast<int>(nodeFluidType)])));
                     ErrorsFound = true;
                 }
             }
-            if (state.dataLoopNodes->Node(NumNode).FluidType == DataLoopNode::NodeFluidType::blank) {
-                state.dataLoopNodes->Node(NumNode).FluidType = NodeFluidType;
+            if (state.dataLoopNodes->Node(NumNode).FluidType == DataLoopNode::NodeFluidType::Blank) {
+                state.dataLoopNodes->Node(NumNode).FluidType = nodeFluidType;
             }
         } else {
             ++state.dataNodeInputMgr->NumOfUniqueNodeNames;
@@ -715,7 +704,7 @@ int AssignNodeNumber(EnergyPlusData &state,
             state.dataLoopNodes->MarkedNode.redimension(state.dataLoopNodes->NumOfNodes);
             state.dataLoopNodes->NodeSetpointCheck.redimension(state.dataLoopNodes->NumOfNodes);
             // Set new item in Node
-            state.dataLoopNodes->Node(state.dataLoopNodes->NumOfNodes).FluidType = NodeFluidType;
+            state.dataLoopNodes->Node(state.dataLoopNodes->NumOfNodes).FluidType = nodeFluidType;
             state.dataNodeInputMgr->NodeRef(state.dataLoopNodes->NumOfNodes) = 0;
             state.dataLoopNodes->NodeID(state.dataNodeInputMgr->NumOfUniqueNodeNames) = Name;
 
@@ -723,7 +712,7 @@ int AssignNodeNumber(EnergyPlusData &state,
         }
     } else {
         state.dataLoopNodes->Node.allocate(1);
-        state.dataLoopNodes->Node(1).FluidType = NodeFluidType;
+        state.dataLoopNodes->Node(1).FluidType = nodeFluidType;
         // Allocate takes care of defining
         state.dataLoopNodes->NumOfNodes = 1;
         state.dataLoopNodes->NodeID.allocate({0, 1});
@@ -744,41 +733,32 @@ int AssignNodeNumber(EnergyPlusData &state,
 int GetOnlySingleNode(EnergyPlusData &state,
                       std::string const &NodeName,
                       bool &errFlag,
-                      std::string const &NodeObjectType,                         // Node Object Type (i.e. "Chiller:Electric")
-                      std::string const &NodeObjectName,                         // Node Object Name (i.e. "MyChiller")
-                      DataLoopNode::NodeFluidType const NodeFluidType,           // Fluidtype for checking/setting node FluidType
-                      DataLoopNode::NodeConnectionType const NodeConnectionType, // Node Connection Type (see DataLoopNode)
-                      compFluidStream const NodeFluidStream,                     // Which Fluid Stream
-                      bool const ObjectIsParent,                                 // True/False
-                      Optional_string_const InputFieldName                       // Input Field Name
+                      DataLoopNode::ConnectionObjectType const NodeObjectType, // Node Object Type (i.e. "Chiller:Electric")
+                      std::string const &NodeObjectName,                       // Node Object Name (i.e. "MyChiller")
+                      DataLoopNode::NodeFluidType const nodeFluidType,         // Fluidtype for checking/setting node FluidType
+                      DataLoopNode::ConnectionType const nodeConnectionType,   // Node Connection Type (see DataLoopNode)
+                      CompFluidStream const NodeFluidStream,                   // Which Fluid Stream
+                      bool const ObjectIsParent,                               // True/False
+                      std::string_view const InputFieldName                    // Input Field Name
 )
 {
 
     // FUNCTION INFORMATION:
     //       AUTHOR         Linda K. Lawrie; adapted from GasAbsorptionChiller;Jason Glazer
     //       DATE WRITTEN   December 2001
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS FUNCTION:
     // This function gets a single node (or error message results) using the
     // node id from the input file.
 
-    // Return value
-    int GetSingleNodeResult;
-
-    // FUNCTION PARAMETER DEFINITIONS:
     static constexpr std::string_view RoutineName("GetOnlySingleNode: ");
 
-    // FUNCTION LOCAL VARIABLE DECLARATIONS:
     int NumNodes;
-
-    DataLoopNode::NodeFluidType FluidType;
-    std::string ConnectionType;
-
     int NumParams;
     int NumAlphas;
     int NumNums;
+
+    std::string_view const objTypeStr = BranchNodeConnections::ConnectionObjectTypeNames[static_cast<int>(NodeObjectType)];
 
     if (state.dataNodeInputMgr->GetOnlySingleNodeFirstTime) {
         state.dataInputProcessing->inputProcessor->getObjectDefMaxArgs(state, "NodeList", NumParams, NumAlphas, NumNums);
@@ -786,44 +766,33 @@ int GetOnlySingleNode(EnergyPlusData &state,
         state.dataNodeInputMgr->GetOnlySingleNodeFirstTime = false;
     }
 
-    FluidType = NodeFluidType;
-
     GetNodeNums(state,
                 NodeName,
                 NumNodes,
                 state.dataNodeInputMgr->GetOnlySingleNodeNodeNums,
                 errFlag,
-                FluidType,
+                nodeFluidType,
                 NodeObjectType,
                 NodeObjectName,
-                NodeConnectionType,
+                nodeConnectionType,
                 NodeFluidStream,
                 ObjectIsParent,
-                _,
+                false,
                 InputFieldName);
 
     if (NumNodes > 1) {
-        ShowSevereError(state, std::string{RoutineName} + NodeObjectType + "=\"" + NodeObjectName + "\", invalid data.");
-        if (present(InputFieldName)) ShowContinueError(state, "...Ref field=" + InputFieldName);
-        ShowContinueError(state, "Only 1st Node used from NodeList=\"" + NodeName + "\".");
+        ShowSevereError(state, format("{}{}=\"{}=\", invalid data.", RoutineName, objTypeStr, NodeObjectName));
+        if (!InputFieldName.empty()) {
+            ShowContinueError(state, fmt::format("...Ref field={}", InputFieldName));
+        }
+        ShowContinueError(state, format("Only 1st Node used from NodeList=\"{}\".", NodeName));
         ShowContinueError(state, "...a Nodelist may not be valid in this context.");
         errFlag = true;
     } else if (NumNodes == 0) {
         state.dataNodeInputMgr->GetOnlySingleNodeNodeNums(1) = 0;
     }
-    if (NumNodes > 0) {
-        if (static_cast<int>(NodeConnectionType) >= 1 && static_cast<int>(NodeConnectionType) <= NumValidConnectionTypes) {
-            ConnectionType = DataLoopNode::ValidConnectionTypes(NodeConnectionType);
-        } else {
-            ConnectionType = format("{}-unknown", NodeConnectionType);
-        }
-        //    CALL RegisterNodeConnection(NodeNums(1),NodeID(NodeNums(1)),NodeObjectType,NodeObjectName,  &
-        //                                  ConnectionType,NodeFluidStream,ObjectIsParent,errFlag)
-    }
 
-    GetSingleNodeResult = state.dataNodeInputMgr->GetOnlySingleNodeNodeNums(1);
-
-    return GetSingleNodeResult;
+    return state.dataNodeInputMgr->GetOnlySingleNodeNodeNums(1);
 }
 
 void InitUniqueNodeCheck(EnergyPlusData &state, std::string const &ContextName)
@@ -851,10 +820,11 @@ void InitUniqueNodeCheck(EnergyPlusData &state, std::string const &ContextName)
 
     if (!state.dataNodeInputMgr->CurCheckContextName.empty()) {
         ShowFatalError(state,
-                       "Init Uniqueness called for \"" + ContextName + ", but checks for \"" + state.dataNodeInputMgr->CurCheckContextName +
-                           "\" was already in progress.");
+                       format("Init Uniqueness called for \"{}, but checks for \"{}\" was already in progress.",
+                              ContextName,
+                              state.dataNodeInputMgr->CurCheckContextName));
     }
-    if (ContextName == std::string()) {
+    if (ContextName.empty()) {
         ShowFatalError(state, "Init Uniqueness called with Blank Context Name");
     }
     if (allocated(state.dataNodeInputMgr->UniqueNodeNames)) {
@@ -867,13 +837,8 @@ void InitUniqueNodeCheck(EnergyPlusData &state, std::string const &ContextName)
     state.dataNodeInputMgr->CurCheckContextName = ContextName;
 }
 
-void CheckUniqueNodes(EnergyPlusData &state,
-                      std::string const &NodeTypes,
-                      std::string const &CheckType,
-                      bool &ErrorsFound,
-                      Optional_string_const CheckName,
-                      Optional_int_const CheckNumber,
-                      Optional_string_const ObjectName)
+void CheckUniqueNodeNames(
+    EnergyPlusData &state, std::string const &NodeTypes, bool &ErrorsFound, std::string const &CheckName, std::string const &ObjectName)
 {
 
     // SUBROUTINE INFORMATION:
@@ -886,11 +851,8 @@ void CheckUniqueNodes(EnergyPlusData &state,
     // This subroutine checks the appropriate input argument for uniqueness.
     // Call CheckUniqueNodes(NodeTypes,CheckType,ErrorsFound,CheckName,CheckNumber)
     // NodeTypes - used in error message (if any produced)
-    // CheckType - "NodeName' or 'NodeNumber' (only 1 can be input per time)
     // ErrorsFound - true if error found by routine
     // CheckName - NodeName entered
-    // CheckNumber - Node Number entered
-    // only 1 of CheckName or CheckNumber need be entered.
     // ObjectName - "Name" field of object (i.e., CurCheckContextName)
 
     // METHODOLOGY EMPLOYED:
@@ -899,56 +861,64 @@ void CheckUniqueNodes(EnergyPlusData &state,
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     int Found;
 
-    {
-        auto const nodeType(CheckType);
-
-        if (nodeType == "NodeName") {
-            if (!present(CheckName)) {
-                ShowFatalError(state, "Routine CheckUniqueNodes called with Nodetypes=NodeName, but did not include CheckName argument.");
-            }
-            if (!CheckName().empty()) {
-                Found = UtilityRoutines::FindItemInList(CheckName(), state.dataNodeInputMgr->UniqueNodeNames, state.dataNodeInputMgr->NumCheckNodes);
-                if (Found != 0) {
-                    ShowSevereError(state, state.dataNodeInputMgr->CurCheckContextName + "=\"" + ObjectName + "\", duplicate node names found.");
-                    ShowContinueError(state, "...for Node Type(s)=" + NodeTypes + ", duplicate node name=\"" + CheckName + "\".");
-                    ShowContinueError(state, "...Nodes must be unique across instances of this object.");
-                    //          CALL ShowSevereError(state, 'Node Types='//TRIM(NodeTypes)//', Non Unique Name found='//TRIM(CheckName))
-                    //          CALL ShowContinueError(state, 'Context='//TRIM(CurCheckContextName))
-                    ErrorsFound = true;
-                } else {
-                    ++state.dataNodeInputMgr->NumCheckNodes;
-                    if (state.dataNodeInputMgr->NumCheckNodes > state.dataNodeInputMgr->MaxCheckNodes) {
-                        state.dataNodeInputMgr->UniqueNodeNames.redimension(state.dataNodeInputMgr->MaxCheckNodes += 100);
-                    }
-                    state.dataNodeInputMgr->UniqueNodeNames(state.dataNodeInputMgr->NumCheckNodes) = CheckName;
-                }
-            }
-
-        } else if (nodeType == "NodeNumber") {
-            if (!present(CheckNumber)) {
-                ShowFatalError(state, "Routine CheckUniqueNodes called with Nodetypes=NodeNumber, but did not include CheckNumber argument.");
-            }
-            if (CheckNumber != 0) {
-                Found = UtilityRoutines::FindItemInList(
-                    state.dataLoopNodes->NodeID(CheckNumber), state.dataNodeInputMgr->UniqueNodeNames, state.dataNodeInputMgr->NumCheckNodes);
-                if (Found != 0) {
-                    ShowSevereError(state, state.dataNodeInputMgr->CurCheckContextName + "=\"" + ObjectName + "\", duplicate node names found.");
-                    ShowContinueError(
-                        state, "...for Node Type(s)=" + NodeTypes + ", duplicate node name=\"" + state.dataLoopNodes->NodeID(CheckNumber) + "\".");
-                    ShowContinueError(state, "...Nodes must be unique across instances of this object.");
-                    ErrorsFound = true;
-                } else {
-                    ++state.dataNodeInputMgr->NumCheckNodes;
-                    if (state.dataNodeInputMgr->NumCheckNodes > state.dataNodeInputMgr->MaxCheckNodes) {
-                        state.dataNodeInputMgr->UniqueNodeNames.redimension(state.dataNodeInputMgr->MaxCheckNodes += 100);
-                    }
-                    state.dataNodeInputMgr->UniqueNodeNames(state.dataNodeInputMgr->NumCheckNodes) = state.dataLoopNodes->NodeID(CheckNumber);
-                }
-            }
-
-        } else {
-            ShowFatalError(state, "CheckUniqueNodes called with invalid Check Type=" + CheckType);
+    if (!CheckName.empty()) {
+        Found = Util::FindItemInList(CheckName, state.dataNodeInputMgr->UniqueNodeNames, state.dataNodeInputMgr->NumCheckNodes);
+        if (Found != 0) {
+            ShowSevereError(state, format("{}=\"{}\", duplicate node names found.", state.dataNodeInputMgr->CurCheckContextName, ObjectName));
+            ShowContinueError(state, format("...for Node Type(s)={}, duplicate node name=\"{}\".", NodeTypes, CheckName));
+            ShowContinueError(state, "...Nodes must be unique across instances of this object.");
+            //          CALL ShowSevereError(state, 'Node Types='//TRIM(NodeTypes)//', Non Unique Name found='//TRIM(CheckName))
+            //          CALL ShowContinueError(state, 'Context='//TRIM(CurCheckContextName))
             ErrorsFound = true;
+        } else {
+            ++state.dataNodeInputMgr->NumCheckNodes;
+            if (state.dataNodeInputMgr->NumCheckNodes > state.dataNodeInputMgr->MaxCheckNodes) {
+                state.dataNodeInputMgr->UniqueNodeNames.redimension(state.dataNodeInputMgr->MaxCheckNodes += 100);
+            }
+            state.dataNodeInputMgr->UniqueNodeNames(state.dataNodeInputMgr->NumCheckNodes) = CheckName;
+        }
+    }
+}
+
+void CheckUniqueNodeNumbers(
+    EnergyPlusData &state, std::string const &NodeTypes, bool &ErrorsFound, int const CheckNumber, std::string const &ObjectName)
+{
+
+    // SUBROUTINE INFORMATION:
+    //       AUTHOR         Linda Lawrie
+    //       DATE WRITTEN   November 2002
+    //       MODIFIED       na
+    //       RE-ENGINEERED  na
+
+    // PURPOSE OF THIS SUBROUTINE:
+    // This subroutine checks the appropriate input argument for uniqueness.
+    // Call CheckUniqueNodes(NodeTypes,CheckType,ErrorsFound,CheckName,CheckNumber)
+    // NodeTypes - used in error message (if any produced)
+    // ErrorsFound - true if error found by routine
+    // CheckNumber - Node Number entered
+    // ObjectName - "Name" field of object (i.e., CurCheckContextName)
+
+    // METHODOLOGY EMPLOYED:
+    // checks the current list of items for this (again)
+
+    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
+    int Found;
+
+    if (CheckNumber != 0) {
+        Found = Util::FindItemInList(
+            state.dataLoopNodes->NodeID(CheckNumber), state.dataNodeInputMgr->UniqueNodeNames, state.dataNodeInputMgr->NumCheckNodes);
+        if (Found != 0) {
+            ShowSevereError(state, format("{}=\"{}\", duplicate node names found.", state.dataNodeInputMgr->CurCheckContextName, ObjectName));
+            ShowContinueError(state,
+                              format("...for Node Type(s)={}, duplicate node name=\"{}\".", NodeTypes, state.dataLoopNodes->NodeID(CheckNumber)));
+            ShowContinueError(state, "...Nodes must be unique across instances of this object.");
+            ErrorsFound = true;
+        } else {
+            ++state.dataNodeInputMgr->NumCheckNodes;
+            if (state.dataNodeInputMgr->NumCheckNodes > state.dataNodeInputMgr->MaxCheckNodes) {
+                state.dataNodeInputMgr->UniqueNodeNames.redimension(state.dataNodeInputMgr->MaxCheckNodes += 100);
+            }
+            state.dataNodeInputMgr->UniqueNodeNames(state.dataNodeInputMgr->NumCheckNodes) = state.dataLoopNodes->NodeID(CheckNumber);
         }
     }
 }
@@ -967,10 +937,11 @@ void EndUniqueNodeCheck(EnergyPlusData &state, std::string const &ContextName)
 
     if (state.dataNodeInputMgr->CurCheckContextName != ContextName) {
         ShowFatalError(state,
-                       "End Uniqueness called for \"" + ContextName + ", but checks for \"" + state.dataNodeInputMgr->CurCheckContextName +
-                           "\" was in progress.");
+                       format("End Uniqueness called for \"{}, but checks for \"{}\" was in progress.",
+                              ContextName,
+                              state.dataNodeInputMgr->CurCheckContextName));
     }
-    if (ContextName == std::string()) {
+    if (ContextName.empty()) {
         ShowFatalError(state, "End Uniqueness called with Blank Context Name");
     }
     state.dataNodeInputMgr->CurCheckContextName = std::string();
@@ -1000,7 +971,6 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
     using FluidProperties::GetSatDensityRefrig;
     using FluidProperties::GetSatEnthalpyRefrig;
     using FluidProperties::GetSpecificHeatGlycol;
-    using OutputProcessor::ReqReportVariables;
     using Psychrometrics::CPCW;
     using Psychrometrics::PsyCpAirFnW;
     using Psychrometrics::PsyHFnTdbW;
@@ -1014,10 +984,6 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
     // SUBROUTINE PARAMETER DEFINITIONS:
     static constexpr std::string_view RoutineName("CalcMoreNodeInfo");
     static std::string const NodeReportingCalc("NodeReportingCalc:");
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int iNode; // node loop index
-    int iReq;  // requested report variables loop index
 
     auto &RhoAirStdInit = state.dataNodeInputMgr->RhoAirStdInit;
     auto &RhoWaterStdInit = state.dataNodeInputMgr->RhoWaterStdInit;
@@ -1043,7 +1009,7 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
 
     if (state.dataNodeInputMgr->CalcMoreNodeInfoMyOneTimeFlag) {
         RhoAirStdInit = state.dataEnvrn->StdRhoAir;
-        RhoWaterStdInit = RhoH2O(DataGlobalConstants::InitConvTemp);
+        RhoWaterStdInit = RhoH2O(Constant::InitConvTemp);
         state.dataNodeInputMgr->NodeWetBulbRepReq.allocate(state.dataLoopNodes->NumOfNodes);
         NodeWetBulbSchedPtr.allocate(state.dataLoopNodes->NumOfNodes);
         NodeRelHumidityRepReq.allocate(state.dataLoopNodes->NumOfNodes);
@@ -1063,24 +1029,24 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
         NodeSpecificHeatRepReq = false;
         NodeSpecificHeatSchedPtr = 0;
 
-        for (iNode = 1; iNode <= state.dataLoopNodes->NumOfNodes; ++iNode) {
+        for (int iNode = 1; iNode <= state.dataLoopNodes->NumOfNodes; ++iNode) {
             nodeReportingStrings.push_back(std::string(NodeReportingCalc + state.dataLoopNodes->NodeID(iNode)));
             nodeFluidNames.push_back(FluidProperties::GetGlycolNameByIndex(state, state.dataLoopNodes->Node(iNode).FluidIndex));
-            for (iReq = 1; iReq <= state.dataOutputProcessor->NumOfReqVariables; ++iReq) {
-                if (UtilityRoutines::SameString(state.dataOutputProcessor->ReqRepVars(iReq).Key, state.dataLoopNodes->NodeID(iNode)) ||
-                    state.dataOutputProcessor->ReqRepVars(iReq).Key.empty()) {
-                    if (UtilityRoutines::SameString(state.dataOutputProcessor->ReqRepVars(iReq).VarName, "System Node Wetbulb Temperature")) {
+
+            for (auto const *reqVar : state.dataOutputProcessor->reqVars) {
+                if (Util::SameString(reqVar->key, state.dataLoopNodes->NodeID(iNode)) || reqVar->key.empty()) {
+                    if (Util::SameString(reqVar->name, "System Node Wetbulb Temperature")) {
                         state.dataNodeInputMgr->NodeWetBulbRepReq(iNode) = true;
-                        NodeWetBulbSchedPtr(iNode) = state.dataOutputProcessor->ReqRepVars(iReq).SchedPtr;
-                    } else if (UtilityRoutines::SameString(state.dataOutputProcessor->ReqRepVars(iReq).VarName, "System Node Relative Humidity")) {
+                        NodeWetBulbSchedPtr(iNode) = reqVar->SchedPtr;
+                    } else if (Util::SameString(reqVar->name, "System Node Relative Humidity")) {
                         NodeRelHumidityRepReq(iNode) = true;
-                        NodeRelHumiditySchedPtr(iNode) = state.dataOutputProcessor->ReqRepVars(iReq).SchedPtr;
-                    } else if (UtilityRoutines::SameString(state.dataOutputProcessor->ReqRepVars(iReq).VarName, "System Node Dewpoint Temperature")) {
+                        NodeRelHumiditySchedPtr(iNode) = reqVar->SchedPtr;
+                    } else if (Util::SameString(reqVar->name, "System Node Dewpoint Temperature")) {
                         NodeDewPointRepReq(iNode) = true;
-                        NodeDewPointSchedPtr(iNode) = state.dataOutputProcessor->ReqRepVars(iReq).SchedPtr;
-                    } else if (UtilityRoutines::SameString(state.dataOutputProcessor->ReqRepVars(iReq).VarName, "System Node Specific Heat")) {
+                        NodeDewPointSchedPtr(iNode) = reqVar->SchedPtr;
+                    } else if (Util::SameString(reqVar->name, "System Node Specific Heat")) {
                         NodeSpecificHeatRepReq(iNode) = true;
-                        NodeSpecificHeatSchedPtr(iNode) = state.dataOutputProcessor->ReqRepVars(iReq).SchedPtr;
+                        NodeSpecificHeatSchedPtr(iNode) = reqVar->SchedPtr;
                     }
                 }
             }
@@ -1104,7 +1070,7 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
         state.dataNodeInputMgr->CalcMoreNodeInfoMyOneTimeFlag = false;
     }
 
-    for (iNode = 1; iNode <= state.dataLoopNodes->NumOfNodes; ++iNode) {
+    for (int iNode = 1; iNode <= state.dataLoopNodes->NumOfNodes; ++iNode) {
         ReportWetBulb = false;
         ReportRelHumidity = false;
         ReportDewPoint = false;
@@ -1189,7 +1155,7 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
                                            nodeReportingStrings[iNode - 1]);
                 rhoStd = GetDensityGlycol(state,
                                           nodeFluidNames[iNode - 1],
-                                          DataGlobalConstants::InitConvTemp,
+                                          Constant::InitConvTemp,
                                           state.dataLoopNodes->Node(iNode).FluidIndex,
                                           nodeReportingStrings[iNode - 1]);
                 rho = GetDensityGlycol(state,
@@ -1265,7 +1231,7 @@ void CalcMoreNodeInfo(EnergyPlusData &state)
 
 void MarkNode(EnergyPlusData &state,
               int const NodeNumber, // Node Number to be marked
-              std::string const &ObjectType,
+              DataLoopNode::ConnectionObjectType const ObjectType,
               std::string const &ObjectName,
               std::string const &FieldName)
 {
@@ -1297,17 +1263,17 @@ void CheckMarkedNodes(EnergyPlusData &state, bool &ErrorsFound)
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine checks "marked" nodes.
 
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int NodeNum;
-
-    for (NodeNum = 1; NodeNum <= state.dataLoopNodes->NumOfNodes; ++NodeNum) {
+    for (int NodeNum = 1; NodeNum <= state.dataLoopNodes->NumOfNodes; ++NodeNum) {
         if (state.dataLoopNodes->MarkedNode(NodeNum).IsMarked) {
             if (state.dataNodeInputMgr->NodeRef(NodeNum) == 0) {
-                ShowSevereError(state, "Node=\"" + state.dataLoopNodes->NodeID(NodeNum) + "\" did not find reference by another object.");
+                std::string_view objType =
+                    BranchNodeConnections::ConnectionObjectTypeNames[static_cast<int>(state.dataLoopNodes->MarkedNode(NodeNum).ObjectType)];
+                ShowSevereError(state, format("Node=\"{}\" did not find reference by another object.", state.dataLoopNodes->NodeID(NodeNum)));
                 ShowContinueError(state,
-                                  "Object=\"" + state.dataLoopNodes->MarkedNode(NodeNum).ObjectType + "\", Name=\"" +
-                                      state.dataLoopNodes->MarkedNode(NodeNum).ObjectName + "\", Field=[" +
-                                      state.dataLoopNodes->MarkedNode(NodeNum).FieldName + ']');
+                                  format(R"(Object="{}", Name="{}", Field=[{}])",
+                                         objType,
+                                         state.dataLoopNodes->MarkedNode(NodeNum).ObjectName,
+                                         state.dataLoopNodes->MarkedNode(NodeNum).FieldName));
                 ErrorsFound = true;
             }
         }

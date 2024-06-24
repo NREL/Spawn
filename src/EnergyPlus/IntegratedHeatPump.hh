@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,12 +50,15 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array1D.fwd.hh>
-#include <ObjexxFCL/Optional.fwd.hh>
+#include <ObjexxFCL/Optional.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
+#include <EnergyPlus/DataHVACGlobals.hh>
+#include <EnergyPlus/DataLoopNode.hh>
 #include <EnergyPlus/EPVector.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/Plant/Enums.hh>
 
 namespace EnergyPlus {
 
@@ -67,15 +70,17 @@ namespace IntegratedHeatPump {
     // operation mode
     enum class IHPOperationMode : int
     {
-        IdleMode,
-        SCMode,
-        SHMode,
-        DWHMode,
-        SCWHMatchSCMode,
-        SCWHMatchWHMode,
-        SCDWHMode,
-        SHDWHElecHeatOffMode,
-        SHDWHElecHeatOnMode
+        Invalid = -1,
+        Idle,
+        SpaceClg,          // Space Cooling
+        SpaceHtg,          // Space Heating
+        DedicatedWaterHtg, // Dedicated Water Heating
+        SCWHMatchSC,       // Space Cooling Water Heating
+        SCWHMatchWH,
+        SpaceClgDedicatedWaterHtg,
+        SHDWHElecHeatOff,
+        SHDWHElecHeatOn,
+        Num
     };
 
     struct IntegratedHeatPumpData // variable speed coil
@@ -87,34 +92,42 @@ namespace IntegratedHeatPump {
         std::string SCCoilType; // Numeric Equivalent for SC Coil Type
         std::string SCCoilName;
         int SCCoilIndex; // Index to SC coil
+        DataLoopNode::ConnectionObjectType SCCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SHCoilType; // Numeric Equivalent for SH Coil Type
         std::string SHCoilName;
         int SHCoilIndex; // Index to SH coil
+        DataLoopNode::ConnectionObjectType SHCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SCWHCoilType; // Numeric Equivalent for SCWH Coil Type
         std::string SCWHCoilName;
         int SCWHCoilIndex; // Index to SCWH coil
+        DataLoopNode::ConnectionObjectType SCWHCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string DWHCoilType; // Numeric Equivalent for DWH Coil Type
         std::string DWHCoilName;
         int DWHCoilIndex; // Index to DWH coil
+        DataLoopNode::ConnectionObjectType DWHCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SCDWHCoolCoilType; // Numeric Equivalent for SCDWH Coil Type, cooling part
         std::string SCDWHCoolCoilName;
         int SCDWHCoolCoilIndex; // Index to SCDWH coil, cooling part
+        DataLoopNode::ConnectionObjectType SCDWHCoolCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SCDWHWHCoilType; // Numeric Equivalent for SCDWH Coil Type, water heating part
         std::string SCDWHWHCoilName;
         int SCDWHWHCoilIndex; // Index to SCDWH coil, water heating part
+        DataLoopNode::ConnectionObjectType SCDWHWHCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SHDWHHeatCoilType; // Numeric Equivalent for SHDWH Coil Type, heating part
         std::string SHDWHHeatCoilName;
         int SHDWHHeatCoilIndex; // Index to SHDWH coil, heating part
+        DataLoopNode::ConnectionObjectType SHDWHHeatCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         std::string SHDWHWHCoilType; // Numeric Equivalent for SHDWH Coil Type, water heating part
         std::string SHDWHWHCoilName;
         int SHDWHWHCoilIndex; // Index to SHDWH coil, water heating part
+        DataLoopNode::ConnectionObjectType SHDWHWHCoilTypeNum = DataLoopNode::ConnectionObjectType::Invalid;
 
         int AirCoolInletNodeNum; // Node Number of the Air cooling coil Inlet
         int AirHeatInletNodeNum; // Node Number of the Air cooling coil Inlet
@@ -138,7 +151,7 @@ namespace IntegratedHeatPump {
         // limit of water volume before switching from SCDWH to SCWH
         Real64 TimeLimitSHDWH; // time limit before turning from SHDWH to electric heating
 
-        int WHtankType;
+        DataPlant::PlantEquipmentType WHtankType;
         std::string WHtankName;
         int WHtankID;
         int LoopNum;
@@ -212,10 +225,10 @@ namespace IntegratedHeatPump {
               SHDWHWHCoilIndex(0), AirCoolInletNodeNum(0), AirHeatInletNodeNum(0), AirOutletNodeNum(0), WaterInletNodeNum(0), WaterOutletNodeNum(0),
               WaterTankoutNod(0), ModeMatchSCWH(0), MinSpedSCWH(1), MinSpedSCDWH(1), MinSpedSHDWH(1), TindoorOverCoolAllow(0.0),
               TambientOverCoolAllow(0.0), TindoorWHHighPriority(0.0), TambientWHHighPriority(0.0), WaterVolSCDWH(0.0), TimeLimitSHDWH(0.0),
-              WHtankType(0), WHtankID(0), LoopNum(0), LoopSideNum(0), IsWHCallAvail(false), CheckWHCall(false), CurMode(IHPOperationMode::IdleMode),
-              ControlledZoneTemp(0), WaterFlowAccumVol(0), SHDWHRunTime(0), CoolVolFlowScale(0), HeatVolFlowScale(0), MaxHeatAirMassFlow(0),
-              MaxHeatAirVolFlow(0), MaxCoolAirMassFlow(0), MaxCoolAirVolFlow(0), IHPCoilsSized(false), IDFanID(0), IDFanPlace(0),
-              ODAirInletNodeNum(0),                                                                                   // oudoor coil inlet Nod
+              WHtankType(DataPlant::PlantEquipmentType::Invalid), WHtankID(0), LoopNum(0), LoopSideNum(0), IsWHCallAvail(false), CheckWHCall(false),
+              CurMode(IHPOperationMode::Idle), ControlledZoneTemp(0), WaterFlowAccumVol(0), SHDWHRunTime(0), CoolVolFlowScale(0), HeatVolFlowScale(0),
+              MaxHeatAirMassFlow(0), MaxHeatAirVolFlow(0), MaxCoolAirMassFlow(0), MaxCoolAirVolFlow(0), IHPCoilsSized(false), IDFanID(0),
+              IDFanPlace(0), ODAirInletNodeNum(0),                                                                    // oudoor coil inlet Nod
               ODAirOutletNodeNum(0),                                                                                  // oudoor coil outlet Nod
               TankSourceWaterMassFlowRate(0), AirFlowSavInWaterLoop(0), AirFlowSavInAirLoop(0), AirLoopFlowRate(0.0), // air loop mass flow rate
               TotalCoolingRate(0.0),                                                                                  // total cooling rate [w]
@@ -236,21 +249,18 @@ namespace IntegratedHeatPump {
     };
 
     void SimIHP(EnergyPlusData &state,
-                std::string_view CompName,     // Coil Name
-                int &CompIndex,                // Index for Component name
-                int const CyclingScheme,       // Continuous fan OR cycling compressor
-                Real64 &MaxONOFFCyclesperHour, // Maximum cycling rate of heat pump [cycles/hr]
-                Real64 &HPTimeConstant,        // Heat pump time constant [s]
-                Real64 &FanDelayTime,          // Fan delay time, time delay for the HP's fan to
-                int const CompOp,              // compressor on/off. 0 = off; 1= on
+                std::string_view CompName,                         // Coil Name
+                int &CompIndex,                                    // Index for Component name
+                int const CyclingScheme,                           // Continuous fan OR cycling compressor
+                DataHVACGlobals::CompressorOperation CompressorOp, // compressor on/off. 0 = off; 1= on
                 Real64 const PartLoadFrac,
-                int const SpeedNum,                        // compressor speed number
-                Real64 const SpeedRatio,                   // compressor speed ratio
-                Real64 const SensLoad,                     // Sensible demand load [W]
-                Real64 const LatentLoad,                   // Latent demand load [W]
-                bool const IsCallbyWH,                     // whether the call from the water heating loop or air loop, true = from water heating loop
-                bool const FirstHVACIteration,             // TRUE if First iteration of simulation
-                Optional<Real64 const> OnOffAirFlowRat = _ // ratio of comp on to comp off air flow rate
+                int const SpeedNum,            // compressor speed number
+                Real64 const SpeedRatio,       // compressor speed ratio
+                Real64 const SensLoad,         // Sensible demand load [W]
+                Real64 const LatentLoad,       // Latent demand load [W]
+                bool const IsCallbyWH,         // whether the call from the water heating loop or air loop, true = from water heating loop
+                bool const FirstHVACIteration, // TRUE if First iteration of simulation
+                ObjexxFCL::Optional<Real64 const> OnOffAirFlowRat = _ // ratio of comp on to comp off air flow rate
     );
 
     void GetIHPInput(EnergyPlusData &state);
@@ -280,12 +290,7 @@ namespace IntegratedHeatPump {
                                 bool const IsCallbyWH // whether the call from the water heating loop or air loop, true = from water heating loop
     );
 
-    Real64 GetWaterVolFlowRateIHP(EnergyPlusData &state,
-                                  int const DXCoilNum,
-                                  int const SpeedNum,
-                                  Real64 const SpeedRatio,
-                                  bool const IsCallbyWH // whether the call from the water heating loop or air loop, true = from water heating loop
-    );
+    Real64 GetWaterVolFlowRateIHP(EnergyPlusData &state, int const DXCoilNum, int const SpeedNum, Real64 const SpeedRatio);
 
     Real64 GetAirMassFlowRateIHP(EnergyPlusData &state,
                                  int const DXCoilNum,

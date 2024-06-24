@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,10 +50,15 @@
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/EnergyPlusData.hh>
+#include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataHVACGlobals.hh>
 #include <EnergyPlus/DataWater.hh>
+#include <EnergyPlus/HeatBalanceManager.hh>
+#include <EnergyPlus/OutputProcessor.hh>
 #include <EnergyPlus/ScheduleManager.hh>
+#include <EnergyPlus/SurfaceGeometry.hh>
 #include <EnergyPlus/WaterManager.hh>
+#include <EnergyPlus/WeatherManager.hh>
 
 #include "Fixtures/EnergyPlusFixture.hh"
 
@@ -77,19 +82,66 @@ TEST_F(EnergyPlusFixture, WaterManager_NormalAnnualPrecipitation)
     ASSERT_TRUE(process_idf(idf_objects));
 
     WaterManager::GetWaterManagerInput(*state);
+    state->dataEnvrn->Year = 2000;
+    state->dataEnvrn->EndYear = 2000;
+    state->dataEnvrn->Month = 1;
+    state->dataGlobal->TimeStep = 2;
+    state->dataGlobal->TimeStepZoneSec = 900;
 
     state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
 
     WaterManager::UpdatePrecipitation(*state);
 
     Real64 ExpectedNomAnnualRain = 0.80771;
-    Real64 ExpectedCurrentRate = 1.0 * (0.75 / 0.80771) / DataGlobalConstants::SecInHour;
+    Real64 ExpectedCurrentRate = 1.0 * (0.75 / 0.80771) / Constant::SecInHour;
 
     Real64 NomAnnualRain = state->dataWaterData->RainFall.NomAnnualRain;
     EXPECT_NEAR(NomAnnualRain, ExpectedNomAnnualRain, 0.000001);
 
     Real64 CurrentRate = state->dataWaterData->RainFall.CurrentRate;
     EXPECT_NEAR(CurrentRate, ExpectedCurrentRate, 0.000001);
+}
+
+TEST_F(EnergyPlusFixture, WaterManager_UpdatePrecipitation)
+{
+    // with site:precipitation
+    std::string const idf_objects = delimited_string({
+
+        "Site:Precipitation,",
+        "ScheduleAndDesignLevel,  !- Precipitation Model Type",
+        "0.75,                    !- Design Level for Total Annual Precipitation {m/yr}",
+        "PrecipitationSchd,       !- Precipitation Rates Schedule Name",
+        "0.75;                    !- Average Total Annual Precipitation {m/yr}",
+
+        "Schedule:Constant,",
+        "PrecipitationSchd,",
+        ",",
+        "1;",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+    WaterManager::GetWaterManagerInput(*state);
+    state->dataGlobal->TimeStepZoneSec = 900;
+    state->dataEnvrn->Year = 2000;
+    state->dataEnvrn->EndYear = 2000;
+    state->dataEnvrn->Month = 1;
+    state->dataGlobal->TimeStep = 2;
+
+    state->dataScheduleMgr->Schedule(1).CurrentValue = 2.0;
+
+    state->dataEnvrn->LiquidPrecipitation = 0.5;
+    WaterManager::UpdatePrecipitation(*state);
+    // note even if LiquidPrecipitation is positive, since site:precipitation is precent, still use site:precipitation first
+    ASSERT_EQ(state->dataWaterData->RainFall.CurrentRate, 2.0 / 3600);
+
+    // without site:precipitation, use epw "LiquidPrecipitation"
+    state->dataEnvrn->LiquidPrecipitation = 0.5;
+    state->dataWaterData->RainFall.ModeID = DataWater::RainfallMode::None;
+    WaterManager::UpdatePrecipitation(*state);
+    ASSERT_EQ(state->dataWaterData->RainFall.CurrentRate, 0.5 / state->dataGlobal->TimeStepZoneSec);
+    // when "LiquidPrecipitation" is 0, rainfall rate is 0
+    state->dataEnvrn->LiquidPrecipitation = 0.0;
+    WaterManager::UpdatePrecipitation(*state);
+    ASSERT_EQ(state->dataWaterData->RainFall.CurrentRate, 0.0);
 }
 
 TEST_F(EnergyPlusFixture, WaterManager_ZeroAnnualPrecipitation)
@@ -110,6 +162,11 @@ TEST_F(EnergyPlusFixture, WaterManager_ZeroAnnualPrecipitation)
     });
     ASSERT_TRUE(process_idf(idf_objects));
     WaterManager::GetWaterManagerInput(*state);
+    state->dataEnvrn->Year = 2000;
+    state->dataEnvrn->EndYear = 2000;
+    state->dataEnvrn->Month = 1;
+    state->dataGlobal->TimeStep = 2;
+    state->dataGlobal->TimeStepZoneSec = 900;
 
     state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
 
@@ -191,10 +248,11 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
 
     // Simulate a call for tank water that would produce 0.025m3 of draw in one timestep
     state->dataHVACGlobal->TimeStepSys = 10.0 / 60.0;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
     state->dataWaterData->WaterStorage(TankNum).NumWaterDemands = 1;
     state->dataWaterData->WaterStorage(TankNum).VdotRequestDemand.allocate(1);
     Real64 draw = 0.025;
-    state->dataWaterData->WaterStorage(TankNum).VdotRequestDemand(1) = draw / (state->dataHVACGlobal->TimeStepSys * DataGlobalConstants::SecInHour);
+    state->dataWaterData->WaterStorage(TankNum).VdotRequestDemand(1) = draw / state->dataHVACGlobal->TimeStepSysSec;
 
     // First call, should bring predicted volume above the ValveOnCapacity
     WaterManager::ManageWater(*state);
@@ -217,7 +275,7 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
     // Third call: Predicted volume is below ValveOnCapacity, it kicks on
     WaterManager::ManageWater(*state);
     calcVolume -= draw;
-    calcVolume += state->dataWaterData->WaterStorage(TankNum).MaxInFlowRate * (state->dataHVACGlobal->TimeStepSys * DataGlobalConstants::SecInHour);
+    calcVolume += state->dataWaterData->WaterStorage(TankNum).MaxInFlowRate * state->dataHVACGlobal->TimeStepSysSec;
     EXPECT_DOUBLE_EQ(calcVolume, state->dataWaterData->WaterStorage(TankNum).ThisTimeStepVolume);
     EXPECT_DOUBLE_EQ(1.985, calcVolume);
     EXPECT_TRUE(state->dataWaterData->WaterStorage(TankNum).LastTimeStepFilling);
@@ -227,7 +285,7 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
     // Fourth call: it should keep on filling, until it hits ValveOffCapacity
     WaterManager::ManageWater(*state);
     calcVolume -= draw;
-    calcVolume += state->dataWaterData->WaterStorage(TankNum).MaxInFlowRate * (state->dataHVACGlobal->TimeStepSys * DataGlobalConstants::SecInHour);
+    calcVolume += state->dataWaterData->WaterStorage(TankNum).MaxInFlowRate * state->dataHVACGlobal->TimeStepSysSec;
     EXPECT_DOUBLE_EQ(3.76, calcVolume);
     calcVolume = min(calcVolume, state->dataWaterData->WaterStorage(TankNum).MaxCapacity);
     EXPECT_DOUBLE_EQ(calcVolume, state->dataWaterData->WaterStorage(TankNum).ThisTimeStepVolume);
@@ -253,4 +311,68 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
     EXPECT_FALSE(state->dataWaterData->WaterStorage(TankNum).LastTimeStepFilling);
 
     WaterManager::UpdateWaterManager(*state);
+}
+
+TEST_F(EnergyPlusFixture, WaterManager_MainsWater_Meter_Test)
+{
+    // Test for #10235: A mainswater meter with a blank Water Quality Subcategory
+    // should add a "General" mainswater meter
+    std::string const idf_objects = delimited_string({
+
+        "WaterUse:Storage,",
+        "  Cooling Tower Water Storage Tank,  !- Name",
+        "  ,                        !- Water Quality Subcategory",
+        "  3,                       !- Maximum Capacity {m3}",
+        "  0.25,                    !- Initial Volume {m3}",
+        "  0.003,                   !- Design In Flow Rate {m3/s}",
+        "  ,                        !- Design Out Flow Rate {m3/s}",
+        "  ,                        !- Overflow Destination",
+        "  GroundwaterWell,         !- Type of Supply Controlled by Float Valve",
+        "  0.20,                    !- Float Valve On Capacity {m3}",
+        "  3,                       !- Float Valve Off Capacity {m3}",
+        "  0.10,                    !- Backup Mains Capacity {m3}",
+        "  ,                        !- Other Tank Name",
+        "  ScheduledTemperature,    !- Water Thermal Mode",
+        "  Always 18,               !- Water Temperature Schedule Name",
+        "  ,                        !- Ambient Temperature Indicator",
+        "  ,                        !- Ambient Temperature Schedule Name",
+        "  ,                        !- Zone Name",
+        "  ,                        !- Tank Surface Area {m2}",
+        "  ,                        !- Tank U Value {W/m2-K}",
+        "  ;                        !- Tank Outside Surface Material Name",
+
+        "WaterUse:Well,",
+        "  Cooling Tower Transfer Pumps,  !- Name",
+        "  Cooling Tower Water Storage Tank,  !- Storage Tank Name",
+        "  ,                        !- Pump Depth {m}",
+        "  0.003,                   !- Pump Rated Flow Rate {m3/s}",
+        "  ,                        !- Pump Rated Head {Pa}",
+        "  1500,                    !- Pump Rated Power Consumption {W}",
+        "  ,                        !- Pump Efficiency",
+        "  ,                        !- Well Recovery Rate {m3/s}",
+        "  ,                        !- Nominal Well Storage Volume {m3}",
+        "  ,                        !- Water Table Depth Mode",
+        "  ,                        !- Water Table Depth {m}",
+        "  ;                        !- Water Table Depth Schedule Name",
+
+        "Schedule:Constant,",
+        "    Always 18,               !- Name",
+        "    ,                        !- Schedule Type Limits Name",
+        "    18.0;                    !- Hourly Value",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    WaterManager::GetWaterManagerInput(*state);
+    state->dataWaterManager->GetInputFlag = false;
+
+    EXPECT_EQ(state->dataWaterData->WaterStorage.size(), 1u);
+
+    EXPECT_EQ(state->dataOutputProcessor->meters.size(), 11u);
+
+    EXPECT_EQ(state->dataOutputProcessor->meters[3]->Name, "General:WaterSystems:MainsWater");
+    EXPECT_TRUE(compare_enums(state->dataOutputProcessor->meters[3]->resource, Constant::eResource::MainsWater));
+    EXPECT_TRUE(compare_enums(state->dataOutputProcessor->meters[3]->sovEndUseCat, OutputProcessor::SOVEndUseCat::WaterSystem));
+    EXPECT_EQ(state->dataOutputProcessor->meters[3]->EndUseSub, "General");
+    EXPECT_TRUE(compare_enums(state->dataOutputProcessor->meters[3]->sovGroup, OutputProcessor::SOVGroup::Invalid));
 }

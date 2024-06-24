@@ -1,9 +1,9 @@
 if(USE_GLYCOL_CACHING)
-  add_definitions("-DEP_cache_GlycolSpecificHeat")
+  add_compile_definitions(EP_cache_GlycolSpecificHeat)
 endif()
 
 if(USE_PSYCH_ERRORS)
-  add_definitions("-DEP_psych_errors")
+  add_compile_definitions(EP_psych_errors)
 endif()
 
 set(test_src
@@ -17,16 +17,16 @@ set(test_src
     Fixtures/SQLiteFixture.hh
     PhaseChangeModeling/HysteresisModel.unit.cc
     AdvancedAFN.unit.cc
-    AirflowNetworkSimulationControl.unit.cc
-    AirflowNetworkBalanceManager.unit.cc
-    AirflowNetworkSolver.unit.cc
     AirLoopHVACDOAS.unit.cc
     AirTerminalSingleDuct.unit.cc
     AirTerminalSingleDuctConstantVolumeNoReheat.unit.cc
     AirTerminalSingleDuctMixer.unit.cc
     AirTerminalSingleDuctPIUReheat.unit.cc
-    Autosizing/AutosizingFixture.hh
+    AirflowNetworkHVAC.unit.cc
+    AirflowNetworkConditions.unit.cc
+    AirflowNetworkComponents.unit.cc
     Autosizing/All_Simple_Sizing.unit.cc
+    Autosizing/AutosizingFixture.hh
     Autosizing/BaseClassSizing.unit.cc
     Autosizing/CoolingAirFlowSizing.unit.cc
     Autosizing/CoolingCapacitySizing.unit.cc
@@ -36,8 +36,8 @@ set(test_src
     Autosizing/CoolingWaterDesAirOutletHumRatSizing.unit.cc
     Autosizing/CoolingWaterDesAirOutletTempSizing.unit.cc
     Autosizing/CoolingWaterDesWaterInletTempSizing.unit.cc
-    Autosizing/CoolingWaterflowSizing.unit.cc
     Autosizing/CoolingWaterNumofTubesPerRowSizing.unit.cc
+    Autosizing/CoolingWaterflowSizing.unit.cc
     Autosizing/HeatingAirFlowSizing.unit.cc
     Autosizing/HeatingAirflowUASizing.unit.cc
     Autosizing/HeatingCapacitySizing.unit.cc
@@ -49,6 +49,7 @@ set(test_src
     Autosizing/SystemAirFlowSizing.unit.cc
     Autosizing/WaterHeatingCapacitySizing.unit.cc
     Autosizing/WaterHeatingCoilUASizing.unit.cc
+    BaseboardElectric.unit.cc
     BaseboardRadiator.unit.cc
     BoilerHotWater.unit.cc
     BoilerSteam.unit.cc
@@ -63,43 +64,48 @@ set(test_src
     ChillerExhaustAbsorption.unit.cc
     ChillerGasAbsorption.unit.cc
     ChillerIndirectAbsorption.unit.cc
-    Coils/CoilCoolingDXFixture.hh
     Coils/CoilCoolingDX.unit.cc
-    Coils/CoilCoolingDXCurveFitPerformance.unit.cc
     Coils/CoilCoolingDXCurveFitOperatingMode.unit.cc
+    Coils/CoilCoolingDXCurveFitPerformance.unit.cc
     Coils/CoilCoolingDXCurveFitSpeed.unit.cc
+    Coils/CoilCoolingDXFixture.hh
     CondenserLoopTowers.unit.cc
     ConstructionInternalSource.unit.cc
     ConvectionCoefficients.unit.cc
+    CoolTower.unit.cc
     CrossVentMgr.unit.cc
     CurveManager.unit.cc
+    DElightManager.unit.cc
+    DOASEffectOnZoneSizing.unit.cc
+    DXCoils.unit.cc
     DataEnvironment.unit.cc
-    DataGlobalConstants.unit.cc
     DataHeatBalance.unit.cc
     DataPlant.unit.cc
-    Datasets.unit.cc
+    DataRuntimeLanguage.unit.cc
     DataSizing.unit.cc
+    DataSurfaceColors.unit.cc
     DataSurfaces.unit.cc
     DataSystemVariables.unit.cc
     DataZoneEquipment.unit.cc
+    Datasets.unit.cc
     DaylightingDevices.unit.cc
     DaylightingManager.unit.cc
-    DElightManager.unit.cc
     DemandResponse.unit.cc
     DesiccantDehumidifiers.unit.cc
     DisplacementVentMgr.unit.cc
-    DOASEffectOnZoneSizing.unit.cc
     DualDuct.unit.cc
-    DXCoils.unit.cc
+    EPVector.unit.cc
+    EMSManager.unit.cc
     EarthTube.unit.cc
-    EconomicTariff.unit.cc
-    EconomicLifeCycleCost.unit.cc
     EcoRoofManager.unit.cc
+    EconomicLifeCycleCost.unit.cc
+    EconomicTariff.unit.cc
     ElectricBaseboardRadiator.unit.cc
     ElectricPowerServiceManager.unit.cc
-    EMSManager.unit.cc
+    EquipAndOperations.unit.cc
     EvaporativeCoolers.unit.cc
     EvaporativeFluidCoolers.unit.cc
+    ExhaustSystem.unit.cc
     ExteriorEnergyUse.unit.cc
     FanCoilUnits.unit.cc
     Fans.unit.cc
@@ -113,46 +119,49 @@ set(test_src
     General.unit.cc
     GeneralRoutines.unit.cc
     GroundHeatExchangers.unit.cc
-    HeatBalanceAirManager.unit.cc
-    HeatBalanceKivaManager.unit.cc
-    HeatBalanceManager.unit.cc
-    HeatBalanceMovableInsulation.unit.cc
-    HeatBalanceIntRadExchange.unit.cc
-    HeatBalanceSurfaceManager.unit.cc
-    HeatBalFiniteDiffManager.unit.cc
-    HeatingCoils.unit.cc
-    HeatPumpWaterToWaterSimple.unit.cc
-    HeatRecovery.unit.cc
-    HighTempRadiantSystem.unit.cc
-    Humidifiers.unit.cc
     HVACControllers.unit.cc
     HVACDXSystem.unit.cc
+    HVACDXHeatPumpSystem.unit.cc
     HVACFan.unit.cc
     HVACFourPipeBeam.unit.cc
-    HVACManager.unit.cc
-    HVACInterfaceManager.unit.cc
     HVACHXAssistedCoolingCoil.unit.cc
+    HVACInterfaceManager.unit.cc
+    HVACManager.unit.cc
     HVACMultiSpeedHeatPump.unit.cc
     HVACSizingSimulationManager.unit.cc
     HVACStandaloneERV.unit.cc
     HVACUnitaryBypassVAV.unit.cc
     HVACVariableRefrigerantFlow.unit.cc
     HWBaseboardRadiator.unit.cc
+    HeatBalFiniteDiffManager.unit.cc
+    HeatBalanceAirManager.unit.cc
+    HeatBalanceIntRadExchange.unit.cc
+    HeatBalanceKivaManager.unit.cc
+    HeatBalanceManager.unit.cc
+    HeatBalanceMovableInsulation.unit.cc
+    HeatBalanceSurfaceManager.unit.cc
+    HeatPumpWaterToWaterSimple.unit.cc
+    HeatRecovery.unit.cc
+    HeatingCoils.unit.cc
+    HighTempRadiantSystem.unit.cc
+    Humidifiers.unit.cc
     HybridModel.unit.cc
     ICEngineElectricGenerator.unit.cc
-    IceThermalStorage.unit.cc
     ICSCollector.unit.cc
+    IceThermalStorage.unit.cc
     IdfParser.unit.cc
+    IndoorGreen.unit.cc
     InputProcessor.unit.cc
     IntegratedHeatPump.unit.cc
     InternalHeatGains.unit.cc
     KusudaAchenbachGroundTemperatureModel.unit.cc
     LowTempRadiantSystem.unit.cc
+    Material.unit.cc
     MicroCHPElectricGenerator.unit.cc
     MicroturbineElectricGenerator.unit.cc
-    MoistureBalanceEMPD.unit.cc
     MixedAir.unit.cc
     MixerComponent.unit.cc
+    MoistureBalanceEMPD.unit.cc
     NodeInputManager.unit.cc
     OASystemHWPreheatCoil.unit.cc
     OccupantDiversity.unit.cc
@@ -161,36 +170,42 @@ set(test_src
     OutputFiles.unit.cc
     OutputProcessor.unit.cc
     OutputReportData.unit.cc
-    OutputReports.unit.cc
     OutputReportTabular.unit.cc
     OutputReportTabularAnnual.unit.cc
+    OutputReports.unit.cc
+    OutsideEnergySources.unit.cc
+    PVWatts.unit.cc
     PackagedTerminalHeatPump.unit.cc
     Photovoltaics.unit.cc
+    PhotovoltaicThermalCollectors.unit.cc
     PierceSurface.unit.cc
     Pipes.unit.cc
     Plant/Branch.unit.cc
     Plant/Subcomponent.unit.cc
-    PlantHeatExchangerFluidToFluid.unit.cc
     PlantCentralGSHP.unit.cc
+    PlantChillers.unit.cc
+    PlantComponentTemperatureSources.unit.cc
+    PlantCondLoopOperation.unit.cc
+    PlantHeatExchangerFluidToFluid.unit.cc
+    PlantLoadProfile.unit.cc
+    PlantLoopHeatPumpEIR.unit.cc
     PlantManager.unit.cc
     PlantPipingSystemsManager.unit.cc
-    PlantComponentTemperatureSources.unit.cc
-    PlantChillers.unit.cc
-    PlantCondLoopOperation.unit.cc
-    PlantLoopHeatPumpEIR.unit.cc
     PlantUtilities.unit.cc
+    PollutionModule.unit.cc
     PoweredInductionUnits.unit.cc
     Psychrometrics.unit.cc
     Pumps.unit.cc
     PurchasedAirManager.unit.cc
-    PVWatts.unit.cc
     ReportCoilSelection.unit.cc
     ResultsFramework.unit.cc
-    RoomAirflowNetwork.unit.cc
     RoomAirModelUserTempPattern.unit.cc
+    RoomAirflowNetwork.unit.cc
     RootFinder.unit.cc
     RunPeriod.unit.cc
     RuntimeLanguageProcessor.unit.cc
+    SQLite.unit.cc
+    SZVAVModel.unit.cc
     ScheduleManager.unit.cc
     SecondaryDXCoils.unit.cc
     SetPointManager.unit.cc
@@ -206,29 +221,28 @@ set(test_src
     SizingAnalysisObjects.unit.cc
     SizingManager.unit.cc
     SolarShading.unit.cc
-    SortAndStringUtilities.unit.cc
-    SQLite.unit.cc
     Standard621SimplifiedProcedure.unit.cc
     StandardRatings.unit.cc
     StringUtilities.unit.cc
     SurfaceGeometry.unit.cc
     SurfaceOctree.unit.cc
+    SurfaceGroundHeatExchanger.unit.cc
     SwimmingPool.unit.cc
     SystemAvailabilityManager.unit.cc
     SystemReports.unit.cc
-    SZVAVModel.unit.cc
     ThermalChimney.unit.cc
     ThermalComfort.unit.cc
     TranspiredCollector.unit.cc
-    UnitaryHybridAirConditioner.unit.cc
-    UnitarySystem.unit.cc
     UnitHeater.unit.cc
     UnitVentilator.unit.cc
+    UFADManager.unit.cc
+    UnitaryHybridAirConditioner.unit.cc
+    UnitarySystem.unit.cc
     UtilityRoutines.unit.cc
-    VariableSpeedCoils.unit.cc
     VAVDefMinMaxFlow.unit.cc
-    Vectors.unit.cc
+    VariableSpeedCoils.unit.cc
     Vector.unit.cc
+    Vectors.unit.cc
     VentilatedSlab.unit.cc
     WaterCoils.unit.cc
     WaterManager.unit.cc
@@ -239,8 +253,10 @@ set(test_src
     WeatherManager.unit.cc
     WinCalcEngine.unit.cc
     WindowAC.unit.cc
+    WindTurbine.unit.cc
     WindowEquivalentLayer.unit.cc
     WindowLayerEffectiveMultipliers.unit.cc
+    WindowManagerExteriorThermal.unit.cc
     WindowManager.unit.cc
     XingGroundTemperatureModel.unit.cc
     ZoneContaminantPredictorCorrector.unit.cc
@@ -250,26 +266,35 @@ set(test_src
     ZoneTempPredictorCorrector.unit.cc
     main.cc)
 
-set(test_dependencies energyplusapi)
+set(test_dependencies energypluslib)
 
 if(LINK_WITH_PYTHON)
-  add_definitions("-DLINK_WITH_PYTHON")
-  find_package(PythonLibs 3 REQUIRED)
+  add_compile_definitions(LINK_WITH_PYTHON)
   include_directories(${Python_INCLUDE_DIRS})
   if(CMAKE_HOST_UNIX)
-    list(APPEND test_src api/datatransfer.unit.cc)
+    #list(APPEND test_src api/datatransfer.unit.cc) # Requires API; will be moved
     list(APPEND test_src PluginManager.unit.cc)
     list(APPEND test_dependencies ${Python_LIBRARIES})
   endif()
 endif()
 
-if(CMAKE_HOST_UNIX)
-  if(NOT APPLE)
-    list(APPEND test_dependencies dl)
-  endif()
+if(CMAKE_HOST_UNIX AND NOT APPLE)
+  list(APPEND test_dependencies dl)
 endif()
 
 # Executable name will be EnergyPlus_tests
 # Execute energyplus_tests --help for options using gtest runner
 # Execute energyplus_tests with no arguments to run all tests
 create_test_targets(energyplus "${test_src}" "${test_dependencies}" True)
+
+
+set(test_src
+    Fixtures/EnergyPlusFixture.cc
+    Fixtures/EnergyPlusFixture.hh
+    CommandLineInterface.unit.cc
+    main.cc
+)
+# For CommandLineInterface.unit.cc, make an in.idf / in.epw in the test directory so we can test the legacy CLI (applies to CTest which sets the current directory to this one)
+configure_file("${PROJECT_SOURCE_DIR}/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw" "${CMAKE_CURRENT_BINARY_DIR}/in.epw" COPYONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Resources/UnitaryHybridUnitTest_DOSA.idf" "${CMAKE_CURRENT_BINARY_DIR}/in.idf" COPYONLY)
+create_test_targets(energyplusapi "${test_src}" "${test_dependencies}" True)

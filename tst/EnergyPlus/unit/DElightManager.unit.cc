@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -51,7 +51,6 @@
 // EnergyPlus Headers
 #include <EnergyPlus/DElightManagerF.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
-#include <EnergyPlus/DataDaylighting.hh>
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
@@ -61,6 +60,7 @@
 #include <EnergyPlus/IOFiles.hh>
 #include <EnergyPlus/InputProcessing/InputProcessor.hh>
 #include <EnergyPlus/InternalHeatGains.hh>
+#include <EnergyPlus/Material.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/SimulationManager.hh>
 #include <EnergyPlus/SurfaceGeometry.hh>
@@ -70,7 +70,7 @@
 
 using namespace EnergyPlus;
 using namespace EnergyPlus::DElightManagerF;
-using namespace EnergyPlus::DataDaylighting;
+using namespace EnergyPlus::Dayltg;
 
 TEST_F(EnergyPlusFixture, DElightManagerF_GetInputDElightComplexFenestration_Test)
 {
@@ -308,8 +308,8 @@ TEST_F(EnergyPlusFixture, DElightManagerF_GetInputDElightComplexFenestration_Tes
     HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
     EXPECT_FALSE(foundErrors);                                      // expect no errors
 
-    HeatBalanceManager::GetMaterialData(*state, foundErrors); // read material data
-    EXPECT_FALSE(foundErrors);                                // expect no errors
+    Material::GetMaterialData(*state, foundErrors); // read material data
+    EXPECT_FALSE(foundErrors);                      // expect no errors
 
     HeatBalanceManager::GetConstructData(*state, foundErrors); // read construction data
     compare_err_stream("");
@@ -321,8 +321,8 @@ TEST_F(EnergyPlusFixture, DElightManagerF_GetInputDElightComplexFenestration_Tes
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(1);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(1);
 
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * DataGlobalConstants::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * DataGlobalConstants::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
 
@@ -353,11 +353,11 @@ TEST_F(EnergyPlusFixture, DElightManagerF_GetInputDElightComplexFenestration_Tes
     compare_err_stream("");
     EXPECT_FALSE(foundErrors); // expect no errors
 
-    EXPECT_EQ(1, state->dataDaylightingData->TotDElightCFS);
+    EXPECT_EQ(1, (int)state->dataDayltg->DElightComplexFene.size());
 
-    EXPECT_EQ("TEST CFS", state->dataDaylightingData->DElightComplexFene(1).Name);
-    EXPECT_EQ("BTDF^GEN^LIGHTSHELF^1.0^20.0", state->dataDaylightingData->DElightComplexFene(1).ComplexFeneType);
-    EXPECT_EQ("ZN001:WALL001", state->dataDaylightingData->DElightComplexFene(1).surfName);
-    EXPECT_EQ("ZN001:WALL001:WIN001", state->dataDaylightingData->DElightComplexFene(1).wndwName);
-    EXPECT_EQ(0., state->dataDaylightingData->DElightComplexFene(1).feneRota);
+    EXPECT_EQ("TEST CFS", state->dataDayltg->DElightComplexFene(1).Name);
+    EXPECT_EQ("BTDF^GEN^LIGHTSHELF^1.0^20.0", state->dataDayltg->DElightComplexFene(1).ComplexFeneType);
+    EXPECT_EQ("ZN001:WALL001", state->dataDayltg->DElightComplexFene(1).surfName);
+    EXPECT_EQ("ZN001:WALL001:WIN001", state->dataDayltg->DElightComplexFene(1).wndwName);
+    EXPECT_EQ(0., state->dataDayltg->DElightComplexFene(1).feneRota);
 }

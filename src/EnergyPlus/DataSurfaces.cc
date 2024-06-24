@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,7 +56,6 @@
 #include <EnergyPlus/Construction.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataEnvironment.hh>
-#include <EnergyPlus/DataHeatBalFanSys.hh>
 #include <EnergyPlus/DataHeatBalSurface.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
 #include <EnergyPlus/DataLoopNode.hh>
@@ -64,6 +63,7 @@
 #include <EnergyPlus/Psychrometrics.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
 #include <EnergyPlus/WindowManager.hh>
+#include <EnergyPlus/ZoneTempPredictorCorrector.hh>
 
 namespace EnergyPlus::DataSurfaces {
 
@@ -80,7 +80,6 @@ namespace EnergyPlus::DataSurfaces {
 using namespace DataVectorTypes;
 using namespace DataBSDFWindow;
 using namespace DataHeatBalance;
-using namespace DataHeatBalFanSys;
 using namespace DataZoneEquipment;
 using namespace DataLoopNode;
 using namespace Psychrometrics;
@@ -227,44 +226,48 @@ Real64 SurfaceData::getInsideAirTemperature(EnergyPlusData &state, const int t_S
     Real64 RefAirTemp = 0;
 
     // determine reference air temperature for this surface
-    {
-        const auto SELECT_CASE_var(state.dataSurface->SurfTAirRef(t_SurfNum));
-        if (SELECT_CASE_var == ZoneMeanAirTemp) {
-            RefAirTemp = state.dataHeatBalFanSys->MAT(Zone);
-        } else if (SELECT_CASE_var == AdjacentAirTemp) {
-            RefAirTemp = state.dataHeatBal->SurfTempEffBulkAir(t_SurfNum);
-        } else if (SELECT_CASE_var == ZoneSupplyAirTemp) {
-            // determine ZoneEquipConfigNum for this zone
-            //            ControlledZoneAirFlag = .FALSE.
-            // ZoneEquipConfigNum = ZoneNum;
-            // check whether this zone is a controlled zone or not
-            if (!state.dataHeatBal->Zone(Zone).IsControlled) {
-                ShowFatalError(state,
-                               "Zones must be controlled for Ceiling-Diffuser Convection model. No system serves zone " +
-                                   state.dataHeatBal->Zone(Zone).Name);
-                // return;
-            }
-            // determine supply air conditions
-            Real64 SumSysMCp = 0;
-            Real64 SumSysMCpT = 0;
-            for (int NodeNum = 1; NodeNum <= state.dataZoneEquip->ZoneEquipConfig(Zone).NumInletNodes; ++NodeNum) {
-                Real64 NodeTemp = state.dataLoopNodes->Node(state.dataZoneEquip->ZoneEquipConfig(Zone).InletNode(NodeNum)).Temp;
-                Real64 MassFlowRate = state.dataLoopNodes->Node(state.dataZoneEquip->ZoneEquipConfig(Zone).InletNode(NodeNum)).MassFlowRate;
-                Real64 CpAir = PsyCpAirFnW(state.dataHeatBalFanSys->ZoneAirHumRat(Zone));
-                SumSysMCp += MassFlowRate * CpAir;
-                SumSysMCpT += MassFlowRate * CpAir * NodeTemp;
-            }
-            // a weighted average of the inlet temperatures.
-            if (SumSysMCp > 0.0) {
-                // a weighted average of the inlet temperatures.
-                RefAirTemp = SumSysMCpT / SumSysMCp;
-            } else {
-                RefAirTemp = state.dataHeatBalFanSys->MAT(Zone);
-            }
-        } else {
-            // currently set to mean air temp but should add error warning here
-            RefAirTemp = state.dataHeatBalFanSys->MAT(Zone);
+    auto &thisSpaceHB = state.dataZoneTempPredictorCorrector->spaceHeatBalance(this->spaceNum);
+    switch (state.dataSurface->SurfTAirRef(t_SurfNum)) {
+    case RefAirTemp::ZoneMeanAirTemp: {
+        RefAirTemp = thisSpaceHB.MAT;
+    } break;
+    case RefAirTemp::AdjacentAirTemp: {
+        RefAirTemp = state.dataHeatBal->SurfTempEffBulkAir(t_SurfNum);
+    } break;
+    case RefAirTemp::ZoneSupplyAirTemp: {
+        // determine ZoneEquipConfigNum for this zone
+        //            ControlledZoneAirFlag = .FALSE.
+        // ZoneEquipConfigNum = ZoneNum;
+        // check whether this zone is a controlled zone or not
+        if (!state.dataHeatBal->Zone(Zone).IsControlled) {
+            ShowFatalError(state,
+                           format("Zones must be controlled for Ceiling-Diffuser Convection model. No system serves zone {}",
+                                  state.dataHeatBal->Zone(Zone).Name));
+            // return;
         }
+        // determine supply air conditions
+        Real64 SumSysMCp = 0;
+        Real64 SumSysMCpT = 0;
+        auto &inletNodes = (state.dataHeatBal->doSpaceHeatBalance) ? state.dataZoneEquip->spaceEquipConfig(this->spaceNum).InletNode
+                                                                   : state.dataZoneEquip->ZoneEquipConfig(Zone).InletNode;
+        for (int nodeNum : inletNodes) {
+            auto &inNode = state.dataLoopNodes->Node(nodeNum);
+            Real64 CpAir = PsyCpAirFnW(thisSpaceHB.airHumRat);
+            SumSysMCp += inNode.MassFlowRate * CpAir;
+            SumSysMCpT += inNode.MassFlowRate * CpAir * inNode.Temp;
+        }
+        // a weighted average of the inlet temperatures.
+        if (SumSysMCp > 0.0) {
+            // a weighted average of the inlet temperatures.
+            RefAirTemp = SumSysMCpT / SumSysMCp;
+        } else {
+            RefAirTemp = thisSpaceHB.MAT;
+        }
+    } break;
+    default: {
+        // currently set to mean air temp but should add error warning here
+        RefAirTemp = thisSpaceHB.MAT;
+    } break;
     }
 
     return RefAirTemp;
@@ -322,7 +325,7 @@ Real64 SurfaceData::getOutsideIR(EnergyPlusData &state, const int t_SurfNum) con
     if (ExtBoundCond > 0) {
         value = state.dataSurface->SurfWinIRfromParentZone(ExtBoundCond) + state.dataHeatBalSurf->SurfQdotRadHVACInPerArea(ExtBoundCond);
     } else {
-        Real64 tout = getOutsideAirTemperature(state, t_SurfNum) + DataGlobalConstants::KelvinConv;
+        Real64 tout = getOutsideAirTemperature(state, t_SurfNum) + Constant::Kelvin;
         value = state.dataWindowManager->sigma * pow_4(tout);
         value = ViewFactorSkyIR *
                     (state.dataSurface->SurfAirSkyRadSplit(t_SurfNum) * state.dataWindowManager->sigma * pow_4(state.dataEnvrn->SkyTempKelvin) +
@@ -501,7 +504,7 @@ Real64 SurfaceData::get_average_height(EnergyPlusData &state) const
     if (totalWidth == 0.0) {
         // This should never happen, but if it does, print a somewhat meaningful fatal error
         // (instead of allowing a divide by zero).
-        ShowFatalError(state, "Calculated projected surface width is zero for surface=\"" + Name + "\"");
+        ShowFatalError(state, format("Calculated projected surface width is zero for surface=\"{}\"", Name));
     }
 
     Real64 averageHeight = 0.0;
@@ -530,7 +533,7 @@ void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
     calcHashKey.EnclIndex = SolarEnclIndex;
     calcHashKey.TAirRef = state.dataSurface->SurfTAirRef(SurfNum);
 
-    auto extBoundCond = state.dataSurface->Surface(SurfNum).ExtBoundCond;
+    int extBoundCond = state.dataSurface->Surface(SurfNum).ExtBoundCond;
     if (extBoundCond > 0) {
         calcHashKey.ExtZone = state.dataSurface->Surface(extBoundCond).Zone;
         calcHashKey.ExtEnclIndex = state.dataSurface->Surface(extBoundCond).SolarEnclIndex;
@@ -547,8 +550,10 @@ void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
     calcHashKey.ViewFactorSky = round(ViewFactorSky * 10.0) / 10.0;
 
     calcHashKey.HeatTransferAlgorithm = HeatTransferAlgorithm;
-    calcHashKey.IntConvCoeff = state.dataSurface->SurfIntConvCoeffIndex(SurfNum);
-    calcHashKey.ExtConvCoeff = state.dataSurface->SurfExtConvCoeffIndex(SurfNum);
+    calcHashKey.intConvModel = state.dataSurface->surfIntConv(SurfNum).model;
+    calcHashKey.extConvModel = state.dataSurface->surfExtConv(SurfNum).model;
+    calcHashKey.intConvUserModelNum = state.dataSurface->surfIntConv(SurfNum).userModelNum;
+    calcHashKey.extConvUserModelNum = state.dataSurface->surfExtConv(SurfNum).userModelNum;
     calcHashKey.OSCPtr = OSCPtr;
     calcHashKey.OSCMPtr = OSCMPtr;
 
@@ -559,11 +564,12 @@ void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
     calcHashKey.MaterialMovInsulInt = state.dataSurface->SurfMaterialMovInsulInt(SurfNum);
     calcHashKey.SchedMovInsulExt = state.dataSurface->SurfSchedMovInsulExt(SurfNum);
     calcHashKey.SchedMovInsulInt = state.dataSurface->SurfSchedMovInsulInt(SurfNum);
-    calcHashKey.ExternalShadingSchInd = state.dataSurface->SurfExternalShadingSchInd(SurfNum);
-    calcHashKey.SurroundingSurfacesNum = state.dataSurface->SurfSurroundingSurfacesNum(SurfNum);
-    calcHashKey.LinkedOutAirNode = state.dataSurface->SurfLinkedOutAirNode(SurfNum);
+    calcHashKey.ExternalShadingSchInd = state.dataSurface->Surface(SurfNum).SurfExternalShadingSchInd;
+    calcHashKey.SurroundingSurfacesNum = state.dataSurface->Surface(SurfNum).SurfSurroundingSurfacesNum;
+    calcHashKey.LinkedOutAirNode = state.dataSurface->Surface(SurfNum).SurfLinkedOutAirNode;
     calcHashKey.OutsideHeatSourceTermSchedule = OutsideHeatSourceTermSchedule;
     calcHashKey.InsideHeatSourceTermSchedule = InsideHeatSourceTermSchedule;
+    calcHashKey.ViewFactorSrdSurfs = state.dataSurface->Surface(SurfNum).ViewFactorSrdSurfs;
 }
 
 void SurfaceData::set_representative_surface(EnergyPlusData &state, const int SurfNum)
@@ -666,47 +672,46 @@ std::string cSurfaceClass(SurfaceClass const ClassNo)
     // Return value
     std::string ClassName;
 
-    {
-        auto const SELECT_CASE_var(ClassNo);
-        if (SELECT_CASE_var == SurfaceClass::Wall) {
-            ClassName = "Wall";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Floor) {
-            ClassName = "Floor";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Roof) {
-            ClassName = "Roof";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Window) {
-            ClassName = "Window";
-
-        } else if (SELECT_CASE_var == SurfaceClass::GlassDoor) {
-            ClassName = "Glass Door";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Door) {
-            ClassName = "Door";
-
-        } else if (SELECT_CASE_var == SurfaceClass::TDD_Dome) {
-            ClassName = "TubularDaylightDome";
-
-        } else if (SELECT_CASE_var == SurfaceClass::TDD_Diffuser) {
-            ClassName = "TubularDaylightDiffuser";
-
-        } else if (SELECT_CASE_var == SurfaceClass::IntMass) {
-            ClassName = "Internal Mass";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Shading) {
-            ClassName = "Shading";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Detached_B) {
-            ClassName = "Detached Shading:Building";
-
-        } else if (SELECT_CASE_var == SurfaceClass::Detached_F) {
-            ClassName = "Detached Shading:Fixed";
-
-        } else {
-            ClassName = "Invalid/Unknown";
-        }
+    switch (ClassNo) {
+    case SurfaceClass::Wall: {
+        ClassName = "Wall";
+    } break;
+    case SurfaceClass::Floor: {
+        ClassName = "Floor";
+    } break;
+    case SurfaceClass::Roof: {
+        ClassName = "Roof";
+    } break;
+    case SurfaceClass::Window: {
+        ClassName = "Window";
+    } break;
+    case SurfaceClass::GlassDoor: {
+        ClassName = "Glass Door";
+    } break;
+    case SurfaceClass::Door: {
+        ClassName = "Door";
+    } break;
+    case SurfaceClass::TDD_Dome: {
+        ClassName = "TubularDaylightDome";
+    } break;
+    case SurfaceClass::TDD_Diffuser: {
+        ClassName = "TubularDaylightDiffuser";
+    } break;
+    case SurfaceClass::IntMass: {
+        ClassName = "Internal Mass";
+    } break;
+    case SurfaceClass::Shading: {
+        ClassName = "Shading";
+    } break;
+    case SurfaceClass::Detached_B: {
+        ClassName = "Detached Shading:Building";
+    } break;
+    case SurfaceClass::Detached_F: {
+        ClassName = "Detached Shading:Fixed";
+    } break;
+    default: {
+        ClassName = "Invalid/Unknown";
+    } break;
     }
 
     return ClassName;
@@ -731,6 +736,78 @@ Real64 AbsBackSide(EnergyPlusData &state, int SurfNum)
         (state.dataSurface->SurfWinExtBeamAbsByShade(SurfNum) + state.dataSurface->SurfWinExtDiffAbsByShade(SurfNum)) *
         state.dataSurface->SurfWinShadeAbsFacFace2(SurfNum);
     return AbsorptanceFromExteriorBackSide + AbsorptanceFromInteriorBackSide;
+}
+
+void GetVariableAbsorptanceSurfaceList(EnergyPlusData &state)
+{
+    if (!state.dataHeatBal->AnyVariableAbsorptance) return;
+    for (int surfNum : state.dataSurface->AllHTSurfaceList) {
+        auto const &thisSurface = state.dataSurface->Surface(surfNum);
+        int ConstrNum = thisSurface.Construction;
+        auto const &thisConstruct = state.dataConstruction->Construct(ConstrNum);
+        int TotLayers = thisConstruct.TotLayers;
+        if (TotLayers == 0) continue;
+        int materNum = thisConstruct.LayerPoint(1);
+        if (materNum == 0) continue; // error finding material number
+        auto const *thisMaterial = dynamic_cast<const Material::MaterialChild *>(state.dataMaterial->Material(materNum));
+        assert(thisMaterial != nullptr);
+        if (thisMaterial->absorpVarCtrlSignal != Material::VariableAbsCtrlSignal::Invalid) {
+            // check for dynamic coating defined on interior surface
+            if (thisSurface.ExtBoundCond != ExternalEnvironment) {
+                ShowWarningError(state,
+                                 format("MaterialProperty:VariableAbsorptance defined on an interior surface, {}. This VariableAbsorptance property "
+                                        "will be ignored here",
+                                        thisSurface.Name));
+            } else {
+                state.dataSurface->AllVaryAbsOpaqSurfaceList.push_back(surfNum);
+            }
+        }
+    }
+    // check for dynamic coating defined on the non-outside layer of a construction
+    for (int ConstrNum = 1; ConstrNum <= state.dataHeatBal->TotConstructs; ++ConstrNum) {
+        auto const &thisConstruct = state.dataConstruction->Construct(ConstrNum);
+        for (int Layer = 2; Layer <= thisConstruct.TotLayers; ++Layer) {
+            auto const *thisMaterial = dynamic_cast<const Material::MaterialChild *>(state.dataMaterial->Material(thisConstruct.LayerPoint(Layer)));
+            if (thisMaterial->absorpVarCtrlSignal != Material::VariableAbsCtrlSignal::Invalid) {
+                ShowWarningError(state,
+                                 format("MaterialProperty:VariableAbsorptance defined on a inside-layer materials, {}. This VariableAbsorptance "
+                                        "property will be ignored here",
+                                        thisMaterial->Name));
+            }
+        }
+    }
+}
+
+Compass4 AzimuthToCompass4(Real64 azimuth)
+{
+    assert(azimuth >= 0.0 && azimuth < 360.0);
+    for (int c4 = 0; c4 < static_cast<int>(Compass4::Num); ++c4) {
+        Real64 lo = Compass4AzimuthLo[c4];
+        Real64 hi = Compass4AzimuthHi[c4];
+        if (lo > hi) {
+            if (azimuth >= lo || azimuth < hi) return static_cast<Compass4>(c4);
+        } else {
+            if (azimuth >= lo && azimuth < hi) return static_cast<Compass4>(c4);
+        }
+    }
+    assert(false);
+    return Compass4::Invalid;
+}
+
+Compass8 AzimuthToCompass8(Real64 azimuth)
+{
+    assert(azimuth >= 0.0 && azimuth < 360.0);
+    for (int c8 = 0; c8 < static_cast<int>(Compass8::Num); ++c8) {
+        Real64 lo = Compass8AzimuthLo[c8];
+        Real64 hi = Compass8AzimuthHi[c8];
+        if (lo > hi) {
+            if (azimuth >= lo || azimuth < hi) return static_cast<Compass8>(c8);
+        } else {
+            if (azimuth >= lo && azimuth < hi) return static_cast<Compass8>(c8);
+        }
+    }
+    assert(false);
+    return Compass8::Invalid;
 }
 
 } // namespace EnergyPlus::DataSurfaces

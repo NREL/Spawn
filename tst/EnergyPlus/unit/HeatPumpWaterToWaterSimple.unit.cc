@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -755,7 +755,7 @@ TEST_F(EnergyPlusFixture, PlantLoopSourceSideTest)
     state->dataGlobal->DoingSizing = false;
     state->dataGlobal->KickOffSimulation = true;
 
-    WeatherManager::ResetEnvironmentCounter(*state);
+    Weather::ResetEnvironmentCounter(*state);
     SimulationManager::SetupSimulation(*state, ErrorsFound);
     state->dataGlobal->KickOffSimulation = false;
 
@@ -765,7 +765,7 @@ TEST_F(EnergyPlusFixture, PlantLoopSourceSideTest)
 
     while (Available) {
 
-        WeatherManager::GetNextEnvironment(*state, Available, ErrorsFound);
+        Weather::GetNextEnvironment(*state, Available, ErrorsFound);
 
         if (!Available) break;
         if (ErrorsFound) break;
@@ -816,7 +816,7 @@ TEST_F(EnergyPlusFixture, PlantLoopSourceSideTest)
                         }
                     }
 
-                    WeatherManager::ManageWeather(*state);
+                    Weather::ManageWeather(*state);
 
                     HeatBalanceManager::ManageHeatBalance(*state);
 
@@ -826,7 +826,6 @@ TEST_F(EnergyPlusFixture, PlantLoopSourceSideTest)
                     state->dataGlobal->BeginDayFlag = false;
                     state->dataGlobal->BeginEnvrnFlag = false;
                     state->dataGlobal->BeginSimFlag = false;
-                    state->dataGlobal->BeginFullSimFlag = false;
 
                 } // TimeStep loop
 
@@ -1535,7 +1534,7 @@ TEST_F(EnergyPlusFixture, WWHP_AutosizeTest1)
     state->dataGlobal->DoingSizing = false;
     state->dataGlobal->KickOffSimulation = true;
 
-    WeatherManager::ResetEnvironmentCounter(*state);
+    Weather::ResetEnvironmentCounter(*state);
     SimulationManager::SetupSimulation(*state, ErrorsFound);
     state->dataGlobal->KickOffSimulation = false;
 

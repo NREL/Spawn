@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -66,10 +66,10 @@
 #include <EnergyPlus/WeatherManager.hh>
 
 // SAM Headers
-//#include <../third_party/ssc/shared/lib_irradproc.h>
-//#include <../third_party/ssc/shared/lib_pvwatts.h>
-//#include <../third_party/ssc/shared/lib_pvshade.h>
-//#include <../third_party/ssc/shared/lib_pv_incidence_modifier.h>
+// #include <../third_party/ssc/shared/lib_irradproc.h>
+// #include <../third_party/ssc/shared/lib_pvwatts.h>
+// #include <../third_party/ssc/shared/lib_pvshade.h>
+// #include <../third_party/ssc/shared/lib_pv_incidence_modifier.h>
 #include <../third_party/ssc/ssc/sscapi.h>
 
 namespace EnergyPlus {
@@ -88,8 +88,9 @@ namespace PVWatts {
                                        size_t surfaceNum,
                                        Real64 groundCoverageRatio)
         : moduleType_(moduleType), arrayType_(arrayType), geometryType_(geometryType), DCtoACRatio_(1.1), inverterEfficiency_(0.96),
-          outputDCPower_(1000.0), cellTemperature_(-9999), planeOfArrayIrradiance_(-9999), shadedPercent_(0.0),
-          pvwattsModule_(ssc_module_create("pvwattsv5_1ts")), pvwattsData_(ssc_data_create()), NumTimeStepsToday_(0.0)
+          outputDCPower_(1000.0), outputDCEnergy_(0.0), outputACPower_(0.0), outputACEnergy_(0.0), cellTemperature_(-9999),
+          planeOfArrayIrradiance_(-9999), shadedPercent_(0.0), pvwattsModule_(ssc_module_create("pvwattsv5_1ts")), pvwattsData_(ssc_data_create()),
+          NumTimeStepsToday_(0.0)
 
     {
 
@@ -151,9 +152,9 @@ namespace PVWatts {
 
         // Initialize m_pvwattsData
         // Location
-        ssc_data_set_number(pvwattsData_, "lat", state.dataWeatherManager->WeatherFileLatitude);
-        ssc_data_set_number(pvwattsData_, "lon", state.dataWeatherManager->WeatherFileLongitude);
-        ssc_data_set_number(pvwattsData_, "tz", state.dataWeatherManager->WeatherFileTimeZone);
+        ssc_data_set_number(pvwattsData_, "lat", state.dataWeather->WeatherFileLatitude);
+        ssc_data_set_number(pvwattsData_, "lon", state.dataWeather->WeatherFileLongitude);
+        ssc_data_set_number(pvwattsData_, "tz", state.dataWeather->WeatherFileTimeZone);
         // System Properties
         ssc_data_set_number(pvwattsData_, "time_step", state.dataGlobal->TimeStepZone);
         ssc_data_set_number(pvwattsData_, "system_capacity", dcSystemCapacity_ * 0.001);
@@ -174,40 +175,39 @@ namespace PVWatts {
         // Set up output variables
         SetupOutputVariable(state,
                             "Generator Produced DC Electricity Rate",
-                            OutputProcessor::Unit::W,
+                            Constant::Units::W,
                             outputDCPower_,
                             OutputProcessor::SOVTimeStepType::System,
                             OutputProcessor::SOVStoreType::Average,
                             name_);
         SetupOutputVariable(state,
                             "Generator Produced DC Electricity Energy",
-                            OutputProcessor::Unit::J,
+                            Constant::Units::J,
                             outputDCEnergy_,
                             OutputProcessor::SOVTimeStepType::System,
                             OutputProcessor::SOVStoreType::Summed,
                             name_,
-                            _,
-                            "ElectricityProduced",
-                            "Photovoltaics",
-                            _,
-                            "Plant");
+                            Constant::eResource::ElectricityProduced,
+                            OutputProcessor::SOVEndUseCat::Photovoltaic,
+                            {},
+                            OutputProcessor::SOVGroup::Plant);
         SetupOutputVariable(state,
                             "Generator PV Cell Temperature",
-                            OutputProcessor::Unit::C,
+                            Constant::Units::C,
                             cellTemperature_,
                             OutputProcessor::SOVTimeStepType::System,
                             OutputProcessor::SOVStoreType::Average,
                             name_);
         SetupOutputVariable(state,
                             "Plane of Array Irradiance",
-                            OutputProcessor::Unit::W_m2,
+                            Constant::Units::W_m2,
                             planeOfArrayIrradiance_,
                             OutputProcessor::SOVTimeStepType::System,
                             OutputProcessor::SOVStoreType::Average,
                             name_);
         SetupOutputVariable(state,
                             "Shaded Percent",
-                            OutputProcessor::Unit::Perc,
+                            Constant::Units::Perc,
                             shadedPercent_,
                             OutputProcessor::SOVTimeStepType::System,
                             OutputProcessor::SOVStoreType::Average,
@@ -222,8 +222,8 @@ namespace PVWatts {
         Array1D_bool lAlphaFieldBlanks;
         Array1D_string cAlphaArgs;
         Array1D<Real64> rNumericArgs;
-        const int maxAlphas = 6;  // from idd
-        const int maxNumeric = 5; // from idd
+        constexpr int maxAlphas = 6;  // from idd
+        constexpr int maxNumeric = 5; // from idd
         cAlphaFieldNames.allocate(maxAlphas);
         cNumericFieldNames.allocate(maxNumeric);
         lNumericFieldBlanks.allocate(maxNumeric);
@@ -255,7 +255,7 @@ namespace PVWatts {
         ModuleType moduleType;
         auto moduleTypeIt = moduleTypeMap.find(cAlphaArgs(AlphaFields::MODULE_TYPE));
         if (moduleTypeIt == moduleTypeMap.end()) {
-            ShowSevereError(state, "PVWatts: Invalid Module Type: " + cAlphaArgs(AlphaFields::MODULE_TYPE));
+            ShowSevereError(state, format("PVWatts: Invalid Module Type: {}", cAlphaArgs(AlphaFields::MODULE_TYPE)));
             errorsFound = true;
         } else {
             moduleType = moduleTypeIt->second;
@@ -269,7 +269,7 @@ namespace PVWatts {
         ArrayType arrayType;
         auto arrayTypeIt = arrayTypeMap.find(cAlphaArgs(AlphaFields::ARRAY_TYPE));
         if (arrayTypeIt == arrayTypeMap.end()) {
-            ShowSevereError(state, "PVWatts: Invalid Array Type: " + cAlphaArgs(AlphaFields::ARRAY_TYPE));
+            ShowSevereError(state, format("PVWatts: Invalid Array Type: {}", cAlphaArgs(AlphaFields::ARRAY_TYPE)));
             errorsFound = true;
         } else {
             arrayType = arrayTypeIt->second;
@@ -280,7 +280,7 @@ namespace PVWatts {
         GeometryType geometryType;
         auto geometryTypeIt = geometryTypeMap.find(cAlphaArgs(AlphaFields::GEOMETRY_TYPE));
         if (geometryTypeIt == geometryTypeMap.end()) {
-            ShowSevereError(state, "PVWatts: Invalid Geometry Type: " + cAlphaArgs(AlphaFields::GEOMETRY_TYPE));
+            ShowSevereError(state, format("PVWatts: Invalid Geometry Type: {}", cAlphaArgs(AlphaFields::GEOMETRY_TYPE)));
             errorsFound = true;
         } else {
             geometryType = geometryTypeIt->second;
@@ -292,7 +292,7 @@ namespace PVWatts {
         if (lAlphaFieldBlanks(AlphaFields::SURFACE_NAME)) {
             surfaceNum = 0;
         } else {
-            surfaceNum = UtilityRoutines::FindItemInList(cAlphaArgs(AlphaFields::SURFACE_NAME), state.dataSurface->Surface);
+            surfaceNum = Util::FindItemInList(cAlphaArgs(AlphaFields::SURFACE_NAME), state.dataSurface->Surface);
         }
 
         if (errorsFound) {
@@ -386,15 +386,15 @@ namespace PVWatts {
 
     void PVWattsGenerator::calc(EnergyPlusData &state)
     {
-        auto &TimeStepSys = state.dataHVACGlobal->TimeStepSys;
+        Real64 TimeStepSysSec = state.dataHVACGlobal->TimeStepSysSec;
 
         // We only run this once for each zone time step.
         const int NumTimeStepsToday_loc = state.dataGlobal->HourOfDay * state.dataGlobal->NumOfTimeStepInHour + state.dataGlobal->TimeStep;
         if (NumTimeStepsToday_ != NumTimeStepsToday_loc) {
             NumTimeStepsToday_ = NumTimeStepsToday_loc;
         } else {
-            outputDCEnergy_ = outputDCPower_ * TimeStepSys * DataGlobalConstants::SecInHour;
-            outputACEnergy_ = outputACPower_ * TimeStepSys * DataGlobalConstants::SecInHour;
+            outputDCEnergy_ = outputDCPower_ * TimeStepSysSec;
+            outputACEnergy_ = outputACPower_ * TimeStepSysSec;
             return;
         }
         // SSC Inputs
@@ -410,7 +410,7 @@ namespace PVWatts {
         ssc_data_set_number(pvwattsData_, "diffuse", state.dataEnvrn->DifSolarRad);
         ssc_data_set_number(pvwattsData_, "tamb", state.dataEnvrn->OutDryBulbTemp);
         ssc_data_set_number(pvwattsData_, "wspd", state.dataEnvrn->WindSpeed);
-        Real64 albedo = state.dataWeatherManager->TodayAlbedo(state.dataGlobal->TimeStep, state.dataGlobal->HourOfDay);
+        Real64 albedo = state.dataWeather->wvarsHrTsToday(state.dataGlobal->TimeStep, state.dataGlobal->HourOfDay).Albedo;
         if (!(std::isfinite(albedo) && albedo > 0.0 && albedo < 1)) {
             albedo = 0.2;
         }
@@ -450,9 +450,9 @@ namespace PVWatts {
         } else {
             // Report Out
             ssc_data_get_number(pvwattsData_, "dc", &outputDCPower_);
-            outputDCEnergy_ = outputDCPower_ * TimeStepSys * DataGlobalConstants::SecInHour;
+            outputDCEnergy_ = outputDCPower_ * TimeStepSysSec;
             ssc_data_get_number(pvwattsData_, "ac", &outputACPower_);
-            outputACEnergy_ = outputACPower_ * TimeStepSys * DataGlobalConstants::SecInHour;
+            outputACEnergy_ = outputACPower_ * TimeStepSysSec;
             ssc_data_get_number(pvwattsData_, "tcell", &cellTemperature_);
             ssc_data_get_number(pvwattsData_, "poa", &planeOfArrayIrradiance_);
         }

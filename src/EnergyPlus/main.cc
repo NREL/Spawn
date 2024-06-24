@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -45,26 +45,24 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <EnergyPlus/CommandLineInterface.hh>
-#include <EnergyPlus/Data/CommonIncludes.hh>
-#include <EnergyPlus/Data/EnergyPlusData.hh>
-#include <EnergyPlus/DataStringGlobals.hh>
+// EnergyPlus Headers
 #include <EnergyPlus/api/EnergyPlusPgm.hh>
 
-int main(int argc, const char *argv[])
+#include <CLI/CLI11.hpp>
+
+#ifdef DEBUG_ARITHM_GCC_OR_CLANG
+#include <EnergyPlus/fenv_missing.h>
+#endif
+
+int main()
 {
-    EnergyPlus::EnergyPlusData state;
-    // these need to be set early to be used in help and version output messaging
-    // this was pulled from EnergyPlusPgm.cc and needs to be removed once the release is done
-    Array1D_int value(8);
-    std::string datestring; // supposedly returns blank when no date available.
-    date_and_time(datestring, _, _, value);
-    if (!datestring.empty()) {
-        state.dataStrGlobals->CurrentDateTime = fmt::format(" YMD={:4}.{:02}.{:02} {:02}:{:02}", value(1), value(2), value(3), value(5), value(6));
-    } else {
-        state.dataStrGlobals->CurrentDateTime = " unknown date/time";
-    }
-    state.dataStrGlobals->VerStringVar = EnergyPlus::DataStringGlobals::VerString + "," + state.dataStrGlobals->CurrentDateTime;
-    EnergyPlus::CommandLineInterface::ProcessArgs(state, argc, argv);
-    return EnergyPlusPgm(state);
+#ifdef DEBUG_ARITHM_GCC_OR_CLANG
+    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+
+    int const argc = CLI::argc();
+    const char *const *argv = CLI::argv(); // This is going to use CommandLineToArgvW on Windows and **narrow** from wchar_t to char
+
+    const std::vector<std::string> args(argv, std::next(argv, static_cast<std::ptrdiff_t>(argc)));
+    return EnergyPlusPgm(args);
 }

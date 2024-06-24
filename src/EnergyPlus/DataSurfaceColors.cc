@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,9 +67,9 @@ namespace EnergyPlus::DataSurfaceColors {
 // other surface reporting.
 
 bool MatchAndSetColorTextString(EnergyPlusData &state,
-                                std::string const &String,   // string to be matched
-                                int const SetValue,          // value to be used for the color
-                                std::string const &ColorType // for now, must be DXF
+                                std::string const &String,       // string to be matched
+                                int const SetValue,              // value to be used for the color
+                                std::string_view const ColorType // for now, must be DXF and probably not a string in the future
 )
 {
 
@@ -79,18 +79,37 @@ bool MatchAndSetColorTextString(EnergyPlusData &state,
     //       MODIFIED       na
     //       RE-ENGINEERED  na
 
-    bool WasSet = false;
-    int found = UtilityRoutines::FindItem(String, state.dataSurfColor->colorkeys, static_cast<int>(ColorNo::NUM));
-    if (found != 0) {
-        if (ColorType == "DXF") {
-            state.dataSurfColor->DXFcolorno(found) = SetValue;
-            WasSet = true;
-        }
-    }
-    return WasSet;
+    static constexpr std::array<std::string_view, static_cast<int>(DataSurfaceColors::ColorNo::Num)> colorkeys = {
+        "TEXT",
+        "WALLS",
+        "WINDOWS",
+        "GLASSDOORS",
+        "DOORS",
+        "ROOFS",
+        "FLOORS",
+        "DETACHEDBUILDINGSHADES",
+        "DETACHEDFIXEDSHADES",
+        "ATTACHEDBUILDINGSHADES",
+        "PHOTOVOLTAICS",
+        "TUBULARDAYLIGHTDOMES",
+        "TUBULARDAYLIGHTDIFFUSERS",
+        "DAYLIGHTREFERENCEPOINT1",
+        "DAYLIGHTREFERENCEPOINT2",
+    };
+
+    // ColorType must be "DXF"
+    if (ColorType != "DXF") return false;
+
+    // try to find enum value
+    int foundIdx = getEnumValue(colorkeys, Util::makeUPPER(String));
+    if (foundIdx == -1) return false;
+
+    // if we've made it here, we found the value
+    state.dataSurfColor->DXFcolorno[foundIdx] = SetValue;
+    return true;
 }
 
-void SetUpSchemeColors(EnergyPlusData &state, std::string const &SchemeName, Optional_string_const ColorType)
+void SetUpSchemeColors(EnergyPlusData &state, std::string const &SchemeName, std::string_view const ColorType)
 {
 
     // SUBROUTINE INFORMATION:
@@ -110,9 +129,9 @@ void SetUpSchemeColors(EnergyPlusData &state, std::string const &SchemeName, Opt
     // the alphas and numerics required to process the Report:SurfaceColorScheme object.
 
     // SUBROUTINE PARAMETER DEFINITIONS:
-    constexpr auto CurrentModuleObject("OutputControl:SurfaceColorScheme");
+    constexpr std::string_view CurrentModuleObject("OutputControl:SurfaceColorScheme");
 
-    state.dataSurfColor->DXFcolorno = state.dataSurfColor->defaultcolorno;
+    state.dataSurfColor->DXFcolorno = DataSurfaceColors::defaultcolorno;
 
     // first see if there is a scheme name
     int numptr = state.dataInputProcessing->inputProcessor->getObjectItemNum(state, CurrentModuleObject, SchemeName);
@@ -157,19 +176,26 @@ void SetUpSchemeColors(EnergyPlusData &state, std::string const &SchemeName, Opt
             if (lNumericBlanks(numargs)) {
                 if (!lAlphaBlanks(numargs + 1)) {
                     ShowWarningError(state,
-                                     "SetUpSchemeColors: " + cAlphaFields(1) + '=' + SchemeName + ", " + cAlphaFields(numargs + 1) + '=' +
-                                         cAlphas(numargs + 1) + ", " + cNumericFields(numargs) + " was blank.  Default color retained.");
+                                     format("SetUpSchemeColors: {}={}, {}={}, {} was blank.  Default color retained.",
+                                            cAlphaFields(1),
+                                            SchemeName,
+                                            cAlphaFields(numargs + 1),
+                                            cAlphas(numargs + 1),
+                                            cNumericFields(numargs)));
                 }
                 continue;
             }
             if (!MatchAndSetColorTextString(state, cAlphas(numargs + 1), numptr, ColorType)) {
                 ShowWarningError(state,
-                                 "SetUpSchemeColors: " + cAlphaFields(1) + '=' + SchemeName + ", " + cAlphaFields(numargs + 1) + '=' +
-                                     cAlphas(numargs + 1) + ", is invalid.  No color set.");
+                                 format("SetUpSchemeColors: {}={}, {}={}, is invalid.  No color set.",
+                                        cAlphaFields(1),
+                                        SchemeName,
+                                        cAlphaFields(numargs + 1),
+                                        cAlphas(numargs + 1)));
             }
         }
     } else {
-        ShowWarningError(state, "SetUpSchemeColors: Name=" + SchemeName + " not on input file. Default colors will be used.");
+        ShowWarningError(state, format("SetUpSchemeColors: Name={} not on input file. Default colors will be used.", SchemeName));
     }
 }
 

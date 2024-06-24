@@ -1,6 +1,6 @@
 \section{Diffuse Reflection of Beam Solar and Sky Solar Radiation}\label{diffuse-reflection-of-beam-solar-and-sky-solar-radiation}
 
-A ray-tracing method is used to calculate beam solar and sky solar radiation that is diffusely reflected onto each of a building's exterior surfaces (walls, roofs, windows and doors), called here ``receiving surfaces.'' The calculation begins by generating a set of rays proceeding into the outward hemisphere at each receiving point on a receiving surface. Then it determinines whether each ray hits the sky, ground or an obstruction. The radiance at the hit point from reflection of incident beam or sky solar is determined and the contribution of this radiance to the receiving surface is calculated, added to the contribution from other hit points, and averaged over the receiving points. Separate calculations are done for beam-to-diffuse and sky solar reflection from all obstructions and beam-to-diffuse and sky solar reflection from the ground. (For beam-to-beam reflection see ``Beam Solar Radiation Specularly Reflected from Obstructions,'' below.)
+A ray-tracing method is used to calculate beam solar and sky solar radiation that is diffusely reflected onto each of a building's exterior surfaces (walls, roofs, windows and doors), called here ``receiving surfaces.'' The calculation begins by generating a set of rays proceeding into the outward hemisphere at each receiving point on a receiving surface. Then it determines whether each ray hits the sky, ground or an obstruction. The radiance at the hit point from reflection of incident beam or sky solar is determined and the contribution of this radiance to the receiving surface is calculated, added to the contribution from other hit points, and averaged over the receiving points. Separate calculations are done for beam-to-diffuse and sky solar reflection from all obstructions and beam-to-diffuse and sky solar reflection from the ground. (For beam-to-beam reflection see ``Beam Solar Radiation Specularly Reflected from Obstructions,'' below.)
 
 \subsection{Receiving points}\label{receiving-points}
 
@@ -130,6 +130,32 @@ This factor is used in the timestep calculation to find the irradiance on a rece
 
 where \({\rho_{gnd}}\) is the solar reflectance of the ground, which is assumed to be uniform over the ground plane but may vary monthly (because of snow cover, for example).
 
+
+The diffuse irradiance received on a building exterior surface due to sky solar radiation reflected from multiple ground surfaces at each time step is given by:
+
+\begin{equation}
+\begin{array}{l}
+{QRadSWOutIncSkyDiffReflGnd(RecSurfNum)} = \\{DifSolarRad * {\rho_{gnd,avg}} * SurfReflFacSkySolGnd(RecSurfNum)~ (W/m^{2})}
+\end{array}
+\end{equation}
+
+The view factor weighted average reflectance of multiple ground surfaces is calculated from the ground reflectances and view factors of the ground surfaces viewed by an exterior surface and is given by:
+
+\begin{equation}
+{\rho_{gnd,avg}} = \sum\limits_{j = 1}^{{N_{gnd}}} {\rho_{gnd,j}} * {F_{gnd,j}} / \sum\limits_{j = 1}^{{N_{gnd}}} {F_{gnd,j}}
+\end{equation}
+
+where
+
+F\(_{gnd,j}\) = view factor of an exterior surface to ground surface j
+
+N\(_{gnd}\) = number ground surfaces viewed by an exterior surface
+
+\({\rho_{gnd,j}}\) = reflectance of ground surface j viewed by an exterior surface
+
+\({\rho_{gnd,avg}}\) = view factor weighed ground solar reflectance of multiple ground surfaces viewed by an exterior surface
+
+
 \subsection{Beam Solar Radiation Diffusely Reflected from Obstructions}\label{beam-solar-radiation-diffusely-reflected-from-obstructions}
 
 This calculation is similar to that for sky solar reflected from obstructions. However, to find the radiance at a hit point on an obstruction a line is drawn from the hit point to center of the sun. From this line it is determined (1) if there is an obstruction between the hit point and the sun, in which case it is assumed that no beam solar reaches the hit point; and (2) if beam solar does reach the hit point, what the the solar angle of incidence at that point is.
@@ -178,7 +204,7 @@ where
 
 \(Hi{t_{gnd,i}}\) = 1 if ray \emph{i} hits the ground, = 0 otherwise,
 
-\(Hi{t_{gnd,i,sun}}\) = 1 if the line from ray \emph{i}'s hit point ot the sun is unobstructed, = 0 otherwise,
+\(Hi{t_{gnd,i,sun}}\) = 1 if the line from ray \emph{i}'s hit point to the sun is unobstructed, = 0 otherwise,
 
 \({\alpha_{sun,gnd}}\) = angle of incidence of sun on ground ( = solar zenith angle).
 
@@ -191,6 +217,33 @@ QRadSWOutIncBmToDiffReflGnd(RecSurfNum) =
 \\+ WeightPreviousHour * SurfReflFacBmToDiffSolGnd(RecSurfNum,PreviousHour))
 \end{split}
 \end{equation}
+
+The diffuse irradiance received by a building exterior surface due to beam solar diffusely reflected from multiple ground surfaces is given by:
+
+\begin{equation}
+\begin{split}
+QRadSWOutIncBmToDiffReflGnd(RecSurfNum) =
+\\BeamSolarRad * {\rho_{gnd, avg}} * (WeightNow * SurfReflFacBmToDiffSolGnd(RecSurfNum,HourOfDay)
+\\+ WeightPreviousHour * SurfReflFacBmToDiffSolGnd(RecSurfNum,PreviousHour))
+\end{split}
+\end{equation}
+
+The beam solar radiation is assumed to be reflected uniformly to all directions. The view factor weighed ground solar reflectance of multiple ground surfaces viewed by an exterior surface is given by:
+
+\begin{equation}
+{\rho_{gnd,avg}} = \sum\limits_{j = 1}^{{N_{gnd}}} {\rho_{gnd,j}} * {F_{gnd,j}} / \sum\limits_{j = 1}^{{N_{gnd}}} {F_{gnd,j}}
+\end{equation}
+
+where
+
+F\(_{gnd,j}\) = view factor of an exterior surface to ground surface j
+
+N\(_{gnd}\) = number ground surfaces viewed by an exterior surface
+
+\({\rho_{gnd,j}}\) = reflectance of ground surface j viewed by an exterior surface
+
+\({\rho_{gnd,avg}}\) = view factor weighed ground solar reflectance of multiple ground surfaces viewed by an exterior surface
+
 
 \subsection{Beam Solar Radiation Specularly Reflected from Obstructions}\label{beam-solar-radiation-specularly-reflected-from-obstructions}
 
@@ -241,7 +294,7 @@ The factor for specular reflection of beam solar from obstruction onto a receivi
 
 The program assumes that specular reflection from a surface is due to glazing. If the reflecting surface is a window belonging to the building itself (as in Figure~\ref{fig:solar-reflection-from-building-surfaces-onto}), then \({f_{C,glazed}}\) is the fraction of the window that is glazed (which is 1.0 unless the window has dividers).
 
-If the surface is a shading surface (that represents, for example, the glazed façade of a neigboring building) the surface reflection information is entered with the Shading Surface Reflectance object. This object contains values for:
+If the surface is a shading surface (that represents, for example, the glazed façade of a neighboring building) the surface reflection information is entered with the Shading Surface Reflectance object. This object contains values for:
 
 1.~~~~Diffuse solar reflectance of the unglazed part of the shading surface
 

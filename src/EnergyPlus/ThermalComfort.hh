@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -62,6 +62,13 @@ namespace EnergyPlus {
 struct EnergyPlusData;
 
 namespace ThermalComfort {
+
+    Real64 constexpr TAbsConv = Constant::Kelvin; // Converter for absolute temperature
+    Real64 constexpr ActLevelConv = 58.2;         // Converter for activity level (1Met = 58.2 W/m2)
+    Real64 constexpr BodySurfArea = 1.8;          // Dubois body surface area of the human body (m2)
+    Real64 constexpr BodySurfAreaPierce = 1.8258; // Pierce two node body surface area of the human body (m2)
+    Real64 constexpr RadSurfEff = 0.72;           // Fraction of surface effective for radiation
+    Real64 constexpr StefanBoltz = 5.6697e-8;     // Stefan-Boltzmann constant (W/m2K4)
 
     struct ThermalComfortDataType
     {
@@ -154,18 +161,12 @@ namespace ThermalComfort {
     struct AngleFactorData
     {
         // Members
-        Array1D<Real64> AngleFactor; // Angle factor of each surface
-        std::string Name;            // Angle factor list name
-        Array1D_string SurfaceName;  // Names of the Surfces
-        Array1D_int SurfacePtr;      // ALLOCATABLE to the names of the Surfces
-        int TotAngleFacSurfaces;     // Total number of surfaces
-        std::string ZoneName;        // Name of zone the system is serving
-        int ZonePtr;                 // Point to this zone in the Zone derived type
-
-        // Default Constructor
-        AngleFactorData() : TotAngleFacSurfaces(0), ZonePtr(0)
-        {
-        }
+        EPVector<Real64> AngleFactor;      // Angle factor of each surface
+        std::string Name;                  // Angle factor list name
+        EPVector<std::string> SurfaceName; // Names of the Surfces
+        EPVector<int> SurfacePtr;          // Surface indexes
+        int TotAngleFacSurfaces = 0;       // Total number of surfaces
+        int EnclosurePtr = 0;              // Enclosure index for the first surface
     };
 
     void ManageThermalComfort(EnergyPlusData &state,
@@ -174,9 +175,9 @@ namespace ThermalComfort {
     void InitThermalComfort(EnergyPlusData &state);
 
     void CalcThermalComfortFanger(EnergyPlusData &state,
-                                  Optional_int_const PNum = _,     // People number for thermal comfort control
-                                  Optional<Real64 const> Tset = _, // Temperature setpoint for thermal comfort control
-                                  Optional<Real64> PMVResult = _   // PMV value for thermal comfort control
+                                  ObjexxFCL::Optional_int_const PNum = _,     // People number for thermal comfort control
+                                  ObjexxFCL::Optional<Real64 const> Tset = _, // Temperature setpoint for thermal comfort control
+                                  ObjexxFCL::Optional<Real64> PMVResult = _   // PMV value for thermal comfort control
     );
     Real64 CalcFangerPMV(
         EnergyPlusData &state, Real64 AirTemp, Real64 RadTemp, Real64 RelHum, Real64 AirVel, Real64 ActLevel, Real64 CloUnit, Real64 WorkEff);
@@ -212,13 +213,13 @@ namespace ThermalComfort {
 
     Real64 CalcAngleFactorMRT(EnergyPlusData &state, int const AngleFacNum);
 
-    Real64 CalcSurfaceWeightedMRT(EnergyPlusData &state, int const ZoneNum, int const SurfNum);
+    Real64 CalcSurfaceWeightedMRT(EnergyPlusData &state, int const SurfNum, bool AveragewithSurface = true);
 
     Real64 CalcSatVapPressFromTemp(Real64 const Temp);
 
     Real64 CalcSatVapPressFromTempTorr(Real64 const Temp);
 
-    Real64 CalcRadTemp(EnergyPlusData &state, int const PeopleListNum); // Type of MRT calculation (zone averaged or surface weighted)
+    Real64 CalcRadTemp(EnergyPlusData &state, int const PeopleListNum);
 
     void CalcThermalComfortSimpleASH55(EnergyPlusData &state);
 
@@ -230,16 +231,16 @@ namespace ThermalComfort {
 
     void CalcThermalComfortAdaptiveASH55(
         EnergyPlusData &state,
-        bool const initiate,                  // true if supposed to initiate
-        Optional_bool_const wthrsim = _,      // true if this is a weather simulation
-        Optional<Real64 const> avgdrybulb = _ // approximate avg drybulb for design day.  will be used as previous period in design day
+        bool const initiate,                             // true if supposed to initiate
+        ObjexxFCL::Optional_bool_const wthrsim = _,      // true if this is a weather simulation
+        ObjexxFCL::Optional<Real64 const> avgdrybulb = _ // approximate avg drybulb for design day.  will be used as previous period in design day
     );
 
     void CalcThermalComfortAdaptiveCEN15251(
         EnergyPlusData &state,
-        bool const initiate,                  // true if supposed to initiate
-        Optional_bool_const wthrsim = _,      // true if this is a weather simulation
-        Optional<Real64 const> avgdrybulb = _ // approximate avg drybulb for design day.  will be used as previous period in design day
+        bool const initiate,                             // true if supposed to initiate
+        ObjexxFCL::Optional_bool_const wthrsim = _,      // true if this is a weather simulation
+        ObjexxFCL::Optional<Real64 const> avgdrybulb = _ // approximate avg drybulb for design day.  will be used as previous period in design day
     );
 
     void DynamicClothingModel(EnergyPlusData &state);
@@ -255,14 +256,6 @@ struct ThermalComfortsData : BaseGlobalStruct
     int AnkleDraftAirVelWarningInd = 0;       // Counter for ankle draft invalid air velocity warnings.
     int AnkleDraftCloUnitWarningInd = 0;      // Counter for ankle draft invalid clothing unit warnings.
     int AnkleDraftActMetWarningInd = 0;       // Counter for ankle draft invalid activity level warnings.
-
-    // MODULE PARAMETER DEFINITIONS
-    Real64 const TAbsConv = DataGlobalConstants::KelvinConv; // Converter for absolute temperature
-    Real64 const ActLevelConv = 58.2;                        // Converter for activity level (1Met = 58.2 W/m2)
-    Real64 const BodySurfArea = 1.8;                         // Dubois body surface area of the human body (m2)
-    Real64 const BodySurfAreaPierce = 1.8258;                // Pierce two node body surface area of the human body (m2)
-    Real64 const RadSurfEff = 0.72;                          // Fraction of surface effective for radiation
-    Real64 const StefanBoltz = 5.6697e-8;                    // Stefan-Boltzmann constant (W/m2K4)
 
     // MODULE VARIABLE DECLARATIONS:
     Real64 AbsAirTemp = 0.0;                // Absolute air temperature; K
@@ -305,7 +298,6 @@ struct ThermalComfortsData : BaseGlobalStruct
     int IterNum = 0;                        // Number of iteration
     Real64 LatRespHeatLoss = 0.0;           // Latent respiration heat loss
     int MaxZoneNum = 0;                     // Number of zones
-    int MRTCalcType = 0;                    // The type of MRT calculation (ZoneAveraged or SurfaceWeighted)
     Real64 OpTemp = 0.0;                    // Operative temperature
     Real64 EffTemp = 0.0;                   // Effective temperature
     int PeopleNum = 0;                      // People number
@@ -375,9 +367,7 @@ struct ThermalComfortsData : BaseGlobalStruct
     Array1D<Real64> Coeff = Array1D<Real64>(2);      // Coefficients used in Range-Kutta's Method
     Array1D<Real64> Temp = Array1D<Real64>(2);       // Temperature
     Array1D<Real64> TempChange = Array1D<Real64>(2); // Change of temperature
-    Array1D<Real64> SurfaceAE;                       // Product of area and emissivity for each surface
-    Array1D<Real64> ZoneAESum;                       // Sum of area times emissivity for all zone surfaces
-    bool FirstTimeError;                             // Only report the error message one time
+    bool FirstTimeError = true;                      // Only report the error message one time
     Real64 avgDryBulbASH = 0.0;
     Array1D<Real64> monthlyTemp = Array1D<Real64>(12, 0.0);
     bool useStatData = false;
@@ -388,115 +378,7 @@ struct ThermalComfortsData : BaseGlobalStruct
 
     void clear_state() override
     {
-        this->FirstTimeFlag = true;
-        this->FirstTimeSurfaceWeightedFlag = true;
-        this->runningAverageASH = 0.0;
-        this->AbsAirTemp = 0.0;
-        this->AbsCloSurfTemp = 0.0;
-        this->AbsRadTemp = 0.0;
-        this->AcclPattern = 0.0;
-        this->ActLevel = 0.0;
-        this->ActMet = 0.0;
-        this->AirVel = 0.0;
-        this->AirTemp = 0.0;
-        this->CloBodyRat = 0.0;
-        this->CloInsul = 0.0;
-        this->CloPermeatEff = 0.0;
-        this->CloSurfTemp = 0.0;
-        this->CloThermEff = 0.0;
-        this->CloUnit = 0.0;
-        this->ConvHeatLoss = 0.0;
-        this->CoreTempChange = 0.0;
-        this->CoreTemp = 0.0;
-        this->CoreTempNeut = 0.0;
-        this->CoreThermCap = 0.0;
-        this->DryHeatLoss = 0.0;
-        this->DryHeatLossET = 0.0;
-        this->DryHeatLossSET = 0.0;
-        this->DryRespHeatLoss = 0.0;
-        this->EvapHeatLoss = 0.0;
-        this->EvapHeatLossDiff = 0.0;
-        this->EvapHeatLossMax = 0.0;
-        this->EvapHeatLossRegComf = 0.0;
-        this->EvapHeatLossRegSweat = 0.0;
-        this->EvapHeatLossSweat = 0.0;
-        this->EvapHeatLossSweatPrev = 0.0;
-        this->H = 0.0;
-        this->Hc = 0.0;
-        this->HcFor = 0.0;
-        this->HcNat = 0.0;
-        this->HeatFlow = 0.0;
-        this->Hr = 0.0;
-        this->IntHeatProd = 0.0;
-        this->IterNum = 0;
-        this->LatRespHeatLoss = 0.0;
-        this->MaxZoneNum = 0;
-        this->MRTCalcType = 0;
-        this->OpTemp = 0.0;
-        this->EffTemp = 0.0;
-        this->PeopleNum = 0;
-        this->RadHeatLoss = 0.0;
-        this->RadTemp = 0.0;
-        this->RelHum = 0.0;
-        this->RespHeatLoss = 0.0;
-        this->SatSkinVapPress = 0.0;
-        this->ShivResponse = 0.0;
-        this->SkinComfTemp = 0.0;
-        this->SkinComfVPress = 0.0;
-        this->SkinTemp = 0.0;
-        this->SkinTempChange = 0.0;
-        this->SkinTempNeut = 0.0;
-        this->SkinThermCap = 0.0;
-        this->SkinWetDiff = 0.0;
-        this->SkinWetSweat = 0.0;
-        this->SkinWetTot = 0.0;
-        this->SkinVapPress = 0.0;
-        this->SurfaceTemp = 0.0;
-        this->AvgBodyTemp = 0.0;
-        this->ThermCndct = 0.0;
-        this->ThermSensTransCoef = 0.0;
-        this->Time = 0.0;
-        this->TimeChange = 0.0;
-        this->VapPress = 0.0;
-        this->VasoconstrictFac = 0.0;
-        this->VasodilationFac = 0.0;
-        this->WorkEff = 0.0;
-        this->ZoneNum = 0;
-        this->TemporarySixAMTemperature = 0.0;
-        this->AnyZoneTimeNotSimpleASH55Summer = 0.0;
-        this->AnyZoneTimeNotSimpleASH55Winter = 0.0;
-        this->AnyZoneTimeNotSimpleASH55Either = 0.0;
-        this->AnyZoneNotMetHeating = 0.0;
-        this->AnyZoneNotMetCooling = 0.0;
-        this->AnyZoneNotMetHeatingOccupied = 0.0;
-        this->AnyZoneNotMetCoolingOccupied = 0.0;
-        this->AnyZoneNotMetOccupied = 0.0;
-        this->TotalAnyZoneTimeNotSimpleASH55Summer = 0.0;
-        this->TotalAnyZoneTimeNotSimpleASH55Winter = 0.0;
-        this->TotalAnyZoneTimeNotSimpleASH55Either = 0.0;
-        this->TotalAnyZoneNotMetHeating = 0.0;
-        this->TotalAnyZoneNotMetCooling = 0.0;
-        this->TotalAnyZoneNotMetHeatingOccupied = 0.0;
-        this->TotalAnyZoneNotMetCoolingOccupied = 0.0;
-        this->TotalAnyZoneNotMetOccupied = 0.0;
-        this->ZoneOccHrs.deallocate();
-        this->ThermalComfortInASH55.deallocate();
-        this->ThermalComfortSetPoint.deallocate();
-        this->ThermalComfortData.deallocate();
-        this->AngleFactorList.deallocate();
-
-        this->Coeff.clear();
-        this->Temp.clear();
-        this->TempChange.clear();
-        this->SurfaceAE.clear(); // Product of area and emissivity for each surface
-        this->ZoneAESum.clear(); // Sum of area times emissivity for all zone surfaces
-        this->avgDryBulbASH = 0.0;
-        this->monthlyTemp.clear();
-        this->useStatData = false;
-        this->avgDryBulbCEN = 0.0;
-        this->runningAverageCEN = 0.0;
-        this->useEpwDataCEN = false;
-        this->firstDaySet = false; // first day is set with initiate -- so do not update
+        new (this) ThermalComfortsData();
     }
 
     // Default Constructor

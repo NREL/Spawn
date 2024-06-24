@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -144,21 +144,22 @@ namespace ZoneDehumidifier {
 
         // Find the correct zone dehumidifier
         if (CompIndex == 0) {
-            ZoneDehumidNum = UtilityRoutines::FindItemInList(CompName, state.dataZoneDehumidifier->ZoneDehumid);
+            ZoneDehumidNum = Util::FindItemInList(CompName, state.dataZoneDehumidifier->ZoneDehumid);
             if (ZoneDehumidNum == 0) {
-                ShowFatalError(state, "SimZoneDehumidifier: Unit not found= " + CompName);
+                ShowFatalError(state, format("SimZoneDehumidifier: Unit not found= {}", CompName));
             }
             CompIndex = ZoneDehumidNum;
         } else {
             ZoneDehumidNum = CompIndex;
-            if (ZoneDehumidNum > state.dataZoneDehumidifier->NumDehumidifiers || ZoneDehumidNum < 1) {
+            int NumDehumidifiers = (int)state.dataZoneDehumidifier->ZoneDehumid.size();
+            if (ZoneDehumidNum > NumDehumidifiers || ZoneDehumidNum < 1) {
                 ShowFatalError(state,
                                format("SimZoneDehumidifier:  Invalid CompIndex passed= {}, Number of Units= {}, Entered Unit name= {}",
                                       ZoneDehumidNum,
-                                      state.dataZoneDehumidifier->NumDehumidifiers,
+                                      NumDehumidifiers,
                                       CompName));
             }
-            if (state.dataZoneDehumidifier->CheckEquipName(ZoneDehumidNum)) {
+            if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidNum).CheckEquipName) {
                 if (CompName != state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidNum).Name) {
                     ShowFatalError(state,
                                    format("SimZoneDehumidifier: Invalid CompIndex passed={}, Unit name= {}, stored Unit Name for that index= {}",
@@ -166,7 +167,7 @@ namespace ZoneDehumidifier {
                                           CompName,
                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidNum).Name));
                 }
-                state.dataZoneDehumidifier->CheckEquipName(ZoneDehumidNum) = false;
+                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidNum).CheckEquipName = false;
             }
         }
 
@@ -197,16 +198,16 @@ namespace ZoneDehumidifier {
         // Standard EnergyPlus methodology using available utility routines where appropriate.
 
         // Using/Aliasing
-        using CurveManager::CurveValue;
-        using CurveManager::GetCurveIndex;
+        using Curve::CurveValue;
+        using Curve::GetCurveIndex;
         using NodeInputManager::GetOnlySingleNode;
         using WaterManager::SetupTankSupplyComponent;
 
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("GetZoneDehumidifierInput");
         static std::string const CurrentModuleObject("ZoneHVAC:Dehumidifier:DX");
-        Real64 const RatedInletAirTemp(26.7);
-        Real64 const RatedInletAirRH(60.0);
+        Real64 constexpr RatedInletAirTemp(26.7);
+        Real64 constexpr RatedInletAirRH(60.0);
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         int ZoneDehumidIndex;          // Loop index
@@ -223,10 +224,9 @@ namespace ZoneDehumidifier {
         int TotalArgs(0);              // Total number of alpha and numeric arguments (max)
         Real64 CurveVal;               // Output from curve object (water removal or energy factor curves)
 
-        state.dataZoneDehumidifier->NumDehumidifiers = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+        int NumDehumidifiers = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
 
-        state.dataZoneDehumidifier->ZoneDehumid.allocate(state.dataZoneDehumidifier->NumDehumidifiers);
-        state.dataZoneDehumidifier->CheckEquipName.dimension(state.dataZoneDehumidifier->NumDehumidifiers, true);
+        state.dataZoneDehumidifier->ZoneDehumid.allocate(NumDehumidifiers);
 
         state.dataInputProcessing->inputProcessor->getObjectDefMaxArgs(state, CurrentModuleObject, TotalArgs, NumAlphas, NumNumbers);
 
@@ -237,7 +237,7 @@ namespace ZoneDehumidifier {
         lAlphaBlanks.dimension(NumAlphas, true);
         lNumericBlanks.dimension(NumNumbers, true);
 
-        for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= state.dataZoneDehumidifier->NumDehumidifiers; ++ZoneDehumidIndex) {
+        for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= NumDehumidifiers; ++ZoneDehumidIndex) {
 
             state.dataInputProcessing->inputProcessor->getObjectItem(state,
                                                                      CurrentModuleObject,
@@ -251,74 +251,77 @@ namespace ZoneDehumidifier {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
-            UtilityRoutines::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
+            Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             // A1,  \field Name
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name = Alphas(1);
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).UnitType = CurrentModuleObject; // 'ZoneHVAC:Dehumidifier:DX'
-            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).UnitType_Num =
-                state.dataZoneDehumidifier->ZoneDehumidUnit; // 'ZoneHVAC:Dehumidifier:DX' = 1
 
             // A2,  \field Availability Schedule Name
             if (lAlphaBlanks(2)) {
-                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr = DataGlobalConstants::ScheduleAlwaysOn;
+                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
             } else {
                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr =
                     GetScheduleIndex(state, Alphas(2)); // Convert schedule name to pointer
                 if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr == 0) {
-                    ShowSevereError(state, cAlphaFields(2) + " not found = " + Alphas(2));
-                    ShowContinueError(state,
-                                      "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(2), Alphas(2)));
+                    ShowContinueError(
+                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                     ErrorsFound = true;
                 }
             }
 
             // A3 , \field Air Inlet Node Name
-            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).AirInletNodeNum = GetOnlySingleNode(state,
-                                                                                                          Alphas(3),
-                                                                                                          ErrorsFound,
-                                                                                                          CurrentModuleObject,
-                                                                                                          Alphas(1),
-                                                                                                          DataLoopNode::NodeFluidType::Air,
-                                                                                                          DataLoopNode::NodeConnectionType::Inlet,
-                                                                                                          NodeInputManager::compFluidStream::Primary,
-                                                                                                          ObjectIsNotParent);
+            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).AirInletNodeNum =
+                GetOnlySingleNode(state,
+                                  Alphas(3),
+                                  ErrorsFound,
+                                  DataLoopNode::ConnectionObjectType::ZoneHVACDehumidifierDX,
+                                  Alphas(1),
+                                  DataLoopNode::NodeFluidType::Air,
+                                  DataLoopNode::ConnectionType::Inlet,
+                                  NodeInputManager::CompFluidStream::Primary,
+                                  ObjectIsNotParent);
 
             // A4 , \field Air Outlet Node Name
-            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).AirOutletNodeNum = GetOnlySingleNode(state,
-                                                                                                           Alphas(4),
-                                                                                                           ErrorsFound,
-                                                                                                           CurrentModuleObject,
-                                                                                                           Alphas(1),
-                                                                                                           DataLoopNode::NodeFluidType::Air,
-                                                                                                           DataLoopNode::NodeConnectionType::Outlet,
-                                                                                                           NodeInputManager::compFluidStream::Primary,
-                                                                                                           ObjectIsNotParent);
+            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).AirOutletNodeNum =
+                GetOnlySingleNode(state,
+                                  Alphas(4),
+                                  ErrorsFound,
+                                  DataLoopNode::ConnectionObjectType::ZoneHVACDehumidifierDX,
+                                  Alphas(1),
+                                  DataLoopNode::NodeFluidType::Air,
+                                  DataLoopNode::ConnectionType::Outlet,
+                                  NodeInputManager::CompFluidStream::Primary,
+                                  ObjectIsNotParent);
 
             // N1,  \field Rated Water Removal
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedWaterRemoval = Numbers(1);
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedWaterRemoval <= 0.0) {
-                ShowSevereError(state, cNumericFields(1) + " must be greater than zero.");
+                ShowSevereError(state, format("{} must be greater than zero.", cNumericFields(1)));
                 ShowContinueError(state, format("Value specified = {:.5T}", Numbers(1)));
-                ShowContinueError(state, "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                ShowContinueError(state,
+                                  format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 ErrorsFound = true;
             }
 
             // N2,  \field Rated Energy Factor
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedEnergyFactor = Numbers(2);
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedEnergyFactor <= 0.0) {
-                ShowSevereError(state, cNumericFields(2) + " must be greater than zero.");
+                ShowSevereError(state, format("{} must be greater than zero.", cNumericFields(2)));
                 ShowContinueError(state, format("Value specified = {:.5T}", Numbers(2)));
-                ShowContinueError(state, "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                ShowContinueError(state,
+                                  format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 ErrorsFound = true;
             }
 
             // N3,  \field Rated Air Flow Rate
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedAirVolFlow = Numbers(3);
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).RatedAirVolFlow <= 0.0) {
-                ShowSevereError(state, cNumericFields(3) + " must be greater than zero.");
+                ShowSevereError(state, format("{} must be greater than zero.", cNumericFields(3)));
                 ShowContinueError(state, format("Value specified = {:.5T}", Numbers(3)));
-                ShowContinueError(state, "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                ShowContinueError(state,
+                                  format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 ErrorsFound = true;
             }
 
@@ -328,31 +331,34 @@ namespace ZoneDehumidifier {
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex == 0) {
                 if (lAlphaBlanks(5)) {
                     ShowSevereError(state,
-                                    std::string{RoutineName} + ':' + CurrentModuleObject + "=\"" + cAlphaFields(5) + "\" is required, missing for " +
-                                        cAlphaFields(1) + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
+                                           RoutineName,
+                                           CurrentModuleObject,
+                                           cAlphaFields(5),
+                                           cAlphaFields(1),
+                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 } else {
-                    ShowSevereError(state, cAlphaFields(5) + " not found = " + Alphas(5));
-                    ShowContinueError(state,
-                                      "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(5), Alphas(5)));
+                    ShowContinueError(
+                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 }
                 ErrorsFound = true;
             } else {
                 // Verify Curve object, only legal type is BiQuadratic
-                ErrorsFound |=
-                    CurveManager::CheckCurveDims(state,
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex, // Curve index
-                                                 {2},                                                                              // Valid dimensions
-                                                 RoutineName,                                                                      // Routine name
-                                                 CurrentModuleObject,                                                              // Object Type
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,                   // Object Name
-                                                 cAlphaFields(5));                                                                 // Field Name
+                ErrorsFound |= Curve::CheckCurveDims(state,
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex, // Curve index
+                                                     {2},                                                            // Valid dimensions
+                                                     RoutineName,                                                    // Routine name
+                                                     CurrentModuleObject,                                            // Object Type
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name, // Object Name
+                                                     cAlphaFields(5));                                               // Field Name
 
                 if (!ErrorsFound) {
                     CurveVal = CurveValue(
                         state, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex, RatedInletAirTemp, RatedInletAirRH);
                     if (CurveVal > 1.10 || CurveVal < 0.90) {
-                        ShowWarningError(state, cAlphaFields(5) + " output is not equal to 1.0");
-                        ShowContinueError(state, "(+ or -10%) at rated conditions for " + CurrentModuleObject + " = " + Alphas(1));
+                        ShowWarningError(state, format("{} output is not equal to 1.0", cAlphaFields(5)));
+                        ShowContinueError(state, format("(+ or -10%) at rated conditions for {} = {}", CurrentModuleObject, Alphas(1)));
                         ShowContinueError(state, format("Curve output at rated conditions = {:.3T}", CurveVal));
                     }
                 }
@@ -364,31 +370,34 @@ namespace ZoneDehumidifier {
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex == 0) {
                 if (lAlphaBlanks(6)) {
                     ShowSevereError(state,
-                                    std::string{RoutineName} + ':' + CurrentModuleObject + "=\"" + cAlphaFields(6) + "\" is required, missing for " +
-                                        cAlphaFields(1) + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
+                                           RoutineName,
+                                           CurrentModuleObject,
+                                           cAlphaFields(6),
+                                           cAlphaFields(1),
+                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 } else {
-                    ShowSevereError(state, cAlphaFields(6) + " not found = " + Alphas(6));
-                    ShowContinueError(state,
-                                      "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(6), Alphas(6)));
+                    ShowContinueError(
+                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 }
                 ErrorsFound = true;
             } else {
                 // Verify Curve Object, only legal type is BiQuadratic
-                ErrorsFound |=
-                    CurveManager::CheckCurveDims(state,
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex, // Curve index
-                                                 {2},                                                                              // Valid dimensions
-                                                 RoutineName,                                                                      // Routine name
-                                                 CurrentModuleObject,                                                              // Object Type
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,                   // Object Name
-                                                 cAlphaFields(6));                                                                 // Field Name
+                ErrorsFound |= Curve::CheckCurveDims(state,
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex, // Curve index
+                                                     {2},                                                            // Valid dimensions
+                                                     RoutineName,                                                    // Routine name
+                                                     CurrentModuleObject,                                            // Object Type
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name, // Object Name
+                                                     cAlphaFields(6));                                               // Field Name
 
                 if (!ErrorsFound) {
                     CurveVal = CurveValue(
                         state, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex, RatedInletAirTemp, RatedInletAirRH);
                     if (CurveVal > 1.10 || CurveVal < 0.90) {
-                        ShowWarningError(state, cAlphaFields(6) + " output is not equal to 1.0");
-                        ShowContinueError(state, "(+ or -10%) at rated conditions for " + CurrentModuleObject + " = " + Alphas(1));
+                        ShowWarningError(state, format("{} output is not equal to 1.0", cAlphaFields(6)));
+                        ShowContinueError(state, format("(+ or -10%) at rated conditions for {} = {}", CurrentModuleObject, Alphas(1)));
                         ShowContinueError(state, format("Curve output at rated conditions = {:.3T}", CurveVal));
                     }
                 }
@@ -400,24 +409,27 @@ namespace ZoneDehumidifier {
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).PartLoadCurveIndex == 0) {
                 if (lAlphaBlanks(7)) {
                     ShowSevereError(state,
-                                    std::string{RoutineName} + ':' + CurrentModuleObject + "=\"" + cAlphaFields(7) + "\" is required, missing for " +
-                                        cAlphaFields(1) + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
+                                           RoutineName,
+                                           CurrentModuleObject,
+                                           cAlphaFields(7),
+                                           cAlphaFields(1),
+                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 } else {
-                    ShowSevereError(state, cAlphaFields(7) + " not found = " + Alphas(7));
-                    ShowContinueError(state,
-                                      "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(7), Alphas(7)));
+                    ShowContinueError(
+                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 }
                 ErrorsFound = true;
             } else {
                 // Verify Curve Object, legal types are Quadratic and Cubic
-                ErrorsFound |=
-                    CurveManager::CheckCurveDims(state,
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).PartLoadCurveIndex, // Curve index
-                                                 {1},                                                                          // Valid dimensions
-                                                 RoutineName,                                                                  // Routine name
-                                                 CurrentModuleObject,                                                          // Object Type
-                                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,               // Object Name
-                                                 cAlphaFields(7));                                                             // Field Name
+                ErrorsFound |= Curve::CheckCurveDims(state,
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).PartLoadCurveIndex, // Curve index
+                                                     {1},                                                                          // Valid dimensions
+                                                     RoutineName,                                                                  // Routine name
+                                                     CurrentModuleObject,                                                          // Object Type
+                                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,               // Object Name
+                                                     cAlphaFields(7));                                                             // Field Name
             }
 
             // N4,  \field Minimum Dry-Bulb Temperature for Dehumidifier Operation
@@ -427,10 +439,11 @@ namespace ZoneDehumidifier {
 
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).MinInletAirTemp >=
                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).MaxInletAirTemp) {
-                ShowSevereError(state, cNumericFields(5) + " must be greater than " + cNumericFields(4));
+                ShowSevereError(state, format("{} must be greater than {}", cNumericFields(5), cNumericFields(4)));
                 ShowContinueError(state, format("{} specified = {:.1T}", cNumericFields(5), Numbers(5)));
                 ShowContinueError(state, format("{} specified = {:.1T}", cNumericFields(4), Numbers(4)));
-                ShowContinueError(state, "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                ShowContinueError(state,
+                                  format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 ErrorsFound = true;
             }
 
@@ -438,18 +451,19 @@ namespace ZoneDehumidifier {
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).OffCycleParasiticLoad = Numbers(6); // Off Cycle Parasitic Load [W]
 
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).OffCycleParasiticLoad < 0.0) {
-                ShowSevereError(state, cNumericFields(6) + " must be >= zero.");
+                ShowSevereError(state, format("{} must be >= zero.", cNumericFields(6)));
                 ShowContinueError(state, format("Value specified = {:.2T}", Numbers(6)));
-                ShowContinueError(state, "Occurs in " + CurrentModuleObject + " = " + state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
+                ShowContinueError(state,
+                                  format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
                 ErrorsFound = true;
             }
 
             // A8;  \field Condensate Collection Water Storage Tank Name
             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectName = Alphas(8);
             if (lAlphaBlanks(8)) {
-                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode = state.dataZoneDehumidifier->CondensateDiscarded;
+                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode = CondensateOutlet::Discarded;
             } else {
-                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode = state.dataZoneDehumidifier->CondensateToTank;
+                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode = CondensateOutlet::ToTank;
                 SetupTankSupplyComponent(state,
                                          state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,
                                          CurrentModuleObject,
@@ -469,114 +483,112 @@ namespace ZoneDehumidifier {
         lNumericBlanks.deallocate();
 
         if (ErrorsFound) {
-            ShowFatalError(state, std::string{RoutineName} + ':' + CurrentModuleObject + ": Errors found in input.");
+            ShowFatalError(state, format("{}:{}: Errors found in input.", RoutineName, CurrentModuleObject));
         }
 
-        for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= state.dataZoneDehumidifier->NumDehumidifiers; ++ZoneDehumidIndex) {
+        for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= NumDehumidifiers; ++ZoneDehumidIndex) {
             // Set up report variables for the dehumidifiers
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Sensible Heating Rate",
-                                OutputProcessor::Unit::W,
+                                Constant::Units::W,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SensHeatingRate,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Sensible Heating Energy",
-                                OutputProcessor::Unit::J,
+                                Constant::Units::J,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SensHeatingEnergy,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Removed Water Mass Flow Rate",
-                                OutputProcessor::Unit::kg_s,
+                                Constant::Units::kg_s,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalRate,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Removed Water Mass",
-                                OutputProcessor::Unit::kg,
+                                Constant::Units::kg,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemoved,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Electricity Rate",
-                                OutputProcessor::Unit::W,
+                                Constant::Units::W,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).ElecPower,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Electricity Energy",
-                                OutputProcessor::Unit::J,
+                                Constant::Units::J,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).ElecConsumption,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,
-                                _,
-                                "Electricity",
-                                "COOLING",
-                                _,
-                                "System");
+                                Constant::eResource::Electricity,
+                                OutputProcessor::SOVEndUseCat::Cooling,
+                                {},
+                                OutputProcessor::SOVGroup::HVAC);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Off Cycle Parasitic Electricity Rate",
-                                OutputProcessor::Unit::W,
+                                Constant::Units::W,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).OffCycleParasiticElecPower,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Off Cycle Parasitic Electricity Energy",
-                                OutputProcessor::Unit::J,
+                                Constant::Units::J,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).OffCycleParasiticElecCons,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Summed,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Part Load Ratio",
-                                OutputProcessor::Unit::None,
+                                Constant::Units::None,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).DehumidPLR,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Runtime Fraction",
-                                OutputProcessor::Unit::None,
+                                Constant::Units::None,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).DehumidRTF,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
             SetupOutputVariable(state,
                                 "Zone Dehumidifier Outlet Air Temperature",
-                                OutputProcessor::Unit::C,
+                                Constant::Units::C,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).OutletAirTemp,
                                 OutputProcessor::SOVTimeStepType::System,
                                 OutputProcessor::SOVStoreType::Average,
                                 state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
 
-            if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode == state.dataZoneDehumidifier->CondensateToTank) {
+            if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).CondensateCollectMode == CondensateOutlet::ToTank) {
                 SetupOutputVariable(state,
                                     "Zone Dehumidifier Condensate Volume Flow Rate",
-                                    OutputProcessor::Unit::m3_s,
+                                    Constant::Units::m3_s,
                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).DehumidCondVolFlowRate,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Average,
                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name);
                 SetupOutputVariable(state,
                                     "Zone Dehumidifier Condensate Volume",
-                                    OutputProcessor::Unit::m3,
+                                    Constant::Units::m3,
                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).DehumidCondVol,
                                     OutputProcessor::SOVTimeStepType::System,
                                     OutputProcessor::SOVStoreType::Summed,
                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,
-                                    _,
-                                    "OnSiteWater",
-                                    "Condensate",
-                                    _,
-                                    "System");
+                                    Constant::eResource::OnSiteWater,
+                                    OutputProcessor::SOVEndUseCat::Condensate,
+                                    {},
+                                    OutputProcessor::SOVGroup::HVAC);
             }
         }
     }
@@ -596,57 +608,37 @@ namespace ZoneDehumidifier {
         // METHODOLOGY EMPLOYED:
         // Use status flags to trigger various initializations
 
-        // REFERENCES:
-        // na
-
         // Using/Aliasing
         using DataZoneEquipment::CheckZoneEquipmentList;
         using Psychrometrics::PsyRhoAirFnPbTdbW;
         using Psychrometrics::PsyWFnTdbRhPb;
 
-        // Locals
-        // SUBROUTINE ARGUMENT DEFINITIONS:
-
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("InitZoneDehumidifier");
 
-        // INTERFACE BLOCK SPECIFICATIONS
-        // na
-
-        // DERIVED TYPE DEFINITIONS
-        // na
-
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        int LoopIndex;         // DO loop index
         int AirInletNode;      // Inlet air node number
         Real64 RatedAirHumrat; // Humidity ratio (kg/kg) at rated inlet air conditions of 26.6667C, 60% RH
         Real64 RatedAirDBTemp; // Dry-bulb air temperature at rated conditions 26.6667C
         Real64 RatedAirRH;     // Relative humidity of air (0.6 --> 60%) at rated conditions
 
-        // Do the one time initializations
-        if (state.dataZoneDehumidifier->MyOneTimeFlag) {
-            state.dataZoneDehumidifier->MyEnvrnFlag.allocate(state.dataZoneDehumidifier->NumDehumidifiers);
-            state.dataZoneDehumidifier->MyEnvrnFlag = true;
-            state.dataZoneDehumidifier->MyOneTimeFlag = false;
-        }
-
         // Need to check all dehumidifiers to see if they are on Zone Equipment List or issue warning
-        if (!state.dataZoneDehumidifier->ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
-            state.dataZoneDehumidifier->ZoneEquipmentListChecked = true;
-            for (LoopIndex = 1; LoopIndex <= state.dataZoneDehumidifier->NumDehumidifiers; ++LoopIndex) {
-                if (CheckZoneEquipmentList(
-                        state, state.dataZoneDehumidifier->ZoneDehumid(LoopIndex).UnitType, state.dataZoneDehumidifier->ZoneDehumid(LoopIndex).Name))
-                    continue;
-                ShowSevereError(state,
-                                "InitZoneDehumidifier: Zone Dehumidifier=\"" + state.dataZoneDehumidifier->ZoneDehumid(LoopIndex).UnitType + ',' +
-                                    state.dataZoneDehumidifier->ZoneDehumid(LoopIndex).Name +
-                                    "\" is not on any ZoneHVAC:EquipmentList.  It will not be simulated.");
+        if (!state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
+            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).ZoneEquipmentListChecked = true;
+            if (!CheckZoneEquipmentList(state,
+                                        state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                        state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name)) {
+                ShowSevereError(
+                    state,
+                    format("InitZoneDehumidifier: Zone Dehumidifier=\"{},{}\" is not on any ZoneHVAC:EquipmentList.  It will not be simulated.",
+                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
             }
         }
 
         AirInletNode = state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).AirInletNodeNum;
         // Do the Begin Environment initializations
-        if (state.dataGlobal->BeginEnvrnFlag && state.dataZoneDehumidifier->MyEnvrnFlag(ZoneDehumNum)) {
+        if (state.dataGlobal->BeginEnvrnFlag && state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).MyEnvrnFlag) {
 
             // Set the mass flow rates from the input volume flow rates, at rated conditions of 26.6667C, 60% RH
             // Might default back to STP later after discussion with M. Witte, use StdRhoAir instead of calc'd RhoAir at rated conditions
@@ -663,11 +655,11 @@ namespace ZoneDehumidifier {
             state.dataLoopNodes->Node(AirInletNode).MassFlowRateMinAvail = 0.0;
             state.dataLoopNodes->Node(AirInletNode).MassFlowRateMin = 0.0;
 
-            state.dataZoneDehumidifier->MyEnvrnFlag(ZoneDehumNum) = false;
+            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).MyEnvrnFlag = false;
         } // End one time inits
 
         if (!state.dataGlobal->BeginEnvrnFlag) {
-            state.dataZoneDehumidifier->MyEnvrnFlag(ZoneDehumNum) = true;
+            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).MyEnvrnFlag = true;
         }
 
         // These initializations are done every iteration
@@ -691,43 +683,6 @@ namespace ZoneDehumidifier {
         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).DehumidCondVol = 0.0; // Zone Dehumidifier Condensate Volume [m3]
         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).OutletAirTemp =
             state.dataLoopNodes->Node(AirInletNode).Temp; // Zone Dehumidifier Outlet Air Temperature [C]
-    }
-
-    void SizeZoneDehumidifier()
-    {
-
-        // SUBROUTINE INFORMATION:
-        //       AUTHOR         Don Shirey, FSEC
-        //       DATE WRITTEN   July 2009
-        //       MODIFIED       na
-        //       RE-ENGINEERED  na
-
-        // PURPOSE OF THIS SUBROUTINE:
-        // No automatic sizing for this model (yet).  Left in place for later (autosize based on latent requirements)
-
-        // METHODOLOGY EMPLOYED:
-        // na
-
-        // REFERENCES:
-        // na
-
-        // USE STATEMENTS:
-        // na
-
-        // SUBROUTINE ARGUMENT DEFINITIONS:
-        // na
-
-        // SUBROUTINE PARAMETER DEFINITIONS:
-        // na
-
-        // INTERFACE BLOCK SPECIFICATIONS
-        // na
-
-        // DERIVED TYPE DEFINITIONS
-        // na
-
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        // na
     }
 
     void CalcZoneDehumidifier(EnergyPlusData &state,
@@ -757,7 +712,7 @@ namespace ZoneDehumidifier {
         // na
 
         // Using/Aliasing
-        using CurveManager::CurveValue;
+        using Curve::CurveValue;
         using Psychrometrics::PsyCpAirFnW;
         using Psychrometrics::PsyHfgAirFnWTdb;
         using Psychrometrics::PsyHFnTdbW;
@@ -829,8 +784,9 @@ namespace ZoneDehumidifier {
                 if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).WaterRemovalCurveErrorCount < 1) {
                     ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).WaterRemovalCurveErrorCount;
                     ShowWarningError(state,
-                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                     format("{} \"{}\":",
+                                            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                     ShowContinueError(state, format(" Water Removal Rate Curve output is <= 0.0 ({:.5T}).", WaterRemovalRateFactor));
                     ShowContinueError(
                         state,
@@ -854,7 +810,7 @@ namespace ZoneDehumidifier {
             WaterRemovalVolRate = WaterRemovalRateFactor * state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).RatedWaterRemoval;
 
             WaterRemovalMassRate =
-                WaterRemovalVolRate / (24.0 * DataGlobalConstants::SecInHour * 1000.0) *
+                WaterRemovalVolRate / (24.0 * Constant::SecInHour * 1000.0) *
                 RhoH2O(max((InletAirTemp - 11.0), 1.0)); //(L/d)/(24 hr/day *3600 sec/hr * 1000 L/m3) | Density of water, minimum temp = 1.0C
 
             if (WaterRemovalMassRate > 0.0) {
@@ -872,8 +828,9 @@ namespace ZoneDehumidifier {
                 if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).EnergyFactorCurveErrorCount < 1) {
                     ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).EnergyFactorCurveErrorCount;
                     ShowWarningError(state,
-                                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                     format("{} \"{}\":",
+                                            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                            state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                     ShowContinueError(state, format(" Energy Factor Curve output is <= 0.0 ({:.5T}).", EnergyFactorAdjFactor));
                     ShowContinueError(
                         state,
@@ -909,8 +866,9 @@ namespace ZoneDehumidifier {
                     if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).LowPLFErrorCount < 1) {
                         ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).LowPLFErrorCount;
                         ShowWarningError(state,
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                         format("{} \"{}\":",
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                         ShowContinueError(
                             state, format(" The Part Load Fraction Correlation Curve output is ({:.2T}) at a part-load ratio ={:.3T}", PLF, PLR));
                         ShowContinueErrorTimeStamp(state,
@@ -931,8 +889,9 @@ namespace ZoneDehumidifier {
                     if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).HighPLFErrorCount < 1) {
                         ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).HighPLFErrorCount;
                         ShowWarningError(state,
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                         format("{} \"{}\":",
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                         ShowContinueError(
                             state, format(" The Part Load Fraction Correlation Curve output is ({:.2T}) at a part-load ratio ={:.3T}", PLF, PLR));
                         ShowContinueErrorTimeStamp(state,
@@ -955,8 +914,9 @@ namespace ZoneDehumidifier {
                     if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).PLFPLRErrorCount < 1) {
                         ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).PLFPLRErrorCount;
                         ShowWarningError(state,
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                         format("{} \"{}\":",
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                         ShowContinueError(
                             state,
                             format("The part load fraction was less than the part load ratio calculated for this time step [PLR={:.4T}, PLF={:.4T}].",
@@ -978,8 +938,9 @@ namespace ZoneDehumidifier {
                     if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).HighRTFErrorCount < 1) {
                         ++state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).HighRTFErrorCount;
                         ShowWarningError(state,
-                                         state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType + " \"" +
-                                             state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name + "\":");
+                                         format("{} \"{}\":",
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).UnitType,
+                                                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).Name));
                         ShowContinueError(state, format("The runtime fraction for this zone dehumidifier exceeded 1.0 [{:.4T}].", RunTimeFraction));
                         ShowContinueError(state, "Runtime fraction reset to 1 and the simulation will continue.");
                         ShowContinueErrorTimeStamp(state, "");
@@ -1135,48 +1096,30 @@ namespace ZoneDehumidifier {
         // PURPOSE OF THIS SUBROUTINE:
         // Fills some of the report variables for the zone dehumidifiers
 
-        // METHODOLOGY EMPLOYED:
-        // na
-
-        // REFERENCES:
-        // na
-
         // Using/Aliasing
-        auto &TimeStepSys = state.dataHVACGlobal->TimeStepSys;
+        Real64 TimeStepSysSec = state.dataHVACGlobal->TimeStepSysSec;
         using Psychrometrics::RhoH2O;
-
-        // Locals
-        // SUBROUTINE ARGUMENT DEFINITIONS:
-
-        // SUBROUTINE PARAMETER DEFINITIONS:
-        // na
-
-        // INTERFACE BLOCK SPECIFICATIONS:
-        // na
 
         // DERIVED TYPE DEFINITIONS:
         // na
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        Real64 ReportingConstant; // Number of seconds per HVAC system time step, to convert from W (J/s) to J
-        Real64 RhoWater;          // Density of condensate (water) being removed (kg/m3)
-        Real64 InletAirTemp;      // Dry-bulb temperature of air entering the dehumidifier (C)
-        Real64 OutletAirTemp;     // Dry-bulb temperature of air leaving the dehumidifier (C)
-        int AirInletNodeNum;      // Node number corresponding to the air entering dehumidifier
-
-        ReportingConstant = TimeStepSys * DataGlobalConstants::SecInHour;
+        Real64 RhoWater;      // Density of condensate (water) being removed (kg/m3)
+        Real64 InletAirTemp;  // Dry-bulb temperature of air entering the dehumidifier (C)
+        Real64 OutletAirTemp; // Dry-bulb temperature of air leaving the dehumidifier (C)
+        int AirInletNodeNum;  // Node number corresponding to the air entering dehumidifier
 
         state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).SensHeatingEnergy =
-            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).SensHeatingRate * ReportingConstant;
+            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).SensHeatingRate * TimeStepSysSec;
         state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).WaterRemoved =
-            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).WaterRemovalRate * ReportingConstant;
+            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).WaterRemovalRate * TimeStepSysSec;
         state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).ElecConsumption =
-            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).ElecPower * ReportingConstant;
+            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).ElecPower * TimeStepSysSec;
         state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).OffCycleParasiticElecCons =
-            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).OffCycleParasiticElecPower * ReportingConstant;
+            state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).OffCycleParasiticElecPower * TimeStepSysSec;
 
         // Dehumidifier water collection to water storage tank (if needed)
-        if (state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).CondensateCollectMode == state.dataZoneDehumidifier->CondensateToTank) {
+        if (state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).CondensateCollectMode == CondensateOutlet::ToTank) {
             // Calculate and report condensation rate (how much water extracted from the air stream)
             // Volumetric flow of water in m3/s for water system interactions
 
@@ -1191,7 +1134,7 @@ namespace ZoneDehumidifier {
             }
 
             state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).DehumidCondVol =
-                state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).DehumidCondVolFlowRate * ReportingConstant;
+                state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).DehumidCondVolFlowRate * TimeStepSysSec;
 
             state.dataWaterData->WaterStorage(state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).CondensateTankID)
                 .VdotAvailSupply(state.dataZoneDehumidifier->ZoneDehumid(DehumidNum).CondensateTankSupplyARRID) =
@@ -1218,15 +1161,13 @@ namespace ZoneDehumidifier {
         // Return value
         bool FindZoneDehumidifierNodeNumber; // Zone Dehumidifier Node Number Check
 
-        int ZoneDehumidIndex; // Loop index
-
         if (state.dataZoneDehumidifier->GetInputFlag) {
             GetZoneDehumidifierInput(state);
             state.dataZoneDehumidifier->GetInputFlag = false;
         }
 
         FindZoneDehumidifierNodeNumber = false;
-        for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= state.dataZoneDehumidifier->NumDehumidifiers; ++ZoneDehumidIndex) {
+        for (int ZoneDehumidIndex = 1; ZoneDehumidIndex <= (int)state.dataZoneDehumidifier->ZoneDehumid.size(); ++ZoneDehumidIndex) {
             if (NodeNumber == state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).AirInletNodeNum) {
                 FindZoneDehumidifierNodeNumber = true;
                 break;

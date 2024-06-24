@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,12 +55,18 @@
 
 // EnergyPlus Headers
 #include "Fixtures/EnergyPlusFixture.hh"
+#include <EnergyPlus/ConfiguredFunctions.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/General.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/WeatherManager.hh>
+
+#include <nlohmann/json.hpp>
+
+#include <map>
+#include <set>
 
 using namespace EnergyPlus;
 using namespace EnergyPlus::ScheduleManager;
@@ -860,7 +866,7 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST)
     state->dataGlobal->NumOfTimeStepInHour = 4; // must initialize this to get schedules initialized
     state->dataGlobal->MinutesPerTimeStep = 15; // must initialize this to get schedules initialized
     state->dataGlobal->TimeStepZone = 0.25;
-    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * DataGlobalConstants::SecInHour;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * Constant::SecInHour;
 
     ScheduleManager::ProcessScheduleInput(*state); // read schedules
 
@@ -909,7 +915,7 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_SouthernHemispher
     state->dataGlobal->NumOfTimeStepInHour = 4; // must initialize this to get schedules initialized
     state->dataGlobal->MinutesPerTimeStep = 15; // must initialize this to get schedules initialized
     state->dataGlobal->TimeStepZone = 0.25;
-    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * DataGlobalConstants::SecInHour;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * Constant::SecInHour;
 
     ScheduleManager::ProcessScheduleInput(*state); // read schedules
 
@@ -967,8 +973,8 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_Leap)
     // # 'FOR' => Number of additional day schedules
     // So we use 366 Week Schedules, all with one day (LeapYear)
     state->dataEnvrn->CurrentYearIsLeapYear = true;
-    state->dataWeatherManager->WFAllowsLeapYears = true;
-    state->dataWeatherManager->LeapYearAdd = 1;
+    state->dataWeather->WFAllowsLeapYears = true;
+    state->dataWeather->LeapYearAdd = 1;
 
     int nDays = 366;
     state->dataGlobal->NumOfTimeStepInHour = 4;
@@ -1006,7 +1012,7 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_Leap)
     state->dataGlobal->NumOfTimeStepInHour = state->dataGlobal->NumOfTimeStepInHour; // must initialize this to get schedules initialized
     state->dataGlobal->MinutesPerTimeStep = 15;                                      // must initialize this to get schedules initialized
     state->dataGlobal->TimeStepZone = 0.25;
-    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * DataGlobalConstants::SecInHour;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * Constant::SecInHour;
 
     state->dataEnvrn->Month = 12;
     state->dataEnvrn->DayOfMonth = 31;
@@ -1150,8 +1156,8 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
     // # 'FOR' => Number of additional day schedules
     // So we use 366 Week Schedules, all with one day (LeapYear)
     state->dataEnvrn->CurrentYearIsLeapYear = false;
-    state->dataWeatherManager->WFAllowsLeapYears = false;
-    state->dataWeatherManager->LeapYearAdd = 0;
+    state->dataWeather->WFAllowsLeapYears = false;
+    state->dataWeather->LeapYearAdd = 0;
 
     // ScheduleManager always assume LeapYear really.
     int nDays = 365;
@@ -1216,7 +1222,7 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
     state->dataGlobal->NumOfTimeStepInHour = state->dataGlobal->NumOfTimeStepInHour; // must initialize this to get schedules initialized
     state->dataGlobal->MinutesPerTimeStep = 15;                                      // must initialize this to get schedules initialized
     state->dataGlobal->TimeStepZone = 0.25;
-    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * DataGlobalConstants::SecInHour;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * Constant::SecInHour;
 
     state->dataEnvrn->Month = 12;
     state->dataEnvrn->DayOfMonth = 31;
@@ -1325,4 +1331,235 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
 
         EXPECT_EQ(8760.0, HourOfYear);
     }
+}
+
+TEST_F(EnergyPlusFixture, ScheduleFileDSTtoggleOptionTest)
+{
+    // P. Shrestha and N. Merket - February 2022
+
+    // Create this file with test data in it. This test will fail until you do that.
+
+    // scheduleFile object of class "path" created here in the next line is basically a long string that provides the full path to the file
+    fs::path scheduleFile = configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file1.csv";
+
+    // Adding Schedule:File blocks that test other possibilities to make sure they work right, such as:
+    //          1.) Setting to "Yes"
+    //          2.) Setting to "No"
+    //          3.) Leaving empty (should default to "No")
+    //          4.) Omitting the last field (should default to "No")
+
+    // Defining the idf chunk needed to run the relevant tests - "idf_objects" as a comma-delimited string vector
+
+    std::string const idf_objects = delimited_string({
+        "Schedule:File,",
+        "  Test1,                   !- Name",
+        "  ,                        !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  2,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  Yes;                     !- Adjust Schedule for Daylight Savings",
+        " ",
+        "Schedule:File,",
+        "  Test2,                   !- Name",
+        "  ,                        !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  2,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  No;                     !- Adjust Schedule for Daylight Savings",
+        " ",
+        "Schedule:File,",
+        "  Test3,                   !- Name",
+        "  ,                        !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  2,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  ;                     !- Adjust Schedule for Daylight Savings",
+        " ",
+        "Schedule:File,",
+        "  Test4,                   !- Name",
+        "  ,                        !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  2,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60;                      !- Minutes per item",
+        " ",
+    });
+
+    // This will process the provided idf chunk within the test fixture (must pass this step in order to proceed)
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->TimeStep = 1;         // Checking to see if omitting this is OK here
+    state->dataEnvrn->DayOfWeek = 1;         // Sunday
+    state->dataEnvrn->DayOfWeekTomorrow = 2; // Monday
+    state->dataEnvrn->DayOfYear_Schedule = 1;
+    state->dataGlobal->HourOfDay = 24;
+
+    // Test 1 condition
+    // "YES" Adjusts schedule for daylight savings
+    const int sch1idx = GetScheduleIndex(*state, "TEST1"); // Index of the IDF schedule object identified and stored into schdl1idx variable
+    ScheduleManager::ScheduleData &sch1 =
+        state->dataScheduleMgr->Schedule(sch1idx); // sch1 reference initialized that points to the specific schedule of interest
+    EXPECT_TRUE(sch1.UseDaylightSaving);           // Checks that the member variable got set correctly.
+
+    state->dataEnvrn->DSTIndicator = 1; // Tells the simulation that we're currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch1idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 0.0);
+    state->dataEnvrn->DSTIndicator = 0; // Tells the simulation that we're NOT currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch1idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 1.0);
+
+    // Test 2 condition
+    // "NO" Does not adjust for daylight savings
+    const int sch2idx = GetScheduleIndex(*state, "TEST2");
+    ScheduleManager::ScheduleData &sch2 = state->dataScheduleMgr->Schedule(sch2idx);
+    EXPECT_FALSE(sch2.UseDaylightSaving);
+
+    state->dataEnvrn->DSTIndicator = 1; // Tells the simulation that we're currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch2idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 1.0);
+    state->dataEnvrn->DSTIndicator = 0; // Tells the simulation that we're NOT currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch2idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 1.0);
+
+    // Test 3 condition
+    // Default: "YES", changes schedule for daylight savings
+    const int sch3idx = GetScheduleIndex(*state, "TEST3");
+    ScheduleManager::ScheduleData &sch3 = state->dataScheduleMgr->Schedule(sch3idx);
+    EXPECT_TRUE(sch3.UseDaylightSaving);
+
+    state->dataEnvrn->DSTIndicator = 1; // Tells the simulation that we're currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch3idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 0.0);
+    state->dataEnvrn->DSTIndicator = 0; // Tells the simulation that we're NOT currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch3idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 1.0);
+
+    // Test 4 condition
+    // Default: "YES", changes schedule for daylight savings
+    const int sch4idx = GetScheduleIndex(*state, "TEST4");                           // Index of the IDF schedule object identified
+    ScheduleManager::ScheduleData &sch4 = state->dataScheduleMgr->Schedule(sch4idx); // sch1 object initialized of type ScheduleData
+    EXPECT_TRUE(sch4.UseDaylightSaving);                                             // Checks that the member variable got set correctly.
+
+    state->dataEnvrn->DSTIndicator = 1; // Tells the simulation that we're currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch4idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 0.0);
+    state->dataEnvrn->DSTIndicator = 0; // Tells the simulation that we're NOT currently observing daylight savings
+    EXPECT_DOUBLE_EQ(ScheduleManager::LookUpScheduleValue(*state, sch4idx, state->dataGlobal->HourOfDay, state->dataGlobal->TimeStep), 1.0);
+}
+
+TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_extra_parenthesis)
+{
+
+    // 9753 - Test backward compat:
+    // a CSV exported with the extra '()' at the end (22.2.0 and below) should still be importable in E+ without crashing
+    const fs::path scheduleFile = configured_source_directory() / "tst/EnergyPlus/unit/Resources/shading_data_2220.csv";
+
+    std::string const idf_objects = delimited_string({
+        "Schedule:File:Shading,",
+        "  " + scheduleFile.string() + ";              !- Name of File",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    state->dataGlobal->NumOfTimeStepInHour = 4; // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesPerTimeStep = 15; // must initialize this to get schedules initialized
+    state->dataGlobal->TimeStepZone = 0.25;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * Constant::SecInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_FALSE(state->dataScheduleMgr->ScheduleFileShadingProcessed);
+    ScheduleManager::ProcessScheduleInput(*state); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Warning ** ProcessScheduleInput: Schedule:File:Shading=\"" + scheduleFile.string() +
+            "\" Removing last column of the CSV since it has '()' for the surface name.",
+        "   **   ~~~   ** This was a problem in E+ 22.2.0 and below, consider removing it from the file to suppress this warning.",
+    });
+    compare_err_stream(expected_error);
+
+    EXPECT_TRUE(state->dataScheduleMgr->ScheduleFileShadingProcessed);
+    EXPECT_EQ(1, state->dataScheduleMgr->NumSchedules);
+    EXPECT_EQ(366, state->dataScheduleMgr->NumWeekSchedules);
+    EXPECT_EQ(366, state->dataScheduleMgr->NumDaySchedules);
+    EXPECT_EQ(1, state->dataScheduleMgr->UniqueProcessedExternalFiles.size());
+
+    auto &[fPath, root] = *(state->dataScheduleMgr->UniqueProcessedExternalFiles.begin());
+    EXPECT_EQ(scheduleFile, fPath);
+    EXPECT_EQ(2, root["header"].size());
+    const std::set<std::string> expectedHeaders{"Surface Name", "EAST SIDE TREE"};
+    EXPECT_EQ(expectedHeaders, root["header"].get<std::set<std::string>>());
+    ASSERT_EQ(2, root["values"].size());
+
+    EXPECT_EQ(8760 * 4, root["values"].at(0).size());
+    EXPECT_EQ(8760 * 4, root["values"].at(1).size());
+
+    EXPECT_EQ("01/01 00:15", root["values"].at(0).at(0).get<std::string>());
+    EXPECT_EQ(0.00000000, root["values"].at(1).at(0).get<Real64>());
+
+    EXPECT_EQ("01/01 13:00", root["values"].at(0).at(51).get<std::string>());
+    EXPECT_EQ(0.96107882, root["values"].at(1).at(51).get<Real64>());
+
+    EXPECT_EQ("12/31 24:00", root["values"].at(0).at(8760 * 4 - 1).get<std::string>());
+    EXPECT_EQ(0.00000000, root["values"].at(1).at(8760 * 4 - 1).get<Real64>());
+
+    std::string curName = "EAST SIDE TREE_shading";
+    EXPECT_EQ("EAST SIDE TREE_shading_wk_1", state->dataScheduleMgr->WeekSchedule(1).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_wk_59", state->dataScheduleMgr->WeekSchedule(59).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_wk_61", state->dataScheduleMgr->WeekSchedule(60).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_wk_62", state->dataScheduleMgr->WeekSchedule(61).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_wk_366", state->dataScheduleMgr->WeekSchedule(365).Name);
+
+    EXPECT_EQ("EAST SIDE TREE_shading_dy_1", state->dataScheduleMgr->DaySchedule(1).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_dy_59", state->dataScheduleMgr->DaySchedule(59).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_dy_61", state->dataScheduleMgr->DaySchedule(60).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_dy_62", state->dataScheduleMgr->DaySchedule(61).Name);
+    EXPECT_EQ("EAST SIDE TREE_shading_dy_366", state->dataScheduleMgr->DaySchedule(365).Name);
+
+    EXPECT_EQ(1, state->dataScheduleMgr->Schedule(1).WeekSchedulePointer(1));
+    EXPECT_EQ(59, state->dataScheduleMgr->Schedule(1).WeekSchedulePointer(59));
+    EXPECT_EQ(59, state->dataScheduleMgr->Schedule(1).WeekSchedulePointer(60)); // 29 Feb points to 28 Feb
+    EXPECT_EQ(365, state->dataScheduleMgr->Schedule(1).WeekSchedulePointer(366));
+
+    for (int iDay = 1; iDay <= 365; ++iDay) {
+        if (iDay <= 59) {
+            EXPECT_EQ(fmt::format("{}_wk_{}", curName, iDay), state->dataScheduleMgr->WeekSchedule(iDay).Name);
+            EXPECT_EQ(fmt::format("{}_dy_{}", curName, iDay), state->dataScheduleMgr->DaySchedule(iDay).Name);
+        } else {
+            EXPECT_EQ(fmt::format("{}_wk_{}", curName, iDay + 1), state->dataScheduleMgr->WeekSchedule(iDay).Name);
+            EXPECT_EQ(fmt::format("{}_dy_{}", curName, iDay + 1), state->dataScheduleMgr->DaySchedule(iDay).Name);
+        }
+    }
+
+    // 01/01 00:15
+    int iDay = 1;
+    int TS = 1;
+    int iHour = 1;
+    EXPECT_EQ(0.00000000, state->dataScheduleMgr->DaySchedule(iDay).TSValue(TS, iHour));
+
+    // 01/01 13:00
+    iDay = 1;
+    TS = 4;
+    iHour = 13;
+    EXPECT_EQ(0.96107882, state->dataScheduleMgr->DaySchedule(iDay).TSValue(TS, iHour));
+
+    // 12/31 16:15,0.19556231,
+    iDay = 365;
+    TS = 1;
+    iHour = 17;
+    EXPECT_EQ(0.19556231, state->dataScheduleMgr->DaySchedule(iDay).TSValue(TS, iHour));
+
+    // 12/31 24:00
+    iDay = 365;
+    TS = 4;
+    iHour = 24;
+    EXPECT_EQ(0.00000000, state->dataScheduleMgr->DaySchedule(iDay).TSValue(TS, iHour));
 }

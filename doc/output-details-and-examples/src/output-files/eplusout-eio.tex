@@ -86,7 +86,7 @@ Environment:Site Atmospheric Variation,0.330,460.000,6.500000E-003
 
 ~SurfaceGeometry,UpperLeftCorner,CounterClockwise,RelativeCoordinateSystem
 
-The simulation parameters output is the simplest form of reporting in the \textbf{eplusout.eio} file. Each of the ``header'' records (lines starting with an ``!'') are followed immediately by the one and only data line. By and large, these data lines are all merely echoes of the entries in the IDF (or defaulted for blank fields). For most of these descriptions, you can look at the object fields (of same name) in the \href{file:///E:/Docs4PDFs/InputOutputReference.pdf}{Input Output Reference} document.
+The simulation parameters output is the simplest form of reporting in the \textbf{eplusout.eio} file. Each of the ``header'' records (lines starting with an ``!'') are followed immediately by the one and only data line. By and large, these data lines are all merely echoes of the entries in the IDF (or defaulted for blank fields). For most of these descriptions, you can look at the object fields (of same name) in the \href{InputOutputReference.pdf}{Input Output Reference} document.
 
 \subsection{Version}\label{version}
 
@@ -168,6 +168,102 @@ Shadowing/Sun Position Calculations, AverageOverDaysInFrequency, 20, 15000, Suth
 
 This shows how many days between the re-calculation of solar position during a weather file simulation. While a smaller number of days will lead to a more accurate solar position estimation (solar position is important in shadowing as well as determining how much solar enters the space), it also increases the calculation time necessarily to complete the simulation. The default, re-calculating every 20 days, gives a good compromise. The allowable number of figures in a shadow overlap can be increased if necessary for the model. There are two calculation methods available: AverageOverDaysInFrequency (default) and DetailedTimestepIntegration.
 
+\subsection{Daylighting:Illuminance Maps}\label{daylighting-illuminace-maps}
+
+\begin{lstlisting}
+! <Daylighting:Illuminance Maps>,#Maps,Style
+Daylighting:Illuminance Maps,1,Comma
+\end{lstlisting}
+
+\subsubsection{Field: \#Maps}\label{field-number-maps}
+The number of illuminance maps (see \hyperref[eplusmap.ext]{eplusmap} and Output:IlluminanceMap).
+
+\subsubsection{Field: Style}\label{style-maps}
+The type of delimiter in the map output (comma, tab or fixed). See OutputControl:IlluminanceMap:Style.
+
+\subsection{Daylighting:Illuminance Maps:Detail}\label{daylighting-illuminace-maps-detail}
+
+\begin{lstlisting}
+! <Daylighting:Illuminance Maps:Detail>,Name,Zone,XMin {m},XMax {m},Xinc {m},#X Points,YMin {m},YMax {m},Yinc {m},#Y Points,Z {m}
+Daylighting:Illuminance Maps:Detail,MAP1,WEST ZONE,0.10,6.00,0.66,10,0.10,6.00,0.66,10,0.00
+\end{lstlisting}
+
+\subsubsection{Field: Name}\label{field-maps-name}
+The name of the illuminance map (see \hyperref[eplusmap.ext]{eplusmap} and Output:IlluminanceMap).
+
+\subsubsection{Field: Zone}\label{field-maps-zone}
+The name of the zone for the map.
+
+\subsubsection{Fields: XMin \{m\}, XMax \{m\}, Xinc \{m\}, \#X Points}\label{field-maps-xcoords}
+The X coordinate data: minimum, maximum, increment, and number of points.
+
+\subsubsection{Fields: YMin \{m\}, YMax \{m\}, Yinc \{m\}, \#Y Points}\label{field-maps-ycoords}
+The Y coordinate data: minimum, maximum, increment, and number of points.
+
+\subsubsection{Field: Z \{m\}}\label{field-maps-z}
+The Z coordinate (height) of the map points.
+
+\subsection{Enclosure/Window Adjacency Daylighting Counts}\label{daylighting-adjacency-counts}
+
+\begin{lstlisting}
+! <Enclosure/Window Adjacency Daylighting Counts>, Enclosure Name, Number of Exterior Windows, Number of Exterior Windows in Adjacent Enclosures
+Enclosure/Window Adjacency Daylighting Counts, WEST ZONE,1,0
+\end{lstlisting}
+
+\subsubsection{Field: Enclosure Name}\label{field-daylighting-counts-enclosurename}
+The name of the daylighting enclosure (which consists of one or more spaces).
+
+\subsubsection{Field: Number of Exterior Windows}\label{field-daylighting-counts-num-ext-windows}
+The number of exterior windows in the enclosure.
+
+\subsubsection{Field: Number of Exterior Windows in Adjacent Enclosures}\label{field-daylighting-counts-num-ext-windows-adj-encl}
+The number of exterior windows in adjacent enclosures. An adjacent enclosure is one that shares an interior window with this enclosure.
+
+
+\subsection{Enclosure/Window Adjacency Daylighting Matrix}\label{daylighting-adjacency-matrix}
+
+\begin{lstlisting}
+! <Enclosure/Window Adjacency Daylighting Matrix>, Enclosure Name, Number of Adjacent Enclosures with Windows,Adjacent Enclosure Names - 1st 100 (max)
+Enclosure/Window Adjacency Daylighting Matrix, WEST ZONE,0
+\end{lstlisting}
+
+\subsubsection{Field: Enclosure Name}\label{field-daylighting-matrix-enclosurename}
+The name of the daylighting enclosure (which consists of one or more spaces).
+
+\subsubsection{Field: Number of Adjacent Enclosures with Windows}\label{field-daylighting-matrix-num-adj-enclosures}
+The number of adjacent enclosures with windows in them.  An adjacent enclosure is one that shares an interior window with this enclosure.
+
+\subsubsection{Field: Adjacent Enclosure Names}\label{field-daylighting-matrix-adj-encl-names}
+The names of adjacent enclosures (up to the first 100).
+
+\subsection{Sky Daylight Factors}\label{sky-daylight-factors}
+
+\begin{lstlisting}
+! <Sky Daylight Factors>, Sky Type, MonthAndDay, Daylighting Control Name, Enclosure Name, Window Name, Reference Point, Daylight Factor
+ Sky Daylight Factors,Clear Sky,01/21,WEST ZONE_DAYLCTRL,WEST ZONE,ZN001:WALL001:WIN001,WEST ZONE_DAYLREFPT1,0.1373
+ Sky Daylight Factors,Clear Turbid Sky,01/21,WEST ZONE_DAYLCTRL,WEST ZONE,ZN001:WALL001:WIN001,WEST ZONE_DAYLREFPT1,0.1572
+ Sky Daylight Factors,Intermediate Sky,01/21,WEST ZONE_DAYLCTRL,WEST ZONE,ZN001:WALL001:WIN001,WEST ZONE_DAYLREFPT1,7.6189E-002
+ Sky Daylight Factors,Overcast Sky,01/21,WEST ZONE_DAYLCTRL,WEST ZONE,ZN001:WALL001:WIN001,WEST ZONE_DAYLREFPT1,2.6123E-002
+\end{lstlisting}
+
+\subsubsection{Field: Sky Type}\label{field-sky-daylight-factors-sky-type}
+The sky type: Clear, ClearTurbid, Intermediate, or Overcast.
+
+\subsubsection{Field: MonthAndDay}\label{field-sky-daylight-factors-monthandday}
+The month and day in mm/dd format.
+
+\subsubsection{Field: Enclosure Nme}\label{field-sky-daylight-factors-encl-name}
+The name of the daylighting enclosure (which consists of one or more spaces).
+
+\subsubsection{Field: Window Name}\label{field-sky-daylight-factors-window-name}
+The name of an exterior window.
+
+\subsubsection{Field: Reference Point}\label{field-sky-daylight-factors-ref-point}
+The name of a daylighting reference point (see Daylighting:ReferencePoint).
+
+\subsubsection{Field: Daylight Factor}\label{field-sky-daylight-factors-factor}
+The bare-window daylight factor from this window to this reference point at noon. Daylight factors are reported only for the first time that they are calculated, so the values are for whatever state is active at the reported time for variables such as ground reflectance, shading surface transmittance schedules, storm window status, or screen status.
+
 \subsection{AirflowNetwork Model:Control}\label{airflownetwork-modelcontrol}
 
 ! \textless{}AirflowNetwork Model:Control\textgreater{}, No Multizone or Distribution/Multizone with Distribution/Multizone without Distribution/Multizone with Distribution only during Fan Operation
@@ -212,7 +308,7 @@ This is the WindPressureCoefficientValues object name entered from the IDF.
 
 \subsubsection{Field: Wind Pressure Coefficients \#1 to n}\label{field-wind-pressure-coefficients-1-to-n}
 
-These values are the wind pressure coefficient for the building façade. These wind pressure coefficient values correspond to the first through Nth wind directions reported above for \textless{}AirflowNetwork Model:Wind Direction\textgreater{}. If Wind Pressure Coefficient Type = INPUT in the AirflowNetwork:SimulationControl object, the wind pressure coefficients described here are the inputs specified in the AirflowNetwork:MultiZone:Wind Pressure Coefficient Values object,. If Wind Pressure Coefficient Type = SurfaceAverageCalculation in the AirflowNetwork:SimulationControl object, the wind pressure coefficients are calculated internally and also described here.
+These values are the wind pressure coefficient for the building facade. These wind pressure coefficient values correspond to the first through Nth wind directions reported above for \textless{}AirflowNetwork Model:Wind Direction\textgreater{}. If Wind Pressure Coefficient Type = INPUT in the AirflowNetwork:SimulationControl object, the wind pressure coefficients described here are the inputs specified in the AirflowNetwork:MultiZone:Wind Pressure Coefficient Values object,. If Wind Pressure Coefficient Type = SurfaceAverageCalculation in the AirflowNetwork:SimulationControl object, the wind pressure coefficients are calculated internally and also described here.
 
 \subsection{Zone Volume Capacitance Multiplier}\label{zone-volume-capacitance-multiplier}
 
@@ -362,11 +458,11 @@ This is the name given to the location whether from the IDF or the weather file.
 
 \subsubsection{Field: Latitude}\label{field-latitude}
 
-This is the latitude of the site, expressed decimally. Convention uses positive (+) values for North of the Equator and negative (-) values for South of the Equator. For example, S 30° 15' is expressed as --30.25.
+This is the latitude of the site, expressed decimally. Convention uses positive (+) values for North of the Equator and negative (-) values for South of the Equator. For example, S 30$^{\circ}$ 15' is expressed as --30.25.
 
 \subsubsection{Field: Longitude}\label{field-longitude}
 
-This is the longitude of the site, expressed decimally. Convention uses positive (+) values for East of the Greenwich meridian and negative (-) values for West of the Greenwich meridian. For example, E 130° 45' is expressed as +130.75.
+This is the longitude of the site, expressed decimally. Convention uses positive (+) values for East of the Greenwich meridian and negative (-) values for West of the Greenwich meridian. For example, E 130$^{\circ}$ 45' is expressed as +130.75.
 
 \subsubsection{Field: Time Zone Number}\label{field-time-zone-number}
 
@@ -1465,7 +1561,7 @@ This field is the air changes per hour for the given ventilation rate.
 
 \subsubsection{Field: Fan Type \{Exhaust;Intake;Natural\}}\label{field-fan-type-exhaustintakenatural}
 
-This field shows the entered value for the type of ventilation {[}NATURAL, EXHAUST, or INTAKE{]}. Natural ventilation is the air movement/exchange a result of openings in the building façade and does not consume any fan energy. For either EXHAUST or INTAKE, values for fan pressure and efficiency define the fan electric consumption. For NATURAL and EXHAUST ventilation, the conditions of the air entering the space are assumed to be equivalent to outdoor air conditions. For INTAKE ventilation, an appropriate amount of fan heat is added to the air stream.
+This field shows the entered value for the type of ventilation {[}NATURAL, EXHAUST, or INTAKE{]}. Natural ventilation is the air movement/exchange a result of openings in the building facade and does not consume any fan energy. For either EXHAUST or INTAKE, values for fan pressure and efficiency define the fan electric consumption. For NATURAL and EXHAUST ventilation, the conditions of the air entering the space are assumed to be equivalent to outdoor air conditions. For INTAKE ventilation, an appropriate amount of fan heat is added to the air stream.
 
 \subsubsection{Field: Fan Pressure Rise \{Pa\}}\label{field-fan-pressure-rise-pa}
 
@@ -1697,45 +1793,45 @@ This field contains the number of building attached shading surfaces (e.g.~Overh
 
 \subsection{Surface Details Report}\label{surface-details-report}
 
-A good example of this is the surface details report(s) (\textbf{Output:Surfaces:List, Details;} \textbf{Output:Surfaces:List, Vertices; Output:Surfaces:List, DetailsWithVertices;}). Excerpt from the file:
+A good example of this is the surface details report(s) (\textbf{Output:Surfaces:List, Details; Output:Surfaces:List, Vertices; Output:Surfaces:List, DetailsWithVertices;}). An example excerpt of this report from the EIO file is shown below:
 
-\textbf{Line 1:}! \textless{}Zone/Shading Surfaces\textgreater{}\textbf{,}\textless{}Zone Name\textgreater{}/\#Shading Surfaces,\# Surfaces, Vertices are shown starting at Upper-Left-Corner = \textgreater{} Counter-Clockwise = \textgreater{} World Coordinates
+\textbf{Line 1:}! \textless{}Zone/Shading Surfaces\textgreater{}\textbf{,}\textless{}Zone Name\textgreater{}/\#Shading Surfaces, \# Surfaces, Vertices are shown starting at Upper-Left-Corner = \textgreater{} Counter-Clockwise = \textgreater{} World Coordinates
 
-\textbf{Line 2:}! \textless{}HeatTransfer/Shading/Frame/Divider\_Surface\textgreater{},Surface Name,Surface Class, Base Surface,Construction,Nominal U (w/o film coefs),Nominal U (with film coefs),Area (Net), Area (Gross), Area (Sunlit Calc), Aimuth, Tilt, \textasciitilde{}Width, \textasciitilde{}Height, Reveal, \textless{}ExtBoundCondition\textgreater{}, \textless{}ExtConvCoeffCalc\textgreater{}, \textless{}IntConvCoeffCalc\textgreater{},\textless{}SunExposure\textgreater{},\textless{}WindExposure\textgreater{},ViewFactorToGround,ViewFactorToSky,ViewFactorToGround-IR,ViewFactorToSky-IR,\#Sides, \{Vertex 1\},,, \{Vertex 2\},,, \{Vertex 3\},,, \{Vertex 4\}, ,,\{etc\}
+\textbf{Line 2:}! \textless{}HeatTransfer/Shading/Frame/Divider Surface\textgreater{}, Surface Name, Surface Class, Base Surface, Construction, Nominal U (w/o film coefs), Nominal U (with film coefs), Area (Net), Area (Gross), Area (Sunlit Calc), Azimuth, Tilt, Width, Height, Reveal, \textless{}ExtBoundCondition\textgreater{}, \textless{}ExtConvCoeffCalc\textgreater{}, \textless{}IntConvCoeffCalc\textgreater{}, \textless{}SunExposure\textgreater{}, \textless{}WindExposure\textgreater{}, ViewFactorToGround, ViewFactorToSky, ViewFactorToGround-IR, ViewFactorToSky-IR,\#Sides, \{Vertex 1\}, , , \{Vertex 2\}, , , \{Vertex 3\},,, \{Vertex 4\}, ,,\{etc\}
 
-\textbf{Line 3:} ! \textless{}Units\textgreater{},,,,,\{W/m2-K\},\{W/m2-K\},\{m2\},\{m2\},\{m2\},\{deg\},\{deg\},\{m\},\{m\},\{m\},,,,,,,,,,X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\}
+\textbf{Line 3:} ! \textless{}Units\textgreater{}, , , , , \{W/m2-K\}, \{W/m2-K\}, \{m2\}, \{m2\}, \{m2\}, \{deg\}, \{deg\}, \{m\}, \{m\}, \{m\}, , , , , , , , , , X \{m\}, Y \{m\}, Z \{m\}, X \{m\}, Y \{m\}, Z \{m\}, X \{m\}, Y \{m\}, Z \{m\}, X \{m\}, Y \{m\}, Z \{m\}
 
-\textbf{Ex Line 1:} Shading\_Surfaces,Number of Shading Surfaces,~~ 10
+\textbf{Ex Line 1:} Shading Surfaces,Number of Shading Surfaces, 10
 
-\textbf{Ex Line 2:} Shading\_Surface,WEST SIDE BUSHES,Detached Shading:Building,,,,, 180.0, 180.0, 180.0, 90.0, 90.0, 60.00, 3.00,,,,,,,,,,, 4, -5.00, 0.00, 3.00, -5.00, 0.00, 0.00, -5.00, 60.00, 0.00, -5.00, 60.00, 3.00
+\textbf{Ex Line 2:} Shading Surface,WEST SIDE BUSHES,Detached Shading:Building,,,,, 180.0, 180.0, 180.0, 90.0, 90.0, 60.00, 3.00, , , , , , , , , , , 4, -5.00, 0.00, 3.00, -5.00, 0.00, 0.00, -5.00, 60.00, 0.00, -5.00, 60.00, 3.00
 
-\textbf{Ex Line 2:} Shading\_Surface,EAST SIDE TREE1,Detached Shading:Building,,,,, 500.0, 500.0, 500.0, 270.0, 90.0, 20.00, 50.99,,,,,,,,,,, 3, 70.00, 30.00, 50.00, 70.00, 40.00, 0.00, 70.00, 20.00, 0.00
+\textbf{Ex Line 2:} Shading Surface,EAST SIDE TREE1,Detached Shading:Building,,,,, 500.0, 500.0, 500.0, 270.0, 90.0, 20.00, 50.99, , , , , , , , , , , 3, 70.00, 30.00, 50.00, 70.00, 40.00, 0.00, 70.00, 20.00, 0.00
 
-\textbf{Ex Line 2:} Shading\_Surface,EAST SIDE TREE2,Detached Shading:Building,,,,, 500.0, 500.0, 500.0, 0.0, 90.0, 20.00, 50.99,,,,,,,,,,, 3, 70.00, 30.00, 50.00, 80.00, 30.00, 0.00, 60.00, 30.00, 0.00
+\textbf{Ex Line 2:} Shading Surface,EAST SIDE TREE2,Detached Shading:Building,,,,, 500.0, 500.0, 500.0, 0.0, 90.0, 20.00, 50.99, , , , , , , , , , , 3, 70.00, 30.00, 50.00, 80.00, 30.00, 0.00, 60.00, 30.00, 0.00
 
-\textbf{Ex Line 1:} Zone\_Surfaces,HEARTLAND AREA,~~ 35
+\textbf{Ex Line 1:} Zone Surfaces,HEARTLAND AREA, 35
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface,ZN001:WALL001,Wall,,EXTERIOR,0.644, 0.588, 136.0, 200.0, 136.0, 180.0, 90.0, 20.0, 10.0, 0.00,ExternalEnvironment,ASHRAEDetailed,ASHRAEDetailed,SunExposed,WindExposed, 0.50, 0.50, 0.67,~ 0.33, 4, 20.00, 10.00, 10.00, 20.00, 10.00, 0.00, 40.00, 10.00, 0.00, 40.00, 10.00, 10.00
+\textbf{Ex Line 2:} HeatTransfer Surface,ZN001:WALL001,Wall,,EXTERIOR,0.644, 0.588, 136.0, 200.0, 136.0, 180.0, 90.0, 20.0, 10.0, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.67, 0.33, 4, 20.00, 10.00, 10.00, 20.00, 10.00, 0.00, 40.00, 10.00, 0.00, 40.00, 10.00, 10.00
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface,ZN001:WALL001:WIN001,Window,ZN001:WALL001,SINGLE PANE HW WINDOW,N/A,6.121, 64.00000, 64.00000, 64.00000,180.0, 90.0, 8.00, 8.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed,~ 0.50,~ 0.50,~ 0.71,~ 0.29, 4, 26.00, 10.00, 8.10, 26.00, 10.00, 0.10, 34.00, 10.00, 0.10, 34.00, 10.00, 8.10
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN001:WALL001:WIN001, Window, ZN001:WALL001, SINGLE PANE HW WINDOW, N/A, 6.121, 64.00000, 64.00000, 64.00000,180.0, 90.0, 8.00, 8.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.71, 0.29, 4, 26.00, 10.00, 8.10, 26.00, 10.00, 0.10, 34.00, 10.00, 0.10, 34.00, 10.00, 8.10
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface,ZN001:WALL002,Wall,,EXTERIOR,0.644,0.588, 155.0, 200.0, 155.0, 90.0, 90.0, 20.00, 10.00, 0.00,ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50,~ 0.50,~ 0.73,~ 0.27, 4, 50.00, 20.00, 10.00, 50.00, 20.00, 0.00, 50.00, 40.00, 0.00, 50.00, 40.00, 10.00
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN001:WALL002, Wall, , EXTERIOR, 0.644, 0.588, 155.0, 200.0, 155.0, 90.0, 90.0, 20.00, 10.00, 0.00,ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.73, 0.27, 4, 50.00, 20.00, 10.00, 50.00, 20.00, 0.00, 50.00, 40.00, 0.00, 50.00, 40.00, 10.00
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface,ZN001:WALL002:WIN001,Window,ZN001:WALL002,SINGLE PANE HW WINDOW,N/A,6.121, 15.0, 15.0, 15.0, 90.0, 90.0, 3.00, 5.00,~ 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed,~ 0.50,~ 0.50,~ 0.76,~ 0.24, 4, 50.00, 22.20, 7.30, 50.00, 22.20, 2.30, 50.00, 25.20, 2.30, 50.00, 25.20, 7.30
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN001:WALL002:WIN001, Window, ZN001:WALL002, SINGLE PANE HW WINDOW, N/A, 6.121, 15.0, 15.0, 15.0, 90.0, 90.0, 3.00, 5.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.76, 0.24, 4, 50.00, 22.20, 7.30, 50.00, 22.20, 2.30, 50.00, 25.20, 2.30, 50.00, 25.20, 7.30
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface,ZN001:WALL002:WIN002,Window,ZN001:WALL002,SINGLE PANE HW WINDOW, N/A, 6.121, 15.00, 15.00, 15.00, 90.00, 90.00, 3.00, 5.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.71, 0.29, 4, 50.00, 28.50, 7.30, 50.00, 28.50, 2.30, 50.00, 31.50, 2.30, 50.00, 31.50, 7.30
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN001:WALL002:WIN002, Window, ZN001:WALL002, SINGLE PANE HW WINDOW, N/A, 6.121, 15.00, 15.00, 15.00, 90.00, 90.00, 3.00, 5.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.71, 0.29, 4, 50.00, 28.50, 7.30, 50.00, 28.50, 2.30, 50.00, 31.50, 2.30, 50.00, 31.50, 7.30
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface, ZN001:WALL002:WIN003, Window, ZN001:WALL002, SINGLE PANE HW WINDOW, N/A, 6.121, 15.00, 15.00, 15.00, 90.00, 90.00, 3.00, 5.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.77, 0.23, 4, 50.00, 35.30, 7.30, 50.00, 35.30, 2.30, 50.00, 38.30, 2.30, 50.00, 38.30, 7.30
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN001:WALL002:WIN003, Window, ZN001:WALL002, SINGLE PANE HW WINDOW, N/A, 6.121, 15.00, 15.00, 15.00, 90.00, 90.00, 3.00, 5.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.77, 0.23, 4, 50.00, 35.30, 7.30, 50.00, 35.30, 2.30, 50.00, 38.30, 2.30, 50.00, 38.30, 7.30
 
 \textless{}reduced for brevity\textgreater{}
 
-\textbf{Ex Line 1:} Zone\_Surfaces,MAINE WING,~~ 12
+\textbf{Ex Line 1:} Zone\_Surfaces,MAINE WING, 12
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface, ZN005:WALL001, Wall, , EXTERIOR, 0.644, 0.588, 100.00, 100.00, 100.00, 180.00, 90.00, 10.00, 10.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.74, 0.26, 4, 50.00, 40.00, 10.00, 50.00, 40.00, 0.00, 60.00, 40.00, 0.00, 60.00, 40.00, 10.00
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN005:WALL001, Wall, , EXTERIOR, 0.644, 0.588, 100.00, 100.00, 100.00, 180.00, 90.00, 10.00, 10.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.50, 0.50, 0.74, 0.26, 4, 50.00, 40.00, 10.00, 50.00, 40.00, 0.00, 60.00, 40.00, 0.00, 60.00, 40.00, 10.00
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface, ZN005:FLR001, Floor, , SLAB FLOOR, 17.040, 3.314, 400.00, 400.00, 400.00, 90.00, 180.00, 20.00, 20.00, 0.00, Ground, N/A-Ground, ASHRAEDetailed, NoSun, NoWind, 1.00, 0.00, 1.00, 0.00, 4, 60.00, 40.00, 0.00, 40.00, 40.00, 0.00, 40.00, 60.00, 0.00, 60.00, 60.00, 0.00
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN005:FLR001, Floor, , SLAB FLOOR, 17.040, 3.314, 400.00, 400.00, 400.00, 90.00, 180.00, 20.00, 20.00, 0.00, Ground, N/A-Ground, ASHRAEDetailed, NoSun, NoWind, 1.00, 0.00, 1.00, 0.00, 4, 60.00, 40.00, 0.00, 40.00, 40.00, 0.00, 40.00, 60.00, 0.00, 60.00, 60.00, 0.00
 
-\textbf{Ex Line 2:} HeatTransfer\_Surface, ZN005:ROOF001, Roof, , ROOF31, 0.790, 0.688, 400.00, 400.00, 400.00, 180.00, 0.00, 20.00, 20.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.00, 1.00, 2.41E-002, 0.98, 4, 40.00, 60.00, 10.00, 40.00, 40.00, 10.00, 60.00, 40.00, 10.00, 60.00, 60.00, 10.00
+\textbf{Ex Line 2:} HeatTransfer Surface, ZN005:ROOF001, Roof, , ROOF31, 0.790, 0.688, 400.00, 400.00, 400.00, 180.00, 0.00, 20.00, 20.00, 0.00, ExternalEnvironment, ASHRAEDetailed, ASHRAEDetailed, SunExposed, WindExposed, 0.00, 1.00, 2.41E-002, 0.98, 4, 40.00, 60.00, 10.00, 40.00, 40.00, 10.00, 60.00, 40.00, 10.00, 60.00, 60.00, 10.00
 
 \subsubsection{Description of the Detailed Surfaces Report(s)}\label{description-of-the-detailed-surfaces-reports}
 
@@ -1747,7 +1843,7 @@ When a line is shown with the comment character (!) in the first position, it si
 
 \subsubsection{Field: \textless{}Zone/Shading Surfaces\textgreater{}}\label{field-zoneshading-surfaces}
 
-This field is a dual purpose field. For beginning of the Shading Surfaces, it will show ``Shading\_Surfaces''. At each Zone, it will show ``Zone\_Surfaces''.
+This field is a dual purpose field. For beginning of the Shading Surfaces, it will show ``Shading Surfaces''. At each Zone, it will show ``Zone Surfaces''.
 
 \subsubsection{Field: \textless{}Zone Name\textgreater{}/\#Shading Surfaces}\label{field-zone-nameshading-surfaces}
 
@@ -1759,13 +1855,13 @@ This field, then, specifies the number of surfaces of the type (zone or shading)
 
 The example lines illustrate:
 
-Shading\_Surfaces,Number of Shading Surfaces,~~ 10
+Shading Surfaces,Number of Shading Surfaces,~~ 10
 
-Zone\_Surfaces,HEARTLAND AREA,~~ 35
+Zone Surfaces,HEARTLAND AREA,~~ 35
 
-Zone\_Surfaces,MAINE WING,~~ 12
+Zone Surfaces,MAINE WING,~~ 12
 
-\textbf{Line 2:}! \textless{}HeatTransfer/Shading/Frame/Divider\_Surface\textgreater{}, Surface Name, Surface Class, Base Surface, Construction, Nominal U (w/o film coefs), Nominal U (with film coefs), Area (Net), Area (Gross), Area (Sunlit Calc), Azimuth, Tilt, \textasciitilde{}Width, \textasciitilde{}Height, Reveal, \textless{}ExtBoundCondition\textgreater{}, \textless{}ExtConvCoeffCalc\textgreater{}, \textless{}IntConvCoeffCalc\textgreater{}, \textless{}SunExposure\textgreater{}, \textless{}WindExposure\textgreater{}, ViewFactorToGround, ViewFactorToSky, ViewFactorToGround-IR, ViewFactorToSky-IR, \#Sides, \{Vertex 1\},,, \{Vertex 2\},,, \{Vertex 3\},,, \{Vertex 4\}, ,,\{etc\}
+\textbf{Line 2:}! \textless{}HeatTransfer/Shading/Frame/Divider Surface\textgreater{}, Surface Name, Surface Class, Base Surface, Construction, Nominal U (w/o film coefs), Nominal U (with film coefs), Area (Net), Area (Gross), Area (Sunlit Calc), Azimuth, Tilt, \textasciitilde{}Width, \textasciitilde{}Height, Reveal, \textless{}ExtBoundCondition\textgreater{}, \textless{}ExtConvCoeffCalc\textgreater{}, \textless{}IntConvCoeffCalc\textgreater{}, \textless{}SunExposure\textgreater{}, \textless{}WindExposure\textgreater{}, ViewFactorToGround, ViewFactorToSky, ViewFactorToGround-IR, ViewFactorToSky-IR, \#Sides, \{Vertex 1\},,, \{Vertex 2\},,, \{Vertex 3\},,, \{Vertex 4\}, ,,\{etc\}
 
 \textbf{Line 3:} ! \textless{}Units\textgreater{},,,,,\{W/m2-K\},\{W/m2-K\},\{m2\},\{m2\},\{m2\},\{deg\},\{deg\},\{m\},\{m\},\{m\},,,,,,,,,,X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\},X \{m\},Y \{m\},Z \{m\}
 
@@ -1773,9 +1869,9 @@ Line 2 shows the full detail of each surface record with Line 3 used for illustr
 
 The first four fields (\textless{}HeatTransfer/ShadingSurface\textgreater{},Surface Name, Surface Class, Base Surface) are included in all the Surface reports (Details, Vertices, Details with Vertices).
 
-\subsubsection{Field: \textless{}HeatTransfer/Shading/Frame/Divider\_Surface\textgreater{}}\label{field-heattransfershadingframedividerux5fsurface}
+\subsubsection{Field: \textless{}HeatTransfer/Shading/Frame/Divider Surface\textgreater{}}\label{field-heattransfershadingframedividerux5fsurface}
 
-For shading surfaces, this will be a constant ``Shading\_Surface''. For heat transfer surfaces, this will be a constant ``HeatTransfer\_Surface''. For Frame and Divider Surfaces, it will be a constant ``Frame/Divider\_Surface'' with the proper type showing in the Surface Class.
+For shading surfaces, this will be a constant ``Shading Surface''. For heat transfer surfaces, this will be a constant ``HeatTransfer Surface''. For Frame and Divider Surfaces, it will be a constant ``Frame/Divider Surface'' with the proper type showing in the Surface Class.
 
 \subsubsection{Field: Surface Name}\label{field-surface-name}
 
@@ -1805,7 +1901,7 @@ For windows, no value is reported because the film coefficients cannot be remove
 
 A nominal thermal conductance for the surface is calculated for the surface, including film coefficients. Units for this field are W/m\(^{2}\)-K.
 
-For opaque surfaces, interior and exterior film coefficients are added to the surface construction based on the prescribed R-values for interior and exterior film coefficients as found in ASHRAE 90.1-2004, Appendix A, and shown below:~ The SI values are the exact values used inside EnergyPlus.
+For opaque surfaces, interior and exterior film coefficients are added to the surface construction based on the prescribed R-values for interior and exterior film coefficients as found in ASHRAE 90.1-2004, Appendix A, and shown below: The SI values are the exact values used inside EnergyPlus.
 
 \begin{longtable}[c]{p{1.2in}p{1.2in}p{1.2in}p{1.2in}p{1.2in}}
 \toprule
@@ -1825,22 +1921,7 @@ CEILING/ROOF & 0.61 & 0.1074271 & 0.46 & 0.0810106 \tabularnewline
 \bottomrule
 \end{longtable}
 
-NOTE:~ The resulting ``Nominal U with film coefs'' is only for comparison purposes with the ASHRAE 90.1 requirements. Actual film coefficients are calculated during the simulation and are dependent on several factors that may change during the simulation time period.
-
-For windows, the ``Nominal U with film coefs'' is calculated using the following assumptions from the WINDOW 5 program (also NFRC winter conditions):
-
-\begin{itemize}
-\item
-  Indoor air temperature = 21 C (69.8 F)
-\item
-  Outdoor air temperature = -18 C (-.4 F)
-\item
-  Exterior film coefficient = ~ 26 W/m\(^{2}\) (4.58 ft\(^{2}\)-F-hr/BTU)
-\item
-  Interior film coefficient = Calculated by EnergyPlus convection algorithm
-\item
-  No incident solar beam radiation
-\end{itemize}
+NOTE: The resulting ``Nominal U with film coefs'' is only for comparison purposes with the ASHRAE 90.1 requirements. Actual film coefficients are calculated during the simulation and are dependent on several factors that may change during the simulation time period.  It should be noted that the Nominal U-values with film coefficients that are listed in this report do not account for whether or not the surface in question is considered a "semi-exterior" surface. For such "semi-exterior" surfaces, use the Nominal U-value without film coefficients listed and then factor in the film coefficients for such surfaces listed in the literature (e.g., ASHRAE Standard 90.1).  For surfaces that use Other Side Coefficients, the exterior film coefficient that is used in this calculation is based on the value entered by the user in the Other Side Coefficients input.
 
 \subsubsection{Field: Area (Net)}\label{field-area-net}
 
@@ -1862,11 +1943,11 @@ Using the specified vertices for the surface (and order of entry), EnergyPlus ca
 
 Using the specified vertices for the surface (and order of entry), EnergyPlus can determine the tilt of the surface with respect to ``horizontal''. That angle is displayed in this field. Units for this field are degrees.
 
-\subsubsection{Field: \textasciitilde{}Width}\label{field-width}
+\subsubsection{Field: Width}\label{field-width}
 
 This field (approximate width of the surface) is calculated and filled by EnergyPlus from the entered vertices. Some parts of EnergyPlus use a width and height rather than the more detailed vertex/area calculations. Units for this field are m.
 
-\subsubsection{Field: \textasciitilde{}Height}\label{field-height}
+\subsubsection{Field: Height}\label{field-height}
 
 This field (approximate height of the surface) is calculated and filled by EnergyPlus from the entered vertices. Some parts of EnergyPlus use a width and height rather than the more detailed vertex/area calculations. Units for this field are m.
 
@@ -2037,11 +2118,11 @@ where:
 \item
   T = Exterior Surface Temperatre when Combined convective/radiative film Coeff \textless{} = 0
 \item
-  Tzone~ = Temperature of the zone being simulated (°C)
+  Tzone~ = Temperature of the zone being simulated (Celsius)
 \item
-  Toadb~ = Dry-bulb temperature of the outdoor air (°C)
+  Toadb~ = Dry-bulb temperature of the outdoor air (Celsius)
 \item
-  Tgrnd~ = Temperature of the ground (°C)
+  Tgrnd~ = Temperature of the ground (Celsius)
 \item
   Wspd~ = Outdoor wind speed (m/sec)
 \end{itemize}
@@ -2162,7 +2243,7 @@ This is the calculated number of CTFs (Conduction Transfer Functions). The condu
 
 \subsubsection{Field: Time Step}\label{field-time-step}
 
-The ``timestep'' in the construction line is the timestep at which the CTFs are valid. Because CTFs for certain constructions might not be stable at the user specified timestep (might be too ``heavy'' from a thermal mass standpoint), this may be different from the zone timestep (specified in ``TimeStep in Hour''). In all cases though, this will be greater than or equal to the zone timestep. If the timestep for the construction is greater than the zone timestep, E+ will use interpolated histories to solve for the surface heat balances for this surface (see discussion on interpolated histories in the \href{file:///E:/Docs4PDFs/EngineeringDoc.pdf}{Engineering Reference} document).
+The ``timestep'' in the construction line is the timestep at which the CTFs are valid. Because CTFs for certain constructions might not be stable at the user specified timestep (might be too ``heavy'' from a thermal mass standpoint), this may be different from the zone timestep (specified in ``TimeStep in Hour''). In all cases though, this will be greater than or equal to the zone timestep. If the timestep for the construction is greater than the zone timestep, E+ will use interpolated histories to solve for the surface heat balances for this surface (see discussion on interpolated histories in the \href{EngineeringDoc.pdf}{Engineering Reference} document).
 
 \subsubsection{Field: Thermal Conductance}\label{field-thermal-conductance}
 
@@ -2302,59 +2383,38 @@ This field ``time'' refers to the history term to which the coefficients are app
 
 A separate report is available for windows (note that both nominal conductance and Solar Heat Gain Coefficient are calculated for windows). Like the opaque construction, the window construction report has multiple parts -- in this case, 2.
 
-\textbf{Line 1:} ! \textless{}WindowConstruction\textgreater{},Construction Name,\#Layers,Roughness,Conductance \{W/m2-K\},SHGC,SolarTransmittanceNormalIncid,VisibleTransmittanceNormalIncid
-
-\textbf{Line 2:} ! \textless{}WindowMaterial:Glazing\textgreater{}, Material Name, Optical Data Type, Spectral Data Set Name, Thickness \{m\}, Solar Transmittance,Front Solar Reflectance, Back Solar Reflectance, Visible Transmittance, Front Visible Reflectance,Back Visible Reflectance,Infrared Transmittance, Front Thermal Emissivity, Back Thermal Emissivity,Conductivity \{W/m-K\},Dirt Factor,Solar Diffusing
-
-\textbf{Line 3:} ! \textless{}WindowMaterial:Gas\textgreater{},Material Name,GasType,Thickness \{m\}
-
-\textbf{Line 4:} ! \textless{}WindowMaterial:Shade\textgreater{},Material Name,Thickness \{m\},Conductivity \{W/m-K\},ThermalAbsorptance,Transmittance,VisibleTransmittance,ShadeReflectance
-
-\textbf{Line 5:} ! \textless{}WindowMaterial:Screen\textgreater{},Material Name,Thickness \{m\},Conductivity \{W/m-K\},ThermalAbsorptance,Transmittance,Reflectance,VisibleReflectance,DiffuseReflectance,DiffuseVisibleReflectance,ScreenMaterialDiameterToSpacingRatio,ScreenToGlassDistance \{m\}
-
-\textbf{Line 6:} ! \textless{}WindowMaterial:Blind\textgreater{},Material Name,SlatWidth \{m\},SlatSeparation \{m\},SlatThickness \{m\},SlatAngle \{deg\},SlatBeamSolarTransmittance,SlatBeamSolarFrontReflectance,BlindToGlassDistance \{m\}
-
-WindowConstruction,DOUBLE PANE WITH SCREEN,~~ 4,MediumRough,~~ 2.514,~~ 0.555,~~ 0.511,~~ 0.589
-
-~WindowMaterial:Screen,BRIGHT ALUMINUM SCREEN 1, 0.00025,~ 2.210E+02,~ 0.272,~ 0.697,~ 0.166,~ 0.166,~ 0.195,~ 0.195,~ 0.165,~ 0.025
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,SpectralAverage,,~ 0.00300,~ 0.83700,~ 0.07500,~ 0.07500,~ 0.89800,~ 0.08100,~ 0.08100,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.90000,~ 1.00000,No
-
-~WindowMaterial:Gas,WINAIRB1 - AIRSPACE RESISTANCE,Air,~ 1.300E-02,
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,SpectralAverage,,~ 0.00300,~ 0.83700,~ 0.07500,~ 0.07500,~ 0.89800,~ 0.08100,~ 0.08100,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.90000,~ 1.00000,No
-
-WindowConstruction,DOUBLE PANE WITH SHADE,~~ 4,VerySmooth,~~ 2.716,~~ 0.482,~~ 0.039,~~ 0.050
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,SpectralAverage,,~ 0.00300,~ 0.83700,~ 0.07500,~ 0.07500,~ 0.89800,~ 0.08100,~ 0.08100,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.90000,~ 1.00000,No
-
-~WindowMaterial:Gas,WINAIRB1 - AIRSPACE RESISTANCE,Air,~ 1.300E-02,
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,SpectralAverage,,~ 0.00300,~ 0.83700,~ 0.07500,~ 0.07500,~ 0.89800,~ 0.08100,~ 0.08100,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.90000,~ 1.00000,No
-
-~WindowMaterial:Shade,SHADE ROLL - LIGHT OPAQUE,~ 0.003,~ 1.000E-01,~ 0.900,~ 0.050,~ 0.050,~ 0.500
-
-WindowConstruction,DOUBLE PANE WITH BLIND,~~ 4,VerySmooth,~~ 2.761,~~ 0.714,~~ 0.395,~~ 0.456
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,~ 0.003,~ 0.900,~ 0.837,~ 0.898,~ 0.840,~ 0.840,~ 0.075,~ 0.075,~ 0.081,~ 0.081,~ 1.000,NO
-
-~WindowMaterial:Gas,WINAIRB1 - AIRSPACE RESISTANCE,Air,~ 1.300E-02,
-
-~WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,~ 0.003,~ 0.900,~ 0.837,~ 0.898,~ 0.840,~ 0.840,~ 0.075,~ 0.075,~ 0.081,~ 0.081,~ 1.000,NO
-
-~WindowMaterial:Blind,INTERIOR BLIND, 0.0010, 0.0022, 0.0010,~ 0.000,~ 0.000,~ 0.200,~ 0.025
+\begin{lstlisting}
+! <WindowConstruction>,Construction Name,#Layers,Roughness,Conductance {W/m2-K},Conductance (Before Adjusted) {W/m2-K},Convection Coefficient Adjustment Ratio,SHGC,SolarTransmittanceNormalIncid,VisibleTransmittanceNormalIncid
+WindowConstruction,DOUBLE PANE WITH SCREEN, 4,MediumRough, 2.514, 2.514, 1.000, 0.555, 0.511, 0.589
+WindowConstruction,DOUBLE PANE WITH SHADE, 4,VerySmooth, 2.716, 2.716, 1.000, 0.482, 0.039, 0.050
+WindowConstruction,DOUBLE PANE WITH BLIND, 4,VerySmooth, 2.761, 2.761, 1.000, 0.714, 0.395, 0.456
+\end{lstlisting}
+\begin{lstlisting}
+! <WindowMaterial:Glazing>, Material Name, Optical Data Type, Spectral Data Set Name, Thickness {m}, Solar Transmittance,Front Solar Reflectance, Back Solar Reflectance, Visible Transmittance, Front Visible Reflectance,Back Visible Reflectance,Infrared Transmittance, Front Thermal Emissivity, Back Thermal Emissivity,Conductivity {W/m-K},Dirt Factor,Solar Diffusing
+WindowMaterial:Glazing,GLASS - CLEAR SHEET 1 / 8 IN,SpectralAverage,, 0.00300, 0.83700, 0.07500, 0.07500, 0.89800, 0.08100, 0.08100, 0.00000, 0.84000, 0.84000, 0.90000, 1.00000,No
+! <WindowMaterial:Gas>,Material Name,GasType,Thickness {m}
+WindowMaterial:Gas,WINAIRB1 - AIRSPACE RESISTANCE,Air, 1.300E-02
+! <WindowMaterial:Shade>,Material Name,Thickness {m},Conductivity {W/m-K},ThermalAbsorptance,Transmittance,VisibleTransmittance,ShadeReflectance
+WindowMaterial:Shade,SHADE ROLL - LIGHT OPAQUE, 0.003, 1.000E-01, 0.900, 0.050, 0.050, 0.500
+! <WindowMaterial:Screen>,Material Name,Thickness {m},Conductivity {W/m-K},ThermalAbsorptance,Transmittance,Reflectance,VisibleReflectance,DiffuseReflectance,DiffuseVisibleReflectance,ScreenMaterialDiameterToSpacingRatio,ScreenToGlassDistance {m}
+WindowMaterial:Screen,BRIGHT ALUMINUM SCREEN 1, 0.00025, 2.210E+02, 0.272, 0.697, 0.166, 0.166, 0.195, 0.195, 0.165, 0.025
+! <WindowMaterial:Blind>,Material Name,SlatWidth {m},SlatSeparation {m},SlatThickness {m},SlatAngle {deg},SlatBeamSolarTransmittance,SlatBeamSolarFrontReflectance,BlindToGlassDistance {m}
+WindowMaterial:Blind,INTERIOR BLIND, 0.0010, 0.0022, 0.0010, 0.000, 0.000, 0.200, 0.025
+\end{lstlisting}
 
 \subsubsection{Fields in Part 1 -- Window Construction Report}\label{fields-in-part-1-window-construction-report}
 
-\textbf{Line 1:} ! \textless{}WindowConstruction\textgreater{},Construction Name,\#Layers,Roughness,Conductance \{W/m2-K\},SHGC,SolarTransmittanceNormalIncid,VisibleTransmittanceNormalIncid
+\begin{lstlisting}
+! <WindowConstruction>,Construction Name,#Layers,Roughness,Conductance {W/m2-K},Conductance (Before Adjusted) {W/m2-K},Convection Coefficient Adjustment Ratio,SHGC,SolarTransmittanceNormalIncid,VisibleTransmittanceNormalIncid
+\end{lstlisting}
 
 \subsubsection{Field: \textless{}WindowConstruction\textgreater{}}\label{field-windowconstruction}
 
-This will be filled with the constant ``Construction'' for each Window Construction line.
+This will be filled with the constant ``WindowConstruction'' for each Window Construction line.
 
 \subsubsection{Field: Construction Name}\label{field-construction-name-1}
 
-This is the name of the window as entered in the IDF.
+This is the name of the window construction as entered in the IDF.
 
 \subsubsection{Field: \#Layers}\label{field-layers-1}
 
@@ -2366,7 +2426,15 @@ The window construction takes on the roughness from the outer material layer. Ro
 
 \subsubsection{Field: Conductance}\label{field-conductance}
 
-This is the center-of-glass conductance of the construction calculated with film coefficients, for winter conditions (indoor air temperature = 21C (69.8F), outdoor air temperature = -18C (-.4F), windspeed = 5.5 m/s (12.3 mph), no solar radiation). Units are W/m\(^{2}\)-K.
+This is the center-of-glass conductance of the construction calculated with film coefficients, for winter conditions (indoor air temperature = 21C (69.8F), outdoor air temperature = -18C (-.4F), windspeed = 5.5 m/s (12.3 mph), no solar radiation). Units are W/m\(^{2}\)-K. The value is calculated by assuming a simple glazing plane with film coefficients, while the film coefficients can be adjusted assuming highly conducted frames are applied given high Nominal U input.
+
+\subsubsection{Field: Conductance (Before Adjusted)}\label{field-conductance-before-adjusted}
+
+This is the center-of-glass conductance of the construction calculated with film coefficients, assuming glazing only, for winter conditions (same as above). Units are W/m\(^{2}\)-K. The value can be lower than the input Nominal U for the simple glazing system due to heat transfer physics limit assuming the default film coefficients and a flat plane.
+
+\subsubsection{Field: Convection Coefficient Adjustment Ratio}\label{field-convection-coefficient-adjustment-ratio}
+
+For simple glazing (WindowMaterial:SimpleGlazingSystem), this is the adjustment ratio to both inside and outside window film coefficients assuming highly conducting frames are applied to achieve a high Nominal U-Factor. The adjustment ratio is calculated such that the glazing-only conductance evaluated at winter conditions equals the input Nominal U-Factor.
 
 \subsubsection{Field: SHGC}\label{field-shgc}
 
@@ -2386,21 +2454,19 @@ Transmittance normal incidence averaged over the solar spectrum and weighted by 
 
 Part 2 of the Window Construction Report encompasses several ``lines''.
 
-\textbf{Line 2:} ! \textless{}WindowMaterial:Glazing\textgreater{}, Material Name, Optical Data Type, Spectral Data Set Name, Thickness \{m\}, Solar Transmittance,Front Solar Reflectance, Back Solar Reflectance, Visible Transmittance, Front Visible Reflectance,Back Visible Reflectance,Infrared Transmittance, Front Thermal Emissivity, Back Thermal Emissivity,Conductivity \{W/m-K\},Dirt Factor,Solar Diffusing
+\begin{lstlisting}
+! <WindowMaterial:Glazing>, Material Name, Optical Data Type, Spectral Data Set Name, Thickness {m}, Solar Transmittance,Front Solar Reflectance, Back Solar Reflectance, Visible Transmittance, Front Visible Reflectance,Back Visible Reflectance,Infrared Transmittance, Front Thermal Emissivity, Back Thermal Emissivity,Conductivity {W/m-K},Dirt Factor,Solar Diffusing
+! <WindowMaterial:Gas>,Material Name,GasType,Thickness {m}
+! <WindowMaterial:Shade>,Material Name,Thickness {m},Conductivity {W/m-K},ThermalAbsorptance,Transmittance,VisibleTransmittance,ShadeReflectance
+! <WindowMaterial:Screen>,Material Name,Thickness {m},Conductivity {W/m-K},ThermalAbsorptance,Transmittance,Reflectance,VisibleReflectance,DiffuseReflectance,DiffuseVisibleReflectance,ScreenMaterialDiameterToSpacingRatio,ScreenToGlassDistance {m}
+! <WindowMaterial:Blind>,Material Name,SlatWidth {m},SlatSeparation {m},SlatThickness {m},SlatAngle {deg},SlatBeamSolarTransmittance,SlatBeamSolarFrontReflectance,BlindToGlassDistance {m}
+\end{lstlisting}
 
-\textbf{Line 3:} ! \textless{}WindowMaterial:Gas\textgreater{},Material Name,GasType,Thickness \{m\}
+\subsubsection{WindowMaterial:Glazing}\label{materialwindowglass}
 
-\textbf{Line 4:} ! \textless{}WindowMaterial:Shade\textgreater{},Material Name,Thickness \{m\},Conductivity \{W/m-K\},ThermalAbsorptance,Transmittance,VisibleTransmittance,ShadeReflectance
+\subsubsection{Field:~ \textless{}WindowMaterial:Glazing\textgreater{}}\label{field-materialwindowglass}
 
-\textbf{Line 5:} ! \textless{}WindowMaterial:Screen\textgreater{},Material Name,Thickness \{m\},Conductivity \{W/m-K\},ThermalAbsorptance,Transmittance,Reflectance,VisibleReflectance,DiffuseReflectance,DiffuseVisibleReflectance,ScreenMaterialDiameterToSpacingRatio,ScreenToGlassDistance \{m\}
-
-\textbf{Line 6:} ! \textless{}WindowMaterial:Blind\textgreater{},Material Name,SlatWidth \{m\},SlatSeparation \{m\},SlatThickness \{m\},SlatAngle \{deg\},SlatBeamSolarTransmittance,SlatBeamSolarFrontReflectance,BlindToGlassDistance \{m\}
-
-\subsection{Material\textbf{:}WindowGlass}\label{materialwindowglass}
-
-\subsubsection{Field:~ \textless{}Material:WindowGlass\textgreater{}}\label{field-materialwindowglass}
-
-This will be filled with the constant ``Material:WindowGlass'' for each material of this type in the construction.
+This will be filled with the constant ``WindowMaterial:Glazing'' for each material of this type in the construction.
 
 \subsubsection{Field: Material Name}\label{field-material-name-2}
 
@@ -2454,11 +2520,11 @@ Glass transmittance dirt factor (1.0 is clear, no dirt factor).
 
 Solar Diffusing value -- Yes if solar diffusing glass, No if not.
 
-\subsubsection{Material:WindowGas}\label{materialwindowgas}
+\subsubsection{WindowMaterial:Gas}\label{materialwindowgas}
 
-\subsubsection{Field:~ \textless{}Material:WindowGas\textgreater{}}\label{field-materialwindowgas}
+\subsubsection{Field:~ \textless{}WindowMaterial:Gas\textgreater{}}\label{field-materialwindowgas}
 
-This will be filled with the constant ``Material:WindowGas'' for each material of this type in the construction.
+This will be filled with the constant ``WindowMaterial:Gas'' for each material of this type in the construction.
 
 \subsubsection{Field: Material Name}\label{field-material-name-3}
 
@@ -2472,11 +2538,11 @@ Type of the gas layer. Possibilities are Air, Argon, Krypton,~ Xenon, and Custom
 
 Thickness of the gas layer.
 
-\subsubsection{Material:WindowShade}\label{materialwindowshade}
+\subsubsection{WindowMaterial:Shade}\label{materialwindowshade}
 
-\subsubsection{Field:~ \textless{}Material:WindowShade\textgreater{}}\label{field-materialwindowshade}
+\subsubsection{Field:~ \textless{}WindowMaterial:Shade\textgreater{}}\label{field-materialwindowshade}
 
-This will be filled with the constant ``Material:WindowShade'' for each material of this type in the construction.
+This will be filled with the constant ``WindowMaterial:Shade'' for each material of this type in the construction.
 
 \subsubsection{Field: Material Name}\label{field-material-name-4}
 
@@ -2506,11 +2572,11 @@ Transmittance of the window shade layer averaged over the solar spectrum and wei
 
 Reflectance of the window shade layer averaged over the solar spectrum. Assumed same for beam solar radiation and diffuse solar radiation. Reflectance of beam solar radiation is assumed to be independent of angle of incidence. Reflectance is assumed to be the same for the front and back faces of the shade layer.
 
-\subsection{Material:WindowBlind}\label{materialwindowblind}
+\subsubsection{WindowMaterial:Blind}\label{materialwindowblind}
 
-This will be filled with the constant ``Material:WindowBlind'' for each material of this type in the construction.
+This will be filled with the constant ``WindowMaterial:Blind'' for each material of this type in the construction.
 
-\subsubsection{Field: \textless{}Material:WindowBlind\textgreater{}}\label{field-materialwindowblind}
+\subsubsection{Field: \textless{}WindowMaterial:Blind\textgreater{}}\label{field-materialwindowblind}
 
 \subsubsection{Field: Material Name}\label{field-material-name-5}
 
@@ -2544,11 +2610,11 @@ The beam solar reflectance at normal incidence on the front side of the slat. As
 
 Distance from the mid-plane of the blind to the adjacent glass (m).
 
-\subsubsection{Material:WindowScreen}\label{materialwindowscreen}
+\subsubsection{WindowMaterial:Screen}\label{materialwindowscreen}
 
-\subsubsection{Field:~ \textless{}Material:WindowScreen\textgreater{}}\label{field-materialwindowscreen}
+\subsubsection{Field:~ \textless{}WindowMaterial:Screen\textgreater{}}\label{field-materialwindowscreen}
 
-This will be filled with the constant ``Material:WindowScreen'' for each material of this type in the construction.
+This will be filled with the constant ``WindowMaterial:Screen'' for each material of this type in the construction.
 
 \subsubsection{Field: Material Name}\label{field-material-name-6}
 
@@ -2598,69 +2664,49 @@ Distance from the mid-plane of the screen to the adjacent glass (m).
 
 Windows with Thermochromic constructions are reported similarly to other window constructions. First, you see the window as entered in the IDF:
 
-WindowConstruction,TCWINDOW,~~ 5,VerySmooth,~~ 1.666,~~ 0.429,~~ 0.242,~~ 0.520
+\begin{lstlisting}
+WindowConstruction,TCWINDOW,~~ 5,VerySmooth,~~ 1.666,~~ 1.666,~~ 1.000,~~ 0.429,~~ 0.242,~~ 0.520
+WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
+WindowMaterial:Glazing,WO18RT25,Spectral,WO18RT25SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
+WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
+WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
+\end{lstlisting}
 
-~WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
+Then, there will be a list of window constructions reported with each one corresponding to a particular temperature of the thermochromic glazing layer. For example, the following excerpt shows a list of window constructions for the thermochromic window TCWINDOW at different temperature of the thermochromic layer - TCWINDOW\_TC\_25 at 25$^{\circ}$C, TCWINDOW\_TC\_27 at 27$^{\circ}$C, and TCWINDOW\_TC\_29 at 29$^{\circ}$C. Detailed properties of the thermochromic glazing layer are also listed for each temperature - WO18RT25 \textbf{at} 25$^{\circ}$C, WO18RT27 \textbf{at} 27$^{\circ}$C, and WO18RT29 \textbf{at} 29$^{\circ}$C.
 
-~WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
-
-~WindowMaterial:Glazing,WO18RT25,Spectral,WO18RT25SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
-
-~WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-Then, there will be a list of window constructions reported with each one corresponding to a particular temperature of the thermochromic glazing layer. For example, the following excerpt shows a list of window constructions for the thermochromic window TCWINDOW at different temperature of the thermochromic layer - TCWINDOW\_TC\_25 at 25°C, TCWINDOW\_TC\_27 at 27°C, and TCWINDOW\_TC\_29 at 29°C. Detailed properties of the thermochromic glazing layer are also listed for each temperature - WO18RT25 \textbf{at} 25°C, WO18RT27 \textbf{at} 27°C, and WO18RT29 \textbf{at} 29°C.
-
-WindowConstruction,TCWINDOW\_TC\_25,~~ 5,VerySmooth,~~ 1.666,~~ 0.429,~~ 0.242,~~ 0.520
-
-~WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
-
-~WindowMaterial:Glazing,WO18RT25,Spectral,WO18RT25SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
-
-~WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-~WindowConstruction,TCWINDOW\_TC\_27,~~ 5,VerySmooth,~~ 1.666,~~ 0.424,~~ 0.236,~~ 0.504
-
-~WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
-
-~WindowMaterial:Glazing,WO18RT27,Spectral,WO18RT27SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
-
-~WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-~WindowConstruction,TCWINDOW\_TC\_29,~~ 5,VerySmooth,~~ 1.666,~~ 0.419,~~ 0.230,~~ 0.490
-
-~WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
-
-~WindowMaterial:Glazing,WO18RT29,Spectral,WO18RT29SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
-
-~WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
-
-~WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
+\begin{lstlisting}
+WindowConstruction,TCWINDOW\_TC\_25,~~ 5,VerySmooth,~~ 1.666,~~ 1.666,~~ 1.000,~~ 0.429,~~ 0.242,~~ 0.520
+WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
+WindowMaterial:Glazing,WO18RT25,Spectral,WO18RT25SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
+WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
+WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowConstruction,TCWINDOW\_TC\_27,~~ 5,VerySmooth,~~ 1.666,~~ 1.666,~~ 1.000,~~ 0.424,~~ 0.236,~~ 0.504
+WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
+WindowMaterial:Glazing,WO18RT27,Spectral,WO18RT27SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
+WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
+WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowConstruction,TCWINDOW\_TC\_29,~~ 5,VerySmooth,~~ 1.666,~~ 1.666,~~ 1.000,~~ 0.419,~~ 0.230,~~ 0.490
+WindowMaterial:Glazing,CLEAR3PPG,Spectral,CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 1.00000,~ 1.00000,No
+WindowMaterial:Gas,AIR 3MM,Air,~ 3.000E-03,
+WindowMaterial:Glazing,WO18RT29,Spectral,WO18RT29SP,~ 0.00750,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.84000,~ 0.84000,~ 0.60000,~ 1.00000,No
+WindowMaterial:Gas,AIR 8MM,Air,~ 8.000E-03,
+WindowMaterial:Glazing,SB60CLEAR3PPG,Spectral,SB60CLEAR3PPGSP,~ 0.00328,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.00000,~ 0.03500,~ 0.84000,~ 1.00000,~ 1.00000,No
+\end{lstlisting}
 
 \subsection{Complex Fenestration}\label{complex-fenestration}
 
 Complex fenestration is reported in a similar manner as other windows.~ The first line is the header, followed by details about each fenestration object (window).
 
-~! \textless{}WindowConstruction:Complex\textgreater{},Construction Name,Index,\#Layers,U-factor \{W/m2-K\},SHGC
-
-~WindowConstruction:Complex,CFS\_GLZ\_813,6,4,0.544,9.104E-002
-
-~WindowConstruction:Complex,CFS\_GLZ\_2015,7,3,1.777,9.205E-002
-
-~WindowConstruction:Complex,CFS\_GLZ\_2046,8,3,2.418,9.273E-002
-
-~WindowConstruction:Complex,CFS\_GLZ\_2001,9,3,1.989,9.253E-002
+\begin{lstlisting}
+! <WindowConstruction:Complex>,Construction Name,Index,#Layers,U-factor {W/m2-K},SHGC
+WindowConstruction:Complex,CFS\_GLZ\_813,6,4,0.544,9.104E-002
+WindowConstruction:Complex,CFS\_GLZ\_2015,7,3,1.777,9.205E-002
+WindowConstruction:Complex,CFS\_GLZ\_2046,8,3,2.418,9.273E-002
+WindowConstruction:Complex,CFS\_GLZ\_2001,9,3,1.989,9.253E-002
+\end{lstlisting}
 
 \subsubsection{Field: Construction Name}\label{field-construction-name-2}
 
@@ -4140,16 +4186,12 @@ Finally, grey interchange coefficients are presented. These are the coefficients
 
 \subsection{DX Coil Outputs}\label{dx-coil-outputs}
 
-\subsection{DX Cooling Coil Outputs}\label{dx-cooling-coil-outputs}
+\subsection{DX Cooling Coil Standard Rating Information}\label{dx-cooling-coil-standard-ratings-2010}
 
 Outputs are provided for air-cooled, single-speed direct expansion (DX) cooling coils as follows:
 
 \begin{lstlisting}
-! <DX Cooling Coil Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rated Net COP {W/W}, EER {Btu/W-h}, SEER {Btu/W-h}, SEER Default {Btu/W-h}, IEER {Btu/W-h}
-\end{lstlisting}
-~ DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PSZ-AC\_1:1\_COOLC DXCOIL, 23990.7, 2.57, 8.77, 9.30, 8.80, 9.03
-\begin{lstlisting}
-DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, PSZ-AC\_2:2\_COOLC DXCOIL, 17626.1, 3.19, 10.88, 12.53, 11.46, 12.16
+! <DX Cooling Coil Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rated Net COP {W/W}, EER {Btu/W-h}, SEER User {Btu/W-h}, SEER Standard {Btu/W-h}, IEER {Btu/W-h}
 \end{lstlisting}
 
 \subsubsection{Field: Component Type}\label{field-component-type-3}
@@ -4160,15 +4202,15 @@ This is the component type, currently Coil:Cooling:DX:SingleSpeed is the only va
 
 The name of the DX cooling coil from the input data file (IDF).
 
-\subsubsection{Field: Standard Rating (Net) Cooling Capacity \{W\}}\label{field-standard-rating-net-cooling-capacity-w}
+\subsubsection{Field: Standard Rating (Net) Cooling Capacity \{W\}}
 
 The standard rating (net) cooling capacity for this DX cooling coil. Units are Watts. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
 
-\subsubsection{Field: Standard Rated Net COP \{W/W\}}\label{field-standard-rated-net-cop-ww}
+\subsubsection{Field: Standard Rated Net COP \{W/W\}}
 
 The standard rated net COP or energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in SI units of W/W. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
 
-\subsubsection{Field: EER \{Btu/W-h\}}\label{field-eer-btuw-h}
+\subsubsection{Field: EER \{Btu/W-h\}}
 
 The energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
 
@@ -4176,21 +4218,102 @@ The energy efficiency ratio (\emph{EER}) at standard rating conditions for the D
 
 The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated. SEER User value calculation uses user specified Part Load Factor (PLF) curve to account for cycling effect.
 
-\subsubsection{Field: SEER Standard \{Btu/W-h\}}\label{field-seer-btuw-h}
+\subsubsection{Field: SEER Standard \{Btu/W-h\}}
 
 The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated. SEER Standard value calculation uses AHRI Standard 210/240-2008 default Part Load Factor (PLF) curve and cooling coefficient of degradation value of 0.25 to account for cycling effect. Otherwise, the SEER User and SEER Standard values calculation use identical procedure.
 
-\subsubsection{Field: IEER \{Btu/W-h\}}\label{field-ieer-btuw-h}
+\subsubsection{Field: IEER \{Btu/W-h\}}
 
 The integrated energy efficiency ratio (\emph{IEER}) for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
 
-\subsection{DX Cooling Coil Outputs for ASHRAE 127 Standard Ratings}\label{dx-cooling-coil-outputs-for-ashrae-127-standard-ratings}
+
+\subsection{DX Cooling Coil Standard Ratings 2017}\label{dx-cooling-coil-standard-ratings-2017}
+
+Outputs are provided for air-cooled, single-speed and multi-speed direct expansion (DX) cooling coils as follows:
+
+\begin{lstlisting}
+! <DX Cooling Coil Standard Ratings 2017>, Component Name, Component Type, Standard Rating (Net) Cooling Capacity {W}, Standard Rated Net COP {W/W}, EER {Btu/W-h}, SEER User {Btu/W-h}, SEER Standard {Btu/W-h}, IEER {Btu/W-h}
+\end{lstlisting}
+
+\subsubsection{field: Component Name}\label{field-component-name-4}
+
+The name of the DX cooling coil from the input data file (IDF).
 
 \subsubsection{Field: Component Type}\label{field-component-type-4}
 
+In the 2017 implementation, supported compontent types include: Coil:Cooling:DX:SingleSpeed and Coil:Cooling:DX:MultiSpeed.
+
+\subsubsection{Field: Standard Rating (Net) Cooling Capacity \{W\}}
+
+The standard rating (net) cooling capacity for this DX cooling coil. Units are Watts. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
+
+\subsubsection{Field: Standard Rated Net COP \{W/W\}}
+
+The standard rated net COP or energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in SI units of W/W. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
+
+\subsubsection{Field: EER \{Btu/W-h\}}
+
+The energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
+
+\subsubsection{Field: SEER User \{Btu/W-h\}}
+
+The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. This calculation uses the user specified Part Load Factor (PLF) curve and cooling coefficient of degradation to account for cycling effects. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated. 
+
+\subsubsection{Field: SEER Standard \{Btu/W-h\}}
+
+The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. This calculation uses the AHRI Standard 210/240-2017 default Part Load Factor (PLF) curve and cooling coefficient of degradation value of 0.25 to account for cycling effects. Otherwise, the SEER User and SEER Standard values calculation use identical procedure. See the EnergyPlus Engineering Reference (DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated. 
+
+\subsubsection{Field: IEER \{Btu/W-h\}}
+
+The integrated energy efficiency ratio (\emph{IEER}) for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
+
+\subsection{DX Cooling Coil Standard Ratings 2023}\label{dx-cooling-coil-standard-ratings-2023}
+
+Outputs are provided for the following types of air cooled and evaporatively cooled direct expansion (DX) cooling coils: CurveFit, SingleSpeed, ToSpeed, MultiSpeed, and VariableSpeed.
+
+\begin{lstlisting}
+! <DX Cooling Coil Standard Ratings 2023>, Component Name, Component Type, Standard Rating (Net) Cooling Capacity {W}, Standard Rated Net COP {W/W}, EER {Btu/W-h}, SEER User {Btu/W-h}, SEER Standard {Btu/W-h}, IEER {Btu/W-h}
+\end{lstlisting}
+
+\subsubsection{field: Component Name}\label{field-component-name-5}
+
+The name of the DX cooling coil from the input data file (IDF).
+
+\subsubsection{Field: Component Type}\label{field-component-type-5}
+
+In the 2023 implementation, supported compontent types include: Coil:Cooling:DX:CurveFit, Coil:Cooling:DX:SingleSpeed, Coil:Cooling:DX:TwoSpeed, Coil:Cooling:DX:MultiSpeed, and Coil:Cooling:DX:VariableSpeed.
+
+\subsubsection{Field: Standard Rating (Net) Cooling Capacity \{W\}}
+
+The standard rating (net) cooling capacity for this DX cooling coil. Units are Watts. See the EnergyPlus Engineering Reference (Single Speed DX Cooling Coil and Multi Speed DX Cooling Coil, Standard Ratings) for details on how this value is calculated.
+
+\subsubsection{Field: Standard Rated Net COP \{W/W\}}
+
+The standard rated net COP or energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in SI units of W/W. See the EnergyPlus Engineering Reference (CurveFit, SingleSpeed, TwoSpeed, MultiSpeed, and VariableSpeed DX Cooling Coils, Standard Ratings) for details on how this value is calculated for the various configurations.
+
+\subsubsection{Field: EER \{Btu/W-h\}}
+
+The energy efficiency ratio (\emph{EER}) at standard rating conditions for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (CurveFit, SingleSpeed, TwoSpeed, MultiSpeed, and VariableSpeed DX Cooling Coils, Standard Ratings) for details on how this value is calculated.
+
+\subsubsection{Field: SEER User \{Btu/W-h\}}
+
+The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. This calculation uses the user specified Part Load Factor (PLF) curve and cooling coefficient of degradation to account for cycling effects. See the EnergyPlus Engineering Reference (CurveFit, SingleSpeed, TwoSpeed, MultiSpeed, and VariableSpeed DX Cooling Coils, Standard Ratings) for details on how this value is calculated. 
+
+\subsubsection{Field: SEER Standard \{Btu/W-h\}}
+
+The seasonal energy efficiency ratio (SEER) for the DX cooling coil in IP units of Btu/W-hr. This calculation uses the AHRI Standard 210/240-2017 default Part Load Factor (PLF) curve and cooling coefficient of degradation value of 0.25 to account for cycling effects. Otherwise, the SEER User and SEER Standard values calculation use identical procedure. See the EnergyPlus Engineering Reference (CurveFit, SingleSpeed, TwoSpeed, MultiSpeed, and VariableSpeed DX Cooling Coils, Standard Ratings) for details on how this value is calculated. 
+
+\subsubsection{Field: IEER \{Btu/W-h\}}
+
+The integrated energy efficiency ratio (\emph{IEER}) for the DX cooling coil in IP units of Btu/W-hr. See the EnergyPlus Engineering Reference (CurveFit, SingleSpeed, TwoSpeed, MultiSpeed, and VariableSpeed DX Cooling Coils, Standard Ratings) for details on how this value is calculated.
+
+\subsection{DX Cooling Coil Outputs for ASHRAE 127 Standard Ratings}\label{dx-cooling-coil-outputs-for-ashrae-127-standard-ratings}
+
+\subsubsection{Field: Component Type}\label{field-component-type-6}
+
 This is the component type, currently Coil:Cooling:DX:SingleSpeed is the only valid type.
 
-\subsubsection{Field: Component Name}\label{field-component-name-4}
+\subsubsection{Field: Component Name}\label{field-component-name-6}
 
 The name of the DX cooling coil from the input data file (IDF).
 
@@ -4247,11 +4370,11 @@ Outputs are provided for single-speed direct expansion (DX) heating coils as fol
 DX Heating Coil Standard Rating Information, Coil:Heating:DX:SingleSpeed, PSZ-AC\_1:1\_HEATC DXCOIL, 10476.1, 5833.2, 6.10, 4
 \end{lstlisting}
 
-\subsubsection{Field: Component Type}\label{field-component-type-5}
+\subsubsection{Field: Component Type}\label{field-component-type-7}
 
 This is the component type, currently Coil:Heating:DX:SingleSpeed is the only valid type.
 
-\subsubsection{Field: Component Name}\label{field-component-name-5}
+\subsubsection{Field: Component Name}\label{field-component-name-7}
 
 The name of the DX heating coil from the input data file (IDF).
 
@@ -4281,11 +4404,11 @@ Chiller Standard Rating Information, Chiller:Electric:EIR, Big Chiller 1, 4.5, 1
 Chiller Standard Rating Information, Chiller:Electric:ReformulatedEIR, Big Chiller 2, 4.8, 16.4
 \end{lstlisting}
 
-\subsubsection{Field: Component Type}\label{field-component-type-6}
+\subsubsection{Field: Component Type}\label{field-component-type-8}
 
 This is the component type, Chiller:Electric:EIR and/or Chiller:Electric:ReformulatedEIR.
 
-\subsubsection{Field: Component Name}\label{field-component-name-6}
+\subsubsection{Field: Component Name}\label{field-component-name-8}
 
 The name of the Chiller:Electric:EIR and Chiller:Electric:ReformulatedEIR objects from the input data file (IDF).
 
@@ -4299,7 +4422,7 @@ The integrated part load value (\emph{IPLV}) for the Chiller:Electric:EIR and Ch
 
 \subsection{Warmup Days Line}
 
-As described elsewhere, EnergyPlus simulates the first day of each simulation period until it reaches “convergence”. This data line will show how many warm up days were required to reach that state.
+As described elsewhere, EnergyPlus simulates the first day of each simulation period until it reaches ``convergence''. This data line will show how many warm up days were required to reach that state.
 
 \begin{lstlisting}
 ! <Environment:WarmupDays>, NumberofWarmupDays
@@ -4316,7 +4439,7 @@ This field will show the number of days required to reach the convergence state 
 
 \subsection{Warmup Convergence Outputs}
 
-Warmup is performed for each environment being simulated. When a file passes convergence, no warnings are shown.  However, when it doesn’t a warning appears in the eplusout.err file, for example:
+Warmup is performed for each environment being simulated. When a file passes convergence, no warnings are shown.  However, when it doesn't a warning appears in the eplusout.err file, for example:
 
 \begin{lstlisting}
 CheckWarmupConvergence: Loads Initialization, Zone = "BACKROOM" did not converge after 25 warmup days.
@@ -4338,7 +4461,7 @@ See Warmup Convergence Information in .eio file for details
 
 \subsection{Warmup Convergence Information}
 
-Warmup convergence information reflects the warmup days calculations and whether or not the zone has reached “convergence”. Warmup calculations are done for each environment (e.g. each sizing period simulated, each run period simulated). Reference the building parameters on Minimum and Maximum Number of Warmup Days as well as Loads and Temperature convergence Tolerance. The file contains two possible flavors of warmup information: summary and detailed.
+Warmup convergence information reflects the warmup days calculations and whether or not the zone has reached ``convergence''. Warmup calculations are done for each environment (e.g. each sizing period simulated, each run period simulated). Reference the building parameters on Minimum and Maximum Number of Warmup Days as well as Loads and Temperature convergence Tolerance. The file contains two possible flavors of warmup information: summary and detailed.
 
 \subsection{Summary Warmup Convergence Information}
 
@@ -4366,7 +4489,7 @@ This field will show the name of individual zone.
 
 \subsubsection{Field: Environment Type/Name}
 
-Type of environment being run (SizingPeriod, RunPeriod) as well as it’s "name".
+Type of environment being run (SizingPeriod, RunPeriod) as well as it's ``name''.
 
 \subsubsection{Field: Average Warmup Temperature Difference \{deltaC\}}
 

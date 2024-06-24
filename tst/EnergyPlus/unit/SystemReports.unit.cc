@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -53,7 +53,10 @@
 // EnergyPlus Headers
 #include "Fixtures/EnergyPlusFixture.hh"
 #include <EnergyPlus/Data/EnergyPlusData.hh>
+#include <EnergyPlus/DataAirLoop.hh>
 #include <EnergyPlus/DataAirSystems.hh>
+#include <EnergyPlus/DataDefineEquip.hh>
+#include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataHVACGlobals.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
@@ -68,7 +71,6 @@
 #include <EnergyPlus/IOFiles.hh>
 #include <EnergyPlus/OutAirNodeManager.hh>
 #include <EnergyPlus/OutdoorAirUnit.hh>
-#include <EnergyPlus/PackagedTerminalHeatPump.hh>
 #include <EnergyPlus/PurchasedAirManager.hh>
 #include <EnergyPlus/SystemReports.hh>
 #include <EnergyPlus/UnitVentilator.hh>
@@ -77,9 +79,7 @@
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
 
 using namespace EnergyPlus::SystemReports;
-using namespace EnergyPlus::DataGlobalConstants;
 using namespace EnergyPlus::DataAirSystems;
-using namespace EnergyPlus::DataGlobalConstants;
 
 namespace EnergyPlus {
 
@@ -108,9 +108,9 @@ TEST_F(EnergyPlusFixture, SeparateGasOutputVariables)
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).NodeNumOut = 1;
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).NumMeteredVars = 1;
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar.allocate(1);
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).EndUse_CompMode = SystemReports::iEndUseType::CoolingOnly;
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).CurMeterReading = 100.0;
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).ResourceType = AssignResourceTypeNum("NaturalGas");
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).heatOrCool = Constant::HeatOrCool::CoolingOnly;
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).curMeterReading = 100.0;
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).resource = Constant::eResource::NaturalGas;
 
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).Name = "Main Gas Heating Coil";
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).TypeOf = "COIL:HEATING:DESUPERHEATER";
@@ -118,30 +118,21 @@ TEST_F(EnergyPlusFixture, SeparateGasOutputVariables)
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).NodeNumOut = 2;
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).NumMeteredVars = 1;
     state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar.allocate(1);
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).EndUse_CompMode = SystemReports::iEndUseType::CoolingOnly;
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).CurMeterReading = 100.0;
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).ResourceType = AssignResourceTypeNum("NaturalGas");
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).heatOrCool = Constant::HeatOrCool::CoolingOnly;
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).curMeterReading = 100.0;
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).resource = Constant::eResource::NaturalGas;
 
     state->dataLoopNodes->Node(1).MassFlowRate = 1.0;
     state->dataLoopNodes->Node(2).MassFlowRate = 1.0;
 
-    state->dataSysRpts->SysHumidNaturalGas.allocate(1);
-    state->dataSysRpts->SysHCCompNaturalGas.allocate(1);
-    state->dataSysRpts->SysTotNaturalGas.allocate(1);
-    state->dataSysRpts->SysTotPropane.allocate(1);
-    state->dataSysRpts->SysHCCompPropane.allocate(1);
-    state->dataSysRpts->SysHumidPropane.allocate(1);
-
-    state->dataSysRpts->SysHumidNaturalGas(1) = 0;
-    state->dataSysRpts->SysHCCompNaturalGas(1) = 0;
-    state->dataSysRpts->SysTotNaturalGas(1) = 0;
+    state->dataSysRpts->SysLoadRepVars.allocate(1);
 
     // Calculate SysHumidNaturalGas ("Air System Humidifier NaturalGas Energy" Output Variable)
     CalcSystemEnergyUse(*state,
                         CompLoadFlag,
                         AirLoopNum,
                         state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).TypeOf,
-                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).ResourceType,
+                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).resource,
                         CompLoad,
                         CompEnergyUse);
 
@@ -150,61 +141,31 @@ TEST_F(EnergyPlusFixture, SeparateGasOutputVariables)
                         CompLoadFlag,
                         AirLoopNum,
                         state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).TypeOf,
-                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).ResourceType,
+                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).resource,
                         CompLoad,
                         CompEnergyUse);
 
-    EXPECT_EQ(state->dataSysRpts->SysHumidNaturalGas(1), 100);
-    EXPECT_EQ(state->dataSysRpts->SysHCCompNaturalGas(1), 100);
-
-    // Allocate variables to run ReportSystemEnergyUse() function for SysTotNaturalGas ("Air System NaturalGas Energy")
-    state->dataSysRpts->SysTotHTNG.allocate(1);
-    state->dataSysRpts->SysFANCompHTNG.allocate(1);
-    state->dataSysRpts->SysHCCompHTNG.allocate(1);
-    state->dataSysRpts->SysHeatExHTNG.allocate(1);
-    state->dataSysRpts->SysHumidHTNG.allocate(1);
-    state->dataSysRpts->SysSolarCollectHeating.allocate(1);
-    state->dataSysRpts->SysUserDefinedTerminalHeating.allocate(1);
-    state->dataSysRpts->SysTotCLNG.allocate(1);
-    state->dataSysRpts->SysCCCompCLNG.allocate(1);
-    state->dataSysRpts->SysHeatExCLNG.allocate(1);
-    state->dataSysRpts->SysEvapCLNG.allocate(1);
-    state->dataSysRpts->DesDehumidCLNG.allocate(1);
-    state->dataSysRpts->SysSolarCollectCooling.allocate(1);
-    state->dataSysRpts->SysUserDefinedTerminalCooling.allocate(1);
-    state->dataSysRpts->SysTotElec.allocate(1);
-    state->dataSysRpts->SysFANCompElec.allocate(1);
-    state->dataSysRpts->SysHCCompElec.allocate(1);
-    state->dataSysRpts->SysCCCompElec.allocate(1);
-    state->dataSysRpts->SysHCCompElecRes.allocate(1);
-    state->dataSysRpts->SysHumidElec.allocate(1);
-    state->dataSysRpts->DesDehumidElec.allocate(1);
-    state->dataSysRpts->SysEvapElec.allocate(1);
-    state->dataSysRpts->SysTotSteam.allocate(1);
-    state->dataSysRpts->SysHCCompSteam.allocate(1);
-    state->dataSysRpts->SysTotH2OCOLD.allocate(1);
-    state->dataSysRpts->SysCCCompH2OCOLD.allocate(1);
-    state->dataSysRpts->SysTotH2OHOT.allocate(1);
-    state->dataSysRpts->SysHCCompH2OHOT.allocate(1);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).HumidNaturalGas, 100);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).HCCompNaturalGas, 100);
 
     // Calculate SysTotNaturalGas ("Air System NaturalGas Energy")
     ReportSystemEnergyUse(*state);
-    EXPECT_EQ(state->dataSysRpts->SysTotNaturalGas(1), 200);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).TotNaturalGas, 200);
 
     // Initialization for propane cases
-    state->dataSysRpts->SysHumidNaturalGas(1) = 0;
-    state->dataSysRpts->SysHCCompNaturalGas(1) = 0;
-    state->dataSysRpts->SysTotNaturalGas(1) = 0;
+    state->dataSysRpts->SysLoadRepVars(1).HumidNaturalGas = 0;
+    state->dataSysRpts->SysLoadRepVars(1).HCCompNaturalGas = 0;
+    state->dataSysRpts->SysLoadRepVars(1).TotNaturalGas = 0;
 
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).ResourceType = AssignResourceTypeNum("Propane");
-    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).ResourceType = AssignResourceTypeNum("Propane");
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).resource = Constant::eResource::Propane;
+    state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).resource = Constant::eResource::Propane;
 
     // Calculate SysHumidPropane ("Air System Humidifier Propane Energy" Output Variable)
     CalcSystemEnergyUse(*state,
                         CompLoadFlag,
                         AirLoopNum,
                         state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).TypeOf,
-                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).ResourceType,
+                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(1).MeteredVar(1).resource,
                         CompLoad,
                         CompEnergyUse);
 
@@ -213,19 +174,23 @@ TEST_F(EnergyPlusFixture, SeparateGasOutputVariables)
                         CompLoadFlag,
                         AirLoopNum,
                         state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).TypeOf,
-                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).ResourceType,
+                        state->dataAirSystemsData->PrimaryAirSystems(1).Branch(1).Comp(2).MeteredVar(1).resource,
                         CompLoad,
                         CompEnergyUse);
 
-    EXPECT_EQ(state->dataSysRpts->SysHumidPropane(1), 100);
-    EXPECT_EQ(state->dataSysRpts->SysHCCompPropane(1), 100);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).HumidPropane, 100);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).HCCompPropane, 100);
 
     // Calculate SysTotPropane ("Air System Propane Energy")
     ReportSystemEnergyUse(*state);
-    EXPECT_EQ(state->dataSysRpts->SysTotPropane(1), 200);
+    EXPECT_EQ(state->dataSysRpts->SysLoadRepVars(1).TotPropane, 200);
 }
-TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
+
+TEST_F(EnergyPlusFixture, ReportVentilationLoads_ZoneEquip)
 {
+
+    state->dataHVACGlobal->TimeStepSys = 1.0;
+    state->dataEnvrn->StdRhoAir = 1.2;
     state->dataHVACGlobal->NumPrimaryAirSys = 0;
     state->dataAirSystemsData->PrimaryAirSystems.allocate(state->dataHVACGlobal->NumPrimaryAirSys);
     state->dataGlobal->NumOfZones = 1;
@@ -242,7 +207,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // Set up OA requirements for one zone
     state->dataSize->NumOARequirements = 1;
     state->dataSize->OARequirements.allocate(state->dataSize->NumOARequirements);
-    state->dataSize->OARequirements(1).OAFlowMethod = DataSizing::OAFlowSum;
+    state->dataSize->OARequirements(1).OAFlowMethod = DataSizing::OAFlowCalcMethod::Sum;
     Real64 expectedVoz = 0.0;
     state->dataSize->OARequirements(1).OAFlowPerZone = 20;
     expectedVoz += state->dataSize->OARequirements(1).OAFlowPerZone;
@@ -260,20 +225,19 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
 
     // Set up controlled zone equipment with just enough info for the ventilation report test
     state->dataZoneEquip->ZoneEquipConfig(1).IsControlled = true;
-    state->dataZoneEquip->ZoneEquipConfig(1).ActualZoneNum = 1;
     state->dataZoneEquip->ZoneEquipConfig(1).ZoneDesignSpecOAIndex = 1;
     state->dataHeatBal->Zone(1).Volume = 10.0;
     state->dataZoneEquip->ZoneEquipConfig(1).EquipListIndex = 1;
 
     int NumEquip1 = 9;
     state->dataZoneEquip->ZoneEquipList(1).NumOfEquipTypes = NumEquip1;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num.allocate(NumEquip1);
+    state->dataZoneEquip->ZoneEquipList(1).EquipType.allocate(NumEquip1);
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex.allocate(NumEquip1);
 
     // 1: WindowAC
     int equipNum = 1;
     int nodeNumOA = 1;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::WindowAC_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::WindowAirConditioner;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataWindowAC->GetWindowACInputFlag = false;
     state->dataWindowAC->WindAC.allocate(1);
@@ -283,7 +247,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 2: VRF
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::VRFTerminalUnit_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::VariableRefrigerantFlowTerminal;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataHVACVarRefFlow->GetVRFInputFlag = false;
     state->dataHVACVarRefFlow->NumVRFTU = 1;
@@ -294,18 +258,19 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 3: PTAC
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::PkgTermACAirToAir_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::PackagedTerminalAirConditioner;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
-    state->dataPTHP->GetPTUnitInputFlag = false;
-    state->dataPTHP->NumPTUs = 1;
-    state->dataPTHP->PTUnit.allocate(1);
-    state->dataPTHP->PTUnit(1).OutsideAirNode = nodeNumOA;
+    UnitarySystems::UnitarySys thisSys;
+    thisSys.m_OAMixerNodes[0] = nodeNumOA;
+    for (int numSys = 0; numSys <= equipNum; ++numSys) {
+        state->dataZoneEquip->ZoneEquipList(1).compPointer.emplace_back(&thisSys);
+    }
     state->dataLoopNodes->Node(nodeNumOA).MassFlowRate = 30.0;
 
     // 4: FanCoil
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::FanCoil4Pipe_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::FourPipeFanCoil;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataFanCoilUnits->GetFanCoilInputFlag = false;
     state->dataFanCoilUnits->NumFanCoils = 1;
@@ -316,7 +281,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 5: Unit Ventilator
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::UnitVentilator_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::UnitVentilator;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataUnitVentilators->GetUnitVentilatorInputFlag = false;
     state->dataUnitVentilators->NumOfUnitVents = 1;
@@ -327,7 +292,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 6: Purchased Air (Ideal Loads)
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::PurchasedAir_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::PurchasedAir;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataPurchasedAirMgr->GetPurchAirInputFlag = false;
     state->dataPurchasedAirMgr->NumPurchAir = 1;
@@ -337,7 +302,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 7: ERV
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::ERVStandAlone_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::EnergyRecoveryVentilator;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataHVACStandAloneERV->GetERVInputFlag = false;
     state->dataHVACStandAloneERV->NumStandAloneERVs = 1;
@@ -348,7 +313,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 8: Outdoor air unit
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::OutdoorAirUnit_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::OutdoorAirUnit;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataOutdoorAirUnit->GetOutdoorAirUnitInputFlag = false;
     state->dataOutdoorAirUnit->NumOfOAUnits = 1;
@@ -359,7 +324,7 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // 9: Zone Hybrid Unitary
     ++equipNum;
     ++nodeNumOA;
-    state->dataZoneEquip->ZoneEquipList(1).EquipType_Num(equipNum) = DataZoneEquipment::ZoneHybridEvaporativeCooler_Num;
+    state->dataZoneEquip->ZoneEquipList(1).EquipType(equipNum) = DataZoneEquipment::ZoneEquipType::HybridEvaporativeCooler;
     state->dataZoneEquip->ZoneEquipList(1).EquipIndex(equipNum) = 1;
     state->dataHybridUnitaryAC->GetInputZoneHybridEvap = false;
     state->dataHybridUnitaryAC->NumZoneHybridEvap = 1;
@@ -370,9 +335,9 @@ TEST_F(EnergyPlusFixture, ReportMaxVentilationLoads_ZoneEquip)
     // Call reporting function
     state->dataSysRpts->VentReportStructureCreated = true;
     state->dataSysRpts->VentLoadsReportEnabled = true;
-    SystemReports::ReportMaxVentilationLoads(*state);
+    SystemReports::ReportVentilationLoads(*state);
 
-    EXPECT_NEAR(state->dataSysRpts->ZoneTargetVentilationFlowVoz(1), expectedVoz, 0.001);
-    EXPECT_NEAR(state->dataSysRpts->ZoneOAMassFlow(1), 98765432.1, 0.001);
+    EXPECT_NEAR(state->dataSysRpts->ZoneVentRepVars(1).TargetVentilationFlowVoz, expectedVoz, 0.001);
+    EXPECT_NEAR(state->dataSysRpts->ZoneVentRepVars(1).OAMassFlow, 98765432.1, 0.001);
 }
 } // namespace EnergyPlus

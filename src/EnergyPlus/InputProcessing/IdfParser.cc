@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -47,6 +47,7 @@
 
 #include <EnergyPlus/FromChars.hh>
 #include <EnergyPlus/InputProcessing/IdfParser.hh>
+#include <cmath>
 #include <fast_float/fast_float.h>
 #include <fmt/format.h>
 #include <milo/dtoa.h>
@@ -54,7 +55,7 @@
 
 using json = nlohmann::json;
 
-auto const icompare = [](std::string_view a, std::string_view b) {
+auto const icompare = [](std::string_view a, std::string_view b) { // (AUTO_OK)
     return (a.length() == b.length()
                 ? std::equal(a.begin(), a.end(), b.begin(), [](char const c, char const d) { return (::tolower(c) == ::tolower(d)); })
                 : false);
@@ -132,6 +133,8 @@ std::string IdfParser::encode(json const &root, json const &schema)
                 auto const &val = obj_in.value()[entry];
                 if (val.is_string()) {
                     encoded += val.get<std::string>();
+                } else if (val.is_number_integer()) {
+                    encoded += std::to_string(val.get<int>());
                 } else {
                     dtoa(val.get<double>(), s);
                     encoded += s;
@@ -174,7 +177,7 @@ std::string IdfParser::encode(json const &root, json const &schema)
 std::string IdfParser::normalizeObjectType(std::string const &objectType)
 {
     if (objectType.empty()) return std::string{};
-    auto key = convertToUpper(objectType);
+    std::string key = convertToUpper(objectType);
     auto tmp_umit = objectTypeMap.find(key);
     if (tmp_umit != objectTypeMap.end()) {
         return tmp_umit->second;
@@ -236,8 +239,8 @@ json IdfParser::parse_idf(std::string_view idf, size_t &index, bool &success, js
             eat_comment(idf, index);
         } else {
             ++idfObjectCount;
-            auto const parsed_obj_name = parse_string(idf, index);
-            auto const obj_name = normalizeObjectType(parsed_obj_name);
+            std::string const parsed_obj_name = parse_string(idf, index);
+            std::string const obj_name = normalizeObjectType(parsed_obj_name);
             if (obj_name.empty()) {
                 errors_.emplace_back(
                     fmt::format("Line: {} Index: {} - \"{}\" is not a valid Object Type.", cur_line_num, index_into_cur_line, parsed_obj_name));
@@ -266,14 +269,14 @@ json IdfParser::parse_idf(std::string_view idf, size_t &index, bool &success, js
             std::string name = fmt::format("{} {}", obj_name, s);
 
             if (!obj.is_null()) {
-                auto const &name_iter = obj.find("name");
+                auto const name_iter = obj.find("name");
                 // If you find a name field, use that
                 if (name_iter != obj.end()) {
                     name = name_iter.value().get<std::string>();
                     obj.erase(name_iter);
                 } else {
                     // Otherwise, see if it should have a name field
-                    auto const &it = obj_loc.find("name");
+                    auto const it = obj_loc.find("name");
                     if (it != obj_loc.end()) {
                         // Let it slide, as a blank string, to be handled in the appropriate GetInput routine
                         name = "";
@@ -306,7 +309,7 @@ json IdfParser::parse_object(
     success = true;
     bool was_value_parsed = false;
     auto const &legacy_idd_fields_array = legacy_idd["fields"];
-    auto const &legacy_idd_extensibles_iter = legacy_idd.find("extensibles");
+    auto const legacy_idd_extensibles_iter = legacy_idd.find("extensibles");
 
     auto const &schema_patternProperties = schema_obj_loc["patternProperties"];
     std::string patternProperty;
@@ -335,7 +338,7 @@ json IdfParser::parse_object(
 
     root["idf_order"] = idfObjectCount;
 
-    auto const &found_min_fields = schema_obj_loc.find("min_fields");
+    auto const found_min_fields = schema_obj_loc.find("min_fields");
 
     index += 1;
 
@@ -405,9 +408,9 @@ json IdfParser::parse_object(
                 return root;
             }
             auto const &legacy_idd_extensibles_array = legacy_idd_extensibles_iter.value();
-            auto const size = legacy_idd_extensibles_array.size();
+            size_t const size = legacy_idd_extensibles_array.size();
             std::string const &field_name = legacy_idd_extensibles_array[extensible_index % size].get<std::string>();
-            auto val = parse_value(idf, index, success, schema_obj_extensions->at(field_name));
+            json val = parse_value(idf, index, success, schema_obj_extensions->at(field_name));
             if (!success) return root;
             extensible[field_name] = std::move(val);
             was_value_parsed = true;
@@ -419,7 +422,7 @@ json IdfParser::parse_object(
         } else {
             was_value_parsed = true;
             std::string const &field = legacy_idd_fields_array[legacy_idd_index].get<std::string>();
-            auto const &find_field_iter = schema_obj_props.find(field);
+            auto const find_field_iter = schema_obj_props.find(field);
             if (find_field_iter == schema_obj_props.end()) {
                 if (field == "name") {
                     root[field] = parse_string(idf, index);
@@ -428,7 +431,7 @@ json IdfParser::parse_object(
                     errors_.emplace_back(fmt::format("Line: {} - Field \"{}\" was not found.", s, field));
                 }
             } else {
-                auto val = parse_value(idf, index, success, find_field_iter.value());
+                json val = parse_value(idf, index, success, find_field_iter.value());
                 if (!success) return root;
                 root[field] = std::move(val);
             }
@@ -468,23 +471,23 @@ json IdfParser::parse_number(std::string_view idf, size_t &index)
         }
     }
 
-    auto diff = save_i - index;
-    auto value = idf.substr(index, diff);
+    size_t diff = save_i - index;
+    std::string_view value = idf.substr(index, diff);
     index_into_cur_line += diff;
     index = save_i;
 
-    auto const convert_double = [&index, this](std::string_view str) -> json {
+    auto const convert_double = [&index, this](std::string_view str) -> json { // (AUTO_OK)
         size_t plus_sign = 0;
         if (str.front() == '+') {
             plus_sign = 1;
         }
-        auto const str_end = str.data() + str.size(); // have to do this for MSVC
+        auto const str_end = str.data() + str.size(); // have to do this for MSVC // (AUTO_OK)
         double val;
-        auto result = fast_float::from_chars(str.data() + plus_sign, str.data() + str.size(), val);
+        auto result = fast_float::from_chars(str.data() + plus_sign, str.data() + str.size(), val); // (AUTO_OK)
         if (result.ec == std::errc::invalid_argument || result.ec == std::errc::result_out_of_range) {
             return rtrim(str);
         } else if (result.ptr != str_end) {
-            auto const initial_ptr = result.ptr;
+            auto const initial_ptr = result.ptr; // (AUTO_OK)
             while (result.ptr != str_end) {
                 if (*result.ptr != ' ') {
                     break;
@@ -501,17 +504,17 @@ json IdfParser::parse_number(std::string_view idf, size_t &index)
         return val;
     };
 
-    auto const convert_int = [&convert_double, &index, this](std::string_view str) -> json {
-        auto const str_end = str.data() + str.size(); // have to do this for MSVC
+    auto const convert_int = [&convert_double, &index, this](std::string_view str) -> json { // (AUTO_OK)
+        auto const str_end = str.data() + str.size();                                        // have to do this for MSVC // (AUTO_OK)
         int val;
-        auto result = FromChars::from_chars(str.data(), str.data() + str.size(), val);
+        auto result = FromChars::from_chars(str.data(), str.data() + str.size(), val); // (AUTO_OK)
         if (result.ec == std::errc::result_out_of_range || result.ec == std::errc::invalid_argument) {
             return convert_double(str);
         } else if (result.ptr != str_end) {
             if (*result.ptr == '.' || *result.ptr == 'e' || *result.ptr == 'E') {
                 return convert_double(str);
             } else {
-                auto const initial_ptr = result.ptr;
+                auto const initial_ptr = result.ptr; // (AUTO_OK)
                 while (result.ptr != str_end) {
                     if (*result.ptr != ' ') {
                         break;
@@ -532,13 +535,70 @@ json IdfParser::parse_number(std::string_view idf, size_t &index)
     return convert_int(value);
 }
 
+json IdfParser::parse_integer(std::string_view idf, size_t &index)
+{
+    eat_whitespace(idf, index);
+
+    size_t save_i = index;
+
+    bool running = true;
+    while (running) {
+        if (save_i == idf_size) {
+            break;
+        }
+
+        char const c = idf[save_i];
+        switch (c) {
+        case '!':
+        case ',':
+        case ';':
+        case '\r':
+        case '\n':
+            running = false;
+            break;
+        default:
+            ++save_i;
+        }
+    }
+
+    size_t diff = save_i - index;
+    std::string_view string_value = idf.substr(index, diff);
+    index_into_cur_line += diff;
+    index = save_i;
+
+    auto const string_end = string_value.data() + string_value.size(); // have to do this for MSVC // (AUTO_OK)
+    int int_value;
+    // Try using from_chars
+    auto result = FromChars::from_chars(string_value.data(), string_value.data() + string_value.size(), int_value); // (AUTO_OK)
+    if (result.ec == std::errc::result_out_of_range || result.ec == std::errc::invalid_argument) {
+        // Failure, return the string
+        return rtrim(string_value);
+    } else if (result.ptr != string_end) {
+        // Didn't use the entire string, try again via double conversion + rounding
+        size_t plus_sign = 0;
+        if (string_value.front() == '+') {
+            plus_sign = 1;
+        }
+        double double_value;
+        auto fresult = fast_float::from_chars(string_value.data() + plus_sign, string_value.data() + string_value.size(), double_value); // (AUTO_OK)
+        if (fresult.ec == std::errc::invalid_argument || fresult.ec == std::errc::result_out_of_range) {
+            // Failure, return the string
+            return rtrim(string_value);
+        }
+        int_value = static_cast<int>(std::round(double_value));
+    }
+    return int_value;
+}
+
 json IdfParser::parse_value(std::string_view idf, size_t &index, bool &success, json const &field_loc)
 {
     Token token;
     auto const &field_type = field_loc.find("type");
     if (field_type != field_loc.end()) {
-        if (field_type.value() == "number" || field_type.value() == "integer") {
+        if (field_type.value() == "number") {
             token = Token::NUMBER;
+        } else if (field_type.value() == "integer") {
+            token = Token::INTEGER;
         } else {
             token = Token::STRING;
         }
@@ -548,18 +608,18 @@ json IdfParser::parse_value(std::string_view idf, size_t &index, bool &success, 
 
     switch (token) {
     case Token::STRING: {
-        auto const parsed_string = parse_string(idf, index);
-        auto const &enum_it = field_loc.find("enum");
+        std::string const parsed_string = parse_string(idf, index);
+        auto const enum_it = field_loc.find("enum");
         if (enum_it != field_loc.end()) {
             for (auto const &enum_str : enum_it.value()) {
-                auto const &str = enum_str.get<std::string>();
+                std::string const str = enum_str.get<std::string>();
                 if (icompare(str, parsed_string)) {
                     return str;
                 }
             }
         } else if (icompare(parsed_string, "Autosize") || icompare(parsed_string, "Autocalculate")) {
-            auto const &default_it = field_loc.find("default");
-            auto const &anyOf_it = field_loc.find("anyOf");
+            auto const default_it = field_loc.find("default");
+            auto const anyOf_it = field_loc.find("anyOf");
 
             if (anyOf_it == field_loc.end()) {
                 errors_.emplace_back(
@@ -578,6 +638,9 @@ json IdfParser::parse_value(std::string_view idf, size_t &index, bool &success, 
     }
     case Token::NUMBER: {
         return parse_number(idf, index);
+    }
+    case Token::INTEGER: {
+        return parse_integer(idf, index);
     }
     case Token::NONE:
     case Token::END:
@@ -727,7 +790,7 @@ std::string IdfParser::rtrim(std::string_view str)
     if (str.empty()) {
         return std::string{};
     }
-    auto const index = str.find_last_not_of(whitespace);
+    size_t const index = str.find_last_not_of(whitespace);
     if (index == std::string::npos) {
         return std::string{};
     } else if (index + 1 < str.length()) {

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -53,6 +53,7 @@
 // EnergyPlus Headers
 #include "Fixtures/EnergyPlusFixture.hh"
 #include <EnergyPlus/Construction.hh>
+#include <EnergyPlus/ConvectionCoefficients.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataHeatBalSurface.hh>
@@ -61,9 +62,9 @@
 #include <EnergyPlus/GeneralRoutines.hh>
 #include <EnergyPlus/Material.hh>
 #include <EnergyPlus/Psychrometrics.hh>
+#include <EnergyPlus/TranspiredCollector.hh>
 
 using namespace EnergyPlus;
-using namespace EnergyPlus::ConvectionCoefficients;
 using namespace EnergyPlus::DataSurfaces;
 using namespace EnergyPlus::DataHeatBalance;
 using namespace EnergyPlus::DataHeatBalSurface;
@@ -77,7 +78,7 @@ TEST_F(EnergyPlusFixture, ICSSolarCollectorTest_CalcPassiveExteriorBaffleGapTest
     // issue #4723 (crash) occurred due to unallocated ICS collector data.
     // ! Collector.allocated()
 
-    int const NumOfSurf(1);
+    int constexpr NumOfSurf(1);
     int SurfNum;
     int ZoneNum;
     int ConstrNum;
@@ -115,15 +116,16 @@ TEST_F(EnergyPlusFixture, ICSSolarCollectorTest_CalcPassiveExteriorBaffleGapTest
     state->dataConstruction->Construct.allocate(ConstrNum);
     state->dataConstruction->Construct(ConstrNum).LayerPoint.allocate(MatNum);
     state->dataConstruction->Construct(ConstrNum).LayerPoint(MatNum) = 1;
-    state->dataMaterial->Material.allocate(MatNum);
-    state->dataMaterial->Material(MatNum).AbsorpThermal = 0.8;
+    Material::MaterialChild *p = new Material::MaterialChild;
+    state->dataMaterial->Material.push_back(p);
+    p->AbsorpThermal = 0.8;
     // allocate exterior vented cavity variable data
-    state->dataSurface->ExtVentedCavity.allocate(1);
-    state->dataSurface->ExtVentedCavity(NumOfSurf).SurfPtrs.allocate(NumOfSurf);
-    state->dataSurface->ExtVentedCavity(NumOfSurf).SurfPtrs(NumOfSurf) = 1;
+    state->dataHeatBal->ExtVentedCavity.allocate(1);
+    state->dataHeatBal->ExtVentedCavity(NumOfSurf).SurfPtrs.allocate(NumOfSurf);
+    state->dataHeatBal->ExtVentedCavity(NumOfSurf).SurfPtrs(NumOfSurf) = 1;
     // allocate zone variable data
     state->dataHeatBal->Zone.allocate(ZoneNum);
-    state->dataHeatBal->Zone(ZoneNum).OutsideConvectionAlgo = ConvectionConstants::HcInt_ASHRAESimple;
+    state->dataHeatBal->Zone(ZoneNum).ExtConvAlgo = Convect::HcExt::ASHRAESimple;
     // allocate surface temperature variable data
     state->dataHeatBalSurf->SurfOutsideTempHist.allocate(1);
     state->dataHeatBalSurf->SurfOutsideTempHist(1).allocate(NumOfSurf);
@@ -132,58 +134,61 @@ TEST_F(EnergyPlusFixture, ICSSolarCollectorTest_CalcPassiveExteriorBaffleGapTest
     state->dataHeatBal->SurfQRadSWOutIncident.allocate(1);
     state->dataHeatBal->SurfQRadSWOutIncident(1) = 0.0;
     // set user defined conv. coeff. calculation to false
-    state->dataConvectionCoefficient->GetUserSuppliedConvectionCoeffs = false;
+    state->dataConvect->GetUserSuppliedConvectionCoeffs = false;
     state->dataHeatBalSurf->SurfWinCoeffAdjRatio.dimension(NumOfSurf, 1.0);
-    state->dataSurface->SurfExtConvCoeffIndex.allocate(NumOfSurf);
-    state->dataSurface->SurfExtConvCoeffIndex(SurfNum) = 0;
-    state->dataSurface->SurfHasSurroundingSurfProperties.allocate(NumOfSurf);
-    state->dataSurface->SurfHasSurroundingSurfProperties(SurfNum) = false;
+    state->dataSurface->surfExtConv.allocate(NumOfSurf);
+    state->dataSurface->surfExtConv(SurfNum).model = Convect::HcExt::SetByZone;
     state->dataSurface->SurfEMSOverrideExtConvCoef.allocate(NumOfSurf);
     state->dataSurface->SurfEMSOverrideExtConvCoef(1) = false;
+    auto &surface = state->dataSurface->Surface(SurfNum);
+    surface.IsSurfPropertyGndSurfacesDefined = false;
+    surface.UseSurfPropertyGndSurfTemp = false;
+    surface.UseSurfPropertyGndSurfRefl = false;
+    surface.SurfHasSurroundingSurfProperty = false;
 
     // SurfPtr( 1 ); // Array of indexes pointing to Surface structure in DataSurfaces
-    Real64 const VentArea(0.1);  // Area available for venting the gap [m2]
-    Real64 const Cv(0.1);        // Orifice coefficient for volume-based discharge, wind-driven [--]
-    Real64 const Cd(0.5);        // Orifice coefficient for discharge,  buoyancy-driven [--]
-    Real64 const HdeltaNPL(3.0); // Height difference from neutral pressure level [m]
-    Real64 const SolAbs(0.75);   // solar absorptivity of baffle [--]
-    Real64 const AbsExt(0.8);    // thermal absorptance/emittance of baffle material [--]
-    Real64 const Tilt(0.283);    // Tilt of gap [Degrees]
-    Real64 const AspRat(0.9);    // aspect ratio of gap  Height/gap [--]
-    Real64 const GapThick(0.05); // Thickness of air space between baffle and underlying heat transfer surface
-    DataSurfaces::SurfaceRoughness Roughness(DataSurfaces::SurfaceRoughness::VeryRough); // Roughness index (1-6), see DataHeatBalance parameters
-    Real64 QdotSource(0.0); // Source/sink term, e.g. electricity exported from solar cell [W]
-    Real64 TsBaffle(20.0);  // Temperature of baffle (both sides) use lagged value on input [C]
-    Real64 TaGap(22.0);     // Temperature of air gap (assumed mixed) use lagged value on input [C]
-    Real64 HcGapRpt;        // gap convection coefficient [W/m2C]
-    Real64 HrGapRpt;        // gap radiation coefficient [W/m2C]
-    Real64 IscRpt;          //
-    Real64 MdotVentRpt;     // gap air mass flow rate [kg/s]
-    Real64 VdotWindRpt;     // gap wind driven air volume flow rate [m3/s]
-    Real64 VdotBuoyRpt;     // gap buoyancy driven volume flow rate [m3/s]
+    Real64 constexpr VentArea(0.1);  // Area available for venting the gap [m2]
+    Real64 constexpr Cv(0.1);        // Orifice coefficient for volume-based discharge, wind-driven [--]
+    Real64 constexpr Cd(0.5);        // Orifice coefficient for discharge,  buoyancy-driven [--]
+    Real64 constexpr HdeltaNPL(3.0); // Height difference from neutral pressure level [m]
+    Real64 constexpr SolAbs(0.75);   // solar absorptivity of baffle [--]
+    Real64 constexpr AbsExt(0.8);    // thermal absorptance/emittance of baffle material [--]
+    Real64 constexpr Tilt(0.283);    // Tilt of gap [Degrees]
+    Real64 constexpr AspRat(0.9);    // aspect ratio of gap  Height/gap [--]
+    Real64 constexpr GapThick(0.05); // Thickness of air space between baffle and underlying heat transfer surface
+    Material::SurfaceRoughness Roughness(Material::SurfaceRoughness::VeryRough); // Roughness index (1-6), see DataHeatBalance parameters
+    Real64 QdotSource(0.0);                                                      // Source/sink term, e.g. electricity exported from solar cell [W]
+    Real64 TsBaffle(20.0);                                                       // Temperature of baffle (both sides) use lagged value on input [C]
+    Real64 TaGap(22.0); // Temperature of air gap (assumed mixed) use lagged value on input [C]
+    Real64 HcGapRpt;    // gap convection coefficient [W/m2C]
+    Real64 HrGapRpt;    // gap radiation coefficient [W/m2C]
+    Real64 IscRpt;      //
+    Real64 MdotVentRpt; // gap air mass flow rate [kg/s]
+    Real64 VdotWindRpt; // gap wind driven air volume flow rate [m3/s]
+    Real64 VdotBuoyRpt; // gap buoyancy driven volume flow rate [m3/s]
 
     // call to test fix to resolve crash
-    CalcPassiveExteriorBaffleGap(*state,
-                                 state->dataSurface->ExtVentedCavity(1).SurfPtrs,
-                                 VentArea,
-                                 Cv,
-                                 Cd,
-                                 HdeltaNPL,
-                                 SolAbs,
-                                 AbsExt,
-                                 Tilt,
-                                 AspRat,
-                                 GapThick,
-                                 Roughness,
-                                 QdotSource,
-                                 TsBaffle,
-                                 TaGap,
-                                 HcGapRpt,
-                                 HrGapRpt,
-                                 IscRpt,
-                                 MdotVentRpt,
-                                 VdotWindRpt,
-                                 VdotBuoyRpt);
+    TranspiredCollector::CalcPassiveExteriorBaffleGap(*state,
+                                                      state->dataHeatBal->ExtVentedCavity(1).SurfPtrs,
+                                                      VentArea,
+                                                      Cv,
+                                                      Cd,
+                                                      HdeltaNPL,
+                                                      SolAbs,
+                                                      AbsExt,
+                                                      Tilt,
+                                                      AspRat,
+                                                      GapThick,
+                                                      Roughness,
+                                                      QdotSource,
+                                                      TsBaffle,
+                                                      TaGap,
+                                                      HcGapRpt,
+                                                      HrGapRpt,
+                                                      IscRpt,
+                                                      MdotVentRpt,
+                                                      VdotWindRpt,
+                                                      VdotBuoyRpt);
 
     EXPECT_NEAR(21.862, TsBaffle, 0.001);
     EXPECT_NEAR(1.692, HcGapRpt, 0.001);
@@ -195,8 +200,8 @@ TEST_F(EnergyPlusFixture, ICSSolarCollectorTest_CalcPassiveExteriorBaffleGapTest
     state->dataConstruction->Construct(ConstrNum).LayerPoint.deallocate();
     state->dataConstruction->Construct.deallocate();
     state->dataMaterial->Material.deallocate();
-    state->dataSurface->ExtVentedCavity(NumOfSurf).SurfPtrs.deallocate();
-    state->dataSurface->ExtVentedCavity.deallocate();
+    state->dataHeatBal->ExtVentedCavity(NumOfSurf).SurfPtrs.deallocate();
+    state->dataHeatBal->ExtVentedCavity.deallocate();
     state->dataHeatBal->Zone.deallocate();
     state->dataHeatBal->SurfQRadSWOutIncident.deallocate();
 }

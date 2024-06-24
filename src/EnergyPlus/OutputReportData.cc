@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -54,7 +54,6 @@
 #include <ObjexxFCL/Array2D.hh>
 #include <ObjexxFCL/Array2S.hh>
 #include <ObjexxFCL/Array3D.hh>
-#include <ObjexxFCL/Optional.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/OutputProcessor.hh>
@@ -73,7 +72,7 @@ int AnnualFieldSet::getVariableKeyCountandTypeFromFldSt(EnergyPlusData &state,
                                                         OutputProcessor::VariableType &typeVar,
                                                         OutputProcessor::StoreType &avgSumVar,
                                                         OutputProcessor::TimeStepType &stepTypeVar,
-                                                        OutputProcessor::Unit &unitsVar)
+                                                        Constant::Units &unitsVar)
 {
     int numkeys;
     GetVariableKeyCountandType(
@@ -88,16 +87,16 @@ void AnnualFieldSet::getVariableKeysFromFldSt(EnergyPlusData &state,
                                               std::vector<int> &indexesForKeyVar)
 {
     // this hides the Objexx arrays and returns regular vectors
-    Array1D_string tempNamesOfKeys;
-    Array1D_int tempIndexesForKeyVar;
-    tempNamesOfKeys.allocate(keyCount);
-    tempIndexesForKeyVar.allocate(keyCount);
-    GetVariableKeys(state, m_variMeter, typeVar, tempNamesOfKeys, tempIndexesForKeyVar); // call outputprocessor routine with member variable
+    Array1D_int tmpVarNums;
+    Array1D_string tmpVarNames;
+    tmpVarNums.allocate(keyCount);
+    tmpVarNames.allocate(keyCount);
+    GetVariableKeys(state, m_variMeter, typeVar, tmpVarNames, tmpVarNums); // call outputprocessor routine with member variable
     namesOfKeys.clear();
     indexesForKeyVar.clear();
     for (int iKey = 1; iKey <= keyCount; ++iKey) {
-        namesOfKeys.push_back(tempNamesOfKeys(iKey));
-        indexesForKeyVar.push_back(tempIndexesForKeyVar(iKey));
+        indexesForKeyVar.push_back(tmpVarNums(iKey));
+        namesOfKeys.push_back(tmpVarNames(iKey));
     }
 }
 

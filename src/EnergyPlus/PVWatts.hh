@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -61,10 +61,10 @@
 #include <EnergyPlus/EnergyPlus.hh>
 
 // SAM Headers
-//#include <../third_party/ssc/shared/lib_irradproc.h>
-//#include <../third_party/ssc/shared/lib_pvwatts.h>
-//#include <../third_party/ssc/shared/lib_pvshade.h>
-//#include <../third_party/ssc/shared/lib_pv_incidence_modifier.h>
+// #include <../third_party/ssc/shared/lib_irradproc.h>
+// #include <../third_party/ssc/shared/lib_pvwatts.h>
+// #include <../third_party/ssc/shared/lib_pvshade.h>
+// #include <../third_party/ssc/shared/lib_pv_incidence_modifier.h>
 #include <../third_party/ssc/ssc/sscapi.h>
 
 namespace EnergyPlus {
@@ -76,24 +76,30 @@ namespace PVWatts {
 
     enum class ModuleType
     {
-        STANDARD = 0,
-        PREMIUM = 1,
-        THIN_FILM = 2,
+        Invalid = -1,
+        STANDARD,
+        PREMIUM,
+        THIN_FILM,
+        Num
     };
 
     enum class ArrayType
     {
-        FIXED_OPEN_RACK = 0,
-        FIXED_ROOF_MOUNTED = 1,
-        ONE_AXIS = 2,
-        ONE_AXIS_BACKTRACKING = 3,
-        TWO_AXIS = 4,
+        Invalid = -1,
+        FIXED_OPEN_RACK,
+        FIXED_ROOF_MOUNTED,
+        ONE_AXIS,
+        ONE_AXIS_BACKTRACKING,
+        TWO_AXIS,
+        Num
     };
 
     enum class GeometryType
     {
+        Invalid = -1,
         TILT_AZIMUTH,
         SURFACE,
+        Num
     };
 
     struct DCPowerOutput

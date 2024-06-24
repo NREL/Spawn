@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,7 @@
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataHeatBalFanSys.hh>
 #include <EnergyPlus/EarthTube.hh>
+#include <EnergyPlus/ZoneTempPredictorCorrector.hh>
 
 using namespace EnergyPlus;
 using namespace EnergyPlus::EarthTube;
@@ -81,25 +82,22 @@ TEST_F(EnergyPlusFixture, EarthTube_CalcEarthTubeHumRatTest)
     // Allocate and set earth tube parameters necessary to run the tests
     state->dataEarthTube->EarthTubeSys.allocate(ETnum);
     state->dataEarthTube->EarthTubeSys(ETnum).InsideAirTemp = 21.0;
-    state->dataEarthTube->EarthTubeSys(ETnum).FanType = EarthTubeVentilation::Natural;
+    state->dataEarthTube->EarthTubeSys(ETnum).FanType = Ventilation::Natural;
     state->dataEarthTube->EarthTubeSys(ETnum).AirTemp = 20.0;
     state->dataEarthTube->EarthTubeSys(ETnum).FanPower = 0.05;
 
     // Allocate and set any zone variables necessary to run the tests
-    state->dataHeatBalFanSys->MCPE.allocate(ZNnum);
-    state->dataHeatBalFanSys->MCPTE.allocate(ZNnum);
-    state->dataHeatBalFanSys->EAMFL.allocate(ZNnum);
-    state->dataHeatBalFanSys->EAMFLxHumRat.allocate(ZNnum);
-    state->dataHeatBalFanSys->MCPE(ZNnum) = 0.05;
-    state->dataHeatBalFanSys->EAMFL(ZNnum) = 0.05;
+    state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(ZNnum);
+    state->dataZoneTempPredictorCorrector->zoneHeatBalance(ZNnum).MCPE = 0.05;
+    state->dataZoneTempPredictorCorrector->zoneHeatBalance(ZNnum).EAMFL = 0.05;
 
     // First case--no condensation so inside humidity ratio should be the same as the outdoor humidity ratio
-    CalcEarthTubeHumRat(*state, ETnum, ZNnum);
+    state->dataEarthTube->EarthTubeSys(ETnum).CalcEarthTubeHumRat(*state, ZNnum);
     EXPECT_EQ(state->dataEarthTube->EarthTubeSys(ETnum).HumRat, state->dataEnvrn->OutHumRat);
 
     // Second case--condensation so inside humidity should be less than outdoor humidity ratio
     state->dataEarthTube->EarthTubeSys(ETnum).InsideAirTemp = 10.0;
-    CalcEarthTubeHumRat(*state, ETnum, ZNnum);
+    state->dataEarthTube->EarthTubeSys(ETnum).CalcEarthTubeHumRat(*state, ZNnum);
     EXPECT_GT(state->dataEnvrn->OutHumRat, state->dataEarthTube->EarthTubeSys(ETnum).HumRat);
 }
 
@@ -115,8 +113,8 @@ TEST_F(EnergyPlusFixture, EarthTube_CheckEarthTubesInZonesTest)
     bool ErrorsFound = false;
 
     // Allocate and set earth tube parameters necessary to run the tests
-    state->dataEarthTube->TotEarthTube = 3;
-    state->dataEarthTube->EarthTubeSys.allocate(state->dataEarthTube->TotEarthTube);
+    int TotEarthTube = 3;
+    state->dataEarthTube->EarthTubeSys.allocate(TotEarthTube);
     state->dataEarthTube->EarthTubeSys(1).ZonePtr = 1;
     state->dataEarthTube->EarthTubeSys(2).ZonePtr = 2;
     state->dataEarthTube->EarthTubeSys(3).ZonePtr = 3;
@@ -129,9 +127,92 @@ TEST_F(EnergyPlusFixture, EarthTube_CheckEarthTubesInZonesTest)
     state->dataEarthTube->EarthTubeSys(3).ZonePtr = 1;
     CheckEarthTubesInZones(*state, ZoneName, InputName, ErrorsFound);
     EXPECT_EQ(ErrorsFound, true);
+}
 
-    state->dataEarthTube->EarthTubeSys.deallocate();
-    state->dataEarthTube->TotEarthTube = 0;
+TEST_F(EnergyPlusFixture, EarthTube_initCPrime0Test)
+{
+    // Test of initCPrime0 subroutine used by the Earth Tube Vertical model
+    int TotEarthTube = 1;
+    state->dataEarthTube->EarthTubeSys.allocate(TotEarthTube);
+    auto &thisEarthTube = state->dataEarthTube->EarthTubeSys(1);
+    thisEarthTube.totNodes = 3;
+    thisEarthTube.aCoeff.resize(thisEarthTube.totNodes);
+    thisEarthTube.bCoeff.resize(thisEarthTube.totNodes);
+    thisEarthTube.cCoeff0.resize(thisEarthTube.totNodes);
+    thisEarthTube.cPrime0.resize(thisEarthTube.totNodes);
+
+    // Test 1
+    thisEarthTube.aCoeff[0] = 0.0;
+    thisEarthTube.bCoeff[0] = 2.0;
+    thisEarthTube.cCoeff0[0] = -1.0;
+    thisEarthTube.aCoeff[1] = -1.0;
+    thisEarthTube.bCoeff[1] = 2.0;
+    thisEarthTube.cCoeff0[1] = -1.0;
+    thisEarthTube.aCoeff[2] = -1.0;
+    thisEarthTube.bCoeff[2] = 2.0;
+    thisEarthTube.cCoeff0[2] = 0.0;
+    Real64 expectedResult0 = -0.5;
+    Real64 expectedResult1 = -0.6666667;
+    Real64 expectedResult2 = 0.0;
+    Real64 diffTol = 0.0001;
+
+    // Run the test and check the results
+    thisEarthTube.initCPrime0();
+    EXPECT_NEAR(expectedResult0, thisEarthTube.cPrime0[0], diffTol);
+    EXPECT_NEAR(expectedResult1, thisEarthTube.cPrime0[1], diffTol);
+    EXPECT_NEAR(expectedResult2, thisEarthTube.cPrime0[2], diffTol);
+
+    // Test 2
+    thisEarthTube.aCoeff[0] = 0.0;
+    thisEarthTube.bCoeff[0] = 1.0;
+    thisEarthTube.cCoeff0[0] = -2.0;
+    thisEarthTube.aCoeff[1] = -1.5;
+    thisEarthTube.bCoeff[1] = 4.0;
+    thisEarthTube.cCoeff0[1] = -1.5;
+    thisEarthTube.aCoeff[2] = -1.5;
+    thisEarthTube.bCoeff[2] = 3.0;
+    thisEarthTube.cCoeff0[2] = 0.0;
+    expectedResult0 = -2.0;
+    expectedResult1 = -1.5;
+    expectedResult2 = 0.0;
+
+    // Run the test and check the results
+    thisEarthTube.initCPrime0();
+    EXPECT_NEAR(expectedResult0, thisEarthTube.cPrime0[0], diffTol);
+    EXPECT_NEAR(expectedResult1, thisEarthTube.cPrime0[1], diffTol);
+    EXPECT_NEAR(expectedResult2, thisEarthTube.cPrime0[2], diffTol);
+}
+
+TEST_F(EnergyPlusFixture, EarthTube_calcUndisturbedGroundTemperatureTest)
+{
+    int TotEarthTube = 1;
+    state->dataEarthTube->EarthTubeSys.allocate(TotEarthTube);
+    auto &thisEarthTube = state->dataEarthTube->EarthTubeSys(1);
+
+    // Test 1
+    thisEarthTube.AverSoilSurTemp = 12.0;
+    thisEarthTube.ApmlSoilSurTemp = 6.0;
+    thisEarthTube.SoilThermDiff = 0.05;
+    state->dataEnvrn->DayOfYear = 23;
+    thisEarthTube.SoilSurPhaseConst = 2.0;
+    Real64 depth = 3.0;
+    Real64 expectedResult = 10.9032;
+    Real64 diffTol = 0.0001;
+
+    Real64 calculatedResult = thisEarthTube.calcUndisturbedGroundTemperature(*state, depth);
+    EXPECT_NEAR(calculatedResult, expectedResult, diffTol);
+
+    // Test 2
+    thisEarthTube.AverSoilSurTemp = 10.0;
+    thisEarthTube.ApmlSoilSurTemp = 5.0;
+    thisEarthTube.SoilThermDiff = 0.08;
+    state->dataEnvrn->DayOfYear = 234;
+    thisEarthTube.SoilSurPhaseConst = 3.0;
+    depth = 2.0;
+    expectedResult = 12.5532;
+
+    calculatedResult = thisEarthTube.calcUndisturbedGroundTemperature(*state, depth);
+    EXPECT_NEAR(calculatedResult, expectedResult, diffTol);
 }
 
 } // namespace EnergyPlus

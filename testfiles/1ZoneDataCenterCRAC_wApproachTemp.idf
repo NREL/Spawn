@@ -26,7 +26,7 @@
 ! Floor Area:              232.25 m2
 ! Number of Stories:       1
 
-  Version,9.6;
+  Version,24.1;
 
   Timestep,6;
 
@@ -390,6 +390,7 @@
     4.5669,                  !- Gross Rated Cooling COP {W/W}
     8.5,                     !- Rated Air Flow Rate {m3/s}
     ,                        !- Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow {W/(m3/s)}
     Supply Inlet Node,       !- Air Inlet Node Name
     Main Cooling Coil 1 Outlet Node,  !- Air Outlet Node Name
     Cool Cap Mod func of Temperature,  !- Total Cooling Capacity Function of Temperature Curve Name
@@ -408,6 +409,7 @@
     ,                        !- Evaporative Condenser Air Flow Rate {m3/s}
     ,                        !- Evaporative Condenser Pump Rated Power Consumption {W}
     ,                        !- Crankcase Heater Capacity {W}
+    ,                        !- Crankcase Heater Capacity Function of Temperature Curve Name
     ,                        !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
     ,                        !- Supply Water Storage Tank Name
     ,                        !- Condensate Collection Water Storage Tank Name
@@ -796,7 +798,7 @@
 
   ElectricEquipment:ITE:AirCooled,
     Data Center Servers,     !- Name
-    Main Zone,               !- Zone Name
+    Main Zone,               !- Zone or Space Name
     FlowControlWithApproachTemperatures,  !- Air Flow Calculation Method
     Watts/Unit,              !- Design Power Input Calculation Method
     500,                     !- Watts per Unit {W}

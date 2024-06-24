@@ -43,7 +43,17 @@ This actuator controls the heat transfer modeling. Changes in air distribution s
 
 \subsection{Material Surface Properties}\label{material-surface-properties}
 
-Three actuators are available for controlling the surface properties material related to absorptance. Those material layers used in a Construction object that lie at the outside and the inside of the assembly determine the surface properties of a heat transfer surface.~ Actuators called ``Material'' are available with the control types ``Surface Property Solar Absorptance,'' ``Surface Property Thermal Absorptance,'' and ``Surface Property Visible Absorptance.''~ These are dimensionless parameters between 0.0 and 1.0.~ These actuators are useful for modeling switchable coatings such as thermochromic paints.
+Three actuators are available for controlling the surface properties material
+related to absorptance. Those material layers used in a Construction object that
+lie at the outside and the inside of the assembly determine the surface
+properties of a heat transfer surface.~ Actuators called ``Material'' are
+available with the control types ``Surface Property Solar Absorptance,''
+``Surface Property Thermal Absorptance,'' and ``Surface Property Visible
+Absorptance.''~ These are dimensionless parameters between 0.0 and 1.0.~ These
+actuators are useful for modeling switchable coatings such as thermochromic
+paints. Note that for a single-layer construction, both the inside and outside
+properties will be overwritten. For overwriting outside properties alone, please
+use ``MaterialProperty:VariableAbsorptance'' (see InputOutputReference).
 
 \subsection{Surface Construction State}\label{surface-construction-state}
 
@@ -81,7 +91,7 @@ Several actuators, called ``Surface,''~ are available for controlling the temper
 \item
   ``Outdoor Air Wetbulb Temperature.''~ This is the wetbulb temperature of the ambient outdoor air exposed to the surface, in degrees C. When the weather indicates that it is raining outside, the surface convection heat transfer boundary conditions use the wetbulb temperature rather than the drybulb temperature (along with a high convection heat transfer coefficient). This override allows changing the outdoor wetbulb experienced by the surface exposed to exterior environment (when it is raining).
 \item
-  ``Outdoor Air Wind Speed.''~ This is the wind speed of the outdoor air exposed to the surface, in m/s. This is the velocity used for some surface convection heat transfer correlations for the outside-face of surfaces exposed to wind. 
+  ``Outdoor Air Wind Speed.''~ This is the wind speed of the outdoor air exposed to the surface, in m/s. This is the velocity used for some surface convection heat transfer correlations for the outside-face of surfaces exposed to wind.
 \item
   ``Outdoor Air Wind Direction.''~ This is the wind direction of the outdoor air exposed to the surface, in degree. This is the direction used for some surface convection heat transfer correlations for the outside-face of surfaces exposed to wind.
 \item
@@ -107,4 +117,35 @@ When using these actuators, values should be set for all four types.~ This bound
 
 \subsection{Conduction Finite Difference}\label{conduction-finite-difference}
 
-Two actuators, called ``CondFD Surface Material Layer,'' are available with actuated component control types called ``Thermal Conductivity'' in [W/m-K] and ``Specific Heat'' in [J/kg-C]. These actuators are available in models that use the Conduction Finite Difference solution for conduction through surfaces.
+Several actuators, called ``CondFD Surface Material Layer,'' are available with actuated component control types for models that use the Conduction Finite Difference solution for conduction through surfaces. These are described below.
+
+\begin{itemize}
+    \item ``Thermal Conductivity''. Has units of [W/m-K]. Controls the thermal conductivity of the specified material layer within a given surface. Actuator is named from the surface name and material layer name combined with a colon ``:''. E.g. ``SURFNAME:MATERIALLAYERNAME''
+    \item ``Specific Heat''. Has units of [J/kg-C]. Controls the specific heat for the specified material layer within a given surfaced. Actuator is named as described previously.
+    \item ``Heat Flux''. Has units of [W/m2]. Controls the surface heat flux for the specified material layer within a given surface. The source is added directly after the material layer referenced and is not available for the final material layer. I.e. it must be inserted between two materal layers. Actuator is named as described previously. The actuator uses the same mechanism as the ``ConductionProperty:InternalHeatSource'' object, and is additive to the results computed by this object, if present. Actuator can only be used to add energy (i.e. positive numbers only), and the energy used is added to the electric heating sub-meter.
+\end{itemize}
+
+\subsubsection{Conduction Finite Difference Outputs}
+
+\begin{itemize}
+  \item Zone,Average,CondFD Phase Change Node Conductivity [W/m-K]
+  \item Zone,Average,CondFD Phase Change Node Specific Heat [J/kg-K]
+  \item Zone,Average,CondFD EMS Heat Source Power After Layer N [W]
+  \item Zone,Average,CondFD EMS Heat Source Energy After Layer N [J]
+\end{itemize}
+
+\paragraph{CondFD Phase Change Node Conductivity}
+
+This output reports thermal conductivity at the node level.
+
+\paragraph{CondFD Phase Change Node Specific Heat}
+
+This output reports specific heat at the node level.
+
+\paragraph{CondFD EMS Heat Source Power After Layer N}
+
+This output reports the heat power added after material layer N
+
+\paragraph{CondFD EMS Heat Source Energy After Layer N}
+
+This output reports the heat energy added after material layer N

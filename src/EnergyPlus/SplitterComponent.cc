@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -105,9 +105,9 @@ namespace SplitterComponent {
 
         // Find the correct SplitterNumber
         if (CompIndex == 0) {
-            SplitterNum = UtilityRoutines::FindItemInList(CompName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
+            SplitterNum = Util::FindItemInList(CompName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
             if (SplitterNum == 0) {
-                ShowFatalError(state, "SimAirLoopSplitter: Splitter not found=" + std::string{CompName});
+                ShowFatalError(state, format("SimAirLoopSplitter: Splitter not found={}", CompName));
             }
             CompIndex = SplitterNum;
         } else {
@@ -219,18 +219,19 @@ namespace SplitterComponent {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
-            UtilityRoutines::IsNameEmpty(state, AlphArray(1), CurrentModuleObject, ErrorsFound);
+            Util::IsNameEmpty(state, AlphArray(1), CurrentModuleObject, ErrorsFound);
 
             state.dataSplitterComponent->SplitterCond(SplitterNum).SplitterName = AlphArray(1);
-            state.dataSplitterComponent->SplitterCond(SplitterNum).InletNode = GetOnlySingleNode(state,
-                                                                                                 AlphArray(2),
-                                                                                                 ErrorsFound,
-                                                                                                 CurrentModuleObject,
-                                                                                                 AlphArray(1),
-                                                                                                 DataLoopNode::NodeFluidType::Air,
-                                                                                                 DataLoopNode::NodeConnectionType::Inlet,
-                                                                                                 NodeInputManager::compFluidStream::Primary,
-                                                                                                 ObjectIsNotParent);
+            state.dataSplitterComponent->SplitterCond(SplitterNum).InletNode =
+                GetOnlySingleNode(state,
+                                  AlphArray(2),
+                                  ErrorsFound,
+                                  DataLoopNode::ConnectionObjectType::AirLoopHVACZoneSplitter,
+                                  AlphArray(1),
+                                  DataLoopNode::NodeFluidType::Air,
+                                  DataLoopNode::ConnectionType::Inlet,
+                                  NodeInputManager::CompFluidStream::Primary,
+                                  ObjectIsNotParent);
             state.dataSplitterComponent->SplitterCond(SplitterNum).NumOutletNodes = NumAlphas - 2;
 
             state.dataSplitterComponent->SplitterCond(SplitterNum)
@@ -260,14 +261,14 @@ namespace SplitterComponent {
                     GetOnlySingleNode(state,
                                       AlphArray(2 + NodeNum),
                                       ErrorsFound,
-                                      CurrentModuleObject,
+                                      DataLoopNode::ConnectionObjectType::AirLoopHVACZoneSplitter,
                                       AlphArray(1),
                                       DataLoopNode::NodeFluidType::Air,
-                                      DataLoopNode::NodeConnectionType::Outlet,
-                                      NodeInputManager::compFluidStream::Primary,
+                                      DataLoopNode::ConnectionType::Outlet,
+                                      NodeInputManager::CompFluidStream::Primary,
                                       ObjectIsNotParent);
                 if (lAlphaBlanks(2 + NodeNum)) {
-                    ShowSevereError(state, cAlphaFields(2 + NodeNum) + " is Blank, " + CurrentModuleObject + " = " + AlphArray(1));
+                    ShowSevereError(state, format("{} is Blank, {} = {}", cAlphaFields(2 + NodeNum), CurrentModuleObject, AlphArray(1)));
                     ErrorsFound = true;
                 }
             }
@@ -280,9 +281,10 @@ namespace SplitterComponent {
             for (OutNodeNum1 = 1; OutNodeNum1 <= state.dataSplitterComponent->SplitterCond(SplitterNum).NumOutletNodes; ++OutNodeNum1) {
                 if (NodeNum != state.dataSplitterComponent->SplitterCond(SplitterNum).OutletNode(OutNodeNum1)) continue;
                 ShowSevereError(state,
-                                CurrentModuleObject + " = " + state.dataSplitterComponent->SplitterCond(SplitterNum).SplitterName +
-                                    " specifies an outlet node name the same as the inlet node.");
-                ShowContinueError(state, ".." + cAlphaFields(2) + '=' + state.dataLoopNodes->NodeID(NodeNum));
+                                format("{} = {} specifies an outlet node name the same as the inlet node.",
+                                       CurrentModuleObject,
+                                       state.dataSplitterComponent->SplitterCond(SplitterNum).SplitterName));
+                ShowContinueError(state, format("..{}={}", cAlphaFields(2), state.dataLoopNodes->NodeID(NodeNum)));
                 ShowContinueError(state, format("..Outlet Node #{} is duplicate.", OutNodeNum1));
                 ErrorsFound = true;
             }
@@ -293,8 +295,9 @@ namespace SplitterComponent {
                         state.dataSplitterComponent->SplitterCond(SplitterNum).OutletNode(OutNodeNum2))
                         continue;
                     ShowSevereError(state,
-                                    CurrentModuleObject + " = " + state.dataSplitterComponent->SplitterCond(SplitterNum).SplitterName +
-                                        " specifies duplicate outlet nodes in its outlet node list.");
+                                    format("{} = {} specifies duplicate outlet nodes in its outlet node list.",
+                                           CurrentModuleObject,
+                                           state.dataSplitterComponent->SplitterCond(SplitterNum).SplitterName));
                     ShowContinueError(state, format("..Outlet Node #{} Name={}", OutNodeNum1, state.dataLoopNodes->NodeID(OutNodeNum1)));
                     ShowContinueError(state, format("..Outlet Node #{} is duplicate.", OutNodeNum2));
                     ErrorsFound = true;
@@ -310,7 +313,7 @@ namespace SplitterComponent {
         lNumericBlanks.deallocate();
 
         if (ErrorsFound) {
-            ShowFatalError(state, std::string{RoutineName} + "Errors found in getting input.");
+            ShowFatalError(state, format("{}Errors found in getting input.", RoutineName));
         }
     }
 
@@ -518,7 +521,7 @@ namespace SplitterComponent {
         //       MODIFIED       na
         //       RE-ENGINEERED  na
 
-        Real64 const FlowRateToler(0.01); // Tolerance for mass flow rate convergence (in kg/s)
+        Real64 constexpr FlowRateToler(0.01); // Tolerance for mass flow rate convergence (in kg/s)
 
         int InletNode;
         int OutletNode;
@@ -610,8 +613,7 @@ namespace SplitterComponent {
         }
 
         if (SplitterNum == 0) {
-            WhichSplitter =
-                UtilityRoutines::FindItemInList(SplitterName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
+            WhichSplitter = Util::FindItemInList(SplitterName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
         } else {
             WhichSplitter = SplitterNum;
         }
@@ -621,7 +623,7 @@ namespace SplitterComponent {
         }
 
         if (WhichSplitter == 0) {
-            ShowSevereError(state, "GetSplitterOuletNumber: Could not find Splitter = \"" + SplitterName + "\"");
+            ShowSevereError(state, format("GetSplitterOuletNumber: Could not find Splitter = \"{}\"", SplitterName));
             ErrorsFound = true;
             SplitterOutletNumber = 0;
         }
@@ -661,8 +663,7 @@ namespace SplitterComponent {
         }
 
         if (SplitterNum == 0) {
-            WhichSplitter =
-                UtilityRoutines::FindItemInList(SplitterName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
+            WhichSplitter = Util::FindItemInList(SplitterName, state.dataSplitterComponent->SplitterCond, &SplitterConditions::SplitterName);
         } else {
             WhichSplitter = SplitterNum;
         }
@@ -677,7 +678,7 @@ namespace SplitterComponent {
         }
 
         if (WhichSplitter == 0) {
-            ShowSevereError(state, "GetSplitterNodeNumbers: Could not find Splitter = \"" + SplitterName + "\"");
+            ShowSevereError(state, format("GetSplitterNodeNumbers: Could not find Splitter = \"{}\"", SplitterName));
             ErrorsFound = true;
         }
 

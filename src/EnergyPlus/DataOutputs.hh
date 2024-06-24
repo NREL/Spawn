@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2021, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,6 +67,10 @@ namespace EnergyPlus {
 
 namespace DataOutputs {
 
+    // TODO: keep only one of these two
+    bool isKeyRegexLike(std::string_view key);
+    bool isKeyRegexLikeOri(std::string_view key); // DataOutputs implementation
+
     int constexpr NumMonthlyReports(63);
 
     extern Array1D_string const MonthlyNamedReports;
@@ -83,7 +87,7 @@ namespace DataOutputs {
     };
 
     // Check if a KeyValue/VariableName is inside the map OutputVariablesForSimulation
-    bool FindItemInVariableList(EnergyPlusData &state, std::string const &KeyedValue, std::string const &VariableName);
+    bool FindItemInVariableList(const EnergyPlusData &state, std::string_view const KeyedValue, std::string_view const VariableName);
 
 } // namespace DataOutputs
 
@@ -92,34 +96,25 @@ struct OutputsData : BaseGlobalStruct
 
     int MaxConsideredOutputVariables = 0; // Max Array size for OutputVariable pre-scanned
     int NumConsideredOutputVariables = 0; // Number of variables - pre-scanned, allowed for output
-    int iNumberOfRecords;                 // Number of records in input
-    int iNumberOfDefaultedFields;         // number of defaulted fields
-    int iTotalFieldsWithDefaults;         // number of fields that can be defaulted
-    int iNumberOfAutoSizedFields;         // number of autosized fields
-    int iTotalAutoSizableFields;          // number of fields that can be autosized
-    int iNumberOfAutoCalcedFields;        // number of autocalculated fields
-    int iTotalAutoCalculatableFields;     // number of fields that can be autocalculated
-    std::unordered_map<std::string,
-                       std::unordered_map<std::string,
-                                          DataOutputs::OutputReportingVariables,
-                                          UtilityRoutines::case_insensitive_hasher,
-                                          UtilityRoutines::case_insensitive_comparator>,
-                       UtilityRoutines::case_insensitive_hasher,
-                       UtilityRoutines::case_insensitive_comparator>
+    int iNumberOfRecords = 0;             // Number of records in input
+    int iNumberOfDefaultedFields = 0;     // number of defaulted fields
+    int iTotalFieldsWithDefaults = 0;     // number of fields that can be defaulted
+    int iNumberOfAutoSizedFields = 0;     // number of autosized fields
+    int iTotalAutoSizableFields = 0;      // number of fields that can be autosized
+    int iNumberOfAutoCalcedFields = 0;    // number of autocalculated fields
+    int iTotalAutoCalculatableFields = 0; // number of fields that can be autocalculated
+    std::map<std::string,
+             std::map<std::string,
+                      DataOutputs::OutputReportingVariables,
+                      // Util::case_insensitive_hasher,
+                      Util::case_insensitive_comparator>,
+             // Util::case_insensitive_hasher,
+             Util::case_insensitive_comparator>
         OutputVariablesForSimulation;
 
     void clear_state() override
     {
-        MaxConsideredOutputVariables = 0;
-        NumConsideredOutputVariables = 0;
-        iNumberOfRecords = int();
-        iNumberOfDefaultedFields = int();
-        iTotalFieldsWithDefaults = int();
-        iNumberOfAutoSizedFields = int();
-        iTotalAutoSizableFields = int();
-        iNumberOfAutoCalcedFields = int();
-        iTotalAutoCalculatableFields = int();
-        OutputVariablesForSimulation.clear();
+        *this = OutputsData();
     }
 };
 
