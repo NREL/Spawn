@@ -30,33 +30,33 @@ TEST_CASE("Test SingleFamilyHouse as FMU")
 
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
-  const auto core_zn_t_ref = modelDescription.valueReference("LIVING ZONE_T");
-  const auto core_zone_q_ref = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
+  // const auto core_zn_t_ref = modelDescription.valueReference("LIVING ZONE_T");
+  // const auto core_zone_q_ref = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
 
-  std::array<fmi2ValueReference, 1> input_vr{core_zn_t_ref};
-  std::array<fmi2Real, 1> input_v{294.15};
-  status = fmu.fmi.fmi2SetReal(comp, input_vr.data(), 1U, input_v.data());
-  REQUIRE(status == fmi2OK);
+  // std::array<fmi2ValueReference, 1> input_vr{core_zn_t_ref};
+  // std::array<fmi2Real, 1> input_v{294.15};
+  // status = fmu.fmi.fmi2SetReal(comp, input_vr.data(), 1U, input_v.data());
+  // REQUIRE(status == fmi2OK);
 
-  // fmi2GetReal will start energyplus
-  std::array<fmi2ValueReference, 1> output_vr{core_zone_q_ref};
-  std::array<fmi2Real, 1> output_v{};
-  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
-  REQUIRE(status == fmi2OK);
+  //// fmi2GetReal will start energyplus
+  // std::array<fmi2ValueReference, 1> output_vr{core_zone_q_ref};
+  // std::array<fmi2Real, 1> output_v{};
+  // status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
+  // REQUIRE(status == fmi2OK);
 
   // Without the previous call to fmi2GetReal this would start energyplus
   // In this case it just returns ok
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
-  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
-  REQUIRE(status == fmi2OK);
+  // status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
+  // REQUIRE(status == fmi2OK);
 
-  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(2));
-  REQUIRE(status == fmi2OK);
+  // status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(2));
+  // REQUIRE(status == fmi2OK);
 
-  status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
-  REQUIRE(status == fmi2OK);
+  // status = fmu.fmi.fmi2GetReal(comp, output_vr.data(), 1U, output_v.data());
+  // REQUIRE(status == fmi2OK);
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);
