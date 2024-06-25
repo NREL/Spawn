@@ -140,7 +140,7 @@ target_compile_definitions(libspawn PUBLIC -DENERGYPLUS_STATIC_API)
 
 target_link_libraries(
   libspawn
-  PUBLIC spawn_utils libzip::zip pugixml::pugixml energyplusapi
+  PUBLIC spawn_utils libzip::zip pugixml::pugixml energyplusapi airflownetworklib libtk205
   PRIVATE compile_options)
 
 add_executable(

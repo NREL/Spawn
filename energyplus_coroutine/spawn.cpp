@@ -53,17 +53,16 @@ void Spawn::start()
         const auto iddPath = spawn::idd_path().string();
         const auto workingdir_string = workingdir.string();
 
-        constexpr int argc = 8;
-        std::array<const char *, argc> argv{"energyplus",
-                                            "-d",
-                                            workingdir_string.c_str(),
-                                            "-w",
-                                            epwPath.c_str(),
-                                            "-i",
-                                            iddPath.c_str(),
-                                            idfPath_string.c_str()};
+        std::vector<std::string> argv{"energyplus",
+                                      "-d",
+                                      workingdir_string.c_str(),
+                                      "-w",
+                                      epwPath.c_str(),
+                                      "-i",
+                                      iddPath.c_str(),
+                                      idfPath_string.c_str()};
 
-        EnergyPlus::CommandLineInterface::ProcessArgs(sim_state, argc, argv.data());
+        EnergyPlus::CommandLineInterface::ProcessArgs(sim_state, argv);
         registerErrorCallback(simState(),
                               [this](const auto level, const auto &message) { logMessage(level, message); });
         registerExternalHVACManager(simState(), [this](EnergyPlusState state) { externalHVACManager(state); });
@@ -253,69 +252,65 @@ void Spawn::setValue(const std::string &name, const double value)
 
 Spawn::ZoneSums Spawn::zoneSums(const int zonenum)
 {
-  Real64 SumIntGain{0.0}; // Zone sum of convective internal gains
-  Real64 SumHA{0.0};      // Zone sum of Hc*Area
-  Real64 SumHATsurf{0.0}; // Zone sum of Hc*Area*Tsurf
-  Real64 SumHATref{0.0};  // Zone sum of Hc*Area*Tref, for ceiling diffuser convection correlation
-  Real64 SumMCp{0.0};     // Zone sum of MassFlowRate*Cp
-  Real64 SumMCpT{0.0};    // Zone sum of MassFlowRate*Cp*T
-  Real64 SumSysMCp{0.0};  // Zone sum of air system MassFlowRate*Cp
-  Real64 SumSysMCpT{0.0}; // Zone sum of air system MassFlowRate*Cp*T
-
-  EnergyPlus::ZoneTempPredictorCorrector::CalcZoneSums(
-      sim_state, zonenum, SumIntGain, SumHA, SumHATsurf, SumHATref, SumMCp, SumMCpT, SumSysMCp, SumSysMCpT);
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
+  zone_heat_balance.calcZoneOrSpaceSums(sim_state, true, zonenum);
 
   Spawn::ZoneSums sums{};
 
-  sums.tempDepCoef = SumHA + SumMCp;
-  sums.tempIndCoef = SumIntGain + SumHATsurf + SumMCpT;
+  sums.tempDepCoef = zone_heat_balance.SumHA + zone_heat_balance.SumMCp;
+  sums.tempIndCoef = zone_heat_balance.SumIntGain + zone_heat_balance.SumHATsurf + zone_heat_balance.SumMCpT;
 
   return sums;
 }
 
 void Spawn::setZoneTemperature(const int zonenum, const double temp) // NOLINT this is logically not const
 {
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
   // Is it necessary to update all of these or can we
   // simply update ZT and count on EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp()
   // to propogate the other variables?
-  sim_state.dataHeatBalFanSys->ZT(zonenum) = temp;
-  sim_state.dataHeatBalFanSys->ZTAV(zonenum) = temp;
-  sim_state.dataHeatBalFanSys->MAT(zonenum) = temp;
+  zone_heat_balance.ZT = temp;
+  zone_heat_balance.ZTAV = temp;
+  zone_heat_balance.MAT = temp;
 }
 
 void Spawn::setZoneHumidityRatio(const int zonenum, const double ratio)
 {
-  sim_state.dataHeatBalFanSys->ZoneAirHumRatAvg(zonenum) = ratio;
-  sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum) = ratio;
-  sim_state.dataHeatBalFanSys->ZoneAirHumRatTemp(zonenum) = ratio;
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
+
+  zone_heat_balance.airHumRatAvg = ratio;
+  zone_heat_balance.airHumRat = ratio;
+  zone_heat_balance.airHumRatTemp = ratio;
 }
 
 double Spawn::zoneHumidityRatio(const int zonenum) const
 {
-  return sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum);
+  return sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum).airHumRat;
 }
 
 double Spawn::zoneTemperature(const int zonenum) const
 {
-  return sim_state.dataHeatBalFanSys->ZT(zonenum);
+  return sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum).ZT;
 }
 
 void Spawn::updateZoneTemperature(const int zonenum, const double dt)
 {
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
+
   // Based on the EnergyPlus analytical method
   // See ZoneTempPredictorCorrector::CorrectZoneAirTemp
   const auto &zonetemp = zoneTemperature(zonenum);
   double newzonetemp = 0;
 
-  const auto aircap = sim_state.dataHeatBal->Zone(as_size_t(zonenum)).Volume *
-                      sim_state.dataHeatBal->Zone(as_size_t(zonenum)).ZoneVolCapMultpSens *
-                      EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state,
-                                                                    sim_state.dataEnvrn->OutBaroPress,
-                                                                    zonetemp,
-                                                                    sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum),
-                                                                    "") *
-                      EnergyPlus::Psychrometrics::PsyCpAirFnW(
-                          sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum)); // / (TimeStepSys * SecInHour);
+  const auto aircap =
+      sim_state.dataHeatBal->Zone(as_size_t(zonenum)).Volume *
+      sim_state.dataHeatBal->Zone(as_size_t(zonenum)).ZoneVolCapMultpSens *
+      EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state,
+                                                    sim_state.dataEnvrn->OutBaroPress,
+                                                    zonetemp,
+                                                    zone_heat_balance.airHumRat,
+                                                    "") *
+      EnergyPlus::Psychrometrics::PsyCpAirFnW(zone_heat_balance.airHumRat); // / (TimeStepSys * SecInHour);
 
   const auto &sums = zoneSums(zonenum);
   if (sums.tempDepCoef == 0.0) { // B=0
@@ -331,38 +326,30 @@ void Spawn::updateZoneTemperature(const int zonenum, const double dt)
 
 void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
 {
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
+
   // Based on the EnergyPlus analytical method
   // See ZoneTempPredictorCorrector::CorrectZoneHumRat
-
   static constexpr std::string_view RoutineName("updateZoneHumidityRatio");
   const auto humidityRatio = zoneHumidityRatio(zonenum);
 
-  auto &ZT = sim_state.dataHeatBalFanSys->ZT;
+  auto &ZT = zone_heat_balance.ZT;
   auto &Zone = sim_state.dataHeatBal->Zone;
   double moistureMassFlowRate = 0.0;
 
   // Calculate hourly humidity ratio from infiltration + humdidity added from latent load + system added moisture
-  const auto latentGain = sim_state.dataHeatBalFanSys->ZoneLatentGain(zonenum) +
-                          sim_state.dataHeatBalFanSys->SumLatentHTRadSys(zonenum) +
+  const auto latentGain = zone_heat_balance.latentGain + sim_state.dataHeatBalFanSys->SumLatentHTRadSys(zonenum) +
                           sim_state.dataHeatBalFanSys->SumLatentPool(zonenum);
 
-  const double RhoAir =
-      EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(sim_state,
-                                                    sim_state.dataEnvrn->OutBaroPress,
-                                                    ZT(zonenum),
-                                                    sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum),
-                                                    RoutineName);
-  const double h2oHtOfVap =
-      EnergyPlus::Psychrometrics::PsyHgAirFnWTdb(sim_state.dataHeatBalFanSys->ZoneAirHumRat(zonenum), ZT(zonenum));
+  const double RhoAir = EnergyPlus::Psychrometrics::PsyRhoAirFnPbTdbW(
+      sim_state, sim_state.dataEnvrn->OutBaroPress, ZT, zone_heat_balance.airHumRat, RoutineName);
+  const double h2oHtOfVap = EnergyPlus::Psychrometrics::PsyHgAirFnWTdb(zone_heat_balance.airHumRat, ZT);
 
-  const double B = (latentGain / h2oHtOfVap) +
-                   ((sim_state.dataHeatBalFanSys->OAMFL(zonenum) + sim_state.dataHeatBalFanSys->VAMFL(zonenum) +
-                     sim_state.dataHeatBalFanSys->CTMFL(zonenum)) *
-                    sim_state.dataEnvrn->OutHumRat) +
-                   sim_state.dataHeatBalFanSys->EAMFLxHumRat(zonenum) + (moistureMassFlowRate) +
-                   sim_state.dataHeatBalFanSys->SumHmARaW(zonenum) +
-                   sim_state.dataHeatBalFanSys->MixingMassFlowXHumRat(zonenum) +
-                   sim_state.dataHeatBalFanSys->MDotOA(zonenum) * sim_state.dataEnvrn->OutHumRat;
+  const double B =
+      (latentGain / h2oHtOfVap) +
+      ((zone_heat_balance.OAMFL + zone_heat_balance.VAMFL + zone_heat_balance.CTMFL) * sim_state.dataEnvrn->OutHumRat) +
+      zone_heat_balance.EAMFLxHumRat + (moistureMassFlowRate) + zone_heat_balance.SumHmARaW +
+      zone_heat_balance.MixingMassFlowXHumRat + zone_heat_balance.MDotOA * sim_state.dataEnvrn->OutHumRat;
 
   const double C = RhoAir * Zone(zonenum).Volume * Zone(zonenum).ZoneVolCapMultpMoist / dt;
 
@@ -375,8 +362,8 @@ void Spawn::updateZoneHumidityRatio(const int zonenum, const double dt)
 
   // Check to make sure that is saturated there is condensation in the zone
   // by resetting to saturation conditions.
-  const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
-      sim_state, ZT(zonenum), 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
+  const double wzSat =
+      EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(sim_state, ZT, 1.0, sim_state.dataEnvrn->OutBaroPress, RoutineName);
 
   if (newHumidityRatio > wzSat) {
     newHumidityRatio = wzSat;
@@ -414,18 +401,20 @@ void Spawn::updateZoneConditions(bool skipConnectedZones)
 
 void Spawn::updateLatentGains()
 {
+
   for (int zonei = 1; zonei <= sim_state.dataGlobal->NumOfZones; ++zonei) {
-    EnergyPlus::InternalHeatGains::SumAllInternalLatentGains(
-        sim_state, zonei, sim_state.dataHeatBalFanSys->ZoneLatentGain(zonei));
+    EnergyPlus::InternalHeatGains::SumAllInternalLatentGains(sim_state, zonei);
   }
 }
 
 double Spawn::zoneHeatTransfer(const int zonenum)
 {
+  auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(zonenum);
+
   const auto &sums = zoneSums(zonenum);
   // Refer to
   // https://bigladdersoftware.com/epx/docs/8-8/engineering-reference/basis-for-the-zone-and-air-system-integration.html#basis-for-the-zone-and-air-system-integration
-  const auto heatTransfer = sums.tempIndCoef - (sums.tempDepCoef * sim_state.dataHeatBalFanSys->MAT(zonenum));
+  const auto heatTransfer = sums.tempIndCoef - (sums.tempDepCoef * zone_heat_balance.MAT);
   return heatTransfer;
 }
 
@@ -462,8 +451,8 @@ void Spawn::setOutsideSurfaceTemperature(const int surfacenum, double temp)
 
 double Spawn::getInsideSurfaceHeatFlow(const int surfacenum) const
 {
-  return sim_state.dataHeatBalSurf->QdotConvInRep(surfacenum) +
-         sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(surfacenum);
+  return sim_state.dataHeatBalSurf->SurfQdotConvInRep(surfacenum) +
+         sim_state.dataHeatBalSurf->SurfQdotRadNetSurfInRep(surfacenum);
 }
 
 double Spawn::getOutsideSurfaceHeatFlow(const int surfacenum) const
@@ -473,10 +462,11 @@ double Spawn::getOutsideSurfaceHeatFlow(const int surfacenum) const
   if (extBoundCond > 0) {
     // EnergyPlus does not calculate the surface heat flux for interzone surfaces,
     // instead return the inside face heat flux of the matching surface
-    return sim_state.dataHeatBalSurf->QdotConvInRep(extBoundCond) +
-           sim_state.dataHeatBalSurf->QdotRadNetSurfInRep(extBoundCond);
+    return sim_state.dataHeatBalSurf->SurfQdotConvInRep(extBoundCond) +
+           sim_state.dataHeatBalSurf->SurfQdotRadNetSurfInRep(extBoundCond);
   } else {
-    return sim_state.dataHeatBalSurf->QdotConvOutRep(surfacenum) + sim_state.dataHeatBalSurf->QdotRadOutRep(surfacenum);
+    return sim_state.dataHeatBalSurf->SurfQdotConvOutRep(surfacenum) +
+           sim_state.dataHeatBalSurf->SurfQdotRadOutRep(surfacenum);
   }
 }
 
@@ -652,7 +642,8 @@ void Spawn::exchange(const bool force)
     switch (var.type) {
     case VariableType::TRAD: {
       const auto varZoneNum = zoneNum(var.name);
-      var.setValue(sim_state.dataHeatBal->ZoneMRT(varZoneNum), spawn::units::UnitSystem::EP);
+      auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(varZoneNum);
+      var.setValue(zone_heat_balance.MRT, spawn::units::UnitSystem::EP);
       break;
     }
     case VariableType::V: {
@@ -678,7 +669,8 @@ void Spawn::exchange(const bool force)
     }
     case VariableType::QLAT_FLOW: {
       const auto varZoneNum = zoneNum(var.name);
-      var.setValue(sim_state.dataHeatBalFanSys->ZoneLatentGain(varZoneNum), spawn::units::UnitSystem::EP);
+      auto &zone_heat_balance = sim_state.dataZoneTempPredictorCorrector->zoneHeatBalance(varZoneNum);
+      var.setValue(zone_heat_balance.latentGain, spawn::units::UnitSystem::EP);
       break;
     }
     case VariableType::QPEO_FLOW:

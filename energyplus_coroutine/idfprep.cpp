@@ -223,7 +223,7 @@ json &expandInfiltrationZoneLists(json &jsonidf)
   std::vector<std::string> infNamesToRemove;
 
   for (const auto &[infname, inffields] : infiltrationObjects.items()) {
-    const auto possibleZoneListName = inffields.at("zone_or_zonelist_name").get<std::string>();
+    const auto possibleZoneListName = inffields.at("zone_or_zonelist_or_space_or_spacelist_name").get<std::string>();
     // if zoneName is the name of a zone list and not a real zone....
     if (zoneListObjects.contains(possibleZoneListName)) {
       const auto zoneNameObjects = zoneListObjects.value(possibleZoneListName, json()).value("zones", json());
@@ -233,7 +233,7 @@ json &expandInfiltrationZoneLists(json &jsonidf)
           const auto zoneName = zoneNameObject.at("zone_name").get<std::string>();
           auto newInfName = fmt::format("Spawn-{}-{}", zoneName, infname);
           newInfiltration[newInfName] = inffields;
-          newInfiltration[newInfName]["zone_or_zonelist_name"] = zoneName;
+          newInfiltration[newInfName]["zone_or_zonelist_or_space_or_spacelist_name"] = zoneName;
         }
         // Also need to remove the orginal infiltration
         infNamesToRemove.push_back(infname);
@@ -286,7 +286,7 @@ json &addDefaultZeroInfiltration(json &jsonidf, const Input &input)
                                                      {"temperature_term_coefficient", 0},
                                                      {"velocity_squared_term_coefficient", 0},
                                                      {"velocity_term_coefficient", 0},
-                                                     {"zone_or_zonelist_name", zone.idfname}};
+                                                     {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname}};
     }
   }
 
@@ -301,7 +301,7 @@ json &removeInfiltration(json &jsonidf, const Input &input)
 
   // Idf infiltration type paired with the field which identifies the related zone
   constexpr std::array<std::pair<const char *, const char *>, 3> infiltrationTypes = {
-      {{"ZoneInfiltration:DesignFlowRate", "zone_or_zonelist_name"},
+      {{"ZoneInfiltration:DesignFlowRate", "zone_or_zonelist_or_space_or_spacelist_name"},
        {"ZoneInfiltration:EffectiveLeakageArea", "zone_name"},
        {"ZoneInfiltration:FlowCoefficient", "zone_name"}}};
 

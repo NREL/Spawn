@@ -1,6 +1,6 @@
 #include "variables.hpp"
+#include "../energyplus/idd/embedded/EmbeddedEpJSONSchema.hh"
 #include "../energyplus/src/EnergyPlus/DataStringGlobals.hh"
-#include "../energyplus/src/EnergyPlus/InputProcessing/EmbeddedEpJSONSchema.hh"
 #include "../energyplus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../energyplus/src/EnergyPlus/UtilityRoutines.hh"
 #include "iddtypes.hpp"
@@ -57,12 +57,11 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input &input)
       var.outputvarname = outputVariable.idfname;
       var.outputvarkey = outputVariable.idfkey;
 
-      const auto &output =
-          std::find_if(std::begin(spawn::energyplus::output_types),
-                       std::end(spawn::energyplus::output_types),
-                       [&](const spawn::energyplus::OutputType &v) {
-                         return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.name) == var.outputvarname;
-                       });
+      const auto &output = std::find_if(std::begin(spawn::energyplus::output_types),
+                                        std::end(spawn::energyplus::output_types),
+                                        [&](const spawn::energyplus::OutputType &v) {
+                                          return EnergyPlus::Util::makeUPPER(v.name) == var.outputvarname;
+                                        });
 
       if (output != std::end(spawn::energyplus::output_types)) {
         var.epunittype = output->epUnitType;
