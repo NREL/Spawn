@@ -420,33 +420,33 @@ double Spawn::zoneHeatTransfer(const int zonenum)
 
 void Spawn::setInsideSurfaceTemperature([[__maybe_unused__]] const int surfacenum, [[__maybe_unused__]] double temp)
 {
-  // auto &surface = sim_state.dataSurface->Surface(as_size_t(surfacenum));
-  // setActuatorValue("Surface", "Surface Inside Temperature", surface.Name, temp);
-  // auto &extBoundCond = surface.ExtBoundCond;
-  // if (extBoundCond > 0) {
-  //   // If this is an interzone surface then set the outside of the matching surface
-  //   auto &other_surface = sim_state.dataSurface->Surface(as_size_t(extBoundCond));
-  //   setActuatorValue("Surface", "Surface Outside Temperature", other_surface.Name, temp);
-  // }
+  auto &surface = sim_state.dataSurface->Surface(as_size_t(surfacenum));
+  setActuatorValue("Surface", "Surface Inside Temperature", surface.Name, temp);
+  auto &extBoundCond = surface.ExtBoundCond;
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the outside of the matching surface
+    auto &other_surface = sim_state.dataSurface->Surface(as_size_t(extBoundCond));
+    setActuatorValue("Surface", "Surface Outside Temperature", other_surface.Name, temp);
+  }
 }
 
 void Spawn::setOutsideSurfaceTemperature([[__maybe_unused__]] const int surfacenum, [[__maybe_unused__]] double temp)
 {
-  // auto &surface = sim_state.dataSurface->Surface(as_size_t(surfacenum));
-  // setActuatorValue("Surface", "Surface Outside Temperature", surface.Name, temp);
-  // auto &extBoundCond = surface.ExtBoundCond;
+  auto &surface = sim_state.dataSurface->Surface(as_size_t(surfacenum));
+  setActuatorValue("Surface", "Surface Outside Temperature", surface.Name, temp);
+  auto &extBoundCond = surface.ExtBoundCond;
 
-  // if (surfacenum == extBoundCond) {
-  //   throw std::runtime_error(fmt::format("Attempt to control surface named {} that has a self referencing exterior "
-  //                                        "boundary condition. This is not supported by Spawn",
-  //                                        surface.Name));
-  // }
+  if (surfacenum == extBoundCond) {
+    throw std::runtime_error(fmt::format("Attempt to control surface named {} that has a self referencing exterior "
+                                         "boundary condition. This is not supported by Spawn",
+                                         surface.Name));
+  }
 
-  // if (extBoundCond > 0) {
-  //   // If this is an interzone surface then set the inside of the matching surface
-  //   auto &other_surface = sim_state.dataSurface->Surface(as_size_t(extBoundCond));
-  //   setActuatorValue("Surface", "Surface Inside Temperature", other_surface.Name, temp);
-  // }
+  if (extBoundCond > 0) {
+    // If this is an interzone surface then set the inside of the matching surface
+    auto &other_surface = sim_state.dataSurface->Surface(as_size_t(extBoundCond));
+    setActuatorValue("Surface", "Surface Inside Temperature", other_surface.Name, temp);
+  }
 }
 
 double Spawn::getInsideSurfaceHeatFlow(const int surfacenum) const

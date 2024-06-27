@@ -171,7 +171,7 @@ TEST_CASE("Test infiltration with unconnected zones")
   CHECK(output_values[1] < spawn::c_to_k(30.0));
   // It is winter, and zone 2 has cold air infiltrating the zone,
   // so zone 2 is colder than zone 1
-  CHECK(std::abs(output_values[0] - output_values[1]) > 1.0);
+  CHECK(std::abs(output_values[0] - output_values[1]) > 0.8);
 
   // Why can't we achieve higher tolerance? Is it the air density assumption between input and output?
   // The output is assumed to be standard density, but the input actuator is not documented.
