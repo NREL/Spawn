@@ -381,6 +381,262 @@ std::map<unsigned int, Variable> parseVariables(const spawn::Input &input)
 
         result.emplace(i, std::move(var));
       }
+      // Sizing related parameters
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_QCooSen_flow";
+        Variable var;
+        var.type = VariableType::QCOOSEN_FLOW;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Design sensible cooling load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "Power");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_QCooLat_flow";
+        Variable var;
+        var.type = VariableType::QCOOLAT_FLOW;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Design latent cooling load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "Power");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_TOutCoo";
+        Variable var;
+        var.type = VariableType::TOUTCOO;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Outdoor drybulb temperature at the cooling design load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_XOutCoo";
+        Variable var;
+        var.type = VariableType::XOUTCOO;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::one;
+        var.mounittype = spawn::units::UnitType::one;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back(
+            "description", "Outdoor humidity ratio at the cooling design load per total air mass of the zone");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_tCoo";
+        Variable var;
+        var.type = VariableType::TCOO;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::s;
+        var.mounittype = spawn::units::UnitType::s;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Time at which these loads occurred");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "Time");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_QHea_flow";
+        Variable var;
+        var.type = VariableType::QHEA_FLOW;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::W;
+        var.mounittype = spawn::units::UnitType::W;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Design heating load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "Power");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_TOutHea";
+        Variable var;
+        var.type = VariableType::TOUTHEA;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::C;
+        var.mounittype = spawn::units::UnitType::K;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Outdoor drybulb temperature at the heating design load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "ThermodynamicTemperature");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_XOutHea";
+        Variable var;
+        var.type = VariableType::XOUTHEA;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::one;
+        var.mounittype = spawn::units::UnitType::one;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back(
+            "description", "Outdoor humidity ratio at the heating design load per total air mass of the zone");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_tHea";
+        Variable var;
+        var.type = VariableType::THEA;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::s;
+        var.mounittype = spawn::units::UnitType::s;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description", "Time at which these loads occurred");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "Time");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_mOutCoo_flow";
+        Variable var;
+        var.type = VariableType::MOUTCOO_FLOW;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::kg_per_s;
+        var.mounittype = spawn::units::UnitType::kg_per_s;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description",
+                                           "Minimum outdoor air flow rate during the cooling design load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "MassFlowRate");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
+      ++i;
+      {
+        const auto var_name = zone.idfname + "_mOutHea_flow";
+        Variable var;
+        var.type = VariableType::MOUTHEA_FLOW;
+        var.name = zone.idfname;
+        var.epunittype = spawn::units::UnitType::kg_per_s;
+        var.mounittype = spawn::units::UnitType::kg_per_s;
+
+        var.scalar_attributes.emplace_back("name", var_name);
+        var.scalar_attributes.emplace_back("valueReference", std::to_string(i));
+        var.scalar_attributes.emplace_back("description",
+                                           "Minimum outdoor air flow rate during the heating design load");
+        var.scalar_attributes.emplace_back("causality", "calculatedParameter");
+        var.scalar_attributes.emplace_back("variability", "fixed");
+        var.scalar_attributes.emplace_back("initial", "calculated");
+
+        var.real_attributes.emplace_back("quantity", "MassFlowRate");
+        var.real_attributes.emplace_back("relativeQuantity", "false");
+        var.real_attributes.emplace_back("unit", spawn::units::toString(var.mounittype));
+
+        var.setValue(0.0, spawn::units::UnitSystem::MO);
+        result.emplace(i, std::move(var));
+      }
       ++i;
     }
   }

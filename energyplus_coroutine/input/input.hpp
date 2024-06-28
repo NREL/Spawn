@@ -40,6 +40,8 @@ public:
   [[nodiscard]] spawn_fs::path epwInputPath() const;
   void setEPWInputPath(const spawn_fs::path &epwpath);
 
+  [[nodiscard]] bool autosize() const;
+
   double relativeSurfaceTolerance() const;
 
   void save(const spawn_fs::path &savepath) const;

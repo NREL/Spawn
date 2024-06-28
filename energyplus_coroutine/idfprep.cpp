@@ -4,19 +4,21 @@
 
 namespace spawn {
 
-json &adjustSimulationControl(json &jsonidf)
+json &adjustSimulationControl(json &jsonidf, const Input &input)
 {
   constexpr auto simulationcontroltype = "SimulationControl";
 
   // Remove the existing control first
   jsonidf.erase(simulationcontroltype);
 
+  // TODO: fix this slop. Please add a consistent method of handling bool types
+  const auto autosize = input.autosize() ? "Yes" : "No";
   // This is what we need for spawn
   jsonidf[simulationcontroltype] = {{"Spawn-SimulationControl",
                                      {{"do_plant_sizing_calculation", "No"},
                                       {"do_system_sizing_calculation", "No"},
-                                      {"do_zone_sizing_calculation", "No"},
-                                      {"run_simulation_for_sizing_periods", "No"},
+                                      {"do_zone_sizing_calculation", autosize},
+                                      {"run_simulation_for_sizing_periods", autosize},
                                       {"run_simulation_for_weather_file_run_periods", "Yes"}}}};
 
   return jsonidf;
@@ -328,7 +330,7 @@ json &removeInfiltration(json &jsonidf, const Input &input)
 
 void prepare_idf(json &jsonidf, const Input &input, const StartTime &start_time)
 {
-  adjustSimulationControl(jsonidf);
+  adjustSimulationControl(jsonidf, input);
   removeUnusedObjects(jsonidf);
   addRunPeriod(jsonidf, input, start_time);
   removeInfiltration(jsonidf, input);

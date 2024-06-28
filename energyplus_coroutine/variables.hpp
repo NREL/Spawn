@@ -33,6 +33,19 @@ enum class VariableType
   QSURF_FRONT,
   TSURF_BACK,
   QSURF_BACK,
+
+  // Sizing related parameters
+  QCOOSEN_FLOW,
+  QCOOLAT_FLOW,
+  TOUTCOO,
+  XOUTCOO,
+  TCOO,
+  QHEA_FLOW,
+  TOUTHEA,
+  XOUTHEA,
+  MOUTCOO_FLOW,
+  MOUTHEA_FLOW,
+  THEA
 };
 
 using VariableAttribute = std::pair<std::string, std::string>;

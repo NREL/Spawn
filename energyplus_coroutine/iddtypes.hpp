@@ -7,7 +7,7 @@ namespace spawn {
 constexpr std::array<const char *, 4> supportedScheduleTypes = {
     "Schedule:Year", "Schedule:Compact", "Schedule:Constant", "Schedule:File"};
 
-constexpr std::array<const char *, 287> supportedIDDTypes = {
+constexpr std::array<const char *, 290> supportedIDDTypes = {
     "Version",
     "SimulationControl",
     "PerformancePrecisionTradeoffs",
@@ -26,6 +26,9 @@ constexpr std::array<const char *, 287> supportedIDDTypes = {
     "RunPeriod",
     "RunPeriodControl:SpecialDays",
     "RunPeriodControl:DaylightSavingTime",
+    "SizingPeriod:DesignDay",
+    "SizingPeriod:WeatherFileDays",
+    "SizingPeriod:WeatherFileConditionType",
     "WeatherProperty:SkyTemperature",
     "Site:WeatherStation",
     "Site:HeightVariation",
