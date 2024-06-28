@@ -94,6 +94,9 @@ void Spawn::start()
       sim_thread.join();
     }
 
+    // This will poppulate const parameters such as the zone sizing values
+    initConstParameters();
+
     // This will make sure that we have a data exchange
     setTime(start_time_.Seconds());
   }
@@ -562,6 +565,84 @@ double Spawn::getSensorValue(Variable &var)
   return getVariableValue(simState(), h);
 }
 
+void Spawn::initConstParameters()
+{
+  isRunningCheck();
+
+  // TODO: look for a better way to check sizing.
+  // DoZoneSizing does not indicate that sizing was done,
+  // so we have to be careful about when to call initConstParameters
+  // sim_state.dataSize->FinalZoneSizing will not be filled out if zone sizing do not happen
+  if (!sim_state.dataGlobal->DoZoneSizing) {
+    return;
+  }
+
+  for (auto &varmap : variables) {
+    auto &var = varmap.second;
+    auto zone_num = zoneNum(var.name);
+
+    switch (var.type) { // NOLINT
+    case VariableType::QCOOSEN_FLOW: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].DesCoolLoad;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::QCOOLAT_FLOW: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].DesLatentCoolLoad;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::TOUTCOO: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].OutTempAtCoolPeak;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::XOUTCOO: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].OutHumRatAtLatentCoolPeak;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::TCOO: {
+      const auto value = 0;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::QHEA_FLOW: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].DesHeatLoad;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::TOUTHEA: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].OutTempAtHeatPeak;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::XOUTHEA: {
+      const auto value = sim_state.dataSize->FinalZoneSizing[zone_num].OutHumRatAtLatentHeatPeak;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::MOUTCOO_FLOW: {
+      const auto value = 0;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::MOUTHEA_FLOW: {
+      const auto value = 0;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    case VariableType::THEA: {
+      const auto value = 0;
+      var.setValue(value, spawn::units::UnitSystem::EP);
+      break;
+    }
+    default:
+      break;
+    }
+  }
+}
+
 void Spawn::exchange(const bool force)
 {
   isRunningCheck();
@@ -719,6 +800,11 @@ void Spawn::initZoneEquip()
 
 void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
 {
+  // Don't run external HVAC during sizing
+  if (sim_state.dataGlobal->ZoneSizingCalc) {
+    return;
+  }
+
   // Although we do not use the ZoneTempPredictorCorrector,
   // some global variables need to be initialized by InitZoneAirSetPoints
   // This is protected by a one time flag so that it will only happen once

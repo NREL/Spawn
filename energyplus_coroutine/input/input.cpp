@@ -98,6 +98,11 @@ void Input::setEPWInputPath(const spawn_fs::path &epwpath)
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }
 
+bool Input::autosize() const
+{
+  return spawnjson.value("EnergyPlus", json()).value("autosize", false);
+}
+
 void Input::save(const spawn_fs::path &savepath) const
 {
   std::ofstream o(savepath.string());

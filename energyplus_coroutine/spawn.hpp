@@ -165,6 +165,10 @@ private:
   double getInsideSurfaceHeatFlow(const int surfacenum) const;
   double getOutsideSurfaceHeatFlow(const int surfacenum) const;
 
+  // Initialize Variables that have fixed values that do not change during the simulation.
+  // This should be called at the end of the ::start() sequence.
+  void initConstParameters();
+
   // WarmupManager will register its own callbacks during construction
   // Maybe all of Spawn's implementation can be derived from "Manager" class
   // Maybe all of EnergyPlus can derive from Manager and the simulation is
