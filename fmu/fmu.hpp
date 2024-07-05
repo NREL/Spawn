@@ -118,11 +118,11 @@ public:
   {
     const auto libFilename = fmi_lib_filename(modelIdentifier());
 
-    std::vector<spawn_fs::path> possiblePaths{m_unzipped.outputDir() / spawn_fs::path{"binaries"} / fmi_platform() /
+    const std::vector<spawn_fs::path> possiblePaths{m_unzipped.outputDir() / spawn_fs::path{"binaries"} / fmi_platform() /
                                                   libFilename,
                                               m_unzipped.outputDir() / spawn_fs::path{"binaries"} / libFilename};
 
-    for (const auto p : possiblePaths) {
+    for (const auto &p : possiblePaths) {
       if (spawn_fs::exists(p)) {
         return p;
       }

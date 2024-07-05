@@ -14,7 +14,7 @@ execute_process(COMMAND ${CMAKE_COMMAND}
   -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}/energyplus
   -DSpawn_SOURCE_DIR=${Spawn_SOURCE_DIR}
   -P ${PROJECT_SOURCE_DIR}/cmake/create_energyplus_version.cmake)
-include("${PROJECT_BINARY_DIR}/EnergyPlus/energyplus_version.cmake")
+include("${PROJECT_BINARY_DIR}/energyplus/energyplus_version.cmake")
 
 # EnergyPlus is forcing CPACK_BINARY_IFW on but for Spawn we aren't using IFW so
 # reset to OFF
