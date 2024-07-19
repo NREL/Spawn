@@ -4,9 +4,9 @@
 %include <std_wstring.i>
 
 %{
-#include "input/input.hpp"
+#include "input/user_config.hpp"
 #include "variables.hpp"
-#include "warmupmanager.hpp"
+#include "warmup_anager.hpp"
 #include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../energyplus/src/EnergyPlus/Data/CommonIncludes.hh"
 #include "../energyplus/src/EnergyPlus/api/state.h"

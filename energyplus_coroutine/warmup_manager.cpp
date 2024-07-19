@@ -1,4 +1,4 @@
-#include "./warmupmanager.hpp"
+#include "./warmup_manager.hpp"
 #include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
 #include "../energyplus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../energyplus/src/EnergyPlus/DataHeatBalance.hh"

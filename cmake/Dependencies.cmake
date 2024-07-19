@@ -15,6 +15,7 @@ find_package(Boost)
 # Normally, we would use conan to pull in spdlog, but the conan build
 # is unaware of fmt provided by EnergyPlus
 set(SPDLOG_FMT_EXTERNAL ON)
+set(SPDLOG_BUILD_PIC ON)
 add_subdirectory(spdlog)
 
 # Provides the cmake macro, `catch_discover_tests`

@@ -90,18 +90,6 @@ TEST_CASE("Test infiltration with unconnected zones")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char *, 6> variable_names{"zone 1 temp",
-                                                       "zone 2 temp",
-                                                       "zone 1 infiltration",
-                                                       "zone 2 infiltration",
-                                                       "zone 1 infiltration output",
-                                                       "zone 2 infiltration output"};
-
-  std::map<std::string, fmi2ValueReference> variable_refs;
-  for (const auto name : variable_names) {
-    variable_refs[name] = modelDescription.valueReference(name);
-  }
-
   const auto zone_1_temp_ref = modelDescription.valueReference("zone 1 temp");
   const auto zone_2_temp_ref = modelDescription.valueReference("zone 2 temp");
   const auto zone_1_infiltration_ref = modelDescription.valueReference("zone 1 infiltration");
@@ -262,48 +250,48 @@ TEST_CASE("Test infiltration with unconnected and connected zones")
   const auto model_description_path = fmu.extractedFilesPath() / fmu.modelDescriptionPath();
   spawn::fmu::ModelDescription modelDescription(model_description_path);
 
-  constexpr std::array<const char *, 6> variable_names{"zone 1 temp",
-                                                       "zone 2 temp",
-                                                       "zone 1 infiltration",
-                                                       "zone 2 infiltration",
-                                                       "zone 1 infiltration output",
-                                                       "zone 2 infiltration output"};
-
-  std::map<std::string, fmi2ValueReference> variable_refs;
-  for (const auto name : variable_names) {
-    variable_refs[name] = modelDescription.valueReference(name);
-  }
-
   const auto zone_1_temp_ref = modelDescription.valueReference("zone 1 temp");
   const auto zone_2_temp_ref = modelDescription.valueReference("zone 2 temp");
   const auto zone_1_infiltration_output_ref = modelDescription.valueReference("zone 1 infiltration output");
   const auto zone_2_infiltration_output_ref = modelDescription.valueReference("zone 2 infiltration output");
+  const auto zone_1_infiltration_ref = modelDescription.valueReference("zone 1 infiltration");
+  const auto zone_2_infiltration_ref = modelDescription.valueReference("zone 2 infiltration");
 
   const std::array<fmi2ValueReference, 4> output_refs = {
       zone_1_temp_ref, zone_2_temp_ref, zone_1_infiltration_output_ref, zone_2_infiltration_output_ref};
+  const std::array<fmi2ValueReference, 2> input_refs = {zone_1_infiltration_ref, zone_2_infiltration_ref};
 
   status = fmu.fmi.fmi2ExitInitializationMode(comp);
   REQUIRE(status == fmi2OK);
 
   std::array<fmi2Real, output_refs.size()> output_values{};
+  std::array<fmi2Real, input_refs.size()> input_values{};
 
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2OK);
 
-  // Zone 2 infiltration output should be 0
+  // Zone 2 (a connected zone) infiltration output should be 0
+  // Infiltration should be provided by the client / Modelica
   CHECK(output_values[3] == Approx(0.0));
-
-  // Zone 1 infiltration output should be non zero
+  // Zone 1 (unconncected / floating zone) infiltration output should be non zero
+  // Infiltration is provided by EnergyPlus
   CHECK(output_values[2] > 0.1);
 
-  // Zone 1 should be colder than zone 2, because zone 1 has infiltration
+  double zone_1_infiltration_input_value = 0.0;
+  double zone_2_infiltration_input_value = 0.0;
+  input_values[0] = zone_1_infiltration_input_value;
+  input_values[1] = zone_2_infiltration_input_value;
+
+  status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
+  CHECK(status == fmi2OK);
+
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2OK);
-  CHECK(output_values[0] > spawn::c_to_k(10.0));
-  CHECK(output_values[1] > spawn::c_to_k(10.0));
-  CHECK(output_values[0] < spawn::c_to_k(30.0));
-  CHECK(output_values[1] < spawn::c_to_k(30.0));
-  CHECK((output_values[1] - output_values[0]) > 0.0);
+
+  // Zone 2 (a connected zone) infiltration output should still be 0
+  CHECK(output_values[3] == Approx(0.0));
+  // Zone 1 (unconncected / floating zone) infiltration output should now be zero
+  CHECK(output_values[2] == Approx(0.0));
 
   status = fmu.fmi.fmi2Terminate(comp);
   REQUIRE(status == fmi2OK);

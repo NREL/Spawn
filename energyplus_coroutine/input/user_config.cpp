@@ -1,11 +1,11 @@
-#include "input.hpp"
 #include "../idf_to_json.hpp"
+#include "user_config.hpp"
 
 using json = nlohmann::json;
 
 namespace spawn {
 
-Input::Input(const std::string &spawninput)
+UserConfig::UserConfig(const std::string &spawninput)
 {
   std::ifstream fileinput(spawninput);
   if (!fileinput.fail()) {
@@ -36,28 +36,28 @@ Input::Input(const std::string &spawninput)
 
   zones = Zone::createZones(spawnjson, jsonidf);
   schedules = Schedule::createSchedules(spawnjson, jsonidf);
-  outputVariables = OutputVariable::createOutputVariables(spawnjson, jsonidf);
+  outputVariables = input::OutputVariable::createOutputVariables(spawnjson, jsonidf);
   emsActuators = EMSActuator::createEMSActuators(spawnjson, jsonidf);
   surfaces = Surface::createSurfaces(spawnjson, jsonidf);
   runPeriod = RunPeriod::create_run_period(spawnjson);
 }
 
-std::string Input::fmuname() const
+std::string UserConfig::fmuname() const
 {
   return spawnjson.value("fmu", json()).value("name", "spawn.fmu");
 }
 
-std::string Input::fmuBaseName() const
+std::string UserConfig::fmuBaseName() const
 {
   return spawn_fs::path(fmuname()).stem().string();
 }
 
-void Input::setFMUName(std::string name)
+void UserConfig::setFMUName(std::string name)
 {
   spawnjson["fmu"]["name"] = std::move(name);
 }
 
-spawn_fs::path Input::toPath(const std::string &pathstring) const
+spawn_fs::path UserConfig::toPath(const std::string &pathstring) const
 {
   spawn_fs::path p(pathstring);
   if (!p.is_absolute()) {
@@ -67,7 +67,7 @@ spawn_fs::path Input::toPath(const std::string &pathstring) const
   return p;
 }
 
-double Input::relativeSurfaceTolerance() const
+double UserConfig::relativeSurfaceTolerance() const
 {
   const auto tol = spawnjson.value("EnergyPlus", json())["relativeSurfaceTolerance"];
   if (!tol.is_null()) {
@@ -78,38 +78,38 @@ double Input::relativeSurfaceTolerance() const
   return 1.0e-6;
 }
 
-spawn_fs::path Input::idfInputPath() const
+spawn_fs::path UserConfig::idfInputPath() const
 {
   return toPath(spawnjson.value("EnergyPlus", json()).value("idf", "in.idf"));
 }
 
-void Input::setIdfInputPath(const spawn_fs::path &idfpath)
+void UserConfig::setIdfInputPath(const spawn_fs::path &idfpath)
 {
   spawnjson["EnergyPlus"]["idf"] = idfpath.string();
 }
 
-spawn_fs::path Input::epwInputPath() const
+spawn_fs::path UserConfig::epwInputPath() const
 {
   return toPath(spawnjson.value("EnergyPlus", json()).value("weather", "in.epw"));
 }
 
-void Input::setEPWInputPath(const spawn_fs::path &epwpath)
+void UserConfig::setEPWInputPath(const spawn_fs::path &epwpath)
 {
   spawnjson["EnergyPlus"]["weather"] = epwpath.string();
 }
 
-bool Input::autosize() const
+bool UserConfig::autosize() const
 {
   return spawnjson.value("EnergyPlus", json()).value("autosize", false);
 }
 
-void Input::save(const spawn_fs::path &savepath) const
+void UserConfig::save(const spawn_fs::path &savepath) const
 {
   std::ofstream o(savepath.string());
   o << std::setw(4) << spawnjson << std::endl;
 }
 
-spawn_fs::path Input::basepath() const
+spawn_fs::path UserConfig::basepath() const
 {
   return m_basepath;
 }

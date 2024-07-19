@@ -97,7 +97,7 @@ TEST_CASE("Test one Spawn")
     auto time = spawn::days_to_seconds(day);
     spawn1.setTime(time);
     CHECK(spawn1.currentTime() == time);
-    const auto lighting_power = spawn1.getValue("Core_Zone_Lights_Output");
+    const auto lighting_power = spawn1.GetValue("Core_Zone_Lights_Output");
     CHECK(lighting_power > 0.0);
   }
   spawn1.stop();
@@ -124,8 +124,8 @@ TEST_CASE("Test two Spawns")
     CHECK(spawn1.currentTime() == time);
     CHECK(spawn2.currentTime() == time);
 
-    const auto lighting_power1 = spawn1.getValue("Core_Zone_Lights_Output");
-    const auto lighting_power2 = spawn2.getValue("Core_Zone_Lights_Output");
+    const auto lighting_power1 = spawn1.GetValue("Core_Zone_Lights_Output");
+    const auto lighting_power2 = spawn2.GetValue("Core_Zone_Lights_Output");
     const auto all_lighting_power = lighting_power1 + lighting_power2;
     CHECK(all_lighting_power > 0.0);
   }
@@ -154,12 +154,12 @@ TEST_CASE("Test negative start time")
     spawn1.setTime(spawn1.currentTime() + seconds_in_day);
     spawn2.setTime(spawn2.currentTime() + seconds_in_day);
 
-    const auto zone_temp_1 = spawn1.getValue("GARAGE ZONE Temp");
-    const auto zone_temp_2 = spawn2.getValue("GARAGE ZONE Temp");
+    const auto zone_temp_1 = spawn1.GetValue("GARAGE ZONE Temp");
+    const auto zone_temp_2 = spawn2.GetValue("GARAGE ZONE Temp");
     CHECK_THAT(zone_temp_1, Catch::Matchers::WithinAbs(zone_temp_2, 0.1));
 
-    // const auto zone_heat_1 = spawn1.getValue("LIVING ZONE_QConSen_flow");
-    // const auto zone_heat_2 = spawn2.getValue("LIVING ZONE_QConSen_flow");
+    // const auto zone_heat_1 = spawn1.GetValue("LIVING ZONE_QConSen_flow");
+    // const auto zone_heat_2 = spawn2.GetValue("LIVING ZONE_QConSen_flow");
     // CHECK(zone_heat_1 == Approx(zone_heat_2));
   }
 

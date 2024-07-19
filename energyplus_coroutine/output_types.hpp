@@ -2,6 +2,7 @@
 #define OUTPUTTYPES_HH_INCLUDED
 
 #include "units.hpp"
+#include "util/strings.hpp"
 #include <map>
 #include <nlohmann/json.hpp>
 
@@ -16,19 +17,26 @@ struct OutputType
   spawn::units::UnitType epUnitType;
 };
 
-[[maybe_unused]] static void to_json(nlohmann::json &j, const OutputType &p)
+[[maybe_unused]] inline void to_json(nlohmann::json &j, const OutputType &p)
 {
   j = nlohmann::json{{"name", p.name},
                      {"modelicaUnit", spawn::units::toString(p.moUnitType)},
                      {"energyplusUnit", spawn::units::toString(p.epUnitType)}};
 }
 
-[[maybe_unused]] static void from_json(const nlohmann::json &j, OutputType &p)
+[[maybe_unused]] inline void from_json(const nlohmann::json &j, OutputType &p)
 {
   p.name = j.at("name").get<std::string>();
   p.moUnitType = spawn::units::fromString(j.at("modelicaUnit").get<std::string>());
   p.epUnitType = spawn::units::fromString(j.at("energyplusUnit").get<std::string>());
 }
+
+// const auto &output =
+//     std::find_if(std::begin(spawn::energyplus::output_types),
+//                  std::end(spawn::energyplus::output_types),
+//                  [&](const spawn::energyplus::OutputType &v) {
+//                    return EnergyPlus::UtilityRoutines::MakeUPPERCase(v.name) == var.outputvarname;
+//                  });
 
 // we might be able to make this a constexpr std::array if we
 // can make OutputType::name into a string_view safely
@@ -577,6 +585,20 @@ struct ListOutputTypes
     std::cout << nlohmann::json(output_types).dump(4) << std::endl;
   }
 };
+
+inline OutputType FindOutputTypeByName(const std::string_view name)
+{
+  const auto &output =
+      std::find_if(std::begin(spawn::energyplus::output_types),
+                   std::end(spawn::energyplus::output_types),
+                   [&](const spawn::energyplus::OutputType &v) { return to_upper(v.name) == to_upper(name); });
+
+  if (output != std::end(spawn::energyplus::output_types)) {
+    return *output;
+  } else {
+    return {std::string(name), spawn::units::UnitType::one, spawn::units::UnitType::one};
+  }
+}
 
 } // namespace spawn::energyplus
 

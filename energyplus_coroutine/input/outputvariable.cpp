@@ -6,17 +6,18 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-OutputVariable::OutputVariable(std::string t_spawnname, std::string t_idfname, std::string t_idfkey) noexcept
+input::OutputVariable::OutputVariable(std::string t_spawnname, std::string t_idfname, std::string t_idfkey) noexcept
     : spawnname(std::move(t_spawnname)), idfname(std::move(t_idfname)), idfkey(std::move(t_idfkey))
 {
   std::transform(idfname.begin(), idfname.end(), idfname.begin(), ::toupper);
   std::transform(idfkey.begin(), idfkey.end(), idfkey.begin(), ::toupper);
 }
 
-std::vector<OutputVariable> OutputVariable::createOutputVariables(const nlohmann::json &spawnjson,
-                                                                  [[maybe_unused]] const nlohmann::json &jsonidf)
+std::vector<input::OutputVariable>
+input::OutputVariable::createOutputVariables(const nlohmann::json &spawnjson,
+                                             [[maybe_unused]] const nlohmann::json &jsonidf)
 {
-  std::vector<OutputVariable> result;
+  std::vector<input::OutputVariable> result;
 
   const auto spawnOutputVariables =
       spawnjson.value("model", json::object()).value("outputVariables", std::vector<json>(0));
@@ -25,7 +26,7 @@ std::vector<OutputVariable> OutputVariable::createOutputVariables(const nlohmann
     const auto idfname = spawnOutputVariable.value("name", "");
     const auto idfkey = spawnOutputVariable.value("key", "");
     const auto &buildvariable = [&]() {
-      OutputVariable variable(spawnname, idfname, idfkey);
+      input::OutputVariable variable(spawnname, idfname, idfkey);
       return variable;
     };
     result.emplace_back(buildvariable());

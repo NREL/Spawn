@@ -15,14 +15,14 @@
 
 namespace spawn {
 
-class Input
+class UserConfig
 {
 public:
-  explicit Input(const std::string &spawnInputJSON);
+  explicit UserConfig(const std::string &spawnInputJSON);
 
   std::vector<Zone> zones;
   std::vector<Schedule> schedules;
-  std::vector<OutputVariable> outputVariables;
+  std::vector<input::OutputVariable> outputVariables;
   std::vector<EMSActuator> emsActuators;
   std::vector<Surface> surfaces;
   RunPeriod runPeriod;
@@ -46,13 +46,14 @@ public:
 
   void save(const spawn_fs::path &savepath) const;
 
+  nlohmann::json jsonidf;
+  nlohmann::json spawnjson;
+
 private:
   // Return an expanded absolute path,
   // this will prepend basepath if the given pathstring is not absolute
   [[nodiscard]] spawn_fs::path toPath(const std::string &pathstring) const;
 
-  nlohmann::json jsonidf;
-  nlohmann::json spawnjson;
   spawn_fs::path m_basepath;
 };
 

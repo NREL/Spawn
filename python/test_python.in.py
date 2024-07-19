@@ -64,7 +64,7 @@ class TestSpawn(unittest.TestCase):
                 time = libspawn.days_to_seconds(day)
                 spawn1.setTime(time)
                 self.assertEqual(spawn1.currentTime(), time)
-                lighting_power = spawn1.getValue("Core_Zone_Lights_Output")
+                lighting_power = spawn1.GetValue("Core_Zone_Lights_Output")
                 print("Time %s, Day %s; Core_Zone_Lights_Output: %d" % (time, day, lighting_power), flush=True)
                 self.assertGreater(lighting_power, 0.0)
 

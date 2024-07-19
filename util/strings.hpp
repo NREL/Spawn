@@ -8,6 +8,8 @@ namespace spawn {
 
 std::string to_lower(const std::string_view s);
 
+std::string to_upper(const std::string_view s);
+
 bool case_insensitive_compare(const std::string &s1, const std::string &s2);
 
 // Remove leading whitespace and newlines

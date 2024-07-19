@@ -1,7 +1,7 @@
 #include "create_fmu.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
-#include "input/input.hpp"
+#include "input/user_config.hpp"
 #include "modelDescription.xml.hpp"
 #include "util/conversion.hpp"
 #include "util/fmi_paths.hpp"
@@ -13,12 +13,14 @@ using json = nlohmann::json;
 
 namespace spawn {
 
-void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id);
+void createModelDescription(const spawn::UserConfig &user_config,
+                            const spawn_fs::path &savepath,
+                            const std::string &id);
 void copyIDFResourceFiles(const json &jsonidf, const spawn_fs::path &from, const spawn_fs::path &to);
 
 void energyplus::CreateFMU::operator()() const
 {
-  spawn::Input input(input_path.string());
+  spawn::UserConfig user_config(input_path.string());
 
   // We are going to copy the required files into an FMU staging directory,
   // also copy the json input file into root of the fmu staging directory,
@@ -26,13 +28,13 @@ void energyplus::CreateFMU::operator()() const
   // contained within the fmu layout.
 
   // The default fmu output path
-  auto fmuPath = spawn_fs::current_path() / (input.fmuBaseName() + ".fmu");
+  auto fmuPath = spawn_fs::current_path() / (user_config.fmuBaseName() + ".fmu");
 
   // These are options to override the default output path
   if (!output_path.empty()) {
     fmuPath = output_path;
   } else if (!output_dir.empty()) {
-    fmuPath = output_dir / (input.fmuBaseName() + ".fmu");
+    fmuPath = output_dir / (user_config.fmuBaseName() + ".fmu");
   }
 
   if (fmuPath.extension() != ".fmu") {
@@ -64,8 +66,8 @@ void energyplus::CreateFMU::operator()() const
   const auto modelDescriptionPath = fmuStagingPath / "modelDescription.xml";
   const auto fmuResourcesPath = fmuStagingPath / "resources";
   const auto fmuspawnPath = fmuResourcesPath / "model.spawn";
-  const auto fmuidfPath = fmuResourcesPath / (input.idfInputPath().stem().string() + ".spawn.idf");
-  const auto fmuepwPath = fmuResourcesPath / input.epwInputPath().filename();
+  const auto fmuidfPath = fmuResourcesPath / (user_config.idfInputPath().stem().string() + ".spawn.idf");
+  const auto fmuepwPath = fmuResourcesPath / user_config.epwInputPath().filename();
   const auto fmuiddPath = fmuResourcesPath / idd_path.filename();
   const auto fmuEPFMIPath = fmuStagingPath / fmi_lib_path(id);
 
@@ -77,23 +79,23 @@ void energyplus::CreateFMU::operator()() const
   spawn_fs::create_directories(fmuResourcesPath);
   spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
-  auto idfjson = idf_to_json(input.idfInputPath());
-  auto start_time = StartTime(day_from_string(input.runPeriod.day_of_week_for_start_day), 0.0);
-  prepare_idf(idfjson, input, start_time);
-  copyIDFResourceFiles(idfjson, input.idfInputPath().parent_path(), fmuResourcesPath);
+  auto idfjson = idf_to_json(user_config.idfInputPath());
+  auto start_time = StartTime(day_from_string(user_config.runPeriod.day_of_week_for_start_day), 0.0);
+  prepare_idf(idfjson, user_config, start_time);
+  copyIDFResourceFiles(idfjson, user_config.idfInputPath().parent_path(), fmuResourcesPath);
   json_to_idf(idfjson, fmuidfPath);
 
   spawn_fs::copy_file(epfmu_path, fmuEPFMIPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(idd_path, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
-  spawn_fs::copy_file(input.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
+  spawn_fs::copy_file(user_config.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
 
-  createModelDescription(input, modelDescriptionPath, id);
+  createModelDescription(user_config, modelDescriptionPath, id);
 
   const auto relativeEPWPath = spawn_fs::relative(fmuepwPath, fmuResourcesPath);
-  input.setEPWInputPath(relativeEPWPath);
+  user_config.setEPWInputPath(relativeEPWPath);
   const auto relativeIdfPath = spawn_fs::relative(fmuidfPath, fmuResourcesPath);
-  input.setIdfInputPath(relativeIdfPath);
-  input.save(fmuspawnPath);
+  user_config.setIdfInputPath(relativeIdfPath);
+  user_config.save(fmuspawnPath);
 
   if (!no_zip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), no_compress);
@@ -101,7 +103,9 @@ void energyplus::CreateFMU::operator()() const
   }
 }
 
-void createModelDescription(const spawn::Input &input, const spawn_fs::path &savepath, const std::string &id)
+void createModelDescription([[maybe_unused]] const spawn::UserConfig &user_config,
+                            const spawn_fs::path &savepath,
+                            const std::string &id)
 {
   pugi::xml_document doc;
   doc.load_string(modelDescriptionXMLText.c_str());
@@ -114,20 +118,11 @@ void createModelDescription(const spawn::Input &input, const spawn_fs::path &sav
   modelExchange.attribute("modelIdentifier").set_value(id.c_str());
 
   auto xmlvariables = fmiModelDescription.child("ModelVariables");
-  const auto variables = parseVariables(input);
 
-  for (const auto &varpair : variables) {
-    const auto var = varpair.second;
+  variable::Variables variables(user_config);
 
-    auto scalarVar = xmlvariables.append_child("ScalarVariable");
-    for (const auto &attribute : var.scalar_attributes) {
-      scalarVar.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-    }
-
-    auto real = scalarVar.append_child("Real");
-    for (const auto &attribute : var.real_attributes) {
-      real.append_attribute(attribute.first.c_str()) = attribute.second.c_str();
-    }
+  for (const auto &variable : variables.AllVariables()) {
+    xmlvariables.append_copy(variable->Metadata().document_element());
   }
 
   doc.save_file(savepath.c_str());

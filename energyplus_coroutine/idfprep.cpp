@@ -1,10 +1,10 @@
 #include "idfprep.hpp"
-#include "input/input.hpp"
+#include "input/user_config.hpp"
 #include "util/strings.hpp"
 
 namespace spawn {
 
-json &adjustSimulationControl(json &jsonidf, const Input &input)
+json &adjustSimulationControl(json &jsonidf, const UserConfig &user_config)
 {
   constexpr auto simulationcontroltype = "SimulationControl";
 
@@ -12,7 +12,7 @@ json &adjustSimulationControl(json &jsonidf, const Input &input)
   jsonidf.erase(simulationcontroltype);
 
   // TODO: fix this slop. Please add a consistent method of handling bool types
-  const auto autosize = input.autosize() ? "Yes" : "No";
+  const auto autosize = user_config.autosize() ? "Yes" : "No";
   // This is what we need for spawn
   jsonidf[simulationcontroltype] = {{"Spawn-SimulationControl",
                                      {{"do_plant_sizing_calculation", "No"},
@@ -24,7 +24,7 @@ json &adjustSimulationControl(json &jsonidf, const Input &input)
   return jsonidf;
 }
 
-json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const StartTime &start_time)
+json &addRunPeriod(json &jsonidf, [[maybe_unused]] const UserConfig &user_config, const StartTime &start_time)
 {
   constexpr auto runperiodtype = "RunPeriod";
   // Remove the existing run periods first
@@ -34,18 +34,19 @@ json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const Sta
   // 200 years should be plenty
   jsonidf[runperiodtype] = {
       {"Spawn-RunPeriod",
-       {{"apply_weekend_holiday_rule", input.runPeriod.apply_weekend_holiday_rule},
+       {{"apply_weekend_holiday_rule", user_config.runPeriod.apply_weekend_holiday_rule},
         {"begin_day_of_month", int(start_time.EnergyPlusEpoch().day())},
         {"begin_month", int(start_time.EnergyPlusEpoch().month())},
         {"begin_year", int(start_time.EnergyPlusEpoch().year())},
-        {"day_of_week_for_start_day", input.runPeriod.day_of_week_for_start_day},
+        {"day_of_week_for_start_day", user_config.runPeriod.day_of_week_for_start_day},
         {"end_day_of_month", 31},
         {"end_month", 12},
         {"end_year", 2217},
-        {"use_weather_file_daylight_saving_period", input.runPeriod.use_weather_file_daylight_saving_period},
-        {"use_weather_file_holidays_and_special_days", input.runPeriod.use_weather_file_holidays_and_special_days},
-        {"use_weather_file_rain_indicators", input.runPeriod.use_weather_file_rain_indicators},
-        {"use_weather_file_snow_indicators", input.runPeriod.use_weather_file_snow_indicators}}}};
+        {"use_weather_file_daylight_saving_period", user_config.runPeriod.use_weather_file_daylight_saving_period},
+        {"use_weather_file_holidays_and_special_days",
+         user_config.runPeriod.use_weather_file_holidays_and_special_days},
+        {"use_weather_file_rain_indicators", user_config.runPeriod.use_weather_file_rain_indicators},
+        {"use_weather_file_snow_indicators", user_config.runPeriod.use_weather_file_snow_indicators}}}};
 
   return jsonidf;
 }
@@ -59,7 +60,7 @@ json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const Sta
 // this approach seems reasonable
 // With this approach QGaiRad_flow will interface with the OtherEquipment actuator,
 // Spawn user does not need to interface directly with the actuator
-json &addOtherEquipment(json &jsonidf, const Input &input)
+json &addOtherEquipment(json &jsonidf, const UserConfig &user_config)
 {
   constexpr auto scheduletype = "Schedule:Constant";
   constexpr auto schedulename = "Spawn-RadiantGains-Schedule";
@@ -71,7 +72,7 @@ json &addOtherEquipment(json &jsonidf, const Input &input)
   jsonidf[scheduletype][schedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
                                          {"hourly_value", "1.0"}};
 
-  for (const auto &zone : input.zones) {
+  for (const auto &zone : user_config.zones) {
     if (!zone.isconnected) {
       continue;
     }
@@ -125,7 +126,7 @@ json &removeUnusedObjects(json &jsonidf)
   return jsonidf;
 }
 
-json &addPeopleOutputVariables(json &jsonidf, const Input &input)
+json &addPeopleOutputVariables(json &jsonidf, const UserConfig &user_config)
 {
   // Some zones don't have people input, which will result in an EnergyPlus error,
   // Insert a default people object that defines zero people
@@ -143,7 +144,7 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
   jsonidf[scheduletype][activitySchedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
                                                  {"hourly_value", "100.0"}};
 
-  for (const auto &zone : input.zones) {
+  for (const auto &zone : user_config.zones) {
     if (!zone.isconnected) {
       continue;
     }
@@ -169,14 +170,14 @@ json &addPeopleOutputVariables(json &jsonidf, const Input &input)
 }
 
 // Add output variables requested in the spawn input file, but not in the idf
-json &addRequestedOutputVariables(json &jsonidf, const Input &input)
+json &addRequestedOutputVariables(json &jsonidf, const UserConfig &user_config)
 {
   // A pair that holds an output variable name and key,
   using Varpair = std::pair<std::string, std::string>;
 
   // Make a list of the requested outputs
   std::vector<Varpair> requestedpairs;
-  for (const auto &var : input.outputVariables) {
+  for (const auto &var : user_config.outputVariables) {
     requestedpairs.emplace_back(var.idfname, var.idfkey);
   }
 
@@ -262,7 +263,7 @@ json &expandInfiltrationZoneLists(json &jsonidf)
 // since some zones have infiltration output variables and actuators while others don't.
 // To address this confusion we will insert default infiltration objects for connected zones,
 // which have zero flow specified.
-json &addDefaultZeroInfiltration(json &jsonidf, const Input &input)
+json &addDefaultZeroInfiltration(json &jsonidf, const UserConfig &user_config)
 {
   constexpr auto infiltrationType = "ZoneInfiltration:DesignFlowRate";
   constexpr auto scheduletype = "Schedule:Constant";
@@ -275,7 +276,7 @@ json &addDefaultZeroInfiltration(json &jsonidf, const Input &input)
   jsonidf[scheduletype][schedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
                                          {"hourly_value", "1.0"}};
 
-  const auto zones = input.zones;
+  const auto zones = user_config.zones;
   for (const auto &zone : zones) {
     // Only add default infiltration for "connected" zones
     if (zone.isconnected) {
@@ -296,7 +297,7 @@ json &addDefaultZeroInfiltration(json &jsonidf, const Input &input)
 }
 
 // Remove infiltration idf input objects for zones that are connected to Modelica
-json &removeInfiltration(json &jsonidf, const Input &input)
+json &removeInfiltration(json &jsonidf, const UserConfig &user_config)
 {
   // First expand any infiltration that uses zone lists
   expandInfiltrationZoneLists(jsonidf);
@@ -307,7 +308,7 @@ json &removeInfiltration(json &jsonidf, const Input &input)
        {"ZoneInfiltration:EffectiveLeakageArea", "zone_name"},
        {"ZoneInfiltration:FlowCoefficient", "zone_name"}}};
 
-  const auto zones = input.zones;
+  const auto zones = user_config.zones;
 
   for (const auto &type : infiltrationTypes) {
     auto &infiltrationObjects = jsonidf[type.first];
@@ -323,20 +324,20 @@ json &removeInfiltration(json &jsonidf, const Input &input)
     }
   }
 
-  addDefaultZeroInfiltration(jsonidf, input);
+  addDefaultZeroInfiltration(jsonidf, user_config);
 
   return jsonidf;
 }
 
-void prepare_idf(json &jsonidf, const Input &input, const StartTime &start_time)
+void prepare_idf(json &jsonidf, const UserConfig &user_config, const StartTime &start_time)
 {
-  adjustSimulationControl(jsonidf, input);
+  adjustSimulationControl(jsonidf, user_config);
   removeUnusedObjects(jsonidf);
-  addRunPeriod(jsonidf, input, start_time);
-  removeInfiltration(jsonidf, input);
-  addOtherEquipment(jsonidf, input);
-  addRequestedOutputVariables(jsonidf, input);
-  addPeopleOutputVariables(jsonidf, input);
+  addRunPeriod(jsonidf, user_config, start_time);
+  removeInfiltration(jsonidf, user_config);
+  addOtherEquipment(jsonidf, user_config);
+  addRequestedOutputVariables(jsonidf, user_config);
+  addPeopleOutputVariables(jsonidf, user_config);
 }
 
 void validate_idf(json &jsonidf)

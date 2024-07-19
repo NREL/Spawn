@@ -16,7 +16,7 @@ using json = nlohmann::json;
 TEST_CASE("Test SingleFamilyHouse as FMU")
 {
   const auto fmu_file_path = create_single_family_house_fmu();
-  spawn::fmu::FMU fmu{fmu_file_path, false, "./mblidf"}; // don't require all symbols
+  spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();
@@ -161,41 +161,41 @@ TEST_CASE("Test surface IO")
   fmi2Status status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), heating_input_values.data());
   CHECK(status == fmi2OK);
 
+  // Outputs should update immediately and it should not require a time advance.
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2OK);
-  // TODO: Check surface actuator in EnergyPlus
-  //// negative heat flow from living space to surface.
-  //// ie heating moving from surface to space.
-  // CHECK(output_values[0] < 0.0);
-  //// also negative heat flow from attic space to back of ceiling surface.
-  // CHECK(output_values[1] < 0.0);
-  //// Check that matching surfaces agree
-  // CHECK((output_values[1] - output_values[2]) == Approx(0.0));
-  // CHECK((output_values[0] - output_values[3]) == Approx(0.0));
+  // negative heat flow from living space to surface.
+  // ie heating moving from surface to space.
+  CHECK(output_values[0] < 0.0);
+  // also negative heat flow from attic space to back of ceiling surface.
+  CHECK(output_values[1] < 0.0); // Living:Ceiling_QBack_flow
+  // Check that matching surfaces agree
+  CHECK((output_values[1] - output_values[2]) == Approx(0.0));
+  CHECK((output_values[0] - output_values[3]) == Approx(0.0));
 
-  //// Test active cooling surface
-  // const std::array<fmi2Real, input_refs.size()> cooling_input_values = {
-  //     spawn::c_to_k(35.0), // Hot attic
-  //     spawn::c_to_k(25.0), // Warm living space
-  //     spawn::c_to_k(10.0), // Active cooling living space ceiling
-  //     spawn::c_to_k(20.0)  // Some heat leakage to back of living space ceiling
-  // };
+  // Test active cooling surface
+  const std::array<fmi2Real, input_refs.size()> cooling_input_values = {
+      spawn::c_to_k(35.0), // Hot attic
+      spawn::c_to_k(25.0), // Warm living space
+      spawn::c_to_k(10.0), // Active cooling living space ceiling
+      spawn::c_to_k(20.0)  // Some heat leakage to back of living space ceiling
+  };
 
-  // status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), cooling_input_values.data());
-  // CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), cooling_input_values.data());
+  CHECK(status == fmi2OK);
 
-  // status = fmu.fmi.fmi2SetTime(comp, 60.0 * 10.0 + std::numeric_limits<float>::epsilon());
-  // CHECK(status == fmi2OK);
+  status = fmu.fmi.fmi2SetTime(comp, spawn::days_to_seconds(1));
+  CHECK(status == fmi2OK);
 
-  // status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
-  // CHECK(status == fmi2OK);
-  //// positive heat flow from living space to surface.
-  // CHECK(output_values[0] > 0.0);
-  //// also positive heat flow from attic space to back of ceiling surface.
-  // CHECK(output_values[1] > 0.0);
-  //// Check that matching surfaces agree
-  // CHECK((output_values[1] - output_values[2]) == Approx(0.0));
-  // CHECK((output_values[0] - output_values[3]) == Approx(0.0));
+  status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
+  CHECK(status == fmi2OK);
+  // positive heat flow from living space to surface.
+  CHECK(output_values[0] > 0.0);
+  // also positive heat flow from attic space to back of ceiling surface.
+  CHECK(output_values[1] > 0.0);
+  // Check that matching surfaces agree
+  CHECK((output_values[1] - output_values[2]) == Approx(0.0));
+  CHECK((output_values[0] - output_values[3]) == Approx(0.0));
 
   status = fmu.fmi.fmi2Terminate(comp);
   CHECK(status == fmi2OK);
@@ -255,7 +255,7 @@ TEST_CASE("Test invalid surface IO")
   }
 
   fmi2Status status = fmu.fmi.fmi2ExitInitializationMode(comp);
-  CHECK(status == fmi2Error);
+  CHECK(status == fmi2OK);
 
   const std::array<fmi2ValueReference, 1> input_refs = {variable_refs["Living:Floor_TBack"]};
 
@@ -271,14 +271,21 @@ TEST_CASE("Test invalid surface IO")
                            // doesn't matter because we are expecting an error
   };
 
+  // Setting a value for Living:Floor_TBack will succeed, because an attempt to
+  // write the value into EnergyPlus does not happen until an EnergyPlus iteration,
+  // and the iteration does not happen until time is advanced, or an attempt is
+  // made to read values. In other words, data exchange is delayed.
+  // We will not see an error here, although it would be better if we did.
   status = fmu.fmi.fmi2SetReal(comp, input_refs.data(), input_refs.size(), input_values.data());
   CHECK(status == fmi2OK);
 
+  // There will see an error here, because exchange with EnergyPlus happens on read.
+  // The previous write attempt should have set the stage for the error
   status = fmu.fmi.fmi2GetReal(comp, output_refs.data(), output_refs.size(), output_values.data());
   CHECK(status == fmi2Error);
 
-  status = fmu.fmi.fmi2Terminate(comp);
-  CHECK(status == fmi2Error);
+  // fmi2Terminate is undefined after an error
+  fmu.fmi.fmi2Terminate(comp);
 }
 
 TEST_CASE("Test Idempotence")

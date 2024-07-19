@@ -22,13 +22,16 @@ add_library(
   variables.hpp
   variables.cpp
 
-  warmupmanager.hpp
-  warmupmanager.cpp
+  energyplus_helpers.hpp
+  energyplus_helpers.cpp
+
+  warmup_manager.hpp
+  warmup_manager.cpp
 
   input/emsactuator.hpp
   input/emsactuator.cpp
-  input/input.hpp
-  input/input.cpp
+  input/user_config.hpp
+  input/user_config.cpp
   input/outputvariable.hpp
   input/outputvariable.cpp
   input/runperiod.hpp

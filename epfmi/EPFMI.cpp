@@ -185,7 +185,7 @@ EPFMI_API fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[],
     for (size_t i = 0; i < nvr; ++i) {
       auto valueRef = vr[i];  // NOLINT
       auto value = values[i]; // NOLINT
-      comp.setValue(valueRef, value);
+      comp.SetValue(valueRef, value);
     }
   };
 
@@ -199,7 +199,7 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[],
     comp.start();
     comp.exchange();
     std::transform(vr, std::next(vr, static_cast<std::ptrdiff_t>(nvr)), values, [&](const auto valueRef) {
-      return comp.getValue(valueRef);
+      return comp.GetValue(valueRef);
     });
   };
 

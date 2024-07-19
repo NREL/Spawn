@@ -1,7 +1,7 @@
 #ifndef SPAWN_ENERGYPLUS_COROUTINE_START_TIME_INCLUDED
 #define SPAWN_ENERGYPLUS_COROUTINE_START_TIME_INCLUDED
 
-#include "input/input.hpp"
+#include "input/user_config.hpp"
 #include "util/datetime.hpp"
 #include <boost/date_time/date_defs.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
