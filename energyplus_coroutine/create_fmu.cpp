@@ -78,7 +78,7 @@ void energyplus::CreateFMU::operator()() const
   spawn_fs::create_directories(fmuEPFMIPath.parent_path());
 
   auto idfjson = idf_to_json(input.idfInputPath());
-  auto start_time = StartTime(day_from_string(input.runPeriod.day_of_week_for_start_day), 0.0);
+  auto start_time = StartTime(day_from_string(input.runPeriod.start_day_of_year), 0.0);
   prepare_idf(idfjson, input, start_time);
   copyIDFResourceFiles(idfjson, input.idfInputPath().parent_path(), fmuResourcesPath);
   json_to_idf(idfjson, fmuidfPath);

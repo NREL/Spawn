@@ -10,8 +10,7 @@ RunPeriod RunPeriod::create_run_period([[maybe_unused]] const nlohmann::json &sp
 
   const auto run_period_json = spawnjson.value("RunPeriod", nlohmann::json::object());
 
-  result.day_of_week_for_start_day =
-      run_period_json.value("day_of_week_for_start_day", result.day_of_week_for_start_day);
+  result.start_day_of_year = run_period_json.value("start_day_of_year", result.start_day_of_year);
 
   result.apply_weekend_holiday_rule =
       run_period_json.value("apply_weekend_holiday_rule", result.apply_weekend_holiday_rule);

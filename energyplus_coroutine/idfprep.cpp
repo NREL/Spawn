@@ -36,7 +36,7 @@ json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const Sta
         {"begin_day_of_month", int(start_time.EnergyPlusEpoch().day())},
         {"begin_month", int(start_time.EnergyPlusEpoch().month())},
         {"begin_year", int(start_time.EnergyPlusEpoch().year())},
-        {"day_of_week_for_start_day", input.runPeriod.day_of_week_for_start_day},
+        {"start_day_of_year", input.runPeriod.start_day_of_year},
         {"end_day_of_month", 31},
         {"end_month", 12},
         {"end_year", 2217},
