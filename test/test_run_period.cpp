@@ -50,7 +50,7 @@ TEST_CASE("Test SingleFamilyHouse with Custom RunPeriod")
   const auto idf_json = spawn::idf_to_json(idf_path);
   const auto runperiod_json = idf_json["RunPeriod"]["Spawn-RunPeriod"];
 
-  CHECK(runperiod_json["start_day_of_year"] == "Monday");
+  CHECK(runperiod_json["day_of_week_for_start_day"] == "Monday");
   CHECK(runperiod_json["apply_weekend_holiday_rule"] == "Yes");
   CHECK(runperiod_json["use_weather_file_daylight_saving_period"] == "Yes");
   CHECK(runperiod_json["use_weather_file_holidays_and_special_days"] == "Yes");

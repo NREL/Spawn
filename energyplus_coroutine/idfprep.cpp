@@ -1,5 +1,6 @@
 #include "idfprep.hpp"
 #include "input/input.hpp"
+#include "util/conversion.hpp"
 #include "util/strings.hpp"
 
 namespace spawn {
@@ -36,7 +37,7 @@ json &addRunPeriod(json &jsonidf, [[maybe_unused]] const Input &input, const Sta
         {"begin_day_of_month", int(start_time.EnergyPlusEpoch().day())},
         {"begin_month", int(start_time.EnergyPlusEpoch().month())},
         {"begin_year", int(start_time.EnergyPlusEpoch().year())},
-        {"start_day_of_year", input.runPeriod.start_day_of_year},
+        {"day_of_week_for_start_day", string_from_day(start_time.EnergyPlusEpoch().day_of_week().as_enum())},
         {"end_day_of_month", 31},
         {"end_month", 12},
         {"end_year", 2217},

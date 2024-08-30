@@ -44,4 +44,19 @@ inline boost::date_time::weekdays day_from_string(const std::string_view day_str
   return days.at(spawn::to_lower(day_string));
 }
 
+inline std::string string_from_day(const boost::date_time::weekdays day)
+{
+  const std::map<boost::date_time::weekdays, std::string> days = {
+      {boost::date_time::Sunday, "sunday"},
+      {boost::date_time::Monday, "monday"},
+      {boost::date_time::Tuesday, "tuesday"},
+      {boost::date_time::Wednesday, "wednesday"},
+      {boost::date_time::Thursday, "thursday"},
+      {boost::date_time::Friday, "friday"},
+      {boost::date_time::Saturday, "saturday"},
+  };
+
+  return days.at(day);
+}
+
 #endif // SPAWN_CONVERSION_HPP
