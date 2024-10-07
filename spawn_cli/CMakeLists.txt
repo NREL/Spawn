@@ -2,7 +2,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 cmake_policy(SET CMP0087 NEW)
 
-set(src main.cpp cli.hpp cli.cpp)
+set(src 
+  main.cpp 
+  cli.hpp 
+  cli.cpp 
+  paths.hpp 
+  paths.cpp 
+)
 
 add_executable(spawn ${src})
 

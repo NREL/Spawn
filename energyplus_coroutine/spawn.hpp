@@ -25,7 +25,10 @@ namespace spawn {
 class Spawn
 {
 public:
-  Spawn(std::string t_name, const std::string &t_input, spawn_fs::path workingdir = ".");
+  Spawn(const std::string_view name,
+        spawn_fs::path idd_path,
+        const std::string_view user_config,
+        spawn_fs::path working_dir = ".");
   Spawn(const Spawn &) = delete;
   Spawn(Spawn &&) = delete;
   Spawn &operator=(const Spawn &) = delete;
@@ -76,9 +79,10 @@ public:
   void exchange(const bool force = false);
 
 private:
-  std::string instanceName;
-  spawn_fs::path workingdir;
+  std::string instance_name_;
+  spawn_fs::path idd_path_;
   UserConfig user_config_;
+  spawn_fs::path working_dir_;
 
   StartTime start_time_;
   double requested_time_{0.0};

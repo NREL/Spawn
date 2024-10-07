@@ -103,7 +103,7 @@ TEST_CASE("Test SingleFamilyHouse as FMU with early stop")
 TEST_CASE("Test surface IO")
 {
   const auto fmu_file = create_single_family_house_fmu();
-  spawn::fmu::FMU fmu{fmu_file, false}; // don't require all symbols
+  spawn::fmu::FMU fmu{fmu_file, false, "TestSurfaceIO"}; // don't require all symbols
   CHECK(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();

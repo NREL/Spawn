@@ -37,8 +37,9 @@ TEST_CASE("Test Zone Capacitance Multiplier")
       }}
     }}
   )",
-      fmt::arg("idfpath",
-               (testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").string()),
+      fmt::arg(
+          "idfpath",
+          (spawn::test::testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").string()),
       fmt::arg("epwpath", chicago_epw_path().string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);

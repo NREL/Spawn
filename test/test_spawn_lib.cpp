@@ -4,6 +4,7 @@
 #include "../util/math.hpp"
 #include "../util/temp_directory.hpp"
 #include "create_epfmu.hpp"
+#include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 #include <iostream>
@@ -89,7 +90,7 @@ const std::string spawn_sfh_input = fmt::format( // NOLINT
 TEST_CASE("Test one Spawn")
 {
   spawn::util::Temp_Directory working_path{};
-  spawn::Spawn spawn1("spawn1", spawn_input, working_path.dir());
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, working_path.dir());
   spawn1.start();
   CHECK(spawn1.currentTime() == 0.0);
 
@@ -108,8 +109,8 @@ TEST_CASE("Test two Spawns")
   spawn::util::Temp_Directory working_path1{};
   spawn::util::Temp_Directory working_path2{};
 
-  spawn::Spawn spawn1("spawn1", spawn_input, working_path1.dir());
-  spawn::Spawn spawn2("spawn2", spawn_input, working_path2.dir());
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, working_path1.dir());
+  spawn::Spawn spawn2("spawn2", spawn::test::idd_path(), spawn_input, working_path2.dir());
 
   spawn1.start();
   spawn2.start();
@@ -139,8 +140,8 @@ TEST_CASE("Test negative start time")
   spawn::util::Temp_Directory working_path1{};
   spawn::util::Temp_Directory working_path2{};
 
-  spawn::Spawn spawn1("spawn1", spawn_sfh_input, working_path1.dir());
-  spawn::Spawn spawn2("spawn2", spawn_sfh_input, working_path2.dir());
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_sfh_input, working_path1.dir());
+  spawn::Spawn spawn2("spawn2", spawn::test::idd_path(), spawn_sfh_input, working_path2.dir());
 
   spawn1.setStartTime(spawn::days_to_seconds(364));
   spawn2.setStartTime(spawn::days_to_seconds(-1));

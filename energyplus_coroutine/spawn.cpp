@@ -1,12 +1,13 @@
 #include "spawn.hpp"
-#include "../util/config.hpp"
-#include "../util/conversion.hpp"
 #include "energyplus_helpers.hpp"
 #include "idf_to_json.hpp"
 #include "idfprep.hpp"
 #include "input/user_config.hpp"
 #include "output_types.hpp"
 #include "start_time.hpp"
+
+#include "../util/config.hpp"
+#include "../util/conversion.hpp"
 
 #include "../energyplus/src/EnergyPlus/CommandLineInterface.hh"
 #include "../energyplus/src/EnergyPlus/api/EnergyPlusPgm.hh"
@@ -17,8 +18,12 @@
 
 namespace spawn {
 
-Spawn::Spawn(std::string t_name, const std::string &t_input, spawn_fs::path t_workingdir) // NOLINT
-    : instanceName(std::move(t_name)), workingdir(std::move(t_workingdir)), user_config_(t_input)
+Spawn::Spawn(const std::string_view name,
+             spawn_fs::path idd_path,
+             const std::string_view user_config,
+             spawn_fs::path working_dir)
+    : instance_name_(name), idd_path_(std::move(idd_path)), user_config_(std::string(user_config)),
+      working_dir_(std::move(working_dir))
 {
 }
 
@@ -34,7 +39,7 @@ void Spawn::start()
     //// which will indicate that the idf has already been "prepared"
     // if (idfPath.stem().extension() != ".spawn") {
     prepare_idf(idfjson, user_config_, start_time_);
-    idfPath = workingdir / (idfPath.stem().string() + ".spawn.idf");
+    idfPath = working_dir_ / (idfPath.stem().string() + ".spawn.idf");
     json_to_idf(idfjson, idfPath);
     //}
 
@@ -43,13 +48,10 @@ void Spawn::start()
 
     const auto &simulation = [&]() {
       try {
-        const auto epwPath = user_config_.epwInputPath().string();
-        const auto idfPath_string = idfPath.string();
-        const auto iddPath = spawn::idd_path().string();
-        const auto workingdir_string = workingdir.string();
+        const auto epw_path = user_config_.epwInputPath().string();
 
         std::vector<std::string> argv{
-            "energyplus", "-d", workingdir_string, "-w", epwPath, "-i", iddPath, idfPath_string};
+            "energyplus", "-d", working_dir_.string(), "-w", epw_path, "-i", idd_path_.string(), idfPath.string()};
 
         EnergyPlus::CommandLineInterface::ProcessArgs(sim_state, argv);
         registerErrorCallback(simState(),

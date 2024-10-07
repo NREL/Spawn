@@ -1,4 +1,7 @@
 #include "paths.hpp"
+#include "util/config.hpp"
+
+namespace spawn::test {
 
 spawn_fs::path testdir()
 {
@@ -12,15 +15,23 @@ spawn_fs::path spawnexe()
 
 spawn_fs::path testcase1()
 {
-  return "${PROJECT_SOURCE_DIR}/examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn";
+  return spawn::project_source_dir() /
+         "examples/RefBldgSmallOfficeNew2004_Chicago/RefBldgSmallOfficeNew2004_Chicago.spawn";
 }
 
 spawn_fs::path testzip()
 {
-  return "${PROJECT_SOURCE_DIR}/test/example_zip.zip";
+  return spawn::project_source_dir() / "test/example_zip.zip";
 }
 
 spawn_fs::path example_fmu_path()
 {
   return "$<TARGET_FILE:example_fmu_lib>";
 }
+
+spawn_fs::path idd_path()
+{
+  return spawn::project_binary_dir() / "energyplus/Products/Energy+.idd";
+}
+
+} // namespace spawn::test

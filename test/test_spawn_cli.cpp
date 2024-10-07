@@ -20,7 +20,7 @@ const std::string one_zone_one_year =
 
 TEST_CASE("Spawn shows help")
 {
-  const auto cmd = spawnexe().string() + " --help";
+  const auto cmd = spawn::test::spawnexe().string() + " --help";
   const auto result = system(cmd.c_str()); // NOLINT
   REQUIRE(result == 0);
 }
@@ -55,7 +55,7 @@ TEST_CASE("Spawn lists the correct actuators")
 {
   // copy idf and modify to generate edd file
   const auto idf_path = spawn::project_source_dir() / "energyplus/testfiles/RefBldgSmallOfficeNew2004_Chicago.idf";
-  const auto new_idf_path = testdir() / "actuators.idf";
+  const auto new_idf_path = spawn::test::testdir() / "actuators.idf";
   spawn_fs::copy(idf_path, new_idf_path, spawn_fs::copy_options::overwrite_existing);
 
   std::ofstream new_idf;

@@ -1,5 +1,6 @@
-#include "spawn_cli/cli.hpp"
+#include "cli.hpp"
 #include "energyplus_coroutine/config.hpp"
+#include "paths.hpp"
 #include "util/config.hpp"
 #include <spdlog/spdlog.h>
 
@@ -109,8 +110,8 @@ void CLI::energyplus_command()
       "Skip compressing the contents of the fmu zip archive. An uncompressed zip archive will be created instead";
   create_fmu_command->add_flag("--no-compress", energyplus_create_fmu.no_compress, no_compress_doc);
 
-  energyplus_create_fmu.epfmu_path = spawn::epfmi_install_path();
-  energyplus_create_fmu.idd_path = spawn::idd_install_path();
+  energyplus_create_fmu.epfmu_path = spawn::cli::epfmi_path();
+  energyplus_create_fmu.idd_path = spawn::cli::idd_path();
 
   create_fmu_command->callback(std::ref(energyplus_create_fmu));
 

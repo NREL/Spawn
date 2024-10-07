@@ -1,4 +1,10 @@
-set(src EPFMI.hpp EPFMI.cpp EPFMI_Export.hpp)
+set(src
+  EPFMI.hpp
+  EPFMI.cpp
+  EPFMI_Export.hpp
+  paths.hpp
+  paths.cpp
+)
 
 add_library(epfmi SHARED ${src})
 set_target_properties(epfmi PROPERTIES OUTPUT_NAME "epfmi")

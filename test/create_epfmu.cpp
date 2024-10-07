@@ -33,13 +33,13 @@ spawn_fs::path create_epfmu()
   // This call generates an FMU for the corresponding idf file
   // testcase1() returns a path to RefBldgSmallOfficeNew2004_Chicago.spawn
   // which is a json file that configures the spawn input
-  const auto cmd = spawnexe().string() + " energyplus create-fmu --no-compress --output-dir " + testdir().string() +
-                   " " + testcase1().string();
+  const auto cmd = spawn::test::spawnexe().string() + " energyplus create-fmu --no-compress --output-dir " +
+                   spawn::test::testdir().string() + " " + spawn::test::testcase1().string();
   const auto result = system(cmd.c_str()); // NOLINT
   if (result != 0) {
     throw std::runtime_error("Error creating FMU, non-0 result");
   }
-  return testdir() / "MyBuilding.fmu";
+  return spawn::test::testdir() / "MyBuilding.fmu";
 }
 
 spawn_fs::path create_epfmu(const std::string &input_string)
@@ -48,13 +48,13 @@ spawn_fs::path create_epfmu(const std::string &input_string)
   const auto fmuname = input.value("fmu", json()).value("name", "MyBuilding.fmu");
   spawn_fs::path fmupath(fmuname);
 
-  const auto spawn_input_path = testdir() / (fmupath.stem().string() + ".json");
+  const auto spawn_input_path = spawn::test::testdir() / (fmupath.stem().string() + ".json");
   std::ofstream spawn_input_file(spawn_input_path);
   spawn_input_file << input_string << std::endl;
   spawn_input_file.close();
 
-  auto fmu_file_path = testdir() / fmupath;
-  const auto cmd = spawnexe().string() + " energyplus create-fmu  --no-compress --output-path " +
+  auto fmu_file_path = spawn::test::testdir() / fmupath;
+  const auto cmd = spawn::test::spawnexe().string() + " energyplus create-fmu  --no-compress --output-path " +
                    fmu_file_path.generic_string() + " " + spawn_input_path.generic_string();
   const auto result = system(cmd.c_str()); // NOLINT
   if (result != 0) {

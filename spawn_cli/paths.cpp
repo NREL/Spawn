@@ -1,6 +1,5 @@
-#include "config.hpp"
-#include "filesystem.hpp"
-#include "fmi_paths.hpp"
+#include "util/filesystem.hpp"
+#include "util/fmi_paths.hpp"
 #include <array>
 #include <iostream>
 
@@ -21,21 +20,9 @@
 #include <climits>
 #endif
 
-namespace spawn {
+namespace spawn::cli {
 
-std::string version_string()
-{
-  return "${CMAKE_PROJECT_VERSION_MAJOR}."
-         "${CMAKE_PROJECT_VERSION_MINOR}."
-         "${CMAKE_PROJECT_VERSION_PATCH}-${CMAKE_PROJECT_VERSION_BUILD}";
-}
-
-std::string fmi_platform()
-{
-  return "${FMI_PLATFORM}";
-}
-
-spawn_fs::path exe()
+spawn_fs::path exe_path()
 {
   auto get_path = []() {
 #if _WIN32
@@ -63,8 +50,7 @@ spawn_fs::path exe()
 
 spawn_fs::path exe_dir()
 {
-  static const auto path = exe().parent_path();
-  return path;
+  return exe_path().parent_path();
 }
 
 bool is_installed()
@@ -72,14 +58,28 @@ bool is_installed()
   return spawn::exe_dir().stem() == "bin";
 }
 
-spawn_fs::path project_source_dir()
+spawn_fs::path idd_path()
 {
-  return "${PROJECT_SOURCE_DIR}";
+  constexpr auto &iddFileName = "Energy+.idd";
+  // Configuration in install tree
+  auto iddInputPath = spawn::exe_dir() / "../etc" / iddFileName;
+
+  // Configuration in a developer tree
+  if (!spawn_fs::exists(iddInputPath)) {
+    iddInputPath = spawn::exe_dir() / iddFileName;
+  }
+
+  return iddInputPath;
 }
 
-spawn_fs::path project_binary_dir()
+spawn_fs::path epfmi_path()
 {
-  return "${PROJECT_BINARY_DIR}";
+  auto candidate = spawn::exe_dir() / ("../lib/" + spawn::epfmi_filename());
+  if (spawn_fs::exists(candidate)) {
+    return candidate;
+  } else {
+    return spawn::exe_dir() / spawn::epfmi_filename();
+  }
 }
 
-} // namespace spawn
+} // namespace spawn::cli

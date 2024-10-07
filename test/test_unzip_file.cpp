@@ -10,11 +10,11 @@ TEST_CASE("Test unzipped file")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(spawn_fs::exists(testzip()));
-  REQUIRE(spawn_fs::is_regular_file(testzip()));
+  REQUIRE(spawn_fs::exists(spawn::test::testzip()));
+  REQUIRE(spawn_fs::is_regular_file(spawn::test::testzip()));
 
   const auto out_file = td.dir() / "a_dir/a_file.data";
-  spawn::util::Unzipped_File unzippedFile{testzip(), td.dir(), {"a_dir/a_file.data"}};
+  spawn::util::Unzipped_File unzippedFile{spawn::test::testzip(), td.dir(), {"a_dir/a_file.data"}};
 
   REQUIRE(spawn_fs::exists(out_file));
   REQUIRE(spawn_fs::is_regular_file(out_file));
@@ -49,10 +49,10 @@ TEST_CASE("Test missing file in zip")
 {
   spawn::util::Temp_Directory td{};
 
-  REQUIRE(spawn_fs::exists(testzip()));
-  REQUIRE(spawn_fs::is_regular_file(testzip()));
+  REQUIRE(spawn_fs::exists(spawn::test::testzip()));
+  REQUIRE(spawn_fs::is_regular_file(spawn::test::testzip()));
 
   const auto out_file = td.dir() / "a_dir/b_file.data";
-  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{testzip(), td.dir(), {"a_dir/b_file.data"}}),
+  REQUIRE_THROWS_WITH((spawn::util::Unzipped_File{spawn::test::testzip(), td.dir(), {"a_dir/b_file.data"}}),
                       Catch::Contains("Error opening file in zip") && Catch::Contains("a_dir/b_file.data"));
 }

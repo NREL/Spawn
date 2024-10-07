@@ -13,11 +13,11 @@
 
 TEST_CASE("Test loading of FMI")
 {
-  const auto fmi_file = example_fmu_path();
+  const auto fmi_file = spawn::test::example_fmu_path();
   REQUIRE(spawn_fs::exists(fmi_file));
   REQUIRE(spawn_fs::is_regular_file(fmi_file));
 
-  spawn::fmu::FMI2 fmi{example_fmu_path(), false};
+  spawn::fmu::FMI2 fmi{spawn::test::example_fmu_path(), false};
 
   REQUIRE(fmi.fmi2GetVersion.has_value());
 
@@ -29,11 +29,11 @@ TEST_CASE("Test loading of FMI")
 
 TEST_CASE("Test loading of FMI missing symbols")
 {
-  const auto fmi_file = example_fmu_path();
+  const auto fmi_file = spawn::test::example_fmu_path();
   REQUIRE(spawn_fs::exists(fmi_file));
   REQUIRE(spawn_fs::is_regular_file(fmi_file));
 
-  REQUIRE_THROWS(spawn::fmu::FMI2{example_fmu_path(), true});
+  REQUIRE_THROWS(spawn::fmu::FMI2{spawn::test::example_fmu_path(), true});
 }
 
 #if defined ENABLE_COMPILER

@@ -1,5 +1,6 @@
 #include "EPFMI.hpp"
 #include "../energyplus_coroutine/spawn.hpp"
+#include "paths.hpp"
 #include <fmi2Functions.h>
 #include <iostream>
 #include <list>
@@ -110,7 +111,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
     const auto spawnJSONPath = resourcePath / "model.spawn";
     const auto simulationWorkingDir = resourcePath.parent_path() / "eplusout/";
 
-    spawn::spawns.emplace_back(fmuGUID, spawnJSONPath.string(), simulationWorkingDir);
+    spawn::spawns.emplace_back(fmuGUID, spawn::epfmi::idd_path(), spawnJSONPath.string(), simulationWorkingDir);
     auto &comp = spawn::spawns.back();
 
     if (loggingOn != 0) {
