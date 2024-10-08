@@ -32,17 +32,19 @@ Variables::Variables([[maybe_unused]] const UserConfig &user_config)
   zone::QLatFlow::CreateAll(user_config, *this);
   zone::QPeoFlow::CreateAll(user_config, *this);
   zone::TRad::CreateAll(user_config, *this);
-  zone::QCooSenFlow::CreateAll(user_config, *this);
-  zone::QCooLatFlow::CreateAll(user_config, *this);
-  zone::TOutCoo::CreateAll(user_config, *this);
-  zone::XOutCoo::CreateAll(user_config, *this);
-  zone::MOutCooFlow::CreateAll(user_config, *this);
-  zone::TCoo::CreateAll(user_config, *this);
-  zone::QHeaFlow::CreateAll(user_config, *this);
-  zone::TOutHea::CreateAll(user_config, *this);
-  zone::XOutHea::CreateAll(user_config, *this);
-  zone::MOutHeaFlow::CreateAll(user_config, *this);
-  zone::THea::CreateAll(user_config, *this);
+
+  // zone::QCooSenFlow::CreateAll(user_config, *this);
+  // zone::QCooLatFlow::CreateAll(user_config, *this);
+  // zone::TOutCoo::CreateAll(user_config, *this);
+  // zone::XOutCoo::CreateAll(user_config, *this);
+  // zone::MOutCooFlow::CreateAll(user_config, *this);
+  // zone::TCoo::CreateAll(user_config, *this);
+  // zone::QHeaFlow::CreateAll(user_config, *this);
+  // zone::TOutHea::CreateAll(user_config, *this);
+  // zone::XOutHea::CreateAll(user_config, *this);
+  // zone::MOutHeaFlow::CreateAll(user_config, *this);
+  // zone::THea::CreateAll(user_config, *this);
+
   zone::MInletsFlow::CreateAll(user_config, *this);
   zone::TAveInlet::CreateAll(user_config, *this);
   zone::T::CreateAll(user_config, *this);
