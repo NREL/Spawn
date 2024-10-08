@@ -94,7 +94,7 @@ namespace ZoneEquipmentManager {
                                      DataSizing::ZoneSizingData &zsCalcSizing,
                                      DataZoneEnergyDemands::ZoneSystemSensibleDemand &zsEnergyDemand,
                                      DataZoneEnergyDemands::ZoneSystemMoistureDemand &zsMoistureDemand,
-                                     DataHeatBalance::ZoneData &zoneOrSpace,
+                                     DataHeatBalance::ZoneData const &zoneOrSpace,
                                      int zoneNum,
                                      int spaceNum = 0);
 
@@ -107,6 +107,14 @@ namespace ZoneEquipmentManager {
     void SizeZoneEquipment(EnergyPlusData &state);
 
     void SetUpZoneSizingArrays(EnergyPlusData &state);
+
+    void calcSizingOA(EnergyPlusData &state,
+                      DataSizing::ZoneSizingData &zsFinalSizing,
+                      DataSizing::ZoneSizingData &zsCalcFinalSizing,
+                      bool &dsoaError,
+                      bool &ErrorsFound,
+                      int const zoneNum,
+                      int const spaceNum = 0);
 
     void fillZoneSizingFromInput(EnergyPlusData &state,
                                  DataSizing::ZoneSizingInputData const &zoneSizingInput,
@@ -121,7 +129,7 @@ namespace ZoneEquipmentManager {
 
     void UpdateZoneSizing(EnergyPlusData &state, Constant::CallIndicator CallIndicator);
 
-    void updateZoneSizingBeginDay(EnergyPlusData &state, DataSizing::ZoneSizingData &zsCalcSizing);
+    void updateZoneSizingBeginDay(EnergyPlusData const &state, DataSizing::ZoneSizingData &zsCalcSizing);
 
     void updateZoneSizingDuringDay(DataSizing::ZoneSizingData &zsSizing,
                                    DataSizing::ZoneSizingData &zsCalcSizing,
@@ -140,10 +148,18 @@ namespace ZoneEquipmentManager {
                                 DataSizing::DesDayWeathData const &desDayWeath,
                                 Real64 const stdRhoAir);
 
-    void updateZoneSizingEndZoneSizingCalc1(EnergyPlusData &state, DataSizing::ZoneSizingData const &zsCalcSizing);
+    void updateZoneSizingEndZoneSizingCalc1(EnergyPlusData &state, int const zoneNum);
 
-    void
-    updateZoneSizingEndZoneSizingCalc2(DataSizing::ZoneSizingData &zsCalcSizing, int const timeStepIndex, int const hourPrint, int const minutes);
+    void updateZoneSizingEndZoneSizingCalc2(EnergyPlusData &state, DataSizing::ZoneSizingData &zsCalcSizing);
+
+    void writeZszSpsz(EnergyPlusData &state,
+                      EnergyPlus::InputOutputFile &outputFile,
+                      int const numSpacesOrZones,
+                      Array1D<DataZoneEquipment::EquipConfiguration> const &zsEquipConfig,
+                      EPVector<DataSizing::ZoneSizingData> const &zsCalcFinalSizing,
+                      Array2D<DataSizing::ZoneSizingData> const &zsCalcSizing);
+
+    std::string sizingPeakTimeStamp(EnergyPlusData const &state, int timeStepIndex);
 
     void updateZoneSizingEndZoneSizingCalc3(DataSizing::ZoneSizingData &zsCalcFinalSizing,
                                             Array2D<DataSizing::ZoneSizingData> &zsCalcSizing,
@@ -204,15 +220,9 @@ namespace ZoneEquipmentManager {
 
     void CalcZoneMassBalance(EnergyPlusData &state, bool FirstHVACIteration);
 
-    void CalcZoneReturnFlows(EnergyPlusData &state,
-                             int ZoneNum,
-                             Real64 &ExpTotalReturnMassFlow,  // Expected total return air mass flow rate
-                             Real64 &FinalTotalReturnMassFlow // Final total return air mass flow rate
-    );
-
     void CalcZoneInfiltrationFlows(EnergyPlusData &state,
-                                   int ZoneNum,                      // current zone index
-                                   Real64 &ZoneReturnAirMassFlowRate // zone total zone return air mass flow rate
+                                   int const ZoneNum,                      // current zone index
+                                   Real64 const &ZoneReturnAirMassFlowRate // zone total zone return air mass flow rate
     );
 
     void CalcAirFlowSimple(EnergyPlusData &state,
@@ -270,9 +280,13 @@ struct ZoneEquipmentManagerData : BaseGlobalStruct
     bool InitZoneEquipmentEnvrnFlag = true;
     bool FirstPassZoneEquipFlag = true; // indicates first pass through zone equipment, used to reset selected ZoneEqSizing variables
 
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
-        *this = ZoneEquipmentManagerData();
+        new (this) ZoneEquipmentManagerData();
     }
 };
 

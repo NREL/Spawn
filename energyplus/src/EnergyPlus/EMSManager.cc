@@ -60,7 +60,6 @@
 #include <EnergyPlus/DataAirSystems.hh>
 #include <EnergyPlus/DataHVACGlobals.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
-#include <EnergyPlus/DataHeatBalSurface.hh>
 #include <EnergyPlus/DataIPShortCuts.hh>
 #include <EnergyPlus/DataLoopNode.hh>
 #include <EnergyPlus/DataRuntimeLanguage.hh>
@@ -112,15 +111,15 @@ namespace EMSManager {
                                                                                                   "BEGINZONETIMESTEPAFTERINITHEATBALANCE",
                                                                                                   "BEGINZONETIMESTEPBEFORESETCURRENTWEATHER"};
 
-    constexpr std::array<std::string_view, static_cast<int>(SPControlType::Num)> controlTypeName{"Temperature Setpoint",
-                                                                                                 "Temperature Minimum Setpoint",
-                                                                                                 "Temperature Maximum Setpoint",
-                                                                                                 "Humidity Ratio Setpoint",
-                                                                                                 "Humidity Ratio Minimum Setpoint",
-                                                                                                 "Humidity Ratio Maximum Setpoint",
-                                                                                                 "Mass Flow Rate Setpoint",
-                                                                                                 "Mass Flow Rate Minimum Available Setpoint",
-                                                                                                 "Mass Flow Rate Maximum Available Setpoint"};
+    constexpr std::array<std::string_view, (int)HVAC::CtrlVarType::Num> controlTypeNames = {"Temperature Setpoint",
+                                                                                            "Temperature Minimum Setpoint",
+                                                                                            "Temperature Maximum Setpoint",
+                                                                                            "Humidity Ratio Setpoint",
+                                                                                            "Humidity Ratio Minimum Setpoint",
+                                                                                            "Humidity Ratio Maximum Setpoint",
+                                                                                            "Mass Flow Rate Setpoint",
+                                                                                            "Mass Flow Rate Minimum Available Setpoint",
+                                                                                            "Mass Flow Rate Maximum Available Setpoint"};
 
     void CheckIfAnyEMS(EnergyPlusData &state)
     {
@@ -314,7 +313,9 @@ namespace EMSManager {
             anyProgramRan = true;
         }
 
-        if (!anyProgramRan) return;
+        if (!anyProgramRan) {
+            return;
+        }
 
         // Set actuated variables with new values
         for (int ActuatorUsedLoop = 1;
@@ -322,35 +323,43 @@ namespace EMSManager {
                                      state.dataRuntimeLang->NumExternalInterfaceFunctionalMockupUnitImportActuatorsUsed +
                                      state.dataRuntimeLang->NumExternalInterfaceFunctionalMockupUnitExportActuatorsUsed;
              ++ActuatorUsedLoop) {
-            int ErlVariableNum = state.dataRuntimeLang->EMSActuatorUsed(ActuatorUsedLoop).ErlVariableNum;
-            if (ErlVariableNum <= 0) continue; // this can happen for good reason during sizing
+            auto const &thisActuatorUsed = state.dataRuntimeLang->EMSActuatorUsed(ActuatorUsedLoop);
 
-            int EMSActuatorVariableNum = state.dataRuntimeLang->EMSActuatorUsed(ActuatorUsedLoop).ActuatorVariableNum;
-            if (EMSActuatorVariableNum <= 0) continue; // this can happen for good reason during sizing
+            int ErlVariableNum = thisActuatorUsed.ErlVariableNum;
+            if (ErlVariableNum <= 0) {
+                continue; // this can happen for good reason during sizing
+            }
 
-            if (state.dataRuntimeLang->ErlVariable(ErlVariableNum).Value.Type == DataRuntimeLanguage::Value::Null) {
-                *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).Actuated = false;
+            int EMSActuatorVariableNum = thisActuatorUsed.ActuatorVariableNum;
+            if (EMSActuatorVariableNum <= 0) {
+                continue; // this can happen for good reason during sizing
+            }
+
+            auto const &thisErlVar = state.dataRuntimeLang->ErlVariable(ErlVariableNum);
+            auto &thisActuatorAvail = state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum);
+
+            if (thisErlVar.Value.Type == DataRuntimeLanguage::Value::Null) {
+                *thisActuatorAvail.Actuated = false;
             } else {
                 // Set the value and the actuated flag remotely on the actuated object via the pointer
-                switch (state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).PntrVarTypeUsed) {
+                switch (thisActuatorAvail.PntrVarTypeUsed) {
                 case DataRuntimeLanguage::PtrDataType::Real: {
-                    *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).Actuated = true;
-                    *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).RealValue =
-                        state.dataRuntimeLang->ErlVariable(ErlVariableNum).Value.Number;
+                    *thisActuatorAvail.Actuated = true;
+                    *thisActuatorAvail.RealValue = thisErlVar.Value.Number;
                 } break;
                 case DataRuntimeLanguage::PtrDataType::Integer: {
-                    *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).Actuated = true;
-                    int tmpInteger = std::floor(state.dataRuntimeLang->ErlVariable(ErlVariableNum).Value.Number);
-                    *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).IntValue = tmpInteger;
+                    *thisActuatorAvail.Actuated = true;
+                    int tmpInteger = std::floor(thisErlVar.Value.Number);
+                    *thisActuatorAvail.IntValue = tmpInteger;
                 } break;
                 case DataRuntimeLanguage::PtrDataType::Logical: {
-                    *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).Actuated = true;
-                    if (state.dataRuntimeLang->ErlVariable(ErlVariableNum).Value.Number == 0.0) {
-                        *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).LogValue = false;
-                    } else if (state.dataRuntimeLang->ErlVariable(ErlVariableNum).Value.Number == 1.0) {
-                        *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).LogValue = true;
+                    *thisActuatorAvail.Actuated = true;
+                    if (thisErlVar.Value.Number == 0.0) {
+                        *thisActuatorAvail.LogValue = false;
+                    } else if (thisErlVar.Value.Number == 1.0) {
+                        *thisActuatorAvail.LogValue = true;
                     } else {
-                        *state.dataRuntimeLang->EMSActuatorAvailable(EMSActuatorVariableNum).LogValue = false;
+                        *thisActuatorAvail.LogValue = false;
                     }
                 } break;
                 default:
@@ -378,7 +387,6 @@ namespace EMSManager {
             SetupSurfaceConvectionActuators(state);
             SetupSurfaceConstructionActuators(state);
             SetupSurfaceOutdoorBoundaryConditionActuators(state);
-            SetupSurfaceTemperatureActuators(state);
             SetupZoneOutdoorBoundaryConditionActuators(state);
             GetEMSInput(state);
             state.dataEMSMgr->GetEMSUserInput = false;
@@ -1503,7 +1511,7 @@ namespace EMSManager {
         }
     }
 
-    bool CheckIfNodeSetPointManaged(EnergyPlusData &state, int const NodeNum, SPControlType const SetPointType, bool byHandle)
+    bool CheckIfNodeSetPointManaged(EnergyPlusData &state, int const NodeNum, HVAC::CtrlVarType const ctrlVar, bool byHandle)
     {
 
         // SUBROUTINE INFORMATION:
@@ -1519,7 +1527,7 @@ namespace EMSManager {
 
         std::string cNodeName = state.dataLoopNodes->NodeID(NodeNum);
         std::string cComponentTypeName = "System Node Setpoint";
-        std::string_view cControlTypeName = controlTypeName[static_cast<int>(SetPointType)];
+        std::string_view cControlTypeName = controlTypeNames[(int)ctrlVar];
 
         if (byHandle) {
             for (int Loop = 1; Loop <= state.dataRuntimeLang->numEMSActuatorsAvailable; ++Loop) {
@@ -1532,10 +1540,8 @@ namespace EMSManager {
                 }
             }
             if (!FoundControl) {
-                ShowWarningError(state,
-                                 format("Missing '{}' for node named named '{}'.",
-                                        format(controlTypeName[static_cast<int>(SetPointType)]),
-                                        state.dataLoopNodes->NodeID(NodeNum)));
+                ShowWarningError(
+                    state, format("Missing '{}' for node named named '{}'.", controlTypeNames[(int)ctrlVar], state.dataLoopNodes->NodeID(NodeNum)));
             }
         } else {
             for (int Loop = 1; Loop <= state.dataRuntimeLang->numActuatorsUsed + state.dataRuntimeLang->NumExternalInterfaceActuatorsUsed; ++Loop) {
@@ -1553,7 +1559,7 @@ namespace EMSManager {
 
     bool CheckIfNodeSetPointManagedByEMS(EnergyPlusData &state,
                                          int const NodeNum, // index of node being checked.
-                                         SPControlType const SetPointType,
+                                         HVAC::CtrlVarType const ctrlVar,
                                          bool &ErrorFlag)
     {
 
@@ -1565,7 +1571,7 @@ namespace EMSManager {
         // Provide method to verify that a specific node is (probably) managed by EMS
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        bool FoundControl = CheckIfNodeSetPointManaged(state, NodeNum, SetPointType, false);
+        bool FoundControl = CheckIfNodeSetPointManaged(state, NodeNum, ctrlVar, false);
 
         if ((!ErrorFlag) && (!FoundControl)) {
             int numPythonPlugins = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "PythonPlugin:Instance");
@@ -1576,38 +1582,7 @@ namespace EMSManager {
                 // We'll defer to checking at the end whether a Plugin / API called getActuatorHandle on it
                 auto &nodeSetpointCheck = state.dataLoopNodes->NodeSetpointCheck(NodeNum);
                 nodeSetpointCheck.needsSetpointChecking = true;
-
-                switch (SetPointType) {
-                case SPControlType::TemperatureSetPoint: {
-                    nodeSetpointCheck.checkTemperatureSetPoint = true;
-                } break;
-                case SPControlType::TemperatureMinSetPoint: {
-                    nodeSetpointCheck.checkTemperatureMinSetPoint = true;
-                } break;
-                case SPControlType::TemperatureMaxSetPoint: {
-                    nodeSetpointCheck.checkTemperatureMaxSetPoint = true;
-                } break;
-                case SPControlType::HumidityRatioSetPoint: {
-                    nodeSetpointCheck.checkHumidityRatioSetPoint = true;
-                } break;
-                case SPControlType::HumidityRatioMinSetPoint: {
-                    nodeSetpointCheck.checkHumidityRatioMinSetPoint = true;
-                } break;
-                case SPControlType::HumidityRatioMaxSetPoint: {
-                    nodeSetpointCheck.checkHumidityRatioMaxSetPoint = true;
-                } break;
-                case SPControlType::MassFlowRateSetPoint: {
-                    nodeSetpointCheck.checkMassFlowRateSetPoint = true;
-                } break;
-                case SPControlType::MassFlowRateMinSetPoint: {
-                    nodeSetpointCheck.checkMassFlowRateMinSetPoint = true;
-                } break;
-                case SPControlType::MassFlowRateMaxSetPoint: {
-                    nodeSetpointCheck.checkMassFlowRateMaxSetPoint = true;
-                } break;
-                default:
-                    break;
-                }
+                nodeSetpointCheck.checkSetPoint[(int)ctrlVar] = true;
             }
         }
 
@@ -1649,39 +1624,11 @@ namespace EMSManager {
                 // Start by setting it to false (assume matched)
                 nodeSetpointCheck.needsSetpointChecking = false;
 
-                if (nodeSetpointCheck.checkTemperatureSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |= !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::TemperatureSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkTemperatureMinSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::TemperatureMinSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkTemperatureMaxSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::TemperatureMaxSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkHumidityRatioSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::HumidityRatioSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkHumidityRatioMinSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::HumidityRatioMinSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkHumidityRatioMaxSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::HumidityRatioMaxSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkMassFlowRateSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |= !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::MassFlowRateSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkMassFlowRateMinSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::MassFlowRateMinSetPoint, true);
-                }
-                if (nodeSetpointCheck.checkMassFlowRateMaxSetPoint) {
-                    nodeSetpointCheck.needsSetpointChecking |=
-                        !CheckIfNodeSetPointManaged(state, NodeNum, SPControlType::MassFlowRateMaxSetPoint, true);
+                for (int iCtrlVar = 0; iCtrlVar < (int)HVAC::CtrlVarType::Num; ++iCtrlVar) {
+                    if (nodeSetpointCheck.checkSetPoint[iCtrlVar]) {
+                        nodeSetpointCheck.needsSetpointChecking |=
+                            !CheckIfNodeSetPointManaged(state, NodeNum, static_cast<HVAC::CtrlVarType>(iCtrlVar), true);
+                    }
                 }
 
                 if (nodeSetpointCheck.needsSetpointChecking) {
@@ -1733,7 +1680,7 @@ namespace EMSManager {
                                  "Availability Status",
                                  "[ ]",
                                  state.dataEMSMgr->lDummy2,
-                                 state.dataAirLoop->PriAirSysAvailMgr(Loop).AvailStatus);
+                                 (int &)state.dataAirLoop->PriAirSysAvailMgr(Loop).availStatus);
             }
         }
     }
@@ -1752,10 +1699,11 @@ namespace EMSManager {
         // Loop thru SurfaceWindow and register any shading controls
 
         for (int loopSurfNum = 1; loopSurfNum <= state.dataSurface->TotSurfaces; ++loopSurfNum) {
+            auto &surf = state.dataSurface->Surface(loopSurfNum);
 
-            if (state.dataSurface->Surface(loopSurfNum).Class != DataSurfaces::SurfaceClass::Window) continue;
-            if (state.dataSurface->Surface(loopSurfNum).ExtBoundCond != DataSurfaces::ExternalEnvironment) continue;
-            if (!state.dataSurface->Surface(loopSurfNum).HasShadeControl) continue;
+            if (surf.Class != DataSurfaces::SurfaceClass::Window) continue;
+            if (surf.ExtBoundCond != DataSurfaces::ExternalEnvironment) continue;
+            if (!surf.HasShadeControl) continue;
 
             if (state.dataSurface->SurfWinHasShadeOrBlindLayer(loopSurfNum)) {
                 SetupEMSActuator(state,
@@ -1765,16 +1713,18 @@ namespace EMSManager {
                                  "[ShadeStatus]",
                                  state.dataSurface->SurfWinShadingFlagEMSOn(loopSurfNum),
                                  state.dataSurface->SurfWinShadingFlagEMSValue(loopSurfNum));
-                if (state.dataSurface->SurfWinMovableSlats(loopSurfNum)) {
+
+                auto &surfShade = state.dataSurface->surfShades(loopSurfNum);
+                if (surfShade.blind.movableSlats) {
                     SetupEMSActuator(state,
                                      "Window Shading Control",
-                                     state.dataSurface->Surface(loopSurfNum).Name,
+                                     surf.Name,
                                      "Slat Angle",
                                      "[degrees]",
-                                     state.dataSurface->SurfWinSlatAngThisTSDegEMSon(loopSurfNum),
-                                     state.dataSurface->SurfWinSlatAngThisTSDegEMSValue(loopSurfNum));
+                                     surfShade.blind.slatAngDegEMSon,
+                                     surfShade.blind.slatAngDegEMSValue);
                 }
-            } else if (state.dataSurface->WindowShadingControl(state.dataSurface->Surface(loopSurfNum).activeWindowShadingControl).ShadingType ==
+            } else if (state.dataSurface->WindowShadingControl(surf.activeWindowShadingControl).ShadingType ==
                        DataSurfaces::WinShadingType::ExtScreen) {
                 SetupEMSActuator(state,
                                  "Window Shading Control",
@@ -1982,30 +1932,6 @@ namespace EMSManager {
                                  "[degree]",
                                  state.dataSurface->SurfWindDirEMSOverrideOn(SurfNum),
                                  state.dataSurface->SurfWindDirEMSOverrideValue(SurfNum));
-            }
-        }
-    }
-
-    void SetupSurfaceTemperatureActuators(EnergyPlusData &state)
-    {
-        for (int SurfNum = 1; SurfNum <= state.dataSurface->TotSurfaces; ++SurfNum) {
-            if (!state.dataSurface->Surface(SurfNum).HeatTransSurf) continue;
-            if (state.dataSurface->Surface(SurfNum).Class != DataSurfaces::SurfaceClass::Window) {
-                SetupEMSActuator(state,
-                                 "Surface",
-                                 state.dataSurface->Surface(SurfNum).Name,
-                                 "Surface Inside Temperature",
-                                 "[C]",
-                                 state.dataSurface->SurfTInsideEMSOverrideOn(SurfNum),
-                                 state.dataSurface->SurfTInsideEMSOverrideValue(SurfNum));
-
-                SetupEMSActuator(state,
-                                 "Surface",
-                                 state.dataSurface->Surface(SurfNum).Name,
-                                 "Surface Outside Temperature",
-                                 "[C]",
-                                 state.dataSurface->SurfTOutsideEMSOverrideOn(SurfNum),
-                                 state.dataSurface->SurfTOutsideEMSOverrideValue(SurfNum));
             }
         }
     }

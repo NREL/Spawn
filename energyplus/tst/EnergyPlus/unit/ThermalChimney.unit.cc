@@ -76,7 +76,6 @@
 using namespace EnergyPlus;
 using namespace EnergyPlus::DataEnvironment;
 using namespace EnergyPlus::DataHeatBalance;
-using namespace EnergyPlus::DataHVACGlobals;
 using namespace EnergyPlus::InternalHeatGains;
 using namespace EnergyPlus::HeatBalanceManager;
 using namespace EnergyPlus::OutputProcessor;
@@ -1122,7 +1121,7 @@ TEST_F(EnergyPlusFixture, ThermalChimney_EMSAirflow_Test)
     EXPECT_FALSE(localErrorsFound);
     HeatBalanceManager::GetZoneData(*state, localErrorsFound);
     EXPECT_FALSE(localErrorsFound);
-    HeatBalanceManager::GetWindowGlassSpectralData(*state, localErrorsFound);
+    Material::GetWindowGlassSpectralData(*state, localErrorsFound);
     EXPECT_FALSE(localErrorsFound);
     Material::GetMaterialData(*state, localErrorsFound);
     EXPECT_FALSE(localErrorsFound);

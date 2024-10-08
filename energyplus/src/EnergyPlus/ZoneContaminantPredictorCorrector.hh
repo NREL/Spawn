@@ -87,12 +87,12 @@ namespace ZoneContaminantPredictorCorrector {
     void RevertZoneTimestepHistories(EnergyPlusData &state);
 
     void InverseModelCO2(EnergyPlusData &state,
-                         int ZoneNum,                 // Zone number
-                         Real64 &CO2Gain,             // Zone total CO2 gain
-                         Real64 &CO2GainExceptPeople, // ZOne total CO2 gain from sources except for people
-                         Real64 &ZoneMassFlowRate,    // Zone air mass flow rate
-                         Real64 &CO2MassFlowRate,     // Zone air CO2 mass flow rate
-                         Real64 &RhoAir               // Air density
+                         int ZoneNum,                // Zone number
+                         Real64 CO2Gain,             // Zone total CO2 gain
+                         Real64 CO2GainExceptPeople, // ZOne total CO2 gain from sources except for people
+                         Real64 ZoneMassFlowRate,    // Zone air mass flow rate
+                         Real64 CO2MassFlowRate,     // Zone air CO2 mass flow rate
+                         Real64 RhoAir               // Air density
     );
 
     void CorrectZoneContaminants(EnergyPlusData &state,
@@ -108,9 +108,13 @@ struct ZoneContaminantPredictorCorrectorData : BaseGlobalStruct
     bool MyEnvrnFlag = true;
     bool MyConfigOneTimeFlag = true;
 
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
-        *this = ZoneContaminantPredictorCorrectorData();
+        new (this) ZoneContaminantPredictorCorrectorData();
     }
 };
 
