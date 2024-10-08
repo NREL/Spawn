@@ -418,20 +418,7 @@ if(WIN32)
   install(FILES "${PROJECT_SOURCE_DIR}/bin/WeatherConverter/TimeZoneCodes.txt" DESTINATION "PreProcess/WeatherConverter/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/WeatherConverter/WBANLocations.csv" DESTINATION "PreProcess/WeatherConverter/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/WeatherConverter/Weather.exe" DESTINATION "PreProcess/WeatherConverter/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/Appearance Pak.dll"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/EHInterfaces5001.dll"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/EHObjectArray5001.dll"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/EHObjectCollection5001.dll"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/EHTreeView4301.DLL"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare Libs/MBSChartDirector5Plugin16042.dll"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Win/EP-Compare.exe" DESTINATION "PostProcess/EP-Compare/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/GraphHints.csv" DESTINATION "PostProcess/EP-Compare/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/readme.txt" DESTINATION "PostProcess/EP-Compare/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/EPDraw/Run-Win/EPDrawGUI Libs/Appearance Pak.dll" DESTINATION "PreProcess/EPDraw/EPDrawGUI Libs/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/EPDraw/Run-Win/EPDrawGUI Libs/Shell.dll" DESTINATION "PreProcess/EPDraw/EPDrawGUI Libs/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/EPDraw/Run-Win/EPDrawGUI.exe" DESTINATION "PreProcess/EPDraw/")
@@ -512,8 +499,7 @@ if(APPLE)
 
   install(DIRECTORY "${PROJECT_SOURCE_DIR}/bin/EP-Launch-Lite/EP-Launch-Lite.app" DESTINATION "PreProcess")
   install(DIRECTORY "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Mac/IDFVersionUpdater.app" DESTINATION "PreProcess/IDFVersionUpdater")
-  install(DIRECTORY "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Mac/EP-Compare.app" DESTINATION "PostProcess/EP-Compare")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/GraphHints.csv" DESTINATION "PostProcess/EP-Compare/")
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/readme.txt" DESTINATION "PostProcess/EP-Compare/")
   install(PROGRAMS "${PROJECT_SOURCE_DIR}/bin/EPMacro/Mac/EPMacro" DESTINATION "./")
 
   configure_file(scripts/runenergyplus.in "${PROJECT_BINARY_DIR}/scripts/runenergyplus" @ONLY)
@@ -549,21 +535,7 @@ elseif(UNIX)
   set(CPACK_IFW_TARGET_DIRECTORY
       "/usr/local/${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}-${CPACK_PACKAGE_VERSION_MINOR}-${CPACK_PACKAGE_VERSION_PATCH}")
 
-  install(PROGRAMS "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare" DESTINATION "PostProcess/EP-Compare/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/GraphHints.csv" DESTINATION "PostProcess/EP-Compare/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/EHInterfaces5001.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/EHObjectArray5001.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/EHObjectCollection5001.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/EHTreeView4301.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/libMBSChartDirector5Plugin16042.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/Run-Linux/EP-Compare Libs/libRBAppearancePak.so"
-          DESTINATION "PostProcess/EP-Compare/EP-Compare Libs/")
-
+  install(FILES "${PROJECT_SOURCE_DIR}/bin/EP-Compare/readme.txt" DESTINATION "PostProcess/EP-Compare/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBAppearancePak64.so"
           DESTINATION "PreProcess/IDFVersionUpdater/IDFVersionUpdater Libs/")
   install(FILES "${PROJECT_SOURCE_DIR}/bin/IDFVersionUpdater/Run-Linux/IDFVersionUpdater Libs/libRBCrypto64.so"
@@ -595,10 +567,6 @@ elseif(UNIX)
   install(CODE "MESSAGE(\"Creating symlinks.\")" COMPONENT Symlinks)
   install(FILES "${PROJECT_SOURCE_DIR}/doc/man/energyplus.1" DESTINATION "./" COMPONENT Symlinks)
 endif()
-
-# TODO: Unused now
-configure_file("${PROJECT_SOURCE_DIR}/cmake/CMakeCPackOptions.cmake.in" "${PROJECT_BINARY_DIR}/CMakeCPackOptions.cmake" @ONLY)
-set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CMakeCPackOptions.cmake")
 
 ##########################################################   D O C U M E N T A T I O N   #############################################################
 
@@ -691,6 +659,47 @@ if(WIN32 AND NOT UNIX)
     install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION "./" COMPONENT Libraries)
   endif()
 endif()
+
+if(APPLE)
+
+  include(${CMAKE_CURRENT_LIST_DIR}/CodeSigning.cmake)
+
+  # Defines CPACK_CODESIGNING_DEVELOPPER_ID_APPLICATION and CPACK_CODESIGNING_NOTARY_PROFILE_NAME
+  setup_macos_codesigning_variables()
+
+  if(CPACK_CODESIGNING_DEVELOPPER_ID_APPLICATION)
+    set(FILES_TO_SIGN
+      # Targets are signed already via register_install_codesign_target
+      #$<TARGET_FILE_NAME:ConvertInputFormat>
+      #$<TARGET_FILE_NAME:energyplus>
+      #$<TARGET_FILE_NAME:energyplusapi>
+
+      # Bash scripts, not sure if needed or not
+      "runenergyplus"
+      "runepmacro"
+      "runreadvars"
+      # Copied-verbatim apps: Already signed because just copied from bin to package
+      # "EPMacro"
+      # "PreProcess/EP-Launch-Lite.app"
+      # "PreProcess/IDFVersionUpdater/IDFVersionUpdater.app"
+    )
+
+    # Codesign inner binaries and libraries, in the CPack staging area for the EnergyPlus project, component Unspecified
+    # Define some required variables for the script in the scope of the install(SCRIPT) first
+    install(CODE "set(CPACK_CODESIGNING_DEVELOPPER_ID_APPLICATION \"${CPACK_CODESIGNING_DEVELOPPER_ID_APPLICATION}\")" COMPONENT Unspecified)
+    install(CODE "set(FILES_TO_SIGN \"${FILES_TO_SIGN}\")" COMPONENT Unspecified)
+    # call the script
+    install(SCRIPT "${CMAKE_CURRENT_LIST_DIR}/install_codesign_script.cmake" COMPONENT Unspecified)
+
+    # Register the CPACK_POST_BUILD_SCRIPTS
+    set(CPACK_POST_BUILD_SCRIPTS "${CMAKE_CURRENT_LIST_DIR}/CPackSignAndNotarizeDmg.cmake")
+
+  endif()
+endif()
+
+# TODO: Unused now
+configure_file("${PROJECT_SOURCE_DIR}/cmake/CMakeCPackOptions.cmake.in" "${PROJECT_BINARY_DIR}/CMakeCPackOptions.cmake" @ONLY)
+set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CMakeCPackOptions.cmake")
 
 ######################################################################################################################################################
 #                                                    P A C K A G I N G   &   C O M P O N E N T S                                                     #

@@ -107,6 +107,8 @@ namespace BaseboardRadiator {
         void InitBaseboard(EnergyPlusData &state, int baseboardNum);
 
         void SizeBaseboard(EnergyPlusData &state, int baseboardNum);
+
+        void checkForZoneSizing(EnergyPlusData &state);
     };
 
     void SimBaseboard(
@@ -126,9 +128,13 @@ struct BaseboardRadiatorData : BaseGlobalStruct
     bool getInputFlag = true;
     EPVector<BaseboardRadiator::BaseboardParams> baseboards;
 
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
-        *this = BaseboardRadiatorData();
+        new (this) BaseboardRadiatorData();
     }
 };
 

@@ -60,16 +60,9 @@
 #include <EnergyPlus/EnergyPlus.hh>
 
 #if LINK_WITH_PYTHON
-#ifdef _DEBUG
-// We don't want to try to import a debug build of Python here
-// so if we are building a Debug build of the C++ code, we need
-// to undefine _DEBUG during the #include command for Python.h.
-// Otherwise it will fail
-#undef _DEBUG
-#include <Python.h>
-#define _DEBUG
-#else
-#include <Python.h>
+#ifndef PyObject_HEAD
+struct _object;
+using PyObject = _object;
 #endif
 #endif
 
@@ -82,22 +75,18 @@ namespace PluginManagement {
 
     constexpr const char *programName = "python";
 
-    void registerNewCallback(EnergyPlusData &state, EMSManager::EMSCallFrom iCalledFrom, const std::function<void(void *)> &f);
-    void registerUserDefinedCallback(EnergyPlusData &state, const std::function<void(void *)> &f, const std::string &programNameInInputFile);
+    void registerNewCallback(const EnergyPlusData &state, EMSManager::EMSCallFrom iCalledFrom, const std::function<void(void *)> &f);
+    void registerUserDefinedCallback(const EnergyPlusData &state, const std::function<void(void *)> &f, const std::string &programNameInInputFile);
 
     void runAnyRegisteredCallbacks(EnergyPlusData &state, EMSManager::EMSCallFrom iCalledFrom, bool &anyRan);
-    void onBeginEnvironment(EnergyPlusData &state);
-    std::string pythonStringForUsage(EnergyPlusData &state);
+    void onBeginEnvironment(const EnergyPlusData &state);
+    std::string pythonStringForUsage(const EnergyPlusData &state);
 
     void clear_state();
 
     struct PluginInstance
     {
-        PluginInstance(const fs::path &_modulePath, const std::string &_className, std::string emsName, bool runPluginDuringWarmup)
-            : modulePath(_modulePath), className(_className), emsAlias(std::move(emsName)), runDuringWarmup(runPluginDuringWarmup),
-              stringIdentifier(_modulePath.string() + "." + _className)
-        {
-        }
+        PluginInstance(const fs::path &_modulePath, const std::string &_className, std::string emsName, bool runPluginDuringWarmup);
 
         // members
         fs::path modulePath;
@@ -179,36 +168,37 @@ namespace PluginManagement {
 #endif
     };
 
+    // TODO: Make this use PythonEngine so we don't duplicate code
     class PluginManager
     {
     public:
         explicit PluginManager(EnergyPlusData &state);
         ~PluginManager();
 
-        static int numActiveCallbacks(EnergyPlusData &state);
+        static int numActiveCallbacks(const EnergyPlusData &state);
         static void addToPythonPath(EnergyPlusData &state, const fs::path &includePath, bool userDefinedPath);
         static void setupOutputVariables(EnergyPlusData &state);
 
         int maxGlobalVariableIndex = -1;
-        void addGlobalVariable(EnergyPlusData &state, const std::string &name);
+        void addGlobalVariable(const EnergyPlusData &state, const std::string &name);
         static int getGlobalVariableHandle(EnergyPlusData &state, const std::string &name, bool suppress_warning = false);
         static Real64 getGlobalVariableValue(EnergyPlusData &state, int handle);
         static void setGlobalVariableValue(EnergyPlusData &state, int handle, Real64 value);
 
         int maxTrendVariableIndex = -1;
-        static int getTrendVariableHandle(EnergyPlusData &state, const std::string &name);
-        static Real64 getTrendVariableValue(EnergyPlusData &state, int handle, int timeIndex);
-        static size_t getTrendVariableHistorySize(EnergyPlusData &state, int handle);
-        static Real64 getTrendVariableAverage(EnergyPlusData &state, int handle, int count);
-        static Real64 getTrendVariableMin(EnergyPlusData &state, int handle, int count);
-        static Real64 getTrendVariableMax(EnergyPlusData &state, int handle, int count);
-        static Real64 getTrendVariableSum(EnergyPlusData &state, int handle, int count);
-        static Real64 getTrendVariableDirection(EnergyPlusData &state, int handle, int count);
+        static int getTrendVariableHandle(const EnergyPlusData &state, const std::string &name);
+        static Real64 getTrendVariableValue(const EnergyPlusData &state, int handle, int timeIndex);
+        static size_t getTrendVariableHistorySize(const EnergyPlusData &state, int handle);
+        static Real64 getTrendVariableAverage(const EnergyPlusData &state, int handle, int count);
+        static Real64 getTrendVariableMin(const EnergyPlusData &state, int handle, int count);
+        static Real64 getTrendVariableMax(const EnergyPlusData &state, int handle, int count);
+        static Real64 getTrendVariableSum(const EnergyPlusData &state, int handle, int count);
+        static Real64 getTrendVariableDirection(const EnergyPlusData &state, int handle, int count);
 
         static void updatePluginValues(EnergyPlusData &state);
 
-        static int getLocationOfUserDefinedPlugin(EnergyPlusData &state, std::string const &_programName);
-        static int getUserDefinedCallbackIndex(EnergyPlusData &state, const std::string &callbackProgramName);
+        static int getLocationOfUserDefinedPlugin(const EnergyPlusData &state, std::string const &_programName);
+        static int getUserDefinedCallbackIndex(const EnergyPlusData &state, const std::string &callbackProgramName);
         static void runSingleUserDefinedPlugin(EnergyPlusData &state, int index);
         static void runSingleUserDefinedCallback(EnergyPlusData &state, int index);
         static bool anyUnexpectedPluginObjects(EnergyPlusData &state);
@@ -226,7 +216,7 @@ namespace PluginManagement {
         std::deque<Real64> values;
         std::deque<Real64> times;
         int indexOfPluginVariable;
-        PluginTrendVariable(EnergyPlusData &state, std::string _name, int _numValues, int _indexOfPluginVariable);
+        PluginTrendVariable(const EnergyPlusData &state, std::string _name, int _numValues, int _indexOfPluginVariable);
         void reset()
         {
             this->values.clear();
@@ -255,6 +245,10 @@ struct PluginManagerData : BaseGlobalStruct
         "PythonPlugin:OutputVariable", "PythonPlugin:SearchPaths", "PythonPlugin:Instance", "PythonPlugin:Variables", "PythonPlugin:TrendVariable"};
 
     bool eplusRunningViaPythonAPI = false;
+
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void clear_state() override
     {

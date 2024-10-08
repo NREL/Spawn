@@ -94,7 +94,8 @@ namespace IndoorGreen {
         Real64 ZCO2 = 400;
         Real64 ZVPD = 0.0;            // vapor pressure deficit (pa)
         Real64 ZPPFD = 0;             // PPFD
-        Real64 SensibleRate = 0.0;    // w
+        Real64 SensibleRate = 0.0;    // w, living wall
+        Real64 SensibleRateLED = 0.0; // w, lED
         Real64 LatentRate = 0.0;      // w
         Real64 ETRate = 0.0;          // kg/(m2s)
         Real64 LambdaET = 0.0;        // J/(kg m2)
@@ -127,6 +128,11 @@ struct IndoorGreenData : BaseGlobalStruct
     int NumIndoorGreen = 0; // Number of Indoor Greenery Systems found in input
     bool getInputFlag = true;
     Array1D<IndoorGreen::IndoorGreenParams> indoorGreens;
+
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
         new (this) IndoorGreenData();

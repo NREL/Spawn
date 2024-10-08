@@ -78,6 +78,7 @@
 #include <EnergyPlus/SolarShading.hh>
 #include <EnergyPlus/SurfaceGeometry.hh>
 #include <EnergyPlus/WeatherManager.hh>
+#include <EnergyPlus/ZoneEquipmentManager.hh>
 
 using namespace EnergyPlus;
 using namespace EnergyPlus::Construction;
@@ -157,8 +158,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_Test)
 
     EXPECT_EQ("WEST ZONE_DAYLCTRL", thisDaylightControl.Name);
     EXPECT_EQ("WEST ZONE", thisDaylightControl.ZoneName);
-    EXPECT_TRUE(compare_enums(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod));
-    EXPECT_TRUE(compare_enums(LtgCtrlType::Continuous, thisDaylightControl.LightControlType));
+    EXPECT_ENUM_EQ(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod);
+    EXPECT_ENUM_EQ(LtgCtrlType::Continuous, thisDaylightControl.LightControlType);
 
     EXPECT_EQ(0.3, thisDaylightControl.MinPowerFraction);
     EXPECT_EQ(0.2, thisDaylightControl.MinLightFraction);
@@ -268,8 +269,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_3RefPt_
     auto const &thisDaylightControl = dl->daylightControl(1);
     EXPECT_EQ("WEST ZONE_DAYLCTRL", thisDaylightControl.Name);
     EXPECT_EQ("WEST ZONE", thisDaylightControl.ZoneName);
-    EXPECT_TRUE(compare_enums(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod));
-    EXPECT_TRUE(compare_enums(LtgCtrlType::Continuous, thisDaylightControl.LightControlType));
+    EXPECT_ENUM_EQ(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod);
+    EXPECT_ENUM_EQ(LtgCtrlType::Continuous, thisDaylightControl.LightControlType);
 
     EXPECT_EQ(0.3, thisDaylightControl.MinPowerFraction);
     EXPECT_EQ(0.2, thisDaylightControl.MinLightFraction);
@@ -870,6 +871,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
 
     HeatBalanceManager::GetZoneData(*state, foundErrors); // read zone data
     EXPECT_FALSE(foundErrors);                            // expect no errors
+    ZoneEquipmentManager::GetZoneEquipment(*state);
 
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(2);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(2);
@@ -1465,13 +1467,13 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     auto &thisDaylgtCtrl = dl->daylightControl(ZoneNum);
     int numExtWins = dl->enclDaylight(1).TotalExtWindows;
     int numRefPts = thisDaylgtCtrl.TotalDaylRefPoints;
-    int numSlatAngs = state->dataSurface->actualMaxSlatAngs;
 
     for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
-                for (int iSlatAng = 1; iSlatAng <= numSlatAngs; ++iSlatAng) {
-                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt, iSlatAng);
+                for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
+                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt)[iWinCover];
+
                     daylFac[(int)Lum::Illum].sky = {0.2, 0.2, 0.2, 0.2};
                     daylFac[(int)Lum::Illum].sun = 0.02;
                     daylFac[(int)Lum::Illum].sunDisk = 0.01;
@@ -1479,6 +1481,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
                     daylFac[(int)Lum::Back].sky = {0.01, 0.01, 0.01, 0.01};
                     daylFac[(int)Lum::Back].sun = 0.01;
                     daylFac[(int)Lum::Back].sunDisk = 0.01;
+
                     daylFac[(int)Lum::Source].sky = {0.9, 0.9, 0.9, 0.9};
                     daylFac[(int)Lum::Source].sun = 0.26;
                     daylFac[(int)Lum::Source].sunDisk = 0.0;
@@ -1503,8 +1506,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
-                for (int iSlatAng = 1; iSlatAng <= numSlatAngs; ++iSlatAng) {
-                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt, iSlatAng);
+                for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
+                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt)[iWinCover];
                     daylFac[(int)Lum::Illum] = Illums();
                     daylFac[(int)Lum::Source] = Illums();
                     daylFac[(int)Lum::Back] = Illums();
@@ -1767,6 +1770,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
 
     HeatBalanceManager::GetZoneData(*state, foundErrors); // read zone data
     EXPECT_FALSE(foundErrors);                            // expect no errors
+    ZoneEquipmentManager::GetZoneEquipment(*state);
 
     SurfaceGeometry::SetupZoneGeometry(*state, foundErrors); // this calls GetSurfaceData()
     EXPECT_FALSE(foundErrors);                               // expect no errors
@@ -1790,13 +1794,12 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
     auto &thisDaylgtCtrl = dl->daylightControl(ZoneNum);
     int numExtWins = dl->enclDaylight(1).TotalExtWindows;
     int numRefPts = thisDaylgtCtrl.TotalDaylRefPoints;
-    int numSlatAngs = state->dataSurface->actualMaxSlatAngs;
 
     for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
-                for (int iSlatAng = 1; iSlatAng <= numSlatAngs; ++iSlatAng) {
-                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt, iSlatAng);
+                for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
+                    auto &daylFac = thisDaylgtCtrl.daylFac[iHr](iWin, iRefPt)[iWinCover];
                     daylFac[(int)Lum::Illum] = Illums();
                     daylFac[(int)Lum::Source] = Illums();
                     daylFac[(int)Lum::Back] = Illums();
@@ -1810,19 +1813,17 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
 
     int iSky = (int)SkyType::Clear;
     int DayltgExtWin = 1;
-    int Shaded = 2;
-    int Unshaded = 1;
     int IWin = Util::FindItemInList("ZN001:WALL001:WIN001", state->dataSurface->Surface);
     EXPECT_GT(IWin, 0);
 
     // Set un-shaded surface illuminance factor to 1.0 for RefPt1, 0.1 for RefPt2
     // Set shaded surface illuminance factor to 0.5 for RefPt1, 0.05 for RefPt2
     int RefPt = 1;
-    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt, Unshaded)[(int)Lum::Illum].sky[iSky] = 1.0;
-    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt, Shaded)[(int)Lum::Illum].sky[iSky] = 0.5;
+    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt)[(int)WinCover::Bare][(int)Lum::Illum].sky[iSky] = 1.0;
+    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt)[(int)WinCover::Shaded][(int)Lum::Illum].sky[iSky] = 0.5;
     RefPt = 2;
-    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt, Unshaded)[(int)Lum::Illum].sky[iSky] = 0.1;
-    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt, Shaded)[(int)Lum::Illum].sky[iSky] = 0.05;
+    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt)[(int)WinCover::Bare][(int)Lum::Illum].sky[iSky] = 0.1;
+    thisDaylgtCtrl.daylFac[state->dataGlobal->HourOfDay](DayltgExtWin, RefPt)[(int)WinCover::Shaded][(int)Lum::Illum].sky[iSky] = 0.05;
 
     // Window5 model - expect 100 for unshaded and 50 for shaded (10 and 5 for RefPt2)
     state->dataSurface->SurfWinWindowModelType(IWin) = WindowModel::Detailed;
@@ -2015,8 +2016,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_Roundin
     auto const &thisDaylightControl = dl->daylightControl(1);
     EXPECT_EQ("WEST ZONE_DAYLCTRL", thisDaylightControl.Name);
     EXPECT_EQ("WEST ZONE", thisDaylightControl.ZoneName);
-    EXPECT_TRUE(compare_enums(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod));
-    EXPECT_TRUE(compare_enums(LtgCtrlType::Continuous, thisDaylightControl.LightControlType));
+    EXPECT_ENUM_EQ(DaylightingMethod::SplitFlux, thisDaylightControl.DaylightMethod);
+    EXPECT_ENUM_EQ(LtgCtrlType::Continuous, thisDaylightControl.LightControlType);
 
     EXPECT_EQ(0.3, thisDaylightControl.MinPowerFraction);
     EXPECT_EQ(0.2, thisDaylightControl.MinLightFraction);
@@ -2567,6 +2568,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
 
     HeatBalanceManager::GetZoneData(*state, foundErrors); // read zone data
     EXPECT_FALSE(foundErrors);                            // expect no errors
+    ZoneEquipmentManager::GetZoneEquipment(*state);
+
     state->dataViewFactor->NumOfSolarEnclosures = 1;
     state->dataViewFactor->EnclSolInfo.allocate(state->dataViewFactor->NumOfSolarEnclosures);
     dl->enclDaylight.allocate(state->dataViewFactor->NumOfSolarEnclosures);
@@ -3669,10 +3672,10 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgIlluminanceMap)
         "    0.9,                     !- Z height {m}                                               ",
         "    0.1,                     !- X Minimum Coordinate {m}                                               ",
         "    6.0,                     !- X Maximum Coordinate {m}                                               ",
-        "    10,                      !- Number of X Grid Points                                               ",
+        "    10,                       !- Number of X Grid Points                                               ",
         "    0.1,                     !- Y Minimum Coordinate {m}                                               ",
         "    6.0,                     !- Y Maximum Coordinate {m}                                               ",
-        "    10;                      !- Number of Y Grid Points                                               ",
+        "    10;                       !- Number of Y Grid Points                                               ",
 
         "  Lights,                                                                                                         ",
         "    East Zone Lights 1,      !- Name                                                                              ",
