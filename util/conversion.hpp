@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <sstream>
 
 inline std::size_t as_size_t(const long long value)
 {

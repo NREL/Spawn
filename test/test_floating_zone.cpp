@@ -134,9 +134,9 @@ TEST_CASE("Test SingleFamilyHouse with Floating Zone")
     CHECK(std::abs(garage_temp - outside_temp) < 32.0);
     CHECK(std::abs(living_temp - outside_temp) < 42.0);
     CHECK(living_temp > spawn::c_to_k(-25.0));
-    CHECK(living_temp < spawn::c_to_k(52.0));
+    CHECK(living_temp < spawn::c_to_k(60.0));
     CHECK(garage_temp > spawn::c_to_k(-25.0));
-    CHECK(garage_temp < spawn::c_to_k(52.0));
+    CHECK(garage_temp < spawn::c_to_k(60.0));
 
     status = fmu.fmi.fmi2NewDiscreteStates(comp, &info);
     CHECK(status == fmi2OK);

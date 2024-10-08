@@ -45,7 +45,7 @@ TEST_CASE("Test SingleFamilyHouse with Custom RunPeriod")
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   // Test that the EnergyPlus RunPeriod object is correct
-  const auto resource_path = (fmu.extractedFilesPath() / "resources");
+  const auto resource_path = fmu.extractedFilesPath() / "resources";
   const auto idf_path = resource_path / "SingleFamilyHouse_TwoSpeed_ZoneAirBalance.spawn.idf";
   const auto idf_json = spawn::idf_to_json(idf_path);
   const auto runperiod_json = idf_json["RunPeriod"]["Spawn-RunPeriod"];
@@ -61,7 +61,7 @@ TEST_CASE("Test SingleFamilyHouse with Custom RunPeriod")
   fmi2CallbackFunctions callbacks = {
       fmuNothingLogger, calloc, free, nullptr, nullptr}; // called by the model during simulation
   const auto comp = fmu.fmi.fmi2Instantiate(
-      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.c_str(), &callbacks, false, true);
+      "test-instance", fmi2ModelExchange, "abc-guid", resource_path.string().c_str(), &callbacks, false, true);
 
   fmi2Status status = fmu.fmi.fmi2SetupExperiment(comp, false, 0.0, 0.0, false, 0.0);
   REQUIRE(status == fmi2OK);

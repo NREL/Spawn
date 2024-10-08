@@ -32,7 +32,7 @@ spawn_fs::path module_path()
 #if defined _WIN32
   TCHAR szPath[MAX_PATH];
   if (GetModuleFileName(module(), szPath, MAX_PATH)) {
-    path = toPath(szPath);
+    path = szPath;
   }
 #else
   Dl_info info;

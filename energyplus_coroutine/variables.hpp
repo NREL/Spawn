@@ -7,6 +7,7 @@
 #include <pugixml.hpp>
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace EnergyPlus {
 struct EnergyPlusData;

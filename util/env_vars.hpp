@@ -16,7 +16,7 @@ namespace spawn {
 inline void set_env(const std::string &name, const std::string &value)
 {
 #ifdef _MSC_VER
-  SetEnvironmentVariable(name, value);
+  SetEnvironmentVariable(name.c_str(), value.c_str());
 #else
   setenv(name.c_str(), value.c_str(), 1);
 #endif

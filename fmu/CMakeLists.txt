@@ -1,4 +1,4 @@
-add_compile_options(-Wno-conversion)
+# add_compile_options(-Wno-conversion)
 
 add_library(
   fmu

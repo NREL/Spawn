@@ -39,8 +39,8 @@ TEST_CASE("Test Zone Capacitance Multiplier")
   )",
       fmt::arg(
           "idfpath",
-          (spawn::test::testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").string()),
-      fmt::arg("epwpath", chicago_epw_path().string()));
+          (spawn::test::testdir() / "models/RefBldgSmallOfficeNew2004_Chicago_ZoneCapacitanceMultiplier.idf").generic_string()),
+      fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);
   spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
