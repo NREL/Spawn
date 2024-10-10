@@ -42,7 +42,7 @@ private:
 [[nodiscard]] double ZoneOutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
                                                         int zone_num);
 
-//[[nodiscard]] double ZoneTimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+[[nodiscard]] double ZoneTimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 [[nodiscard]] double ZoneDesignHeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
@@ -50,6 +50,8 @@ private:
 
 [[nodiscard]] double ZoneOutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
                                                         int zone_num);
+
+[[nodiscard]] double ZoneTimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 void SetZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int zone_num, const double &temp);
 

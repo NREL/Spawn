@@ -33,17 +33,17 @@ Variables::Variables([[maybe_unused]] const UserConfig &user_config)
   zone::QPeoFlow::CreateAll(user_config, *this);
   zone::TRad::CreateAll(user_config, *this);
 
-  // zone::QCooSenFlow::CreateAll(user_config, *this);
-  // zone::QCooLatFlow::CreateAll(user_config, *this);
-  // zone::TOutCoo::CreateAll(user_config, *this);
-  // zone::XOutCoo::CreateAll(user_config, *this);
-  // zone::MOutCooFlow::CreateAll(user_config, *this);
-  // zone::TCoo::CreateAll(user_config, *this);
-  // zone::QHeaFlow::CreateAll(user_config, *this);
-  // zone::TOutHea::CreateAll(user_config, *this);
-  // zone::XOutHea::CreateAll(user_config, *this);
-  // zone::MOutHeaFlow::CreateAll(user_config, *this);
-  // zone::THea::CreateAll(user_config, *this);
+  zone::QCooSenFlow::CreateAll(user_config, *this);
+  zone::QCooLatFlow::CreateAll(user_config, *this);
+  zone::TOutCoo::CreateAll(user_config, *this);
+  zone::XOutCoo::CreateAll(user_config, *this);
+  zone::MOutCooFlow::CreateAll(user_config, *this);
+  zone::TCoo::CreateAll(user_config, *this);
+  zone::QHeaFlow::CreateAll(user_config, *this);
+  zone::TOutHea::CreateAll(user_config, *this);
+  zone::XOutHea::CreateAll(user_config, *this);
+  zone::MOutHeaFlow::CreateAll(user_config, *this);
+  zone::THea::CreateAll(user_config, *this);
 
   zone::MInletsFlow::CreateAll(user_config, *this);
   zone::TAveInlet::CreateAll(user_config, *this);
@@ -679,8 +679,8 @@ namespace zone {
 
   void TCoo::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::ZoneTimeAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void QHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -855,8 +855,8 @@ namespace zone {
 
   void THea::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::ZoneTimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)

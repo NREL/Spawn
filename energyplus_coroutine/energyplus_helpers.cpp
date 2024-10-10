@@ -118,10 +118,15 @@ int ZoneNum(EnergyPlus::EnergyPlusData &energyplus_data, const std::string_view 
   return 0.0;
 }
 
-//[[nodiscard]] double ZoneTimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
-//{
-//  return 0.0;
-//}
+[[nodiscard]] double ZoneTimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
+    return energyplus_data.dataSize->FinalZoneSizing(zone_num).TimeStepNumAtCoolMax *
+           energyplus_data.dataGlobal->TimeStepZoneSec;
+  }
+
+  return 0.0;
+}
 
 [[nodiscard]] double ZoneDesignHeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
 {
@@ -145,6 +150,16 @@ int ZoneNum(EnergyPlus::EnergyPlusData &energyplus_data, const std::string_view 
 {
   if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
     return energyplus_data.dataSize->FinalZoneSizing(zone_num).OutHumRatAtHeatPeak;
+  }
+
+  return 0.0;
+}
+
+[[nodiscard]] double ZoneTimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
+    return energyplus_data.dataSize->FinalZoneSizing(zone_num).TimeStepNumAtHeatMax *
+           energyplus_data.dataGlobal->TimeStepZoneSec;
   }
 
   return 0.0;
