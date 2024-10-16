@@ -472,6 +472,182 @@ namespace zone {
                        units::UnitSystem::EP);
   }
 
+  void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+    for (const auto &zone : zones) {
+      std::string zone_name = zone.value("name", "");
+      Variables::CreateOne<MInletsFlow>(variables, zone_name);
+    }
+  }
+
+  MInletsFlow::MInletsFlow(Variables &variables, const std::string_view zone_name) // NOLINT
+      : Input(
+            variables, std::string(zone_name) + "_mInlets_flow", units::UnitType::kg_per_s, units::UnitType::kg_per_s),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") =
+        "Sum of positive mass flow rates into the zone for all air inlets (including infiltration)";
+    scalar_variable.append_attribute("causality") = "input";
+    scalar_variable.append_attribute("variability") = "continuous";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "MassFlowRate";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void MInletsFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    // TODO: Do something with this value.
+    // It should probably impact the surface heat transfer coefficients.
+    // Right?
+  }
+
+  void TAveInlet::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+    for (const auto &zone : zones) {
+      std::string zone_name = zone.value("name", "");
+      Variables::CreateOne<TAveInlet>(variables, zone_name);
+    }
+  }
+
+  TAveInlet::TAveInlet(Variables &variables, const std::string_view zone_name)
+      : Input(variables, std::string(zone_name) + "_TAveInlet", units::UnitType::C, units::UnitType::K),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") =
+        "Average of inlets medium temperatures carried by the mass flow rates";
+    scalar_variable.append_attribute(" causality ") = " input ";
+    scalar_variable.append_attribute(" variability ") = "continuous";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "ThermodynamicTemperature";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void TAveInlet::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    // TODO: Do something with this value.
+  }
+
+  void T::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+    for (const auto &zone : zones) {
+      std::string zone_name = zone.value("name", "");
+      Variables::CreateOne<T>(variables, zone_name);
+    }
+  }
+
+  T::T(Variables &variables, const std::string_view zone_name)
+      : Input(variables, std::string(zone_name) + "_T", units::UnitType::C, units::UnitType::K), zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Temperature of the zone air";
+    scalar_variable.append_attribute("causality") = "input";
+    scalar_variable.append_attribute("variability") = "continuous";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "ThermodynamicTemperature";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    if (const auto v = Value(units::UnitSystem::EP)) {
+      energyplus::SetZoneTemperature(energyplus_data, zone_num_.get(energyplus_data), *v);
+    }
+  }
+
+  void X::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+    for (const auto &zone : zones) {
+      std::string zone_name = zone.value("name", "");
+      Variables::CreateOne<X>(variables, zone_name);
+    }
+  }
+
+  X::X(Variables &variables, const std::string_view zone_name)
+      : Input(variables, std::string(zone_name) + "_X", units::UnitType::one, units::UnitType::one),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Water vapor mass fraction in kg water/kg dry air";
+    scalar_variable.append_attribute("causality") = "input";
+    scalar_variable.append_attribute("variability") = "continuous";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void X::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    if (const auto v = Value(units::UnitSystem::EP)) {
+      energyplus::SetZoneHumidityRatio(energyplus_data, zone_num_.get(energyplus_data), *v);
+    }
+  }
+
+  void QGaiRadFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+    for (const auto &zone : zones) {
+      std::string zone_name = zone.value("name", "");
+      Variables::CreateOne<QGaiRadFlow>(variables, zone_name);
+    }
+  }
+
+  QGaiRadFlow::QGaiRadFlow(Variables &variables, const std::string_view zone_name)
+      : Input(variables, std::string(zone_name) + "_QGaiRad_flow", units::UnitType::W, units::UnitType::W),
+        zone_name_{zone_name}, actuator_name_(fmt::format("Spawn-Zone-{}-RadiantGains", zone_name_)),
+        handle_([this](EnergyPlus::EnergyPlusData &data) {
+          return energyplus::ActuatorHandle(data, actuator_type_, actuator_controltype_, actuator_name_);
+        })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Radiative sensible heat gain added to the zone";
+    scalar_variable.append_attribute("causality") = "input";
+    scalar_variable.append_attribute("variability") = "continuous";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "Power";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void QGaiRadFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    if (const auto v = Value(units::UnitSystem::EP)) {
+      energyplus::SetActuatorValue(energyplus_data, handle_.get(energyplus_data), *v);
+    }
+  }
+
   void QCooSenFlow::CreateAll(const UserConfig &user_config, Variables &variables)
   {
     const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
@@ -859,168 +1035,40 @@ namespace zone {
                        units::UnitSystem::EP);
   }
 
-  void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)
-  {
-    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+} // namespace zone
 
-    for (const auto &zone : zones) {
-      std::string zone_name = zone.value("name", "");
-      Variables::CreateOne<MInletsFlow>(variables, zone_name);
+namespace hvaczones {
+  void QCooSenFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto groups = user_config.spawnjson.value("model", json::object()).value("hvacZones", std::vector<json>(0));
+
+    for (const auto &group : groups) {
+      std::string group_name = group.value("name", "");
+      const auto zones = group.value("zones", std::vector<json>(0));
+      std::vector<std::string> zone_names(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<QCooSenFlow>(variables, group_name, zone_names);
     }
   }
 
-  MInletsFlow::MInletsFlow(Variables &variables, const std::string_view zone_name) // NOLINT
-      : Input(
-            variables, std::string(zone_name) + "_mInlets_flow", units::UnitType::kg_per_s, units::UnitType::kg_per_s),
-        zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  QCooSenFlow::QCooSenFlow(Variables &variables,
+                           const std::string_view group_name,
+                           const std::vector<std::string> &zone_names) // NOLINT
+      : Parameter(variables,
+                  std::string("hvac_sizing_group_") + std::string(group_name) + "_QCooSen_flow",
+                  units::UnitType::W,
+                  units::UnitType::W),
+        zone_names_(zone_names),
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") =
-        "Sum of positive mass flow rates into the zone for all air inlets (including infiltration)";
-    scalar_variable.append_attribute("causality") = "input";
-    scalar_variable.append_attribute("variability") = "continuous";
-
-    auto real = scalar_variable.append_child("Real");
-    real.append_attribute("quantity") = "MassFlowRate";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
-  }
-
-  void MInletsFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
-  {
-    // TODO: Do something with this value.
-    // It should probably impact the surface heat transfer coefficients.
-    // Right?
-  }
-
-  void TAveInlet::CreateAll(const UserConfig &user_config, Variables &variables)
-  {
-    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
-
-    for (const auto &zone : zones) {
-      std::string zone_name = zone.value("name", "");
-      Variables::CreateOne<TAveInlet>(variables, zone_name);
-    }
-  }
-
-  TAveInlet::TAveInlet(Variables &variables, const std::string_view zone_name)
-      : Input(variables, std::string(zone_name) + "_TAveInlet", units::UnitType::C, units::UnitType::K),
-        zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
-  {
-    auto scalar_variable = metadata_.append_child("ScalarVariable");
-    scalar_variable.append_attribute("name") = name_.c_str();
-    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") =
-        "Average of inlets medium temperatures carried by the mass flow rates";
-    scalar_variable.append_attribute(" causality ") = " input ";
-    scalar_variable.append_attribute(" variability ") = "continuous";
-
-    auto real = scalar_variable.append_child("Real");
-    real.append_attribute("quantity") = "ThermodynamicTemperature";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
-  }
-
-  void TAveInlet::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
-  {
-    // TODO: Do something with this value.
-  }
-
-  void T::CreateAll(const UserConfig &user_config, Variables &variables)
-  {
-    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
-
-    for (const auto &zone : zones) {
-      std::string zone_name = zone.value("name", "");
-      Variables::CreateOne<T>(variables, zone_name);
-    }
-  }
-
-  T::T(Variables &variables, const std::string_view zone_name)
-      : Input(variables, std::string(zone_name) + "_T", units::UnitType::C, units::UnitType::K), zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
-  {
-    auto scalar_variable = metadata_.append_child("ScalarVariable");
-    scalar_variable.append_attribute("name") = name_.c_str();
-    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Temperature of the zone air";
-    scalar_variable.append_attribute("causality") = "input";
-    scalar_variable.append_attribute("variability") = "continuous";
-
-    auto real = scalar_variable.append_child("Real");
-    real.append_attribute("quantity") = "ThermodynamicTemperature";
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
-  }
-
-  void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
-  {
-    if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetZoneTemperature(energyplus_data, zone_num_.get(energyplus_data), *v);
-    }
-  }
-
-  void X::CreateAll(const UserConfig &user_config, Variables &variables)
-  {
-    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
-
-    for (const auto &zone : zones) {
-      std::string zone_name = zone.value("name", "");
-      Variables::CreateOne<X>(variables, zone_name);
-    }
-  }
-
-  X::X(Variables &variables, const std::string_view zone_name)
-      : Input(variables, std::string(zone_name) + "_X", units::UnitType::one, units::UnitType::one),
-        zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
-  {
-    auto scalar_variable = metadata_.append_child("ScalarVariable");
-    scalar_variable.append_attribute("name") = name_.c_str();
-    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Water vapor mass fraction in kg water/kg dry air";
-    scalar_variable.append_attribute("causality") = "input";
-    scalar_variable.append_attribute("variability") = "continuous";
-
-    auto real = scalar_variable.append_child("Real");
-    real.append_attribute("relativeQuantity") = "false";
-    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
-  }
-
-  void X::Update(EnergyPlus::EnergyPlusData &energyplus_data)
-  {
-    if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetZoneHumidityRatio(energyplus_data, zone_num_.get(energyplus_data), *v);
-    }
-  }
-
-  void QGaiRadFlow::CreateAll(const UserConfig &user_config, Variables &variables)
-  {
-    const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
-
-    for (const auto &zone : zones) {
-      std::string zone_name = zone.value("name", "");
-      Variables::CreateOne<QGaiRadFlow>(variables, zone_name);
-    }
-  }
-
-  QGaiRadFlow::QGaiRadFlow(Variables &variables, const std::string_view zone_name)
-      : Input(variables, std::string(zone_name) + "_QGaiRad_flow", units::UnitType::W, units::UnitType::W),
-        zone_name_{zone_name}, actuator_name_(fmt::format("Spawn-Zone-{}-RadiantGains", zone_name_)),
-        handle_([this](EnergyPlus::EnergyPlusData &data) {
-          return energyplus::ActuatorHandle(data, actuator_type_, actuator_controltype_, actuator_name_);
-        })
-  {
-    auto scalar_variable = metadata_.append_child("ScalarVariable");
-    scalar_variable.append_attribute("name") = name_.c_str();
-    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Radiative sensible heat gain added to the zone";
-    scalar_variable.append_attribute("causality") = "input";
-    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("description") = "Design sensible cooling load";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
+    scalar_variable.append_attribute("initial") = "calculated";
 
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("quantity") = "Power";
@@ -1028,13 +1076,388 @@ namespace zone {
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
   }
 
-  void QGaiRadFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  void QCooSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetActuatorValue(energyplus_data, handle_.get(energyplus_data), *v);
+    Variable::SetValue(energyplus::HVACSizingGroupDesignCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+                       units::UnitSystem::EP);
+  }
+
+  void QCooLatFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto groups = user_config.spawnjson.value("model", json::object()).value("hvacZones", std::vector<json>(0));
+
+    for (const auto &group : groups) {
+      std::string group_name = group.value("name", "");
+      const auto zones = group.value("zones", std::vector<json>(0));
+      std::vector<std::string> zone_names(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<QCooLatFlow>(variables, group_name, zone_names);
     }
   }
-} // namespace zone
+
+  QCooLatFlow::QCooLatFlow(Variables &variables,
+                           const std::string_view group_name,
+                           const std::vector<std::string> &zone_names) // NOLINT
+      : Parameter(variables,
+                  std::string("hvac_sizing_group_") + std::string(group_name) + "_QCooLat_flow",
+                  units::UnitType::W,
+                  units::UnitType::W),
+        zone_names_(zone_names),
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Design latent cooling load";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "Power";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void QCooLatFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::HVACSizingGroupDesignCoolingLatentLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+        units::UnitSystem::EP);
+  }
+
+  void TOutCoo::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    const auto groups = user_config.spawnjson.value("model", json::object()).value("hvacZones", std::vector<json>(0));
+
+    for (const auto &group : groups) {
+      std::string group_name = group.value("name", "");
+      const auto zones = group.value("zones", std::vector<json>(0));
+      std::vector<std::string> zone_names(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<TOutCoo>(variables, group_name, zone_names);
+    }
+  }
+
+  TOutCoo::TOutCoo(Variables &variables,
+                   const std::string_view group_name,
+                   const std::vector<std::string> &zone_names) // NOLINT
+      : Parameter(variables,
+                  std::string("hvac_sizing_group_") + std::string(group_name) + "_TOutCoo",
+                  units::UnitType::C,
+                  units::UnitType::K),
+        zone_names_(zone_names),
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Outdoor drybulb temperature at the cooling design load";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "ThermodynamicTemperature";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void TOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::HVACSizingGroupOutdoorTempAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
+        units::UnitSystem::EP);
+  }
+
+  // void XOutCoo::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<XOutCoo>(variables, zone_name);
+  //  }
+  //}
+
+  // XOutCoo::XOutCoo(Variables &variables, const std::string_view zone_name) // NOLINT
+  //     : Parameter(variables, std::string(zone_name) + "_XOutCoo", units::UnitType::one, units::UnitType::one),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") =
+  //       "Outdoor humidity ratio at the cooling design load per total air mass of the zone";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void XOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneOutdoorHumidityRatioAtPeakCool(energyplus_data,
+  //   zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+
+  // void MOutCooFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<MOutCooFlow>(variables, zone_name);
+  //  }
+  //}
+
+  // MOutCooFlow::MOutCooFlow(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(
+  //           variables, std::string(zone_name) + "_mOutCoo_flow", units::UnitType::kg_per_s,
+  //           units::UnitType::kg_per_s),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Minimum outdoor air flow rate during the cooling design load";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "MassFlowRate";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void MOutCooFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   // TODO: get this value
+  //   Variable::SetValue(0.0, units::UnitSystem::EP);
+  // }
+
+  // void TCoo::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<TCoo>(variables, zone_name);
+  //  }
+  //}
+
+  // TCoo::TCoo(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(variables, std::string(zone_name) + "_TCoo", units::UnitType::s, units::UnitType::s),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Time at which these loads occurred";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "Time";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void TCoo::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneTimeAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+
+  // void QHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<QHeaFlow>(variables, zone_name);
+  //  }
+  //}
+
+  // QHeaFlow::QHeaFlow(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(variables, std::string(zone_name) + "_QHea_flow", units::UnitType::W, units::UnitType::W),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Design heating load";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "Power";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void QHeaFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneDesignHeatingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+
+  // void TOutHea::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<TOutHea>(variables, zone_name);
+  //  }
+  //}
+
+  // TOutHea::TOutHea(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(variables, std::string(zone_name) + "_TOutHea", units::UnitType::C, units::UnitType::K),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Outdoor drybulb temperature at the heating design load";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "ThermodynamicTemperature";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void TOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneOutdoorTempAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+
+  // void XOutHea::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<XOutHea>(variables, zone_name);
+  //  }
+  //}
+
+  // XOutHea::XOutHea(Variables &variables, const std::string_view zone_name) // NOLINT
+  //     : Parameter(variables, std::string(zone_name) + "_XOutHea", units::UnitType::one, units::UnitType::one),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") =
+  //       "Outdoor humidity ratio at the heating design load per total air mass of the zone";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void XOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneOutdoorHumidityRatioAtPeakHeat(energyplus_data,
+  //   zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+
+  // void MOutHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<MOutHeaFlow>(variables, zone_name);
+  //  }
+  //}
+
+  // MOutHeaFlow::MOutHeaFlow(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(
+  //           variables, std::string(zone_name) + "_mOutHea_flow", units::UnitType::kg_per_s,
+  //           units::UnitType::kg_per_s),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Minimum outdoor air flow rate during the heating design load";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "MassFlowRate";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void MOutHeaFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   // TODO: get this value
+  //   Variable::SetValue(0.0, units::UnitSystem::EP);
+  // }
+
+  // void THea::CreateAll(const UserConfig &user_config, Variables &variables)
+  //{
+  //   const auto zones = user_config.spawnjson.value("model", json::object()).value("zones", std::vector<json>(0));
+
+  //  for (const auto &zone : zones) {
+  //    std::string zone_name = zone.value("name", "");
+  //    Variables::CreateOne<THea>(variables, zone_name);
+  //  }
+  //}
+
+  // THea::THea(Variables &variables, const std::string_view zone_name)
+  //     : Parameter(variables, std::string(zone_name) + "_THea", units::UnitType::s, units::UnitType::s),
+  //       zone_name_(zone_name),
+  //       zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  //{
+  //   auto scalar_variable = metadata_.append_child("ScalarVariable");
+  //   scalar_variable.append_attribute("name") = name_.c_str();
+  //   scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+  //   scalar_variable.append_attribute("description") = "Time at which these loads occurred";
+  //   scalar_variable.append_attribute("causality") = "calculatedParameter";
+  //   scalar_variable.append_attribute("variability") = "fixed";
+  //   scalar_variable.append_attribute("initial") = "calculated";
+
+  //  auto real = scalar_variable.append_child("Real");
+  //  real.append_attribute("quantity") = "Time";
+  //  real.append_attribute("relativeQuantity") = "false";
+  //  real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  //}
+
+  // void THea::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
+  //{
+  //   Variable::SetValue(energyplus::ZoneTimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+  //                      units::UnitSystem::EP);
+  // }
+} // namespace hvaczones
 
 namespace other {
   void Sensor::CreateAll(const UserConfig &user_config, Variables &variables)

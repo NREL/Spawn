@@ -1,4 +1,5 @@
 #include <string_view>
+#include <vector>
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -23,6 +24,9 @@ private:
 
 [[nodiscard]] int ZoneNum(EnergyPlus::EnergyPlusData &energyplus_data, const std::string_view zone_name);
 
+[[nodiscard]] std::vector<int> ZoneNums(EnergyPlus::EnergyPlusData &energyplus_data,
+                                        const std::vector<std::string> &zone_names);
+
 [[nodiscard]] double ZoneVolume(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 [[nodiscard]] double ZoneFloorArea(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
@@ -33,25 +37,42 @@ private:
 
 [[nodiscard]] double ZoneMeanRadiantTemp(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneDesignCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data);
 
-[[nodiscard]] double ZoneDesignCoolingLatentLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+namespace zone_sizing {
 
-[[nodiscard]] double ZoneOutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneOutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                        int zone_num);
+  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneTimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneDesignHeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneOutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneOutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                        int zone_num);
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-[[nodiscard]] double ZoneTimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
+  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
+} // namespace zone_sizing
+
+namespace zone_group_sizing {
+
+  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                           const std::vector<int> &zone_nums);
+
+  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                         const std::vector<int> &zone_nums);
+
+  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             const std::vector<int> &zone_nums);
+
+} // namespace zone_group_sizing
 
 void SetZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int zone_num, const double &temp);
 

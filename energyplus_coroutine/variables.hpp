@@ -2,12 +2,12 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
+#include <functional>
 #include <memory>
 #include <optional>
 #include <pugixml.hpp>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -205,9 +205,13 @@ private:
 // Begin defining the specific Variable types, which are documented here:
 // https://lbl-srg.github.io/soep/softwareArchitecture.html#coupling-of-the-envelope-model
 // Namespaces are used to disambiguate variables such as temperature T of a zone versus a surface
+// If the number of variables becomes unwieldy, these can be divided into multiple files.
 //
 // All Variable types must have a static CreateAll factory method.
-// Constructor and factory are private, because instances are created by the Variables friend class.
+// Constructor and factory are private, because instances are created by the friended "Variables" class.
+//
+// Namespaces are used to organize the variables, and in some cases namespaces disambiguate, such as the case
+// spawn::variable::zone::T and spawn::variable::surface::T.
 namespace zone {
   class V : public Parameter
   {
@@ -298,6 +302,74 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+  };
+
+  class MInletsFlow : public Input
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit MInletsFlow(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class TAveInlet : public Input
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit TAveInlet(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class T : public Input
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit T(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class X : public Input
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit X(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class QGaiRadFlow : public Input
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit QGaiRadFlow(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    const std::string zone_name_;
+    const std::string actuator_name_;
+    const std::string actuator_type_{"OtherEquipment"};
+    const std::string actuator_controltype_{"Power Level"};
+    CachedValue<int> handle_;
   };
 
   class QCooSenFlow : public Parameter
@@ -442,75 +514,158 @@ namespace zone {
     std::string zone_name_;
     CachedValue<int> zone_num_;
   };
-
-  class MInletsFlow : public Input
-  {
-    friend class variable::Variables;
-
-  private:
-    explicit MInletsFlow(Variables &variables, const std::string_view zone_name);
-    static void CreateAll(const UserConfig &user_config, Variables &variables);
-    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
-
-    std::string zone_name_;
-    CachedValue<int> zone_num_;
-  };
-
-  class TAveInlet : public Input
-  {
-    friend class variable::Variables;
-
-  private:
-    explicit TAveInlet(Variables &variables, const std::string_view zone_name);
-    static void CreateAll(const UserConfig &user_config, Variables &variables);
-    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
-
-    std::string zone_name_;
-    CachedValue<int> zone_num_;
-  };
-
-  class T : public Input
-  {
-    friend class variable::Variables;
-
-  private:
-    explicit T(Variables &variables, const std::string_view zone_name);
-    static void CreateAll(const UserConfig &user_config, Variables &variables);
-    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
-
-    std::string zone_name_;
-    CachedValue<int> zone_num_;
-  };
-
-  class X : public Input
-  {
-    friend class variable::Variables;
-
-  private:
-    explicit X(Variables &variables, const std::string_view zone_name);
-    static void CreateAll(const UserConfig &user_config, Variables &variables);
-    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
-
-    std::string zone_name_;
-    CachedValue<int> zone_num_;
-  };
-
-  class QGaiRadFlow : public Input
-  {
-    friend class variable::Variables;
-
-  private:
-    explicit QGaiRadFlow(Variables &variables, const std::string_view zone_name);
-    static void CreateAll(const UserConfig &user_config, Variables &variables);
-    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
-
-    const std::string zone_name_;
-    const std::string actuator_name_;
-    const std::string actuator_type_{"OtherEquipment"};
-    const std::string actuator_controltype_{"Power Level"};
-    CachedValue<int> handle_;
-  };
 } // namespace zone
+
+namespace hvaczones {
+  class QCooSenFlow : public Parameter
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit QCooSenFlow(Variables &variables,
+                         const std::string_view group_name,
+                         const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
+
+  class QCooLatFlow : public Parameter
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit QCooLatFlow(Variables &variables,
+                         const std::string_view group_name,
+                         const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
+
+  class TOutCoo : public Parameter
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit TOutCoo(Variables &variables,
+                     const std::string_view group_name,
+                     const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
+
+  // class XOutCoo : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit XOutCoo(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class MOutCooFlow : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit MOutCooFlow(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class TCoo : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit TCoo(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class QHeaFlow : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit QHeaFlow(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class TOutHea : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit TOutHea(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class XOutHea : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit XOutHea(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class MOutHeaFlow : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit MOutHeaFlow(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+
+  // class THea : public Parameter
+  //{
+  //   friend class variable::Variables;
+
+  // private:
+  //   explicit THea(Variables &variables, const std::vector<std::string_view> zone_names);
+  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
+  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+  //  std::string zone_name_;
+  //  CachedValue<int> zone_num_;
+  //};
+} // namespace hvaczones
 
 namespace other {
   class Sensor : public Output
