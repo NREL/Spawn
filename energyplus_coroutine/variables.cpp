@@ -679,7 +679,7 @@ namespace zone {
 
   void QCooSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneDesignCoolingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::SensibleCoolingLoad(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -714,7 +714,7 @@ namespace zone {
 
   void QCooLatFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneDesignCoolingLatentLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::LatentCoolingLoad(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -749,7 +749,7 @@ namespace zone {
 
   void TOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneOutdoorTempAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -784,8 +784,9 @@ namespace zone {
 
   void XOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneOutdoorHumidityRatioAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
-                       units::UnitSystem::EP);
+    Variable::SetValue(
+        energyplus::zone_sizing::OutdoorHumidityRatioAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+        units::UnitSystem::EP);
   }
 
   void MOutCooFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -855,7 +856,7 @@ namespace zone {
 
   void TCoo::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneTimeAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -890,7 +891,7 @@ namespace zone {
 
   void QHeaFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneDesignHeatingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::HeatingLoad(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -925,7 +926,7 @@ namespace zone {
 
   void TOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneOutdoorTempAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
@@ -960,8 +961,9 @@ namespace zone {
 
   void XOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneOutdoorHumidityRatioAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
-                       units::UnitSystem::EP);
+    Variable::SetValue(
+        energyplus::zone_sizing::OutdoorHumidityRatioAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+        units::UnitSystem::EP);
   }
 
   void MOutHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1031,13 +1033,13 @@ namespace zone {
 
   void THea::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::ZoneTimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
   }
 
 } // namespace zone
 
-namespace hvaczones {
+namespace zone_group_sizing {
   void QCooSenFlow::CreateAll(const UserConfig &user_config, Variables &variables)
   {
     const auto groups = user_config.spawnjson.value("model", json::object()).value("hvacZones", std::vector<json>(0));
@@ -1078,8 +1080,9 @@ namespace hvaczones {
 
   void QCooSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::HVACSizingGroupDesignCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
-                       units::UnitSystem::EP);
+    Variable::SetValue(
+        energyplus::zone_group_sizing::SensibleCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+        units::UnitSystem::EP);
   }
 
   void QCooLatFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1123,7 +1126,7 @@ namespace hvaczones {
   void QCooLatFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     Variable::SetValue(
-        energyplus::HVACSizingGroupDesignCoolingLatentLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+        energyplus::zone_group_sizing::LatentCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
         units::UnitSystem::EP);
   }
 
@@ -1168,7 +1171,7 @@ namespace hvaczones {
   void TOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     Variable::SetValue(
-        energyplus::HVACSizingGroupOutdoorTempAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
+        energyplus::zone_group_sizing::OutdoorTempAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
         units::UnitSystem::EP);
   }
 
@@ -1457,7 +1460,7 @@ namespace hvaczones {
   //   Variable::SetValue(energyplus::ZoneTimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
   //                      units::UnitSystem::EP);
   // }
-} // namespace hvaczones
+} // namespace zone_group_sizing
 
 namespace other {
   void Sensor::CreateAll(const UserConfig &user_config, Variables &variables)

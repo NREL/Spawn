@@ -516,7 +516,7 @@ namespace zone {
   };
 } // namespace zone
 
-namespace hvaczones {
+namespace zone_group_sizing {
   class QCooSenFlow : public Parameter
   {
     friend class variable::Variables;
@@ -665,7 +665,7 @@ namespace hvaczones {
   //  std::string zone_name_;
   //  CachedValue<int> zone_num_;
   //};
-} // namespace hvaczones
+} // namespace zone_group_sizing
 
 namespace other {
   class Sensor : public Output

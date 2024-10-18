@@ -212,14 +212,14 @@ namespace zone_group_sizing {
 
     const auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
     const auto num_design_days = zone_sizing.isize1();
-    std::vector<PeakLoad> peak_loads(num_design_days);
+    std::vector<PeakLoad> peak_loads;
 
     for (int design_day_index = 0; design_day_index <= num_design_days; ++design_day_index) {
       const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, 0)).size());
       std::vector<double> combined_group_load(num_timesteps);
 
       for (const auto &zone_num : zone_nums) {
-        const auto &load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
+        const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
         for (int i = 0; i < num_timesteps; ++i) {
           combined_group_load[i] += load_seq[i];
         }
@@ -268,10 +268,10 @@ namespace zone_group_sizing {
       return sizing_data.CoolLoadSeq;
     };
 
-    const auto &peak_load = GetPeakLoad(energyplus_data, zone_nums, get_cooling_load_seq);
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_cooling_load_seq);
     // The outdoor temperature should be the same for all zones, so get the sizing data for the
     // peak design day, using any one of the zones in the group.
-    const auto &zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, zone_nums.front());
+    const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, zone_nums.front());
 
     return zone_sizing.CoolOutTempSeq(peak_load.day_timestep);
   }
