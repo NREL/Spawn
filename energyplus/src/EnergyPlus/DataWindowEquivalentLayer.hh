@@ -108,6 +108,9 @@ namespace DataWindowEquivalentLayer {
         Num
     };
 
+    static constexpr std::array<std::string_view, (int)Orientation::Num> orientationNames = {"Horizontal", "Vertical"};
+    static constexpr std::array<std::string_view, (int)Orientation::Num> orientationNamesUC = {"HORIZONTAL", "VERTICAL"};
+
     enum class AngleType
     {
         Invalid = -1,
@@ -288,6 +291,10 @@ struct WindowEquivLayerData : BaseGlobalStruct
     Array1D<DataWindowEquivalentLayer::CFSLAYER> CFSLayers;
     Array1D<DataWindowEquivalentLayer::CFSTY> CFS;
     Array1D<DataWindowEquivalentLayer::CFSGAP> CFSGaps;
+
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void clear_state() override
     {

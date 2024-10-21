@@ -127,7 +127,7 @@ public:
 
     bool getDefaultValue(EnergyPlusData &state, std::string const &objectWord, std::string const &fieldName, std::string &value);
 
-    std::string getAlphaFieldValue(json const &ep_object, json const &schema_obj_props, std::string const &fieldName);
+    std::string getAlphaFieldValue(json const &ep_object, json const &schema_obj_props, std::string const &fieldName, bool uc = true);
 
     Real64 getRealFieldValue(json const &ep_object, json const &schema_obj_props, std::string const &fieldName);
 
@@ -153,6 +153,8 @@ public:
                        ObjexxFCL::Optional<Array1D_string> NumericFieldNames = _);
 
     int getIDFObjNum(EnergyPlusData &state, std::string_view Object, int const Number);
+
+    std::vector<std::string> getIDFOrderedKeys(EnergyPlusData &state, std::string_view Object);
 
     int getJSONObjNum(EnergyPlusData &state, std::string const &Object, int const Number);
 
@@ -321,6 +323,10 @@ private:
 struct DataInputProcessing : BaseGlobalStruct
 {
     std::unique_ptr<InputProcessor> inputProcessor = InputProcessor::factory();
+
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void clear_state() override
     {
