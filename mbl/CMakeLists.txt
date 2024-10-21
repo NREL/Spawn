@@ -22,8 +22,8 @@ if(ENABLE_BUILDINGS_LIBRARY)
     MBL
     BUILD_ALWAYS 1
     BUILD_IN_SOURCE
-    GIT_REPOSITORY https://github.com/kbenne/modelica-buildings.git
-    GIT_TAG 08ea0db72514a7773d9afc05bf889e0ce8999e30
+    GIT_REPOSITORY https://github.com/lbl-srg/modelica-buildings.git
+    GIT_TAG 112520ad4e978393d3bde882525a9f92901343f3
     GIT_SHALLOW
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND}
