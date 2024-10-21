@@ -114,14 +114,14 @@ struct HeatBalSurfData : BaseGlobalStruct
     Array1D<Real64> SurfWinCoeffAdjRatio; // Convective Coefficient Adjustment Ratio assuming highly conductive frames
                                           // Only applicable for exterior window surfaces
 
-    Array1D<Real64> SurfHAirExt;         // Outside Radiation Coefficient to Air
-    Array1D<Real64> SurfHSkyExt;         // Outside Radiation Coefficient to Sky
-    Array1D<Real64> SurfHGrdExt;         // Outside Radiation Coefficient to Ground
-    Array1D<Real64> SurfHConvInt;        // INSIDE CONVECTION COEFFICIENT
-    Array1D<Real64> SurfTempSource;      // Temperature at the source location for each heat transfer surface
-    Array1D<Real64> SurfTempUserLoc;     // Temperature at the user specified location for each heat transfer surface
-    Array1D<Real64> SurfTempInMovInsRep; // Temperature of interior movable insulation on the side facing the zone
-    Array1D<Real64> SurfHSrdSurfExt;     // Outside Radiation Coefficient to Surrounding Surfaces
+    Array1D<Real64> SurfHAirExt;          // Outside Radiation Coefficient to Air
+    Array1D<Real64> SurfHSkyExt;          // Outside Radiation Coefficient to Sky
+    Array1D<Real64> SurfHGrdExt;          // Outside Radiation Coefficient to Ground
+    Array1D<Real64> SurfHConvInt;         // INSIDE CONVECTION COEFFICIENT
+    Array1D<Real64> SurfTempSource;       // Temperature at the source location for each heat transfer surface
+    Array1D<Real64> SurfTempUserLoc;      // Temperature at the user specified location for each heat transfer surface
+    Array1D<Real64> SurfTempInMovInsRep;  // Temperature of interior movable insulation on the side facing the zone
+    Array1D<Real64> SurfHSrdSurfExt;      // Outside Radiation Coefficient to Surrounding Surfaces
 
     Array1D<Real64> SurfQConvInRep;        // Surface convection heat gain at inside face [J]
     Array1D<Real64> SurfQdotConvInRep;     // Surface convection heat transfer rate at inside face surface [W] (report)
@@ -204,8 +204,9 @@ struct HeatBalSurfData : BaseGlobalStruct
     Array1D<Real64> SurfQAdditionalHeatSourceOutside; // Additional heat source term on boundary conditions at outside surface
     Array1D<Real64> SurfQAdditionalHeatSourceInside;  // Additional heat source term on boundary conditions at inside surface
 
-    Array1D<Real64> SurfOpaqInitialDifSolInAbs;  // Initial diffuse solar absorbed on inside of opaque surface [W/m2]
-    Array1D<Real64> SurfWinInitialDifSolInTrans; // Initial diffuse solar transmitted out through window surface [W/m2]
+    Array1D<Real64> SurfOpaqInitialDifSolInAbs;   // Initial diffuse solar absorbed on inside of opaque surface [W/m2]
+    Array1D<Real64> SurfWinInitialDifSolInTrans;  // Initial diffuse solar transmitted out through window inside face [W/m2]
+    Array1D<Real64> SurfWinInitialBeamSolInTrans; // Interior beam solar transmitted out through window inside face [W]
 
     // REAL(r64) variables from BLDCTF.inc and only used in the Heat Balance
     // Hist Term (1 = Current Time, 2-MaxCTFTerms = previous times)
@@ -244,9 +245,14 @@ struct HeatBalSurfData : BaseGlobalStruct
     Array1D<Real64> SurfAbsThermalInt;                    // Thermal absorptivity of surface inside face or exterior movable insulation if present
     std::vector<int> SurfMovInsulIndexList;
     std::vector<int> SurfMovSlatsIndexList;
+
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
-        *this = HeatBalSurfData();
+        new (this) HeatBalSurfData();
     }
 };
 
