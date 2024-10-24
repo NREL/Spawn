@@ -184,7 +184,6 @@ namespace SurfaceGroundHeatExchanger {
         // Using/Aliasing
         using BranchNodeConnections::TestCompSet;
         using FluidProperties::CheckFluidPropertyName;
-        using FluidProperties::FindGlycol;
 
         using NodeInputManager::GetOnlySingleNode;
         using namespace DataLoopNode;
@@ -353,93 +352,94 @@ namespace SurfaceGroundHeatExchanger {
                                 "Ground Heat Exchanger Heat Transfer Rate",
                                 Constant::Units::W,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).HeatTransferRate,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Surface Heat Transfer Rate",
                                 Constant::Units::W,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).SurfHeatTransferRate,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Heat Transfer Energy",
                                 Constant::Units::J,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Energy,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Summed,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Sum,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Mass Flow Rate",
                                 Constant::Units::kg_s,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).MassFlowRate,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Inlet Temperature",
                                 Constant::Units::C,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).InletTemp,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Outlet Temperature",
                                 Constant::Units::C,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).OutletTemp,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Top Surface Temperature",
                                 Constant::Units::C,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).TopSurfaceTemp,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Bottom Surface Temperature",
                                 Constant::Units::C,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).BtmSurfaceTemp,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Top Surface Heat Transfer Energy per Area",
                                 Constant::Units::J_m2,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).TopSurfaceFlux,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Bottom Surface Heat Transfer Energy per Area",
                                 Constant::Units::J_m2,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).BtmSurfaceFlux,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Surface Heat Transfer Energy",
                                 Constant::Units::J,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).SurfEnergy,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Summed,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Sum,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
             SetupOutputVariable(state,
                                 "Ground Heat Exchanger Source Temperature",
                                 Constant::Units::C,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).SourceTemp,
-                                OutputProcessor::SOVTimeStepType::Plant,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataSurfaceGroundHeatExchangers->SurfaceGHE(Item).Name);
         }
 
         if (state.dataSurfaceGroundHeatExchangers->NoSurfaceGroundTempObjWarning) {
-            if (!state.dataEnvrn->GroundTemp_SurfaceObjInput) {
+            if (!state.dataEnvrn->GroundTempInputs[(int)DataEnvironment::GroundTempType::Shallow]) {
                 ShowWarningError(state, "GetSurfaceGroundHeatExchanger: No \"Site:GroundTemperature:Shallow\" were input.");
                 ShowContinueError(state,
-                                  format("Defaults, constant throughout the year of ({:.1R}) will be used.", state.dataEnvrn->GroundTemp_Surface));
+                                  format("Defaults, constant throughout the year of ({:.1R}) will be used.",
+                                         state.dataEnvrn->GroundTemp[(int)DataEnvironment::GroundTempType::Shallow]));
             }
             state.dataSurfaceGroundHeatExchangers->NoSurfaceGroundTempObjWarning = false;
         }
@@ -474,6 +474,8 @@ namespace SurfaceGroundHeatExchanger {
         int LayerNum;      // material layer number for bottom
         Real64 OutDryBulb; // Height Dependent dry bulb.
 
+        auto &s_mat = state.dataMaterial;
+
         // get QTF data - only once
         if (this->InitQTF) {
             for (Cons = 1; Cons <= state.dataHeatBal->TotConstructs; ++Cons) {
@@ -496,13 +498,11 @@ namespace SurfaceGroundHeatExchanger {
                     this->CTFTSourceQ = state.dataConstruction->Construct(Cons).CTFTSourceQ;     // w coefficents
                     this->ConstructionNum = Cons;
                     // surface properties
-                    auto const *thisMaterialLayer = dynamic_cast<Material::MaterialChild *>(
-                        state.dataMaterial->Material(state.dataConstruction->Construct(Cons).LayerPoint(LayerNum)));
+                    auto const *thisMaterialLayer = s_mat->materials(state.dataConstruction->Construct(Cons).LayerPoint(LayerNum));
                     assert(thisMaterialLayer != nullptr);
                     this->BtmRoughness = thisMaterialLayer->Roughness;
                     this->TopThermAbs = thisMaterialLayer->AbsorpThermal;
-                    auto const *thisMaterial1 =
-                        dynamic_cast<Material::MaterialChild *>(state.dataMaterial->Material(state.dataConstruction->Construct(Cons).LayerPoint(1)));
+                    auto const *thisMaterial1 = s_mat->materials(state.dataConstruction->Construct(Cons).LayerPoint(1));
                     assert(thisMaterial1 != nullptr);
                     this->TopRoughness = thisMaterial1->Roughness;
                     this->TopThermAbs = thisMaterial1->AbsorpThermal;
@@ -538,7 +538,7 @@ namespace SurfaceGroundHeatExchanger {
             state.dataSurfaceGroundHeatExchangers->PastBeamSolarRad = state.dataEnvrn->BeamSolarRad;
             state.dataSurfaceGroundHeatExchangers->PastSolarDirCosVert = state.dataEnvrn->SOLCOS(3);
             state.dataSurfaceGroundHeatExchangers->PastDifSolarRad = state.dataEnvrn->DifSolarRad;
-            state.dataSurfaceGroundHeatExchangers->PastGroundTemp = state.dataEnvrn->GroundTemp_Surface;
+            state.dataSurfaceGroundHeatExchangers->PastGroundTemp = state.dataEnvrn->GroundTemp[(int)DataEnvironment::GroundTempType::Shallow];
             state.dataSurfaceGroundHeatExchangers->PastIsRain = state.dataEnvrn->IsRain;
             state.dataSurfaceGroundHeatExchangers->PastIsSnow = state.dataEnvrn->IsSnow;
             state.dataSurfaceGroundHeatExchangers->PastOutDryBulbTemp = OutDryBulbTempAt(state, SurfaceHXHeight);
@@ -731,7 +731,7 @@ namespace SurfaceGroundHeatExchanger {
             state.dataSurfaceGroundHeatExchangers->PastBeamSolarRad = state.dataEnvrn->BeamSolarRad;
             state.dataSurfaceGroundHeatExchangers->PastSolarDirCosVert = state.dataEnvrn->SOLCOS(3);
             state.dataSurfaceGroundHeatExchangers->PastDifSolarRad = state.dataEnvrn->DifSolarRad;
-            state.dataSurfaceGroundHeatExchangers->PastGroundTemp = state.dataEnvrn->GroundTemp_Surface;
+            state.dataSurfaceGroundHeatExchangers->PastGroundTemp = state.dataEnvrn->GroundTemp[(int)DataEnvironment::GroundTempType::Shallow];
             state.dataSurfaceGroundHeatExchangers->PastIsRain = state.dataEnvrn->IsRain;
             state.dataSurfaceGroundHeatExchangers->PastIsSnow = state.dataEnvrn->IsSnow;
             state.dataSurfaceGroundHeatExchangers->PastOutDryBulbTemp = OutDryBulbTempAt(state, SurfaceHXHeight);
@@ -781,7 +781,7 @@ namespace SurfaceGroundHeatExchanger {
                                        TempB,
                                        state.dataSurfaceGroundHeatExchangers->PastOutDryBulbTemp,
                                        state.dataSurfaceGroundHeatExchangers->PastOutDryBulbTemp,
-                                       state.dataEnvrn->GroundTemp_Surface);
+                                       state.dataEnvrn->GroundTemp[(int)DataEnvironment::GroundTempType::Shallow]);
                     // under-relax
                     TempBtm = TempBtm * (1.0 - RelaxT) + RelaxT * TempB;
                     // update flux record

@@ -60,17 +60,16 @@ void Spawn::start()
         sim_state.dataHeatBal->MaxAllowedDelTemp = user_config_.relativeSurfaceTolerance();
 
         RunEnergyPlus(sim_state);
-
-        {
-          std::unique_lock<std::mutex> lk(sim_mutex);
-          iterate_flag = false;
-          is_running = false;
-        }
-        iterate_cv.notify_one();
       } catch (...) {
-        std::cout << "there was an exception in the simulation thread" << std::endl;
         sim_exception_ptr = std::current_exception();
       }
+
+      {
+        std::unique_lock<std::mutex> lk(sim_mutex);
+        iterate_flag = false;
+        is_running = false;
+      }
+      iterate_cv.notify_one();
     };
 
     requested_time_ = start_time_.Seconds();
@@ -78,13 +77,6 @@ void Spawn::start()
     // This will make the EnergyPlus simulation thread go through startup/warmup,
     // and reach the requested start time.
     iterate();
-
-    // We might see isRunning return false, before
-    // the EnergyPlus thread is terminated, therefore this check
-    // will wait for the EnergyPlus thread to finish.
-    if (!isRunning()) {
-      sim_thread.join();
-    }
 
     variables_.UpdateParameters(sim_state);
 
@@ -99,6 +91,7 @@ void Spawn::wait()
   iterate_cv.wait(lk, [&]() { return (!iterate_flag) || (!is_running) || sim_exception_ptr; });
 
   if (sim_exception_ptr) {
+    sim_thread.join();
     std::rethrow_exception(sim_exception_ptr);
   }
 }

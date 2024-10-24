@@ -139,7 +139,7 @@ namespace TranspiredCollector {
         // Setup to avoid string comparisons after first call
 
         // Using/Aliasing
-        using DataHVACGlobals::TempControlTol;
+        using HVAC::TempControlTol;
 
         using ScheduleManager::GetCurrentScheduleValue;
 
@@ -748,104 +748,103 @@ namespace TranspiredCollector {
                                 "Solar Collector Heat Exchanger Effectiveness",
                                 Constant::Units::None,
                                 state.dataTranspiredCollector->UTSC(Item).HXeff,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Leaving Air Temperature",
                                 Constant::Units::C,
                                 state.dataTranspiredCollector->UTSC(Item).TairHX,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Outside Face Suction Velocity",
                                 Constant::Units::m_s,
                                 state.dataTranspiredCollector->UTSC(Item).Vsuction,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Surface Temperature",
                                 Constant::Units::C,
                                 state.dataTranspiredCollector->UTSC(Item).Tcoll,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Plenum Air Temperature",
                                 Constant::Units::C,
                                 state.dataTranspiredCollector->UTSC(Item).Tplen,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Sensible Heating Rate",
                                 Constant::Units::W,
                                 state.dataTranspiredCollector->UTSC(Item).SensHeatingRate,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Sensible Heating Energy",
                                 Constant::Units::J,
                                 state.dataTranspiredCollector->UTSC(Item).SensHeatingEnergy,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Summed,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Sum,
                                 state.dataTranspiredCollector->UTSC(Item).Name,
                                 Constant::eResource::SolarAir,
-                                OutputProcessor::SOVEndUseCat::HeatProduced,
-                                {},
-                                OutputProcessor::SOVGroup::HVAC);
+                                OutputProcessor::Group::HVAC,
+                                OutputProcessor::EndUseCat::HeatProduced);
 
             SetupOutputVariable(state,
                                 "Solar Collector Natural Ventilation Air Change Rate",
                                 Constant::Units::ach,
                                 state.dataTranspiredCollector->UTSC(Item).PassiveACH,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Natural Ventilation Mass Flow Rate",
                                 Constant::Units::kg_s,
                                 state.dataTranspiredCollector->UTSC(Item).PassiveMdotVent,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Wind Natural Ventilation Mass Flow Rate",
                                 Constant::Units::kg_s,
                                 state.dataTranspiredCollector->UTSC(Item).PassiveMdotWind,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Buoyancy Natural Ventilation Mass Flow Rate",
                                 Constant::Units::kg_s,
                                 state.dataTranspiredCollector->UTSC(Item).PassiveMdotTherm,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Incident Solar Radiation",
                                 Constant::Units::W_m2,
                                 state.dataTranspiredCollector->UTSC(Item).Isc,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector System Efficiency",
                                 Constant::Units::None,
                                 state.dataTranspiredCollector->UTSC(Item).UTSCEfficiency,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
             SetupOutputVariable(state,
                                 "Solar Collector Surface Efficiency",
                                 Constant::Units::None,
                                 state.dataTranspiredCollector->UTSC(Item).UTSCCollEff,
-                                OutputProcessor::SOVTimeStepType::System,
-                                OutputProcessor::SOVStoreType::Average,
+                                OutputProcessor::TimeStepType::System,
+                                OutputProcessor::StoreType::Average,
                                 state.dataTranspiredCollector->UTSC(Item).Name);
         }
 
@@ -931,8 +930,7 @@ namespace TranspiredCollector {
                                 state.dataHVACGlobal->SetPointErrorFlag = true;
                             } else {
                                 // need call to EMS to check node
-                                CheckIfNodeSetPointManagedByEMS(
-                                    state, ControlNode, EMSManager::SPControlType::TemperatureSetPoint, state.dataHVACGlobal->SetPointErrorFlag);
+                                CheckIfNodeSetPointManagedByEMS(state, ControlNode, HVAC::CtrlVarType::Temp, state.dataHVACGlobal->SetPointErrorFlag);
                                 if (state.dataHVACGlobal->SetPointErrorFlag) {
                                     ShowSevereError(
                                         state,
@@ -1080,6 +1078,7 @@ namespace TranspiredCollector {
         Real64 SensHeatingRate;               // Rate at which the system is heating outdoor air
         Real64 AlessHoles;                    // Area for Kutscher's relation
 
+        auto &s_mat = state.dataMaterial;
         // Active UTSC calculation
         // first do common things for both correlations
         Real64 sum_area = 0.0;
@@ -1189,9 +1188,7 @@ namespace TranspiredCollector {
                                       HAirARR(ThisSurf),
                                       HSrdSurfARR(ThisSurf));
             ConstrNum = state.dataSurface->Surface(SurfPtr).Construction;
-            AbsThermSurf =
-                dynamic_cast<Material::MaterialChild *>(state.dataMaterial->Material(state.dataConstruction->Construct(ConstrNum).LayerPoint(1)))
-                    ->AbsorpThermal;
+            AbsThermSurf = s_mat->materials(state.dataConstruction->Construct(ConstrNum).LayerPoint(1))->AbsorpThermal;
             TsoK = state.dataHeatBalSurf->SurfOutsideTempHist(1)(SurfPtr) + Constant::Kelvin;
             TscollK = state.dataTranspiredCollector->UTSC(UTSCNum).TcollLast + Constant::Kelvin;
             HPlenARR(ThisSurf) = Sigma * AbsExt * AbsThermSurf * (pow_4(TscollK) - pow_4(TsoK)) / (TscollK - TsoK);
@@ -1754,6 +1751,9 @@ namespace TranspiredCollector {
         Real64 sum_area = 0.0;
         Real64 sum_produc_area_drybulb = 0.0;
         Real64 sum_produc_area_wetbulb = 0.0;
+
+        auto &s_mat = state.dataMaterial;
+
         for (int SurfNum : SurfPtrARR) {
             sum_area += state.dataSurface->Surface(SurfNum).Area;
             sum_produc_area_drybulb += state.dataSurface->Surface(SurfNum).Area * state.dataSurface->SurfOutDryBulbTemp(SurfNum);
@@ -1803,9 +1803,7 @@ namespace TranspiredCollector {
                                       HAirARR(ThisSurf),
                                       HSrdSurfARR(ThisSurf));
             int ConstrNum = state.dataSurface->Surface(SurfPtr).Construction;
-            Real64 AbsThermSurf =
-                dynamic_cast<Material::MaterialChild *>(state.dataMaterial->Material(state.dataConstruction->Construct(ConstrNum).LayerPoint(1)))
-                    ->AbsorpThermal;
+            Real64 AbsThermSurf = s_mat->materials(state.dataConstruction->Construct(ConstrNum).LayerPoint(1))->AbsorpThermal;
             Real64 TsoK = state.dataHeatBalSurf->SurfOutsideTempHist(1)(SurfPtr) + Constant::Kelvin;
             Real64 TsBaffK = TmpTsBaf + Constant::Kelvin;
             if (TsBaffK == TsoK) {        // avoid divide by zero

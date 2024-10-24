@@ -254,7 +254,7 @@ set(SRC
     ElectricPowerServiceManager.cc
     ElectricPowerServiceManager.hh
     EnergyPlus.hh
-    EnergyPlusLogger.cc 
+    EnergyPlusLogger.cc
     EnergyPlusLogger.hh
     EvaporativeCoolers.cc
     EvaporativeCoolers.hh
@@ -320,8 +320,6 @@ set(SRC
     HVACDXHeatPumpSystem.hh
     HVACDuct.cc
     HVACDuct.hh
-    HVACFan.cc
-    HVACFan.hh
     HVACFourPipeBeam.cc
     HVACFourPipeBeam.hh
     HVACHXAssistedCoolingCoil.cc
@@ -475,7 +473,6 @@ set(SRC
     Plant/LoopSidePumpInformation.hh
     Plant/MeterData.hh
     Plant/MixerData.hh
-    Plant/PlantAvailManager.hh
     Plant/PlantConvergencePoint.hh
     Plant/PlantLocation.hh
     Plant/PlantManager.cc
@@ -524,6 +521,8 @@ set(SRC
     Pumps.hh
     PurchasedAirManager.cc
     PurchasedAirManager.hh
+    PythonEngine.cc
+    PythonEngine.hh
     RefrigeratedCase.cc
     RefrigeratedCase.hh
     ReportCoilSelection.cc
@@ -605,6 +604,8 @@ set(SRC
     TARCOGParams.hh
     TarcogShading.cc
     TarcogShading.hh
+    Timer.cc
+    Timer.hh
     ThermalChimney.cc
     ThermalChimney.hh
     ThermalComfort.cc
@@ -966,7 +967,11 @@ if(LINK_WITH_PYTHON)
   add_custom_command(
     TARGET energyplusapi
     POST_BUILD # TODO: I don't think we want to quote the generator expression
-    COMMAND ${Python_EXECUTABLE} "${PROJECT_SOURCE_DIR}/cmake/PythonCopyStandardLib.py" "$<TARGET_FILE:energyplusapi>" "python_standard_lib")
+    COMMAND ${Python_EXECUTABLE} "${PROJECT_SOURCE_DIR}/cmake/PythonCopyStandardLib.py" "$<TARGET_FILE:energyplusapi>" "python_lib"
+    COMMAND ${CMAKE_COMMAND} -E env --unset=PIP_REQUIRE_VIRTUALENV
+            ${Python_EXECUTABLE} -m pip install --target="$<TARGET_FILE_DIR:energyplusapi>/python_lib" --upgrade energyplus-launch==3.7.2
+    COMMAND ${Python_EXECUTABLE} "${PROJECT_SOURCE_DIR}/cmake/PythonFixUpTclTk.py" "$<TARGET_FILE_DIR:energyplusapi>/python_lib"
+  )
 endif()
 
 if(BUILD_PACKAGE)
@@ -974,7 +979,13 @@ if(BUILD_PACKAGE)
   if(LINK_WITH_PYTHON)
     # we'll want to grab the standard lib for python plugins
     # TODO: I don't think we want to quote the generator expression
-    install(DIRECTORY "$<TARGET_FILE_DIR:energyplus>/python_standard_lib/" DESTINATION "./python_standard_lib")
+    install(DIRECTORY "$<TARGET_FILE_DIR:energyplus>/python_lib/" DESTINATION "./python_lib")
+    if(WIN32)
+      # on Windows, with Build Package, and also Link With Python, we can also drop in shortcuts to the new auxiliary CLI
+      # NOTE: The install command COMPONENTS should line up so that they are run at the same packaging step
+      install(CODE "execute_process(COMMAND powershell.exe -ExecutionPolicy Bypass -File ${PROJECT_SOURCE_DIR}/scripts/dev/create_shortcut.ps1 -TargetPath \"$<TARGET_FILE:energyplus>\" -ShortcutPath \"$<TARGET_FILE_DIR:energyplus>/EPLaunchPython.lnk\" -Arguments \"auxiliary eplaunch\")" COMPONENT Auxiliary)
+      install(FILES $<TARGET_FILE_DIR:energyplus>/EPLaunchPython.lnk DESTINATION "./" COMPONENT Auxiliary)
+    endif()
   endif()
   # we'll want to always provide the C API headers
   install(FILES ${API_HEADERS} DESTINATION "./include/EnergyPlus/api")
@@ -992,7 +1003,7 @@ if(BUILD_TESTING)
                    -DEPW_FILE=USA_CO_Golden-NREL.724666_TMY3.epw -P ${PROJECT_SOURCE_DIR}/cmake/RunCallbackTest.cmake)
 
   set(EPW_FILE "${PROJECT_SOURCE_DIR}/weather/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw")
-  set(IDF_FILE "${PROJECT_SOURCE_DIR}/testfiles/1ZoneUncontrolled.idf")
+  set(IDF_FILE "${PROJECT_SOURCE_DIR}/testfiles/_1ZoneUncontrolled_ForAPITesting.idf")
 
   add_executable(TestAPI_Functional_C ${PROJECT_SOURCE_DIR}/tst/EnergyPlus/api/TestFunctional.c)
   #  project_warnings is essentially a C++ interface, and not included here because this is C, not C++
@@ -1150,4 +1161,10 @@ if(UNIX AND NOT APPLE)
       COMMAND size $<TARGET_FILE:energyplusapi> > "${PROJECT_BINARY_DIR}/performance_tests/size.energyplusapi"
       )
   endif()
+endif()
+
+if(APPLE AND CPACK_CODESIGNING_DEVELOPPER_ID_APPLICATION)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/CodeSigning.cmake")
+  register_install_codesign_target(energyplus ".")
+  register_install_codesign_target(energyplusapi ".")
 endif()

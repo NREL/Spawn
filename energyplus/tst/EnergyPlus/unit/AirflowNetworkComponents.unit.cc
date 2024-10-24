@@ -4393,7 +4393,7 @@ TEST_F(EnergyPlusFixture, AirflowNetwork_TestFanModel)
     EXPECT_FALSE(ErrorsFound);
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
-    HeatBalanceManager::GetWindowGlassSpectralData(*state, ErrorsFound);
+    Material::GetWindowGlassSpectralData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
     Material::GetMaterialData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
@@ -4442,7 +4442,7 @@ TEST_F(EnergyPlusFixture, AirflowNetwork_TestFanModel)
         }
     }
     state->dataAirLoop->AirLoopAFNInfo.allocate(1);
-    state->dataAirLoop->AirLoopAFNInfo(1).LoopFanOperationMode = 1;
+    state->dataAirLoop->AirLoopAFNInfo(1).LoopFanOperationMode = HVAC::FanOp::Cycling;
     state->dataAirLoop->AirLoopAFNInfo(1).LoopOnOffFanPartLoadRatio = 0.0;
     state->dataAirLoop->AirLoopAFNInfo(1).LoopSystemOnMassFlowrate = 1.23;
     state->afn->AirflowNetworkLinkageData(17).AirLoopNum = 1;

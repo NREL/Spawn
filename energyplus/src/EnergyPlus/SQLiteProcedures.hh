@@ -104,7 +104,6 @@ protected:
 
     bool m_writeOutputToSQLite;
     std::shared_ptr<std::ostream> m_errorStream;
-    sqlite3 *m_connection;
     std::shared_ptr<sqlite3> m_db;
 };
 
@@ -567,11 +566,12 @@ private:
         Material(std::shared_ptr<std::ostream> const &errorStream,
                  std::shared_ptr<sqlite3> const &db,
                  int const materialNumber,
-                 EnergyPlus::Material::MaterialChild const *materialData)
+                 EnergyPlus::Material::MaterialBase const *materialData)
             : SQLiteData(errorStream, db), number(materialNumber), name(materialData->Name), group(materialData->group),
               roughness(materialData->Roughness), conductivity(materialData->Conductivity), density(materialData->Density),
-              isoMoistCap(materialData->IsoMoistCap), porosity(materialData->Porosity), resistance(materialData->Resistance),
-              rOnly(materialData->ROnly), specHeat(materialData->SpecHeat), thermGradCoef(materialData->ThermGradCoef),
+              // isoMoistCap(materialData->IsoMoistCap),
+              porosity(materialData->Porosity), resistance(materialData->Resistance), rOnly(materialData->ROnly), specHeat(materialData->SpecHeat),
+              // thermGradCoef(materialData->ThermGradCoef),
               thickness(materialData->Thickness), vaporDiffus(materialData->VaporDiffus)
         {
         }
@@ -585,12 +585,12 @@ private:
         EnergyPlus::Material::SurfaceRoughness const &roughness;
         double const &conductivity;
         double const &density;
-        double const &isoMoistCap;
+        // double const &isoMoistCap;
         double const &porosity;
         double const &resistance;
         bool const &rOnly;
         double const &specHeat;
-        double const &thermGradCoef;
+        // double const &thermGradCoef;
         double const &thickness;
         double const &vaporDiffus;
     };
@@ -1012,6 +1012,10 @@ void CreateSQLiteZoneExtendedOutput(EnergyPlusData &state);
 struct SQLiteProceduresData : BaseGlobalStruct
 {
     std::unique_ptr<SQLite> sqlite;
+    void init_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void clear_state() override
     {
         sqlite.reset(); // probably not necessary, as it is recreated in ManageSimulation, but it should be fine to delete it here

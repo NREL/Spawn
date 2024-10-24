@@ -51,6 +51,7 @@
 #include <EnergyPlus/DataConversions.hh>
 #include <EnergyPlus/DisplayRoutines.hh>
 #include <EnergyPlus/Material.hh>
+#include <EnergyPlus/OutputReportPredefined.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
 
 namespace EnergyPlus::Construction {
@@ -130,15 +131,15 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
     // greater than this, then the coefficients will not yield a valid steady
     // state solution.
 
-    constexpr Real64 MaxAllowedTimeStep(4.0); // Sets the maximum allowed time step
-    // for CTF calculations to be 4 hours.  This is done in response to some
+    constexpr Real64 MaxAllowedTimeStep = 7.0; // Sets the maximum allowed time step
+    // for CTF calculations to be 7 hours.  This is done in response to some
     // rare situations where odd or faulty input will cause the routine to
     // go off and get some huge time step (in excess of 20 hours).  This value
     // is a compromise that does not really solve any input problems.  One run
     // indicated that 2 meters of concrete will result in a time step of slightly
-    // more than 3 hours.  So, 4 hours was arbitrarily picked as a ceiling for
+    // more than 3 hours.  So, 7 hours was arbitrarily picked as a ceiling for
     // time steps so that an error message can be produced to warn the user
-    // that something isn't right.  Note that the 4 hour limit does not guarantee
+    // that something isn't right.  Note that the 7 hour limit does not guarantee
     // that problems won't exist and it does not necessarily avoid any problems
     // that interpolated temperature histories might cause.
 
@@ -209,7 +210,7 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
 
         // Obtain thermal properties from the Material derived type
 
-        auto *thisMaterial = dynamic_cast<Material::MaterialChild *>(state.dataMaterial->Material(CurrentLayer));
+        auto *thisMaterial = state.dataMaterial->materials(CurrentLayer);
         assert(thisMaterial != nullptr);
 
         dl(Layer) = thisMaterial->Thickness;
@@ -288,7 +289,7 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
                 // then use the "exact" approach to model a massless layer
                 // based on the node equations for the state space method.
 
-                if ((Layer == 1) || (Layer == this->TotLayers) || (!state.dataMaterial->Material(this->LayerPoint(Layer))->ROnly)) {
+                if ((Layer == 1) || (Layer == this->TotLayers) || (!state.dataMaterial->materials(this->LayerPoint(Layer))->ROnly)) {
                     cp(Layer) = 1.007;
                     rho(Layer) = 1.1614;
                     rk(Layer) = 0.0263;
@@ -712,7 +713,7 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
 
                     // As with the 1-D solution, we are accounting for the thermal mass
                     // of the half-node at the surface by adding it to the first row
-                    // of interior nodes at both sides of the this->  This is not
+                    // of interior nodes at both sides of the construction.  This is not
                     // exact, but it does take all of the thermal mass into account.
                     amatx = rk(1) / (1.5 * rho(1) * cp(1) * dx(1) * dx(1));
                     amaty = rk(1) / (1.5 * rho(1) * cp(1) * dyn * dyn);
@@ -821,7 +822,7 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
 
                     // As with the 1-D solution, we are accounting for the thermal mass
                     // of the half-node at the surface by adding it to the first row
-                    // of interior nodes at both sides of the this->  This is not
+                    // of interior nodes at both sides of the construction.  This is not
                     // exact, but it does take all of the thermal mass into account.
                     amatx /= 1.5;
                     amaty /= 1.5;
@@ -927,12 +928,12 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
                 if (this->CTFTimeStep >= MaxAllowedTimeStep) {
                     ShowSevereError(state, format("CTF calculation convergence problem for Construction=\"{}\".", this->Name));
                     ShowContinueError(state, "...with Materials (outside layer to inside)");
-                    ShowContinueError(state, format("(outside)=\"{}\"", state.dataMaterial->Material(this->LayerPoint(1))->Name));
+                    ShowContinueError(state, format("(outside)=\"{}\"", state.dataMaterial->materials(this->LayerPoint(1))->Name));
                     for (int Layer = 2; Layer <= this->TotLayers; ++Layer) {
                         if (Layer != this->TotLayers) {
-                            ShowContinueError(state, format("(next)=\"{}\"", state.dataMaterial->Material(this->LayerPoint(Layer))->Name));
+                            ShowContinueError(state, format("(next)=\"{}\"", state.dataMaterial->materials(this->LayerPoint(Layer))->Name));
                         } else {
-                            ShowContinueError(state, format("(inside)=\"{}\"", state.dataMaterial->Material(this->LayerPoint(Layer))->Name));
+                            ShowContinueError(state, format("(inside)=\"{}\"", state.dataMaterial->materials(this->LayerPoint(Layer))->Name));
                         }
                     }
                     ShowContinueError(state,
@@ -943,9 +944,9 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
                     ShowContinueError(state, "listed in the severe error above.  The CTF calculate routine is unable to come up");
                     ShowContinueError(state, "with a series of CTF terms that have a reasonable time step and this indicates an");
                     ShowContinueError(state, "error.  Check the definition of this construction and the materials that make up");
-                    ShowContinueError(state, "the this->  Very thin, highly conductive materials may cause problems.");
+                    ShowContinueError(state, "the construction.  Very thin, highly conductive materials may cause problems.");
                     ShowContinueError(state, "This may be avoided by ignoring the presence of those materials since they probably");
-                    ShowContinueError(state, "do not effect the heat transfer characteristics of the this->  Highly");
+                    ShowContinueError(state, "do not effect the heat transfer characteristics of the construction.  Highly");
                     ShowContinueError(state, "conductive or highly resistive layers that are alternated with high mass layers");
                     ShowContinueError(state, "may also result in problems.  After confirming that the input is correct and");
                     ShowContinueError(state, "realistic, the user should contact the EnergyPlus support team.");
@@ -972,7 +973,7 @@ void ConstructionProps::calculateTransferFunction(EnergyPlusData &state, bool &E
         this->s0(1, 1) = cnd;  // CTFs for current time
         this->s0(2, 1) = -cnd; // step are set to the
         this->s0(1, 2) = cnd;  // overall conductance
-        this->s0(2, 2) = -cnd; // of the this->
+        this->s0(2, 2) = -cnd; // of the construction.
 
         this->e.allocate(1);
         this->e = 0.0;
@@ -1870,13 +1871,13 @@ void ConstructionProps::reportTransferFunction(EnergyPlusData &state, int const 
           this->InsideAbsorpThermal,
           this->OutsideAbsorpSolar,
           this->InsideAbsorpSolar,
-          Material::RoughnessNames[static_cast<int>(this->OutsideRoughness)]);
+          Material::surfaceRoughnessNames[(int)this->OutsideRoughness]);
 
     for (int I = 1; I <= this->TotLayers; ++I) {
         int Layer = this->LayerPoint(I);
-        auto const *thisMaterial = state.dataMaterial->Material(Layer);
+        auto const *thisMaterial = state.dataMaterial->materials(Layer);
         switch (thisMaterial->group) {
-        case Material::Group::Air: {
+        case Material::Group::AirGap: {
             static constexpr std::string_view Format_702(" Material:Air,{},{:12.4N}\n");
             print(state.files.eio, Format_702, thisMaterial->Name, thisMaterial->Resistance);
         } break;
@@ -1919,6 +1920,19 @@ void ConstructionProps::reportTransferFunction(EnergyPlusData &state, int const 
     }
 }
 
+void ConstructionProps::reportLayers(EnergyPlusData &state)
+{
+    // Report the layers for each opaque construction in predefined tabular report
+    // J. Glazer March 2024
+    if (state.dataOutRptPredefined->pdchOpqConsLayCol.size() > 0) {
+        for (int i = 1; i <= this->TotLayers; ++i) {
+            int layerIndex = this->LayerPoint(i);
+            auto const *mat = state.dataMaterial->materials(layerIndex);
+            OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchOpqConsLayCol[i - 1], this->Name, mat->Name);
+        }
+    }
+}
+
 bool ConstructionProps::isGlazingConstruction(EnergyPlusData &state) const
 {
     // SUBROUTINE INFORMATION:
@@ -1928,10 +1942,9 @@ bool ConstructionProps::isGlazingConstruction(EnergyPlusData &state) const
     // PURPOSE OF THIS SUBROUTINE:
     // Commonly used routine in several places in EnergyPlus which examines if current
     // construction is glazing construction
-    const Material::Group MaterialGroup = state.dataMaterial->Material(LayerPoint(1))->group;
-    return (MaterialGroup == Material::Group::WindowGlass) || (MaterialGroup == Material::Group::Shade) ||
-           (MaterialGroup == Material::Group::Screen) || (MaterialGroup == Material::Group::WindowBlind) ||
-           (MaterialGroup == Material::Group::WindowSimpleGlazing);
+    const Material::Group group = state.dataMaterial->materials(LayerPoint(1))->group;
+    return (group == Material::Group::Glass) || (group == Material::Group::Shade) || (group == Material::Group::Screen) ||
+           (group == Material::Group::Blind) || (group == Material::Group::GlassSimple);
 }
 
 Real64 ConstructionProps::setThicknessPerpendicular(EnergyPlusData &state, Real64 userValue)
@@ -2001,10 +2014,7 @@ void ConstructionProps::setArraysBasedOnMaxSolidWinLayers(EnergyPlusData &state)
 {
     this->AbsDiff.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->AbsDiffBack.allocate(state.dataHeatBal->MaxSolidWinLayers);
-    this->BlAbsDiff.allocate(Material::MaxSlatAngs, state.dataHeatBal->MaxSolidWinLayers);
-    this->BlAbsDiffGnd.allocate(Material::MaxSlatAngs, state.dataHeatBal->MaxSolidWinLayers);
-    this->BlAbsDiffSky.allocate(Material::MaxSlatAngs, state.dataHeatBal->MaxSolidWinLayers);
-    this->BlAbsDiffBack.allocate(Material::MaxSlatAngs, state.dataHeatBal->MaxSolidWinLayers);
+    this->layerSlatBlindDfAbs.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->AbsBeamCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->AbsBeamBackCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->tBareSolCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
@@ -2032,12 +2042,14 @@ void ConstructionProps::setArraysBasedOnMaxSolidWinLayers(EnergyPlusData &state)
         this->AbsDiff(Layer) = 0.0;
         this->AbsDiffBack(Layer) = 0.0;
     }
-    for (int Index = 1; Index <= Material::MaxSlatAngs; ++Index) {
-        for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
-            this->BlAbsDiff(Index, Layer) = 0.0;
-            this->BlAbsDiffGnd(Index, Layer) = 0.0;
-            this->BlAbsDiffSky(Index, Layer) = 0.0;
-            this->BlAbsDiffBack(Index, Layer) = 0.0;
+    for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
+        auto &slatBlindDfAbs = this->layerSlatBlindDfAbs(Layer);
+        for (int iSlatAng = 0; iSlatAng < Material::MaxSlatAngs; ++iSlatAng) {
+            auto &blindDfAbs = slatBlindDfAbs[iSlatAng];
+            blindDfAbs.Sol.Ft.Df.Abs = 0.0;
+            blindDfAbs.Sol.Ft.Df.AbsGnd = 0.0;
+            blindDfAbs.Sol.Ft.Df.AbsGnd = 0.0;
+            blindDfAbs.Sol.Bk.Df.Abs = 0.0;
         }
     }
     for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
