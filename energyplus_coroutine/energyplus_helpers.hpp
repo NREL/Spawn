@@ -72,19 +72,23 @@ namespace zone_group_sizing {
   [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
                                              const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int
-  // zone_num);
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                   const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int
-  // zone_num);
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      const std::vector<int> &zone_nums);
 
-  //[[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      const std::vector<int> &zone_nums);
 
 } // namespace zone_group_sizing
 

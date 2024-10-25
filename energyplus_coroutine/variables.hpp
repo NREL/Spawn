@@ -562,109 +562,121 @@ namespace zone_group_sizing {
     CachedValue<std::vector<int>> zone_nums_;
   };
 
-  // class XOutCoo : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class XOutCoo : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit XOutCoo(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit XOutCoo(Variables &variables,
+                     const std::string_view group_name,
+                     const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class MOutCooFlow : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class MOutCooFlow : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit MOutCooFlow(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit MOutCooFlow(Variables &variables,
+                         const std::string_view group_name,
+                         const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class TCoo : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class TCoo : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit TCoo(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit TCoo(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class QHeaFlow : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class QHeaFlow : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit QHeaFlow(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit QHeaFlow(Variables &variables,
+                      const std::string_view group_name,
+                      const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class TOutHea : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class TOutHea : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit TOutHea(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit TOutHea(Variables &variables,
+                     const std::string_view group_name,
+                     const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class XOutHea : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class XOutHea : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit XOutHea(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit XOutHea(Variables &variables,
+                     const std::string_view group_name,
+                     const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class MOutHeaFlow : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class MOutHeaFlow : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit MOutHeaFlow(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit MOutHeaFlow(Variables &variables,
+                         const std::string_view group_name,
+                         const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 
-  // class THea : public Parameter
-  //{
-  //   friend class variable::Variables;
+  class THea : public Parameter
+  {
+    friend class variable::Variables;
 
-  // private:
-  //   explicit THea(Variables &variables, const std::vector<std::string_view> zone_names);
-  //   static void CreateAll(const UserConfig &user_config, Variables &variables);
-  //   void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+  private:
+    explicit THea(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
-  //  std::string zone_name_;
-  //  CachedValue<int> zone_num_;
-  //};
+    std::vector<std::string> zone_names_;
+    CachedValue<std::vector<int>> zone_nums_;
+  };
 } // namespace zone_group_sizing
 
 namespace other {

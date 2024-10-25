@@ -276,6 +276,78 @@ namespace zone_group_sizing {
     return zone_sizing.CoolOutTempSeq(peak_load.day_timestep);
   }
 
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      const std::vector<int> &zone_nums)
+  {
+    const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.CoolLoadSeq;
+    };
+
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_cooling_load_seq);
+    const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, zone_nums.front());
+
+    return zone_sizing.CoolOutHumRatSeq(peak_load.day_timestep);
+  }
+
+  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      const std::vector<int> &zone_nums)
+  {
+    const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.CoolLoadSeq;
+    };
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_cooling_load_seq);
+    return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
+  }
+
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  {
+    const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.HeatLoadSeq;
+    };
+
+    return GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq).value;
+  }
+
+  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             [[maybe_unused]] const std::vector<int> &zone_nums)
+  {
+    const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.HeatLoadSeq;
+    };
+
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq);
+    // The outdoor temperature should be the same for all zones, so get the sizing data for the
+    // peak design day, using any one of the zones in the group.
+    const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, zone_nums.front());
+
+    return zone_sizing.HeatOutTempSeq(peak_load.day_timestep);
+  }
+
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      [[maybe_unused]] const std::vector<int> &zone_nums)
+  {
+    const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.HeatLoadSeq;
+    };
+
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq);
+    // The outdoor temperature should be the same for all zones, so get the sizing data for the
+    // peak design day, using any one of the zones in the group.
+    const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, zone_nums.front());
+
+    return zone_sizing.HeatOutHumRatSeq(peak_load.day_timestep);
+  }
+
+  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      const std::vector<int> &zone_nums)
+  {
+    const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.HeatLoadSeq;
+    };
+    const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq);
+    return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
+  }
+
 } // namespace zone_group_sizing
 
 void SetZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int zone_num, const double &temp)
