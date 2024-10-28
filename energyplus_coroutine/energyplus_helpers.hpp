@@ -1,4 +1,5 @@
 #include <string_view>
+#include <vector>
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -81,9 +82,15 @@ void ResetActuator(EnergyPlus::EnergyPlusData &energyplus_data, int handle);
 
 [[nodiscard]] double SurfaceOutsideHeatFlow(EnergyPlus::EnergyPlusData &energyplus_data, int surface_num);
 
-void SetInsideSurfaceTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int surface_num, double temp);
+// Get the actuators to set the inside surface temperature.
+// There are up to two, because the opposing face of the matching surface may need to be set.
+// This can be a costly lookup, so avoid calling in the loop.
+std::vector<int> InsideSurfaceTemperatureActuatorHandles(EnergyPlus::EnergyPlusData &energyplus_data,
+                                                         const std::string_view surface_name);
 
-void SetOutsideSurfaceTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int surface_num, double temp);
+// Get the actuators to set the outside surface temperature.
+std::vector<int> OutsideSurfaceTemperatureActuatorHandles(EnergyPlus::EnergyPlusData &energyplus_data,
+                                                          const std::string_view surface_name);
 
 void UpdateZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int zonenum, const double dt);
 

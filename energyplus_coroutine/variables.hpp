@@ -2,12 +2,12 @@
 #define Variables_hh_INCLUDED
 
 #include "units.hpp"
+#include <functional>
 #include <memory>
 #include <optional>
 #include <pugixml.hpp>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -606,7 +606,7 @@ namespace surface {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 } // namespace surface
 
@@ -660,7 +660,7 @@ namespace construction {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 
   class TBack : public Input
@@ -673,7 +673,7 @@ namespace construction {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 } // namespace construction
 
