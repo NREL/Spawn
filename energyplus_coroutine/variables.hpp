@@ -773,7 +773,7 @@ namespace surface {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 } // namespace surface
 
@@ -827,7 +827,7 @@ namespace construction {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 
   class TBack : public Input
@@ -840,7 +840,7 @@ namespace construction {
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string surface_name_;
-    CachedValue<int> surface_num_;
+    CachedValue<std::vector<int>> actuator_handles_;
   };
 } // namespace construction
 

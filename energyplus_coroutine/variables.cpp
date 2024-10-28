@@ -1783,8 +1783,9 @@ namespace surface {
 
   T::T(Variables &variables, const std::string_view surface_name)
       : Input(variables, std::string(surface_name) + "_T", units::UnitType::C, units::UnitType::K),
-        surface_name_(surface_name),
-        surface_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::SurfaceNum(data, surface_name_); })
+        surface_name_(surface_name), actuator_handles_([this](EnergyPlus::EnergyPlusData &data) {
+          return energyplus::InsideSurfaceTemperatureActuatorHandles(data, surface_name_);
+        })
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1802,7 +1803,9 @@ namespace surface {
   void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetInsideSurfaceTemperature(energyplus_data, surface_num_.get(energyplus_data), *v);
+      for (const auto &h : actuator_handles_.get(energyplus_data)) {
+        energyplus::SetActuatorValue(energyplus_data, h, *v);
+      }
     }
   }
 } // namespace surface
@@ -1935,8 +1938,9 @@ namespace construction {
 
   TFront::TFront(Variables &variables, const std::string_view surface_name)
       : Input(variables, std::string(surface_name) + "_TFront", units::UnitType::C, units::UnitType::K),
-        surface_name_(surface_name),
-        surface_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::SurfaceNum(data, surface_name_); })
+        surface_name_(surface_name), actuator_handles_([this](EnergyPlus::EnergyPlusData &data) {
+          return energyplus::InsideSurfaceTemperatureActuatorHandles(data, surface_name_);
+        })
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1954,7 +1958,9 @@ namespace construction {
   void TFront::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetInsideSurfaceTemperature(energyplus_data, surface_num_.get(energyplus_data), *v);
+      for (const auto &h : actuator_handles_.get(energyplus_data)) {
+        energyplus::SetActuatorValue(energyplus_data, h, *v);
+      }
     }
   }
 
@@ -1971,8 +1977,9 @@ namespace construction {
 
   TBack::TBack(Variables &variables, const std::string_view surface_name)
       : Input(variables, std::string(surface_name) + "_TBack", units::UnitType::C, units::UnitType::K),
-        surface_name_(surface_name),
-        surface_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::SurfaceNum(data, surface_name_); })
+        surface_name_(surface_name), actuator_handles_([this](EnergyPlus::EnergyPlusData &data) {
+          return energyplus::OutsideSurfaceTemperatureActuatorHandles(data, surface_name_);
+        })
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1990,7 +1997,9 @@ namespace construction {
   void TBack::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     if (const auto v = Value(units::UnitSystem::EP)) {
-      energyplus::SetOutsideSurfaceTemperature(energyplus_data, surface_num_.get(energyplus_data), *v);
+      for (const auto &h : actuator_handles_.get(energyplus_data)) {
+        energyplus::SetActuatorValue(energyplus_data, h, *v);
+      }
     }
   }
 } // namespace construction

@@ -486,27 +486,34 @@ void ResetActuator(EnergyPlus::EnergyPlusData &energyplus_data, int handle)
   }
 }
 
-void SetInsideSurfaceTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int surface_num, double temp)
+std::vector<int> InsideSurfaceTemperatureActuatorHandles(EnergyPlus::EnergyPlusData &energyplus_data,
+                                                         const std::string_view surface_name)
 {
+  const auto surface_num = SurfaceNum(energyplus_data, surface_name);
   const auto &surface = energyplus_data.dataSurface->Surface(as_size_t(surface_num));
   const auto inside_actuator_handle =
       ActuatorHandle(energyplus_data, "Surface", "Surface Inside Temperature", surface.Name);
-  SetActuatorValue(energyplus_data, inside_actuator_handle, temp);
+
   auto &extBoundCond = surface.ExtBoundCond;
   if (extBoundCond > 0) {
     // If this is an interzone surface then set the outside of the matching surface
     auto &other_surface = energyplus_data.dataSurface->Surface(as_size_t(extBoundCond));
     const auto outside_actuator_handle =
         ActuatorHandle(energyplus_data, "Surface", "Surface Outside Temperature", other_surface.Name);
-    SetActuatorValue(energyplus_data, outside_actuator_handle, temp);
+
+    return {inside_actuator_handle, outside_actuator_handle};
   }
+
+  return {inside_actuator_handle};
 }
-void SetOutsideSurfaceTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int surface_num, double temp)
+
+std::vector<int> OutsideSurfaceTemperatureActuatorHandles(EnergyPlus::EnergyPlusData &energyplus_data,
+                                                          const std::string_view surface_name)
 {
+  const auto surface_num = SurfaceNum(energyplus_data, surface_name);
   const auto &surface = energyplus_data.dataSurface->Surface(as_size_t(surface_num));
   const auto outside_actuator_handle =
       ActuatorHandle(energyplus_data, "Surface", "Surface Outside Temperature", surface.Name);
-  SetActuatorValue(energyplus_data, outside_actuator_handle, temp);
 
   const auto &extBoundCond = surface.ExtBoundCond;
 
@@ -521,8 +528,11 @@ void SetOutsideSurfaceTemperature(EnergyPlus::EnergyPlusData &energyplus_data, c
     auto &other_surface = energyplus_data.dataSurface->Surface(as_size_t(extBoundCond));
     const auto inside_actuator_handle =
         ActuatorHandle(energyplus_data, "Surface", "Surface Inside Temperature", other_surface.Name);
-    SetActuatorValue(energyplus_data, inside_actuator_handle, temp);
+
+    return {outside_actuator_handle, inside_actuator_handle};
   }
+
+  return {outside_actuator_handle};
 }
 
 void UpdateZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const int zonenum, const double dt)
