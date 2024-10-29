@@ -916,8 +916,8 @@ namespace zone {
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
     scalar_variable.append_attribute("description") =
         "Average of inlets medium temperatures carried by the mass flow rates";
-    scalar_variable.append_attribute(" causality ") = " input ";
-    scalar_variable.append_attribute(" variability ") = "continuous";
+    scalar_variable.append_attribute("causality") = "input";
+    scalar_variable.append_attribute("variability") = "continuous";
 
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("quantity") = "ThermodynamicTemperature";
@@ -1060,6 +1060,10 @@ namespace other {
           return energyplus::VariableHandle(data, energyplus_name_, energyplus_key_);
         })
   {
+    const auto &output_type = energyplus::FindOutputTypeByName(energyplus_name_);
+    ep_unit_ = output_type.epUnitType;
+    mo_unit_ = output_type.moUnitType;
+
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
@@ -1070,10 +1074,6 @@ namespace other {
 
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
-
-    const auto &output_type = energyplus::FindOutputTypeByName(energyplus_name_);
-    ep_unit_ = output_type.epUnitType;
-    mo_unit_ = output_type.moUnitType;
   }
 
   void Sensor::Update(EnergyPlus::EnergyPlusData &energyplus_data)
