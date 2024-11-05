@@ -887,6 +887,7 @@ namespace zone {
     real.append_attribute("quantity") = "MassFlowRate";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void MInletsFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
@@ -923,6 +924,7 @@ namespace zone {
     real.append_attribute("quantity") = "ThermodynamicTemperature";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void TAveInlet::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
@@ -955,6 +957,7 @@ namespace zone {
     real.append_attribute("quantity") = "ThermodynamicTemperature";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 21.0;
   }
 
   void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -989,6 +992,7 @@ namespace zone {
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void X::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1026,6 +1030,7 @@ namespace zone {
     real.append_attribute("quantity") = "Power";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void QGaiRadFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1117,6 +1122,7 @@ namespace other {
 
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void Actuator::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1181,6 +1187,7 @@ namespace other {
 
     auto real = scalar_variable.append_child("Real");
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 0.0;
   }
 
   void Schedule::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1298,6 +1305,7 @@ namespace surface {
     real.append_attribute("quantity") = "ThermodynamicTemperature";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 21.0;
   }
 
   void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1453,6 +1461,7 @@ namespace construction {
     real.append_attribute("quantity") = "ThermodynamicTemperature";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 21.0;
   }
 
   void TFront::Update(EnergyPlus::EnergyPlusData &energyplus_data)
@@ -1492,6 +1501,7 @@ namespace construction {
     real.append_attribute("quantity") = "ThermodynamicTemperature";
     real.append_attribute("relativeQuantity") = "false";
     real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+    real.append_attribute("start") = 21.0;
   }
 
   void TBack::Update(EnergyPlus::EnergyPlusData &energyplus_data)
