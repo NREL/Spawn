@@ -128,8 +128,6 @@ json &removeUnusedObjects(json &jsonidf)
 
 json &addPeopleOutputVariables(json &jsonidf, const UserConfig &user_config)
 {
-  // Some zones don't have people input, which will result in an EnergyPlus error,
-  // Insert a default people object that defines zero people
   constexpr auto scheduletype = "Schedule:Constant";
   constexpr auto peopleSchedulename = "Spawn-People-Schedule";
   constexpr auto activitySchedulename = "Spawn-PeopleActivity-Schedule";
@@ -144,21 +142,33 @@ json &addPeopleOutputVariables(json &jsonidf, const UserConfig &user_config)
   jsonidf[scheduletype][activitySchedulename] = {{"schedule_type_limits_name", schedule_typelimits_name},
                                                  {"hourly_value", "100.0"}};
 
+  const auto &has_people = [&](const std::string &zone_name) {
+    const auto all_people_inputs = jsonidf[Zone::ep_people_object_type];
+
+    return std::any_of(all_people_inputs.begin(), all_people_inputs.end(), [&zone_name](const auto &p) {
+      return (case_insensitive_compare(p["zone_or_zonelist_or_space_or_spacelist_name"], zone_name));
+    });
+  };
+
   for (const auto &zone : user_config.zones) {
     if (!zone.isconnected) {
       continue;
     }
 
-    jsonidf[Zone::ep_people_object_type][zone.ep_qgairad_flow_object_name] = {
-        {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname},
-        {"number_of_people_schedule_name", peopleSchedulename},
-        {"number_of_people_calculation_method", "People"},
-        {"number_of_people", "0"},
-        {"people_per_zone_floor_area", "0"},
-        {"zone_floor_area_per_person", "0"},
-        {"fraction_radiant", "0"},
-        {"sensible_heat_fraction", "autocalculate"},
-        {"activity_level_schedule_name", activitySchedulename}};
+    // Some zones don't have people input, which will result in an EnergyPlus error,
+    // Insert a default people object that defines zero people
+    if (!has_people(zone.idfname)) {
+      jsonidf[Zone::ep_people_object_type][zone.idfname + " Default People"] = {
+          {"zone_or_zonelist_or_space_or_spacelist_name", zone.idfname},
+          {"number_of_people_schedule_name", peopleSchedulename},
+          {"number_of_people_calculation_method", "People"},
+          {"number_of_people", "0"},
+          {"people_per_zone_floor_area", "0"},
+          {"zone_floor_area_per_person", "0"},
+          {"fraction_radiant", "0"},
+          {"sensible_heat_fraction", "autocalculate"},
+          {"activity_level_schedule_name", activitySchedulename}};
+    }
 
     jsonidf[zone.ep_outputvariable_type][zone.ep_qpeo_flow_object_name] = {
         {"variable_name", zone.ep_qpeo_flow_output_var_name},
