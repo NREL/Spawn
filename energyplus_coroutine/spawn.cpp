@@ -151,7 +151,7 @@ double Spawn::startTime() const noexcept
 
 void Spawn::setStartTime(const double &time) noexcept
 {
-  start_time_ = StartTime(day_from_string(user_config_.runPeriod.day_of_week_for_start_day), time);
+  start_time_ = StartTime(day_from_string(user_config_.runPeriod.start_day_of_year), time);
 }
 
 void Spawn::setTime(const double &time)

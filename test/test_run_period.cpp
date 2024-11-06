@@ -28,7 +28,7 @@ spawn_fs::path create_runperiod_test_fmu(const std::string_view start_day)
           "kind"   : "ME"
       }},
       "RunPeriod": {{
-        "day_of_week_for_start_day": "{start_day}",
+        "start_day_of_year": "{start_day}",
         "apply_weekend_holiday_rule": "Yes",
         "use_weather_file_daylight_saving_period": "Yes",
         "use_weather_file_holidays_and_special_days": "Yes",
