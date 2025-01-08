@@ -97,6 +97,16 @@ spawn_fs::path create_single_family_house_fmu()
             "name":    "Zone Mean Air Temperature",
             "key":     "GARAGE ZONE",
             "fmiName": "GARAGE ZONE Temp"
+          }},
+          {{
+            "name":    "Surface Inside Face Temperature",
+            "key":     "Living:Interior",
+            "fmiName": "Interior wall living room surface temperature"
+          }},
+          {{
+            "name":    "Surface Outside Face Conduction Heat Transfer Rate",
+            "key":     "Living:South",
+            "fmiName": "South wall heat transfer rate"
           }}
         ]
       }}

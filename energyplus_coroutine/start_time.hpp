@@ -19,9 +19,9 @@ namespace spawn {
 class StartTime
 {
 public:
-  explicit StartTime(const boost::date_time::weekdays &day_of_week_for_start_day = boost::date_time::weekdays::Sunday,
+  explicit StartTime(const boost::date_time::weekdays &start_day_of_year = boost::date_time::weekdays::Sunday,
                      const double &seconds = 0.0)
-      : day_of_week_for_start_day_(day_of_week_for_start_day), seconds_(seconds)
+      : start_day_of_year_(start_day_of_year), seconds_(seconds)
   {
   }
 
@@ -54,7 +54,7 @@ public:
 
 private:
   // Day of the week for Jan 1 of the start year.
-  boost::date_time::weekdays day_of_week_for_start_day_;
+  boost::date_time::weekdays start_day_of_year_;
 
   // Is the start year a leap year?
   bool is_leap_year_{false};
@@ -65,7 +65,7 @@ private:
 
   // Description of the spawn epoch year.
   // This is used to find an assumed year, given the criteria.
-  YearDescription start_year_description_{day_of_week_for_start_day_, is_leap_year_};
+  YearDescription start_year_description_{start_day_of_year_, is_leap_year_};
 
   // The date, Jan 1, and time 00:00, of the start year.
   boost::gregorian::date spawn_epoch_{start_year_description_.AssumedYear(), boost::date_time::Jan, 1};

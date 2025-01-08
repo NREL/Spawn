@@ -3,7 +3,7 @@
 
 namespace spawn {
 
-constexpr double days_to_seconds(const int days)
+constexpr double days_to_seconds(const double days)
 {
   const double seconds_per_minute = 60.0;
   const double minutes_per_hour = 60.0;

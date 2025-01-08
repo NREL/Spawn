@@ -13,7 +13,7 @@ public:
 
   [[nodiscard]] static RunPeriod create_run_period(const nlohmann::json &spawnjson);
 
-  std::string day_of_week_for_start_day{"Sunday"};
+  std::string start_day_of_year{"Sunday"};
   std::string apply_weekend_holiday_rule{"No"};
   std::string use_weather_file_daylight_saving_period{"No"};
   std::string use_weather_file_holidays_and_special_days{"No"};

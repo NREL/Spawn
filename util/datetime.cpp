@@ -8,7 +8,7 @@
 
   // start incrementing or decrementing assumedYear until we match *yearStartsOn and assumedLeapYear
   while ((boost::gregorian::gregorian_calendar::is_leap_year(year) != is_leap_year_) ||
-         (boost::gregorian::date(year, boost::date_time::Jan, 1).day_of_week() != day_of_week_for_start_day_)) {
+         (boost::gregorian::date(year, boost::date_time::Jan, 1).day_of_week() != start_day_of_year_)) {
     if (look_in_future_) {
       ++year;
     } else {

@@ -151,7 +151,7 @@ double Spawn::startTime() const noexcept
 
 void Spawn::setStartTime(const double &time) noexcept
 {
-  start_time_ = StartTime(day_from_string(user_config_.runPeriod.day_of_week_for_start_day), time);
+  start_time_ = StartTime(day_from_string(user_config_.runPeriod.start_day_of_year), time);
 }
 
 void Spawn::setTime(const double &time)
@@ -270,19 +270,22 @@ void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
     // After kick off, we skip this call, because the client is managing the HVAC.
     EnergyPlus::HVACManager::ManageHVAC(sim_state);
     // At this time, there is no data exchange or any other
-    // interaction with the client during kick off, so this funciton returns and the
+    // interaction with the client during kick off, so this function returns and the
     // simulation continues through the startup process.
     return;
   }
 
-  // Similarly, there is no interaction with the client during warmup and sizing, so return now before signaling
+  // "exchange" to get inputs, update internal EnergyPlus state, set outputs
+  // "exchange" does not itself trigger an iteraction with the client
+  exchange(true);
+
+  // But, there is no interaction with the client during warmup and sizing,
+  // instead we return early, before signalizing and waiting for client
   if (sim_state.dataGlobal->DoingSizing || sim_state.dataGlobal->WarmupFlag) {
     return;
   }
 
-  // Exchange data with the FMU
-  exchange(true);
-
+  // This is the part the signals and waits for the client
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
   if (currentTime() >= requested_time_) {
