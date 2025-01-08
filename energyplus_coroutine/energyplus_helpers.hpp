@@ -59,6 +59,10 @@ namespace zone_sizing {
 
   [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
 } // namespace zone_sizing
 
 namespace zone_group_sizing {
@@ -89,6 +93,10 @@ namespace zone_group_sizing {
 
   [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
                                       const std::vector<int> &zone_nums);
+
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums);
+
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums);
 
 } // namespace zone_group_sizing
 

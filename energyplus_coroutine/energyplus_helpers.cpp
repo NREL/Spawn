@@ -140,6 +140,7 @@ namespace zone_sizing {
   [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
   {
     if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
+      // TODO: Are we sure this is right when the sizing is from a DesignDay
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).TimeStepNumAtCoolMax *
              energyplus_data.dataGlobal->TimeStepZoneSec;
     }
@@ -182,6 +183,18 @@ namespace zone_sizing {
     }
 
     return 0.0;
+  }
+
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  {
+    return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+           energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolDens;
+  }
+
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  {
+    return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+           energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatDens;
   }
 
 } // namespace zone_sizing
@@ -296,6 +309,7 @@ namespace zone_group_sizing {
       return sizing_data.CoolLoadSeq;
     };
     const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_cooling_load_seq);
+    // TODO: Are we sure this is right when the sizing is from a DesignDay
     return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
   }
 
@@ -341,11 +355,36 @@ namespace zone_group_sizing {
   [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
                                       const std::vector<int> &zone_nums)
   {
+    // TODO: Are we sure this is right when the sizing is from a DesignDay
     const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
       return sizing_data.HeatLoadSeq;
     };
     const auto peak_load = GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq);
     return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
+  }
+
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  {
+    double sum_oa = 0;
+
+    for (const auto zone_num : zone_nums) {
+      sum_oa += energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+                energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolDens;
+    }
+
+    return sum_oa;
+  }
+
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  {
+    double sum_oa = 0;
+
+    for (const auto zone_num : zone_nums) {
+      sum_oa += energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+                energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatDens;
+    }
+
+    return sum_oa;
   }
 
 } // namespace zone_group_sizing

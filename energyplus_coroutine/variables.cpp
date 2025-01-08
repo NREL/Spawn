@@ -836,8 +836,8 @@ namespace zone {
 
   void MOutCooFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO: get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::MinCoolOA(energyplus_data, zone_num_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void TCoo::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1013,8 +1013,8 @@ namespace zone {
 
   void MOutHeaFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO: get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::MinHeatOA(energyplus_data, zone_num_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void THea::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1273,8 +1273,8 @@ namespace zone_group_sizing {
 
   void MOutCooFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO: get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::MinCoolOA(energyplus_data, zone_nums_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void TCoo::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1489,8 +1489,8 @@ namespace zone_group_sizing {
 
   void MOutHeaFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    // TODO: get this value
-    Variable::SetValue(0.0, units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::MinHeatOA(energyplus_data, zone_nums_.get(energyplus_data)),
+                       units::UnitSystem::EP);
   }
 
   void THea::CreateAll(const UserConfig &user_config, Variables &variables)
