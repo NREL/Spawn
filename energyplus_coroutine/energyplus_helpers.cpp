@@ -185,16 +185,25 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double MinCoolOA([[maybe_unused]] const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 [[maybe_unused]] int zone_num)
   {
-    return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
-           energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolDens;
+    if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
+      return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+             energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolDens;
+    }
+
+    return 0.0;
   }
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double MinHeatOA([[maybe_unused]] const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 [[maybe_unused]] int zone_num)
   {
-    return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
-           energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatDens;
+    if (!energyplus_data.dataSize->FinalZoneSizing.empty()) {
+      return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
+             energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatDens;
+    }
+    return 0.0;
   }
 
 } // namespace zone_sizing

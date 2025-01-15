@@ -53,15 +53,15 @@ void Spawn::start()
         std::vector<std::string> argv{
             "energyplus", "-d", working_dir_.string(), "-w", epw_path, "-i", idd_path_.string(), idfPath.string()};
 
-        EnergyPlus::CommandLineInterface::ProcessArgs(sim_state, argv);
         registerErrorCallback(simState(),
                               [this](const auto level, const auto &message) { logMessage(level, message); });
         registerExternalHVACManager(simState(), [this](EnergyPlusState state) { externalHVACManager(state); });
         sim_state.dataHeatBal->MaxAllowedDelTemp = user_config_.relativeSurfaceTolerance();
 
-        RunEnergyPlus(sim_state);
+        runEnergyPlusAsLibrary(sim_state, argv);
       } catch (...) {
         sim_exception_ptr = std::current_exception();
+        EnergyPlus::AbortEnergyPlus(sim_state);
       }
 
       {
@@ -264,7 +264,7 @@ void Spawn::exchange(const bool force)
 
 void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
 {
-  if (sim_state.dataGlobal->KickOffSimulation) {
+  if (sim_state.dataGlobal->KickOffSimulation || sim_state.dataGlobal->DoingSizing) {
     // ManageHVAC initializes many structures that need to exist.
     // Withouth calling this during the simulation kick off, the simulation will crash.
     // After kick off, we skip this call, because the client is managing the HVAC.
@@ -279,9 +279,7 @@ void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
   // "exchange" does not itself trigger an iteraction with the client
   exchange(true);
 
-  // But, there is no interaction with the client during warmup and sizing,
-  // instead we return early, before signalizing and waiting for client
-  if (sim_state.dataGlobal->DoingSizing || sim_state.dataGlobal->WarmupFlag) {
+  if (sim_state.dataGlobal->WarmupFlag) {
     return;
   }
 

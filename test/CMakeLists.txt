@@ -41,6 +41,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
     test_infiltration.cpp
     test_run_period.cpp
     test_simulate.cpp
+    test_sizing.cpp
     test_zone_multiplier.cpp
     test_zone_capacitance_multiplier.cpp
   )

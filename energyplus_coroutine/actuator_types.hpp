@@ -65,6 +65,8 @@ const std::vector<ActuatorTypes> actuator_types{
     {"Surface", "Outdoor Air Wind Direction", spawn::units::UnitType::rad, spawn::units::UnitType::deg},
     {"Zone", "Outdoor Air Drybulb Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Zone", "Outdoor Air Wetbulb Temperature", spawn::units::UnitType::K, spawn::units::UnitType::C},
+    {"Zone Temperature Control", "Heating Setpoint", spawn::units::UnitType::K, spawn::units::UnitType::C},
+    {"Zone Temperature Control", "Cooling Setpoint", spawn::units::UnitType::K, spawn::units::UnitType::C},
     {"Surface", "Outdoor Air Wind Speed", spawn::units::UnitType::m_per_s, spawn::units::UnitType::m_per_s},
     {"Zone Infiltration",
      "Air Exchange Flow Rate",

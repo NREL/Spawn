@@ -19,8 +19,62 @@ json &adjustSimulationControl(json &jsonidf, const UserConfig &user_config)
                                      {{"do_plant_sizing_calculation", "No"},
                                       {"do_system_sizing_calculation", "No"},
                                       {"do_zone_sizing_calculation", autosize},
-                                      {"run_simulation_for_sizing_periods", autosize},
+                                      {"run_simulation_for_sizing_periods", "No"},
                                       {"run_simulation_for_weather_file_run_periods", "Yes"}}}};
+  return jsonidf;
+}
+
+json &addIdealLoads(json &jsonidf, const UserConfig &user_config) {
+  if( user_config.autosize() ) {
+    const auto zone_sizing_objects = jsonidf["Sizing:Zone"];
+    jsonidf["ZoneHVAC:EquipmentConnections"] = json();
+    jsonidf["ZoneHVAC:EquipmentList"] = json();
+    jsonidf["ZoneHVAC:IdealLoadsAirSystem"] = json();
+
+    for (const auto &zone_sizing : zone_sizing_objects) {
+      // TODO: Make this work for the zonelist case
+      const auto zone_name = zone_sizing.value("zone_or_zonelist_name", "");
+      const auto air_node_name = fmt::format("{} Air Node", zone_name);
+      const auto supply_node_name = fmt::format("{} Supply Node", zone_name);
+      const auto exhaust_node_name = fmt::format("{} Exhaust Node", zone_name);
+      const auto equipment_list_name = fmt::format("{} Equipment List", zone_name);
+      const auto ideal_system_name = fmt::format("{} Ideal System", zone_name);
+
+      // clang-format off
+      const json ideal_system = {
+        {"name", ideal_system_name},
+        {"zone_supply_air_node_name", supply_node_name},
+        {"zone_exhaust_air_node_name", exhaust_node_name}
+      };
+
+      jsonidf["ZoneHVAC:IdealLoadsAirSystem"][ideal_system_name] = ideal_system;
+
+      const json equipment_list = {
+        {"load_distribution_scheme", "SequentialLoad"},
+        {"equipment", {
+          {
+            {"zone_equipment_cooling_sequence", 1},
+            {"zone_equipment_heating_or_no_load_sequence", 1},
+            {"zone_equipment_name", ideal_system_name},
+            {"zone_equipment_object_type", "ZoneHVAC:IdealLoadsAirSystem"}
+          }
+        }}
+      };
+
+      jsonidf["ZoneHVAC:EquipmentList"][equipment_list_name] = equipment_list;
+
+      const json hvac_connections = {
+        {"zone_air_node_name", air_node_name},
+        {"zone_conditioning_equipment_list_name", equipment_list_name},
+        {"zone_air_inlet_node_or_nodelist_name", supply_node_name},
+        {"zone_air_exhaust_node_or_nodelist_name", exhaust_node_name},
+        {"zone_name", zone_name}
+      };
+
+      jsonidf["ZoneHVAC:EquipmentConnections"][zone_name] = hvac_connections;
+      // clang-format on
+    }
+  }
 
   return jsonidf;
 }
@@ -342,8 +396,9 @@ json &removeInfiltration(json &jsonidf, const UserConfig &user_config)
 
 void prepare_idf(json &jsonidf, const UserConfig &user_config, const StartTime &start_time)
 {
-  adjustSimulationControl(jsonidf, user_config);
   removeUnusedObjects(jsonidf);
+  adjustSimulationControl(jsonidf, user_config);
+  addIdealLoads(jsonidf, user_config);
   addRunPeriod(jsonidf, user_config, start_time);
   removeInfiltration(jsonidf, user_config);
   addOtherEquipment(jsonidf, user_config);

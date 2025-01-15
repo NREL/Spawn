@@ -7,7 +7,7 @@ namespace spawn {
 constexpr std::array<const char *, 4> supportedScheduleTypes = {
     "Schedule:Year", "Schedule:Compact", "Schedule:Constant", "Schedule:File"};
 
-constexpr std::array<const char *, 290> supportedIDDTypes = {
+constexpr std::array<const char *, 305> supportedIDDTypes = {
     "Version",
     "SimulationControl",
     "PerformancePrecisionTradeoffs",
@@ -108,6 +108,21 @@ constexpr std::array<const char *, 290> supportedIDDTypes = {
     "Zone",
     "ZoneList",
     "ZoneGroup",
+    "Sizing:Zone",
+    "DesignSpecification:OutdoorAir",
+    "ZoneControl:Humidistat",
+    "ZoneControl:Thermostat",
+    "ZoneControl:Thermostat:OperativeTemperature",
+    "ZoneControl:Thermostat:ThermalComfort",
+    "ZoneControl:Thermostat:TemperatureAndHumidity",
+    "ThermostatSetpoint:SingleHeating",
+    "ThermostatSetpoint:SingleCooling",
+    "ThermostatSetpoint:SingleHeatingOrCooling",
+    "ThermostatSetpoint:DualSetpoint",
+    "ThermostatSetpoint:ThermalComfort:Fanger:SingleHeating",
+    "ThermostatSetpoint:ThermalComfort:Fanger:SingleCooling",
+    "ThermostatSetpoint:ThermalComfort:Fanger:SingleHeatingOrCooling",
+    "ZoneControl:Thermostat:StagedDualSetpoint",
     "BuildingSurface:Detailed",
     "Wall:Detailed",
     "RoofCeiling:Detailed",
