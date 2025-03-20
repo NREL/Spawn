@@ -616,7 +616,7 @@ void ManageSizing(EnergyPlusData &state)
         }
     }
     // Deallocate arrays no longer needed
-    state.dataSize->ZoneSizing.deallocate();
+    // state.dataSize->ZoneSizing.deallocate();
     // CalcZoneSizing.deallocate();
     if (state.dataHeatBal->doSpaceHeatBalanceSizing) {
         state.dataSize->SpaceSizing.deallocate();

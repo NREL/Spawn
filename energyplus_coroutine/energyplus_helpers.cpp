@@ -231,13 +231,13 @@ namespace zone_group_sizing {
     if (!HaveSizingInfo(energyplus_data)) {
       return {0.0, 0, 0};
     }
-
-    const auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
+    auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
+    size_t first_zone_num = zone_nums.front();
     const auto num_design_days = zone_sizing.isize1();
     std::vector<PeakLoad> peak_loads;
 
-    for (int design_day_index = 0; design_day_index <= num_design_days; ++design_day_index) {
-      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, 0)).size());
+    for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
+      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
       std::vector<double> combined_group_load(num_timesteps);
 
       for (const auto &zone_num : zone_nums) {

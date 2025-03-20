@@ -1,21 +1,11 @@
 #include "variables.hpp"
-#include "../energyplus/idd/embedded/EmbeddedEpJSONSchema.hh"
-#include "../energyplus/src/EnergyPlus/DataStringGlobals.hh"
-#include "../energyplus/src/EnergyPlus/InputProcessing/IdfParser.hh"
 #include "../energyplus/src/EnergyPlus/UtilityRoutines.hh"
 #include "energyplus_helpers.hpp"
 #include "iddtypes.hpp"
-#include "input/outputvariable.hpp"
-#include "input/schedule.hpp"
-#include "input/surface.hpp"
 #include "input/user_config.hpp"
-#include "input/zone.hpp"
 #include "output_types.hpp"
-#include "spawn.hpp"
 #include "spdlog/spdlog.h"
 #include <EnergyPlusData.hh>
-#include <fstream>
-#include <iostream>
 #include <vector>
 
 using json = nlohmann::json;
