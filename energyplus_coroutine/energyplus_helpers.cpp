@@ -9,6 +9,7 @@
 #include <InternalHeatGains.hh>
 #include <Psychrometrics.hh>
 #include <ZoneTempPredictorCorrector.hh>
+#include <algorithm>
 #include <api/datatransfer.h>
 #include <string_view>
 
@@ -212,9 +213,9 @@ namespace zone_group_sizing {
 
   struct PeakLoad
   {
-    const double value;
-    const int day_timestep;
-    const int design_day_index;
+    double value;
+    int day_timestep;
+    int design_day_index;
   };
 
   // Instances of this function type will receive ZoneSizingData and return a sequence of loads for each timestep within
@@ -224,43 +225,44 @@ namespace zone_group_sizing {
   // The purpose of this function is to find the design day and timestep that has the highest combined load for the
   // given zones. This function is generic. The get_load_seq function defines what type of peak load (Sensible Cooling |
   // Heating) to locate.
-  [[nodiscard]] PeakLoad GetPeakLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                     const std::vector<int> &zone_nums,
-                                     const GetLoadSeqFunc &get_load_seq)
-  {
-    if (!HaveSizingInfo(energyplus_data)) {
-      return {0.0, 0, 0};
-    }
-    auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
-    size_t first_zone_num = zone_nums.front();
-    const auto num_design_days = zone_sizing.isize1();
-    std::vector<PeakLoad> peak_loads;
+  namespace {
+    [[nodiscard]] PeakLoad GetPeakLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                       const std::vector<int> &zone_nums,
+                                       const GetLoadSeqFunc &get_load_seq)
+    {
+      if (!HaveSizingInfo(energyplus_data)) {
+        return {0.0, 0, 0};
+      }
+      auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
+      size_t first_zone_num = zone_nums.front();
+      const auto num_design_days = zone_sizing.isize1();
+      std::vector<PeakLoad> peak_loads;
 
-    for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
-      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
-      std::vector<double> combined_group_load(num_timesteps);
+      for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
+        const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
+        std::vector<double> combined_group_load(num_timesteps);
 
-      for (const auto &zone_num : zone_nums) {
-        const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
-        for (int i = 0; i < num_timesteps; ++i) {
-          combined_group_load[i] += load_seq[i];
+        for (const auto &zone_num : zone_nums) {
+          const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
+          for (int i = 0; i < num_timesteps; ++i) {
+            combined_group_load[i] += load_seq[i];
+          }
         }
+
+        const auto peak_value = std::max_element(combined_group_load.begin(), combined_group_load.end());
+        const auto timestep_of_peak = static_cast<int>(std::distance(combined_group_load.begin(), peak_value) + 1);
+
+        // Store the PeakLoad for this design day
+        peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
       }
 
-      const auto peak_value = std::max_element(combined_group_load.begin(), combined_group_load.end());
-      const auto timestep_of_peak = static_cast<int>(std::distance(combined_group_load.begin(), peak_value) + 1);
+      // Find the PeakLoad across all design days
+      const auto gloabl_peak_load = std::max_element(
+          peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
 
-      // Store the PeakLoad for this design day
-      peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
+      return *gloabl_peak_load;
     }
-
-    // Find the PeakLoad across all design days
-    const auto gloabl_peak_load = std::max_element(
-        peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
-
-    return *gloabl_peak_load;
-  }
-
+  } // namespace
   [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
                                            const std::vector<int> &zone_nums)
   {
@@ -640,25 +642,21 @@ void UpdateZoneHumidityRatio(EnergyPlus::EnergyPlusData &energyplus_data, const 
                     energyplus_data.dataEnvrn->OutHumRat) +
                    zone_heat_balance.EAMFLxHumRat + (moistureMassFlowRate) + zone_heat_balance.SumHmARaW +
                    zone_heat_balance.MixingMassFlowXHumRat +
-                   zone_heat_balance.MDotOA * energyplus_data.dataEnvrn->OutHumRat;
+                   (zone_heat_balance.MDotOA * energyplus_data.dataEnvrn->OutHumRat);
 
   const double C = RhoAir * Zone(zonenum).Volume * Zone(zonenum).ZoneVolCapMultpMoist / dt;
 
-  double newHumidityRatio = humidityRatio + B / C;
+  double newHumidityRatio = humidityRatio + (B / C);
 
   // Set the humidity ratio to zero if the zone has been dried out
-  if (newHumidityRatio < 0.0) {
-    newHumidityRatio = 0.0;
-  }
+  newHumidityRatio = std::max(newHumidityRatio, 0.0);
 
   // Check to make sure that is saturated there is condensation in the zone
   // by resetting to saturation conditions.
   const double wzSat = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
       energyplus_data, ZT, 1.0, energyplus_data.dataEnvrn->OutBaroPress, RoutineName);
 
-  if (newHumidityRatio > wzSat) {
-    newHumidityRatio = wzSat;
-  }
+  newHumidityRatio = std::min(newHumidityRatio, wzSat);
 
   SetZoneHumidityRatio(energyplus_data, zonenum, newHumidityRatio);
 }
