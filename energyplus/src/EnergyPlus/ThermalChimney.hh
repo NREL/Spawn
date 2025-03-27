@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,8 +70,7 @@ namespace ThermalChimney {
         std::string Name;
         int RealZonePtr;
         std::string RealZoneName;
-        int SchedPtr;
-        std::string SchedName;
+        Sched::Schedule *availSched = nullptr;
         Real64 AbsorberWallWidth;
         Real64 AirOutletCrossArea;
         Real64 DischargeCoeff;
@@ -87,8 +86,8 @@ namespace ThermalChimney {
 
         // Default Constructor
         ThermalChimneyData()
-            : RealZonePtr(0), SchedPtr(0), AbsorberWallWidth(0.0), AirOutletCrossArea(0.0), DischargeCoeff(0.0), TotZoneToDistrib(0),
-              EMSOverrideOn(false), EMSAirFlowRateValue(0)
+            : RealZonePtr(0), AbsorberWallWidth(0.0), AirOutletCrossArea(0.0), DischargeCoeff(0.0), TotZoneToDistrib(0), EMSOverrideOn(false),
+              EMSAirFlowRateValue(0)
         {
         }
     };
@@ -147,6 +146,10 @@ struct ThermalChimneysData : BaseGlobalStruct
     EPVector<ThermalChimney::ThermalChimneyData> ThermalChimneySys;
     EPVector<ThermalChimney::ThermChimZnReportVars> ZnRptThermChim;
     EPVector<ThermalChimney::ThermChimReportVars> ThermalChimneyReport;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

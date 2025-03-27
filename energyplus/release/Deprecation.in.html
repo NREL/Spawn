@@ -134,16 +134,34 @@
         this capability are now considered potentially deprecated.
     </p>
 
+    <h2>Level 2 Deprecation Status</h2>
+
     <h3>EP-Launch (Classic)</h3>
     <p>
         The EP-Launch tool that has been packaged with EnergyPlus for decades is tabbed for potential removal in a
-        future release.  A new Python-based cross-platform version of EP-Launch has been developed, tested, and
-        released, but not included in the EnergyPlus installation, thus limiting adoption.  With 24.2, we are packaging
-        that new tool with EnergyPlus installations, and will await feedback from users.  Based on this, the classic
-        EP-Launch tool will be placed on the deprecation path.
+        future release.  A new Python-based cross-platform version of EP-Launch has been developed, tested, and is now
+        packaged right with the EnergyPlus installation on all platforms.  On Windows, the start menu now includes
+        both the EPLaunch (classic) tool, along with an EPLaunch Python shortcut.  We encourage users to try out the
+        new Python-based tool, and see how it can unlock new workflows and capabilities.  Although it has been tested
+        heavily in-house, we are excited for feedback.  To learn more about this new version of EP-Launch, you can find
+        information on the <a href="https://github.com/NREL/EP-Launch">GitHub repository</a>. Users are also welcome to
+        install the new EP-Launch tool into their Python environment which would allow getting updates to the tool more
+        frequently.  The classic EP-Launch tool is going to be removed from our maintenance and package at a future date
+        based on user feedback on the new tool.
     </p>
 
-    <h2>Level 2 Deprecation Status</h2>
+    <h3>IDFVersionUpdater (Classic)</h3>
+    <p>
+        EnergyPlus has maintained and provided a small client app that made it easier for users to update their input
+        files between versions of EnergyPlus.  The tool is written in a relatively uncommon language, and the team
+        is not able to readily maintain this version of the tool.  The team created a very similar tool in Python, and
+        as of EnergyPlus 25.1.0, the tool was packaged up with the installer, and is ready for user testing.  The tool
+        has undergone significant testing, but we are excited to get feedback from users.  On Windows and Mac, we are
+        still including the classic version of the tool, for now, in case of any unforeseen issues.  However, on Linux,
+        we discovered that the classic tool was not functional anymore as of Ubuntu 24.04, and so we removed the classic
+        tool completely.  On all platforms, it is expected that the classic version updater tool will be removed in the
+        next version.
+    </p>
 
     <h3>32-bit Windows Builds</h3>
     <p>
@@ -171,8 +189,8 @@
 
     <h3>Outdated Linux Builds</h3>
     <p>
-        Ubuntu 18.04 builds are no longer provided.  This version reached end of life in April 2023, and we have instead
-        added 22.04.
+        Ubuntu 18.04 and 20.04 builds are no longer provided.  These versions are at, or near, end of life.  Moving
+        forward, we will continue providing Linux builds for the two most recent Linux LTS versions.
     </p>
 
     <h3>Outdated Mac Builds</h3>

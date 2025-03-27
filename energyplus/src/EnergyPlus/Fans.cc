@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -304,8 +304,8 @@ void GetFanInput(EnergyPlusData &state)
         fan->sizingPrefix = cNumericFieldNames(3);
 
         if (lAlphaFieldBlanks(2)) {
-            fan->availSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(2))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(2))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), cAlphaArgs(2));
             ErrorsFound = true;
         }
@@ -383,8 +383,8 @@ void GetFanInput(EnergyPlusData &state)
         fan->sizingPrefix = cNumericFieldNames(3);
 
         if (lAlphaFieldBlanks(2)) {
-            fan->availSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(2))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(2))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), cAlphaArgs(2));
             ErrorsFound = true;
         }
@@ -473,16 +473,15 @@ void GetFanInput(EnergyPlusData &state)
         fan->sizingPrefix = cNumericFieldNames(3);
 
         if (lAlphaFieldBlanks(2)) {
-            fan->availSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(2))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(2))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), cAlphaArgs(2));
             ErrorsFound = true;
-        } else if (ScheduleManager::HasFractionalScheduleValue(state, fan->availSchedNum)) {
-            ShowWarningError(state,
-                             format("{}=\"{}\" has fractional values in Schedule={}. Only 0.0 in the schedule value turns the fan off.",
-                                    cCurrentModuleObject,
-                                    fan->Name,
-                                    cAlphaArgs(2)));
+        } else if (fan->availSched->hasFractionalVal(state)) {
+            ShowWarningCustom(
+                state,
+                eoh,
+                format("{}={} has fracdtional values. Only 0.0 in the schedule value turns the fan off.", cAlphaFieldNames(2), cAlphaArgs(2)));
         }
 
         fan->totalEff = rNumericArgs(1);
@@ -523,17 +522,12 @@ void GetFanInput(EnergyPlusData &state)
         fan->endUseSubcategoryName = (NumAlphas > 4 && !lAlphaFieldBlanks(5)) ? cAlphaArgs(5) : "General";
 
         if (NumAlphas <= 5 || lAlphaFieldBlanks(6)) {
-            fan->flowFracSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->flowFracSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(6))) == 0) {
+            fan->flowFracSched = Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+        } else if ((fan->flowFracSched = Sched::GetSchedule(state, cAlphaArgs(6))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(6), cAlphaArgs(6));
             ErrorsFound = true;
-        } else if (!ScheduleManager::CheckScheduleValueMinMax(
-                       state, fan->flowFracSchedNum, ScheduleManager::Clusivity::Inclusive, 0.0, ScheduleManager::Clusivity::Inclusive, 1.0)) {
-            ShowSevereError(
-                state,
-                format("{}: {}: invalid {} for {}={}", routineName, cCurrentModuleObject, cAlphaFieldNames(6), cAlphaFieldNames(1), cAlphaArgs(1)));
-            ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(6), cAlphaArgs(6)));
-            ShowContinueError(state, "Schedule values must be (>=0., <=1.)");
+        } else if (!fan->flowFracSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+            Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(6), cAlphaArgs(6), Clusive::In, 0.0, Clusive::In, 1.0);
             ErrorsFound = true;
         }
 
@@ -546,14 +540,14 @@ void GetFanInput(EnergyPlusData &state)
         }
 
         if (NumAlphas <= 7 || lAlphaFieldBlanks(8)) {
-            fan->minTempLimitSchedNum = 0;
-        } else if ((fan->minTempLimitSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(8))) == 0) {
+            fan->minTempLimitSched = nullptr;
+        } else if ((fan->minTempLimitSched = Sched::GetSchedule(state, cAlphaArgs(8))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(8), cAlphaArgs(8));
             ErrorsFound = true;
         }
 
         if (NumAlphas <= 8 || lAlphaFieldBlanks(9)) {
-            fan->balancedFractSchedNum = 0;
+            fan->balancedFractSched = nullptr;
         } else if (state.dataHeatBal->ZoneAirMassFlow.ZoneFlowAdjustment != DataHeatBalance::AdjustmentType::NoAdjustReturnAndMixing) {
             // do not include adjusted for "balanced" exhaust flow in the zone total return calculation
             ShowWarningError(state,
@@ -566,17 +560,12 @@ void GetFanInput(EnergyPlusData &state)
                                     cAlphaArgs(1)));
             ShowContinueError(state, "When zone air mass flow balance is enforced, this input field should be left blank.");
             ShowContinueError(state, "This schedule will be ignored in the simulation.");
-            fan->balancedFractSchedNum = 0;
-        } else if ((fan->balancedFractSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(9))) == 0) {
+            fan->balancedFractSched = nullptr;
+        } else if ((fan->balancedFractSched = Sched::GetSchedule(state, cAlphaArgs(9))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(9), cAlphaArgs(9));
             ErrorsFound = true;
-        } else if (!ScheduleManager::CheckScheduleValueMinMax(
-                       state, fan->balancedFractSchedNum, ScheduleManager::Clusivity::Inclusive, 0.0, ScheduleManager::Clusivity::Inclusive, 1.0)) {
-            ShowSevereError(
-                state,
-                format("{}: {}: invalid {} for {}={}", routineName, cCurrentModuleObject, cAlphaFieldNames(9), cAlphaFieldNames(1), cAlphaArgs(1)));
-            ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(9), cAlphaArgs(9)));
-            ShowContinueError(state, "Schedule values must be (>=0., <=1.)");
+        } else if (!fan->balancedFractSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+            Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(9), cAlphaArgs(9), Clusive::In, 0.0, Clusive::In, 1.0);
             ErrorsFound = true;
         }
         if (ErrorsFound) {
@@ -616,8 +605,8 @@ void GetFanInput(EnergyPlusData &state)
         fan->sizingPrefix = cNumericFieldNames(3);
 
         if (lAlphaFieldBlanks(2)) {
-            fan->availSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(2))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(2))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), cAlphaArgs(2));
             ErrorsFound = true;
         }
@@ -780,8 +769,8 @@ void GetFanInput(EnergyPlusData &state)
         BranchNodeConnections::TestCompSet(state, cCurrentModuleObject, cAlphaArgs(1), cAlphaArgs(2), cAlphaArgs(3), "Air Nodes");
 
         if (lAlphaFieldBlanks(4)) {
-            fan->availSchedNum = 0;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(4))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(4))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(4), cAlphaArgs(4));
             ErrorsFound = true;
         }
@@ -875,8 +864,8 @@ void GetFanInput(EnergyPlusData &state)
         fan->type = HVAC::FanType::SystemModel;
 
         if (lAlphaFieldBlanks(2)) {
-            fan->availSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else if ((fan->availSchedNum = ScheduleManager::GetScheduleIndex(state, cAlphaArgs(2))) == 0) {
+            fan->availSched = Sched::GetScheduleAlwaysOn(state); // nullptr
+        } else if ((fan->availSched = Sched::GetSchedule(state, cAlphaArgs(2))) == nullptr) {
             ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), cAlphaArgs(2));
             ErrorsFound = true;
         }
@@ -1124,7 +1113,7 @@ void GetFanInput(EnergyPlusData &state)
         if (fan->type == HVAC::FanType::Exhaust) {
             auto *fanExhaust = dynamic_cast<FanComponent *>(fan);
             assert(fanExhaust != nullptr);
-            if (fanExhaust->balancedFractSchedNum > 0) {
+            if (fanExhaust->balancedFractSched != nullptr) {
                 SetupOutputVariable(state,
                                     "Fan Unbalanced Air Mass Flow Rate",
                                     Constant::Units::kg_s,
@@ -1306,8 +1295,8 @@ void FanComponent::init(EnergyPlusData &state)
     } else { // zone exhaust fans
         massFlowRateMaxAvail = maxAirMassFlowRate;
         massFlowRateMinAvail = 0.0;
-        if (flowFracSchedNum > 0) { // modulate flow
-            inletAirMassFlowRate = massFlowRateMaxAvail * ScheduleManager::GetCurrentScheduleValue(state, flowFracSchedNum);
+        if (flowFracSched != nullptr) { // modulate flow
+            inletAirMassFlowRate = massFlowRateMaxAvail * flowFracSched->getCurrentVal();
             inletAirMassFlowRate = max(0.0, inletAirMassFlowRate);
         } else { // always run at max
             inletAirMassFlowRate = massFlowRateMaxAvail;
@@ -1658,19 +1647,14 @@ void FanComponent::simulateConstant(EnergyPlusData &state)
     if (faultyFilterFlag && (!state.dataGlobal->WarmupFlag) && (!state.dataGlobal->DoingSizing) && (!state.dataGlobal->KickOffSimulation)) {
         auto &fault = state.dataFaultsMgr->FaultsFouledAirFilters(faultyFilterIndex);
         // Check fault availability schedules
-        if (ScheduleManager::GetCurrentScheduleValue(state, fault.availSchedNum) > 0.0) {
+        if (fault.availSched->getCurrentVal() > 0.0) {
             // Decrease of the Fan Design Volume Flow Rate [m3/sec]
-            Real64 _fanDesignFlowRateDec =
-                CalFaultyFanAirFlowReduction(state,
-                                             Name,
-                                             maxAirFlowRate,
-                                             deltaPress,
-                                             (ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) - 1) * deltaPress,
-                                             fault.fanCurveNum);
+            Real64 _fanDesignFlowRateDec = CalFaultyFanAirFlowReduction(
+                state, Name, maxAirFlowRate, deltaPress, (fault.pressFracSched->getCurrentVal() - 1) * deltaPress, fault.fanCurveNum);
 
             // Update MassFlow & DeltaPress of the fan
             _massFlow = min(_massFlow, maxAirMassFlowRate - _fanDesignFlowRateDec * _rhoAir);
-            _deltaPress = ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) * deltaPress;
+            _deltaPress = fault.pressFracSched->getCurrentVal() * deltaPress;
         }
     }
 
@@ -1683,8 +1667,7 @@ void FanComponent::simulateConstant(EnergyPlusData &state)
     _massFlow = max(_massFlow, minAirMassFlowRate);
 
     // Determine the Fan Schedule for the Time step
-    if ((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 || state.dataHVACGlobal->TurnFansOn) &&
-        !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
+    if ((availSched->getCurrentVal() > 0.0 || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
         // Fan is operating
         totalPower = max(0.0, _massFlow * _deltaPress / (_totalEff * _rhoAir)); // total fan power
         _shaftPower = _motorEff * totalPower;                                   // power delivered to shaft
@@ -1775,19 +1758,15 @@ void FanComponent::simulateVAV(EnergyPlusData &state, ObjexxFCL::Optional<Real64
 
         auto &fault = state.dataFaultsMgr->FaultsFouledAirFilters(faultyFilterIndex);
         // Check fault availability schedules
-        if (ScheduleManager::GetCurrentScheduleValue(state, fault.availSchedNum) > 0.0) {
+        if (fault.availSched->getCurrentVal() > 0.0) {
             Real64 _fanDesignFlowRateDec = // Decrease of the Fan Design Volume Flow Rate [m3/sec]
-                CalFaultyFanAirFlowReduction(state,
-                                             Name,
-                                             maxAirFlowRate,
-                                             deltaPress,
-                                             (ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) - 1) * deltaPress,
-                                             fault.fanCurveNum);
+                CalFaultyFanAirFlowReduction(
+                    state, Name, maxAirFlowRate, deltaPress, (fault.pressFracSched->getCurrentVal() - 1) * deltaPress, fault.fanCurveNum);
 
             // Update MassFlow & DeltaPress of the fan
             _maxAirFlowRate = maxAirFlowRate - _fanDesignFlowRateDec;
             _maxAirMassFlowRate = maxAirMassFlowRate - _fanDesignFlowRateDec * _rhoAir;
-            _deltaPress = ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) * deltaPress;
+            _deltaPress = fault.pressFracSched->getCurrentVal() * deltaPress;
         }
     }
 
@@ -1799,8 +1778,7 @@ void FanComponent::simulateVAV(EnergyPlusData &state, ObjexxFCL::Optional<Real64
     _massFlow = min(_massFlow, _maxAirMassFlowRate);
 
     // Determine the Fan Schedule for the Time step
-    if ((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 || state.dataHVACGlobal->TurnFansOn) &&
-        !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
+    if ((availSched->getCurrentVal() > 0.0 || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
         // Fan is operating - calculate power loss and enthalpy rise
         //  fan%FanPower = PartLoadFrac*FullMassFlow*DeltaPress/(FanEff*RhoAir) ! total fan power
         // Calculate and check limits on fraction of system flow
@@ -1918,18 +1896,14 @@ void FanComponent::simulateOnOff(EnergyPlusData &state, ObjexxFCL::Optional<Real
         auto &fault = state.dataFaultsMgr->FaultsFouledAirFilters(faultyFilterIndex);
 
         // Check fault availability schedules
-        if (ScheduleManager::GetCurrentScheduleValue(state, fault.availSchedNum) > 0.0) {
+        if (fault.availSched->getCurrentVal() > 0.0) {
             Real64 _fanDesignFlowRateDec = // Decrease of the Fan Design Volume Flow Rate [m3/sec]
-                CalFaultyFanAirFlowReduction(state,
-                                             Name,
-                                             maxAirFlowRate,
-                                             deltaPress,
-                                             (ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) - 1) * deltaPress,
-                                             fault.fanCurveNum);
+                CalFaultyFanAirFlowReduction(
+                    state, Name, maxAirFlowRate, deltaPress, (fault.pressFracSched->getCurrentVal() - 1) * deltaPress, fault.fanCurveNum);
 
             // Update MassFlow & DeltaPress of the fan
             _maxAirMassFlowRate = maxAirMassFlowRate - _fanDesignFlowRateDec * _rhoAir;
-            _deltaPress = ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum) * deltaPress;
+            _deltaPress = fault.pressFracSched->getCurrentVal() * deltaPress;
         }
     }
 
@@ -1943,8 +1917,8 @@ void FanComponent::simulateOnOff(EnergyPlusData &state, ObjexxFCL::Optional<Real
     runtimeFrac = 0.0;
 
     // Determine the Fan Schedule for the Time step
-    if ((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 || state.dataHVACGlobal->TurnFansOn) &&
-        !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0 && maxAirMassFlowRate > 0.0) {
+    if ((availSched->getCurrentVal() > 0.0 || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0 &&
+        maxAirMassFlowRate > 0.0) {
         // The actual flow fraction is calculated from MassFlow and the MaxVolumeFlow * AirDensity
         Real64 _flowFrac = _massFlow / _maxAirMassFlowRate;
 
@@ -2079,24 +2053,16 @@ void FanComponent::simulateZoneExhaust(EnergyPlusData &state)
 
     // apply controls to determine if operating
     if (availManagerMode == AvailManagerMode::Coupled) {
-        if (((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0) || state.dataHVACGlobal->TurnFansOn) &&
-            !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) { // available
-            if (minTempLimitSchedNum > 0) {
-                _fanIsRunning = (_Tin >= ScheduleManager::GetCurrentScheduleValue(state, minTempLimitSchedNum));
-            } else {
-                _fanIsRunning = true;
-            }
+        if (((availSched->getCurrentVal() > 0.0) || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff &&
+            _massFlow > 0.0) { // available
+            _fanIsRunning = (minTempLimitSched != nullptr) ? (_Tin >= minTempLimitSched->getCurrentVal()) : true;
         } else {
             _fanIsRunning = false;
         }
 
     } else if (availManagerMode == AvailManagerMode::Decoupled) {
-        if (ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 && _massFlow > 0.0) {
-            if (minTempLimitSchedNum > 0) {
-                _fanIsRunning = (_Tin >= ScheduleManager::GetCurrentScheduleValue(state, minTempLimitSchedNum));
-            } else {
-                _fanIsRunning = true;
-            }
+        if (availSched->getCurrentVal() > 0.0 && _massFlow > 0.0) {
+            _fanIsRunning = (minTempLimitSched != nullptr) ? (_Tin >= minTempLimitSched->getCurrentVal()) : true;
         } else {
             _fanIsRunning = false;
         }
@@ -2187,8 +2153,7 @@ void FanComponent::simulateComponentModel(EnergyPlusData &state)
     //  IF (fan%EMSMaxMassFlowOverrideOn) MassFlow   = fan%EMSAirMassFlowValue
 
     // Determine the Fan Schedule for the Time step
-    if ((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 || state.dataHVACGlobal->TurnFansOn) &&
-        !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
+    if ((availSched->getCurrentVal() > 0.0 || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff && _massFlow > 0.0) {
         // Fan is operating - calculate fan pressure rise, component efficiencies and power, and also air enthalpy rise
 
         // Calculate fan static pressure rise using fan volumetric flow, std air density, air-handling system characteristics,
@@ -2358,9 +2323,8 @@ void FanComponent::update(EnergyPlusData &state)
         inletNode.MassFlowRate = inletAirMassFlowRate;
         if (state.afn->AirflowNetworkNumOfExhFan == 0) {
             state.dataHVACGlobal->UnbalExhMassFlow = inletAirMassFlowRate;
-            if (balancedFractSchedNum > 0) {
-                state.dataHVACGlobal->BalancedExhMassFlow =
-                    state.dataHVACGlobal->UnbalExhMassFlow * ScheduleManager::GetCurrentScheduleValue(state, balancedFractSchedNum);
+            if (balancedFractSched != nullptr) {
+                state.dataHVACGlobal->BalancedExhMassFlow = state.dataHVACGlobal->UnbalExhMassFlow * balancedFractSched->getCurrentVal();
                 state.dataHVACGlobal->UnbalExhMassFlow = state.dataHVACGlobal->UnbalExhMassFlow - state.dataHVACGlobal->BalancedExhMassFlow;
             } else {
                 state.dataHVACGlobal->BalancedExhMassFlow = 0.0;
@@ -2803,9 +2767,9 @@ void FanSystem::calcSimpleSystemFan(
     if (faultyFilterFlag && (state.dataFaultsMgr->NumFaultyAirFilter > 0) && (!state.dataGlobal->WarmupFlag) && (!state.dataGlobal->DoingSizing) &&
         state.dataGlobal->DoWeathSim && (!EMSMaxMassFlowOverrideOn) && (!EMSPressureOverrideOn)) {
         auto &fault = state.dataFaultsMgr->FaultsFouledAirFilters(faultyFilterIndex);
-        if (ScheduleManager::GetCurrentScheduleValue(state, fault.availSchedNum) > 0) {
+        if (fault.availSched->getCurrentVal() > 0) {
             _faultActive = true;
-            Real64 _pressFrac = ScheduleManager::GetCurrentScheduleValue(state, fault.pressFracSchedNum);
+            Real64 _pressFrac = fault.pressFracSched->getCurrentVal();
             Real64 _designFlowRateDec = // Decrease of the Fan Design Volume Flow Rate [m3/sec]
                 Fans::CalFaultyFanAirFlowReduction(state, Name, maxAirFlowRate, deltaPress, (_pressFrac - 1) * deltaPress, fault.fanCurveNum);
 
@@ -2844,8 +2808,8 @@ void FanSystem::calcSimpleSystemFan(
         }
     }
 
-    if ((ScheduleManager::GetCurrentScheduleValue(state, availSchedNum) > 0.0 || state.dataHVACGlobal->TurnFansOn) &&
-        !state.dataHVACGlobal->TurnFansOff && ((_localAirMassFlow[0] + _localAirMassFlow[1]) > 0.0)) {
+    if ((availSched->getCurrentVal() > 0.0 || state.dataHVACGlobal->TurnFansOn) && !state.dataHVACGlobal->TurnFansOff &&
+        ((_localAirMassFlow[0] + _localAirMassFlow[1]) > 0.0)) {
         // fan is running
 
         for (int mode = 0; mode < _numModes; ++mode) {

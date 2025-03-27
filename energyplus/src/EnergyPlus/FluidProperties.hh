@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,7 +67,10 @@ namespace EnergyPlus {
 // Forward declarations
 struct EnergyPlusData;
 
-namespace FluidProperties {
+namespace Fluid {
+
+    constexpr int GlycolNum_Water = 1;
+    constexpr int RefrigNum_Steam = 1;
 
 #undef PERFORMANCE_OPT
 
@@ -229,6 +232,8 @@ namespace FluidProperties {
                                  Real64 Temperature,           // actual temperature given as input
                                  Real64 Pressure,              // actual pressure given as input
                                  std::string_view CalledFrom); // routine this function was called from (error messages)
+
+        void setTempLimits(EnergyPlusData &state, bool &ErrorsFound);
     };
 
     enum class GlycolError
@@ -372,21 +377,24 @@ namespace FluidProperties {
         Real64 getViscosity(EnergyPlusData &state,
                             Real64 Temperature,           // actual temperature given as input
                             std::string_view CalledFrom); // routine this function was called from (error messages)
+
+        void setTempLimits(EnergyPlusData &state, bool &ErrorsFound);
+
+        void getDensityTemperatureLimits(EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit);
+
+        void getSpecificHeatTemperatureLimits(EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit);
     };
 
     struct cached_tsh
     {
         // Members
-        std::uint64_t iT;
-        Real64 sh;
-
-        // Default Constructor
-        cached_tsh() : iT(1000), sh(0.0)
-        {
-        }
+        std::uint64_t iT = 1000;
+        Real64 sh = 0.0;
     };
 
     void GetFluidPropertiesData(EnergyPlusData &state);
+
+    void InitConstantFluidPropertiesData(EnergyPlusData &state);
 
     template <size_t NumOfTemps, size_t NumOfConcs>
     void InterpDefValuesForGlycolConc(
@@ -406,14 +414,10 @@ namespace FluidProperties {
                                    Array1D<Real64> &InterpData         // interpolated output data at proper concentration
     );
 
-    void InitializeGlycolTempLimits(EnergyPlusData &state, bool &ErrorsFound); // set to true if errors found here
-
-    void InitializeRefrigerantLimits(EnergyPlusData &state, bool &ErrorsFound); // set to true if errors found here
-
     void ReportAndTestGlycols(EnergyPlusData &state);
 
     void ReportAndTestRefrigerants(EnergyPlusData &state);
-
+#ifdef GET_OUT
     Real64 GetQualityRefrig(EnergyPlusData &state,
                             std::string const &Refrigerant, // carries in substance name
                             Real64 Temperature,             // actual temperature given as input
@@ -521,6 +525,7 @@ namespace FluidProperties {
                               int &GlycolIndex,           // Index to Glycol Properties
                               std::string_view CalledFrom // routine this function was called from (error messages)
     );
+#endif // GET_OUT
 
     inline Real64 GetInterpValue(Real64 const Tact, // actual temperature at which we want the property of interest
                                  Real64 const Tlo,  // temperature below Tact for which we have property data
@@ -534,12 +539,14 @@ namespace FluidProperties {
 
     int GetRefrigNum(EnergyPlusData &state, std::string_view name);
     RefrigProps *GetRefrig(EnergyPlusData &state, std::string_view name);
+    RefrigProps *GetSteam(EnergyPlusData &state);
 
     int GetGlycolRawNum(EnergyPlusData &state, std::string_view name);
     GlycolRawProps *GetGlycolRaw(EnergyPlusData &state, std::string_view name);
 
     int GetGlycolNum(EnergyPlusData &state, std::string_view name);
     GlycolProps *GetGlycol(EnergyPlusData &state, std::string_view name);
+    GlycolProps *GetWater(EnergyPlusData &state);
 
     std::string GetGlycolNameByIndex(EnergyPlusData &state, int Idx); // carries in substance index
 
@@ -564,46 +571,8 @@ namespace FluidProperties {
                                   int UpperBound                    // Valid values upper bound (set by calling program)
     );
 
-    bool CheckFluidPropertyName(EnergyPlusData const &state,
-                                std::string const &NameToCheck); // Name from input(?) to be checked against valid FluidPropertyNames
-
     void ReportOrphanFluids(EnergyPlusData &state);
-
-    void GetFluidDensityTemperatureLimits(EnergyPlusData &state, int FluidIndex, Real64 &MinTempLimit, Real64 &MaxTempLimit);
-
-    void GetFluidSpecificHeatTemperatureLimits(EnergyPlusData &state, int FluidIndex, Real64 &MinTempLimit, Real64 &MaxTempLimit);
-
-    struct GlycolAPI
-    {
-        std::string glycolName;
-        int glycolIndex;
-        std::string cf;
-        explicit GlycolAPI(EnergyPlusData &state, std::string const &glycolName);
-        ~GlycolAPI() = default;
-        Real64 specificHeat(EnergyPlusData &state, Real64 temperature);
-        Real64 density(EnergyPlusData &state, Real64 temperature);
-        Real64 conductivity(EnergyPlusData &state, Real64 temperature);
-        Real64 viscosity(EnergyPlusData &state, Real64 temperature);
-    };
-
-    struct RefrigerantAPI
-    {
-        std::string rName;
-        int rIndex;
-        std::string cf;
-        explicit RefrigerantAPI(EnergyPlusData &state, std::string const &refrigName);
-        ~RefrigerantAPI() = default;
-        Real64 saturationPressure(EnergyPlusData &state, Real64 temperature);
-        Real64 saturationTemperature(EnergyPlusData &state, Real64 pressure);
-        Real64 saturatedEnthalpy(EnergyPlusData &state, Real64 temperature, Real64 quality);
-        Real64 saturatedDensity(EnergyPlusData &state, Real64 temperature, Real64 quality);
-        Real64 saturatedSpecificHeat(EnergyPlusData &state, Real64 temperature, Real64 quality);
-        Real64 superHeatedEnthalpy(EnergyPlusData &state, Real64 temperature, Real64 pressure);
-        Real64 superHeatedPressure(EnergyPlusData &state, Real64 temperature, Real64 enthalpy);
-        Real64 superHeatedDensity(EnergyPlusData &state, Real64 temperature, Real64 pressure);
-    };
-
-} // namespace FluidProperties
+} // namespace Fluid
 
 struct FluidData : BaseGlobalStruct
 {
@@ -612,11 +581,11 @@ struct FluidData : BaseGlobalStruct
     int GlycolErrorLimitTest = 1; // how many times error is printed with details before recurring called
     int RefrigErrorLimitTest = 1; // how many times error is printed with details before recurring called
 
-    Array1D<FluidProperties::RefrigProps *> refrigs;
-    Array1D<FluidProperties::GlycolRawProps *> glycolsRaw;
-    Array1D<FluidProperties::GlycolProps *> glycols;
+    Array1D<Fluid::RefrigProps *> refrigs;
+    Array1D<Fluid::GlycolRawProps *> glycolsRaw;
+    Array1D<Fluid::GlycolProps *> glycols;
 
-    std::array<int, (int)FluidProperties::GlycolError::Num> glycolErrorLimits = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<int, (int)Fluid::GlycolError::Num> glycolErrorLimits = {0, 0, 0, 0, 0, 0, 0, 0};
 
     int SatErrCountGetSupHeatEnthalpyRefrig = 0;
     int SatErrCountGetSupHeatDensityRefrig = 0;
@@ -626,19 +595,27 @@ struct FluidData : BaseGlobalStruct
     int TempRangeErrIndexGetInterpolatedSatProp = 0;
 
 #ifdef EP_cache_GlycolSpecificHeat
-    std::array<FluidProperties::cached_tsh, FluidProperties::t_sh_cache_size> cached_t_sh;
+    std::array<Fluid::cached_tsh, Fluid::t_sh_cache_size> cached_t_sh;
 #endif
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+        Fluid::InitConstantFluidPropertiesData(state);
+    }
 
     void init_state(EnergyPlusData &state) override
     {
-        FluidProperties::GetFluidPropertiesData(state);
+        Fluid::GetFluidPropertiesData(state);
     }
 
     void clear_state() override
     {
 
-        for (int i = 1; i <= refrigs.isize(); ++i)
+        for (int i = 1; i <= refrigs.isize(); ++i) {
+            refrigs(i)->HshValues.deallocate();
+            refrigs(i)->RhoshValues.deallocate();
             delete refrigs(i);
+        }
         for (int i = 1; i <= glycolsRaw.isize(); ++i)
             delete glycolsRaw(i);
         for (int i = 1; i <= glycols.isize(); ++i)

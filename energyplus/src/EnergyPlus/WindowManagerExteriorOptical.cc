@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -249,13 +249,16 @@ namespace Window {
                     constrSh.effShadeBlindEmi[iSlatAng] = EpsShIR * (1.0 + RhoGlIR * TauShIR / (1.0 - RhoGlIR * RhoShIR));
                     constrSh.effGlassEmi[iSlatAng] = EpsGlIR * TauShIR / (1.0 - RhoGlIR * RhoShIR);
                 }
-
-                surfShade.effShadeEmi = Interp(constrSh.effShadeBlindEmi[surfShade.blind.slatAngIdxLo],
-                                               constrSh.effShadeBlindEmi[surfShade.blind.slatAngIdxHi],
-                                               surfShade.blind.slatAngInterpFac);
-                surfShade.effGlassEmi = Interp(constrSh.effGlassEmi[surfShade.blind.slatAngIdxLo],
-                                               constrSh.effGlassEmi[surfShade.blind.slatAngIdxHi],
-                                               surfShade.blind.slatAngInterpFac);
+                // The following surface assignments previously lived in the WindowManagerExteriorThermal file.
+                // They were moved here during the Material refactor, however I found that the array index values Lo/Hi
+                // were making it here still as -1, and this was causing a difficult to diagnose segfault.
+                // I'm moving these back over there, but open to suggestion if they need to be here.
+                // surfShade.effShadeEmi = Interp(constrSh.effShadeBlindEmi[surfShade.blind.slatAngIdxLo],
+                //                                constrSh.effShadeBlindEmi[surfShade.blind.slatAngIdxHi],
+                //                                surfShade.blind.slatAngInterpFac);
+                // surfShade.effGlassEmi = Interp(constrSh.effGlassEmi[surfShade.blind.slatAngIdxLo],
+                //                                constrSh.effGlassEmi[surfShade.blind.slatAngIdxHi],
+                //                                surfShade.blind.slatAngInterpFac);
             } // End of check if interior shade or interior blind
         }     // End of surface loop
     }         // InitWCE_SimplifiedOpticalData()

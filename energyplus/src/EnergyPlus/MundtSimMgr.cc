@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -756,7 +756,7 @@ namespace RoomAir {
                     int hbSurfNum = state.dataMundtSimMgr->ZoneData(ZoneNum).HBsurfaceIndexes(SurfNum);
                     DeltaTemp = state.dataMundtSimMgr->MundtAirSurf(SurfNum, state.dataMundtSimMgr->MundtZoneNum).TMeanAir -
                                 state.dataMundtSimMgr->LineNode(state.dataMundtSimMgr->TstatNodeID, state.dataMundtSimMgr->MundtZoneNum).Temp;
-                    state.dataHeatBal->SurfTempEffBulkAir(hbSurfNum) = state.dataHeatBalFanSys->TempZoneThermostatSetPoint(ZoneNum) + DeltaTemp;
+                    state.dataHeatBal->SurfTempEffBulkAir(hbSurfNum) = state.dataHeatBalFanSys->zoneTstatSetpts(ZoneNum).setpt + DeltaTemp;
                     // set flag for reference air temperature
                     state.dataSurface->SurfTAirRef(hbSurfNum) = DataSurfaces::RefAirTemp::AdjacentAirTemp;
                     state.dataSurface->SurfTAirRefRpt(hbSurfNum) = DataSurfaces::SurfTAirRefReportVals[state.dataSurface->SurfTAirRef(hbSurfNum)];
@@ -770,7 +770,7 @@ namespace RoomAir {
                 int ZoneNodeNum = state.dataHeatBal->Zone(ZoneNum).SystemZoneNodeNumber;
                 DeltaTemp = state.dataMundtSimMgr->LineNode(state.dataMundtSimMgr->ReturnNodeID, state.dataMundtSimMgr->MundtZoneNum).Temp -
                             state.dataMundtSimMgr->LineNode(state.dataMundtSimMgr->TstatNodeID, state.dataMundtSimMgr->MundtZoneNum).Temp;
-                state.dataLoopNodes->Node(ZoneNodeNum).Temp = state.dataHeatBalFanSys->TempZoneThermostatSetPoint(ZoneNum) + DeltaTemp;
+                state.dataLoopNodes->Node(ZoneNodeNum).Temp = state.dataHeatBalFanSys->zoneTstatSetpts(ZoneNum).setpt + DeltaTemp;
                 // d) Thermostat air temperature -> TempTstatAir(ZoneNum)
                 state.dataHeatBalFanSys->TempTstatAir(ZoneNum) = state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum)
                                                                      .ZT; // for indirect coupling, control air temp is equal to mean air temp?

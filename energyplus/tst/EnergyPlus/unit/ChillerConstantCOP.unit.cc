@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -72,9 +72,9 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     state->dataPlnt->TotNumLoops = 4;
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.20;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->MinutesInTimeStep = 60;
 
     std::string const idf_objects = delimited_string({
         "  Chiller:ConstantCOP,",
@@ -100,6 +100,8 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
 
     EXPECT_TRUE(process_idf(idf_objects, false));
 
+    state->init_state(*state);
+
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
     for (int l = 1; l <= state->dataPlnt->TotNumLoops; ++l) {
@@ -116,10 +118,9 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     auto &thisChiller = state->dataPlantChillers->ConstCOPChiller(1);
 
     state->dataPlnt->PlantLoop(1).Name = "ChilledWaterLoop";
-    state->dataPlnt->PlantLoop(1).FluidName = "ChilledWater";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).PlantSizNum = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = thisChiller.Name;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
         DataPlant::PlantEquipmentType::Chiller_ConstCOP;
@@ -127,10 +128,10 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumOut = thisChiller.EvapOutletNodeNum;
 
     state->dataPlnt->PlantLoop(2).Name = "CondenserWaterLoop";
-    state->dataPlnt->PlantLoop(2).FluidName = "CondenserWater";
-    state->dataPlnt->PlantLoop(2).FluidIndex = 1;
     state->dataPlnt->PlantLoop(2).PlantSizNum = 2;
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(2).glycol = Fluid::GetWater(*state);
+
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = thisChiller.Name;
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
         DataPlant::PlantEquipmentType::Chiller_ConstCOP;
@@ -151,7 +152,6 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_WaterCooled_Autosize)
     bool RunFlag(true);
     Real64 MyLoad(-20000.0);
 
-    Psychrometrics::InitializePsychRoutines(*state);
     thisChiller.initialize(*state, RunFlag, MyLoad);
     thisChiller.size(*state);
 
@@ -206,9 +206,9 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_Default_Des_Cond_Evap_Temps)
     state->dataPlnt->TotNumLoops = 12;
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.20;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->MinutesInTimeStep = 60;
 
     std::string const idf_objects = delimited_string({
         "  Chiller:ConstantCOP,",
@@ -261,6 +261,8 @@ TEST_F(EnergyPlusFixture, ChillerConstantCOP_Default_Des_Cond_Evap_Temps)
     });
 
     EXPECT_TRUE(process_idf(idf_objects, false));
+
+    state->init_state(*state);
 
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
 

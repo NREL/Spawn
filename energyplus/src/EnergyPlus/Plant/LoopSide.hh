@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -136,7 +136,6 @@ namespace DataPlant {
         Real64 LoadToLoopSetPointThatWasntMet; // Unmet Demand
         Real64 InitialDemandToLoopSetPointSAVED;
         std::string loopSideDescription;
-        int refrigIndex; // Index denoting refrigerant used (possibly steam)
         // report variables
         Real64 LoopSetPtDemandAtInlet;
         Real64 ThisSideLoadAlterations;
@@ -155,7 +154,7 @@ namespace DataPlant {
               LoopSideInlet_CapExcessStorageTimeReport(0.0), LoopSideInlet_TotalTime(0.0), InletNode(0.0, 0.0), OutletNode(0.0, 0.0),
               flowRequestNeedIfOn(0.0), flowRequestNeedAndTurnOn(0.0), flowRequestFinal(0.0), hasConstSpeedBranchPumps(false),
               InitialDemandToLoopSetPoint(0.0), CurrentAlterationsToDemand(0.0), UpdatedDemandToLoopSetPoint(0.0),
-              LoadToLoopSetPointThatWasntMet(0.0), InitialDemandToLoopSetPointSAVED(0.0), refrigIndex(0), LoopSetPtDemandAtInlet(0.0),
+              LoadToLoopSetPointThatWasntMet(0.0), InitialDemandToLoopSetPointSAVED(0.0), LoopSetPtDemandAtInlet(0.0),
               ThisSideLoadAlterations(0.0), plantLoc{}
         {
         }

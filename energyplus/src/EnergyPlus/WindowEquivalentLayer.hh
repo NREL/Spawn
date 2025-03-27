@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -60,6 +60,7 @@
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
+#include <EnergyPlus/DataBSDFWindow.hh>
 #include <EnergyPlus/DataWindowEquivalentLayer.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 
@@ -817,6 +818,10 @@ struct WindowEquivalentLayerData : BaseGlobalStruct
 
     Real64 X1MRDiff = -1.0;
     Real64 XTAUDiff = -1.0;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

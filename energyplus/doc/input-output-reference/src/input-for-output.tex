@@ -346,6 +346,21 @@ As seen in an IDF:
 OutputControl:ReportingTolerances,.21,.21;
 \end{lstlisting}
 
+\subsection{OutputControl:ResilienceSummaries}\label{OutputControlResilienceSummaries}
+
+This input specifies methods or algorithms used in certain resilience reporting variables.
+
+\subsubsection{Inputs}\label{inputs-OutputControlResilienceSummaries}
+
+\paragraph{Field: Heat Index Algorithm}\label{Heat-Index-Algorithm}
+
+This field has two choices: \textbf{Simplified} and \textbf{Extended}. The
+Simplified option is the default and by choosing this, the heat index will be
+calculated using the method based on regression analysis carried out by Lans P.
+Rothfusz. When Extended is selected, the heat index will be computed using the
+extended heat index method developed by Lu \& Romps. Note that using the
+Extended method is slower to simulate.
+
 \subsection{Output:Variable}\label{outputvariable}
 
 This input object is used request results reporting.~ As shown above in the Variable Dictionary Report section, there are many different output variables available for reporting results from EnergyPlus.~ The Output:Variable object is primarily used for reporting time series data at various frequencies.

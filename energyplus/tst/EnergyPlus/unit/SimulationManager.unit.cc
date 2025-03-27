@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -71,6 +71,7 @@ TEST_F(EnergyPlusFixture, CheckThreading)
     });
 
     EXPECT_FALSE(process_idf(idf_objects, false));
+    state->init_state(*state);
 
     std::string const error_string = delimited_string({
         "   ** Severe  ** Line: 1 Index: 14 - \"ProgramControl\" is not a valid Object Type.",
@@ -112,6 +113,8 @@ TEST_F(EnergyPlusFixture, Test_PerformancePrecisionTradeoffs_DirectSolution_Mess
 
     EXPECT_TRUE(process_idf(idf_objects, false));
 
+    state->init_state(*state);
+
     std::string const error_string = delimited_string({
         "   ** Warning ** PerformancePrecisionTradeoffs: Coil Direct Solution simulation is selected.",
     });
@@ -125,7 +128,7 @@ TEST_F(EnergyPlusFixture, Simulationmanager_bool_to_string)
     EXPECT_EQ(SimulationManager::bool_to_string(false), "False");
 }
 
-TEST_F(EnergyPlusFixture, Simulationmanager_writeIntialPerfLogValues)
+TEST_F(EnergyPlusFixture, Simulationmanager_writeInitialPerfLogValues)
 {
     state->dataStrGlobals->outputPerfLogFilePath = "eplusout_perflog.csv";
 
@@ -136,7 +139,7 @@ TEST_F(EnergyPlusFixture, Simulationmanager_writeIntialPerfLogValues)
     Util::appendPerfLog(*state, "RESET", "RESET");
 
     // call the function to test
-    SimulationManager::writeIntialPerfLogValues(*state, "MODE193");
+    SimulationManager::writeInitialPerfLogValues(*state, "MODE193");
 
     // force the file to be written
     Util::appendPerfLog(*state, "lastHeader", "lastValue", true);
@@ -186,6 +189,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDebuggingData)
 
         state->init_state_called = false;
         EXPECT_TRUE(process_idf(idf_objects));
+        state->init_state(*state);
 
         EXPECT_TRUE(state->dataReportFlag->DebugOutput);
         EXPECT_FALSE(state->dataReportFlag->EvenDuringWarmup);
@@ -203,6 +207,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDebuggingData)
 
         state->init_state_called = false;
         EXPECT_TRUE(process_idf(idf_objects));
+        state->init_state(*state);
 
         EXPECT_FALSE(state->dataReportFlag->DebugOutput);
         EXPECT_TRUE(state->dataReportFlag->EvenDuringWarmup);
@@ -227,6 +232,8 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDebuggingData)
         compare_err_stream_substring("", true);
         // Input processor with throw a severe, so do not use assertions
         EXPECT_FALSE(process_idf(idf_objects, false));
+        state->init_state(*state);
+
         // Instead do it here, making sure to reset the stream
         {
             std::string const expectedError = delimited_string({
@@ -248,6 +255,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_DefaultState)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_FALSE(state->dataGlobal->DisplayAllWarnings);
     EXPECT_FALSE(state->dataGlobal->DisplayExtraWarnings);
@@ -282,6 +290,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_SimpleCase)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_TRUE(state->dataGlobal->DisplayAllWarnings);
     EXPECT_TRUE(state->dataGlobal->DisplayExtraWarnings);
@@ -320,6 +329,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_AllKeys)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_TRUE(state->dataGlobal->DisplayAllWarnings);
     EXPECT_TRUE(state->dataGlobal->DisplayExtraWarnings);
@@ -351,6 +361,8 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_Unicity)
     compare_err_stream_substring("", true);
     // Input processor will throw a severe, so do not use assertions
     EXPECT_FALSE(process_idf(idf_objects, false));
+    state->init_state(*state);
+
     // Instead do it here, making sure to reset the stream
     {
         std::string const expectedError = delimited_string({
@@ -387,6 +399,8 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_UndocumentedFlags)
 
     // This will throw a warning in InputProcessor since these aren't supported keys, so do not use assertions
     EXPECT_FALSE(process_idf(idf_objects, false));
+    state->init_state(*state);
+
     const std::string expected_warning = delimited_string({
         "   ** Severe  ** <root>[Output:Diagnostics][Output:Diagnostics 1][diagnostics][0][key] - \"IgnoreSolarRadiation\" - Failed to match against "
         "any enum values.",
@@ -435,6 +449,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_OutputDiagnostics_HasEmpty)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_FALSE(state->dataGlobal->DisplayAllWarnings);
     EXPECT_FALSE(state->dataGlobal->DisplayExtraWarnings);
@@ -471,6 +486,7 @@ TEST_F(EnergyPlusFixture, SimulationManager_HVACSizingSimulationChoiceTest)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_TRUE(state->dataGlobal->DoHVACSizingSimulation);
     // get a default value
@@ -492,6 +508,7 @@ TEST_F(EnergyPlusFixture, Test_SimulationControl_ZeroSimulation)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     ASSERT_THROW(SimulationManager::CheckForMisMatchedEnvironmentSpecifications(*state), std::runtime_error);
     // no error message from PerformancePrecisionTradeoffs objects
@@ -522,6 +539,7 @@ TEST_F(EnergyPlusFixture, Test_SimulationControl_PureLoadCalc)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_NO_THROW(SimulationManager::CheckForMisMatchedEnvironmentSpecifications(*state));
     // no error message from PerformancePrecisionTradeoffs objects

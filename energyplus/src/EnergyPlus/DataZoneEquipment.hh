@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -310,14 +310,14 @@ namespace DataZoneEquipment {
         int EquipListIndex;
         std::string ControlListName;
         int ZoneNode;
-        int NumInletNodes;                    // number of inlet nodes
-        int NumExhaustNodes;                  // number of exhaust nodes
-        int NumReturnNodes;                   // number of return air nodes
-        int NumReturnFlowBasisNodes;          // number of return air flow basis nodes
-        int ReturnFlowSchedPtrNum;            // return air flow fraction schedule pointer
-        bool FlowError;                       // flow error flag
-        Array1D_int InletNode;                // zone supply air inlet nodes
-        Array1D_int InletNodeAirLoopNum;      // air loop number connected to this inlet node (0 if not an airloop node)
+        int NumInletNodes;                              // number of inlet nodes
+        int NumExhaustNodes;                            // number of exhaust nodes
+        int NumReturnNodes;                             // number of return air nodes
+        int NumReturnFlowBasisNodes;                    // number of return air flow basis nodes
+        Sched::Schedule *returnFlowFracSched = nullptr; // return air flow fraction schedule pointer
+        bool FlowError;                                 // flow error flag
+        Array1D_int InletNode;                          // zone supply air inlet nodes
+        Array1D_int InletNodeAirLoopNum;                // air loop number connected to this inlet node (0 if not an airloop node)
         Array1D_int InletNodeADUNum;          // AirDistUnit connected to this inlet node (0 if not an ADU node, could be zone equip or direct air)
         Array1D_int ExhaustNode;              // zone air exhaust nodes
         Array1D_int ReturnNode;               // zone return air nodes (node numbers)
@@ -363,10 +363,10 @@ namespace DataZoneEquipment {
         // Default Constructor
         EquipConfiguration()
             : ZoneName("Uncontrolled Zone"), EquipListIndex(0), ZoneNode(0), NumInletNodes(0), NumExhaustNodes(0), NumReturnNodes(0),
-              NumReturnFlowBasisNodes(0), ReturnFlowSchedPtrNum(0), FlowError(false), ZonalSystemOnly(false), IsControlled(false), ZoneExh(0.0),
-              ZoneExhBalanced(0.0), PlenumMassFlow(0.0), ExcessZoneExh(0.0), TotAvailAirLoopOA(0.0), TotInletAirMassFlowRate(0.0),
-              TotExhaustAirMassFlowRate(0.0), InFloorActiveElement(false), InWallActiveElement(false), InCeilingActiveElement(false),
-              ZoneHasAirLoopWithOASys(false), ZoneAirDistributionIndex(0), ZoneDesignSpecOAIndex(0), AirLoopDesSupply(0.0)
+              NumReturnFlowBasisNodes(0), FlowError(false), ZonalSystemOnly(false), IsControlled(false), ZoneExh(0.0), ZoneExhBalanced(0.0),
+              PlenumMassFlow(0.0), ExcessZoneExh(0.0), TotAvailAirLoopOA(0.0), TotInletAirMassFlowRate(0.0), TotExhaustAirMassFlowRate(0.0),
+              InFloorActiveElement(false), InWallActiveElement(false), InCeilingActiveElement(false), ZoneHasAirLoopWithOASys(false),
+              ZoneAirDistributionIndex(0), ZoneDesignSpecOAIndex(0), AirLoopDesSupply(0.0)
         {
         }
 
@@ -430,8 +430,8 @@ namespace DataZoneEquipment {
         std::vector<HVACSystemData *> compPointer;
         Array1D_int CoolingPriority;
         Array1D_int HeatingPriority;
-        Array1D_int SequentialCoolingFractionSchedPtr;
-        Array1D_int SequentialHeatingFractionSchedPtr;
+        Array1D<Sched::Schedule *> sequentialCoolingFractionScheds;
+        Array1D<Sched::Schedule *> sequentialHeatingFractionScheds;
         Array1D_int CoolingCapacity;      // Current cooling capacity (negative) [W]
         Array1D_int HeatingCapacity;      // Current heating capacity (positive) [W]
         Array1D<EquipmentData> EquipData; // Index of energy output report data
@@ -648,6 +648,10 @@ struct DataZoneEquipmentData : BaseGlobalStruct
     std::vector<DataZoneEquipment::ZoneEquipmentSplitter> zoneEquipSplitter;
     std::vector<DataZoneEquipment::ZoneEquipmentMixer> zoneEquipMixer;
     std::vector<DataZoneEquipment::ZoneReturnMixer> zoneReturnMixer;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

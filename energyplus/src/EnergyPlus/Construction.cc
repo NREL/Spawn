@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -2025,18 +2025,6 @@ void ConstructionProps::setArraysBasedOnMaxSolidWinLayers(EnergyPlusData &state)
     this->rbBareVisCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->afBareSolCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
     this->abBareSolCoef.allocate(state.dataHeatBal->MaxSolidWinLayers);
-    for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
-        this->AbsBeamCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->AbsBeamBackCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->tBareSolCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->tBareVisCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->rfBareSolCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->rfBareVisCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->rbBareSolCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->rbBareVisCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->afBareSolCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-        this->abBareSolCoef(Layer).allocate(DataSurfaces::MaxPolyCoeff);
-    }
 
     for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
         this->AbsDiff(Layer) = 0.0;
@@ -2053,18 +2041,16 @@ void ConstructionProps::setArraysBasedOnMaxSolidWinLayers(EnergyPlusData &state)
         }
     }
     for (int Layer = 1; Layer <= state.dataHeatBal->MaxSolidWinLayers; ++Layer) {
-        for (int Index = 1; Index <= DataSurfaces::MaxPolyCoeff; ++Index) {
-            this->AbsBeamCoef(Layer)(Index) = 0.0;
-            this->AbsBeamBackCoef(Layer)(Index) = 0.0;
-            this->tBareSolCoef(Layer)(Index) = 0.0;
-            this->tBareVisCoef(Layer)(Index) = 0.0;
-            this->rfBareSolCoef(Layer)(Index) = 0.0;
-            this->rfBareVisCoef(Layer)(Index) = 0.0;
-            this->rbBareSolCoef(Layer)(Index) = 0.0;
-            this->rbBareVisCoef(Layer)(Index) = 0.0;
-            this->afBareSolCoef(Layer)(Index) = 0.0;
-            this->abBareSolCoef(Layer)(Index) = 0.0;
-        }
+        std::fill(this->AbsBeamCoef(Layer).begin(), this->AbsBeamCoef(Layer).end(), 0.0);
+        std::fill(this->AbsBeamBackCoef(Layer).begin(), this->AbsBeamBackCoef(Layer).end(), 0.0);
+        std::fill(this->tBareSolCoef(Layer).begin(), this->tBareSolCoef(Layer).end(), 0.0);
+        std::fill(this->tBareVisCoef(Layer).begin(), this->tBareVisCoef(Layer).end(), 0.0);
+        std::fill(this->rfBareSolCoef(Layer).begin(), this->rfBareSolCoef(Layer).end(), 0.0);
+        std::fill(this->rfBareVisCoef(Layer).begin(), this->rfBareVisCoef(Layer).end(), 0.0);
+        std::fill(this->rbBareSolCoef(Layer).begin(), this->rbBareSolCoef(Layer).end(), 0.0);
+        std::fill(this->rbBareVisCoef(Layer).begin(), this->rbBareVisCoef(Layer).end(), 0.0);
+        std::fill(this->afBareSolCoef(Layer).begin(), this->afBareSolCoef(Layer).end(), 0.0);
+        std::fill(this->abBareSolCoef(Layer).begin(), this->abBareSolCoef(Layer).end(), 0.0);
     }
 }
 

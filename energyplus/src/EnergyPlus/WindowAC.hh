@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,24 +67,24 @@ namespace WindowAC {
     {
         // Members
         // input data
-        std::string Name;      // name of unit
-        int UnitType;          // type of unit
-        std::string Sched;     // availability schedule
-        int SchedPtr;          // index to schedule
-        int FanSchedPtr;       // index to fan operating mode schedule
-        int FanAvailSchedPtr;  // index to fan availability schedule
-        Real64 MaxAirVolFlow;  // m3/s
-        Real64 MaxAirMassFlow; // kg/s
-        Real64 OutAirVolFlow;  // m3/s
-        Real64 OutAirMassFlow; // kg/s
-        int AirInNode;         // inlet air node number
-        int AirOutNode;        // outlet air node number
-        int OutsideAirNode;    // outside air node number
-        int AirReliefNode;     // relief air node number
-        int ReturnAirNode;     // return air node number
-        int MixedAirNode;      // Mixed Air Node number
-        std::string OAMixName; // name of outdoor air mixer
-        std::string OAMixType; // type of outdoor air mixer
+        std::string Name; // name of unit
+        int UnitType;     // type of unit
+
+        Sched::Schedule *availSched = nullptr;     // availability schedule
+        Sched::Schedule *fanOpModeSched = nullptr; // fan operating mode schedule
+        Sched::Schedule *fanAvailSched = nullptr;  // fan availability schedule
+        Real64 MaxAirVolFlow;                      // m3/s
+        Real64 MaxAirMassFlow;                     // kg/s
+        Real64 OutAirVolFlow;                      // m3/s
+        Real64 OutAirMassFlow;                     // kg/s
+        int AirInNode;                             // inlet air node number
+        int AirOutNode;                            // outlet air node number
+        int OutsideAirNode;                        // outside air node number
+        int AirReliefNode;                         // relief air node number
+        int ReturnAirNode;                         // return air node number
+        int MixedAirNode;                          // Mixed Air Node number
+        std::string OAMixName;                     // name of outdoor air mixer
+        std::string OAMixType;                     // type of outdoor air mixer
         int OAMixIndex;
         std::string FanName;   // name of fan
         HVAC::FanType fanType; // index to fan type
@@ -125,13 +125,12 @@ namespace WindowAC {
 
         // Default Constructor
         WindACData()
-            : UnitType(0), SchedPtr(0), FanSchedPtr(0), FanAvailSchedPtr(0), MaxAirVolFlow(0.0), MaxAirMassFlow(0.0), OutAirVolFlow(0.0),
-              OutAirMassFlow(0.0), AirInNode(0), AirOutNode(0), OutsideAirNode(0), AirReliefNode(0), MixedAirNode(0), OAMixIndex(0),
-              fanType(HVAC::FanType::Invalid), FanIndex(0), DXCoilType_Num(0), DXCoilIndex(0), DXCoilNumOfSpeeds(0), CoilOutletNodeNum(0),
-              fanPlace(HVAC::FanPlace::Invalid), MaxIterIndex1(0), MaxIterIndex2(0), ConvergenceTol(0.0), PartLoadFrac(0.0),
-              EMSOverridePartLoadFrac(false), EMSValueForPartLoadFrac(0.0), TotCoolEnergyRate(0.0), TotCoolEnergy(0.0), SensCoolEnergyRate(0.0),
-              SensCoolEnergy(0.0), LatCoolEnergyRate(0.0), LatCoolEnergy(0.0), ElecPower(0.0), ElecConsumption(0.0), FanPartLoadRatio(0.0),
-              CompPartLoadRatio(0.0), ZonePtr(0), HVACSizingIndex(0), FirstPass(true)
+            : UnitType(0), MaxAirVolFlow(0.0), MaxAirMassFlow(0.0), OutAirVolFlow(0.0), OutAirMassFlow(0.0), AirInNode(0), AirOutNode(0),
+              OutsideAirNode(0), AirReliefNode(0), MixedAirNode(0), OAMixIndex(0), fanType(HVAC::FanType::Invalid), FanIndex(0), DXCoilType_Num(0),
+              DXCoilIndex(0), DXCoilNumOfSpeeds(0), CoilOutletNodeNum(0), fanPlace(HVAC::FanPlace::Invalid), MaxIterIndex1(0), MaxIterIndex2(0),
+              ConvergenceTol(0.0), PartLoadFrac(0.0), EMSOverridePartLoadFrac(false), EMSValueForPartLoadFrac(0.0), TotCoolEnergyRate(0.0),
+              TotCoolEnergy(0.0), SensCoolEnergyRate(0.0), SensCoolEnergy(0.0), LatCoolEnergyRate(0.0), LatCoolEnergy(0.0), ElecPower(0.0),
+              ElecConsumption(0.0), FanPartLoadRatio(0.0), CompPartLoadRatio(0.0), ZonePtr(0), HVACSizingIndex(0), FirstPass(true)
         {
         }
     };
@@ -235,6 +234,10 @@ struct WindowACData : BaseGlobalStruct
 
     Array1D_bool MyEnvrnFlag;  // one time initialization flag
     Array1D_bool MyZoneEqFlag; // used to set up zone equipment availability managers
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

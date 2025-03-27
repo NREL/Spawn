@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -110,12 +110,12 @@ namespace EvaporativeCoolers {
     {
         std::string Name; // Name of the EvapCooler
         int EquipIndex;
-        EvapCoolerType evapCoolerType; // Type of the EvapCooler
-        std::string EvapControlType;   // Type of Control for the EvapCooler
-        std::string Schedule;          // HeatingCoil Operation Schedule
-        int SchedPtr;                  // Pointer to the correct schedule
-        Real64 VolFlowRate;            // Volume Flow Rate in Evap Cooler needed for calculating SatEff
-        Real64 DesVolFlowRate;         // Design volume flow rate (autosize or user input) - this is only used to compute design pump power
+        EvapCoolerType evapCoolerType;         // Type of the EvapCooler
+        std::string EvapControlType;           // Type of Control for the EvapCooler
+        std::string Schedule;                  // HeatingCoil Operation Schedule
+        Sched::Schedule *availSched = nullptr; // Pointer to the correct schedule
+        Real64 VolFlowRate;                    // Volume Flow Rate in Evap Cooler needed for calculating SatEff
+        Real64 DesVolFlowRate;                 // Design volume flow rate (autosize or user input) - this is only used to compute design pump power
         Real64 OutletTemp;
         Real64 OuletWetBulbTemp;
         Real64 OutletHumRat;
@@ -209,11 +209,11 @@ namespace EvaporativeCoolers {
 
         // Default Constructor
         EvapConditions()
-            : EquipIndex(0), evapCoolerType(EvapCoolerType::Invalid), SchedPtr(0), VolFlowRate(0.0), DesVolFlowRate(0.0), OutletTemp(0.0),
-              OuletWetBulbTemp(0.0), OutletHumRat(0.0), OutletEnthalpy(0.0), OutletPressure(0.0), OutletMassFlowRate(0.0),
-              OutletMassFlowRateMaxAvail(0.0), OutletMassFlowRateMinAvail(0.0), InitFlag(false), InletNode(0), OutletNode(0), SecondaryInletNode(0),
-              SecondaryOutletNode(0), TertiaryInletNode(0), InletMassFlowRate(0.0), InletMassFlowRateMaxAvail(0.0), InletMassFlowRateMinAvail(0.0),
-              InletTemp(0.0), InletWetBulbTemp(0.0), InletHumRat(0.0), InletEnthalpy(0.0), InletPressure(0.0), SecInletMassFlowRate(0.0),
+            : EquipIndex(0), evapCoolerType(EvapCoolerType::Invalid), VolFlowRate(0.0), DesVolFlowRate(0.0), OutletTemp(0.0), OuletWetBulbTemp(0.0),
+              OutletHumRat(0.0), OutletEnthalpy(0.0), OutletPressure(0.0), OutletMassFlowRate(0.0), OutletMassFlowRateMaxAvail(0.0),
+              OutletMassFlowRateMinAvail(0.0), InitFlag(false), InletNode(0), OutletNode(0), SecondaryInletNode(0), SecondaryOutletNode(0),
+              TertiaryInletNode(0), InletMassFlowRate(0.0), InletMassFlowRateMaxAvail(0.0), InletMassFlowRateMinAvail(0.0), InletTemp(0.0),
+              InletWetBulbTemp(0.0), InletHumRat(0.0), InletEnthalpy(0.0), InletPressure(0.0), SecInletMassFlowRate(0.0),
               SecInletMassFlowRateMaxAvail(0.0), SecInletMassFlowRateMinAvail(0.0), SecInletTemp(0.0), SecInletWetBulbTemp(0.0), SecInletHumRat(0.0),
               SecInletEnthalpy(0.0), SecInletPressure(0.0), SecOutletTemp(0.0), SecOuletWetBulbTemp(0.0), SecOutletHumRat(0.0),
               SecOutletEnthalpy(0.0), SecOutletMassFlowRate(0.0), PadDepth(0.0), PadArea(0.0), RecircPumpPower(0.0), IndirectRecircPumpPower(0.0),
@@ -236,8 +236,8 @@ namespace EvaporativeCoolers {
     {
         std::string Name; // user identifier
         int ZoneNodeNum;
-        int AvailSchedIndex;              // pointer to local availability schedule
-        std::string AvailManagerListName; // Name of an availability manager list object
+        Sched::Schedule *availSched = nullptr; // local availability schedule
+        std::string AvailManagerListName;      // Name of an availability manager list object
         bool UnitIsAvailable;
         Avail::Status FanAvailStatus = Avail::Status::NoAction;
         int OAInletNodeNum;    // outdoor air inlet node index
@@ -247,7 +247,7 @@ namespace EvaporativeCoolers {
         std::string FanName;
         int FanIndex;
         Real64 ActualFanVolFlowRate;
-        int FanAvailSchedPtr;
+        Sched::Schedule *fanAvailSched = nullptr;
         int FanInletNodeNum;
         int FanOutletNodeNum;
         HVAC::FanOp fanOp = HVAC::FanOp::Invalid;
@@ -307,19 +307,19 @@ namespace EvaporativeCoolers {
 
         // Default Constructor
         ZoneEvapCoolerUnitStruct()
-            : ZoneNodeNum(0), AvailSchedIndex(0), UnitIsAvailable(false), OAInletNodeNum(0), UnitOutletNodeNum(0), UnitReliefNodeNum(0),
-              fanType(HVAC::FanType::Invalid), FanIndex(0), ActualFanVolFlowRate(0.0), FanAvailSchedPtr(0), FanInletNodeNum(0), FanOutletNodeNum(0),
-              DesignAirVolumeFlowRate(0.0), DesignAirMassFlowRate(0.0), DesignFanSpeedRatio(0.0), FanSpeedRatio(0.0),
-              fanPlace(HVAC::FanPlace::Invalid), ControlSchemeType(ControlType::Invalid), TimeElapsed(0.0), ThrottlingRange(0.0),
-              IsOnThisTimestep(false), WasOnLastTimestep(false), ThresholdCoolingLoad(0.0), EvapCooler_1_Type_Num(EvapCoolerType::Invalid),
-              EvapCooler_1_Index(0), EvapCooler_1_AvailStatus(false), EvapCooler_2_Type_Num(EvapCoolerType::Invalid), EvapCooler_2_Index(0),
-              EvapCooler_2_AvailStatus(false), OAInletRho(0.0), OAInletCp(0.0), OAInletTemp(0.0), OAInletHumRat(0.0), OAInletMassFlowRate(0.0),
-              UnitOutletTemp(0.0), UnitOutletHumRat(0.0), UnitOutletMassFlowRate(0.0), UnitReliefTemp(0.0), UnitReliefHumRat(0.0),
-              UnitReliefMassFlowRate(0.0), UnitTotalCoolingRate(0.0), UnitTotalCoolingEnergy(0.0), UnitSensibleCoolingRate(0.0),
-              UnitSensibleCoolingEnergy(0.0), UnitLatentHeatingRate(0.0), UnitLatentHeatingEnergy(0.0), UnitLatentCoolingRate(0.0),
-              UnitLatentCoolingEnergy(0.0), UnitFanSpeedRatio(0.0), UnitPartLoadRatio(0.0), UnitVSControlMaxIterErrorIndex(0),
-              UnitVSControlLimitsErrorIndex(0), UnitLoadControlMaxIterErrorIndex(0), UnitLoadControlLimitsErrorIndex(0), ZonePtr(0),
-              HVACSizingIndex(0), ShutOffRelativeHumidity(100.0), MySize(true), MyEnvrn(true), MyFan(true), MyZoneEq(true)
+            : ZoneNodeNum(0), UnitIsAvailable(false), OAInletNodeNum(0), UnitOutletNodeNum(0), UnitReliefNodeNum(0), fanType(HVAC::FanType::Invalid),
+              FanIndex(0), ActualFanVolFlowRate(0.0), FanInletNodeNum(0), FanOutletNodeNum(0), DesignAirVolumeFlowRate(0.0),
+              DesignAirMassFlowRate(0.0), DesignFanSpeedRatio(0.0), FanSpeedRatio(0.0), fanPlace(HVAC::FanPlace::Invalid),
+              ControlSchemeType(ControlType::Invalid), TimeElapsed(0.0), ThrottlingRange(0.0), IsOnThisTimestep(false), WasOnLastTimestep(false),
+              ThresholdCoolingLoad(0.0), EvapCooler_1_Type_Num(EvapCoolerType::Invalid), EvapCooler_1_Index(0), EvapCooler_1_AvailStatus(false),
+              EvapCooler_2_Type_Num(EvapCoolerType::Invalid), EvapCooler_2_Index(0), EvapCooler_2_AvailStatus(false), OAInletRho(0.0), OAInletCp(0.0),
+              OAInletTemp(0.0), OAInletHumRat(0.0), OAInletMassFlowRate(0.0), UnitOutletTemp(0.0), UnitOutletHumRat(0.0), UnitOutletMassFlowRate(0.0),
+              UnitReliefTemp(0.0), UnitReliefHumRat(0.0), UnitReliefMassFlowRate(0.0), UnitTotalCoolingRate(0.0), UnitTotalCoolingEnergy(0.0),
+              UnitSensibleCoolingRate(0.0), UnitSensibleCoolingEnergy(0.0), UnitLatentHeatingRate(0.0), UnitLatentHeatingEnergy(0.0),
+              UnitLatentCoolingRate(0.0), UnitLatentCoolingEnergy(0.0), UnitFanSpeedRatio(0.0), UnitPartLoadRatio(0.0),
+              UnitVSControlMaxIterErrorIndex(0), UnitVSControlLimitsErrorIndex(0), UnitLoadControlMaxIterErrorIndex(0),
+              UnitLoadControlLimitsErrorIndex(0), ZonePtr(0), HVACSizingIndex(0), ShutOffRelativeHumidity(100.0), MySize(true), MyEnvrn(true),
+              MyFan(true), MyZoneEq(true)
         {
         }
     };
@@ -449,6 +449,10 @@ struct EvaporativeCoolersData : BaseGlobalStruct
     std::unordered_map<std::string, std::string> UniqueEvapCondNames;
     bool MySetPointCheckFlag = true;
     bool ZoneEquipmentListChecked = false;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

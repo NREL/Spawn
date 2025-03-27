@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -54,6 +54,7 @@
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -108,7 +109,7 @@ protected:                                               // Data
     std::string name;                                    // name of unit
     std::string unitType;                                // type of unit = e.g. AirTerminal:SingleDuct:ConstantVolume:FourPipeBeam
     int aDUNum = 0;                                      // index of this unit in the corresponding air distribution unit structure
-    int airAvailSchedNum = 0;                            // index to schedule for pimary air availability
+    Sched::Schedule *airAvailSched = nullptr;            // schedule for pimary air availability
     bool airAvailable = false;                           // true if primary air is available
     Real64 vDotDesignPrimAir = 0.0;                      // Design primary air volume flow rate m3/s (autosizable)
     bool vDotDesignPrimAirWasAutosized = false;          // true if user input for design air flow was autsized on input

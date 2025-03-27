@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -103,6 +103,8 @@ TEST_F(EnergyPlusFixture, LoadProfile_GetInput)
     });
 
     ASSERT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
+
     GetPlantProfileInput(*state);
 
     // Tests for LoadProfile on Water loop
@@ -130,7 +132,7 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Waterloop)
     // Test setup for a load profile in a water loop
     auto &thisWaterLoop(state->dataPlnt->PlantLoop(1));
     thisWaterLoop.FluidName = "WATER";
-    thisWaterLoop.FluidIndex = 1;
+    thisWaterLoop.glycol = Fluid::GetWater(*state);
     thisWaterLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch.allocate(1);
     thisWaterLoop.LoopSide(DataPlant::LoopSideLocation::Demand).TotalBranches = 1;
     thisWaterLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).TotalComponents = 1;
@@ -152,18 +154,17 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Waterloop)
     thisLoadProfileWaterLoop.Name = "LOAD PROFILE WATER";
     thisLoadProfileWaterLoop.FluidType = PlantLoopFluidType::Water;
     thisLoadProfileWaterLoop.PeakVolFlowRate = 0.002;
-    thisLoadProfileWaterLoop.LoadSchedule = 1;
-    thisLoadProfileWaterLoop.FlowRateFracSchedule = 2;
+    thisLoadProfileWaterLoop.loadSched = Sched::AddScheduleConstant(*state, "LOAD");
+    thisLoadProfileWaterLoop.flowRateFracSched = Sched::AddScheduleConstant(*state, "FLOWRATEFRAC");
     thisLoadProfileWaterLoop.InletNode = 1;
     thisLoadProfileWaterLoop.OutletNode = 2;
     thisLoadProfileWaterLoop.plantLoc = locWater;
     thisLoadProfileWaterLoop.plantLoc.loopNum = 1;
 
-    state->dataScheduleMgr->Schedule.allocate(2);
-    state->dataScheduleMgr->Schedule(thisLoadProfileWaterLoop.LoadSchedule).EMSActuatedOn = false;
-    state->dataScheduleMgr->Schedule(thisLoadProfileWaterLoop.LoadSchedule).CurrentValue = 10000;
-    state->dataScheduleMgr->Schedule(thisLoadProfileWaterLoop.FlowRateFracSchedule).EMSActuatedOn = false;
-    state->dataScheduleMgr->Schedule(thisLoadProfileWaterLoop.FlowRateFracSchedule).CurrentValue = 0.8;
+    thisLoadProfileWaterLoop.loadSched->EMSActuatedOn = false;
+    thisLoadProfileWaterLoop.loadSched->currentVal = 10000;
+    thisLoadProfileWaterLoop.flowRateFracSched->EMSActuatedOn = false;
+    thisLoadProfileWaterLoop.flowRateFracSched->currentVal = 0.8;
 
     // InitPlantProfile()
     thisLoadProfileWaterLoop.InitPlantProfile(*state);
@@ -179,9 +180,8 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Waterloop)
     std::string_view RoutineName("PlantLoadProfileTests");
     thisLoadProfileWaterLoop.simulate(*state, locWater, firstHVAC, curLoad, runFlag);
 
-    Real64 rhoWater = FluidProperties::GetDensityGlycol(*state, thisWaterLoop.FluidName, 60, thisWaterLoop.FluidIndex, RoutineName);
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(
-        *state, thisWaterLoop.FluidName, thisLoadProfileWaterLoop.InletTemp, thisWaterLoop.FluidIndex, RoutineName);
+    Real64 rhoWater = thisWaterLoop.glycol->getDensity(*state, 60, RoutineName);
+    Real64 Cp = thisWaterLoop.glycol->getSpecificHeat(*state, thisLoadProfileWaterLoop.InletTemp, RoutineName);
     Real64 deltaTemp = curLoad / (rhoWater * thisLoadProfileWaterLoop.VolFlowRate * Cp);
     Real64 calOutletTemp = thisLoadProfileWaterLoop.InletTemp - deltaTemp;
 
@@ -199,7 +199,8 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Steamloop)
     // Test setup for a load profile in a steam loop
     auto &thisSteamLoop(state->dataPlnt->PlantLoop(1));
     thisSteamLoop.FluidName = "STEAM";
-    thisSteamLoop.FluidIndex = 1;
+    thisSteamLoop.steam = Fluid::GetSteam(*state);
+    thisSteamLoop.glycol = Fluid::GetWater(*state);
     thisSteamLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch.allocate(1);
     thisSteamLoop.LoopSide(DataPlant::LoopSideLocation::Demand).TotalBranches = 1;
     thisSteamLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).TotalComponents = 1;
@@ -211,8 +212,7 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Steamloop)
 
     std::string_view RoutineName("PlantLoadProfileTests");
 
-    Real64 SatTempAtmPress = FluidProperties::GetSatTemperatureRefrig(
-        *state, state->dataPlnt->PlantLoop(1).FluidName, DataEnvironment::StdPressureSeaLevel, state->dataPlnt->PlantLoop(1).FluidIndex, RoutineName);
+    Real64 SatTempAtmPress = state->dataPlnt->PlantLoop(1).steam->getSatTemperature(*state, DataEnvironment::StdPressureSeaLevel, RoutineName);
 
     state->dataLoopNodes->Node(1).Temp = SatTempAtmPress;
     state->dataLoopNodes->Node(1).MassFlowRateMax = 1;
@@ -227,18 +227,17 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Steamloop)
     thisLoadProfileSteamLoop.FluidType = PlantLoopFluidType::Steam;
     thisLoadProfileSteamLoop.PeakVolFlowRate = 0.008;
     thisLoadProfileSteamLoop.DegOfSubcooling = 3.0;
-    thisLoadProfileSteamLoop.LoadSchedule = 1;
-    thisLoadProfileSteamLoop.FlowRateFracSchedule = 2;
+    thisLoadProfileSteamLoop.loadSched = Sched::AddScheduleConstant(*state, "LOAD");
+    thisLoadProfileSteamLoop.flowRateFracSched = Sched::AddScheduleConstant(*state, "FLOWRATEFRAC");
     thisLoadProfileSteamLoop.InletNode = 1;
     thisLoadProfileSteamLoop.OutletNode = 2;
     thisLoadProfileSteamLoop.plantLoc = locSteam;
     thisLoadProfileSteamLoop.plantLoc.loopNum = 1;
 
-    state->dataScheduleMgr->Schedule.allocate(2);
-    state->dataScheduleMgr->Schedule(thisLoadProfileSteamLoop.LoadSchedule).EMSActuatedOn = false;
-    state->dataScheduleMgr->Schedule(thisLoadProfileSteamLoop.LoadSchedule).CurrentValue = 10000;
-    state->dataScheduleMgr->Schedule(thisLoadProfileSteamLoop.FlowRateFracSchedule).EMSActuatedOn = false;
-    state->dataScheduleMgr->Schedule(thisLoadProfileSteamLoop.FlowRateFracSchedule).CurrentValue = 0.8;
+    thisLoadProfileSteamLoop.loadSched->EMSActuatedOn = false;
+    thisLoadProfileSteamLoop.loadSched->currentVal = 10000;
+    thisLoadProfileSteamLoop.flowRateFracSched->EMSActuatedOn = false;
+    thisLoadProfileSteamLoop.flowRateFracSched->currentVal = 0.8;
 
     // InitPlantProfile()
     thisLoadProfileSteamLoop.InitPlantProfile(*state);
@@ -253,13 +252,10 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Steamloop)
     bool runFlag = true;
     thisLoadProfileSteamLoop.simulate(*state, locSteam, firstHVAC, curLoad, runFlag);
 
-    Real64 EnthSteamIn =
-        FluidProperties::GetSatEnthalpyRefrig(*state, thisSteamLoop.FluidName, SatTempAtmPress, 1.0, thisSteamLoop.FluidIndex, RoutineName);
-    Real64 EnthSteamOut =
-        FluidProperties::GetSatEnthalpyRefrig(*state, thisSteamLoop.FluidName, SatTempAtmPress, 0.0, thisSteamLoop.FluidIndex, RoutineName);
+    Real64 EnthSteamIn = thisSteamLoop.steam->getSatEnthalpy(*state, SatTempAtmPress, 1.0, RoutineName);
+    Real64 EnthSteamOut = thisSteamLoop.steam->getSatEnthalpy(*state, SatTempAtmPress, 0.0, RoutineName);
     Real64 LatentHeatSteam = EnthSteamIn - EnthSteamOut;
-    Real64 CpCondensate =
-        FluidProperties::GetSpecificHeatGlycol(*state, thisSteamLoop.FluidName, SatTempAtmPress, thisSteamLoop.FluidIndex, RoutineName);
+    Real64 CpCondensate = thisSteamLoop.glycol->getSpecificHeat(*state, SatTempAtmPress, RoutineName);
     Real64 calOutletMdot = curLoad / (LatentHeatSteam + thisLoadProfileSteamLoop.DegOfSubcooling * CpCondensate);
 
     EXPECT_EQ(thisLoadProfileSteamLoop.MassFlowRate, calOutletMdot);

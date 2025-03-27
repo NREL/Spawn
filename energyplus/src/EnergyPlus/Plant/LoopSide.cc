@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -45,7 +45,6 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/member.functions.hh>
 
 #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -65,8 +64,6 @@
 
 namespace EnergyPlus {
 namespace DataPlant {
-
-    static constexpr std::string_view fluidNameSteam("STEAM");
 
     void HalfLoopData::solve(EnergyPlusData &state, bool const FirstHVACIteration, bool &ReSimOtherSideNeeded)
     {
@@ -737,8 +734,7 @@ namespace DataPlant {
 
         if (thisPlantLoop.FluidType == DataLoopNode::NodeFluidType::Water) {
 
-            Real64 Cp =
-                FluidProperties::GetSpecificHeatGlycol(state, thisPlantLoop.FluidName, WeightedInletTemp, thisPlantLoop.FluidIndex, RoutineName);
+            Real64 Cp = thisPlantLoop.glycol->getSpecificHeat(state, WeightedInletTemp, RoutineName);
 
             {
 
@@ -810,8 +806,7 @@ namespace DataPlant {
 
         } else if (thisPlantLoop.FluidType == DataLoopNode::NodeFluidType::Steam) {
 
-            Real64 Cp =
-                FluidProperties::GetSpecificHeatGlycol(state, thisPlantLoop.FluidName, WeightedInletTemp, thisPlantLoop.FluidIndex, RoutineName);
+            Real64 Cp = thisPlantLoop.glycol->getSpecificHeat(state, WeightedInletTemp, RoutineName);
 
             {
 
@@ -823,10 +818,9 @@ namespace DataPlant {
                     // Calculate the delta temperature
                     Real64 DeltaTemp = LoopSetPointTemperature - WeightedInletTemp;
 
-                    Real64 EnthalpySteamSatVapor =
-                        FluidProperties::GetSatEnthalpyRefrig(state, fluidNameSteam, LoopSetPointTemperature, 1.0, this->refrigIndex, RoutineNameAlt);
-                    Real64 EnthalpySteamSatLiquid =
-                        FluidProperties::GetSatEnthalpyRefrig(state, fluidNameSteam, LoopSetPointTemperature, 0.0, this->refrigIndex, RoutineNameAlt);
+                    auto *steam = Fluid::GetSteam(state);
+                    Real64 EnthalpySteamSatVapor = steam->getSatEnthalpy(state, LoopSetPointTemperature, 1.0, RoutineNameAlt);
+                    Real64 EnthalpySteamSatLiquid = steam->getSatEnthalpy(state, LoopSetPointTemperature, 0.0, RoutineNameAlt);
 
                     Real64 LatentHeatSteam = EnthalpySteamSatVapor - EnthalpySteamSatLiquid;
 
@@ -934,7 +928,7 @@ namespace DataPlant {
                     LoopFlowStatus FlowPriorityStatus = component.FlowPriority;
 
                     // reference
-                    auto &node_with_request(state.dataLoopNodes->Node(NodeToCheckRequest));
+                    auto const &node_with_request = state.dataLoopNodes->Node(NodeToCheckRequest);
 
                     if (!DataPlant::PlantEquipmentTypeIsPump[static_cast<int>(component.Type)]) {
 
@@ -1998,11 +1992,7 @@ namespace DataPlant {
         Real64 const InletTemp(state.dataLoopNodes->Node(InletNode).Temp);
         Real64 const OutletTemp(state.dataLoopNodes->Node(OutletNode).Temp);
         Real64 const AverageTemp((InletTemp + OutletTemp) / 2.0);
-        Real64 const ComponentCp(FluidProperties::GetSpecificHeatGlycol(state,
-                                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                                        AverageTemp,
-                                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                                        RoutineName));
+        Real64 const ComponentCp(state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, AverageTemp, RoutineName));
 
         // Calculate the load altered by this component
         Real64 const LoadAlteration(ComponentMassFlowRate * ComponentCp * (OutletTemp - InletTemp));

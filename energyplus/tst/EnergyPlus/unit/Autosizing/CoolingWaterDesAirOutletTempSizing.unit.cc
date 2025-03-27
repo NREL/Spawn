@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -60,7 +60,7 @@ namespace EnergyPlus {
 
 TEST_F(AutoSizingFixture, CoolingWaterDesAirOutletTempSizingGauntlet)
 {
-    state->dataFluidProps->init_state(*state);
+    state->dataFluid->init_state(*state);
     // this global state is what would be set up by E+ currently
     state->dataSize->ZoneEqSizing.allocate(1);
     state->dataEnvrn->StdRhoAir = 1.2;
@@ -119,6 +119,7 @@ TEST_F(AutoSizingFixture, CoolingWaterDesAirOutletTempSizingGauntlet)
     state->dataSize->FinalZoneSizing.allocate(1);
     state->dataSize->ZoneEqSizing.allocate(1);
     state->dataPlnt->PlantLoop.allocate(1);
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataSize->PlantSizData.allocate(1);
     state->dataSize->PlantSizData(1).ExitTemp = 7.0;
     state->dataSize->DataPltSizCoolNum = 1;

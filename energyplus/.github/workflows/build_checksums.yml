@@ -26,9 +26,9 @@ jobs:
         set -x
         TAG_NAME=${{ github.event.inputs.tag }}
         if [ -z "$TAG_NAME" ]; then
-          url=https://api.github.com/repos/NREL/EnergyPlus/releases/latest
+          url=https://api.github.com/repos/$GITHUB_REPOSITORY_OWNER/EnergyPlus/releases/latest
         else
-          url=https://api.github.com/repos/NREL/EnergyPlus/releases/tags/$TAG_NAME
+          url=https://api.github.com/repos/$GITHUB_REPOSITORY_OWNER/EnergyPlus/releases/tags/$TAG_NAME
         fi;
 
         echo "Querying url=$url"

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -79,7 +79,6 @@ using namespace EnergyPlus::DataLoopNode;
 using namespace EnergyPlus::DataZoneEquipment;
 using namespace EnergyPlus::HeatBalanceManager;
 using namespace EnergyPlus::Psychrometrics;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::SingleDuct;
 using namespace EnergyPlus::ZoneAirLoopEquipmentManager;
 
@@ -149,9 +148,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_GetInput)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -163,9 +162,10 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_GetInput)
     EXPECT_EQ("AirTerminal:SingleDuct:ConstantVolume:NoReheat",
               state->dataSingleDuct->sd_airterminal(1).sysType);                    // AT SD constant volume no reheat object type
     EXPECT_EQ("SDCVNOREHEATAT1", state->dataSingleDuct->sd_airterminal(1).SysName); // AT SD constant volume no reheat name
-    EXPECT_EQ("AVAILSCHEDULE", state->dataSingleDuct->sd_airterminal(1).Schedule);  // AT SD constant volume no reheat availability schedule name
-    EXPECT_EQ(0.50, state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate);    // maximum volume flow Rate
-    ASSERT_TRUE(state->dataSingleDuct->sd_airterminal(1).NoOAFlowInputFromUser);    // no OA flow input from user
+    EXPECT_EQ("AVAILSCHEDULE",
+              state->dataSingleDuct->sd_airterminal(1).availSched->Name);        // AT SD constant volume no reheat availability schedule name
+    EXPECT_EQ(0.50, state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate); // maximum volume flow Rate
+    ASSERT_TRUE(state->dataSingleDuct->sd_airterminal(1).NoOAFlowInputFromUser); // no OA flow input from user
     EXPECT_EQ(DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel,
               state->dataSingleDuct->sd_airterminal(1).OAPerPersonMode); // default value when A6 input field is blank
 }
@@ -231,9 +231,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_SimConstVolNoReheat)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -245,7 +245,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_SimConstVolNoReheat)
     int constexpr SysNum(1);
     Real64 MassFlowRateMaxAvail = state->dataSingleDuct->sd_airterminal(SysNum).MaxAirVolFlowRate * state->dataEnvrn->StdRhoAir;
     state->dataSingleDuct->sd_airterminal(SysNum).sd_airterminalInlet.AirMassFlowRate = MassFlowRateMaxAvail;
-    state->dataScheduleMgr->Schedule(state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr).CurrentValue = 1.0; // unit is always available
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched->currentVal = 1.0; // unit is always available
     // run SimConstVolNoReheat() function
     state->dataSingleDuct->sd_airterminal(SysNum).SimConstVolNoReheat(*state);
     // check the TA outlet air mass flow rate
@@ -314,9 +314,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_Sim)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -334,7 +334,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_Sim)
     int const InletNode = state->dataSingleDuct->sd_airterminal(SysNum).InletNodeNum;
     int const ZonePtr = state->dataSingleDuct->sd_airterminal(SysNum).CtrlZoneNum;
     int const ZoneAirNodeNum = state->dataZoneEquip->ZoneEquipConfig(ZonePtr).ZoneNode;
-    state->dataScheduleMgr->Schedule(state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr).CurrentValue = 1.0; // unit is always available
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched->currentVal = 1.0; // unit is always available
 
     // design maximum air mass flow rate
     Real64 MassFlowRateMaxAvail = state->dataSingleDuct->sd_airterminal(SysNum).MaxAirVolFlowRate * state->dataEnvrn->StdRhoAir;
@@ -504,9 +504,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OASpecification)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -578,7 +578,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OASpecification)
 
     // Full occupancy 3 people, OA/person = 0.1, OA/zone = 0.5, OA Sched = 1.0
     state->dataGlobal->HourOfDay = 12;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 3.0;
     Real64 expectedMassFlow = 1.0 * ((3.0 * 0.1) + 0.5);
@@ -596,7 +596,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OASpecification)
 
     // 50% occupancy 1.5 people, OA/person = 0.1, OA/zone = 0.5, OA Sched = 1.0
     state->dataGlobal->HourOfDay = 12;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 1.5;
     expectedMassFlow = 1.0 * ((1.5 * 0.1) + 0.5);
@@ -612,7 +612,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OASpecification)
 
     // Nighttime OA Sched = 0.0
     state->dataGlobal->HourOfDay = 24;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 1.5;
     expectedMassFlow = 0.0 * ((1.5 * 0.1) + 0.5);
@@ -689,9 +689,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_EMSOverrideAirFlow)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -709,7 +709,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_EMSOverrideAirFlow)
     int const InletNode = state->dataSingleDuct->sd_airterminal(SysNum).InletNodeNum;
     int const ZonePtr = state->dataSingleDuct->sd_airterminal(SysNum).CtrlZoneNum;
     int const ZoneAirNodeNum = state->dataZoneEquip->ZoneEquipConfig(ZonePtr).ZoneNode;
-    state->dataScheduleMgr->Schedule(state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr).CurrentValue = 1.0; // unit is always available
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched->currentVal = 1.0; // unit is always available
     // design maximum air mass flow rate
     Real64 MassFlowRateMaxAvail = state->dataSingleDuct->sd_airterminal(SysNum).MaxAirVolFlowRate * state->dataEnvrn->StdRhoAir;
     EXPECT_EQ(1.0, state->dataSingleDuct->sd_airterminal(SysNum).MaxAirVolFlowRate);
@@ -878,9 +878,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OAVolumeFlowRateReport
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -955,7 +955,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OAVolumeFlowRateReport
 
     // Full occupancy 3 people, OA/person = 0.1, OA/zone = 0.5, OA Sched = 1.0
     state->dataGlobal->HourOfDay = 12;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 3.0;
     Real64 expectedMassFlow = 1.0 * ((3.0 * 0.1) + 0.5);
@@ -970,7 +970,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OAVolumeFlowRateReport
 
     // 50% occupancy 1.5 people, OA/person = 0.1, OA/zone = 0.5, OA Sched = 1.0
     state->dataGlobal->HourOfDay = 12;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 1.5;
     expectedMassFlow = 1.0 * ((1.5 * 0.1) + 0.5);
@@ -983,7 +983,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_OAVolumeFlowRateReport
 
     // Nighttime OA Sched = 0.0
     state->dataGlobal->HourOfDay = 24;
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Just set number of people directly, too many other things that have to be in place to call ManagerInternalHeatGains()
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 1.5;
     expectedMassFlow = 0.0 * ((1.5 * 0.1) + 0.5);
@@ -1057,9 +1057,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_SimSensibleOutPutTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -1083,7 +1083,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctCVNoReheat_SimSensibleOutPutTest)
     int const ZonePtr = thisAirTerminal.CtrlZoneNum;
     int const ZoneAirNodeNum = state->dataZoneEquip->ZoneEquipConfig(ZonePtr).ZoneNode;
 
-    state->dataScheduleMgr->Schedule(thisAirTerminal.SchedPtr).CurrentValue = 1.0; // unit is always available
+    thisAirTerminal.availSched->currentVal = 1.0; // unit is always available
     ;
     // design maximum air mass flow rate
     Real64 MassFlowRateMaxAvail = thisAirTerminal.MaxAirVolFlowRate * state->dataEnvrn->StdRhoAir;

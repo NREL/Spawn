@@ -86,9 +86,9 @@ IF EXIST eplusout.sln   DEL eplusout.sln
 IF EXIST epluszsz.csv   DEL epluszsz.csv
 IF EXIST epluszsz.tab   DEL epluszsz.tab
 IF EXIST epluszsz.txt   DEL epluszsz.txt
-IF EXIST eplusspsz.csv   DEL eplusspsz.csv
-IF EXIST eplusspsz.tab   DEL eplusspsz.tab
-IF EXIST eplusspsz.txt   DEL eplusspsz.txt
+IF EXIST eplusspsz.csv  DEL eplusspsz.csv
+IF EXIST eplusspsz.tab  DEL eplusspsz.tab
+IF EXIST eplusspsz.txt  DEL eplusspsz.txt
 IF EXIST eplusssz.csv   DEL eplusssz.csv
 IF EXIST eplusssz.tab   DEL eplusssz.tab
 IF EXIST eplusssz.txt   DEL eplusssz.txt

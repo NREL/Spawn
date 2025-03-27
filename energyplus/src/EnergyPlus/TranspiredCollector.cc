@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -51,7 +51,6 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/member.functions.hh>
 
 // EnergyPlus Headers
@@ -92,7 +91,7 @@ namespace TranspiredCollector {
     //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS MODULE:
-    // Ecapsulates data and routines for simulating unglazed transpired solar collectors (UTSC)
+    // Encapsulates data and routines for simulating unglazed transpired solar collectors (UTSC)
     //   as a component on the HVAC air system.
 
     // METHODOLOGY EMPLOYED:
@@ -141,8 +140,6 @@ namespace TranspiredCollector {
         // Using/Aliasing
         using HVAC::TempControlTol;
 
-        using ScheduleManager::GetCurrentScheduleValue;
-
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
         int UTSCNum(0); // local number index for UTSC
@@ -188,8 +185,7 @@ namespace TranspiredCollector {
         auto &InletNode = UTSC_CI.InletNode;
         auto &ControlNode = UTSC_CI.ControlNode;
         UTSC_CI.IsOn = false;
-        if ((GetCurrentScheduleValue(state, UTSC_CI.SchedPtr) > 0.0) &&
-            (UTSC_CI.InletMDot > 0.0)) { // availability Schedule | OA system is setting mass flow
+        if ((UTSC_CI.availSched->getCurrentVal() > 0.0) && (UTSC_CI.InletMDot > 0.0)) { // availability Schedule | OA system is setting mass flow
             bool ControlLTSet(false);
             bool ControlLTSchedule(false);
             bool ZoneLTSchedule(false);
@@ -198,10 +194,9 @@ namespace TranspiredCollector {
             for (int i = InletNode.l(), e = InletNode.u(); i <= e; ++i) {
                 if (state.dataLoopNodes->Node(InletNode(i)).Temp + TempControlTol < state.dataLoopNodes->Node(ControlNode(i)).TempSetPoint)
                     ControlLTSet = true;
-                if (state.dataLoopNodes->Node(InletNode(i)).Temp + TempControlTol < GetCurrentScheduleValue(state, UTSC_CI.FreeHeatSetPointSchedPtr))
+                if (state.dataLoopNodes->Node(InletNode(i)).Temp + TempControlTol < UTSC_CI.freeHeatSetPointSched->getCurrentVal())
                     ControlLTSchedule = true;
-                if (state.dataLoopNodes->Node(UTSC_CI.ZoneNode(i)).Temp + TempControlTol <
-                    GetCurrentScheduleValue(state, UTSC_CI.FreeHeatSetPointSchedPtr))
+                if (state.dataLoopNodes->Node(UTSC_CI.ZoneNode(i)).Temp + TempControlTol < UTSC_CI.freeHeatSetPointSched->getCurrentVal())
                     ZoneLTSchedule = true;
             }
             if (ControlLTSet || (ControlLTSchedule && ZoneLTSchedule))
@@ -233,13 +228,14 @@ namespace TranspiredCollector {
         // usual EnergyPlus input
         // Extensible UTSC object for underlying heat transfer surfaces and for multisystem
 
+        static constexpr std::string_view routineName = "GetTranspiredCollectorInput";
+
         // Using/Aliasing
         using BranchNodeConnections::TestCompSet;
         using DataLoopNode::ObjectIsNotParent;
         using DataSurfaces::OtherSideCondModeledExt;
         using DataSurfaces::SurfaceData;
         using NodeInputManager::GetOnlySingleNode;
-        using ScheduleManager::GetScheduleIndex;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
@@ -249,9 +245,9 @@ namespace TranspiredCollector {
         Array1D<Real64> Numbers(11); // Numeric items for object
         int NumAlphas;               // Number of Alphas for each GetObjectItem call
         int NumNumbers;              // Number of Numbers for each GetObjectItem call
-        int MaxNumAlphas;            // argumenet for call to GetObjectDefMaxArgs
-        int MaxNumNumbers;           // argumenet for call to GetObjectDefMaxArgs
-        int Dummy;                   // argumenet for call to GetObjectDefMaxArgs
+        int MaxNumAlphas;            // argument for call to GetObjectDefMaxArgs
+        int MaxNumNumbers;           // argument for call to GetObjectDefMaxArgs
+        int Dummy;                   // argument for call to GetObjectDefMaxArgs
         int IOStatus;                // Used in GetObjectItem
         bool ErrorsFound(false);     // Set to true if errors in input, fatal at end of routine
         int Found;
@@ -270,8 +266,8 @@ namespace TranspiredCollector {
         Array1D<Real64> NumbersSplit(1);      // Numeric items for object
         int NumAlphasSplit;                   // Number of Alphas for each GetObjectItem call
         int NumNumbersSplit;                  // Number of Numbers for each GetObjectItem call
-        int MaxNumAlphasSplit;                // argumenet for call to GetObjectDefMaxArgs
-        int MaxNumNumbersSplit;               // argumenet for call to GetObjectDefMaxArgs
+        int MaxNumAlphasSplit;                // argument for call to GetObjectDefMaxArgs
+        int MaxNumNumbersSplit;               // argument for call to GetObjectDefMaxArgs
         int IOStatusSplit;                    // Used in GetObjectItem
         int NumOASys;                         // do loop counter
         int ACountBase;                       // counter for alhpasSplit
@@ -314,6 +310,8 @@ namespace TranspiredCollector {
                                                                      state.dataIPShortCut->lAlphaFieldBlanks,
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
 
             // first handle alphas
             state.dataTranspiredCollector->UTSC(Item).Name = Alphas(1);
@@ -423,19 +421,11 @@ namespace TranspiredCollector {
             }
             state.dataTranspiredCollector->UTSC(Item).OSCMPtr = Found;
             if (state.dataIPShortCut->lAlphaFieldBlanks(3)) {
-                state.dataTranspiredCollector->UTSC(Item).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                state.dataTranspiredCollector->UTSC(Item).SchedPtr = GetScheduleIndex(state, Alphas(3));
-                if (state.dataTranspiredCollector->UTSC(Item).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}not found={} in {} ={}",
-                                           state.dataIPShortCut->cAlphaFieldNames(3),
-                                           Alphas(3),
-                                           CurrentModuleObject,
-                                           state.dataTranspiredCollector->UTSC(Item).Name));
-                    ErrorsFound = true;
-                    continue;
-                }
+                state.dataTranspiredCollector->UTSC(Item).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((state.dataTranspiredCollector->UTSC(Item).availSched = Sched::GetSchedule(state, Alphas(3))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(3), Alphas(3));
+                ErrorsFound = true;
+                continue;
             }
 
             // now if UTSC(Item)%NumOASysAttached still not set, assume no multisystem
@@ -494,14 +484,11 @@ namespace TranspiredCollector {
                                       ObjectIsNotParent);
             } // no splitter
 
-            state.dataTranspiredCollector->UTSC(Item).FreeHeatSetPointSchedPtr = GetScheduleIndex(state, Alphas(8));
-            if (state.dataTranspiredCollector->UTSC(Item).FreeHeatSetPointSchedPtr == 0) {
-                ShowSevereError(state,
-                                format("{} not found={} in {} ={}",
-                                       state.dataIPShortCut->cAlphaFieldNames(8),
-                                       Alphas(8),
-                                       CurrentModuleObject,
-                                       state.dataTranspiredCollector->UTSC(Item).Name));
+            if (state.dataIPShortCut->lAlphaFieldBlanks(8)) {
+                ShowSevereEmptyField(state, eoh, state.dataIPShortCut->cAlphaFieldNames(8));
+                ErrorsFound = true;
+            } else if ((state.dataTranspiredCollector->UTSC(Item).freeHeatSetPointSched = Sched::GetSchedule(state, Alphas(8))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(8), Alphas(8));
                 ErrorsFound = true;
                 continue;
             }
@@ -634,7 +621,7 @@ namespace TranspiredCollector {
 
             if (ErrorsFound) continue; // previous inner do loop may have detected problems that need to be cycle'd again to avoid crash
 
-            // now that we should have all the surfaces, do some preperations and checks.
+            // now that we should have all the surfaces, do some preparations and checks.
 
             // are they all similar tilt and azimuth? Issue warnings so people can do it if they really want
             Real64 const surfaceArea(sum_sub(state.dataSurface->Surface, &SurfaceData::Area, state.dataTranspiredCollector->UTSC(Item).SurfPtrs));
@@ -740,7 +727,7 @@ namespace TranspiredCollector {
             default:
                 break;
             }
-            TiltRads = std::abs(AvgTilt) * Constant::DegToRadians;
+            TiltRads = std::abs(AvgTilt) * Constant::DegToRad;
             tempHdeltaNPL = std::sin(TiltRads) * state.dataTranspiredCollector->UTSC(Item).Height / 4.0;
             state.dataTranspiredCollector->UTSC(Item).HdeltaNPL = max(tempHdeltaNPL, state.dataTranspiredCollector->UTSC(Item).PlenGapThick);
 
@@ -982,7 +969,7 @@ namespace TranspiredCollector {
             sum_sub(state.dataLoopNodes->Node,
                     &DataLoopNode::NodeData::MassFlowRate,
                     state.dataTranspiredCollector->UTSC(UTSCNum).InletNode); // Autodesk:F2C++ Functions handle array subscript usage
-        state.dataTranspiredCollector->UTSC(UTSCNum).IsOn = false;           // intialize then turn on if appropriate
+        state.dataTranspiredCollector->UTSC(UTSCNum).IsOn = false;           // initialize then turn on if appropriate
         state.dataTranspiredCollector->UTSC(UTSCNum).Tplen = state.dataTranspiredCollector->UTSC(UTSCNum).TplenLast;
         state.dataTranspiredCollector->UTSC(UTSCNum).Tcoll = state.dataTranspiredCollector->UTSC(UTSCNum).TcollLast;
         state.dataTranspiredCollector->UTSC(UTSCNum).TairHX = Tamb;
@@ -1038,7 +1025,7 @@ namespace TranspiredCollector {
         Real64 HcPlen;                        // surface convection heat transfer coefficient for plenum surfaces
         Real64 D;                             // hole diameter
         Real64 ReD;                           // Reynolds number for holes
-        Real64 P;                             // pitch, distance betweeen holes
+        Real64 P;                             // pitch, distance between holes
         Real64 Por;                           // porosity, area fraction of collector that is open because of holes
         Real64 Mdot;                          // mass flow rate of suction air
         Real64 QdotSource;                    // energy flux for source/sink inside collector surface (for hybrid PV UTSC)
@@ -1046,13 +1033,13 @@ namespace TranspiredCollector {
         int NumSurfs;                         // number of underlying HT surfaces associated with UTSC
         Material::SurfaceRoughness Roughness; // parameters for surface roughness, defined in DataHeatBalance
         Real64 SolAbs;                        // solar absorptivity of collector
-        Real64 AbsExt;                        // thermal emmittance of collector
+        Real64 AbsExt;                        // thermal emittance of collector
         Real64 TempExt;                       // collector temperature
         int SurfPtr;                          // index of surface in main surface structure
         Real64 HMovInsul;                     // dummy for call to InitExteriorConvectionCoeff
         Real64 HExt;                          // dummy for call to InitExteriorConvectionCoeff
         int ConstrNum;                        // index of construction in main construction structure
-        Real64 AbsThermSurf;                  // thermal emmittance of underlying wall.
+        Real64 AbsThermSurf;                  // thermal emittance of underlying wall.
         Real64 TsoK;                          // underlying surface temperature in Kelvin
         Real64 TscollK;                       // collector temperature in Kelvin  (lagged)
         Real64 AreaSum;                       // sum of contributing surfaces for area-weighted averages.
@@ -1439,7 +1426,7 @@ namespace TranspiredCollector {
         state.dataTranspiredCollector->UTSC(UTSCNum).PassiveACH =
             (MdotVent / RhoAir) *
             (1.0 / (state.dataTranspiredCollector->UTSC(UTSCNum).ProjArea * state.dataTranspiredCollector->UTSC(UTSCNum).PlenGapThick)) *
-            Constant::SecInHour;
+            Constant::rSecsInHour;
         state.dataTranspiredCollector->UTSC(UTSCNum).PassiveMdotVent = MdotVent;
         state.dataTranspiredCollector->UTSC(UTSCNum).PassiveMdotWind = VdotWind * RhoAir;
         state.dataTranspiredCollector->UTSC(UTSCNum).PassiveMdotTherm = VdotThermal * RhoAir;
@@ -1945,7 +1932,7 @@ namespace TranspiredCollector {
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS
         Real64 gnu901; // Nusselt number temporary variables for
 
-        Real64 tiltr = Tilt * Constant::DegToRadians;
+        Real64 tiltr = Tilt * Constant::DegToRad;
         Real64 Ra = Gr * Pr; // Rayleigh number
 
         if (Ra <= 1.0e4) {

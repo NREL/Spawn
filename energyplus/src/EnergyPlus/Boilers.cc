@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,7 +50,6 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Autosizing/Base.hh>
@@ -507,11 +506,7 @@ void BoilerSpecs::oneTimeInit(EnergyPlusData &state)
 void BoilerSpecs::initEachEnvironment(EnergyPlusData &state)
 {
     static constexpr std::string_view RoutineName("BoilerSpecs::initEachEnvironment");
-    Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                         state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                         Constant::HWInitConvTemp,
-                                                         state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                         RoutineName);
+    Real64 const rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
     this->DesMassFlowRate = this->VolFlowRate * rho;
 
     PlantUtilities::InitComponentNodes(state, 0.0, this->DesMassFlowRate, this->BoilerInletNodeNum, this->BoilerOutletNodeNum);
@@ -624,16 +619,8 @@ void BoilerSpecs::SizeBoiler(EnergyPlusData &state)
     if (PltSizNum > 0) {
         if (state.dataSize->PlantSizData(PltSizNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
 
-            Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                                 state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                                 Constant::HWInitConvTemp,
-                                                                 state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                                 RoutineName);
-            Real64 const Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                                     state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                                     Constant::HWInitConvTemp,
-                                                                     state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                                     RoutineName);
+            Real64 const rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+            Real64 const Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
             tmpNomCap =
                 Cp * rho * this->SizFac * state.dataSize->PlantSizData(PltSizNum).DeltaT * state.dataSize->PlantSizData(PltSizNum).DesVolFlowRate;
         } else {
@@ -815,11 +802,8 @@ void BoilerSpecs::CalcBoilerModel(EnergyPlusData &state,
     Real64 const TempUpLimitBout = this->TempUpLimitBoilerOut;  // C - boiler high temperature limit
     Real64 const BoilerMassFlowRateMax = this->DesMassFlowRate; // Max Design Boiler Mass Flow Rate converted from Volume Flow Rate
 
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                       state.dataLoopNodes->Node(BoilerInletNode).Temp,
-                                                       state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+    Real64 Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                    .glycol->getSpecificHeat(state, state.dataLoopNodes->Node(BoilerInletNode).Temp, RoutineName);
 
     // If the specified load is 0.0 or the boiler should not run then we leave this subroutine. Before leaving
     // if the component control is SERIESACTIVE we set the component flow to inlet flow so that flow resolver
@@ -879,7 +863,7 @@ void BoilerSpecs::CalcBoilerModel(EnergyPlusData &state,
 
             if ((BoilerDeltaTemp > 0.0) && (this->BoilerLoad > 0.0)) {
                 this->BoilerMassFlowRate = this->BoilerLoad / Cp / BoilerDeltaTemp;
-                this->BoilerMassFlowRate = min(BoilerMassFlowRateMax, this->BoilerMassFlowRate);
+                this->BoilerMassFlowRate = std::min(BoilerMassFlowRateMax, this->BoilerMassFlowRate);
             } else {
                 this->BoilerMassFlowRate = 0.0;
             }
@@ -908,8 +892,8 @@ void BoilerSpecs::CalcBoilerModel(EnergyPlusData &state,
         this->BoilerOutletTemp = state.dataLoopNodes->Node(BoilerInletNode).Temp;
     }
     this->BoilerPLR = this->BoilerLoad / BoilerNomCap; // operating part load ratio
-    this->BoilerPLR = min(this->BoilerPLR, BoilerMaxPLR);
-    this->BoilerPLR = max(this->BoilerPLR, BoilerMinPLR);
+    this->BoilerPLR = std::min(this->BoilerPLR, BoilerMaxPLR);
+    this->BoilerPLR = std::max(this->BoilerPLR, BoilerMinPLR);
 
     // calculate theoretical fuel use based on nominal thermal efficiency
     Real64 const TheorFuelUse = this->BoilerLoad / BoilerNomEff; // Theoretical (stoichiometric) fuel use

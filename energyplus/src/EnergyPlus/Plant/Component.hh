@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -89,7 +89,7 @@ namespace DataPlant {
         false, //	"Pipe:Indoor"
         false, //	"Pipe:Underground"
         false, //	"DistrictCooling"
-        false, //	"DistrictHeating"
+        false, //	"DistrictHeating:Water" (steam is at the end)
         false, //	"ThermalStorage:Ice:Detailed"
         false, //	"ThermalStorage:Ice:Simple"
         false, //	"TemperingValve"
@@ -158,7 +158,8 @@ namespace DataPlant {
         false, //	"AirTerminal:SingleDuct:ConstantVolume:FourPipeBeam"
         false, //	"ZoneHVAC:CoolingPanel:RadiantConvective:Water"
         false, //	"HeatPump:PlantLoop:EIR:Cooling"
-        false  //	"HeatPump:PlantLoop:EIR:Heating"
+        false, //	"HeatPump:PlantLoop:EIR:Heating"
+        false  //   "DistrictHeating:Steam"
     };
 
     struct CompData
@@ -229,6 +230,8 @@ namespace DataPlant {
         void oneTimeInit(EnergyPlusData &state) const;
 
         static CompData &getPlantComponent(EnergyPlusData &state, PlantLocation const &plantLoc);
+
+        Real64 getDynamicMaxCapacity(EnergyPlusData &state) const;
     };
 } // namespace DataPlant
 } // namespace EnergyPlus

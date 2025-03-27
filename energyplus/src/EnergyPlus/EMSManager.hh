@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -135,7 +135,7 @@ namespace EMSManager {
                                         int nodeNum, // index of node being checked.
                                         std::string const &varName);
 
-    bool isScheduleManaged(EnergyPlusData &state, int const scheduleNum);
+    bool isScheduleManaged(EnergyPlusData &state, Sched::Schedule *const sched);
 
     void SetupPrimaryAirSystemAvailMgrAsActuators(EnergyPlusData &state);
 
@@ -148,8 +148,6 @@ namespace EMSManager {
     void SetupSurfaceConstructionActuators(EnergyPlusData &state);
 
     void SetupSurfaceOutdoorBoundaryConditionActuators(EnergyPlusData &state);
-
-    void SetupSurfaceTemperatureActuators(EnergyPlusData &state);
 
     void SetupZoneOutdoorBoundaryConditionActuators(EnergyPlusData &state);
 
@@ -203,8 +201,13 @@ struct EMSManagerData : BaseGlobalStruct
     bool lDummy = false;                   // dummy pointer location
     bool lDummy2 = false;                  // dummy pointer location
 
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
+        EMSManager::CheckIfAnyEMS(state);
     }
 
     void clear_state() override

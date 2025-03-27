@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -98,6 +98,16 @@ namespace DataHeatBalFanSys {
         Real64 CoolingPanel;   // Current radiant heat flux to surface from simple cooling panels
     };
 
+    struct ZoneTstatSetpt
+    {
+        Real64 setpt = 0.0;
+        Real64 setptAdapComfortCool = 0.0;
+        Real64 setptHi = 0.0;
+        Real64 setptLo = 0.0;
+        Real64 setptHiAver = 0.0;
+        Real64 setptLoAver = 0.0;
+    };
+
 } // namespace DataHeatBalFanSys
 
 struct HeatBalFanSysData : BaseGlobalStruct
@@ -141,12 +151,7 @@ struct HeatBalFanSysData : BaseGlobalStruct
     Array1D<Real64> RadSysToHBTinCoef;   // Outside heat balance coefficient that modifies Toutside
     Array1D<Real64> RadSysToHBQsrcCoef;  // Outside heat balance coefficient that modifies source/sink
 
-    Array1D<Real64> TempZoneThermostatSetPoint;
-    Array1D<Real64> AdapComfortCoolingSetPoint;
-    Array1D<Real64> ZoneThermostatSetPointHi;
-    Array1D<Real64> ZoneThermostatSetPointLo;
-    Array1D<Real64> ZoneThermostatSetPointHiAver;
-    Array1D<Real64> ZoneThermostatSetPointLoAver;
+    Array1D<DataHeatBalFanSys::ZoneTstatSetpt> zoneTstatSetpts;
 
     EPVector<Real64> LoadCorrectionFactor; // PH 3/3/04
 
@@ -157,9 +162,9 @@ struct HeatBalFanSysData : BaseGlobalStruct
     Array1D<Real64> PreviousMeasuredHumRat1; // Hybrid model zone humidity ratio at previous timestep
     Array1D<Real64> PreviousMeasuredHumRat2; // Hybrid model zone humidity ratio at previous timestep
     Array1D<Real64> PreviousMeasuredHumRat3; // Hybrid model zone humidity ratio at previous timestep
-    EPVector<HVAC::ThermostatType> TempControlType;
+    EPVector<HVAC::SetptType> TempControlType;
     EPVector<int> TempControlTypeRpt;
-    EPVector<HVAC::ThermostatType> ComfortControlType;
+    EPVector<HVAC::SetptType> ComfortControlType;
     EPVector<int> ComfortControlTypeRpt;
 
     Array2D<bool> CrossedColdThreshRepPeriod;
@@ -194,6 +199,10 @@ struct HeatBalFanSysData : BaseGlobalStruct
     int PMVerrorIndex = 0;
 
     EPVector<DataHeatBalFanSys::ZoneComfortControlsFangerData> ZoneComfortControlsFanger;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -104,8 +104,6 @@ bool ParseSQLiteInput(EnergyPlusData &state, bool &writeOutputToSQLite, bool &wr
             return input;
         };
 
-        auto &sql_ort = state.dataOutRptTab;
-
         // There can only be 1 "Output:SQLite"
         auto const instance = instances.value().begin();
         auto const &fields = instance.value();
@@ -123,6 +121,8 @@ bool ParseSQLiteInput(EnergyPlusData &state, bool &writeOutputToSQLite, bool &wr
         }
         { // "unit_conversion_for_tabular_data"
             std::string tabularDataUnitConversion = find_input(fields, "unit_conversion_for_tabular_data");
+            auto const &sql_ort = state.dataOutRptTab;
+
             if ("UseOutputControlTableStyles" == tabularDataUnitConversion) {
                 // Jan 2021 Note: Since here we do not know weather sql_ort->unitsStyle has been processed or not,
                 // the value "NotFound" is used for the option "UseOutputControlTableStyles" at this point;
@@ -184,13 +184,13 @@ void CreateSQLiteZoneExtendedOutput(EnergyPlusData &state)
         for (int groupNum = 1; groupNum <= state.dataHeatBal->NumOfZoneGroups; ++groupNum) {
             state.dataSQLiteProcedures->sqlite->addZoneGroupData(groupNum, state.dataHeatBal->ZoneGroup(groupNum));
         }
-        for (int scheduleNumber = 1, numberOfSchedules = ScheduleManager::GetNumberOfSchedules(state); scheduleNumber <= numberOfSchedules;
-             ++scheduleNumber) {
-            state.dataSQLiteProcedures->sqlite->addScheduleData(scheduleNumber,
-                                                                ScheduleManager::GetScheduleName(state, scheduleNumber),
-                                                                ScheduleManager::GetScheduleType(state, scheduleNumber),
-                                                                ScheduleManager::GetScheduleMinValue(state, scheduleNumber),
-                                                                ScheduleManager::GetScheduleMaxValue(state, scheduleNumber));
+        for (auto *sched : state.dataSched->schedules) {
+            state.dataSQLiteProcedures->sqlite->addScheduleData(
+                sched->Num,
+                sched->Name,
+                (sched->schedTypeNum == -1) ? "" : state.dataSched->scheduleTypes[sched->schedTypeNum]->Name,
+                sched->getMinVal(state),
+                sched->getMaxVal(state));
         }
         for (int surfaceNumber = 1; surfaceNumber <= state.dataSurface->TotSurfaces; ++surfaceNumber) {
             auto const &surface = state.dataSurface->Surface(surfaceNumber);
@@ -1577,7 +1577,6 @@ void SQLite::createSQLiteTimeIndexRecord(OutputProcessor::ReportFreq const repor
                                          bool const warmupFlag)
 {
     if (m_writeOutputToSQLite) {
-        int intStartMinute = 0;
         int intervalInMinutes = 60;
 
         static std::vector<int> lastDayOfMonth = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -1595,7 +1594,7 @@ void SQLite::createSQLiteTimeIndexRecord(OutputProcessor::ReportFreq const repor
             ++m_sqlDBTimeIndex;
 
             int intEndMinute = static_cast<int>(endMinute + 0.5);
-            intStartMinute = static_cast<int>(startMinute + 0.5);
+            int intStartMinute = static_cast<int>(startMinute + 0.5);
             int t_hour = hour;
             intervalInMinutes = intEndMinute - intStartMinute;
             adjustReportingHourAndMinutes(t_hour, intEndMinute);
@@ -2296,7 +2295,7 @@ bool SQLite::NominalLighting::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionReturnAir);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2316,13 +2315,13 @@ bool SQLite::NominalPeople::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
     sqliteBindDouble(insertStmt, 4, numberOfPeople);
-    sqliteBindForeignKey(insertStmt, 5, numberOfPeoplePtr);
-    sqliteBindForeignKey(insertStmt, 6, activityLevelPtr);
+    sqliteBindForeignKey(insertStmt, 5, numberOfPeopleSched ? numberOfPeopleSched->Num : -1);
+    sqliteBindForeignKey(insertStmt, 6, activityLevelSched ? activityLevelSched->Num : -1);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
     sqliteBindDouble(insertStmt, 8, fractionConvected);
-    sqliteBindForeignKey(insertStmt, 9, workEffPtr);
-    sqliteBindForeignKey(insertStmt, 10, clothingPtr);
-    sqliteBindForeignKey(insertStmt, 11, airVelocityPtr);
+    sqliteBindForeignKey(insertStmt, 9, workEffSched ? workEffSched->Num : -1);
+    sqliteBindForeignKey(insertStmt, 10, clothingSched ? clothingSched->Num : -1);
+    sqliteBindForeignKey(insertStmt, 11, airVelocitySched ? airVelocitySched->Num : -1);
     sqliteBindLogical(insertStmt, 12, fanger);
     sqliteBindLogical(insertStmt, 13, pierce);
     sqliteBindLogical(insertStmt, 14, ksu);
@@ -2343,7 +2342,7 @@ bool SQLite::NominalElectricEquipment::insertIntoSQLite(sqlite3_stmt *insertStmt
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionLatent);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2361,7 +2360,7 @@ bool SQLite::NominalGasEquipment::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionLatent);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2379,7 +2378,7 @@ bool SQLite::NominalSteamEquipment::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionLatent);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2397,7 +2396,7 @@ bool SQLite::NominalHotWaterEquipment::insertIntoSQLite(sqlite3_stmt *insertStmt
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionLatent);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2415,7 +2414,7 @@ bool SQLite::NominalOtherEquipment::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedulePtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
     sqliteBindDouble(insertStmt, 6, fractionLatent);
     sqliteBindDouble(insertStmt, 7, fractionRadiant);
@@ -2433,7 +2432,7 @@ bool SQLite::NominalBaseboardHeat::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedPtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, capatLowTemperature);
     sqliteBindDouble(insertStmt, 6, lowTemperature);
     sqliteBindDouble(insertStmt, 7, capatHighTemperature);
@@ -2452,7 +2451,7 @@ bool SQLite::Infiltration::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedPtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
 
     int rc = sqliteStepCommand(insertStmt);
@@ -2465,7 +2464,7 @@ bool SQLite::Ventilation::insertIntoSQLite(sqlite3_stmt *insertStmt)
     sqliteBindInteger(insertStmt, 1, number);
     sqliteBindText(insertStmt, 2, name);
     sqliteBindForeignKey(insertStmt, 3, zonePtr);
-    sqliteBindForeignKey(insertStmt, 4, schedPtr);
+    sqliteBindForeignKey(insertStmt, 4, sched->Num);
     sqliteBindDouble(insertStmt, 5, designLevel);
 
     int rc = sqliteStepCommand(insertStmt);
@@ -2611,7 +2610,7 @@ SQLiteProcedures::SQLiteProcedures(std::shared_ptr<std::ostream> const &errorStr
 {
     sqlite3 *m_connection = nullptr;
     if (m_writeOutputToSQLite) {
-        int rc = -1;
+        int rc;
         bool ok = true;
 
         std::string const dbName_utf8 = FileSystem::toGenericString(dbName);

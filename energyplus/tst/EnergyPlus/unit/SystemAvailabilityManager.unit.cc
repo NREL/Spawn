@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -193,6 +193,9 @@ TEST_F(EnergyPlusFixture, SysAvailManager_OptimumStart)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 6;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 10; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     state->dataHeatBal->NumOfZoneLists = 1;
     state->dataHeatBal->ZoneList.allocate(state->dataHeatBal->NumOfZoneLists);
@@ -239,10 +242,6 @@ TEST_F(EnergyPlusFixture, SysAvailManager_OptimumStart)
     state->dataAirLoop->AirToZoneNodeInfo(3).CoolCtrlZoneNums.allocate(1);
     state->dataAirLoop->AirToZoneNodeInfo(3).CoolCtrlZoneNums(1) = 6;
 
-    state->dataGlobal->NumOfTimeStepInHour = 6;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 10;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -253,7 +252,7 @@ TEST_F(EnergyPlusFixture, SysAvailManager_OptimumStart)
     state->dataEnvrn->DayOfWeekTomorrow = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     state->dataZoneEquip->ZoneEquipAvail.allocate(6);
 
@@ -297,11 +296,12 @@ TEST_F(EnergyPlusFixture, SysAvailManager_OptimumStart)
     state->dataHeatBalFanSys->TempTstatAir(5) = 14.0;
     state->dataHeatBalFanSys->TempTstatAir(6) = 10.0;
 
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(6);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(6);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(6);
 
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo = 19.0; // all zones use same set point temperature
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi = 24.0;
+    for (auto &zoneTstatSetpt : state->dataHeatBalFanSys->zoneTstatSetpts) {
+        zoneTstatSetpt.setptLo = 19.0; // all zones use same set point temperature
+        zoneTstatSetpt.setptHi = 24.0;
+    }
 
     state->dataZoneCtrls->OccRoomTSetPointHeat.allocate(6);
     state->dataZoneCtrls->OccRoomTSetPointCool.allocate(6);
@@ -356,15 +356,15 @@ TEST_F(EnergyPlusFixture, SysAvailManager_OptimumStart)
     ZoneTempPredictorCorrector::GetZoneAirSetPoints(*state);
     state->dataHeatBalFanSys->TempControlType.allocate(state->dataGlobal->NumOfZones);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(state->dataGlobal->NumOfZones);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(state->dataGlobal->NumOfZones);
 
     state->dataGlobal->CurrentTime = 19.0; // set the current time to 7 PM which is post-occupancy
     Avail::ManageSystemAvailability(*state);
     ZoneTempPredictorCorrector::CalcZoneAirTempSetPoints(*state);
 
     EXPECT_EQ((int)Avail::Status::NoAction, (int)state->dataAvail->OptimumStartData(1).availStatus); // avail manager should be set to no action
-    EXPECT_EQ(15.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));                          // 15.0C is the unoccupied heating setpoint
-    EXPECT_EQ(29.4, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));                          // 29.4C is the unoccupied cooling setpoint
+    EXPECT_EQ(15.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);                           // 15.0C is the unoccupied heating setpoint
+    EXPECT_EQ(29.4, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);                           // 29.4C is the unoccupied cooling setpoint
 }
 
 TEST_F(EnergyPlusFixture, SysAvailManager_NightCycle_ZoneOutOfTolerance)
@@ -373,26 +373,24 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycle_ZoneOutOfTolerance)
     state->dataHeatBalFanSys->TempControlType.allocate(NumZones);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(NumZones);
     state->dataHeatBalFanSys->TempTstatAir.allocate(NumZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(NumZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(NumZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(NumZones);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(NumZones);
 
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::SingleCooling;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::SingleCool;
     state->dataHeatBalFanSys->TempTstatAir(1) = 30.0;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 25.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 25.0;
 
-    state->dataHeatBalFanSys->TempControlType(2) = HVAC::ThermostatType::SingleHeatCool;
+    state->dataHeatBalFanSys->TempControlType(2) = HVAC::SetptType::SingleHeatCool;
     state->dataHeatBalFanSys->TempTstatAir(2) = 25.0;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(2) = 25.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(2).setpt = 25.0;
 
-    state->dataHeatBalFanSys->TempControlType(3) = HVAC::ThermostatType::SingleHeating;
+    state->dataHeatBalFanSys->TempControlType(3) = HVAC::SetptType::SingleHeat;
     state->dataHeatBalFanSys->TempTstatAir(3) = 10.0;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(3) = 20.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(3).setpt = 20.0;
 
-    state->dataHeatBalFanSys->TempControlType(4) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(4) = HVAC::SetptType::DualHeatCool;
     state->dataHeatBalFanSys->TempTstatAir(4) = 30.0;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(4) = 25.0;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(4) = 20.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(4).setptHi = 25.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(4).setptLo = 20.0;
 
     Real64 TempTol = 0.5;
     Array1D_int ZoneNumList;
@@ -416,9 +414,7 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycle_ZoneOutOfTolerance)
 
     state->dataHeatBalFanSys->TempControlType.deallocate();
     state->dataHeatBalFanSys->TempTstatAir.deallocate();
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.deallocate();
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.deallocate();
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.deallocate();
+    state->dataHeatBalFanSys->zoneTstatSetpts.deallocate();
     ZoneNumList.deallocate();
 }
 
@@ -433,16 +429,15 @@ TEST_F(EnergyPlusFixture, SysAvailManager_HybridVentilation_OT_CO2Control)
     state->dataContaminantBalance->ZoneCO2SetPoint.allocate(1);
     state->dataAirLoop->PriAirSysAvailMgr.allocate(1);
     state->dataAvail->SchedData.allocate(1);
-    state->dataScheduleMgr->Schedule.allocate(1);
     state->dataAvail->ZoneComp.allocate(DataZoneEquipment::NumValidSysAvailZoneComponents);
     state->dataHeatBalFanSys->TempControlType.allocate(1);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(1);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(1);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
 
     state->dataAvail->HybridVentData(1).Name = "HybridControl";
     state->dataAvail->HybridVentData(1).ControlledZoneNum = 1;
     state->dataAvail->HybridVentData(1).AirLoopNum = 1;
-    state->dataAvail->HybridVentData(1).ControlModeSchedPtr = 1;
+    state->dataAvail->HybridVentData(1).controlModeSched = Sched::AddScheduleConstant(*state, "CONTROL MODE");
     state->dataAvail->HybridVentData(1).UseRainIndicator = false;
     state->dataAvail->HybridVentData(1).MaxWindSpeed = 40.0;
     state->dataAvail->HybridVentData(1).MinOutdoorTemp = 15.0;
@@ -451,7 +446,7 @@ TEST_F(EnergyPlusFixture, SysAvailManager_HybridVentilation_OT_CO2Control)
     state->dataAvail->HybridVentData(1).MaxOutdoorEnth = 30000.0;
     state->dataAvail->HybridVentData(1).MinOutdoorDewPoint = 15.0;
     state->dataAvail->HybridVentData(1).MaxOutdoorDewPoint = 35.0;
-    state->dataAvail->HybridVentData(1).MinOASched = 2;
+    state->dataAvail->HybridVentData(1).minOASched = Sched::AddScheduleConstant(*state, "MIN OA");
     state->dataAvail->HybridVentData(1).MinOperTime = 10.0;
     state->dataAvail->HybridVentData(1).MinVentTime = 10.0;
 
@@ -496,11 +491,11 @@ TEST_F(EnergyPlusFixture, SysAvailManager_HybridVentilation_OT_CO2Control)
     state->dataAirLoop->PriAirSysAvailMgr(1).availManagers(1).type = Avail::ManagerType::Scheduled; // Scheduled
     state->dataAirLoop->PriAirSysAvailMgr(1).availManagers(1).Name = "Avail 1";
     state->dataAirLoop->PriAirSysAvailMgr(1).availManagers(1).Num = 1;
-    state->dataAvail->SchedData(1).SchedPtr = 1;
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1;
+    auto *availSched = state->dataAvail->SchedData(1).availSched = Sched::AddScheduleConstant(*state, "AVAIL");
+    availSched->currentVal = 1;
     Avail::CalcHybridVentSysAvailMgr(*state, 1, 1);
     EXPECT_EQ((int)Avail::VentCtrlStatus::Close, (int)state->dataAvail->HybridVentData(1).ctrlStatus); // System operation
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 0;
+    availSched->currentVal = 0;
     Avail::CalcHybridVentSysAvailMgr(*state, 1, 1);
     EXPECT_EQ((int)Avail::VentCtrlStatus::Open, (int)state->dataAvail->HybridVentData(1).ctrlStatus); // Vent open
 
@@ -539,8 +534,8 @@ TEST_F(EnergyPlusFixture, SysAvailManager_HybridVentilation_OT_CO2Control)
     Avail::CalcHybridVentSysAvailMgr(*state, 1, 1);
     EXPECT_EQ((int)Avail::VentCtrlStatus::Close, (int)state->dataAvail->HybridVentData(1).ctrlStatus); // No change
     state->dataAvail->HybridVentData(1).TimeVentDuration = 11.0;
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::SingleHeating;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 25.0;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::SingleHeat;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 25.0;
     Avail::CalcHybridVentSysAvailMgr(*state, 1, 1);
     EXPECT_EQ((int)Avail::VentCtrlStatus::Open, (int)state->dataAvail->HybridVentData(1).ctrlStatus); // Can change
 }
@@ -595,11 +590,10 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleGetInput)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     // get system availability schedule
     Avail::GetSysAvailManagerInputs(*state);
     // check the three cycling run time control types
@@ -628,16 +622,16 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleZone_CalcNCycSysAvailMgr)
     state->dataHeatBalFanSys->TempControlType.allocate(NumZones);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(NumZones);
     state->dataHeatBalFanSys->TempTstatAir.allocate(NumZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(NumZones);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::SingleCooling;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 25.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(NumZones);
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::SingleCool;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 25.0;
     state->dataHeatBalFanSys->TempTstatAir(1) = 25.1;
 
     state->dataAvail->NightCycleData.allocate(NumZones);
     state->dataAvail->NightCycleData(1).Name = "System Avail";
     state->dataAvail->NightCycleData(1).nightCycleControlType = Avail::NightCycleControlType::OnAny;
-    state->dataAvail->NightCycleData(1).SchedPtr = 1;
-    state->dataAvail->NightCycleData(1).FanSchedPtr = 2;
+    auto *availSched = state->dataAvail->NightCycleData(1).availSched = Sched::AddScheduleConstant(*state, "AVAIL");
+    auto *fanSched = state->dataAvail->NightCycleData(1).fanSched = Sched::AddScheduleConstant(*state, "FAN");
     state->dataAvail->NightCycleData(1).TempTolRange = 0.4;
     state->dataAvail->NightCycleData(1).CyclingTimeSteps = 4;
     state->dataAvail->NightCycleData(1).CtrlZoneListName = state->dataHeatBal->Zone(1).Name;
@@ -647,9 +641,9 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleZone_CalcNCycSysAvailMgr)
     state->dataAvail->NightCycleData(1).CoolingZoneListName = state->dataHeatBal->Zone(1).Name;
     state->dataAvail->NightCycleData(1).NumOfCoolingZones = NumZones;
     state->dataAvail->NightCycleData(1).CoolingZonePtrs = NumZones;
-    state->dataScheduleMgr->Schedule.allocate(2);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1;
-    state->dataScheduleMgr->Schedule(2).CurrentValue = 0;
+
+    availSched->currentVal = 1;
+    fanSched->currentVal = 0;
 
     // Cycling Run Time Control Type = FixedRunTime
     // and current time is within the run time period, starting time is less than stopping time
@@ -749,9 +743,9 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleSys_CalcNCycSysAvailMgr)
     state->dataHeatBalFanSys->TempControlType.allocate(NumZones);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(NumZones);
     state->dataHeatBalFanSys->TempTstatAir.allocate(NumZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(NumZones);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::SingleCooling;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 25.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(NumZones);
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::SingleCool;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 25.0;
     state->dataHeatBalFanSys->TempTstatAir(1) = 25.1;
     state->dataHeatBal->Zone.allocate(NumZones);
     state->dataHeatBal->Zone(1).Name = "SPACE1-1";
@@ -766,8 +760,8 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleSys_CalcNCycSysAvailMgr)
 
     state->dataAvail->NightCycleData(1).Name = "System Avail";
     state->dataAvail->NightCycleData(1).nightCycleControlType = Avail::NightCycleControlType::OnAny;
-    state->dataAvail->NightCycleData(1).SchedPtr = 1;
-    state->dataAvail->NightCycleData(1).FanSchedPtr = 2;
+    auto *availSched = state->dataAvail->NightCycleData(1).availSched = Sched::AddScheduleConstant(*state, "AVAIL");
+    auto *fanSched = state->dataAvail->NightCycleData(1).fanSched = Sched::AddScheduleConstant(*state, "FAN");
     state->dataAvail->NightCycleData(1).TempTolRange = 0.4;
     state->dataAvail->NightCycleData(1).CyclingTimeSteps = 4;
     state->dataAvail->NightCycleData(1).CtrlZoneListName = state->dataHeatBal->Zone(1).Name;
@@ -777,9 +771,8 @@ TEST_F(EnergyPlusFixture, SysAvailManager_NightCycleSys_CalcNCycSysAvailMgr)
     state->dataAvail->NightCycleData(1).CoolingZoneListName = state->dataHeatBal->Zone(1).Name;
     state->dataAvail->NightCycleData(1).NumOfCoolingZones = NumZones;
     state->dataAvail->NightCycleData(1).CoolingZonePtrs = NumZones;
-    state->dataScheduleMgr->Schedule.allocate(2);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1;
-    state->dataScheduleMgr->Schedule(2).CurrentValue = 0;
+    availSched->currentVal = 1;
+    fanSched->currentVal = 0;
 
     // Cycling Run Time Control Type = FixedRunTime
     // and current time is within the run time period, starting time is less than stopping time

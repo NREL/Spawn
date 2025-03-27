@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,7 +67,6 @@ namespace EnergyPlus {
 TEST_F(EnergyPlusFixture, DemandManagerGetInput)
 {
     // Test input processing for DemandManager:Ventilation
-
     std::string const idf_objects = delimited_string({"DemandManager:Ventilation,",
                                                       " Ventilation Manager,",
                                                       " ,",
@@ -81,6 +80,7 @@ TEST_F(EnergyPlusFixture, DemandManagerGetInput)
                                                       " OA CONTROLLER 1;"});
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataMixedAir->NumOAControllers = 1;
     state->dataMixedAir->OAController.allocate(state->dataMixedAir->NumOAControllers);
@@ -88,7 +88,7 @@ TEST_F(EnergyPlusFixture, DemandManagerGetInput)
 
     GetDemandManagerInput(*state);
     auto &DemandMgr(state->dataDemandManager->DemandMgr);
-    EXPECT_EQ(ScheduleManager::ScheduleAlwaysOn, DemandMgr(1).AvailSchedule);
+    EXPECT_EQ(Sched::SchedNum_AlwaysOn, DemandMgr(1).availSched->Num);
     EXPECT_ENUM_EQ(ManagerLimit::Fixed, DemandMgr(1).LimitControl);
     EXPECT_DOUBLE_EQ(60.0, DemandMgr(1).LimitDuration);
     EXPECT_DOUBLE_EQ(0.2, DemandMgr(1).FixedRate);
@@ -98,7 +98,6 @@ TEST_F(EnergyPlusFixture, DemandManagerGetInput)
 
 TEST_F(EnergyPlusFixture, DemandManagerAssignmentListGetInputTest)
 {
-
     std::string const idf_objects = delimited_string({
         "  DemandManagerAssignmentList,",
         "    Demand Manager,          !- Name",
@@ -156,10 +155,10 @@ TEST_F(EnergyPlusFixture, DemandManagerAssignmentListGetInputTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     ExteriorEnergyUse::GetExteriorEnergyUseInput(*state);
     GetDemandManagerInput(*state);
 

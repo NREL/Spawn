@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -140,6 +140,7 @@ TEST_F(EnergyPlusFixture, GasAbsorption_GetInput_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetGasAbsorberInput(*state);
 
@@ -171,6 +172,7 @@ TEST_F(EnergyPlusFixture, GasAbsorption_GetInput_Test)
 
 TEST_F(EnergyPlusFixture, GasAbsorption_getDesignCapacities_Test)
 {
+    state->init_state(*state);
     state->dataPlnt->TotNumLoops = 3;
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
 
@@ -317,6 +319,7 @@ TEST_F(EnergyPlusFixture, GasAbsorption_calculateHeater_Fix_Test)
 
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream("");
+    state->init_state(*state);
 
     GetGasAbsorberInput(*state);
 
@@ -333,7 +336,7 @@ TEST_F(EnergyPlusFixture, GasAbsorption_calculateHeater_Fix_Test)
     thisChillerHeater.HWplantLoc.loopNum = 1;
     thisChillerHeater.HWplantLoc.loopSideNum = DataPlant::LoopSideLocation::Demand;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopDemandCalcScheme = DataPlant::LoopDemandCalcScheme::SingleSetPoint;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).FlowLock = DataPlant::FlowLock::Locked;
     state->dataLoopNodes->Node(3).Temp = 60.0;

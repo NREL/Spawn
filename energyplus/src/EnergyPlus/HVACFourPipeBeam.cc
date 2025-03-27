@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -96,7 +96,6 @@ namespace FourPipeBeam {
         using NodeInputManager::GetOnlySingleNode;
         using namespace DataSizing;
         using Curve::GetCurveIndex;
-        using ScheduleManager::GetScheduleIndex;
         static constexpr std::string_view routineName("FourPipeBeamFactory "); // include trailing blank space
 
         int beamIndex; // loop index
@@ -137,6 +136,8 @@ namespace FourPipeBeam {
             ErrorsFound = true;
         }
 
+        ErrorObjectHeader eoh{routineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)};
+
         errFlag = false;
         GlobalNames::VerifyUniqueADUName(state, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1), errFlag, cCurrentModuleObject + " Name");
         if (errFlag) {
@@ -146,52 +147,23 @@ namespace FourPipeBeam {
         thisBeam->unitType = cCurrentModuleObject;
 
         if (state.dataIPShortCut->lAlphaFieldBlanks(2)) {
-            thisBeam->airAvailSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            thisBeam->airAvailSchedNum = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(2)); // convert schedule name to pointer
-            if (thisBeam->airAvailSchedNum == 0) {
-                ShowSevereError(state,
-                                format("{}{}: invalid {} entered ={} for {}={}",
-                                       routineName,
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(2),
-                                       state.dataIPShortCut->cAlphaArgs(2),
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-                ErrorsFound = true;
-            }
+            thisBeam->airAvailSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((thisBeam->airAvailSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(2), state.dataIPShortCut->cAlphaArgs(2));
+            ErrorsFound = true;
         }
+
         if (state.dataIPShortCut->lAlphaFieldBlanks(3)) {
-            thisBeam->coolingAvailSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            thisBeam->coolingAvailSchedNum = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(3)); // convert schedule name to index
-            if (thisBeam->coolingAvailSchedNum == 0) {
-                ShowSevereError(state,
-                                format("{}{}: invalid {} entered ={} for {}={}",
-                                       routineName,
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(3),
-                                       state.dataIPShortCut->cAlphaArgs(3),
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-                ErrorsFound = true;
-            }
+            thisBeam->coolingAvailSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((thisBeam->coolingAvailSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(3))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3));
+            ErrorsFound = true;
         }
         if (state.dataIPShortCut->lAlphaFieldBlanks(4)) {
-            thisBeam->heatingAvailSchedNum = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            thisBeam->heatingAvailSchedNum = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(4)); // convert schedule name to index
-            if (thisBeam->heatingAvailSchedNum == 0) {
-                ShowSevereError(state,
-                                format("{}{}: invalid {} entered ={} for {}={}",
-                                       routineName,
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(4),
-                                       state.dataIPShortCut->cAlphaArgs(4),
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-                ErrorsFound = true;
-            }
+            thisBeam->heatingAvailSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((thisBeam->heatingAvailSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(4))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(4), state.dataIPShortCut->cAlphaArgs(4));
+            ErrorsFound = true;
         }
 
         thisBeam->airInNodeNum = GetOnlySingleNode(state,
@@ -576,7 +548,6 @@ namespace FourPipeBeam {
         using PlantUtilities::InitComponentNodes;
         using PlantUtilities::ScanPlantLoopsForObject;
         using PlantUtilities::SetComponentFlowRate;
-        using ScheduleManager::GetCurrentScheduleValue;
 
         static constexpr std::string_view routineName("HVACFourPipeBeam::init");
 
@@ -674,21 +645,10 @@ namespace FourPipeBeam {
         // Do the start of HVAC time step initializations
         if (FirstHVACIteration) {
             // check availability schedules and set flags
-            if (GetCurrentScheduleValue(state, this->airAvailSchedNum) > 0.0) {
-                this->airAvailable = true;
-            } else {
-                this->airAvailable = false;
-            }
-            if (this->airAvailable && beamCoolingPresent && (GetCurrentScheduleValue(state, this->coolingAvailSchedNum) > 0.0)) {
-                this->coolingAvailable = true;
-            } else {
-                this->coolingAvailable = false;
-            }
-            if (this->airAvailable && beamHeatingPresent && (GetCurrentScheduleValue(state, this->heatingAvailSchedNum) > 0.0)) {
-                this->heatingAvailable = true;
-            } else {
-                this->heatingAvailable = false;
-            }
+            this->airAvailable = (this->airAvailSched->getCurrentVal() > 0.0);
+            this->coolingAvailable = (this->airAvailable && beamCoolingPresent && (this->coolingAvailSched->getCurrentVal() > 0.0));
+            this->heatingAvailable = (this->airAvailable && beamHeatingPresent && (this->heatingAvailSched->getCurrentVal() > 0.0));
+
             // check for upstream zero flow. If nonzero and air available, set primary flow to max
             if (this->airAvailable && state.dataLoopNodes->Node(this->airInNodeNum).MassFlowRate > 0.0) {
                 state.dataLoopNodes->Node(this->airInNodeNum).MassFlowRate = this->mDotDesignPrimAir;
@@ -735,8 +695,6 @@ namespace FourPipeBeam {
 
         // Using
         using namespace DataSizing;
-        using FluidProperties::GetDensityGlycol;
-        using FluidProperties::GetSpecificHeatGlycol;
         using PlantUtilities::MyPlantSizingIndex;
         using PlantUtilities::RegisterPlantCompDesignFlow;
         using Psychrometrics::PsyCpAirFnW;
@@ -872,11 +830,8 @@ namespace FourPipeBeam {
                     this->totBeamLength = this->vDotDesignPrimAir / this->vDotNormRatedPrimAir;
                     if (this->vDotDesignCWWasAutosized) {
                         this->vDotDesignCW = this->vDotNormRatedCW * this->totBeamLength;
-                        Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                                             state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidName,
-                                                                             Constant::CWInitConvTemp,
-                                                                             state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidIndex,
-                                                                             routineName);
+                        Real64 const rho =
+                            state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, routineName);
                         this->mDotNormRatedCW = this->vDotNormRatedCW * rho;
                         this->mDotCW = this->vDotDesignCW * rho;
                         if (this->beamCoolingPresent) {
@@ -885,11 +840,8 @@ namespace FourPipeBeam {
                     }
                     if (vDotDesignHWWasAutosized) {
                         this->vDotDesignHW = this->vDotNormRatedHW * this->totBeamLength;
-                        Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                                             state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidName,
-                                                                             Constant::HWInitConvTemp,
-                                                                             state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidIndex,
-                                                                             routineName);
+                        Real64 const rho =
+                            state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, routineName);
                         this->mDotNormRatedHW = this->vDotNormRatedHW * rho;
                         this->mDotHW = this->vDotDesignHW * rho;
                         if (this->beamHeatingPresent) {
@@ -952,11 +904,8 @@ namespace FourPipeBeam {
                     this->totBeamLength = this->vDotDesignPrimAir / this->vDotNormRatedPrimAir;
                     if (this->vDotDesignCWWasAutosized) {
                         this->vDotDesignCW = this->vDotNormRatedCW * this->totBeamLength;
-                        Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                                             state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidName,
-                                                                             Constant::CWInitConvTemp,
-                                                                             state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidIndex,
-                                                                             routineName);
+                        Real64 const rho =
+                            state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, routineName);
                         this->mDotNormRatedCW = this->vDotNormRatedCW * rho;
                         this->mDotCW = this->vDotDesignCW * rho;
                         if (this->beamCoolingPresent) {
@@ -965,11 +914,8 @@ namespace FourPipeBeam {
                     }
                     if (vDotDesignHWWasAutosized) {
                         this->vDotDesignHW = this->vDotNormRatedHW * this->totBeamLength;
-                        Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                                             state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidName,
-                                                                             Constant::HWInitConvTemp,
-                                                                             state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidIndex,
-                                                                             routineName);
+                        Real64 const rho =
+                            state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, routineName);
                         this->mDotNormRatedHW = this->vDotNormRatedHW * rho;
                         this->mDotHW = this->vDotDesignHW * rho;
                         if (this->beamHeatingPresent) {
@@ -1035,21 +981,13 @@ namespace FourPipeBeam {
         }
 
         if (this->beamCoolingPresent) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidName,
-                                                    Constant::CWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidIndex,
-                                                    routineName);
+            rho = state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, routineName);
             this->mDotNormRatedCW = this->vDotNormRatedCW * rho;
             this->mDotDesignCW = this->vDotDesignCW * rho;
             PlantUtilities::InitComponentNodes(state, 0.0, this->mDotDesignCW, this->cWInNodeNum, this->cWOutNodeNum);
         }
         if (this->beamHeatingPresent) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidIndex,
-                                                    routineName);
+            rho = state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, routineName);
             this->mDotNormRatedHW = this->vDotNormRatedHW * rho;
             this->mDotDesignHW = this->vDotDesignHW * rho;
             PlantUtilities::InitComponentNodes(state, 0.0, this->mDotDesignHW, this->hWInNodeNum, this->hWOutNodeNum);
@@ -1245,8 +1183,6 @@ namespace FourPipeBeam {
     {
 
         // Using/Aliasing
-        using FluidProperties::GetDensityGlycol;
-        using FluidProperties::GetSpecificHeatGlycol;
         using PlantUtilities::SetComponentFlowRate;
 
         // Locals
@@ -1284,11 +1220,7 @@ namespace FourPipeBeam {
             fModCoolAirMdot = Curve::CurveValue(
                 state, this->modCoolingQdotAirFlowFuncNum, ((this->mDotSystemAir / this->totBeamLength) / this->mDotNormRatedPrimAir));
             this->qDotBeamCooling = -1.0 * this->qDotNormRatedCooling * fModCoolDeltaT * fModCoolAirMdot * fModCoolCWMdot * this->totBeamLength;
-            cp = GetSpecificHeatGlycol(state,
-                                       state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidName,
-                                       this->cWTempIn,
-                                       state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).FluidIndex,
-                                       routineName);
+            cp = state.dataPlnt->PlantLoop(this->cWplantLoc.loopNum).glycol->getSpecificHeat(state, this->cWTempIn, routineName);
             if (this->mDotCW > 0.0) {
                 this->cWTempOut = this->cWTempIn - (this->qDotBeamCooling / (this->mDotCW * cp));
             } else {
@@ -1325,11 +1257,7 @@ namespace FourPipeBeam {
             fModHeatAirMdot = Curve::CurveValue(
                 state, this->modHeatingQdotAirFlowFuncNum, ((this->mDotSystemAir / this->totBeamLength) / this->mDotNormRatedPrimAir));
             this->qDotBeamHeating = this->qDotNormRatedHeating * fModHeatDeltaT * fModHeatAirMdot * fModHeatHWMdot * this->totBeamLength;
-            cp = GetSpecificHeatGlycol(state,
-                                       state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidName,
-                                       this->hWTempIn,
-                                       state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).FluidIndex,
-                                       routineName);
+            cp = state.dataPlnt->PlantLoop(this->hWplantLoc.loopNum).glycol->getSpecificHeat(state, this->hWTempIn, routineName);
             if (this->mDotHW > 0.0) {
                 this->hWTempOut = this->hWTempIn - (this->qDotBeamHeating / (this->mDotHW * cp));
             } else {

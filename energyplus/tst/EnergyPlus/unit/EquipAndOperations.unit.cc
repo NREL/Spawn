@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -124,6 +124,9 @@ public:
                 thisPlantLoop.Name = "Heating Plant";
                 thisPlantLoop.OperationScheme = "Heating Loop Operation Scheme List";
             }
+
+            thisPlantLoop.FluidName = "WATER";
+            thisPlantLoop.glycol = Fluid::GetWater(*state);
 
             thisPlantLoop.NumOpSchemes = 1;
             thisPlantLoop.OpScheme.allocate(thisPlantLoop.NumOpSchemes);
@@ -273,6 +276,8 @@ TEST_F(DistributeEquipOpTest, EvaluateChillerHeaterChangeoverOpSchemeTest)
      )IDF";
 
     ASSERT_TRUE(process_idf(idf_objects));
+
+    state->init_state(*state);
 
     auto &heatBranch1 = state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1);
     auto &heatComp1 = state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1);
@@ -502,6 +507,8 @@ TEST_F(DistributeEquipOpTest, SupervisoryControlLogicForAirSourcePlantsTest)
      )IDF";
 
     ASSERT_TRUE(process_idf(idf_objects));
+
+    state->init_state(*state);
 
     auto &heatBranch1 = state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1);
     auto &heatComp1 = state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1);

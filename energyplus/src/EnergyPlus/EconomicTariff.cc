@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -136,6 +136,8 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
     // meaning if "CCF" is picked, the conversion factor isn't the same whether it's a water meter or a fuel meter.
 
     static constexpr std::string_view RoutineName("GetInputEconomicsTariff: ");
+    static constexpr std::string_view routineName = "GetInputEconomicsTariff";
+
     int NumAlphas; // Number of elements in the alpha array
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
@@ -149,6 +151,8 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
     Array1D_string NamesOfKeys;                       // Specific key name
     Array1D_int IndexesForKeyVar;                     // Array index
 
+    auto &s_ipsc = state.dataIPShortCut;
+
     auto &tariff(state.dataEconTariff->tariff);
 
     std::string_view CurrentModuleObject = "UtilityCost:Tariff";
@@ -158,25 +162,27 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
                                                                  CurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
+
+        ErrorObjectHeader eoh{routineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)};
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
             //  args are always turned to upper case but this is okay...
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
         // name of the tariff
-        tariff(iInObj).tariffName = state.dataIPShortCut->cAlphaArgs(1);
+        tariff(iInObj).tariffName = s_ipsc->cAlphaArgs(1);
         // check if tariff name is unique
         int found = 0;
         for (int jObj = 1; jObj <= iInObj - 1; ++jObj) {
@@ -186,17 +192,17 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
             }
         }
         if (found > 0) {
-            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state, "...Duplicate name. Name has already been used.");
             ErrorsFound = true;
         }
         // name of the report meter
-        tariff(iInObj).reportMeter = state.dataIPShortCut->cAlphaArgs(2);
+        tariff(iInObj).reportMeter = s_ipsc->cAlphaArgs(2);
         // call the key count function but only need count during this pass
         GetVariableKeyCountandType(state, tariff(iInObj).reportMeter, KeyCount, TypeVar, AvgSumVar, StepTypeVar, UnitsVar);
         // if no meters found for that name
         if (KeyCount == 0) {
-            ShowWarningError(state, format("{}{}=\"{}\" missing meter", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            ShowWarningError(state, format("{}{}=\"{}\" missing meter", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state,
                               format("Meter referenced is not present due to a lack of equipment that uses that energy source/meter:\"{}\".",
                                      tariff(iInObj).reportMeter));
@@ -207,7 +213,7 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
             GetVariableKeys(state, tariff(iInObj).reportMeter, TypeVar, NamesOfKeys, IndexesForKeyVar);
             // although this retrieves all keys for a variable, we only need one so the first one is chosen
             if (KeyCount > 1) {
-                ShowWarningError(state, format("{}{}=\"{}\" multiple keys", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                ShowWarningError(state, format("{}{}=\"{}\" multiple keys", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... Multiple keys for variable select. First key will be used.");
             }
             // assign the index
@@ -267,23 +273,23 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
         // We set demandConv to something analogous to m3/h
         if (tariff(iInObj).kindWaterMtr == kindMeterWater) {
             // conversion factor
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "USERDEFINED")) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(3), "USERDEFINED")) {
                 tariff(iInObj).convChoice = EconConv::USERDEF;
-                tariff(iInObj).energyConv = state.dataIPShortCut->rNumericArgs(1); // energy conversion factor
-                tariff(iInObj).demandConv = state.dataIPShortCut->rNumericArgs(2); // demand conversion factor
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "M3")) {
+                tariff(iInObj).energyConv = s_ipsc->rNumericArgs(1); // energy conversion factor
+                tariff(iInObj).demandConv = s_ipsc->rNumericArgs(2); // demand conversion factor
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "M3")) {
                 tariff(iInObj).convChoice = EconConv::M3;
                 tariff(iInObj).energyConv = 1.0;
                 tariff(iInObj).demandConv = 3600.0;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "CCF")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "CCF")) {
                 tariff(iInObj).convChoice = EconConv::CCF;
                 tariff(iInObj).energyConv = 0.35314666721488586;
                 tariff(iInObj).demandConv = 0.35314666721488586 * 3600;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "GAL")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "GAL")) {
                 tariff(iInObj).convChoice = EconConv::GAL;
                 tariff(iInObj).energyConv = 264.1720523602524;
                 tariff(iInObj).demandConv = 264.1720523602524 * 3600;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KGAL")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KGAL")) {
                 tariff(iInObj).convChoice = EconConv::KGAL;
                 tariff(iInObj).energyConv = 0.2641720523602524;
                 tariff(iInObj).demandConv = 0.2641720523602524 * 3600;
@@ -292,100 +298,94 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 tariff(iInObj).convChoice = EconConv::M3;
                 tariff(iInObj).energyConv = 1.0;
                 tariff(iInObj).demandConv = 3600.0;
-                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format("{}=\"{}\", Defaulting to m^3 (Water resource detected).",
-                                         state.dataIPShortCut->cAlphaFieldNames(3),
-                                         state.dataIPShortCut->cAlphaArgs(3)));
+                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(
+                    state, format("{}=\"{}\", Defaulting to m^3 (Water resource detected).", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
             }
 
             // If it's an electric meter
             // Volumetric units such as MCF or CCF doesn't make sense IMHO (JM)
             // THERM is strange for an electric meter but currently I accept but issue a warning
         } else if (tariff(iInObj).kindElectricMtr != kindMeterNotElectric) {
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "USERDEFINED")) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(3), "USERDEFINED")) {
                 tariff(iInObj).convChoice = EconConv::USERDEF;
-                tariff(iInObj).energyConv = state.dataIPShortCut->rNumericArgs(1); // energy conversion factor
-                tariff(iInObj).demandConv = state.dataIPShortCut->rNumericArgs(2); // demand conversion factor
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KWH")) {
+                tariff(iInObj).energyConv = s_ipsc->rNumericArgs(1); // energy conversion factor
+                tariff(iInObj).demandConv = s_ipsc->rNumericArgs(2); // demand conversion factor
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KWH")) {
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MJ")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MJ")) {
                 tariff(iInObj).convChoice = EconConv::MJ;
                 tariff(iInObj).energyConv = 0.000001;
                 tariff(iInObj).demandConv = 0.0036;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MMBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MMBTU")) {
                 tariff(iInObj).convChoice = EconConv::MMBTU;
                 tariff(iInObj).energyConv = 9.4781712e-10;
                 tariff(iInObj).demandConv = 0.000003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KBTU")) {
                 tariff(iInObj).convChoice = EconConv::KBTU;
                 tariff(iInObj).energyConv = 9.4781712e-7;
                 tariff(iInObj).demandConv = 0.003412;
 
                 // We accept the following choices, but issue a warning
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "THERM")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "THERM")) {
                 tariff(iInObj).convChoice = EconConv::THERM;
                 tariff(iInObj).energyConv = 9.4781712e-9;
                 tariff(iInObj).demandConv = 0.00003412;
-                ShowWarningError(
-                    state, format("{}{}=\"{}\" potentially invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format("{}=\"{}\", Therm is an unusual choice for an electric resource.",
-                                         state.dataIPShortCut->cAlphaFieldNames(3),
-                                         state.dataIPShortCut->cAlphaArgs(3)));
+                ShowWarningError(state, format("{}{}=\"{}\" potentially invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(
+                    state,
+                    format("{}=\"{}\", Therm is an unusual choice for an electric resource.", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
 
                 // Otherwise, default to kWh
             } else {
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format("{}=\"{}\", Defaulting to kWh (Electric resource detected)",
-                                         state.dataIPShortCut->cAlphaFieldNames(3),
-                                         state.dataIPShortCut->cAlphaArgs(3)));
+                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(
+                    state, format("{}=\"{}\", Defaulting to kWh (Electric resource detected)", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
             }
 
             // If it's a gas meter
         } else if (tariff(iInObj).kindGasMtr == kindMeterGas) {
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "USERDEFINED")) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(3), "USERDEFINED")) {
                 tariff(iInObj).convChoice = EconConv::USERDEF;
-                tariff(iInObj).energyConv = state.dataIPShortCut->rNumericArgs(1); // energy conversion factor
-                tariff(iInObj).demandConv = state.dataIPShortCut->rNumericArgs(2); // demand conversion factor
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KWH")) {
+                tariff(iInObj).energyConv = s_ipsc->rNumericArgs(1); // energy conversion factor
+                tariff(iInObj).demandConv = s_ipsc->rNumericArgs(2); // demand conversion factor
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KWH")) {
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "THERM")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "THERM")) {
                 tariff(iInObj).convChoice = EconConv::THERM;
                 tariff(iInObj).energyConv = 9.4781712e-9;
                 tariff(iInObj).demandConv = 0.00003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MMBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MMBTU")) {
                 tariff(iInObj).convChoice = EconConv::MMBTU;
                 tariff(iInObj).energyConv = 9.4781712e-10;
                 tariff(iInObj).demandConv = 0.000003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MJ")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MJ")) {
                 tariff(iInObj).convChoice = EconConv::MJ;
                 tariff(iInObj).energyConv = 0.000001;
                 tariff(iInObj).demandConv = 0.0036;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KBTU")) {
                 tariff(iInObj).convChoice = EconConv::KBTU;
                 tariff(iInObj).energyConv = 9.4781712e-7;
                 tariff(iInObj).demandConv = 0.003412;
 
                 // Volumetric units for natural gas
                 // Actually assuming 1 therm = 1 CCF (= 100 ft^3)
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MCF")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MCF")) {
                 tariff(iInObj).convChoice = EconConv::MCF;
                 tariff(iInObj).energyConv = 9.4781712e-10;
                 tariff(iInObj).demandConv = 0.000003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "CCF")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "CCF")) {
                 tariff(iInObj).convChoice = EconConv::CCF;
                 tariff(iInObj).energyConv = 9.4781712e-9;
                 tariff(iInObj).demandConv = 0.00003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "M3")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "M3")) {
                 // Obtained from converting CCF above to m^3 so the same heat content of natural gas is used (1 therm = 1 CCF)
                 tariff(iInObj).convChoice = EconConv::M3;
                 tariff(iInObj).energyConv = 2.6839192e-10;
@@ -396,35 +396,34 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(
-                    state, format("{}=\"{}\", Defaulting to kWh.", state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3)));
+                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(state, format("{}=\"{}\", Defaulting to kWh.", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
             }
 
             // It it's neither an electric, water or gas meter, we cannot accept volumetric units
             // because we cannot infer the heat content
         } else {
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "USERDEFINED")) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(3), "USERDEFINED")) {
                 tariff(iInObj).convChoice = EconConv::USERDEF;
-                tariff(iInObj).energyConv = state.dataIPShortCut->rNumericArgs(1); // energy conversion factor
-                tariff(iInObj).demandConv = state.dataIPShortCut->rNumericArgs(2); // demand conversion factor
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KWH")) {
+                tariff(iInObj).energyConv = s_ipsc->rNumericArgs(1); // energy conversion factor
+                tariff(iInObj).demandConv = s_ipsc->rNumericArgs(2); // demand conversion factor
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KWH")) {
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "THERM")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "THERM")) {
                 tariff(iInObj).convChoice = EconConv::THERM;
                 tariff(iInObj).energyConv = 9.4781712e-9;
                 tariff(iInObj).demandConv = 0.00003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MMBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MMBTU")) {
                 tariff(iInObj).convChoice = EconConv::MMBTU;
                 tariff(iInObj).energyConv = 9.4781712e-10;
                 tariff(iInObj).demandConv = 0.000003412;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "MJ")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "MJ")) {
                 tariff(iInObj).convChoice = EconConv::MJ;
                 tariff(iInObj).energyConv = 0.000001;
                 tariff(iInObj).demandConv = 0.0036;
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "KBTU")) {
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "KBTU")) {
                 tariff(iInObj).convChoice = EconConv::KBTU;
                 tariff(iInObj).energyConv = 9.4781712e-7;
                 tariff(iInObj).demandConv = 0.003412;
@@ -434,71 +433,50 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 tariff(iInObj).convChoice = EconConv::KWH;
                 tariff(iInObj).energyConv = 0.0000002778;
                 tariff(iInObj).demandConv = 0.001;
-                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(
-                    state, format("{}=\"{}\", Defaulting to kWh.", state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3)));
+                ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(state, format("{}=\"{}\", Defaulting to kWh.", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
             }
         } // Default conversion factors have been applied from here on
 
         // schedules
         // period schedule
-        if (len(state.dataIPShortCut->cAlphaArgs(4)) > 0) {
-            tariff(iInObj).periodSchedule = state.dataIPShortCut->cAlphaArgs(4); // name of the period schedule (time of day)
-            tariff(iInObj).periodSchIndex =
-                ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(4)); // index to the period schedule
-            if (tariff(iInObj).periodSchIndex == 0) {
-                ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format(" not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(4), state.dataIPShortCut->cAlphaArgs(4)));
+        if (len(s_ipsc->cAlphaArgs(4)) > 0) {
+            if ((tariff(iInObj).periodSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(4))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4));
                 ErrorsFound = true;
             }
-        } else {
-            tariff(iInObj).periodSchIndex = 0; // flag value for no schedule used
         }
+
         // season schedule
-        if (len(state.dataIPShortCut->cAlphaArgs(5)) > 0) {
-            tariff(iInObj).seasonSchedule = state.dataIPShortCut->cAlphaArgs(5); // name of the season schedule (winter/summer)
-            tariff(iInObj).seasonSchIndex =
-                ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(5)); // index to the season schedule
-            if (tariff(iInObj).seasonSchIndex == 0) {
-                ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format(" not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(5), state.dataIPShortCut->cAlphaArgs(5)));
+        if (len(s_ipsc->cAlphaArgs(5)) > 0) {
+            if ((tariff(iInObj).seasonSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(5))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5));
                 ErrorsFound = true;
             }
-        } else {
-            tariff(iInObj).seasonSchIndex = 0; // flag value for no schedule used
         }
+
         // month schedule
-        if (len(state.dataIPShortCut->cAlphaArgs(6)) > 0) {
-            tariff(iInObj).monthSchedule = state.dataIPShortCut->cAlphaArgs(6); // name of month schedule (when months end)
-            tariff(iInObj).monthSchIndex =
-                ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(6)); // index to the month schedule
-            if (tariff(iInObj).monthSchIndex == 0) {
-                ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state,
-                                  format(" not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(6), state.dataIPShortCut->cAlphaArgs(6)));
+        if (len(s_ipsc->cAlphaArgs(6)) > 0) {
+            if ((tariff(iInObj).monthSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(6))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6));
                 ErrorsFound = true;
             }
-        } else {
-            tariff(iInObj).monthSchIndex = 0; // flag value for no schedule used
         }
         // type of demand window
-        if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "QuarterHour")) {
-            // check to make sure that the demand window and the TIMESTEP IN HOUR are consistant.
-            {
-                switch (state.dataGlobal->NumOfTimeStepInHour) {
+        if (Util::SameString(s_ipsc->cAlphaArgs(7), "QuarterHour")) {
+            // check to make sure that the demand window and the TIMESTEP IN HOUR are consistent.
+            { // Why is this a nested scope?
+                switch (state.dataGlobal->TimeStepsInHour) {
                 case 1:
                 case 3:
                 case 5:
                 case 15: {
                     tariff(iInObj).demandWindow = DemandWindow::Hour;
                     tariff(iInObj).demWinTime = 1.00;
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                    ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                     ShowContinueError(state,
                                       format("Demand window of QuarterHour is not consistent with number of timesteps per hour [{}].",
-                                             state.dataGlobal->NumOfTimeStepInHour));
+                                             state.dataGlobal->TimeStepsInHour));
                     ShowContinueError(state, "Demand window will be set to FullHour, and the simulation continues.");
                 } break;
                 case 2:
@@ -507,11 +485,10 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 case 30: {
                     tariff(iInObj).demandWindow = DemandWindow::Half;
                     tariff(iInObj).demWinTime = 0.50;
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                    ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                     ShowContinueError(state,
                                       format("Demand window of QuarterHour is not consistent with number of timesteps per hour [{}].",
-                                             state.dataGlobal->NumOfTimeStepInHour));
+                                             state.dataGlobal->TimeStepsInHour));
                     ShowContinueError(state, "Demand window will be set to HalfHour, and the simulation continues.");
                 } break;
                 case 4:
@@ -526,20 +503,19 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 } break;
                 }
             }
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "HalfHour")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(7), "HalfHour")) {
             {
-                switch (state.dataGlobal->NumOfTimeStepInHour) {
+                switch (state.dataGlobal->TimeStepsInHour) {
                 case 1:
                 case 3:
                 case 5:
                 case 15: {
                     tariff(iInObj).demandWindow = DemandWindow::Hour;
                     tariff(iInObj).demWinTime = 1.00;
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                    ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                     ShowContinueError(state,
                                       format("Demand window of HalfHour is not consistent with number of timesteps per hour [{}].",
-                                             state.dataGlobal->NumOfTimeStepInHour));
+                                             state.dataGlobal->TimeStepsInHour));
                     ShowContinueError(state, "Demand window will be set to FullHour, and the simulation continues.");
                 } break;
                 case 2:
@@ -558,19 +534,19 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
                 } break;
                 }
             }
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "FullHour")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(7), "FullHour")) {
             tariff(iInObj).demandWindow = DemandWindow::Hour;
             tariff(iInObj).demWinTime = 1.00;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "Day")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(7), "Day")) {
             tariff(iInObj).demandWindow = DemandWindow::Day;
             tariff(iInObj).demWinTime = 24.00;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "Week")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(7), "Week")) {
             tariff(iInObj).demandWindow = DemandWindow::Week;
             tariff(iInObj).demWinTime = 24.0 * 7.0;
         } else {
             // if not entered default to the same logic as quarter of an hour
             {
-                switch (state.dataGlobal->NumOfTimeStepInHour) {
+                switch (state.dataGlobal->TimeStepsInHour) {
                 case 1:
                 case 3:
                 case 5:
@@ -599,43 +575,41 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
             }
         }
         // monthly charge
-        tariff(iInObj).monthChgVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(8), isNotNumeric);
+        tariff(iInObj).monthChgVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(8), isNotNumeric);
         tariff(iInObj).monthChgPt =
-            AssignVariablePt(state, state.dataIPShortCut->cAlphaArgs(8), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, iInObj);
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(8), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, iInObj);
         // minimum monthly charge
-        if (len(state.dataIPShortCut->cAlphaArgs(9)) > 0) {
-            tariff(iInObj).minMonthChgVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(9), isNotNumeric);
+        if (len(s_ipsc->cAlphaArgs(9)) > 0) {
+            tariff(iInObj).minMonthChgVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(9), isNotNumeric);
         } else {
             tariff(iInObj).minMonthChgVal = -HUGE_(-1.0); // set to a very negative value
         }
         tariff(iInObj).minMonthChgPt =
-            AssignVariablePt(state, state.dataIPShortCut->cAlphaArgs(9), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, iInObj);
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(9), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, iInObj);
         // real time pricing
-        tariff(iInObj).chargeSchedule = state.dataIPShortCut->cAlphaArgs(10);
-        tariff(iInObj).chargeSchIndex = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(10));
-        tariff(iInObj).baseUseSchedule = state.dataIPShortCut->cAlphaArgs(11);
-        tariff(iInObj).baseUseSchIndex = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(11));
+        tariff(iInObj).chargeSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(10));
+        tariff(iInObj).baseUseSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(11));
         // group name for separate distribution and transmission rates
-        tariff(iInObj).groupName = state.dataIPShortCut->cAlphaArgs(12);
+        tariff(iInObj).groupName = s_ipsc->cAlphaArgs(12);
         // buy or sell option
-        if (Util::SameString(state.dataIPShortCut->cAlphaArgs(13), "BuyFromUtility")) {
+        if (Util::SameString(s_ipsc->cAlphaArgs(13), "BuyFromUtility")) {
             tariff(iInObj).buyOrSell = buyFromUtility;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(13), "SellToUtility")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(13), "SellToUtility")) {
             tariff(iInObj).buyOrSell = sellToUtility;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(13), "NetMetering")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(13), "NetMetering")) {
             tariff(iInObj).buyOrSell = netMetering;
         } else {
             tariff(iInObj).buyOrSell = buyFromUtility;
         }
         // check if meter is consistent with buy or sell option
         if ((tariff(iInObj).buyOrSell == sellToUtility) && (!Util::SameString(tariff(iInObj).reportMeter, "ELECTRICITYSURPLUSSOLD:FACILITY"))) {
-            ShowWarningError(state, format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            ShowWarningError(state, format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state,
                               format("The meter chosen \"{}\" is not typically used with the sellToUtility option.", tariff(iInObj).reportMeter));
             ShowContinueError(state, "Usually the ElectricitySurplusSold:Facility meter is selected when the sellToUtility option is used.");
         }
         if ((tariff(iInObj).buyOrSell == netMetering) && (!Util::SameString(tariff(iInObj).reportMeter, "ELECTRICITYNET:FACILITY"))) {
-            ShowWarningError(state, format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            ShowWarningError(state, format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state,
                               format("The meter chosen \"{}\" is not typically used with the netMetering option.", tariff(iInObj).reportMeter));
             ShowContinueError(state, "Usually the ElectricityNet:Facility meter is selected when the netMetering option is used.");
@@ -645,8 +619,7 @@ void GetInputEconomicsTariff(EnergyPlusData &state, bool &ErrorsFound) // true i
             if (hasi(tariff(iInObj).reportMeter, "Elec")) { // test if electric meter
                 if (!(Util::SameString(tariff(iInObj).reportMeter, "Electricity:Facility") ||
                       Util::SameString(tariff(iInObj).reportMeter, "ElectricityPurchased:Facility"))) {
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                    ShowWarningError(state, format("{}{}=\"{}\" atypical meter", RoutineName, CurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                     ShowContinueError(
                         state, format("The meter chosen \"{}\" is not typically used with the buyFromUtility option.", tariff(iInObj).reportMeter));
                     ShowContinueError(state,
@@ -684,84 +657,80 @@ void GetInputEconomicsQualify(EnergyPlusData &state, bool &ErrorsFound) // true 
     //    Read the input file for "Economics:Qualify" objects.
 
     static constexpr std::string_view RoutineName("GetInputEconomicsQualify: ");
+
     int iInObj;    // loop index variable for reading in objects
     int NumAlphas; // Number of elements in the alpha array
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
     bool isNotNumeric;
     int jFld;
-    std::string CurrentModuleObject; // for ease in renaming.
 
     auto &qualify(state.dataEconTariff->qualify);
 
-    CurrentModuleObject = "UtilityCost:Qualify";
-    state.dataEconTariff->numQualify = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Qualify";
+    state.dataEconTariff->numQualify = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     qualify.allocate(state.dataEconTariff->numQualify);
     for (iInObj = 1; iInObj <= state.dataEconTariff->numQualify; ++iInObj) {
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
+
         // check to make sure none of the values are another economic object
         for (jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
         // index of the tariff name in the tariff array
-        qualify(iInObj).tariffIndx =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), qualify(iInObj).tariffIndx, ErrorsFound, CurrentModuleObject);
+        qualify(iInObj).tariffIndx = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), qualify(iInObj).tariffIndx, ErrorsFound, s_ipsc->cCurrentModuleObject);
         qualify(iInObj).namePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::Qualify, iInObj, qualify(iInObj).tariffIndx);
+            state, s_ipsc->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::Qualify, iInObj, qualify(iInObj).tariffIndx);
         // index of the variable in the variable array
-        qualify(iInObj).sourcePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, qualify(iInObj).tariffIndx);
+        qualify(iInObj).sourcePt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, qualify(iInObj).tariffIndx);
         // indicator if maximum test otherwise minimum
-        if (Util::SameString(state.dataIPShortCut->cAlphaArgs(4), "Minimum")) {
+        if (Util::SameString(s_ipsc->cAlphaArgs(4), "Minimum")) {
             qualify(iInObj).isMaximum = false;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(4), "Maximum")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(4), "Maximum")) {
             qualify(iInObj).isMaximum = true;
         } else {
-            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-            ShowContinueError(state, format("{}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(4), state.dataIPShortCut->cAlphaArgs(4)));
+            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowContinueError(state, format("{}=\"{}\".", s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4)));
             ErrorsFound = true;
             qualify(iInObj).isMaximum = true;
         }
         // value of the threshold
-        qualify(iInObj).thresholdVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(5), isNotNumeric);
-        qualify(iInObj).thresholdPt = AssignVariablePt(state,
-                                                       state.dataIPShortCut->cAlphaArgs(5),
-                                                       isNotNumeric,
-                                                       varIsArgument,
-                                                       varNotYetDefined,
-                                                       ObjType::Invalid,
-                                                       0,
-                                                       qualify(iInObj).tariffIndx);
+        qualify(iInObj).thresholdVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(5), isNotNumeric);
+        qualify(iInObj).thresholdPt = AssignVariablePt(
+            state, s_ipsc->cAlphaArgs(5), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, qualify(iInObj).tariffIndx);
         // enumerated list of the kind of season
-        qualify(iInObj).season = LookUpSeason(state, state.dataIPShortCut->cAlphaArgs(6), state.dataIPShortCut->cAlphaArgs(1));
+        qualify(iInObj).season = LookUpSeason(state, s_ipsc->cAlphaArgs(6), s_ipsc->cAlphaArgs(1));
         // indicator if consecutive months otherwise count
-        if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "Count")) {
+        if (Util::SameString(s_ipsc->cAlphaArgs(7), "Count")) {
             qualify(iInObj).isConsecutive = false;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(7), "Consecutive")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(7), "Consecutive")) {
             qualify(iInObj).isConsecutive = true;
         } else {
-            ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-            ShowContinueError(state, format("{}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(5), state.dataIPShortCut->cAlphaArgs(5)));
+            ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowContinueError(state, format("{}=\"{}\".", s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5)));
             ErrorsFound = true;
             qualify(iInObj).isConsecutive = true;
         }
         // number of months the test must be good for
-        qualify(iInObj).numberOfMonths = state.dataIPShortCut->rNumericArgs(1);
+        qualify(iInObj).numberOfMonths = s_ipsc->rNumericArgs(1);
     }
 }
 
@@ -778,66 +747,60 @@ void GetInputEconomicsChargeSimple(EnergyPlusData &state, bool &ErrorsFound) // 
     int IOStat;    // IO Status when calling get input subroutine
     bool isNotNumeric;
 
-    std::string CurrentModuleObject = "UtilityCost:Charge:Simple";
-    state.dataEconTariff->numChargeSimple = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Charge:Simple";
+
+    state.dataEconTariff->numChargeSimple = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     state.dataEconTariff->chargeSimple.allocate(state.dataEconTariff->numChargeSimple);
     for (int iInObj = 1; iInObj <= state.dataEconTariff->numChargeSimple; ++iInObj) {
         auto &chargeSimple = state.dataEconTariff->chargeSimple(iInObj);
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
         // index of the tariff name in the tariff array
-        chargeSimple.tariffIndx =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), chargeSimple.tariffIndx, ErrorsFound, CurrentModuleObject);
-        chargeSimple.namePt = AssignVariablePt(state,
-                                               state.dataIPShortCut->cAlphaArgs(1),
-                                               true,
-                                               varIsAssigned,
-                                               varNotYetDefined,
-                                               ObjType::ChargeSimple,
-                                               iInObj,
-                                               chargeSimple.tariffIndx);
+        chargeSimple.tariffIndx = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), chargeSimple.tariffIndx, ErrorsFound, s_ipsc->cCurrentModuleObject);
+        chargeSimple.namePt = AssignVariablePt(
+            state, s_ipsc->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::ChargeSimple, iInObj, chargeSimple.tariffIndx);
         // index of the variable in the variable array
-        chargeSimple.sourcePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeSimple.tariffIndx);
+        chargeSimple.sourcePt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeSimple.tariffIndx);
         // enumerated list of the kind of season
-        chargeSimple.season = LookUpSeason(state, state.dataIPShortCut->cAlphaArgs(4), state.dataIPShortCut->cAlphaArgs(1));
+        chargeSimple.season = LookUpSeason(state, s_ipsc->cAlphaArgs(4), s_ipsc->cAlphaArgs(1));
         // check to make sure a seasonal schedule is specified if the season is not annual
         if (chargeSimple.season != seasonAnnual) {
             if (chargeSimple.tariffIndx != 0) {
-                if (state.dataEconTariff->tariff(chargeSimple.tariffIndx).seasonSchIndex == 0) {
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(state, format("{}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(4), state.dataIPShortCut->cAlphaArgs(4)));
+                if (state.dataEconTariff->tariff(chargeSimple.tariffIndx).seasonSched == nullptr) {
+                    ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                    ShowContinueError(state, format("{}=\"{}\".", s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4)));
                     ShowContinueError(state,
                                       " a Season other than Annual is used but no Season Schedule Name is specified in the UtilityCost:Tariff.");
                 }
             }
         }
         // index of the category in the variable array
-        chargeSimple.categoryPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(5), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeSimple.tariffIndx);
+        chargeSimple.categoryPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(5), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeSimple.tariffIndx);
         // cost per unit value or variable
-        chargeSimple.costPerVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(6), isNotNumeric);
+        chargeSimple.costPerVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(6), isNotNumeric);
         chargeSimple.costPerPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(6), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeSimple.tariffIndx);
+            state, s_ipsc->cAlphaArgs(6), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeSimple.tariffIndx);
     }
 }
 
@@ -853,93 +816,86 @@ void GetInputEconomicsChargeBlock(EnergyPlusData &state, bool &ErrorsFound) // t
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
     bool isNotNumeric;
-    int alphaOffset;                 // offset used in blocks for alpha array
-    Real64 hugeNumber(0.0);          // Autodesk Value not used but suppresses warning about HUGE_() call
-    std::string CurrentModuleObject; // for ease in renaming.
+    int alphaOffset;        // offset used in blocks for alpha array
+    Real64 hugeNumber(0.0); // Autodesk Value not used but suppresses warning about HUGE_() call
 
-    CurrentModuleObject = "UtilityCost:Charge:Block";
+    auto &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Charge:Block";
+
     hugeNumber = HUGE_(hugeNumber);
-    state.dataEconTariff->numChargeBlock = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    state.dataEconTariff->numChargeBlock = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     state.dataEconTariff->chargeBlock.allocate(state.dataEconTariff->numChargeBlock);
     for (int iInObj = 1; iInObj <= state.dataEconTariff->numChargeBlock; ++iInObj) {
         auto &chargeBlock = state.dataEconTariff->chargeBlock(iInObj);
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
         // index of the tariff name in the tariff array
-        chargeBlock.tariffIndx =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), chargeBlock.tariffIndx, ErrorsFound, CurrentModuleObject);
+        chargeBlock.tariffIndx = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), chargeBlock.tariffIndx, ErrorsFound, s_ipsc->cCurrentModuleObject);
         chargeBlock.namePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::ChargeBlock, iInObj, chargeBlock.tariffIndx);
+            state, s_ipsc->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::ChargeBlock, iInObj, chargeBlock.tariffIndx);
         // index of the variable in the variable array
-        chargeBlock.sourcePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeBlock.tariffIndx);
+        chargeBlock.sourcePt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeBlock.tariffIndx);
         // enumerated list of the kind of season
-        chargeBlock.season = LookUpSeason(state, state.dataIPShortCut->cAlphaArgs(4), state.dataIPShortCut->cAlphaArgs(1));
+        chargeBlock.season = LookUpSeason(state, s_ipsc->cAlphaArgs(4), s_ipsc->cAlphaArgs(1));
         // check to make sure a seasonal schedule is specified if the season is not annual
         if (chargeBlock.season != seasonAnnual) {
             if (chargeBlock.tariffIndx != 0) {
-                if (state.dataEconTariff->tariff(chargeBlock.tariffIndx).seasonSchIndex == 0) {
-                    ShowWarningError(state,
-                                     format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(state, format("{}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(4), state.dataIPShortCut->cAlphaArgs(4)));
+                if (state.dataEconTariff->tariff(chargeBlock.tariffIndx).seasonSched == nullptr) {
+                    ShowWarningError(state, format("{}{}=\"{}\" invalid data", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+                    ShowContinueError(state, format("{}=\"{}\".", s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4)));
                     ShowContinueError(state,
                                       " a Season other than Annual is used but no Season Schedule Name is specified in the UtilityCost:Tariff.");
                 }
             }
         }
         // index of the category in the variable array
-        chargeBlock.categoryPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(5), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeBlock.tariffIndx);
+        chargeBlock.categoryPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(5), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeBlock.tariffIndx);
         // index of the remaining into variable in the variable array
-        chargeBlock.remainingPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(6), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeBlock.tariffIndx);
+        chargeBlock.remainingPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(6), true, varIsAssigned, varNotYetDefined, ObjType::Category, iInObj, chargeBlock.tariffIndx);
         // block size multiplier
-        if (len(state.dataIPShortCut->cAlphaArgs(7)) == 0) { // if blank
-            chargeBlock.blkSzMultVal = 1.0;                  // default is 1 if left blank
+        if (len(s_ipsc->cAlphaArgs(7)) == 0) { // if blank
+            chargeBlock.blkSzMultVal = 1.0;    // default is 1 if left blank
             chargeBlock.blkSzMultPt = 0;
         } else {
-            chargeBlock.blkSzMultVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(7), isNotNumeric);
-            chargeBlock.blkSzMultPt = AssignVariablePt(state,
-                                                       state.dataIPShortCut->cAlphaArgs(7),
-                                                       isNotNumeric,
-                                                       varIsArgument,
-                                                       varNotYetDefined,
-                                                       ObjType::Invalid,
-                                                       0,
-                                                       chargeBlock.tariffIndx);
+            chargeBlock.blkSzMultVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(7), isNotNumeric);
+            chargeBlock.blkSzMultPt = AssignVariablePt(
+                state, s_ipsc->cAlphaArgs(7), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, chargeBlock.tariffIndx);
         }
         // number of blocks used
         chargeBlock.numBlk = (NumAlphas - 7) / 2;
         for (int jBlk = 1; jBlk <= chargeBlock.numBlk; ++jBlk) {
             alphaOffset = 7 + (jBlk - 1) * 2;
             // catch the "remaining" code word for the block size
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(alphaOffset + 1), "REMAINING")) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(alphaOffset + 1), "REMAINING")) {
                 chargeBlock.blkSzVal(jBlk) = hugeNumber / 1000000; // using small portion of largest possible value to prevent overflow
                 chargeBlock.blkSzPt(jBlk) = 0;
             } else {
                 // array of block size
-                chargeBlock.blkSzVal(jBlk) = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(alphaOffset + 1), isNotNumeric);
+                chargeBlock.blkSzVal(jBlk) = Util::ProcessNumber(s_ipsc->cAlphaArgs(alphaOffset + 1), isNotNumeric);
 
                 chargeBlock.blkSzPt(jBlk) = AssignVariablePt(state,
-                                                             state.dataIPShortCut->cAlphaArgs(alphaOffset + 1),
+                                                             s_ipsc->cAlphaArgs(alphaOffset + 1),
                                                              isNotNumeric,
                                                              varIsArgument,
                                                              varNotYetDefined,
@@ -948,9 +904,9 @@ void GetInputEconomicsChargeBlock(EnergyPlusData &state, bool &ErrorsFound) // t
                                                              chargeBlock.tariffIndx);
             }
             // array of block cost
-            chargeBlock.blkCostVal(jBlk) = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(alphaOffset + 2), isNotNumeric);
+            chargeBlock.blkCostVal(jBlk) = Util::ProcessNumber(s_ipsc->cAlphaArgs(alphaOffset + 2), isNotNumeric);
             chargeBlock.blkCostPt(jBlk) = AssignVariablePt(state,
-                                                           state.dataIPShortCut->cAlphaArgs(alphaOffset + 2),
+                                                           s_ipsc->cAlphaArgs(alphaOffset + 2),
                                                            isNotNumeric,
                                                            varIsArgument,
                                                            varNotYetDefined,
@@ -969,59 +925,61 @@ void GetInputEconomicsRatchet(EnergyPlusData &state, bool &ErrorsFound) // true 
     //    Read the input file for "Economics:Ratchet" objects.
 
     static constexpr std::string_view RoutineName("GetInputEconomicsRatchet: ");
+
     int NumAlphas; // Number of elements in the alpha array
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
     bool isNotNumeric;
 
-    std::string CurrentModuleObject = "UtilityCost:Ratchet";
-    state.dataEconTariff->numRatchet = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Ratchet";
+
+    state.dataEconTariff->numRatchet = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     state.dataEconTariff->ratchet.allocate(state.dataEconTariff->numRatchet);
     for (int iInObj = 1; iInObj <= state.dataEconTariff->numRatchet; ++iInObj) {
         auto &ratchet = state.dataEconTariff->ratchet(iInObj);
 
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
         // index of the tariff name in the tariff array
-        ratchet.tariffIndx =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), ratchet.tariffIndx, ErrorsFound, CurrentModuleObject);
-        ratchet.namePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
+        ratchet.tariffIndx = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), ratchet.tariffIndx, ErrorsFound, s_ipsc->cCurrentModuleObject);
+        ratchet.namePt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(1), true, varIsAssigned, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
         // index of the variable in the variable array
-        ratchet.baselinePt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
+        ratchet.baselinePt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(3), true, varIsArgument, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
         // index of the variable in the variable array
-        ratchet.adjustmentPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(4), true, varIsArgument, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
+        ratchet.adjustmentPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(4), true, varIsArgument, varNotYetDefined, ObjType::Ratchet, iInObj, ratchet.tariffIndx);
         // seasons to and from
-        ratchet.seasonFrom = LookUpSeason(state, state.dataIPShortCut->cAlphaArgs(5), state.dataIPShortCut->cAlphaArgs(1));
-        ratchet.seasonTo = LookUpSeason(state, state.dataIPShortCut->cAlphaArgs(6), state.dataIPShortCut->cAlphaArgs(1));
+        ratchet.seasonFrom = LookUpSeason(state, s_ipsc->cAlphaArgs(5), s_ipsc->cAlphaArgs(1));
+        ratchet.seasonTo = LookUpSeason(state, s_ipsc->cAlphaArgs(6), s_ipsc->cAlphaArgs(1));
         // ratchet multiplier
-        ratchet.multiplierVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(7), isNotNumeric);
-        ratchet.multiplierPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(7), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, ratchet.tariffIndx);
+        ratchet.multiplierVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(7), isNotNumeric);
+        ratchet.multiplierPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(7), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, ratchet.tariffIndx);
         // ratchet offset
-        ratchet.offsetVal = Util::ProcessNumber(state.dataIPShortCut->cAlphaArgs(8), isNotNumeric);
-        ratchet.offsetPt = AssignVariablePt(
-            state, state.dataIPShortCut->cAlphaArgs(8), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, ratchet.tariffIndx);
+        ratchet.offsetVal = Util::ProcessNumber(s_ipsc->cAlphaArgs(8), isNotNumeric);
+        ratchet.offsetPt =
+            AssignVariablePt(state, s_ipsc->cAlphaArgs(8), isNotNumeric, varIsArgument, varNotYetDefined, ObjType::Invalid, 0, ratchet.tariffIndx);
     }
 }
 
@@ -1038,58 +996,58 @@ void GetInputEconomicsVariable(EnergyPlusData &state, bool &ErrorsFound) // true
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
 
-    std::string CurrentModuleObject = "UtilityCost:Variable";
-    int numEconVarObj = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Variable";
+    int numEconVarObj = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     for (int iInObj = 1; iInObj <= numEconVarObj; ++iInObj) {
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
-        int tariffPt =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        int variablePt =
-            AssignVariablePt(state, state.dataIPShortCut->cAlphaArgs(1), true, varIsArgument, varUserDefined, ObjType::Variable, iInObj, tariffPt);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), tariffPt, ErrorsFound, CurrentModuleObject);
+        int tariffPt = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        int variablePt = AssignVariablePt(state, s_ipsc->cAlphaArgs(1), true, varIsArgument, varUserDefined, ObjType::Variable, iInObj, tariffPt);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), tariffPt, ErrorsFound, s_ipsc->cCurrentModuleObject);
         auto &econVar = state.dataEconTariff->econVar(variablePt);
 
         // validate the kind of variable - not used internally except for validation
-        if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "ENERGY")) {
+        if (Util::SameString(s_ipsc->cAlphaArgs(3), "ENERGY")) {
             econVar.varUnitType = varUnitTypeEnergy;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "DEMAND")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "DEMAND")) {
             econVar.varUnitType = varUnitTypeDemand;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "DIMENSIONLESS")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "DIMENSIONLESS")) {
             econVar.varUnitType = varUnitTypeDimensionless;
-        } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(3), "CURRENCY")) {
+        } else if (Util::SameString(s_ipsc->cAlphaArgs(3), "CURRENCY")) {
             econVar.varUnitType = varUnitTypeCurrency;
         } else {
             econVar.varUnitType = varUnitTypeDimensionless;
-            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-            ShowContinueError(state, format("invalid {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3)));
+            ShowSevereError(state, format("{}{}=\"{}\" invalid data", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowContinueError(state, format("invalid {}=\"{}\".", s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3)));
             ErrorsFound = true;
         }
         // move number inputs into econVar
         for (int jVal = 1; jVal <= NumNums; ++jVal) {
-            econVar.values(jVal) = state.dataIPShortCut->rNumericArgs(jVal);
+            econVar.values(jVal) = s_ipsc->rNumericArgs(jVal);
         }
         // fill the rest of the array with the last value entered
         if (NumNums < MaxNumMonths) {
             for (int jVal = NumNums + 1; jVal <= MaxNumMonths; ++jVal) {
-                econVar.values(jVal) = state.dataIPShortCut->rNumericArgs(NumNums);
+                econVar.values(jVal) = s_ipsc->rNumericArgs(NumNums);
             }
         }
     }
@@ -1109,8 +1067,10 @@ void GetInputEconomicsComputation(EnergyPlusData &state, bool &ErrorsFound) // t
     int NumNums;   // Number of elements in the numeric array
     int IOStat;    // IO Status when calling get input subroutine
 
-    std::string CurrentModuleObject = "UtilityCost:Computation";
-    state.dataEconTariff->numComputation = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+
+    s_ipsc->cCurrentModuleObject = "UtilityCost:Computation";
+    state.dataEconTariff->numComputation = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     state.dataEconTariff->computation.allocate(state.dataEconTariff->numTariff); // not the number of Computations but the number of tariffs
     // set default values for computation
     for (auto &e : state.dataEconTariff->computation) {
@@ -1121,36 +1081,35 @@ void GetInputEconomicsComputation(EnergyPlusData &state, bool &ErrorsFound) // t
     }
     for (int iInObj = 1; iInObj <= state.dataEconTariff->numComputation; ++iInObj) {
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  iInObj,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // check to make sure none of the values are another economic object
         for (int jFld = 1; jFld <= NumAlphas; ++jFld) {
-            if (hasi(state.dataIPShortCut->cAlphaArgs(jFld), "UtilityCost:")) {
-                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+            if (hasi(s_ipsc->cAlphaArgs(jFld), "UtilityCost:")) {
+                ShowWarningError(state, format("{}{}=\"{}\".", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... a field was found containing UtilityCost: which may indicate a missing comma.");
             }
         }
-        int tariffPt =
-            FindTariffIndex(state, state.dataIPShortCut->cAlphaArgs(2), state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, CurrentModuleObject);
-        warnIfNativeVarname(state, state.dataIPShortCut->cAlphaArgs(1), tariffPt, ErrorsFound, CurrentModuleObject);
+        int tariffPt = FindTariffIndex(state, s_ipsc->cAlphaArgs(2), s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject);
+        warnIfNativeVarname(state, s_ipsc->cAlphaArgs(1), tariffPt, ErrorsFound, s_ipsc->cCurrentModuleObject);
         // tariff and computation share the same index, the tariff index
         // so all references are to the tariffPt
         auto &computation = state.dataEconTariff->computation(tariffPt);
 
         if (isWithinRange(state, tariffPt, 1, state.dataEconTariff->numTariff)) {
-            computation.computeName = state.dataIPShortCut->cAlphaArgs(1);
+            computation.computeName = s_ipsc->cAlphaArgs(1);
             computation.firstStep = state.dataEconTariff->numSteps + 1;
             for (int jLine = 3; jLine <= NumAlphas; ++jLine) {
-                parseComputeLine(state, state.dataIPShortCut->cAlphaArgs(jLine), tariffPt);
+                parseComputeLine(state, s_ipsc->cAlphaArgs(jLine), tariffPt);
             }
             computation.lastStep = state.dataEconTariff->numSteps;
             // check to make sure that some steps were defined
@@ -1158,16 +1117,15 @@ void GetInputEconomicsComputation(EnergyPlusData &state, bool &ErrorsFound) // t
                 computation.firstStep = 0;
                 computation.lastStep = -1;
                 computation.isUserDef = false;
-                ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
+                ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "... No lines in the computation can be interpreted ");
                 ErrorsFound = true;
             } else {
                 computation.isUserDef = true;
             }
         } else {
-            ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-            ShowContinueError(state,
-                              format("... not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(2), state.dataIPShortCut->cAlphaArgs(2)));
+            ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowContinueError(state, format("... not found {}=\"{}\".", s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaArgs(2)));
             ErrorsFound = true;
         }
     }
@@ -1181,7 +1139,6 @@ void GetInputEconomicsCurrencyType(EnergyPlusData &state, bool &ErrorsFound) // 
     //   Sets the type of currency (U.S. Dollar, Euro, Yen, etc.. )
     //   This is a "unique" object.
 
-    std::string const CurrentModuleObject("CurrencyType");
     static constexpr std::string_view RoutineName("GetInputEconomicsCurrencyType: ");
 
     int NumCurrencyType;
@@ -1190,38 +1147,42 @@ void GetInputEconomicsCurrencyType(EnergyPlusData &state, bool &ErrorsFound) // 
     int IOStat;    // IO Status when calling get input subroutine
     int i;
 
+    auto &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "CurrencyType";
+
     initializeMonetaryUnit(state);
-    NumCurrencyType = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
+    NumCurrencyType = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     state.dataCostEstimateManager->selectedMonetaryUnit = 0; // invalid
     if (NumCurrencyType == 0) {
         state.dataCostEstimateManager->selectedMonetaryUnit = 1; // USD - U.S. Dollar
     } else if (NumCurrencyType == 1) {
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 CurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  1,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlphas,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNums,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
         // Monetary Unit
         for (i = 1; i <= (int)state.dataCostEstimateManager->monetaryUnit.size(); ++i) {
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(1), state.dataCostEstimateManager->monetaryUnit(i).code)) {
+            if (Util::SameString(s_ipsc->cAlphaArgs(1), state.dataCostEstimateManager->monetaryUnit(i).code)) {
                 state.dataCostEstimateManager->selectedMonetaryUnit = i;
                 break;
             }
         }
         if (state.dataCostEstimateManager->selectedMonetaryUnit == 0) {
-            ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, CurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-            ShowContinueError(state, format("... invalid {}.", state.dataIPShortCut->cAlphaFieldNames(1)));
+            ShowSevereError(state, format("{}{}=\"{}\" invalid data.", RoutineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowContinueError(state, format("... invalid {}.", s_ipsc->cAlphaFieldNames(1)));
             ErrorsFound = true;
         }
     } else if (NumCurrencyType > 1) {
-        ShowWarningError(state, format("{}{} Only one instance of this object is allowed. USD will be used.", RoutineName, CurrentModuleObject));
+        ShowWarningError(state,
+                         format("{}{} Only one instance of this object is allowed. USD will be used.", RoutineName, s_ipsc->cCurrentModuleObject));
         state.dataCostEstimateManager->selectedMonetaryUnit = 1; // USD - U.S. Dollar
     }
 }
@@ -1275,7 +1236,7 @@ void GetLastWord(std::string const &lineOfText, std::string::size_type &endOfSca
 
     //   Returns the last substring of the line of text to the
     //   left of the endOfSubStrg pointer. A substring is
-    //   delimitted by spaces.  Quotes are not significant
+    //   delimited by spaces.  Quotes are not significant
     //   (they are treated just like any other non-space character)
 
     //   Scan the string from the end.
@@ -2210,7 +2171,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
     //    into categories.
     //      category SUM chg1Name chg2Name chg3Name
     //    Since the dependency array has one target and multiple
-    //    parameters, remainingPt is shown as a seperate equation that
+    //    parameters, remainingPt is shown as a separate equation that
     //    depends on namePt for Charge:Block. The equation will not be
     //    displayed or processed except in the sort.
     //      remainingPt NOOP namePt
@@ -2219,21 +2180,21 @@ void CreateDefaultComputation(EnergyPlusData &state)
     //    charge, ratchet or qualify.
     //      chg1Name
     //    It is also possible that two variables referenced within one
-    //    object could include a dependancy relationship also. For
+    //    object could include a dependency relationship also. For
     //    example, the blkSzPt could be calculated using the same sourePt
     //    in Charge:Block.
 
     // METHODOLOGY EMPLOYED:
     //    Since some ECONOMCIS:* objects depend on other variables
     //    first must create the order of when to perform the
-    //    computations. First a dependancy table is created that
-    //    indicates what variables are dependant on other variables.
+    //    computations. First a dependency table is created that
+    //    indicates what variables are dependent on other variables.
     //    A directed acyclic graph (DAG) describes the general
     //    problem which is usually solved using a topological
     //    sorting algorithm.
     //    Each line/step is generated and put into the depend
     //    array. Also in the array are counts of how many items it
-    //    depends on and a list of entries that are dependant on that
+    //    depends on and a list of entries that are dependent on that
     //    line.
 
     // for each tariff that does not have a UtilityCost:Computation object go through the variables
@@ -2251,7 +2212,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
             }
             //"clear" the dependOn array
             state.dataEconTariff->numOperand = 0;
-            // Define the preset equations (category sumation)
+            // Define the preset equations (category summation)
             int curTotal = tariff.ptTotal;
             int curSubtotal = tariff.ptSubtotal;
             int curBasis = tariff.ptBasis;
@@ -2280,11 +2241,11 @@ void CreateDefaultComputation(EnergyPlusData &state)
             addChargesToOperand(state, iTariff, tariff.ptSurcharge);
             addChargesToOperand(state, iTariff, tariff.ptTaxes);
             // add the real time pricing to the energy charges
-            if (tariff.chargeSchIndex != 0) {
+            if (tariff.chargeSched != nullptr) {
                 addOperand(state, tariff.ptEnergyCharges, tariff.nativeRealTimePriceCosts);
             }
             // now add equations with NOOP to represent each object with its
-            // dependancies
+            // dependencies
             // Qualify
             for (int kObj = 1; kObj <= state.dataEconTariff->numQualify; ++kObj) {
                 auto const &qualify = state.dataEconTariff->qualify(kObj);
@@ -2351,7 +2312,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
                     }
                 }
             }
-            // make sure no compuation is already user defined
+            // make sure no computation is already user defined
             if (computation.firstStep != 0) {
                 ShowWarningError(state, format("In UtilityCost:Tariff: Overwriting user defined tariff {}", tariff.tariffName));
             }
@@ -2361,13 +2322,13 @@ void CreateDefaultComputation(EnergyPlusData &state)
             computation.lastStep = -1; // this will be incremented by addStep
             computation.isUserDef = false;
             // now all "equations" are defined, treat the variables with the list
-            // of dependancies as a directed acyclic graph and use "count down" algorithm
+            // of dependencies as a directed acyclic graph and use "count down" algorithm
             // to do a topological sort of the variables into the order for computation
             // First, clear the counters
             for (int jVar = 1; jVar <= state.dataEconTariff->numEconVar; ++jVar) {
                 state.dataEconTariff->econVar(jVar).cntMeDependOn = 0;
             }
-            // Second, add up the number of dependancies on each variable
+            // Second, add up the number of dependencies on each variable
             for (int iVar = 1; iVar <= state.dataEconTariff->numEconVar; ++iVar) {
                 if (state.dataEconTariff->econVar(iVar).activeNow) {
                     if (state.dataEconTariff->econVar(iVar).lastOperand >= state.dataEconTariff->econVar(iVar).firstOperand) {
@@ -2384,7 +2345,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
                 numNoDepend = 0;
                 for (int iVar = 1; iVar <= state.dataEconTariff->numEconVar; ++iVar) {
                     if (state.dataEconTariff->econVar(iVar).activeNow) {
-                        // find a variable that has no more dangling dependancies
+                        // find a variable that has no more dangling dependencies
                         if (state.dataEconTariff->econVar(iVar).cntMeDependOn == 0) {
                             // If the variable is a native variable then
                             // IF (econVar(iVar)%kindOfObj .NE. iEconVarObjType::Native) THEN
@@ -2437,7 +2398,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
             }
             if (loopCount > 100000) {
                 ShowWarningError(state,
-                                 format("UtilityCost:Tariff: Loop count exceeded when counting dependancies in tariff: {}", tariff.tariffName));
+                                 format("UtilityCost:Tariff: Loop count exceeded when counting dependencies in tariff: {}", tariff.tariffName));
             }
             // make sure that all variables associated with the tariff are included
             bool remainingVarFlag = false;
@@ -2450,7 +2411,7 @@ void CreateDefaultComputation(EnergyPlusData &state)
                 ShowWarningError(state,
                                  format("CreateDefaultComputation: In UtilityCost:Computation: Circular or invalid dependencies found in tariff: {}",
                                         tariff.tariffName));
-                ShowContinueError(state, "  UtilityCost variables that may have invalid dependencies and the variables they are dependant on.");
+                ShowContinueError(state, "  UtilityCost variables that may have invalid dependencies and the variables they are dependent on.");
                 for (int iVar = 1; iVar <= state.dataEconTariff->numEconVar; ++iVar) {
                     if (state.dataEconTariff->econVar(iVar).tariffIndx == iTariff) {
                         if (state.dataEconTariff->econVar(iVar).activeNow) {
@@ -2484,7 +2445,7 @@ void addOperand(EnergyPlusData &state, int const varMe, int const varOperand)
     //    AUTHOR         Jason Glazer of GARD Analytics, Inc.
     //    DATE WRITTEN   July 2004
 
-    //   Used by CreateDefaultComputation to create the dependancy
+    //   Used by CreateDefaultComputation to create the dependency
     //   relationship in the EconVar array
 
     int constexpr sizeIncrement(100);
@@ -2586,36 +2547,22 @@ void GatherForEconomics(EnergyPlusData &state)
             tariff.collectEnergy += curInstantValue;
             tariff.collectTime += state.dataGlobal->TimeStepZoneSec;
             // added *SecInHour when adding RTP support August 2008
-            if (tariff.collectTime >= tariff.demWinTime * Constant::SecInHour) {
-                int curSeason;
-                int curMonth;
-                int curPeriod;
+            if (tariff.collectTime >= tariff.demWinTime * Constant::rSecsInHour) {
                 // get current value that has been converted into desired units
                 curDemand = tariff.demandConv * tariff.collectEnergy / tariff.collectTime;
                 curEnergy = tariff.energyConv * tariff.collectEnergy;
                 // get the schedule values
                 // remember no confirmation of schedule values occurs prior to now
-                if (tariff.seasonSchIndex != 0) {
-                    curSeason = ScheduleManager::GetCurrentScheduleValue(state, tariff.seasonSchIndex);
-                } else {
-                    curSeason = 1;
-                }
-                if (tariff.periodSchIndex != 0) {
-                    curPeriod = ScheduleManager::GetCurrentScheduleValue(state, tariff.periodSchIndex);
-                } else {
-                    curPeriod = 1;
-                }
-                if (tariff.monthSchIndex != 0) {
-                    curMonth = ScheduleManager::GetCurrentScheduleValue(state, tariff.monthSchIndex);
-                } else {
-                    // #7814 - Have to be careful with DST. tariff::seasonForMonth is overwritten at each timestep, and only the last value is
-                    // retained, so make sure to capture the right one
-                    if ((state.dataGlobal->HourOfDay + state.dataEnvrn->DSTIndicator) <= 24) {
-                        curMonth = state.dataEnvrn->Month;
-                    } else {
-                        curMonth = state.dataEnvrn->MonthTomorrow;
-                    }
-                }
+                int curSeason = (tariff.seasonSched != nullptr) ? tariff.seasonSched->getCurrentVal() : 1;
+                int curPeriod = (tariff.periodSched != nullptr) ? tariff.periodSched->getCurrentVal() : 1;
+
+                int curMonth =
+                    (tariff.monthSched != nullptr) ? tariff.monthSched->getCurrentVal() :
+                                                   // #7814 - Have to be careful with DST. tariff::seasonForMonth is overwritten at each timestep, and
+                                                   // only the last value is retained, so make sure to capture the right one
+                        (((state.dataGlobal->HourOfDay + state.dataEnvrn->DSTIndicator) <= Constant::iHoursInDay) ? state.dataEnvrn->Month
+                                                                                                                  : state.dataEnvrn->MonthTomorrow);
+
                 bool isGood = false;
                 if (isWithinRange(state, curSeason, 1, 5)) {
                     if (isWithinRange(state, curPeriod, 1, 4)) {
@@ -2635,12 +2582,12 @@ void GatherForEconomics(EnergyPlusData &state)
                     ShowContinueError(state, "Invalid schedule values - outside of range");
                 }
                 // Real Time Pricing
-                if (tariff.chargeSchIndex != 0) {
-                    curRTPprice = ScheduleManager::GetCurrentScheduleValue(state, tariff.chargeSchIndex);
+                if (tariff.chargeSched != nullptr) {
+                    curRTPprice = tariff.chargeSched->getCurrentVal();
                     // if customer baseline load schedule is used, subtract that off of the
                     // current energy
-                    if (tariff.baseUseSchIndex != 0) {
-                        curRTPbaseline = ScheduleManager::GetCurrentScheduleValue(state, tariff.baseUseSchIndex);
+                    if (tariff.baseUseSched != nullptr) {
+                        curRTPbaseline = tariff.baseUseSched->getCurrentVal();
                         curRTPenergy = curEnergy - curRTPbaseline;
                     } else {
                         curRTPenergy = curEnergy;
@@ -3148,7 +3095,7 @@ void pushStack(EnergyPlusData &state, Array1A<Real64> const monthlyArray, int co
             }
             // if the serviceCharges are being evaluated add in the monthly charges
             if (econVar(variablePointer).specific == catServiceCharges) addMonthlyCharge(state, variablePointer);
-            // get the results of performing the evaulation - should have been
+            // get the results of performing the evaluation - should have been
             // put into the econVar values
             curMonthlyArray = econVar(variablePointer).values;
         }
@@ -3298,7 +3245,7 @@ void evaluateChargeBlock(EnergyPlusData &state, int const usingVariable)
     } else {
         blkSzMult = chargeBlock.blkSzMultVal;
     }
-    // initially set the remaing energy or demand to the source
+    // initially set the remaining energy or demand to the source
     remainVals = sourceVals;
     // initially set the result (cost) to zero
     resultChg = 0.0;
@@ -3607,7 +3554,7 @@ void evaluateQualify(EnergyPlusData &state, int const usingVariable)
         }
     }
     // now update the tariff level qualifier - only update if the tariff is still qualified
-    // and the current qualifer fails.
+    // and the current qualifier fails.
     if (tariff.isQualified) {
         if (!isQualified) {
             tariff.isQualified = false;
@@ -4743,7 +4690,7 @@ void selectTariff(EnergyPlusData &state)
     //    DATE WRITTEN   July 2004
 
     //    To select tariffs for each combination of meter and
-    //    group.  If multipler tariffs have the same meter and
+    //    group.  If multiple tariffs have the same meter and
     //    group, then select the one with the lowest cost.
     //    For electric tariffs, since they may have buy, sell, or
     //    netmetering, they need to be combined more carefully.

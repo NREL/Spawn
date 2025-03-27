@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,19 +70,20 @@
 #include <EnergyPlus/ReportCoilSelection.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/SimAirServingZones.hh>
+#include <EnergyPlus/StandardRatings.hh>
 #include <EnergyPlus/WaterManager.hh>
 
 using namespace EnergyPlus;
 
 int CoilCoolingDX::factory(EnergyPlus::EnergyPlusData &state, std::string const &coilName)
 {
-    if (state.dataCoilCooingDX->coilCoolingDXGetInputFlag) {
+    if (state.dataCoilCoolingDX->coilCoolingDXGetInputFlag) {
         CoilCoolingDX::getInput(state);
-        state.dataCoilCooingDX->coilCoolingDXGetInputFlag = false;
+        state.dataCoilCoolingDX->coilCoolingDXGetInputFlag = false;
     }
     int handle = -1;
     std::string coilNameUpper = Util::makeUPPER(coilName);
-    for (auto const &thisCoil : state.dataCoilCooingDX->coilCoolingDXs) {
+    for (auto const &thisCoil : state.dataCoilCoolingDX->coilCoolingDXs) {
         handle++;
         if (coilNameUpper == Util::makeUPPER(thisCoil.name)) {
             return handle;
@@ -94,7 +95,7 @@ int CoilCoolingDX::factory(EnergyPlus::EnergyPlusData &state, std::string const 
 
 void CoilCoolingDX::getInput(EnergyPlusData &state)
 {
-    int numCoolingCoilDXs = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, state.dataCoilCooingDX->coilCoolingDXObjectName);
+    int numCoolingCoilDXs = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, state.dataCoilCoolingDX->coilCoolingDXObjectName);
     if (numCoolingCoilDXs <= 0) {
         ShowFatalError(state, R"(No "Coil:Cooling:DX" objects in input file)");
     }
@@ -103,7 +104,7 @@ void CoilCoolingDX::getInput(EnergyPlusData &state)
         int NumNumbers; // Number of Numbers for each GetObjectItem call
         int IOStatus;
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                                                 state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                                  coilNum,
                                                                  state.dataIPShortCut->cAlphaArgs,
                                                                  NumAlphas,
@@ -123,20 +124,23 @@ void CoilCoolingDX::getInput(EnergyPlusData &state)
         input_specs.evaporative_condenser_supply_water_storage_tank_name = state.dataIPShortCut->cAlphaArgs(10);
         CoilCoolingDX thisCoil;
         thisCoil.instantiateFromInputSpec(state, input_specs);
-        state.dataCoilCooingDX->coilCoolingDXs.push_back(thisCoil);
+        state.dataCoilCoolingDX->coilCoolingDXs.push_back(thisCoil);
     }
 }
 
 void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCoolingDXInputSpecification &input_data)
 {
-    static constexpr std::string_view routineName("CoilCoolingDX::instantiateFromInputSpec: ");
+    static constexpr std::string_view routineName = "CoilCoolingDX::instantiateFromInputSpec";
+
+    ErrorObjectHeader eoh{routineName, "CoilCoolingDX", input_data.name};
+
     this->original_input_specs = input_data;
     bool errorsFound = false;
     this->name = input_data.name;
 
     // initialize reclaim heat parameters
     this->reclaimHeat.Name = this->name;
-    this->reclaimHeat.SourceType = state.dataCoilCooingDX->coilCoolingDXObjectName;
+    this->reclaimHeat.SourceType = state.dataCoilCoolingDX->coilCoolingDXObjectName;
 
     this->performance = CoilCoolingDXCurveFitPerformance(state, input_data.performance_object_name);
 
@@ -189,7 +193,7 @@ void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCo
     if (!input_data.condensate_collection_water_storage_tank_name.empty()) {
         WaterManager::SetupTankSupplyComponent(state,
                                                this->name,
-                                               state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                               state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                input_data.condensate_collection_water_storage_tank_name,
                                                errorsFound,
                                                this->condensateTankIndex,
@@ -199,7 +203,7 @@ void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCo
     if (!input_data.evaporative_condenser_supply_water_storage_tank_name.empty()) {
         WaterManager::SetupTankDemandComponent(state,
                                                this->name,
-                                               state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                               state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                input_data.evaporative_condenser_supply_water_storage_tank_name,
                                                errorsFound,
                                                this->evaporativeCondSupplyTankIndex,
@@ -207,14 +211,9 @@ void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCo
     }
 
     if (input_data.availability_schedule_name.empty()) {
-        this->availScheduleIndex = ScheduleManager::ScheduleAlwaysOn;
-    } else {
-        this->availScheduleIndex = ScheduleManager::GetScheduleIndex(state, input_data.availability_schedule_name);
-    }
-
-    if (this->availScheduleIndex == 0) {
-        ShowSevereError(state, std::string{routineName} + state.dataCoilCooingDX->coilCoolingDXObjectName + "=\"" + this->name + "\", invalid");
-        ShowContinueError(state, "...Availability Schedule Name=\"" + input_data.availability_schedule_name + "\".");
+        this->availSched = Sched::GetScheduleAlwaysOn(state);
+    } else if ((this->availSched = Sched::GetSchedule(state, input_data.availability_schedule_name)) == nullptr) {
+        ShowSevereItemNotFound(state, eoh, "Availability Schedule Name", input_data.availability_schedule_name);
         errorsFound = true;
     }
 
@@ -224,7 +223,7 @@ void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCo
     }
 
     BranchNodeConnections::TestCompSet(state,
-                                       state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                       state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                        this->name,
                                        input_data.evaporator_inlet_node_name,
                                        input_data.evaporator_outlet_node_name,
@@ -232,7 +231,7 @@ void CoilCoolingDX::instantiateFromInputSpec(EnergyPlusData &state, const CoilCo
 
     if (errorsFound) {
         ShowFatalError(state,
-                       std::string{routineName} + "Errors found in getting " + state.dataCoilCooingDX->coilCoolingDXObjectName +
+                       std::string{routineName} + "Errors found in getting " + state.dataCoilCoolingDX->coilCoolingDXObjectName +
                            " input. Preceding condition(s) causes termination.");
     }
 }
@@ -658,12 +657,11 @@ void CoilCoolingDX::size(EnergyPlusData &state)
 
 void CoilCoolingDX::simulate(EnergyPlusData &state,
                              HVAC::CoilMode coilMode,
-                             Real64 PLR,
-                             int speedNum,
-                             Real64 speedRatio,
+                             int const speedNum,
+                             Real64 const speedRatio,
                              HVAC::FanOp const fanOp,
                              bool const singleMode,
-                             Real64 LoadSHR)
+                             Real64 const LoadSHR)
 {
     if (this->myOneTimeInitFlag) {
         this->oneTimeInit(state);
@@ -693,11 +691,11 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
     this->performance.OperatingMode = 0;
     this->performance.ModeRatio = 0.0;
     this->performance.simulate(
-        state, evapInletNode, evapOutletNode, coilMode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode, LoadSHR);
+        state, evapInletNode, evapOutletNode, coilMode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode, LoadSHR);
     CoilCoolingDX::passThroughNodeData(evapInletNode, evapOutletNode);
 
     // calculate energy conversion factor
-    Real64 reportingConstant = state.dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    Real64 reportingConstant = state.dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     // update condensate collection tank
     if (this->condensateTankIndex > 0) {
@@ -770,7 +768,7 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
     this->wasteHeatEnergyRate = this->performance.wasteHeatRate;
     this->wasteHeatEnergy = this->performance.wasteHeatRate * reportingConstant;
 
-    this->partLoadRatioReport = PLR;
+    this->partLoadRatioReport = speedNum > 1 ? 1.0 : speedRatio;
     this->speedNumReport = speedNum;
     this->speedRatioReport = speedRatio;
 
@@ -805,7 +803,7 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
             ratedSensCap = this->performance.normalMode.ratedGrossTotalCap * this->normModeNomSpeed().grossRatedSHR;
             state.dataRptCoilSelection->coilSelectionReportObj->setCoilFinalSizes(state,
                                                                                   this->name,
-                                                                                  state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                                                                  state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                                                   this->performance.normalMode.ratedGrossTotalCap,
                                                                                   ratedSensCap,
                                                                                   this->performance.normalMode.ratedEvapAirFlowRate,
@@ -816,7 +814,7 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
             if (this->supplyFanIndex > 0) {
                 state.dataRptCoilSelection->coilSelectionReportObj->setCoilSupplyFanInfo(state,
                                                                                          this->name,
-                                                                                         state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                                                                         state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                                                          state.dataFans->fans(this->supplyFanIndex)->Name,
                                                                                          state.dataFans->fans(this->supplyFanIndex)->type,
                                                                                          this->supplyFanIndex);
@@ -827,7 +825,6 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
             DataLoopNode::NodeData dummyEvapOutlet;
             DataLoopNode::NodeData dummyCondInlet;
             DataLoopNode::NodeData dummyCondOutlet;
-            Real64 dummyPLR = 1.0;
             int dummySpeedNum = 1;
             Real64 dummySpeedRatio = 1.0;
             HVAC::FanOp dummyFanOp = HVAC::FanOp::Cycling;
@@ -869,7 +866,6 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
                                        dummyEvapInlet,
                                        dummyEvapOutlet,
                                        HVAC::CoilMode::Normal,
-                                       dummyPLR,
                                        dummySpeedNum,
                                        dummySpeedRatio,
                                        dummyFanOp,
@@ -903,7 +899,7 @@ void CoilCoolingDX::simulate(EnergyPlusData &state,
                 state, dummyEvapOutlet.Temp, dummyEvapOutlet.HumRat, DataEnvironment::StdPressureSeaLevel, "Coil:Cooling:DX::simulate");
             state.dataRptCoilSelection->coilSelectionReportObj->setRatedCoilConditions(state,
                                                                                        this->name,
-                                                                                       state.dataCoilCooingDX->coilCoolingDXObjectName,
+                                                                                       state.dataCoilCoolingDX->coilCoolingDXObjectName,
                                                                                        coolingRate,
                                                                                        sensCoolingRate,
                                                                                        ratedInletEvapMassFlowRate,
@@ -987,7 +983,7 @@ void PopulateCoolingCoilStandardRatingInformation(InputOutputFile &eio,
 
 void CoilCoolingDX::reportAllStandardRatings(EnergyPlusData &state)
 {
-    if (!state.dataCoilCooingDX->coilCoolingDXs.empty()) {
+    if (!state.dataCoilCoolingDX->coilCoolingDXs.empty()) {
         Real64 constexpr ConvFromSIToIP(3.412141633); // Conversion from SI to IP [3.412 Btu/hr-W]
         if (state.dataHVACGlobal->StandardRatingsMyCoolOneTimeFlag) {
             static constexpr std::string_view Format_994(
@@ -998,7 +994,7 @@ void CoilCoolingDX::reportAllStandardRatings(EnergyPlusData &state)
             print(state.files.eio, "{}\n", Format_994);
             state.dataHVACGlobal->StandardRatingsMyCoolOneTimeFlag = false;
         }
-        for (auto &coil : state.dataCoilCooingDX->coilCoolingDXs) {
+        for (auto &coil : state.dataCoilCoolingDX->coilCoolingDXs) {
             coil.performance.calcStandardRatings210240(state);
             PopulateCoolingCoilStandardRatingInformation(state.files.eio,
                                                          coil.name,
@@ -1047,19 +1043,7 @@ void CoilCoolingDX::reportAllStandardRatings(EnergyPlusData &state)
             } else {
                 OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchDXCoolCoilIEERIP, coil.name, "N/A");
             }
-            OutputReportPredefined::addFootNoteSubTable(
-                state,
-                state.dataOutRptPredefined->pdstDXCoolCoil,
-                "ANSI/AHRI ratings account for supply air fan heat and electric power. <br/>"
-                "1 - EnergyPlus object type. <br/>"
-                "2 - Capacity less than 65K Btu/h (19050 W) - calculated as per AHRI Standard 210/240-2017. <br/>"
-                "&emsp;&nbsp;Capacity of 65K Btu/h (19050 W) to less than 135K Btu/h (39565 W) - calculated as per AHRI Standard 340/360-2007. "
-                "<br/>"
-                "&emsp;&nbsp;Capacity from 135K (39565 W) to 250K Btu/hr (73268 W) - calculated as per AHRI Standard 365-2009 - Ratings not yet "
-                "supported in EnergyPlus. <br/>"
-                "3 - SEER (User) is calculated using user-input PLF curve and cooling coefficient of degradation. <br/>"
-                "&emsp;&nbsp;SEER (Standard) is calculated using the default PLF curve and cooling coefficient of degradation"
-                "from the appropriate AHRI standard.");
+            OutputReportPredefined::addFootNoteSubTable(state, state.dataOutRptPredefined->pdstDXCoolCoil, StandardRatings::AHRI2017FOOTNOTE);
 
             // AHRI 2023 Standard SEER2 Calculations
             if (state.dataHVACGlobal->StandardRatingsMyCoolOneTimeFlag2) {
@@ -1125,21 +1109,8 @@ void CoilCoolingDX::reportAllStandardRatings(EnergyPlusData &state)
             } else {
                 OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchDXCoolCoilIEERIP_2023, coil.name, "N/A");
             }
-            OutputReportPredefined::addFootNoteSubTable(
-                state,
-                state.dataOutRptPredefined->pdstDXCoolCoil_2023,
-                "ANSI/AHRI ratings account for supply air fan heat and electric power. <br/>"
-                "1 - EnergyPlus object type. <br/>"
-                "2 - Capacity less than 65K Btu/h (19050 W) - calculated as per AHRI Standard 210/240-2023. <br/>"
-                "&emsp;&nbsp;Capacity of 65K Btu/h (19050 W) to less than 135K Btu/h (39565 W) - calculated as per AHRI Standard 340/360-2022. "
-                "<br/>"
-                "&emsp;&nbsp;Capacity from 135K (39565 W) to 250K Btu/hr (73268 W) - calculated as per AHRI Standard 365-2009 - Ratings not yet "
-                "supported in EnergyPlus. <br/>"
-                "3 - SEER2 (User) is calculated using user-input PLF curve and cooling coefficient of degradation. <br/>"
-                "&emsp;&nbsp;SEER2 (Standard) is calculated using the default PLF curve and cooling coefficient of degradation"
-                "from the appropriate AHRI standard. <br/>"
-                "4 - Value for the Full Speed of the coil.");
+            OutputReportPredefined::addFootNoteSubTable(state, state.dataOutRptPredefined->pdstDXCoolCoil_2023, StandardRatings::AHRI2023FOOTNOTE);
         }
     }
-    state.dataCoilCooingDX->stillNeedToReportStandardRatings = false;
+    state.dataCoilCoolingDX->stillNeedToReportStandardRatings = false;
 }

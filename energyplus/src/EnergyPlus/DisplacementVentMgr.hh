@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -157,6 +157,10 @@ struct DisplacementVentMgrData : BaseGlobalStruct
     Array1D_bool MyEnvrnFlag;
     Real64 TempDepCoef = 0.0; // Formerly CoefSumha, coef in zone temp equation with dimensions of h*A
     Real64 TempIndCoef = 0.0; // Formerly CoefSumhat, coef in zone temp equation with dimensions of h*A(T1
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

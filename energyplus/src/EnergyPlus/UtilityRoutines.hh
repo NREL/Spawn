@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -286,20 +286,69 @@ void ShowSevereEmptyField(EnergyPlusData &state,
                           std::string_view depFieldName = {},
                           std::string_view depFieldValue = {});
 void ShowSevereItemNotFound(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
+void ShowSevereItemNotFoundAudit(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
+
+void ShowSevereDuplicateAssignment(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view prevValue);
+
 void ShowSevereInvalidKey(
     EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view msg = {});
 void ShowSevereInvalidBool(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue);
 
-void ShowSevereCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+void ShowSevereCustom(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+void ShowSevereCustomField(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view msg);
+
+void ShowSevereCustomAudit(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+
+enum class Clusive
+{
+    Invalid = -1,
+    In,
+    Ex,
+    Num
+};
+
+void ShowSevereBadMin(EnergyPlusData &state,
+                      ErrorObjectHeader const &eoh,
+                      std::string_view fieldName,
+                      Real64 fieldVal,
+                      Clusive cluMin,
+                      Real64 minVal,
+                      std::string_view msg = {});
+void ShowSevereBadMax(EnergyPlusData &state,
+                      ErrorObjectHeader const &eoh,
+                      std::string_view fieldName,
+                      Real64 fieldVal,
+                      Clusive cluMin,
+                      Real64 maxVal,
+                      std::string_view msg = {});
+void ShowSevereBadMinMax(EnergyPlusData &state,
+                         ErrorObjectHeader const &eoh,
+                         std::string_view fieldName,
+                         Real64 fieldVal,
+                         Clusive cluMin,
+                         Real64 minVal,
+                         Clusive cluMax,
+                         Real64 maxVal,
+                         std::string_view msg = {});
+
 void ShowWarningDuplicateName(EnergyPlusData &state, ErrorObjectHeader const &eoh);
 void ShowWarningEmptyField(EnergyPlusData &state,
                            ErrorObjectHeader const &eoh,
                            std::string_view fieldName,
-                           std::string_view defaultValue,
+                           std::string_view defaultValue = {},
                            std::string_view depFieldName = {},
                            std::string_view depFieldValue = {});
+
+void ShowWarningNonEmptyField(EnergyPlusData &state,
+                              ErrorObjectHeader const &eoh,
+                              std::string_view fieldName,
+                              std::string_view depFieldName = {},
+                              std::string_view depFieldValue = {});
+
 void ShowWarningItemNotFound(
-    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue);
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue = {});
 void ShowWarningInvalidKey(EnergyPlusData &state,
                            ErrorObjectHeader const &eoh,
                            std::string_view fieldName,
@@ -308,7 +357,9 @@ void ShowWarningInvalidKey(EnergyPlusData &state,
                            std::string_view msg = {});
 void ShowWarningInvalidBool(
     EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view defaultValue);
-void ShowWarningCustomMessage(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+void ShowWarningCustom(EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view msg);
+void ShowWarningCustomField(
+    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, std::string_view fieldValue, std::string_view msg);
 
 namespace Util {
 
@@ -332,6 +383,18 @@ namespace Util {
     inline int FindItemInList(std::string_view const String, Array1_string const &ListOfItems)
     {
         return Util::FindItemInList(String, ListOfItems, ListOfItems.isize());
+    }
+
+    inline int FindIntInList(Array1_int &list, int item)
+    {
+        auto it = std::find(list.begin(), list.end(), item);
+        return (it == list.end()) ? -1 : (it - list.begin());
+    }
+
+    inline int FindIntInList(std::vector<int> &list, int item)
+    {
+        auto it = std::find(list.begin(), list.end(), item);
+        return (it == list.end()) ? -1 : (it - list.begin());
     }
 
     int FindItemInList(std::string_view const String, Array1S_string const ListOfItems, int NumItems);
@@ -728,6 +791,7 @@ constexpr int getEnumValue(const gsl::span<const std::string_view> sList, const 
     return -1;
 }
 
+constexpr std::array<std::string_view, 2> yesNoNames = {"No", "Yes"};
 constexpr std::array<std::string_view, 2> yesNoNamesUC = {"NO", "YES"};
 
 constexpr BooleanSwitch getYesNoValue(const std::string_view s)
@@ -747,6 +811,10 @@ struct UtilityRoutinesData : BaseGlobalStruct
     std::string appendPerfLog_headerRow;
     std::string appendPerfLog_valuesRow;
     bool GetMatrixInputFlag = true;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

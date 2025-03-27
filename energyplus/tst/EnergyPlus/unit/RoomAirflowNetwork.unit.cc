@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -169,7 +169,7 @@ TEST_F(RoomAirflowNetworkTest, RAFNTest)
     int ZoneNum = 1;
     int RoomAirNode;
     state->dataHVACGlobal->TimeStepSys = 15.0 / 60.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataHeatBal->Zone(ZoneNum).ZoneVolCapMultpSens = 1;
 
@@ -554,10 +554,11 @@ TEST_F(EnergyPlusFixture, RoomAirInternalGains_InternalHeatGains_Check)
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     ErrorsFound = false;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ScheduleManager::ProcessScheduleInput(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
@@ -574,8 +575,8 @@ TEST_F(EnergyPlusFixture, RoomAirInternalGains_InternalHeatGains_Check)
     ErrorsFound = false;
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(1);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(1);
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
     SurfaceGeometry::GetSurfaceData(*state, ErrorsFound);
@@ -591,7 +592,13 @@ TEST_F(EnergyPlusFixture, RoomAirInternalGains_InternalHeatGains_Check)
     EXPECT_TRUE(ErrorsFound);
 
     std::string const error_string =
-        delimited_string({"   ** Severe  ** GetRoomAirflowNetworkData: Invalid Internal Gain Object Name = LIVING_UNIT1 PEOPLE",
+        delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = SCH_ACT",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Severe  ** GetRoomAirflowNetworkData: Invalid Internal Gain Object Name = LIVING_UNIT1 PEOPLE",
                           "   **   ~~~   ** Entered in RoomAir:Node:AirflowNetwork:InternalGains = NODE1_GAIN",
                           "   **   ~~~   ** Internal gain did not match correctly",
                           "   ** Severe  ** GetRoomAirflowNetworkData: Invalid Internal Gain Object Name = LIVING_UNIT1 LIGHTS",

@@ -73,7 +73,7 @@
 ! Utility Tariffs:                None
 !
 
-  Version,24.2;
+  Version,25.1;
 
   Building,
     barracks2,               !- Name
@@ -5272,7 +5272,7 @@
     SumOrAverageDuringHoursShown,  !- Aggregation Type for Variable or Meter 2
     Zone Mechanical Ventilation Air Changes per Hour,  !- Variable or Meter 3 Name
     SumOrAverageDuringHoursShown,  !- Aggregation Type for Variable or Meter 3
-    Zone Infiltration Air Change Rate,  !- Variable or Meter 4 Name
+    Zone Infiltration Current Density Air Change Rate,  !- Variable or Meter 4 Name
     SumOrAverageDuringHoursShown;  !- Aggregation Type for Variable or Meter 4
 
   Output:Table:Monthly,
@@ -5353,5 +5353,5 @@
 
   Output:Variable,FURNACE_PACU_CAV:1_Unitary_Package_CoolCoil,Cooling Coil Total Cooling Rate,hourly;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,hourly;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,hourly;
 

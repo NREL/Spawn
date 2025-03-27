@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -132,11 +132,7 @@ namespace PlantComponentTemperatureSources {
         // Initialize critical Demand Side Variables at the beginning of each environment
         if (this->MyEnvironFlag && state.dataGlobal->BeginEnvrnFlag && (state.dataPlnt->PlantFirstSizesOkayToFinalize)) {
 
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                           Constant::InitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
             this->MassFlowRateMax = this->DesVolFlowRate * rho;
             PlantUtilities::InitComponentNodes(state, 0.0, this->MassFlowRateMax, this->InletNodeNum, this->OutletNodeNum);
 
@@ -150,15 +146,11 @@ namespace PlantComponentTemperatureSources {
         // OK, so we can set up the inlet and boundary temperatures now
         this->InletTemp = state.dataLoopNodes->Node(this->InletNodeNum).Temp;
         if (this->tempSpecType == TempSpecType::Schedule) {
-            this->BoundaryTemp = ScheduleManager::GetCurrentScheduleValue(state, this->TempSpecScheduleNum);
+            this->BoundaryTemp = this->tempSpecSched->getCurrentVal();
         }
 
         // Calculate specific heat
-        Real64 cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                           this->BoundaryTemp,
-                                                           state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+        Real64 cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, this->BoundaryTemp, RoutineName);
 
         // Calculate deltaT
         Real64 delta_temp = this->BoundaryTemp - this->InletTemp;
@@ -364,11 +356,7 @@ namespace PlantComponentTemperatureSources {
 
         if (this->MassFlowRate > 0.0) {
             this->OutletTemp = this->BoundaryTemp;
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                               this->BoundaryTemp,
-                                                               state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, this->BoundaryTemp, RoutineName);
             this->HeatRate = this->MassFlowRate * Cp * (this->OutletTemp - this->InletTemp);
             this->HeatEnergy = this->HeatRate * state.dataHVACGlobal->TimeStepSysSec;
         } else {
@@ -455,6 +443,8 @@ namespace PlantComponentTemperatureSources {
         //  N2 , \field Boundary Temperature
         //  A5 ; \field Source Temperature Schedule Name
 
+        static constexpr std::string_view routineName = "GetWaterSourceInput";
+
         // LOCAL VARIABLES:
         int NumAlphas; // Number of elements in the alpha array
         int NumNums;   // Number of elements in the numeric array
@@ -489,6 +479,9 @@ namespace PlantComponentTemperatureSources {
                                                                      state.dataIPShortCut->lAlphaFieldBlanks,
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)};
+
             Util::IsNameEmpty(state, state.dataIPShortCut->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
 
             state.dataPlantCompTempSrc->WaterSource(SourceNum).Name = state.dataIPShortCut->cAlphaArgs(1);
@@ -530,15 +523,9 @@ namespace PlantComponentTemperatureSources {
                 state.dataPlantCompTempSrc->WaterSource(SourceNum).BoundaryTemp = state.dataIPShortCut->rNumericArgs(2);
             } else if (state.dataIPShortCut->cAlphaArgs(4) == "SCHEDULED") {
                 state.dataPlantCompTempSrc->WaterSource(SourceNum).tempSpecType = TempSpecType::Schedule;
-                state.dataPlantCompTempSrc->WaterSource(SourceNum).TempSpecScheduleName = state.dataIPShortCut->cAlphaArgs(5);
-                state.dataPlantCompTempSrc->WaterSource(SourceNum).TempSpecScheduleNum =
-                    ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(5));
-                if (state.dataPlantCompTempSrc->WaterSource(SourceNum).TempSpecScheduleNum == 0) {
-                    ShowSevereError(state, format("Input error for {}={}", cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(state,
-                                      format("Invalid schedule name in field {}={}",
-                                             state.dataIPShortCut->cAlphaFieldNames(5),
-                                             state.dataIPShortCut->cAlphaArgs(5)));
+                if ((state.dataPlantCompTempSrc->WaterSource(SourceNum).tempSpecSched =
+                         Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(5))) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(5), state.dataIPShortCut->cAlphaArgs(5));
                     ErrorsFound = true;
                 }
             } else {

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -92,7 +92,9 @@ struct CoilCoolingDXCurveFitSpeed
     std::string parentName;
 
     CoilCoolingDXCurveFitSpeed() = default;
+
     explicit CoilCoolingDXCurveFitSpeed(EnergyPlusData &state, const std::string &name);
+
     void instantiateFromInputSpec(EnergyPlusData &state, const CoilCoolingDXCurveFitSpeedInputSpecification &input_data);
 
     CoilCoolingDXCurveFitSpeedInputSpecification original_input_specs;
@@ -163,9 +165,10 @@ struct CoilCoolingDXCurveFitSpeed
     void CalcSpeedOutput(EnergyPlusData &state,
                          const DataLoopNode::NodeData &inletNode,
                          DataLoopNode::NodeData &outletNode,
-                         Real64 &PLR,
+                         Real64 PLR,
                          HVAC::FanOp const fanOp,
                          Real64 condInletTemp);
+
     void size(EnergyPlusData &state);
 
     Real64 CalcBypassFactor(EnergyPlusData &state,

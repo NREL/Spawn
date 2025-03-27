@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -69,23 +69,19 @@ namespace EnergyPlus {
 
 TEST_F(EnergyPlusFixture, HeatBalanceMovableInsulation_EvalOutsideMovableInsulation)
 {
+    state->init_state(*state);
     auto &s_mat = state->dataMaterial;
 
     int SurfNum = 1;
     state->dataSurface->Surface.allocate(SurfNum);
-    state->dataSurface->SurfSchedMovInsulExt.allocate(SurfNum);
-    state->dataSurface->SurfMaterialMovInsulExt.allocate(SurfNum);
-    state->dataSurface->SurfSchedMovInsulExt(SurfNum) = 1;
-    state->dataSurface->SurfMaterialMovInsulExt(SurfNum) = 1;
-    state->dataHeatBalSurf->SurfMovInsulExtPresent.allocate(SurfNum);
-    state->dataHeatBalSurf->SurfMovInsulHExt.allocate(SurfNum);
+    state->dataSurface->extMovInsuls.allocate(SurfNum);
+    state->dataSurface->extMovInsuls(SurfNum).sched = Sched::GetScheduleAlwaysOn(*state);
+    state->dataSurface->extMovInsuls(SurfNum).matNum = 1;
     state->dataHeatBalSurf->SurfAbsSolarExt.allocate(SurfNum);
     state->dataHeatBalSurf->SurfAbsThermalExt.allocate(SurfNum);
     state->dataHeatBalSurf->SurfRoughnessExt.allocate(SurfNum);
-    state->dataScheduleMgr->Schedule.allocate(1);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
-    state->dataHeatBalSurf->SurfMovInsulExtPresent(1) = true;
-    state->dataHeatBalSurf->SurfMovInsulIndexList.push_back(1);
+    state->dataSurface->extMovInsuls(SurfNum).present = true;
+    state->dataSurface->extMovInsulSurfNums.push_back(SurfNum);
 
     auto *mat1 = new Material::MaterialShade;
     s_mat->materials.push_back(mat1);
@@ -106,7 +102,7 @@ TEST_F(EnergyPlusFixture, HeatBalanceMovableInsulation_EvalOutsideMovableInsulat
     state->dataHeatBalSurf->SurfAbsSolarExt(1) = 0.0;
     HeatBalanceSurfaceManager::EvalOutsideMovableInsulation(*state);
     EXPECT_EQ(0.75, state->dataHeatBalSurf->SurfAbsSolarExt(1));
-    EXPECT_EQ(0.8, state->dataHeatBalSurf->SurfMovInsulHExt(1));
+    EXPECT_EQ(0.8, state->dataSurface->extMovInsuls(1).H);
     EXPECT_ENUM_EQ(Material::SurfaceRoughness::VeryRough, state->dataHeatBalSurf->SurfRoughnessExt(1));
     EXPECT_EQ(0.75, state->dataHeatBalSurf->SurfAbsThermalExt(1));
 
@@ -150,21 +146,17 @@ TEST_F(EnergyPlusFixture, HeatBalanceMovableInsulation_EvalOutsideMovableInsulat
 
 TEST_F(EnergyPlusFixture, HeatBalanceMovableInsulation_EvalInsideMovableInsulation)
 {
+    state->init_state(*state);
 
     int SurfNum = 1;
     state->dataSurface->Surface.allocate(SurfNum);
 
-    state->dataSurface->SurfSchedMovInsulInt.allocate(SurfNum);
-    state->dataSurface->SurfMaterialMovInsulInt.allocate(SurfNum);
-    state->dataSurface->SurfSchedMovInsulInt(SurfNum) = 1;
-    state->dataSurface->SurfMaterialMovInsulInt(SurfNum) = 1;
-    state->dataHeatBalSurf->SurfMovInsulIntPresent.allocate(SurfNum);
-    state->dataHeatBalSurf->SurfMovInsulHInt.allocate(SurfNum);
+    state->dataSurface->intMovInsuls.allocate(SurfNum);
+    state->dataSurface->intMovInsuls(SurfNum).sched = Sched::GetScheduleAlwaysOn(*state);
+    state->dataSurface->intMovInsuls(SurfNum).matNum = 1;
     state->dataHeatBalSurf->SurfAbsSolarInt.allocate(SurfNum);
     state->dataHeatBalSurf->SurfAbsThermalInt.allocate(SurfNum);
-    state->dataScheduleMgr->Schedule.allocate(1);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
-    state->dataHeatBalSurf->SurfMovInsulIndexList.push_back(1);
+    state->dataSurface->intMovInsulSurfNums.push_back(SurfNum);
 
     auto *mat = new Material::MaterialShade;
     state->dataMaterial->materials.push_back(mat);
@@ -185,8 +177,8 @@ TEST_F(EnergyPlusFixture, HeatBalanceMovableInsulation_EvalInsideMovableInsulati
     state->dataHeatBalSurf->SurfAbsSolarInt(1) = 0.0;
     HeatBalanceSurfaceManager::EvalInsideMovableInsulation(*state);
     EXPECT_EQ(0.75, state->dataHeatBalSurf->SurfAbsSolarInt(1));
-    EXPECT_EQ(0.8, state->dataHeatBalSurf->SurfMovInsulHInt(1));
-    EXPECT_EQ(true, state->dataHeatBalSurf->SurfMovInsulIntPresent(1));
+    EXPECT_EQ(0.8, state->dataSurface->intMovInsuls(1).H);
+    EXPECT_EQ(true, state->dataSurface->intMovInsuls(1).present);
     EXPECT_EQ(0.75, state->dataHeatBalSurf->SurfAbsThermalInt(1));
 
     state->dataHeatBalSurf->SurfAbsSolarInt(1) = 0.0;
@@ -287,15 +279,14 @@ TEST_F(EnergyPlusFixture, SurfaceControlMovableInsulation_InvalidWindowSimpleGla
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state);
     // set error to false
     bool ErrorsFound(false);
     // set zone data
     state->dataGlobal->NumOfZones = 1;
     state->dataHeatBal->Zone.allocate(1);
     state->dataHeatBal->Zone(1).Name = "ZONE ONE";
-    // get schedule data
-    ScheduleManager::ProcessScheduleInput(*state);
+
     // get materials data
     Material::GetMaterialData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
@@ -316,14 +307,12 @@ TEST_F(EnergyPlusFixture, SurfaceControlMovableInsulation_InvalidWindowSimpleGla
     // set surface data
     state->dataSurface->TotSurfaces = 1;
     state->dataSurface->Surface.allocate(1);
-    state->dataSurface->SurfMaterialMovInsulExt.allocate(1);
-    state->dataSurface->SurfSchedMovInsulExt.allocate(1);
-    state->dataSurface->SurfMaterialMovInsulInt.allocate(1);
-    state->dataSurface->SurfSchedMovInsulInt.allocate(1);
-    state->dataSurface->SurfMaterialMovInsulExt = 0;
-    state->dataSurface->SurfSchedMovInsulExt = 0;
-    state->dataSurface->SurfMaterialMovInsulInt = 0;
-    state->dataSurface->SurfSchedMovInsulInt = 0;
+    state->dataSurface->extMovInsuls.allocate(1);
+    state->dataSurface->intMovInsuls.allocate(1);
+    state->dataSurface->extMovInsuls(1).matNum = 0;
+    state->dataSurface->extMovInsuls(1).sched = nullptr;
+    state->dataSurface->intMovInsuls(1).matNum = 0;
+    state->dataSurface->intMovInsuls(1).sched = nullptr;
     state->dataSurfaceGeometry->SurfaceTmp.allocate(1);
     int SurfNum = 0;
     int TotHTSurfs = state->dataSurface->TotSurfaces = 1;
@@ -337,7 +326,7 @@ TEST_F(EnergyPlusFixture, SurfaceControlMovableInsulation_InvalidWindowSimpleGla
     SurfaceGeometry::GetMovableInsulationData(*state, ErrorsFound);
     // check movable insulation material
     EXPECT_EQ(state->dataSurfaceGeometry->SurfaceTmp(1).BaseSurfName, "ZN001:WALL001");     // base surface name
-    EXPECT_EQ(state->dataSurface->SurfMaterialMovInsulExt(1), 4);                           // index to movable insulation material
+    EXPECT_EQ(state->dataSurface->extMovInsuls(1).matNum, 4);                               // index to movable insulation material
     EXPECT_EQ(state->dataMaterial->materials(4)->Name, "SIMPLEGLAZINGSYSTEM");              // name of movable insulation material
     EXPECT_ENUM_EQ(state->dataMaterial->materials(4)->group, Material::Group::GlassSimple); // invalid material group type
     EXPECT_TRUE(ErrorsFound);                                                               // error found due to invalid material

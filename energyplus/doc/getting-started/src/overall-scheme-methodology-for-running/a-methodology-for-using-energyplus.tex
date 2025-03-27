@@ -144,6 +144,7 @@ The pieces of the definition that designate BuildingSurface:Detailed surfaces as
          \type choice
          \key Surface
          \key Zone
+         \key Space
          \key Outdoors
          \key Ground
          \key OtherSideCoefficients
@@ -151,7 +152,7 @@ The pieces of the definition that designate BuildingSurface:Detailed surfaces as
     A6,  \field Outside Boundary Condition Object
          \type object-list
          \object-list OutFaceEnvNames
-         \note Non-blank only if the field Outside Boundary Condition is Surface, Zone, OtherSideCoefficients,
+         \note Non-blank only if the field Outside Boundary Condition is Surface, Zone, Space, OtherSideCoefficients,
          \note or OtherSideConditionsModel
          \note If Surface, specify name of corresponding surface in adjacent zone or
          \note specify current surface name for internal partition separating like zones

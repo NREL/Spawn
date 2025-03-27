@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -128,7 +128,7 @@ int SizingLog::GetZtStepIndex(const ZoneTimestepObject tmpztStepStamp)
         vecIndex = envrnStartZtStepIndexMap[newEnvrnToSeedEnvrnMap[tmpztStepStamp.envrnNum]];
     }
 
-    // next for safety sake, constrain index to lie inside correct envronment
+    // next for safety sake, constrain index to lie inside correct environment
     if (vecIndex < envrnStartZtStepIndexMap[newEnvrnToSeedEnvrnMap[tmpztStepStamp.envrnNum]]) {
         vecIndex = envrnStartZtStepIndexMap[newEnvrnToSeedEnvrnMap[tmpztStepStamp.envrnNum]]; // first step in environment
     }
@@ -175,17 +175,14 @@ int SizingLog::GetSysStepZtStepIndex(ZoneTimestepObject tmpztStepStamp)
 void SizingLog::FillSysStep(ZoneTimestepObject tmpztStepStamp, SystemTimestepObject tmpSysStepStamp)
 {
 
-    int ztIndex(0);
-    int oldNumSubSteps(0);
-    int newNumSubSteps(0);
+    int newNumSubSteps;
     Real64 constexpr MinutesPerHour(60.0);
-    Real64 ZoneStepStartMinutes(0.0);
 
-    ztIndex = GetSysStepZtStepIndex(tmpztStepStamp);
+    int ztIndex = GetSysStepZtStepIndex(tmpztStepStamp);
 
     if (ztStepObj[ztIndex].hasSystemSubSteps) {
 
-        oldNumSubSteps = ztStepObj[ztIndex].numSubSteps;
+        int oldNumSubSteps = ztStepObj[ztIndex].numSubSteps;
         newNumSubSteps = round(tmpztStepStamp.timeStepDuration / tmpSysStepStamp.TimeStepDuration);
         if (newNumSubSteps != oldNumSubSteps) {
             ztStepObj[ztIndex].subSteps.resize(newNumSubSteps);
@@ -199,7 +196,7 @@ void SizingLog::FillSysStep(ZoneTimestepObject tmpztStepStamp, SystemTimestepObj
     }
 
     // figure out which index this substep needs to go into
-    ZoneStepStartMinutes = tmpztStepStamp.stepStartMinute;
+    Real64 ZoneStepStartMinutes = tmpztStepStamp.stepStartMinute;
 
     tmpSysStepStamp.stStepsIntoZoneStep =
         round((((tmpSysStepStamp.CurMinuteStart - ZoneStepStartMinutes) / MinutesPerHour) / tmpSysStepStamp.TimeStepDuration));
@@ -220,7 +217,7 @@ void SizingLog::AverageSysTimeSteps()
     for (auto &zt : ztStepObj) {
         if (zt.numSubSteps > 0) {
             RunningSum = 0.0;
-            for (auto &SysT : zt.subSteps) {
+            for (auto const &SysT : zt.subSteps) {
                 RunningSum += SysT.LogDataValue;
             }
             zt.logDataValue = RunningSum / double(zt.numSubSteps);
@@ -254,15 +251,14 @@ void SizingLog::ProcessRunningAverage()
 
 ZoneTimestepObject SizingLog::GetLogVariableDataMax(EnergyPlusData &state)
 {
-    Real64 MaxVal;
     ZoneTimestepObject tmpztStepStamp;
-    MaxVal = 0.0;
+    Real64 MaxVal = 0.0;
 
     if (!ztStepObj.empty()) {
         tmpztStepStamp = ztStepObj[0];
     }
 
-    for (auto &zt : ztStepObj) {
+    for (auto const &zt : ztStepObj) {
         if (zt.envrnNum > 0 && zt.kindOfSim != Constant::KindOfSim::Invalid && zt.runningAvgDataValue > MaxVal) {
             MaxVal = zt.runningAvgDataValue;
             tmpztStepStamp = zt;
@@ -276,19 +272,13 @@ ZoneTimestepObject SizingLog::GetLogVariableDataMax(EnergyPlusData &state)
 Real64 SizingLog::GetLogVariableDataAtTimestamp(ZoneTimestepObject tmpztStepStamp)
 {
     int const index = GetZtStepIndex(tmpztStepStamp);
-
-    Real64 const val = ztStepObj[index].runningAvgDataValue;
-
-    return val;
+    return ztStepObj[index].runningAvgDataValue;
 }
 
 void SizingLog::ReInitLogForIteration()
 {
     ZoneTimestepObject tmpNullztStepObj;
-
-    for (auto &zt : ztStepObj) {
-        zt = tmpNullztStepObj;
-    }
+    std::fill(ztStepObj.begin(), ztStepObj.end(), tmpNullztStepObj);
 }
 
 void SizingLog::SetupNewEnvironment(int const seedEnvrnNum, int const newEnvrnNum)
@@ -298,8 +288,7 @@ void SizingLog::SetupNewEnvironment(int const seedEnvrnNum, int const newEnvrnNu
 
 int SizingLoggerFramework::SetupVariableSizingLog(EnergyPlusData &state, Real64 &rVariable, int stepsInAverage)
 {
-    int VectorLength(0);
-    int constexpr HoursPerDay(24);
+    int constexpr HoursPerDay = 24;
 
     SizingLog tmpLog(rVariable);
     tmpLog.NumOfEnvironmentsInLogSet = 0;
@@ -323,10 +312,10 @@ int SizingLoggerFramework::SetupVariableSizingLog(EnergyPlusData &state, Real64 
     for (int i = 1; i <= state.dataWeather->NumOfEnvrn; ++i) {
 
         if (state.dataWeather->Environment(i).KindOfEnvrn == Constant::KindOfSim::DesignDay) {
-            tmpLog.ztStepCountByEnvrnMap[i] = HoursPerDay * state.dataGlobal->NumOfTimeStepInHour;
+            tmpLog.ztStepCountByEnvrnMap[i] = HoursPerDay * state.dataGlobal->TimeStepsInHour;
         }
         if (state.dataWeather->Environment(i).KindOfEnvrn == Constant::KindOfSim::RunPeriodDesign) {
-            tmpLog.ztStepCountByEnvrnMap[i] = HoursPerDay * state.dataGlobal->NumOfTimeStepInHour * state.dataWeather->Environment(i).TotalDays;
+            tmpLog.ztStepCountByEnvrnMap[i] = HoursPerDay * state.dataGlobal->TimeStepsInHour * state.dataWeather->Environment(i).TotalDays;
         }
     }
 
@@ -340,7 +329,7 @@ int SizingLoggerFramework::SetupVariableSizingLog(EnergyPlusData &state, Real64 
 
     tmpLog.timeStepsInAverage = stepsInAverage;
 
-    VectorLength = stepSum;
+    int VectorLength = stepSum;
 
     tmpLog.NumOfStepsInLogSet = VectorLength;
     tmpLog.ztStepObj.resize(VectorLength);
@@ -364,7 +353,7 @@ ZoneTimestepObject SizingLoggerFramework::PrepareZoneTimestepStamp(EnergyPlusDat
     // prepare current timing data once and then pass into fill routines
     // function used by both zone and system frequency log updates
 
-    int locDayOfSim(1);
+    int locDayOfSim;
 
     if (state.dataGlobal->WarmupFlag) { // DayOfSim not okay during warmup, keeps incrementing up during warmup days
         locDayOfSim = 1;
@@ -379,16 +368,14 @@ ZoneTimestepObject SizingLoggerFramework::PrepareZoneTimestepStamp(EnergyPlusDat
         state.dataGlobal->HourOfDay,
         state.dataGlobal->TimeStep,
         *state.dataOutputProcessor->TimeValue[(int)OutputProcessor::TimeStepType::Zone].TimeStep,
-        state.dataGlobal->NumOfTimeStepInHour);
+        state.dataGlobal->TimeStepsInHour);
 
     return tmpztStepStamp;
 }
 
 void SizingLoggerFramework::UpdateSizingLogValuesZoneStep(EnergyPlusData &state)
 {
-    ZoneTimestepObject tmpztStepStamp;
-
-    tmpztStepStamp = PrepareZoneTimestepStamp(state);
+    ZoneTimestepObject tmpztStepStamp = PrepareZoneTimestepStamp(state);
 
     for (auto &l : logObjs) {
         l.FillZoneStep(tmpztStepStamp);
@@ -397,11 +384,9 @@ void SizingLoggerFramework::UpdateSizingLogValuesZoneStep(EnergyPlusData &state)
 
 void SizingLoggerFramework::UpdateSizingLogValuesSystemStep(EnergyPlusData &state)
 {
-    Real64 constexpr MinutesPerHour(60.0);
-    ZoneTimestepObject tmpztStepStamp;
+    Real64 constexpr MinutesPerHour = 60.0;
+    ZoneTimestepObject tmpztStepStamp = PrepareZoneTimestepStamp(state);
     SystemTimestepObject tmpSysStepStamp;
-
-    tmpztStepStamp = PrepareZoneTimestepStamp(state);
 
     // prepare system timestep stamp
     tmpSysStepStamp.CurMinuteEnd = state.dataOutputProcessor->TimeValue[(int)OutputProcessor::TimeStepType::System].CurMinute;
@@ -538,7 +523,7 @@ void PlantCoinicidentAnalysis::ResolveDesignFlowRate(EnergyPlusData &state, int 
         }
     }
 
-    // add a seperate eio summary report about what happened, did demand trap get used, what were the key values.
+    // add a separate eio summary report about what happened, did demand trap get used, what were the key values.
     if (!state.dataGlobal->sizingAnalysisEioHeaderDoneOnce) {
         print(state.files.eio,
               "{}",

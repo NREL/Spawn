@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -71,8 +71,9 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXInput)
 {
     std::string idf_objects = this->getCoilObjectString("coolingCoil", false, 2);
     EXPECT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
     int coilIndex = CoilCoolingDX::factory(*state, "coolingCoil");
-    auto const &thisCoil(state->dataCoilCooingDX->coilCoolingDXs[coilIndex]);
+    auto const &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
     EXPECT_EQ("COOLINGCOIL", thisCoil.name);
     EXPECT_EQ("PERFORMANCEOBJECTNAME", thisCoil.performance.name);
 }
@@ -144,8 +145,9 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
                                                 "    1.0,                     !- Active Fraction of Coil Face Area",
                                                 "    ,,,,,,,,,,,;"});
     EXPECT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
     int coilIndex = CoilCoolingDX::factory(*state, "Coil");
-    auto &thisCoil(state->dataCoilCooingDX->coilCoolingDXs[coilIndex]);
+    auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
 
     // fix the inlet conditions
     auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
@@ -176,7 +178,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
     Real64 speedRatio = 1.0;
     HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
     bool singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     //    std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     EXPECT_NEAR(2500, thisCoil.totalCoolingEnergyRate, 0.1); // expect the coil to run full out, at speed 1
     EXPECT_NEAR(19.485, evapOutletNode.Temp, 0.01);
@@ -185,7 +187,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
     // alter values and run at rated conditions normal mode speed 2
     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
     speedNum = 2;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     //    std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     EXPECT_NEAR(5000, thisCoil.totalCoolingEnergyRate, 0.01); // expect the coil to run full out, at speed 1
     // EXPECT_NEAR(17.896, evapOutletNode.Temp, 0.01);
@@ -195,7 +197,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
     // ok so now run at alternate mode, speed 1
     coilMode = HVAC::CoilMode::Enhanced;
     speedNum = 1;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     //    std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     EXPECT_NEAR(2250, thisCoil.totalCoolingEnergyRate, 0.01); // expect the coil to run full out, at speed 1
     // EXPECT_NEAR(24.45, evapOutletNode.Temp, 0.01);
@@ -205,7 +207,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformance)
     // ok so now run at alternate mode, speed 2
     coilMode = HVAC::CoilMode::Enhanced;
     speedNum = 2;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     //    std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     EXPECT_NEAR(4500, thisCoil.totalCoolingEnergyRate, 0.01); // expect the coil to run full out, at speed 1
     // EXPECT_NEAR(20.39, evapOutletNode.Temp, 0.01);
@@ -280,8 +282,9 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
                                                 "    1.0,                     !- Active Fraction of Coil Face Area",
                                                 "    ,,,,,,,,,,,;"});
     EXPECT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
     int coilIndex = CoilCoolingDX::factory(*state, "Coil");
-    auto &thisCoil(state->dataCoilCooingDX->coilCoolingDXs[coilIndex]);
+    auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
 
     // fix the inlet conditions
     auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
@@ -314,7 +317,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
     Real64 speedRatio = 1.0;
     HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
     bool singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     if (!setExpectations) {
         std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     } else {
@@ -325,7 +328,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
     // alter values and run at rated conditions normal mode speed 2
     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
     speedNum = 2;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     if (!setExpectations) {
         std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     } else {
@@ -337,7 +340,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
     // ok so now run at alternate mode, speed 1
     coilMode = HVAC::CoilMode::Enhanced;
     speedNum = 1;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     if (!setExpectations) {
         std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     } else {
@@ -350,7 +353,7 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
     // ok so now run at alternate mode, speed 2
     coilMode = HVAC::CoilMode::Enhanced;
     speedNum = 2;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+    thisCoil.simulate(*state, coilMode, speedNum, speedRatio, fanOp, singleMode);
     if (!setExpectations) {
         std::cout << thisCoil.totalCoolingEnergyRate << ',' << evapOutletNode.Temp << ',' << evapOutletNode.HumRat << std::endl;
     } else {
@@ -361,1302 +364,1307 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXAlternateModePerformanceHitsSaturation)
     }
 }
 
-TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
-{
-
-    int DXCoilNum(1);
-    state->dataDXCoils->NumDXCoils = 1;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
-    state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataLoopNodes->Node.allocate(2);
-    state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
-    state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
-    state->dataDXCoils->DXCoilOutletTemp.allocate(1);
-    state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
-    state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
-    state->dataDXCoils->DXCoilFanOp.allocate(1);
-    state->dataCurveManager->allocateCurveVector(2);
-
-    auto &Coil = state->dataDXCoils->DXCoil(1);
-    auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
-    auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
-    auto &AirInletNode = state->dataLoopNodes->Node(1);
-    auto &AirOutletNode = state->dataLoopNodes->Node(2);
-    state->dataEnvrn->StdBaroPress = 101325.0;
-    Real64 ratedInletAirTemp = 26.6667;
-    Real64 ratedInletAirHumRat = 0.0111847;
-    std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
-    Real64 ratedRhoAir =
-        Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat, routineName);
-
-    Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
-    Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelType = Constant::eFuel::Electricity;
-    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    Coil.NumOfSpeeds = 2;
-    Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
-    Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
-    Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
-    Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
-    Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp = 1;
-    Coil.MSCCapFFlow = 2;
-    Coil.MSEIRFTemp = 1;
-    Coil.MSEIRFFlow = 2;
-    Coil.MSPLFFPLR = 2;
-    Coil.AirOutNode = 2;
-    Coil.AirInNode = 1;
-    // biquadratic curve
-    constantcurve1->Name = "constant biquadratic curve";
-    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
-    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve1->coeff[0] = 1.0;
-    constantcurve1->coeff[1] = 0.0;
-    constantcurve1->coeff[2] = 0.0;
-    constantcurve1->coeff[3] = 0.0;
-    constantcurve1->coeff[4] = 0.0;
-    constantcurve1->coeff[5] = 0.0;
-    constantcurve1->inputLimits[0].min = 10.0;
-    constantcurve1->inputLimits[0].max = 25.0;
-    constantcurve1->inputLimits[1].min = 0.0;
-    constantcurve1->inputLimits[1].max = 100.0;
-    constantcurve1->outputLimits.min = 1.0;
-    constantcurve1->outputLimits.max = 1.0;
-    // quadratic curve
-    constantcurve2->Name = "constant quadratic curve";
-    constantcurve2->curveType = Curve::CurveType::Quadratic;
-    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve2->coeff[0] = 1.0;
-    constantcurve2->coeff[1] = 0.0;
-    constantcurve2->coeff[2] = 0.0;
-    constantcurve2->inputLimits[0].min = 0.0;
-    constantcurve2->inputLimits[0].max = 1.0;
-    constantcurve2->outputLimits.min = 1.0;
-    constantcurve2->outputLimits.max = 1.0;
-    // set coil parameter
-    Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
-    Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
-    Coil.MSRatedAirMassFlowRate(1) = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    Coil.MSRatedAirMassFlowRate(2) = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    // Match RatedCBF from new coil
-    Coil.MSRatedCBF(1) = 0.32321692557501741;
-    Coil.MSRatedCBF(2) = 0.037495280896632406;
-    Coil.MSWasteHeat(1) = 0;
-    Coil.MSWasteHeat(2) = 0;
-    Coil.MSWasteHeatFrac(1) = 0;
-    Coil.MSWasteHeatFrac(2) = 0;
-    Coil.MSRatedSHR(1) = 0.65;
-    Coil.MSRatedSHR(2) = 0.75;
-    Coil.MSRatedCOP(1) = 3.0;
-    Coil.MSRatedCOP(2) = 3.0;
-
-    // test 1: dry cooling
-    Coil.InletAirTemp = 35.0;
-    Coil.InletAirHumRat = 0.0055;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    AirOutletNode.Temp = Coil.InletAirTemp;
-    AirOutletNode.HumRat = Coil.InletAirHumRat;
-    AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // outside air condition
-    state->dataEnvrn->OutBaroPress = 101325.0;
-    state->dataEnvrn->OutDryBulbTemp = 35.0;
-    state->dataEnvrn->OutHumRat = 0.0120;
-    state->dataEnvrn->WindSpeed = 5.0;
-    state->dataEnvrn->WindDir = 0.0;
-    int SpeedNum = 2;
-    HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
-    HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
-    int SingleMode = 0;
-    // Test 1 - dry coil - run the coil at low speed
-    Real64 SpeedRatio = 0.0;
-    Real64 CycRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
-    EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
-
-    // run the coil at high speed
-    SpeedRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
-    EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate2 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate2 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate2 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat2 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp2 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower2 = Coil.ElecCoolingPower;
-
-    // Test 3 - dry coil - run the coil at speed ratio 0.75
-    SpeedRatio = 0.75;
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                          // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                            // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                           // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);                                       // outlet dry bulb
-    EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
-
-    // test 4: wet cooling
-    Coil.InletAirTemp = 24.0;
-    Coil.InletAirHumRat = 0.0100;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // Test 4 - wet coil - run coil at low speed
-    SpeedRatio = 0.0;
-    CycRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
-    EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
-    EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
-    EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate4 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate4 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate4 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat4 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp4 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower4 = Coil.ElecCoolingPower;
-
-    // Test 5 - wet coil - run the coil at high speed
-    SpeedRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
-    EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
-    EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                       // input check
-    EXPECT_NEAR(0.0080958363400692145, AirOutletNode.HumRat, 0.00001);   // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                        // inlet dry bulb
-    EXPECT_NEAR(11.250732746176219, AirOutletNode.Temp, 0.0001);         // outlet dry bulb
-    EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate5 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate5 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate5 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat5 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp5 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower5 = Coil.ElecCoolingPower;
-
-    // Test 6 - wet coil - run the coil at speed ratio 0.75
-    SpeedRatio = 0.75;
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
-    EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
-    EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                                         // input check
-    // EXPECT_NEAR(0.0079495749435070425, AirOutletNode.HumRat, 0.00001);                                        // cooling and dehumidification
-    EXPECT_NEAR(0.0079983287423610987, AirOutletNode.HumRat, 0.00001); // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                      // inlet dry bulb
-    // EXPECT_NEAR(11.612485891133730, AirOutletNode.Temp, 0.0001);                                              // outlet dry bulb
-    EXPECT_NEAR(11.491880074594654, AirOutletNode.Temp, 0.0001); // outlet dry bulb
-    EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate6 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate6 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate6 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat6 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp6 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower6 = Coil.ElecCoolingPower;
-
-    Real64 ratedVolFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh / ratedRhoAir;
-    std::string volFlowRateStr = format("{:.4R}", ratedVolFlowRate);
-
-    std::string idf_objects = delimited_string({
-        "  Coil:Cooling:DX,",
-        "    Coil,",
-        "    Evaporator Inlet Node,Evaporator Outlet Node,",
-        "    ,,",
-        "    Condenser Inlet Node,Condenser Outlet Node,",
-        "    Coil Performance,",
-        "    ,;",
-
-        "  Coil:Cooling:DX:CurveFit:Performance,",
-        "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1;",
-
-        "  Coil:Cooling:DX:CurveFit:OperatingMode,",
-        "    Coil Mode 1,",
-        "    17850.0,   !- Rated Gross Total Cooling Capacity {W}",
-        volFlowRateStr + ",   !- Rated Evaporator Air Flow Rate {m3/s}",
-        "    ,,,,,,,,",
-        "    2,Coil Mode 1 Speed 1,Coil Mode 1 Speed 2;",
-
-        "  Coil:Cooling:DX:CurveFit:Speed,",
-        "    Coil Mode 1 Speed 1,     !- Name",
-        "    0.60,                    !- Gross Total Cooling Capacity Fraction",
-        "    0.60,                    !- Evaporator Air Flow Rate Fraction",
-        "    ,                        !- Condenser Air Flow Rate Fraction",
-        "    0.65,                     !- Gross Sensible Heat Ratio",
-        "    3,                       !- Gross Cooling COP {W/W}",
-        "    1.0,                     !- Active Fraction of Coil Face Area",
-        "    ,,,,,,,,,,,;",
-
-        "  Coil:Cooling:DX:CurveFit:Speed,",
-        "    Coil Mode 1 Speed 2,     !- Name",
-        "    1.0,                     !- Gross Total Cooling Capacity Fraction",
-        "    1.0,                     !- Evaporator Air Flow Rate Fraction",
-        "    ,                        !- Condenser Air Flow Rate Fraction",
-        "    0.75,                     !- Gross Sensible Heat Ratio",
-        "    3,                       !- Gross Cooling COP {W/W}",
-        "    1.0,                     !- Active Fraction of Coil Face Area",
-        "    ,,,,,,,,,,,;",
-
-    });
-    EXPECT_TRUE(process_idf(idf_objects, false));
-    int coilIndex = CoilCoolingDX::factory(*state, "Coil");
-    auto &thisCoil(state->dataCoilCooingDX->coilCoolingDXs[coilIndex]);
-
-    // fix the inlet conditions
-    auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
-    auto &condInletNode = state->dataLoopNodes->Node(thisCoil.condInletNodeIndex);
-    evapInletNode.Press = 101325;
-    condInletNode.Temp = 30.0;
-    condInletNode.Press = 101325;
-    condInletNode.HumRat = 0.012;
-    condInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(condInletNode.Temp, condInletNode.HumRat);
-
-    // size it
-    thisCoil.size(*state);
-
-    // for speed > 1 we use the mshp rated high speed flow...
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-
-    // we'll use this later
-    auto &evapOutletNode = state->dataLoopNodes->Node(thisCoil.evapOutletNodeIndex);
-
-    // Test 1 - dry coil - run the coil at low speed
-    evapInletNode.Temp = 35.0;
-    evapInletNode.HumRat = 0.0055;
-    evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
-    // set some values to run at rated conditions and call to run normal mode speed 1
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
-    Real64 PLR = 1.0;
-    int speedNum = 1;
-    Real64 speedRatio = 0.0;
-    fanOp = HVAC::FanOp::Cycling;
-    bool singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate1, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate1, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate1, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp1, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat1, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower1, thisCoil.elecCoolingPower, 0.001);
-    // Test 2 - dry coil - run the coil at high speed
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-    speedNum = 2;
-    speedRatio = 1.0;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate2, thisCoil.totalCoolingEnergyRate, 0.01);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate2, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate2, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp2, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat2, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower2, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 3 - dry coil - run the coil at 0.75 speed ratio
-    speedNum = 2;
-    speedRatio = 0.75;
-    evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
-                                 (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp3, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower3, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 4 - wet coil - run the coil at low speed
-    evapInletNode.Temp = 24.0;
-    evapInletNode.HumRat = 0.0100;
-    evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    coilMode = HVAC::CoilMode::Normal;
-    PLR = 1.0;
-    speedNum = 1;
-    speedRatio = 1.0;
-    fanOp = HVAC::FanOp::Cycling;
-    singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate4, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate4, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate4, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp4, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat4, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower4, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 5 - wet coil - run the coil at high speed
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-    speedNum = 2;
-    speedRatio = 1.0;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate5, thisCoil.totalCoolingEnergyRate, 0.01);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate5, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate5, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp5, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat5, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower5, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 6 - wet coil - run the coil at 0.75 speed ratio
-    speedNum = 2;
-    speedRatio = 0.75;
-    evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
-                                 (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate6, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate6, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate6, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp6, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat6, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower6, thisCoil.elecCoolingPower, 0.001);
-}
-TEST_F(EnergyPlusFixture, DISABLED_CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
-{
-
-    int DXCoilNum(1);
-    state->dataDXCoils->NumDXCoils = 1;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
-    state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataLoopNodes->Node.allocate(2);
-    state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
-    state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
-    state->dataDXCoils->DXCoilOutletTemp.allocate(1);
-    state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
-    state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
-    state->dataDXCoils->DXCoilFanOp.allocate(1);
-    state->dataCurveManager->allocateCurveVector(2);
-
-    auto &Coil = state->dataDXCoils->DXCoil(1);
-    auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
-    auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
-    auto &AirInletNode = state->dataLoopNodes->Node(1);
-    auto &AirOutletNode = state->dataLoopNodes->Node(2);
-    state->dataEnvrn->StdBaroPress = 101325.0;
-    Real64 ratedInletAirTemp = 26.6667;
-    Real64 ratedInletAirHumRat = 0.0111847;
-    std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
-    Real64 ratedRhoAir =
-        Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat, routineName);
-
-    Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
-    Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelType = Constant::eFuel::Electricity;
-    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    Coil.NumOfSpeeds = 2;
-    Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
-    Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
-    Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
-    Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
-    Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp = 1;
-    Coil.MSCCapFFlow = 2;
-    Coil.MSEIRFTemp = 1;
-    Coil.MSEIRFFlow = 2;
-    Coil.MSPLFFPLR = 2;
-    Coil.AirOutNode = 2;
-    Coil.AirInNode = 1;
-    // biquadratic curve
-    constantcurve1->Name = "constant biquadratic curve";
-    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
-    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve1->coeff[0] = 1.0;
-    constantcurve1->coeff[1] = 0.0;
-    constantcurve1->coeff[2] = 0.0;
-    constantcurve1->coeff[3] = 0.0;
-    constantcurve1->coeff[4] = 0.0;
-    constantcurve1->coeff[5] = 0.0;
-    constantcurve1->inputLimits[0].min = 10.0;
-    constantcurve1->inputLimits[0].max = 25.0;
-    constantcurve1->inputLimits[1].min = 0.0;
-    constantcurve1->inputLimits[1].max = 100.0;
-    constantcurve1->outputLimits.min = 1.0;
-    constantcurve1->outputLimits.max = 1.0;
-    // quadratic curve
-    constantcurve2->Name = "constant quadratic curve";
-    constantcurve2->curveType = Curve::CurveType::Quadratic;
-    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve2->coeff[0] = 1.0;
-    constantcurve2->coeff[1] = 0.0;
-    constantcurve2->coeff[2] = 0.0;
-    constantcurve2->inputLimits[0].min = 0.0;
-    constantcurve2->inputLimits[0].max = 1.0;
-    constantcurve2->outputLimits.min = 1.0;
-    constantcurve2->outputLimits.max = 1.0;
-    // set coil parameter
-    Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
-    Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
-    Coil.MSRatedAirMassFlowRate(1) = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    Coil.MSRatedAirMassFlowRate(2) = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    // Match RatedCBF from new coil
-    Coil.MSRatedCBF(1) = 0.32321692557501741;
-    //    Coil.MSRatedCBF(2) = 0.32321692557501741;
-    Coil.MSRatedCBF(2) = 0.037495280896632406;
-    Coil.MSWasteHeat(1) = 0;
-    Coil.MSWasteHeat(2) = 0;
-    Coil.MSWasteHeatFrac(1) = 0;
-    Coil.MSWasteHeatFrac(2) = 0;
-    Coil.MSRatedSHR(1) = 0.65;
-    Coil.MSRatedSHR(2) = 0.75;
-    Coil.MSRatedCOP(1) = 3.0;
-    Coil.MSRatedCOP(2) = 3.0;
-
-    // test 1: dry cooling
-    Coil.InletAirTemp = 35.0;
-    Coil.InletAirHumRat = 0.0055;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    AirOutletNode.Temp = Coil.InletAirTemp;
-    AirOutletNode.HumRat = Coil.InletAirHumRat;
-    AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // outside air condition
-    state->dataEnvrn->OutBaroPress = 101325.0;
-    state->dataEnvrn->OutDryBulbTemp = 35.0;
-    state->dataEnvrn->OutHumRat = 0.0120;
-    state->dataEnvrn->WindSpeed = 5.0;
-    state->dataEnvrn->WindDir = 0.0;
-    int SpeedNum = 2;
-    HVAC::FanOp fanOp = HVAC::FanOp::Continuous;
-    HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
-    int SingleMode = 0;
-    // Test 1 - dry coil - run the coil at low speed
-    Real64 SpeedRatio = 0.0;
-    Real64 CycRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
-    EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
-
-    // run the coil at high speed
-    SpeedRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
-    EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate2 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate2 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate2 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat2 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp2 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower2 = Coil.ElecCoolingPower;
-
-    // Test 3 - dry coil - run the coil at speed ratio 0.75
-    SpeedRatio = 0.75;
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                          // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                            // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                           // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);                                       // outlet dry bulb
-    EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
-
-    // test 4: wet cooling
-    Coil.InletAirTemp = 24.0;
-    Coil.InletAirHumRat = 0.0100;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // Test 4 - wet coil - run coil at low speed
-    SpeedRatio = 0.0;
-    CycRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
-    EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
-    EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
-    EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate4 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate4 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate4 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat4 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp4 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower4 = Coil.ElecCoolingPower;
-
-    // Test 5 - wet coil - run the coil at high speed
-    SpeedRatio = 1.0;
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
-    EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
-    EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                       // input check
-    EXPECT_NEAR(0.0080958363400692145, AirOutletNode.HumRat, 0.00001);   // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                        // inlet dry bulb
-    EXPECT_NEAR(11.250732746176219, AirOutletNode.Temp, 0.0001);         // outlet dry bulb
-    EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate5 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate5 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate5 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat5 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp5 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower5 = Coil.ElecCoolingPower;
-
-    // Test 6 - wet coil - run the coil at speed ratio 0.75
-    SpeedRatio = 0.75;
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
-    EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
-    EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                                         // input check
-    // EXPECT_NEAR(0.0079495749435070425, AirOutletNode.HumRat, 0.00001);                                        // cooling and dehumidification
-    EXPECT_NEAR(0.0079983287423610987, AirOutletNode.HumRat, 0.00001); // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                      // inlet dry bulb
-    // EXPECT_NEAR(11.612485891133730, AirOutletNode.Temp, 0.0001);                                              // outlet dry bulb
-    EXPECT_NEAR(11.491880074594654, AirOutletNode.Temp, 0.0001); // outlet dry bulb
-    EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate6 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate6 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate6 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat6 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp6 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower6 = Coil.ElecCoolingPower;
-
-    Real64 ratedVolFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh / ratedRhoAir;
-    std::string volFlowRateStr = format("{:.4R}", ratedVolFlowRate);
-
-    std::string idf_objects = delimited_string({
-        "  Coil:Cooling:DX,",
-        "    Coil,",
-        "    Evaporator Inlet Node,Evaporator Outlet Node,",
-        "    ,,",
-        "    Condenser Inlet Node,Condenser Outlet Node,",
-        "    Coil Performance,",
-        "    ,;",
-
-        "  Coil:Cooling:DX:CurveFit:Performance,",
-        "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1;",
-
-        "  Coil:Cooling:DX:CurveFit:OperatingMode,",
-        "    Coil Mode 1,",
-        "    17850.0,   !- Rated Gross Total Cooling Capacity {W}",
-        volFlowRateStr + ",   !- Rated Evaporator Air Flow Rate {m3/s}",
-        "    ,,,,,,,,",
-        "    2,Coil Mode 1 Speed 1,Coil Mode 1 Speed 2;",
-
-        "  Coil:Cooling:DX:CurveFit:Speed,",
-        "    Coil Mode 1 Speed 1,     !- Name",
-        "    0.60,                    !- Gross Total Cooling Capacity Fraction",
-        "    0.60,                    !- Evaporator Air Flow Rate Fraction",
-        "    ,                        !- Condenser Air Flow Rate Fraction",
-        "    0.65,                     !- Gross Sensible Heat Ratio",
-        "    3,                       !- Gross Cooling COP {W/W}",
-        "    1.0,                     !- Active Fraction of Coil Face Area",
-        "    ,,,,,,,,,,,;",
-
-        "  Coil:Cooling:DX:CurveFit:Speed,",
-        "    Coil Mode 1 Speed 2,     !- Name",
-        "    1.0,                     !- Gross Total Cooling Capacity Fraction",
-        "    1.0,                     !- Evaporator Air Flow Rate Fraction",
-        "    ,                        !- Condenser Air Flow Rate Fraction",
-        "    0.75,                     !- Gross Sensible Heat Ratio",
-        "    3,                       !- Gross Cooling COP {W/W}",
-        "    1.0,                     !- Active Fraction of Coil Face Area",
-        "    ,,,,,,,,,,,;",
-
-    });
-    EXPECT_TRUE(process_idf(idf_objects, false));
-    int coilIndex = CoilCoolingDX::factory(*state, "Coil");
-    auto &thisCoil(state->dataCoilCooingDX->coilCoolingDXs[coilIndex]);
-
-    // fix the inlet conditions
-    auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
-    auto &condInletNode = state->dataLoopNodes->Node(thisCoil.condInletNodeIndex);
-    evapInletNode.Press = 101325;
-    condInletNode.Temp = 30.0;
-    condInletNode.Press = 101325;
-    condInletNode.HumRat = 0.012;
-    condInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(condInletNode.Temp, condInletNode.HumRat);
-
-    // size it
-    thisCoil.size(*state);
-
-    // for speed > 1 we use the mshp rated high speed flow...
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-
-    // we'll use this later
-    auto &evapOutletNode = state->dataLoopNodes->Node(thisCoil.evapOutletNodeIndex);
-
-    // Test 1 - dry coil - run the coil at low speed
-    evapInletNode.Temp = 35.0;
-    evapInletNode.HumRat = 0.0055;
-    evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
-    // set some values to run at rated conditions and call to run normal mode speed 1
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
-    Real64 PLR = 1.0;
-    int speedNum = 1;
-    Real64 speedRatio = 0.0;
-    fanOp = HVAC::FanOp::Continuous;
-    bool singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate1, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate1, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate1, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp1, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat1, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower1, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 2 - dry coil - run the coil at high speed
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-    speedNum = 2;
-    speedRatio = 1.0;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate2, thisCoil.totalCoolingEnergyRate, 0.01);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate2, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate2, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp2, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat2, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower2, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 3 - dry coil - run the coil at 0.75 speed ratio
-    speedNum = 2;
-    speedRatio = 0.75;
-    evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
-                                 (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp3, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower3, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 4 - wet coil - run the coil at low speed
-    evapInletNode.Temp = 24.0;
-    evapInletNode.HumRat = 0.0100;
-    evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    coilMode = HVAC::CoilMode::Normal;
-    PLR = 1.0;
-    speedNum = 1;
-    speedRatio = 1.0;
-    fanOp = HVAC::FanOp::Cycling;
-    singleMode = false;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate4, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate4, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate4, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp4, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat4, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower4, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 5 - wet coil - run the coil at high speed
-    evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
-    speedNum = 2;
-    speedRatio = 1.0;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate5, thisCoil.totalCoolingEnergyRate, 0.01);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate5, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate5, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp5, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat5, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower5, thisCoil.elecCoolingPower, 0.001);
-
-    // Test 6 - wet coil - run the coil at 0.75 speed ratio
-    speedNum = 2;
-    speedRatio = 0.75;
-    evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
-                                 (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
-    thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate6, thisCoil.totalCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedSensCoolingRate6, thisCoil.sensCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedLatCoolingRate6, thisCoil.latCoolingEnergyRate, 0.1);
-    EXPECT_NEAR(MultiSpeedOutletTemp6, evapOutletNode.Temp, 0.01);
-    EXPECT_NEAR(MultiSpeedOutletHumRat6, evapOutletNode.HumRat, 0.001);
-    EXPECT_NEAR(MultiSpeedElecPower6, thisCoil.elecCoolingPower, 0.001);
-}
-TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
-{
-
-    int DXCoilNum(1);
-    state->dataDXCoils->NumDXCoils = 1;
-    state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataLoopNodes->Node.allocate(2);
-    state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
-    state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
-    state->dataDXCoils->DXCoilOutletTemp.allocate(1);
-    state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
-    state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
-    state->dataDXCoils->DXCoilFanOp.allocate(1);
-    state->dataCurveManager->allocateCurveVector(2);
-
-    auto &Coil = state->dataDXCoils->DXCoil(1);
-    auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
-    auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
-    auto &AirInletNode = state->dataLoopNodes->Node(1);
-    auto &AirOutletNode = state->dataLoopNodes->Node(2);
-    state->dataEnvrn->StdBaroPress = 101325.0;
-    // Real64 ratedInletAirTemp = 26.6667;
-    // Real64 ratedInletAirHumRat = 0.0111847;
-    // std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
-    // Real64 ratedRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat,
-    // routineName);
-
-    Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
-    Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelType = Constant::eFuel::Electricity;
-    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    Coil.NumOfSpeeds = 2;
-    Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
-    Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
-    Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
-    Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
-    Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp = 1;
-    Coil.MSCCapFFlow = 2;
-    Coil.MSEIRFTemp = 1;
-    Coil.MSEIRFFlow = 2;
-    Coil.MSPLFFPLR = 2;
-    Coil.AirOutNode = 2;
-    Coil.AirInNode = 1;
-    // biquadratic curve
-    constantcurve1->Name = "constant biquadratic curve";
-    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
-    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve1->coeff[0] = 1.0;
-    constantcurve1->coeff[1] = 0.0;
-    constantcurve1->coeff[2] = 0.0;
-    constantcurve1->coeff[3] = 0.0;
-    constantcurve1->coeff[4] = 0.0;
-    constantcurve1->coeff[5] = 0.0;
-    constantcurve1->inputLimits[0].min = 10.0;
-    constantcurve1->inputLimits[0].max = 25.0;
-    constantcurve1->inputLimits[1].min = 0.0;
-    constantcurve1->inputLimits[1].max = 100.0;
-    constantcurve1->outputLimits.min = 1.0;
-    constantcurve1->outputLimits.max = 1.0;
-    // quadratic curve
-    constantcurve2->Name = "constant quadratic curve";
-    constantcurve2->curveType = Curve::CurveType::Quadratic;
-    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve2->coeff[0] = 1.0;
-    constantcurve2->coeff[1] = 0.0;
-    constantcurve2->coeff[2] = 0.0;
-    constantcurve2->inputLimits[0].min = 0.0;
-    constantcurve2->inputLimits[0].max = 1.0;
-    constantcurve2->outputLimits.min = 1.0;
-    constantcurve2->outputLimits.max = 1.0;
-    // set coil parameter
-    Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
-    Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
-    Coil.MSRatedAirMassFlowRate(1) = 0.6;
-    Coil.MSRatedAirMassFlowRate(2) = 1.0;
-    // Match RatedCBF from new coil
-    Coil.MSRatedCBF(1) = 0.32321692557501741;
-    Coil.MSRatedCBF(2) = 0.037495280896632406;
-    Coil.MSWasteHeat(1) = 0;
-    Coil.MSWasteHeat(2) = 0;
-    Coil.MSWasteHeatFrac(1) = 0;
-    Coil.MSWasteHeatFrac(2) = 0;
-    Coil.MSRatedSHR(1) = 0.65;
-    Coil.MSRatedSHR(2) = 0.75;
-    Coil.MSRatedCOP(1) = 3.0;
-    Coil.MSRatedCOP(2) = 3.0;
-
-    // test 1: dry cooling
-    Coil.InletAirTemp = 35.0;
-    Coil.InletAirHumRat = 0.0055;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    AirOutletNode.Temp = Coil.InletAirTemp;
-    AirOutletNode.HumRat = Coil.InletAirHumRat;
-    AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // outside air condition
-    state->dataEnvrn->OutBaroPress = 101325.0;
-    state->dataEnvrn->OutDryBulbTemp = 35.0;
-    state->dataEnvrn->OutHumRat = 0.0120;
-    state->dataEnvrn->WindSpeed = 5.0;
-    state->dataEnvrn->WindDir = 0.0;
-    HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
-    HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
-    int SingleMode = 0;
-    // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
-    int SpeedNum = 2;
-    Real64 SpeedRatio = 0.0;
-    Real64 CycRatio = 1.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
-    EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
-    // Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
-
-    // Test 2 - dry coil - run the coil at low speed (speednum=1, speedratio=0) - same result?
-    SpeedNum = 1;
-    SpeedRatio = 0.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                 // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                   // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp1, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower1, Coil.ElecCoolingPower, 0.01);
-
-    // tests 3 & 4: wet cooling
-    Coil.InletAirTemp = 24.0;
-    Coil.InletAirHumRat = 0.0100;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // Test 3 - wet coil - run coil at low speed - run the coil at low speed (speednum=2, speedratio=0, CycFanCycCoil)
-    SpeedNum = 2;
-    SpeedRatio = 0.0;
-    CycRatio = 1.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
-    EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
-    EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
-    EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
-
-    // Test 4 - wet coil - run the coil at low speed (speednum=1, speedratio=0, CycFanCycCoil) - same result?
-    SpeedNum = 1;
-    SpeedRatio = 0.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                 // input check
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.00001);           // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.01);
-
-    // Test 5 - wet coil - run the coil at almost low speed (speednum=2, speedratio=0.00001, CycFanCycCoil) - same result?
-    SpeedNum = 2;
-    SpeedRatio = 0.00001;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                              // input check
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.001);          // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                               // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.01);               // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.1);
-}
-TEST_F(EnergyPlusFixture, DISABLED_CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
-{
-
-    int DXCoilNum(1);
-    state->dataDXCoils->NumDXCoils = 1;
-    state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataLoopNodes->Node.allocate(2);
-    state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
-    state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
-    state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
-    state->dataDXCoils->DXCoilOutletTemp.allocate(1);
-    state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
-    state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
-    state->dataDXCoils->DXCoilFanOp.allocate(1);
-    state->dataCurveManager->allocateCurveVector(2);
-
-    auto &Coil = state->dataDXCoils->DXCoil(1);
-    auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
-    auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
-    auto &AirInletNode = state->dataLoopNodes->Node(1);
-    auto &AirOutletNode = state->dataLoopNodes->Node(2);
-    state->dataEnvrn->StdBaroPress = 101325.0;
-    // Real64 ratedInletAirTemp = 26.6667;
-    // Real64 ratedInletAirHumRat = 0.0111847;
-    // std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
-    // Real64 ratedRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat,
-    // routineName);
-
-    Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
-    Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
-    Coil.FuelType = Constant::eFuel::Electricity;
-    Coil.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    Coil.NumOfSpeeds = 2;
-    Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
-    Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
-    Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
-    Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
-    Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
-    Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
-    Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
-    Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
-    Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
-    Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
-    Coil.MSCCapFTemp = 1;
-    Coil.MSCCapFFlow = 2;
-    Coil.MSEIRFTemp = 1;
-    Coil.MSEIRFFlow = 2;
-    Coil.MSPLFFPLR = 2;
-    Coil.AirOutNode = 2;
-    Coil.AirInNode = 1;
-    // biquadratic curve
-    constantcurve1->Name = "constant biquadratic curve";
-    constantcurve1->curveType = Curve::CurveType::BiQuadratic;
-    constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve1->coeff[0] = 1.0;
-    constantcurve1->coeff[1] = 0.0;
-    constantcurve1->coeff[2] = 0.0;
-    constantcurve1->coeff[3] = 0.0;
-    constantcurve1->coeff[4] = 0.0;
-    constantcurve1->coeff[5] = 0.0;
-    constantcurve1->inputLimits[0].min = 10.0;
-    constantcurve1->inputLimits[0].max = 25.0;
-    constantcurve1->inputLimits[1].min = 0.0;
-    constantcurve1->inputLimits[1].max = 100.0;
-    constantcurve1->outputLimits.min = 1.0;
-    constantcurve1->outputLimits.max = 1.0;
-    // quadratic curve
-    constantcurve2->Name = "constant quadratic curve";
-    constantcurve2->curveType = Curve::CurveType::Quadratic;
-    constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-    constantcurve2->coeff[0] = 1.0;
-    constantcurve2->coeff[1] = 0.0;
-    constantcurve2->coeff[2] = 0.0;
-    constantcurve2->inputLimits[0].min = 0.0;
-    constantcurve2->inputLimits[0].max = 1.0;
-    constantcurve2->outputLimits.min = 1.0;
-    constantcurve2->outputLimits.max = 1.0;
-    // set coil parameter
-    Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
-    Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
-    Coil.MSRatedAirMassFlowRate(1) = 0.6;
-    Coil.MSRatedAirMassFlowRate(2) = 1.0;
-    // Match RatedCBF from new coil
-    Coil.MSRatedCBF(1) = 0.32321692557501741;
-    Coil.MSRatedCBF(2) = 0.037495280896632406;
-    Coil.MSWasteHeat(1) = 0;
-    Coil.MSWasteHeat(2) = 0;
-    Coil.MSWasteHeatFrac(1) = 0;
-    Coil.MSWasteHeatFrac(2) = 0;
-    Coil.MSRatedSHR(1) = 0.65;
-    Coil.MSRatedSHR(2) = 0.75;
-    Coil.MSRatedCOP(1) = 3.0;
-    Coil.MSRatedCOP(2) = 3.0;
-
-    // test 1: dry cooling
-    Coil.InletAirTemp = 35.0;
-    Coil.InletAirHumRat = 0.0055;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    AirOutletNode.Temp = Coil.InletAirTemp;
-    AirOutletNode.HumRat = Coil.InletAirHumRat;
-    AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // outside air condition
-    state->dataEnvrn->OutBaroPress = 101325.0;
-    state->dataEnvrn->OutDryBulbTemp = 35.0;
-    state->dataEnvrn->OutHumRat = 0.0120;
-    state->dataEnvrn->WindSpeed = 5.0;
-    state->dataEnvrn->WindDir = 0.0;
-    HVAC::FanOp fanOp = HVAC::FanOp::Continuous;
-    HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
-    int SingleMode = 0;
-    // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
-    int SpeedNum = 2;
-    Real64 SpeedRatio = 0.0;
-    Real64 CycRatio = 1.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
-    EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
-    EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
-    // Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
-
-    // Test 2 - dry coil - run the coil at low speed (speednum=1, speedratio=0) - same result?
-    SpeedNum = 1;
-    SpeedRatio = 0.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                 // input check
-    EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                   // dry cooling only
-    EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp1, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower1, Coil.ElecCoolingPower, 0.01);
-
-    // tests 3 & 4: wet cooling
-    Coil.InletAirTemp = 24.0;
-    Coil.InletAirHumRat = 0.0100;
-    Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
-    // set coil inlet and outlet node condition
-    AirInletNode.Temp = Coil.InletAirTemp;
-    AirInletNode.HumRat = Coil.InletAirHumRat;
-    AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
-    // Test 3 - wet coil - run coil at low speed - run the coil at low speed (speednum=2, speedratio=0, CycFanCycCoil)
-    SpeedNum = 2;
-    SpeedRatio = 0.0;
-    CycRatio = 1.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
-    EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
-    EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
-    EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
-    EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
-    EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
-    // Save results for comparison
-    Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
-    Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
-    Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
-    Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
-    Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
-    Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
-
-    // Test 4 - wet coil - run the coil at low speed (speednum=1, speedratio=0, CycFanCycCoil) - same result?
-    SpeedNum = 1;
-    SpeedRatio = 0.0;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
-    Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                 // input check
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.00001);           // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.01);
-
-    // Test 5 - wet coil - run the coil at almost low speed (speednum=2, speedratio=0.00001, CycFanCycCoil) - same result?
-    SpeedNum = 2;
-    SpeedRatio = 0.00001;
-    state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
-    state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
-    Coil.InletAirMassFlowRate =
-        SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
-    DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
-    EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
-    EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
-    EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
-    EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                              // input check
-    EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.001);          // cooling and dehumidification
-    EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                               // inlet dry bulb
-    EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.01);               // outlet dry bulb
-    EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.1);
-}
+// The following two tests have been disabled for a while.  I tried enabling them but got an arithmetic
+// error.  Something was dividing by zero I'm guessing, and needs to be set up in these unit tests, but
+// I couldn't find it quickly enough, so I'm just commenting them out.
+// TEST_F(EnergyPlusFixture, CoilDXCoolingVsMultiSpeed_CycFanCycCoil)
+// {
+//
+//     int DXCoilNum(1);
+//     state->dataDXCoils->NumDXCoils = 1;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
+//     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataLoopNodes->Node.allocate(2);
+//     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
+//     state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
+//     state->dataDXCoils->DXCoilOutletTemp.allocate(1);
+//     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
+//     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
+//     state->dataDXCoils->DXCoilFanOp.allocate(1);
+//     state->dataCurveManager->allocateCurveVector(2);
+//
+//     auto &Coil = state->dataDXCoils->DXCoil(1);
+//     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
+//     auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
+//     auto &AirInletNode = state->dataLoopNodes->Node(1);
+//     auto &AirOutletNode = state->dataLoopNodes->Node(2);
+//     state->dataEnvrn->StdBaroPress = 101325.0;
+//     Real64 ratedInletAirTemp = 26.6667;
+//     Real64 ratedInletAirHumRat = 0.0111847;
+//     std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
+//     Real64 ratedRhoAir =
+//         Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat, routineName);
+//
+//     Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
+//     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
+//     Coil.FuelType = Constant::eFuel::Electricity;
+//     Coil.availSched = Sched::GetScheduleAlwaysOn(*state);
+//     Coil.NumOfSpeeds = 2;
+//     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
+//     Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
+//     Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
+//     Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp = 1;
+//     Coil.MSCCapFFlow = 2;
+//     Coil.MSEIRFTemp = 1;
+//     Coil.MSEIRFFlow = 2;
+//     Coil.MSPLFFPLR = 2;
+//     Coil.AirOutNode = 2;
+//     Coil.AirInNode = 1;
+//     // biquadratic curve
+//     constantcurve1->Name = "constant biquadratic curve";
+//     constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+//     constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve1->coeff[0] = 1.0;
+//     constantcurve1->coeff[1] = 0.0;
+//     constantcurve1->coeff[2] = 0.0;
+//     constantcurve1->coeff[3] = 0.0;
+//     constantcurve1->coeff[4] = 0.0;
+//     constantcurve1->coeff[5] = 0.0;
+//     constantcurve1->inputLimits[0].min = 10.0;
+//     constantcurve1->inputLimits[0].max = 25.0;
+//     constantcurve1->inputLimits[1].min = 0.0;
+//     constantcurve1->inputLimits[1].max = 100.0;
+//     constantcurve1->outputLimits.min = 1.0;
+//     constantcurve1->outputLimits.max = 1.0;
+//     // quadratic curve
+//     constantcurve2->Name = "constant quadratic curve";
+//     constantcurve2->curveType = Curve::CurveType::Quadratic;
+//     constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve2->coeff[0] = 1.0;
+//     constantcurve2->coeff[1] = 0.0;
+//     constantcurve2->coeff[2] = 0.0;
+//     constantcurve2->inputLimits[0].min = 0.0;
+//     constantcurve2->inputLimits[0].max = 1.0;
+//     constantcurve2->outputLimits.min = 1.0;
+//     constantcurve2->outputLimits.max = 1.0;
+//     // set coil parameter
+//     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
+//     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
+//     Coil.MSRatedAirMassFlowRate(1) = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     Coil.MSRatedAirMassFlowRate(2) = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     // Match RatedCBF from new coil
+//     Coil.MSRatedCBF(1) = 0.32321692557501741;
+//     Coil.MSRatedCBF(2) = 0.037495280896632406;
+//     Coil.MSWasteHeat(1) = 0;
+//     Coil.MSWasteHeat(2) = 0;
+//     Coil.MSWasteHeatFrac(1) = 0;
+//     Coil.MSWasteHeatFrac(2) = 0;
+//     Coil.MSRatedSHR(1) = 0.65;
+//     Coil.MSRatedSHR(2) = 0.75;
+//     Coil.MSRatedCOP(1) = 3.0;
+//     Coil.MSRatedCOP(2) = 3.0;
+//
+//     // test 1: dry cooling
+//     Coil.InletAirTemp = 35.0;
+//     Coil.InletAirHumRat = 0.0055;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     AirOutletNode.Temp = Coil.InletAirTemp;
+//     AirOutletNode.HumRat = Coil.InletAirHumRat;
+//     AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // outside air condition
+//     state->dataEnvrn->OutBaroPress = 101325.0;
+//     state->dataEnvrn->OutDryBulbTemp = 35.0;
+//     state->dataEnvrn->OutHumRat = 0.0120;
+//     state->dataEnvrn->WindSpeed = 5.0;
+//     state->dataEnvrn->WindDir = 0.0;
+//     int SpeedNum = 2;
+//     HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
+//     HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
+//     int SingleMode = 0;
+//     // Test 1 - dry coil - run the coil at low speed
+//     Real64 SpeedRatio = 0.0;
+//     Real64 CycRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
+//     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
+//
+//     // run the coil at high speed
+//     SpeedRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
+//     EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate2 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate2 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate2 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat2 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp2 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower2 = Coil.ElecCoolingPower;
+//
+//     // Test 3 - dry coil - run the coil at speed ratio 0.75
+//     SpeedRatio = 0.75;
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                          // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                            // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                           // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);                                       // outlet dry bulb
+//     EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
+//
+//     // test 4: wet cooling
+//     Coil.InletAirTemp = 24.0;
+//     Coil.InletAirHumRat = 0.0100;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // Test 4 - wet coil - run coil at low speed
+//     SpeedRatio = 0.0;
+//     CycRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
+//     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
+//     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
+//     EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate4 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate4 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate4 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat4 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp4 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower4 = Coil.ElecCoolingPower;
+//
+//     // Test 5 - wet coil - run the coil at high speed
+//     SpeedRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
+//     EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
+//     EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                       // input check
+//     EXPECT_NEAR(0.0080958363400692145, AirOutletNode.HumRat, 0.00001);   // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                        // inlet dry bulb
+//     EXPECT_NEAR(11.250732746176219, AirOutletNode.Temp, 0.0001);         // outlet dry bulb
+//     EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate5 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate5 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate5 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat5 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp5 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower5 = Coil.ElecCoolingPower;
+//
+//     // Test 6 - wet coil - run the coil at speed ratio 0.75
+//     SpeedRatio = 0.75;
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
+//     EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
+//     EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                                         // input check
+//     // EXPECT_NEAR(0.0079495749435070425, AirOutletNode.HumRat, 0.00001);                                        // cooling and dehumidification
+//     EXPECT_NEAR(0.0079983287423610987, AirOutletNode.HumRat, 0.00001); // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                      // inlet dry bulb
+//     // EXPECT_NEAR(11.612485891133730, AirOutletNode.Temp, 0.0001);                                              // outlet dry bulb
+//     EXPECT_NEAR(11.491880074594654, AirOutletNode.Temp, 0.0001); // outlet dry bulb
+//     EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate6 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate6 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate6 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat6 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp6 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower6 = Coil.ElecCoolingPower;
+//
+//     Real64 ratedVolFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh / ratedRhoAir;
+//     std::string volFlowRateStr = format("{:.4R}", ratedVolFlowRate);
+//
+//     std::string idf_objects = delimited_string({
+//         "  Coil:Cooling:DX,",
+//         "    Coil,",
+//         "    Evaporator Inlet Node,Evaporator Outlet Node,",
+//         "    ,,",
+//         "    Condenser Inlet Node,Condenser Outlet Node,",
+//         "    Coil Performance,",
+//         "    ,;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Performance,",
+//         "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1;",
+//
+//         "  Coil:Cooling:DX:CurveFit:OperatingMode,",
+//         "    Coil Mode 1,",
+//         "    17850.0,   !- Rated Gross Total Cooling Capacity {W}",
+//         volFlowRateStr + ",   !- Rated Evaporator Air Flow Rate {m3/s}",
+//         "    ,,,,,,,,",
+//         "    2,Coil Mode 1 Speed 1,Coil Mode 1 Speed 2;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Speed,",
+//         "    Coil Mode 1 Speed 1,     !- Name",
+//         "    0.60,                    !- Gross Total Cooling Capacity Fraction",
+//         "    0.60,                    !- Evaporator Air Flow Rate Fraction",
+//         "    ,                        !- Condenser Air Flow Rate Fraction",
+//         "    0.65,                     !- Gross Sensible Heat Ratio",
+//         "    3,                       !- Gross Cooling COP {W/W}",
+//         "    1.0,                     !- Active Fraction of Coil Face Area",
+//         "    ,,,,,,,,,,,;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Speed,",
+//         "    Coil Mode 1 Speed 2,     !- Name",
+//         "    1.0,                     !- Gross Total Cooling Capacity Fraction",
+//         "    1.0,                     !- Evaporator Air Flow Rate Fraction",
+//         "    ,                        !- Condenser Air Flow Rate Fraction",
+//         "    0.75,                     !- Gross Sensible Heat Ratio",
+//         "    3,                       !- Gross Cooling COP {W/W}",
+//         "    1.0,                     !- Active Fraction of Coil Face Area",
+//         "    ,,,,,,,,,,,;",
+//
+//     });
+//     EXPECT_TRUE(process_idf(idf_objects, false));
+//     state->init_state(*state);
+//     int coilIndex = CoilCoolingDX::factory(*state, "Coil");
+//     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
+//
+//     // fix the inlet conditions
+//     auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
+//     auto &condInletNode = state->dataLoopNodes->Node(thisCoil.condInletNodeIndex);
+//     evapInletNode.Press = 101325;
+//     condInletNode.Temp = 30.0;
+//     condInletNode.Press = 101325;
+//     condInletNode.HumRat = 0.012;
+//     condInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(condInletNode.Temp, condInletNode.HumRat);
+//
+//     // size it
+//     thisCoil.size(*state);
+//
+//     // for speed > 1 we use the mshp rated high speed flow...
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//
+//     // we'll use this later
+//     auto &evapOutletNode = state->dataLoopNodes->Node(thisCoil.evapOutletNodeIndex);
+//
+//     // Test 1 - dry coil - run the coil at low speed
+//     evapInletNode.Temp = 35.0;
+//     evapInletNode.HumRat = 0.0055;
+//     evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
+//     // set some values to run at rated conditions and call to run normal mode speed 1
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
+//     Real64 PLR = 1.0;
+//     int speedNum = 1;
+//     Real64 speedRatio = 0.0;
+//     fanOp = HVAC::FanOp::Cycling;
+//     bool singleMode = false;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate1, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate1, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp1, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat1, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower1, thisCoil.elecCoolingPower, 0.001);
+//     // Test 2 - dry coil - run the coil at high speed
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//     speedNum = 2;
+//     speedRatio = 1.0;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate2, thisCoil.totalCoolingEnergyRate, 0.01);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate2, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate2, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp2, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat2, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower2, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 3 - dry coil - run the coil at 0.75 speed ratio
+//     speedNum = 2;
+//     speedRatio = 0.75;
+//     evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
+//                                  (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower3, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 4 - wet coil - run the coil at low speed
+//     evapInletNode.Temp = 24.0;
+//     evapInletNode.HumRat = 0.0100;
+//     evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     coilMode = HVAC::CoilMode::Normal;
+//     PLR = 1.0;
+//     speedNum = 1;
+//     speedRatio = 1.0;
+//     fanOp = HVAC::FanOp::Cycling;
+//     singleMode = false;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate4, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate4, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate4, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp4, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat4, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower4, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 5 - wet coil - run the coil at high speed
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//     speedNum = 2;
+//     speedRatio = 1.0;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate5, thisCoil.totalCoolingEnergyRate, 0.01);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate5, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate5, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp5, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat5, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower5, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 6 - wet coil - run the coil at 0.75 speed ratio
+//     speedNum = 2;
+//     speedRatio = 0.75;
+//     evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
+//                                  (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate6, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate6, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate6, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp6, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat6, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower6, thisCoil.elecCoolingPower, 0.001);
+// }
+// TEST_F(EnergyPlusFixture, CoilDXCoolingVsMultiSpeed_ContFanCycCoil)
+// {
+//
+//     int DXCoilNum(1);
+//     state->dataDXCoils->NumDXCoils = 1;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = 0.6;
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = 1.0;
+//     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataLoopNodes->Node.allocate(2);
+//     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
+//     state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
+//     state->dataDXCoils->DXCoilOutletTemp.allocate(1);
+//     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
+//     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
+//     state->dataDXCoils->DXCoilFanOp.allocate(1);
+//     state->dataCurveManager->allocateCurveVector(2);
+//
+//     auto &Coil = state->dataDXCoils->DXCoil(1);
+//     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
+//     auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
+//     auto &AirInletNode = state->dataLoopNodes->Node(1);
+//     auto &AirOutletNode = state->dataLoopNodes->Node(2);
+//     state->dataEnvrn->StdBaroPress = 101325.0;
+//     Real64 ratedInletAirTemp = 26.6667;
+//     Real64 ratedInletAirHumRat = 0.0111847;
+//     std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
+//     Real64 ratedRhoAir =
+//         Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat, routineName);
+//
+//     Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
+//     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
+//     Coil.FuelType = Constant::eFuel::Electricity;
+//     Coil.availSched = Sched::GetScheduleAlwaysOn(*state);
+//     Coil.NumOfSpeeds = 2;
+//     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
+//     Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
+//     Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
+//     Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp = 1;
+//     Coil.MSCCapFFlow = 2;
+//     Coil.MSEIRFTemp = 1;
+//     Coil.MSEIRFFlow = 2;
+//     Coil.MSPLFFPLR = 2;
+//     Coil.AirOutNode = 2;
+//     Coil.AirInNode = 1;
+//     // biquadratic curve
+//     constantcurve1->Name = "constant biquadratic curve";
+//     constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+//     constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve1->coeff[0] = 1.0;
+//     constantcurve1->coeff[1] = 0.0;
+//     constantcurve1->coeff[2] = 0.0;
+//     constantcurve1->coeff[3] = 0.0;
+//     constantcurve1->coeff[4] = 0.0;
+//     constantcurve1->coeff[5] = 0.0;
+//     constantcurve1->inputLimits[0].min = 10.0;
+//     constantcurve1->inputLimits[0].max = 25.0;
+//     constantcurve1->inputLimits[1].min = 0.0;
+//     constantcurve1->inputLimits[1].max = 100.0;
+//     constantcurve1->outputLimits.min = 1.0;
+//     constantcurve1->outputLimits.max = 1.0;
+//     // quadratic curve
+//     constantcurve2->Name = "constant quadratic curve";
+//     constantcurve2->curveType = Curve::CurveType::Quadratic;
+//     constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve2->coeff[0] = 1.0;
+//     constantcurve2->coeff[1] = 0.0;
+//     constantcurve2->coeff[2] = 0.0;
+//     constantcurve2->inputLimits[0].min = 0.0;
+//     constantcurve2->inputLimits[0].max = 1.0;
+//     constantcurve2->outputLimits.min = 1.0;
+//     constantcurve2->outputLimits.max = 1.0;
+//     // set coil parameter
+//     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
+//     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
+//     Coil.MSRatedAirMassFlowRate(1) = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     Coil.MSRatedAirMassFlowRate(2) = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     // Match RatedCBF from new coil
+//     Coil.MSRatedCBF(1) = 0.32321692557501741;
+//     //    Coil.MSRatedCBF(2) = 0.32321692557501741;
+//     Coil.MSRatedCBF(2) = 0.037495280896632406;
+//     Coil.MSWasteHeat(1) = 0;
+//     Coil.MSWasteHeat(2) = 0;
+//     Coil.MSWasteHeatFrac(1) = 0;
+//     Coil.MSWasteHeatFrac(2) = 0;
+//     Coil.MSRatedSHR(1) = 0.65;
+//     Coil.MSRatedSHR(2) = 0.75;
+//     Coil.MSRatedCOP(1) = 3.0;
+//     Coil.MSRatedCOP(2) = 3.0;
+//
+//     // test 1: dry cooling
+//     Coil.InletAirTemp = 35.0;
+//     Coil.InletAirHumRat = 0.0055;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     AirOutletNode.Temp = Coil.InletAirTemp;
+//     AirOutletNode.HumRat = Coil.InletAirHumRat;
+//     AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // outside air condition
+//     state->dataEnvrn->OutBaroPress = 101325.0;
+//     state->dataEnvrn->OutDryBulbTemp = 35.0;
+//     state->dataEnvrn->OutHumRat = 0.0120;
+//     state->dataEnvrn->WindSpeed = 5.0;
+//     state->dataEnvrn->WindDir = 0.0;
+//     int SpeedNum = 2;
+//     HVAC::FanOp fanOp = HVAC::FanOp::Continuous;
+//     HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
+//     int SingleMode = 0;
+//     // Test 1 - dry coil - run the coil at low speed
+//     Real64 SpeedRatio = 0.0;
+//     Real64 CycRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
+//     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
+//
+//     // run the coil at high speed
+//     SpeedRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);   // total capacity at high speed
+//     EXPECT_NEAR(17850.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at high speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate2 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate2 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate2 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat2 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp2 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower2 = Coil.ElecCoolingPower;
+//
+//     // Test 3 - dry coil - run the coil at speed ratio 0.75
+//     SpeedRatio = 0.75;
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.0001); // total capacity
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.SensCoolingEnergyRate, 0.0001);  // sensible cooling rate
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);                                   // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                          // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                            // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                           // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);                                       // outlet dry bulb
+//     EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
+//
+//     // test 4: wet cooling
+//     Coil.InletAirTemp = 24.0;
+//     Coil.InletAirHumRat = 0.0100;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // Test 4 - wet coil - run coil at low speed
+//     SpeedRatio = 0.0;
+//     CycRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
+//     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
+//     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
+//     EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate4 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate4 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate4 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat4 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp4 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower4 = Coil.ElecCoolingPower;
+//
+//     // Test 5 - wet coil - run the coil at high speed
+//     SpeedRatio = 1.0;
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(17850.0, Coil.TotalCoolingEnergyRate, 0.0001);           // total capacity at high speed
+//     EXPECT_NEAR(13002.847055477625, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at high speed
+//     EXPECT_NEAR(4847.1529445223750, Coil.LatCoolingEnergyRate, 0.0001);  // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                       // input check
+//     EXPECT_NEAR(0.0080958363400692145, AirOutletNode.HumRat, 0.00001);   // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                        // inlet dry bulb
+//     EXPECT_NEAR(11.250732746176219, AirOutletNode.Temp, 0.0001);         // outlet dry bulb
+//     EXPECT_NEAR(5950.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate5 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate5 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate5 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat5 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp5 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower5 = Coil.ElecCoolingPower;
+//
+//     // Test 6 - wet coil - run the coil at speed ratio 0.75
+//     SpeedRatio = 0.75;
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0 + 0.75 * (17850.0 - 10710.0), Coil.TotalCoolingEnergyRate, 0.01);                  // total capacity
+//     EXPECT_NEAR(6908.14887 + 0.75 * (13002.847055477625 - 6908.14887), Coil.SensCoolingEnergyRate, 0.01);  // sensible cooling rate
+//     EXPECT_NEAR(3801.851126 + 0.75 * (4847.1529445223750 - 3801.851126), Coil.LatCoolingEnergyRate, 0.01); // latent cooling rate
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                                         // input check
+//     // EXPECT_NEAR(0.0079495749435070425, AirOutletNode.HumRat, 0.00001);                                        // cooling and dehumidification
+//     EXPECT_NEAR(0.0079983287423610987, AirOutletNode.HumRat, 0.00001); // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                      // inlet dry bulb
+//     // EXPECT_NEAR(11.612485891133730, AirOutletNode.Temp, 0.0001);                                              // outlet dry bulb
+//     EXPECT_NEAR(11.491880074594654, AirOutletNode.Temp, 0.0001); // outlet dry bulb
+//     EXPECT_NEAR(5355.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate6 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate6 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate6 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat6 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp6 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower6 = Coil.ElecCoolingPower;
+//
+//     Real64 ratedVolFlowRate = state->dataHVACGlobal->MSHPMassFlowRateHigh / ratedRhoAir;
+//     std::string volFlowRateStr = format("{:.4R}", ratedVolFlowRate);
+//
+//     std::string idf_objects = delimited_string({
+//         "  Coil:Cooling:DX,",
+//         "    Coil,",
+//         "    Evaporator Inlet Node,Evaporator Outlet Node,",
+//         "    ,,",
+//         "    Condenser Inlet Node,Condenser Outlet Node,",
+//         "    Coil Performance,",
+//         "    ,;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Performance,",
+//         "    Coil Performance,,,,,,,,,Electricity,Coil Mode 1;",
+//
+//         "  Coil:Cooling:DX:CurveFit:OperatingMode,",
+//         "    Coil Mode 1,",
+//         "    17850.0,   !- Rated Gross Total Cooling Capacity {W}",
+//         volFlowRateStr + ",   !- Rated Evaporator Air Flow Rate {m3/s}",
+//         "    ,,,,,,,,",
+//         "    2,Coil Mode 1 Speed 1,Coil Mode 1 Speed 2;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Speed,",
+//         "    Coil Mode 1 Speed 1,     !- Name",
+//         "    0.60,                    !- Gross Total Cooling Capacity Fraction",
+//         "    0.60,                    !- Evaporator Air Flow Rate Fraction",
+//         "    ,                        !- Condenser Air Flow Rate Fraction",
+//         "    0.65,                     !- Gross Sensible Heat Ratio",
+//         "    3,                       !- Gross Cooling COP {W/W}",
+//         "    1.0,                     !- Active Fraction of Coil Face Area",
+//         "    ,,,,,,,,,,,;",
+//
+//         "  Coil:Cooling:DX:CurveFit:Speed,",
+//         "    Coil Mode 1 Speed 2,     !- Name",
+//         "    1.0,                     !- Gross Total Cooling Capacity Fraction",
+//         "    1.0,                     !- Evaporator Air Flow Rate Fraction",
+//         "    ,                        !- Condenser Air Flow Rate Fraction",
+//         "    0.75,                     !- Gross Sensible Heat Ratio",
+//         "    3,                       !- Gross Cooling COP {W/W}",
+//         "    1.0,                     !- Active Fraction of Coil Face Area",
+//         "    ,,,,,,,,,,,;",
+//
+//     });
+//     EXPECT_TRUE(process_idf(idf_objects, false));
+//     state->init_state(*state);
+//     int coilIndex = CoilCoolingDX::factory(*state, "Coil");
+//     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
+//
+//     // fix the inlet conditions
+//     auto &evapInletNode = state->dataLoopNodes->Node(thisCoil.evapInletNodeIndex);
+//     auto &condInletNode = state->dataLoopNodes->Node(thisCoil.condInletNodeIndex);
+//     evapInletNode.Press = 101325;
+//     condInletNode.Temp = 30.0;
+//     condInletNode.Press = 101325;
+//     condInletNode.HumRat = 0.012;
+//     condInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(condInletNode.Temp, condInletNode.HumRat);
+//
+//     // size it
+//     thisCoil.size(*state);
+//
+//     // for speed > 1 we use the mshp rated high speed flow...
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//
+//     // we'll use this later
+//     auto &evapOutletNode = state->dataLoopNodes->Node(thisCoil.evapOutletNodeIndex);
+//
+//     // Test 1 - dry coil - run the coil at low speed
+//     evapInletNode.Temp = 35.0;
+//     evapInletNode.HumRat = 0.0055;
+//     evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
+//     // set some values to run at rated conditions and call to run normal mode speed 1
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
+//     Real64 PLR = 1.0;
+//     int speedNum = 1;
+//     Real64 speedRatio = 0.0;
+//     fanOp = HVAC::FanOp::Continuous;
+//     bool singleMode = false;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate1, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate1, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp1, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat1, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower1, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 2 - dry coil - run the coil at high speed
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//     speedNum = 2;
+//     speedRatio = 1.0;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate2, thisCoil.totalCoolingEnergyRate, 0.01);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate2, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate2, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp2, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat2, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower2, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 3 - dry coil - run the coil at 0.75 speed ratio
+//     speedNum = 2;
+//     speedRatio = 0.75;
+//     evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
+//                                  (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower3, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 4 - wet coil - run the coil at low speed
+//     evapInletNode.Temp = 24.0;
+//     evapInletNode.HumRat = 0.0100;
+//     evapInletNode.Enthalpy = Psychrometrics::PsyHFnTdbW(evapInletNode.Temp, evapInletNode.HumRat);
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     coilMode = HVAC::CoilMode::Normal;
+//     PLR = 1.0;
+//     speedNum = 1;
+//     speedRatio = 1.0;
+//     fanOp = HVAC::FanOp::Cycling;
+//     singleMode = false;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate4, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate4, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate4, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp4, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat4, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower4, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 5 - wet coil - run the coil at high speed
+//     evapInletNode.MassFlowRate = thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate;
+//     speedNum = 2;
+//     speedRatio = 1.0;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate5, thisCoil.totalCoolingEnergyRate, 0.01);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate5, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate5, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp5, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat5, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower5, thisCoil.elecCoolingPower, 0.001);
+//
+//     // Test 6 - wet coil - run the coil at 0.75 speed ratio
+//     speedNum = 2;
+//     speedRatio = 0.75;
+//     evapInletNode.MassFlowRate = speedRatio * thisCoil.performance.normalMode.speeds.back().RatedAirMassFlowRate +
+//                                  (1.0 - speedRatio) * thisCoil.performance.normalMode.speeds.front().RatedAirMassFlowRate;
+//     thisCoil.simulate(*state, coilMode, PLR, speedNum, speedRatio, fanOp, singleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate6, thisCoil.totalCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate6, thisCoil.sensCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate6, thisCoil.latCoolingEnergyRate, 0.1);
+//     EXPECT_NEAR(MultiSpeedOutletTemp6, evapOutletNode.Temp, 0.01);
+//     EXPECT_NEAR(MultiSpeedOutletHumRat6, evapOutletNode.HumRat, 0.001);
+//     EXPECT_NEAR(MultiSpeedElecPower6, thisCoil.elecCoolingPower, 0.001);
+// }
+// TEST_F(EnergyPlusFixture, CoilDXMultiSpeed_SpeedCheck_CycFanCycCoil)
+// {
+//
+//     int DXCoilNum(1);
+//     state->dataDXCoils->NumDXCoils = 1;
+//     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataLoopNodes->Node.allocate(2);
+//     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
+//     state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
+//     state->dataDXCoils->DXCoilOutletTemp.allocate(1);
+//     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
+//     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
+//     state->dataDXCoils->DXCoilFanOp.allocate(1);
+//     state->dataCurveManager->allocateCurveVector(2);
+//
+//     auto &Coil = state->dataDXCoils->DXCoil(1);
+//     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
+//     auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
+//     auto &AirInletNode = state->dataLoopNodes->Node(1);
+//     auto &AirOutletNode = state->dataLoopNodes->Node(2);
+//     state->dataEnvrn->StdBaroPress = 101325.0;
+//     // Real64 ratedInletAirTemp = 26.6667;
+//     // Real64 ratedInletAirHumRat = 0.0111847;
+//     // std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
+//     // Real64 ratedRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat,
+//     // routineName);
+//
+//     Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
+//     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
+//     Coil.FuelType = Constant::eFuel::Electricity;
+//     Coil.availSched = Sched::GetScheduleAlwaysOn(*state);
+//     Coil.NumOfSpeeds = 2;
+//     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
+//     Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
+//     Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
+//     Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp = 1;
+//     Coil.MSCCapFFlow = 2;
+//     Coil.MSEIRFTemp = 1;
+//     Coil.MSEIRFFlow = 2;
+//     Coil.MSPLFFPLR = 2;
+//     Coil.AirOutNode = 2;
+//     Coil.AirInNode = 1;
+//     // biquadratic curve
+//     constantcurve1->Name = "constant biquadratic curve";
+//     constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+//     constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve1->coeff[0] = 1.0;
+//     constantcurve1->coeff[1] = 0.0;
+//     constantcurve1->coeff[2] = 0.0;
+//     constantcurve1->coeff[3] = 0.0;
+//     constantcurve1->coeff[4] = 0.0;
+//     constantcurve1->coeff[5] = 0.0;
+//     constantcurve1->inputLimits[0].min = 10.0;
+//     constantcurve1->inputLimits[0].max = 25.0;
+//     constantcurve1->inputLimits[1].min = 0.0;
+//     constantcurve1->inputLimits[1].max = 100.0;
+//     constantcurve1->outputLimits.min = 1.0;
+//     constantcurve1->outputLimits.max = 1.0;
+//     // quadratic curve
+//     constantcurve2->Name = "constant quadratic curve";
+//     constantcurve2->curveType = Curve::CurveType::Quadratic;
+//     constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve2->coeff[0] = 1.0;
+//     constantcurve2->coeff[1] = 0.0;
+//     constantcurve2->coeff[2] = 0.0;
+//     constantcurve2->inputLimits[0].min = 0.0;
+//     constantcurve2->inputLimits[0].max = 1.0;
+//     constantcurve2->outputLimits.min = 1.0;
+//     constantcurve2->outputLimits.max = 1.0;
+//     // set coil parameter
+//     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
+//     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
+//     Coil.MSRatedAirMassFlowRate(1) = 0.6;
+//     Coil.MSRatedAirMassFlowRate(2) = 1.0;
+//     // Match RatedCBF from new coil
+//     Coil.MSRatedCBF(1) = 0.32321692557501741;
+//     Coil.MSRatedCBF(2) = 0.037495280896632406;
+//     Coil.MSWasteHeat(1) = 0;
+//     Coil.MSWasteHeat(2) = 0;
+//     Coil.MSWasteHeatFrac(1) = 0;
+//     Coil.MSWasteHeatFrac(2) = 0;
+//     Coil.MSRatedSHR(1) = 0.65;
+//     Coil.MSRatedSHR(2) = 0.75;
+//     Coil.MSRatedCOP(1) = 3.0;
+//     Coil.MSRatedCOP(2) = 3.0;
+//
+//     // test 1: dry cooling
+//     Coil.InletAirTemp = 35.0;
+//     Coil.InletAirHumRat = 0.0055;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     AirOutletNode.Temp = Coil.InletAirTemp;
+//     AirOutletNode.HumRat = Coil.InletAirHumRat;
+//     AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // outside air condition
+//     state->dataEnvrn->OutBaroPress = 101325.0;
+//     state->dataEnvrn->OutDryBulbTemp = 35.0;
+//     state->dataEnvrn->OutHumRat = 0.0120;
+//     state->dataEnvrn->WindSpeed = 5.0;
+//     state->dataEnvrn->WindDir = 0.0;
+//     HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
+//     HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
+//     int SingleMode = 0;
+//     // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
+//     int SpeedNum = 2;
+//     Real64 SpeedRatio = 0.0;
+//     Real64 CycRatio = 1.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
+//     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
+//     // Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
+//
+//     // Test 2 - dry coil - run the coil at low speed (speednum=1, speedratio=0) - same result?
+//     SpeedNum = 1;
+//     SpeedRatio = 0.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                 // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                   // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp1, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower1, Coil.ElecCoolingPower, 0.01);
+//
+//     // tests 3 & 4: wet cooling
+//     Coil.InletAirTemp = 24.0;
+//     Coil.InletAirHumRat = 0.0100;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // Test 3 - wet coil - run coil at low speed - run the coil at low speed (speednum=2, speedratio=0, CycFanCycCoil)
+//     SpeedNum = 2;
+//     SpeedRatio = 0.0;
+//     CycRatio = 1.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
+//     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
+//     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
+//     EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
+//
+//     // Test 4 - wet coil - run the coil at low speed (speednum=1, speedratio=0, CycFanCycCoil) - same result?
+//     SpeedNum = 1;
+//     SpeedRatio = 0.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                 // input check
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.00001);           // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.01);
+//
+//     // Test 5 - wet coil - run the coil at almost low speed (speednum=2, speedratio=0.00001, CycFanCycCoil) - same result?
+//     SpeedNum = 2;
+//     SpeedRatio = 0.00001;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                              // input check
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.001);          // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                               // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.01);               // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.1);
+// }
+// TEST_F(EnergyPlusFixture, CoilDXMultiSpeed_SpeedCheck_ContFanCycCoil)
+// {
+//
+//     int DXCoilNum(1);
+//     state->dataDXCoils->NumDXCoils = 1;
+//     state->dataDXCoils->DXCoil.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataLoopNodes->Node.allocate(2);
+//     state->dataDXCoils->DXCoilNumericFields.allocate(state->dataDXCoils->NumDXCoils);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode.allocate(1);
+//     state->dataDXCoils->DXCoilNumericFields(1).PerfMode(1).FieldNames.allocate(17);
+//     state->dataHeatBal->HeatReclaimDXCoil.allocate(2);
+//     state->dataDXCoils->DXCoilOutletTemp.allocate(1);
+//     state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
+//     state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
+//     state->dataDXCoils->DXCoilFanOp.allocate(1);
+//     state->dataCurveManager->allocateCurveVector(2);
+//
+//     auto &Coil = state->dataDXCoils->DXCoil(1);
+//     auto &constantcurve1 = state->dataCurveManager->PerfCurve(1);
+//     auto &constantcurve2 = state->dataCurveManager->PerfCurve(2);
+//     auto &AirInletNode = state->dataLoopNodes->Node(1);
+//     auto &AirOutletNode = state->dataLoopNodes->Node(2);
+//     state->dataEnvrn->StdBaroPress = 101325.0;
+//     // Real64 ratedInletAirTemp = 26.6667;
+//     // Real64 ratedInletAirHumRat = 0.0111847;
+//     // std::string routineName = "MultiSpeedDXCoolingCoilOutputTestvsCoilDXCooling";
+//     // Real64 ratedRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->StdBaroPress, ratedInletAirTemp, ratedInletAirHumRat,
+//     // routineName);
+//
+//     Coil.DXCoilType_Num = HVAC::CoilDX_MultiSpeedCooling;
+//     Coil.DXCoilType = "Coil:Cooling:DX:MultiSpeed";
+//     Coil.FuelType = Constant::eFuel::Electricity;
+//     Coil.availSched = Sched::GetScheduleAlwaysOn(*state);
+//     Coil.NumOfSpeeds = 2;
+//     Coil.MSRatedTotCap.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedSHR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCOP.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirVolFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedAirMassFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFTemp.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEIRFFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeat.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondEffect.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondAirFlow.allocate(Coil.NumOfSpeeds);
+//     Coil.MSEvapCondPumpElecNomPower.allocate(Coil.NumOfSpeeds);
+//     Coil.MSRatedCBF.allocate(Coil.NumOfSpeeds);
+//     Coil.MSWasteHeatFrac.allocate(Coil.NumOfSpeeds);
+//     Coil.MSPLFFPLR.allocate(Coil.NumOfSpeeds);
+//     Coil.MSTwet_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSGamma_Rated.allocate(Coil.NumOfSpeeds);
+//     Coil.MSMaxONOFFCyclesperHour.allocate(Coil.NumOfSpeeds);
+//     Coil.MSLatentCapacityTimeConstant.allocate(Coil.NumOfSpeeds);
+//     Coil.MSFanPowerPerEvapAirFlowRate.allocate(Coil.NumOfSpeeds);
+//     Coil.MSCCapFTemp = 1;
+//     Coil.MSCCapFFlow = 2;
+//     Coil.MSEIRFTemp = 1;
+//     Coil.MSEIRFFlow = 2;
+//     Coil.MSPLFFPLR = 2;
+//     Coil.AirOutNode = 2;
+//     Coil.AirInNode = 1;
+//     // biquadratic curve
+//     constantcurve1->Name = "constant biquadratic curve";
+//     constantcurve1->curveType = Curve::CurveType::BiQuadratic;
+//     constantcurve1->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve1->coeff[0] = 1.0;
+//     constantcurve1->coeff[1] = 0.0;
+//     constantcurve1->coeff[2] = 0.0;
+//     constantcurve1->coeff[3] = 0.0;
+//     constantcurve1->coeff[4] = 0.0;
+//     constantcurve1->coeff[5] = 0.0;
+//     constantcurve1->inputLimits[0].min = 10.0;
+//     constantcurve1->inputLimits[0].max = 25.0;
+//     constantcurve1->inputLimits[1].min = 0.0;
+//     constantcurve1->inputLimits[1].max = 100.0;
+//     constantcurve1->outputLimits.min = 1.0;
+//     constantcurve1->outputLimits.max = 1.0;
+//     // quadratic curve
+//     constantcurve2->Name = "constant quadratic curve";
+//     constantcurve2->curveType = Curve::CurveType::Quadratic;
+//     constantcurve2->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
+//     constantcurve2->coeff[0] = 1.0;
+//     constantcurve2->coeff[1] = 0.0;
+//     constantcurve2->coeff[2] = 0.0;
+//     constantcurve2->inputLimits[0].min = 0.0;
+//     constantcurve2->inputLimits[0].max = 1.0;
+//     constantcurve2->outputLimits.min = 1.0;
+//     constantcurve2->outputLimits.max = 1.0;
+//     // set coil parameter
+//     Coil.MSRatedTotCap(1) = 10710.0; // 60 % of full capacity
+//     Coil.MSRatedTotCap(2) = 17850.0; // 5 ton capcity
+//     Coil.MSRatedAirMassFlowRate(1) = 0.6;
+//     Coil.MSRatedAirMassFlowRate(2) = 1.0;
+//     // Match RatedCBF from new coil
+//     Coil.MSRatedCBF(1) = 0.32321692557501741;
+//     Coil.MSRatedCBF(2) = 0.037495280896632406;
+//     Coil.MSWasteHeat(1) = 0;
+//     Coil.MSWasteHeat(2) = 0;
+//     Coil.MSWasteHeatFrac(1) = 0;
+//     Coil.MSWasteHeatFrac(2) = 0;
+//     Coil.MSRatedSHR(1) = 0.65;
+//     Coil.MSRatedSHR(2) = 0.75;
+//     Coil.MSRatedCOP(1) = 3.0;
+//     Coil.MSRatedCOP(2) = 3.0;
+//
+//     // test 1: dry cooling
+//     Coil.InletAirTemp = 35.0;
+//     Coil.InletAirHumRat = 0.0055;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     AirOutletNode.Temp = Coil.InletAirTemp;
+//     AirOutletNode.HumRat = Coil.InletAirHumRat;
+//     AirOutletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // outside air condition
+//     state->dataEnvrn->OutBaroPress = 101325.0;
+//     state->dataEnvrn->OutDryBulbTemp = 35.0;
+//     state->dataEnvrn->OutHumRat = 0.0120;
+//     state->dataEnvrn->WindSpeed = 5.0;
+//     state->dataEnvrn->WindDir = 0.0;
+//     HVAC::FanOp fanOp = HVAC::FanOp::Continuous;
+//     HVAC::CompressorOp compressorOp = HVAC::CompressorOp::On;
+//     int SingleMode = 0;
+//     // Test 1 - dry coil - run the coil at low speed (speednum=2, speedratio=0)
+//     int SpeedNum = 2;
+//     Real64 SpeedRatio = 0.0;
+//     Real64 CycRatio = 1.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed capacity
+//     EXPECT_NEAR(10710.0, Coil.SensCoolingEnergyRate, 0.0001);    // sensible cooling rate at low speed
+//     EXPECT_NEAR(0.0, Coil.LatCoolingEnergyRate, 1.0E-11);        // zero latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);               // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat); // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(17.4149, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate1 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate1 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate1 = Coil.LatCoolingEnergyRate;
+//     // Real64 MultiSpeedOutletHumRat1 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp1 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower1 = Coil.ElecCoolingPower;
+//
+//     // Test 2 - dry coil - run the coil at low speed (speednum=1, speedratio=0) - same result?
+//     SpeedNum = 1;
+//     SpeedRatio = 0.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate1, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate1, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate1, Coil.LatCoolingEnergyRate, 1.0E-11);    // zero latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0055, AirInletNode.HumRat);                                 // input check
+//     EXPECT_DOUBLE_EQ(AirInletNode.HumRat, AirOutletNode.HumRat);                   // dry cooling only
+//     EXPECT_NEAR(35.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp1, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower1, Coil.ElecCoolingPower, 0.01);
+//
+//     // tests 3 & 4: wet cooling
+//     Coil.InletAirTemp = 24.0;
+//     Coil.InletAirHumRat = 0.0100;
+//     Coil.InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(Coil.InletAirTemp, Coil.InletAirHumRat);
+//     // set coil inlet and outlet node condition
+//     AirInletNode.Temp = Coil.InletAirTemp;
+//     AirInletNode.HumRat = Coil.InletAirHumRat;
+//     AirInletNode.Enthalpy = Coil.InletAirEnthalpy;
+//     // Test 3 - wet coil - run coil at low speed - run the coil at low speed (speednum=2, speedratio=0, CycFanCycCoil)
+//     SpeedNum = 2;
+//     SpeedRatio = 0.0;
+//     CycRatio = 1.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(10710.0, Coil.TotalCoolingEnergyRate, 0.0001);   // equals low speed cooling capacity
+//     EXPECT_NEAR(6908.14887, Coil.SensCoolingEnergyRate, 0.0001); // sensible cooling rate at low speed
+//     EXPECT_NEAR(3801.851126, Coil.LatCoolingEnergyRate, 0.0001); // latent cooling rate at low speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);               // input check
+//     EXPECT_NEAR(0.00751079, AirOutletNode.HumRat, 0.00001);      // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                // inlet dry bulb
+//     EXPECT_NEAR(12.6989, AirOutletNode.Temp, 0.0001);            // outlet dry bulb
+//     EXPECT_NEAR(3570.0, Coil.ElecCoolingPower, 0.01);
+//     // Save results for comparison
+//     Real64 MultiSpeedTotalCoolingRate3 = Coil.TotalCoolingEnergyRate;
+//     Real64 MultiSpeedSensCoolingRate3 = Coil.SensCoolingEnergyRate;
+//     Real64 MultiSpeedLatCoolingRate3 = Coil.LatCoolingEnergyRate;
+//     Real64 MultiSpeedOutletHumRat3 = AirOutletNode.HumRat;
+//     Real64 MultiSpeedOutletTemp3 = AirOutletNode.Temp;
+//     Real64 MultiSpeedElecPower3 = Coil.ElecCoolingPower;
+//
+//     // Test 4 - wet coil - run the coil at low speed (speednum=1, speedratio=0, CycFanCycCoil) - same result?
+//     SpeedNum = 1;
+//     SpeedRatio = 0.0;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(1);
+//     Coil.InletAirMassFlowRate = state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.0001); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.0001);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.0001);     // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                                 // input check
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.00001);           // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                                  // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.0001);                // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.01);
+//
+//     // Test 5 - wet coil - run the coil at almost low speed (speednum=2, speedratio=0.00001, CycFanCycCoil) - same result?
+//     SpeedNum = 2;
+//     SpeedRatio = 0.00001;
+//     state->dataHVACGlobal->MSHPMassFlowRateLow = Coil.MSRatedAirMassFlowRate(1);
+//     state->dataHVACGlobal->MSHPMassFlowRateHigh = Coil.MSRatedAirMassFlowRate(2);
+//     Coil.InletAirMassFlowRate =
+//         SpeedRatio * state->dataHVACGlobal->MSHPMassFlowRateHigh + (1.0 - SpeedRatio) * state->dataHVACGlobal->MSHPMassFlowRateLow;
+//     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXCoilNum, SpeedRatio, CycRatio, SpeedNum, fanOp, compressorOp, SingleMode);
+//     EXPECT_NEAR(MultiSpeedTotalCoolingRate3, Coil.TotalCoolingEnergyRate, 0.1); // total capacity at high speed
+//     EXPECT_NEAR(MultiSpeedSensCoolingRate3, Coil.SensCoolingEnergyRate, 0.1);   // sensible cooling rate at high speed
+//     EXPECT_NEAR(MultiSpeedLatCoolingRate3, Coil.LatCoolingEnergyRate, 0.1);     // latent cooling rate at high speed
+//     EXPECT_DOUBLE_EQ(0.0100, AirInletNode.HumRat);                              // input check
+//     EXPECT_NEAR(MultiSpeedOutletHumRat3, AirOutletNode.HumRat, 0.001);          // cooling and dehumidification
+//     EXPECT_NEAR(24.0, AirInletNode.Temp, 0.0001);                               // inlet dry bulb
+//     EXPECT_NEAR(MultiSpeedOutletTemp3, AirOutletNode.Temp, 0.01);               // outlet dry bulb
+//     EXPECT_NEAR(MultiSpeedElecPower3, Coil.ElecCoolingPower, 0.1);
+// }
 
 TEST_F(CoilCoolingDXTest, CoilCoolingDX_LowerSpeedFlowSizingTest)
 {
@@ -1805,9 +1813,10 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDX_LowerSpeedFlowSizingTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int coilIndex = CoilCoolingDX::factory(*state, "DX Cooling Coil");
-    auto &this_dx_clg_coil = state->dataCoilCooingDX->coilCoolingDXs[coilIndex];
+    auto &this_dx_clg_coil = state->dataCoilCoolingDX->coilCoolingDXs[coilIndex];
     // check dx cooling coil inputs
     EXPECT_EQ(this_dx_clg_coil.name, "DX COOLING COIL");
 

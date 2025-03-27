@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -53,7 +53,6 @@
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/ArrayS.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Construction.hh>
@@ -374,23 +373,22 @@ namespace WindowComplexManager {
         NBkSurf = state.dataBSDFWindow->ComplexWind(iSurf).NBkSurf;
 
         state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).SolBmGndWt.allocate(
-            24, state.dataGlobal->NumOfTimeStepInHour, state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).NGnd);
-        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).SolBmIndex.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).ThetaBm.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).PhiBm.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinDirHemiTrans.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinDirSpecTrans.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmGndTrans.allocate(24, state.dataGlobal->NumOfTimeStepInHour);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmFtAbs.allocate(24, state.dataGlobal->NumOfTimeStepInHour, NLayers);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmGndAbs.allocate(24, state.dataGlobal->NumOfTimeStepInHour, NLayers);
-        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinToSurfBmTrans.allocate(
-            24, state.dataGlobal->NumOfTimeStepInHour, NBkSurf);
+            24, state.dataGlobal->TimeStepsInHour, state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).NGnd);
+        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).SolBmIndex.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).ThetaBm.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataBSDFWindow->ComplexWind(iSurf).Geom(iState).PhiBm.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinDirHemiTrans.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinDirSpecTrans.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmGndTrans.allocate(24, state.dataGlobal->TimeStepsInHour);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmFtAbs.allocate(24, state.dataGlobal->TimeStepsInHour, NLayers);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinBmGndAbs.allocate(24, state.dataGlobal->TimeStepsInHour, NLayers);
+        state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).WinToSurfBmTrans.allocate(24, state.dataGlobal->TimeStepsInHour, NBkSurf);
         state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).BkSurf.allocate(NBkSurf);
         for (KBkSurf = 1; KBkSurf <= NBkSurf; ++KBkSurf) {
-            state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).BkSurf(KBkSurf).WinDHBkRefl.allocate(
-                24, state.dataGlobal->NumOfTimeStepInHour);
+            state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).BkSurf(KBkSurf).WinDHBkRefl.allocate(24,
+                                                                                                                  state.dataGlobal->TimeStepsInHour);
             state.dataSurface->SurfaceWindow(iSurf).ComplexFen.State(iState).BkSurf(KBkSurf).WinDirBkAbs.allocate(
-                24, state.dataGlobal->NumOfTimeStepInHour, NLayers);
+                24, state.dataGlobal->TimeStepsInHour, NLayers);
         }
     }
 
@@ -596,7 +594,7 @@ namespace WindowComplexManager {
             std::size_t lHT(0);  // Linear index for ( Hour, TS )
             std::size_t lHTI(0); // Linear index for ( Hour, TS, I )
             for (int Hour = 1; Hour <= 24; ++Hour) {
-                for (int TS = 1; TS <= state.dataGlobal->NumOfTimeStepInHour; ++TS, ++lHT) { // [ lHT ] == ( Hour, TS )
+                for (int TS = 1; TS <= state.dataGlobal->TimeStepsInHour; ++TS, ++lHT) { // [ lHT ] == ( Hour, TS )
                     SunDir = state.dataBSDFWindow->SUNCOSTS(TS, Hour);
                     Theta = 0.0;
                     Phi = 0.0;
@@ -1012,7 +1010,7 @@ namespace WindowComplexManager {
                 NPhis(1) = 1;
                 NumElem = 1;
                 for (I = 2; I <= NThetas; ++I) {
-                    Thetas(I) = state.dataConstruction->Construct(IConst).BSDFInput.BasisMat(1, I) * Constant::DegToRadians;
+                    Thetas(I) = state.dataConstruction->Construct(IConst).BSDFInput.BasisMat(1, I) * Constant::DegToRad;
                     NPhis(I) = std::floor(state.dataConstruction->Construct(IConst).BSDFInput.BasisMat(2, I) + 0.001);
                     if (NPhis(I) <= 0) ShowFatalError(state, "WindowComplexManager: incorrect input, no. phis must be positive.");
                     NumElem += NPhis(I);
@@ -1087,7 +1085,7 @@ namespace WindowComplexManager {
                 NPhis = 1;                                // As insurance, define one phi for each theta
                 NumElem = 1;
                 for (I = 2; I <= NThetas; ++I) {
-                    Thetas(I) = state.dataConstruction->Construct(IConst).BSDFInput.BasisMat(1, I) * Constant::DegToRadians;
+                    Thetas(I) = state.dataConstruction->Construct(IConst).BSDFInput.BasisMat(1, I) * Constant::DegToRad;
                     ++NumElem;
                 }
                 Basis.Phis.allocate(1, NThetas);
@@ -1296,8 +1294,8 @@ namespace WindowComplexManager {
         //  Define the central ray directions (in world coordinate system)
 
         state.dataSurface->SurfaceWindow(ISurf).ComplexFen.State(IState).NLayers = state.dataConstruction->Construct(IConst).BSDFInput.NumLayers;
-        Azimuth = Constant::DegToRadians * state.dataSurface->Surface(ISurf).Azimuth;
-        Tilt = Constant::DegToRadians * state.dataSurface->Surface(ISurf).Tilt;
+        Azimuth = Constant::DegToRad * state.dataSurface->Surface(ISurf).Azimuth;
+        Tilt = Constant::DegToRad * state.dataSurface->Surface(ISurf).Tilt;
 
         // For incoming grid
 
@@ -1386,7 +1384,7 @@ namespace WindowComplexManager {
                     V = HitPt - state.dataSurface->Surface(ISurf).Centroid; // vector array from window ctr to hit pt
                     LeastHitDsq = magnitude_squared(V);                     // dist^2 window ctr to hit pt
                     TmpHSurfDSq(1, NReflSurf) = LeastHitDsq;
-                    if (!state.dataSurface->Surface(JSurf).HeatTransSurf && state.dataSurface->Surface(JSurf).SchedShadowSurfIndex != 0) {
+                    if (!state.dataSurface->Surface(JSurf).HeatTransSurf && state.dataSurface->Surface(JSurf).shadowSurfSched != nullptr) {
                         TransRSurf = 1.0; // If a shadowing surface may have a scheduled transmittance,
                         //   treat it here as completely transparent
                     } else {
@@ -1405,7 +1403,8 @@ namespace WindowComplexManager {
                                         break;
                                     }
                                 }
-                                if (!state.dataSurface->Surface(JSurf).HeatTransSurf && state.dataSurface->Surface(JSurf).SchedShadowSurfIndex == 0) {
+                                if (!state.dataSurface->Surface(JSurf).HeatTransSurf &&
+                                    state.dataSurface->Surface(JSurf).shadowSurfSched == nullptr) {
                                     //  The new hit is opaque, so we can drop all the hits further away
                                     TmpHSurfNo(J, NReflSurf) = JSurf;
                                     TmpHitPt(J, NReflSurf) = HitPt;
@@ -1433,7 +1432,7 @@ namespace WindowComplexManager {
                         //  A new closest hit.  If it is opaque, drop the current hit list,
                         //    otherwise add it at the front
                         LeastHitDsq = HitDsq;
-                        if (!state.dataSurface->Surface(JSurf).HeatTransSurf && state.dataSurface->Surface(JSurf).SchedShadowSurfIndex != 0) {
+                        if (!state.dataSurface->Surface(JSurf).HeatTransSurf && state.dataSurface->Surface(JSurf).shadowSurfSched != nullptr) {
                             TransRSurf = 1.0; // New closest hit is transparent, keep the existing hit list
                             for (I = TotHits; I >= 1; --I) {
                                 TmpHSurfNo(I + 1, NReflSurf) = TmpHSurfNo(I, NReflSurf);
@@ -1898,13 +1897,13 @@ namespace WindowComplexManager {
             if (Sum2 > 0.0) {
                 Hold = Sum1 / Sum2;
                 for (I = 1; I <= 24; ++I) {
-                    for (J = 1; J <= state.dataGlobal->NumOfTimeStepInHour; ++J) {
+                    for (J = 1; J <= state.dataGlobal->TimeStepsInHour; ++J) {
                         State.BkSurf(KBkSurf).WinDHBkRefl(I, J) = Hold;
                     }
                 }
             } else {
                 for (I = 1; I <= 24; ++I) {
-                    for (J = 1; J <= state.dataGlobal->NumOfTimeStepInHour; ++J) {
+                    for (J = 1; J <= state.dataGlobal->TimeStepsInHour; ++J) {
                         State.BkSurf(KBkSurf).WinDHBkRefl(I, J) = 0.0;
                     }
                 }
@@ -1922,13 +1921,13 @@ namespace WindowComplexManager {
                 if (Sum2 > 0.0) {
                     Hold = Sum1 / Sum2;
                     for (I = 1; I <= 24; ++I) {
-                        for (J = 1; J <= state.dataGlobal->NumOfTimeStepInHour; ++J) {
+                        for (J = 1; J <= state.dataGlobal->TimeStepsInHour; ++J) {
                             State.BkSurf(KBkSurf).WinDirBkAbs(I, J, L) = Hold;
                         }
                     }
                 } else {
                     for (I = 1; I <= 24; ++I) {
-                        for (J = 1; J <= state.dataGlobal->NumOfTimeStepInHour; ++J) {
+                        for (J = 1; J <= state.dataGlobal->TimeStepsInHour; ++J) {
                             State.BkSurf(KBkSurf).WinDirBkAbs(I, J, L) = 0.0;
                         }
                     }
@@ -2241,8 +2240,8 @@ namespace WindowComplexManager {
         }
 
         // get window tilt and azimuth
-        Gamma = Constant::DegToRadians * state.dataSurface->Surface(ISurf).Tilt;
-        Alpha = Constant::DegToRadians * state.dataSurface->Surface(ISurf).Azimuth;
+        Gamma = Constant::DegToRad * state.dataSurface->Surface(ISurf).Tilt;
+        Alpha = Constant::DegToRad * state.dataSurface->Surface(ISurf).Azimuth;
         // get the corresponding local Theta, Phi for ray
         W6CoordsFromWorldVect(state, RayToFind, RadType, Gamma, Alpha, Theta, Phi);
 
@@ -2488,7 +2487,6 @@ namespace WindowComplexManager {
         using namespace DataBSDFWindow;
         using Psychrometrics::PsyCpAirFnW;
         using Psychrometrics::PsyTdpFnWPb;
-        using ScheduleManager::GetCurrentScheduleValue;
         using TARCOGGassesParams::maxgas;
         using TARCOGMain::TARCOG90;
         using TARCOGParams::maxlay;

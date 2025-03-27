@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -76,6 +76,7 @@ using namespace EnergyPlus::Curve;
 
 TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAir)
 {
+    state->dataFluid->init_state(*state);
     // This unit test is intended to check if supply air Humidity ratio used in the cooling sizing calculation is
     // reset to the minimum of entering mixed air humidity ratio and the user specified supply air design Humidity
     // ratio such that the total cooling capacity is always greater than or equal to the sensible cooling capacity.
@@ -186,6 +187,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAir)
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).Name = "Condenser Water Loop";
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     auto &loopside(state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand));
     loopside.TotalBranches = 1;
     loopside.Branch.allocate(1);
@@ -362,6 +364,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestAirFlow)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetCurveInput(*state);
     GetSimpleWatertoAirHPInput(*state);
@@ -398,9 +401,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestAirFlow)
     }
 
     state->dataPlnt->PlantLoop(1).Name = "ChilledWaterLoop";
-    state->dataPlnt->PlantLoop(1).FluidName = "ChilledWater";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -482,9 +484,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestAirFlow)
 
     state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum = 2;
     state->dataPlnt->PlantLoop(2).Name = "HotWaterLoop";
-    state->dataPlnt->PlantLoop(2).FluidName = "HotWater";
-    state->dataPlnt->PlantLoop(2).FluidIndex = 1;
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(2).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -717,6 +718,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestWaterFlowControl)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetCurveInput(*state);
     GetSimpleWatertoAirHPInput(*state);
@@ -752,9 +754,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestWaterFlowControl)
     }
 
     state->dataPlnt->PlantLoop(1).Name = "ChilledWaterLoop";
-    state->dataPlnt->PlantLoop(1).FluidName = "ChilledWater";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -825,9 +826,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimple_TestWaterFlowControl)
     HPNum = 2;
     state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum = 2;
     state->dataPlnt->PlantLoop(2).Name = "HotWaterLoop";
-    state->dataPlnt->PlantLoop(2).FluidName = "HotWater";
-    state->dataPlnt->PlantLoop(2).FluidIndex = 1;
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(2).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -1075,6 +1075,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_CheckSimpleWAHPRatedCurve
 
 TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAirRatedConditions)
 {
+    state->dataFluid->init_state(*state);
     // This unit test is intended to check if the power calculated during the sizing routine
     // uses the user-specified COP at rated conditions
 
@@ -1243,6 +1244,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAirRatedCo
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).Name = "Condenser Water Loop";
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     auto &loopside(state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand));
     loopside.TotalBranches = 1;
     loopside.Branch.allocate(1);
@@ -1304,6 +1306,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAirRatedCo
 
 TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAirRatedConditionsNoDesHtgAirFlow)
 {
+    state->dataFluid->init_state(*state);
     // This unit test is similar as above but checks if the capacities can still be
     // correctly calculated when the design heating air flow rate is 0
 
@@ -1472,6 +1475,7 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpSimpleTest_SizeHVACWaterToAirRatedCo
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).Name = "Condenser Water Loop";
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     auto &loopside(state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand));
     loopside.TotalBranches = 1;
     loopside.Branch.allocate(1);
@@ -1598,6 +1602,8 @@ TEST_F(EnergyPlusFixture, EquationFit_Initialization)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
+
     std::string CurrentModuleObject = "Coil:Cooling:DX:VariableSpeed";
     int num_coils = state->dataInputProcessing->inputProcessor->getNumObjectsFound(*state, CurrentModuleObject);
     ASSERT_EQ(0, num_coils);

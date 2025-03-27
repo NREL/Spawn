@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,7 +57,6 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
 
 #define MINIMUM_LOAD_TO_ACTIVATE 0.5 // (kw) sets a minimum load to avoid the system fluttering on and off.
 #define IMPLAUSIBLE_POWER 10000000
@@ -230,14 +229,13 @@ namespace HybridEvapCoolingModel {
         Model();
 
         // Default Constructor
-        std::string Name;     // user identifier
-        std::string Schedule; // Availability Schedule Name
-        bool Initialized;     // initialization flag ensures the system object is initialized only once.
-        int ZoneNum;  // stores the current zone associated with the system, this is currently not used but is expected to be used in the next set of
-                      // functionality additions.
-        int SchedPtr; // Pointer to the correct schedule
-        int ZoneNodeNum;                  // index of zone air node in node structure
-        std::string AvailManagerListName; // Name of an availability manager list object
+        std::string Name; // user identifier
+        bool Initialized; // initialization flag ensures the system object is initialized only once.
+        int ZoneNum; // stores the current zone associated with the system, this is currently not used but is expected to be used in the next set of
+                     // functionality additions.
+        Sched::Schedule *availSched = nullptr; // Pointer to the correct schedule
+        int ZoneNodeNum;                       // index of zone air node in node structure
+        std::string AvailManagerListName;      // Name of an availability manager list object
         Avail::Status availStatus = Avail::Status::NoAction;
 
         Real64 SystemMaximumSupplyAirFlowRate;           // taken from IDF N1, the system max supply flow rate in m3/s.
@@ -288,18 +286,18 @@ namespace HybridEvapCoolingModel {
         Real64 QLatentZoneOut;               // W
         Real64 QLatentZoneOutMass;           // kg/s
         Real64 ExternalStaticPressure;       //
-        Real64 RequestedHumdificationMass;
-        Real64 RequestedHumdificationLoad;
-        Real64 RequestedHumdificationEnergy;
-        Real64 RequestedDeHumdificationMass;
-        Real64 RequestedDeHumdificationLoad;
-        Real64 RequestedDeHumdificationEnergy;
+        Real64 RequestedHumidificationMass;
+        Real64 RequestedHumidificationLoad;
+        Real64 RequestedHumidificationEnergy;
+        Real64 RequestedDeHumidificationMass;
+        Real64 RequestedDeHumidificationLoad;
+        Real64 RequestedDeHumidificationEnergy;
         Real64 RequestedLoadToHeatingSetpoint;
         Real64 RequestedLoadToCoolingSetpoint;
-        int TsaMin_schedule_pointer;
-        int TsaMax_schedule_pointer;
-        int RHsaMin_schedule_pointer;
-        int RHsaMax_schedule_pointer;
+        Sched::Schedule *TsaMinSched = nullptr;
+        Sched::Schedule *TsaMaxSched = nullptr;
+        Sched::Schedule *RHsaMinSched = nullptr;
+        Sched::Schedule *RHsaMaxSched = nullptr;
         int PrimaryMode;
         Real64 PrimaryModeRuntimeFraction;
         Real64 averageOSAF;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -140,10 +140,15 @@ namespace Window {
             }
             SurfInsideTemp = aTemp - Constant::Kelvin;
             if (ANY_INTERIOR_SHADE_BLIND(state.dataSurface->SurfWinShadingFlag(SurfNum))) {
-                auto const &surfShade = state.dataSurface->surfShades(SurfNum);
+                auto &surfShade = state.dataSurface->surfShades(SurfNum);
                 Real64 EffShBlEmiss = surfShade.effShadeEmi;
                 Real64 EffGlEmiss = surfShade.effGlassEmi;
-
+                surfShade.effShadeEmi = Interp(construction.effShadeBlindEmi[surfShade.blind.slatAngIdxLo],
+                                               construction.effShadeBlindEmi[surfShade.blind.slatAngIdxHi],
+                                               surfShade.blind.slatAngInterpFac);
+                surfShade.effGlassEmi = Interp(construction.effGlassEmi[surfShade.blind.slatAngIdxLo],
+                                               construction.effGlassEmi[surfShade.blind.slatAngIdxHi],
+                                               surfShade.blind.slatAngInterpFac);
                 state.dataSurface->SurfWinEffInsSurfTemp(SurfNum) =
                     (EffShBlEmiss * SurfInsideTemp + EffGlEmiss * (state.dataWindowManager->thetas[2 * totSolidLayers - 3] - Constant::Kelvin)) /
                     (EffShBlEmiss + EffGlEmiss);
@@ -551,7 +556,7 @@ namespace Window {
             conductivity = matGlass->Conductivity;
 
         } else if (mat->group == Material::Group::Blind) {
-            auto const &surfShade = state.dataSurface->surfShades(m_SurfNum);
+            // auto const &surfShade = state.dataSurface->surfShades(m_SurfNum);
             auto const *matBlind = dynamic_cast<Material::MaterialBlind const *>(mat);
             assert(matBlind != nullptr);
             thickness = matBlind->SlatThickness;
@@ -606,7 +611,7 @@ namespace Window {
             assert(matScreen != nullptr);
 
             // Simon: Existing code already takes into account geometry of Woven and scales down
-            // emissivity for openning area.
+            // emissivity for opening area.
             emissFront = matScreen->AbsorpThermal;
             emissBack = matScreen->AbsorpThermal;
             transThermalFront = matScreen->TransThermal;

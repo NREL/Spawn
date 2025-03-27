@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -93,7 +93,6 @@ using namespace EnergyPlus::DataLoopNode;
 using namespace EnergyPlus::DataSurfaces;
 using namespace EnergyPlus::DataEnvironment;
 using namespace EnergyPlus::Psychrometrics;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::RoomAir;
 using namespace EnergyPlus::HybridModel;
 using namespace SimulationManager;
@@ -102,7 +101,9 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_CorrectZoneHumRatTest)
 {
 
     state->dataHVACGlobal->TimeStepSys = 15.0 / 60.0; // System timestep in hours
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+
+    state->init_state(*state);
 
     state->dataZoneEquip->ZoneEquipConfig.allocate(1);
     state->dataZoneEquip->ZoneEquipConfig(1).ZoneName = "Zone 1";
@@ -449,7 +450,12 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     bool ErrorsFound(false); // If errors detected in input
+
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
 
@@ -458,10 +464,6 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
     int CoolHeatZoneNum(3);
     int DualZoneNum(4);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
-
     GetZoneAirSetPoints(*state);
 
     state->dataZoneEnergyDemand->DeadBandOrSetback.allocate(state->dataZoneCtrls->NumTempControlledZones);
@@ -469,10 +471,8 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
     state->dataHeatBalFanSys->TempControlType.allocate(state->dataZoneCtrls->NumTempControlledZones);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(state->dataZoneCtrls->NumTempControlledZones);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(state->dataZoneCtrls->NumTempControlledZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(state->dataZoneCtrls->NumTempControlledZones);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(state->dataZoneCtrls->NumTempControlledZones);
     state->dataZoneEnergyDemand->Setback.allocate(state->dataZoneCtrls->NumTempControlledZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(state->dataZoneCtrls->NumTempControlledZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(state->dataZoneCtrls->NumTempControlledZones);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneTempPredictorCorrector->spaceHeatBalance.allocate(state->dataGlobal->NumOfZones);
 
@@ -486,83 +486,72 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
     //	extern int const SingleHeatingSetPoint; = 1
     //	extern int const SingleCoolingSetPoint; = 2
     //	extern int const SingleHeatCoolSetPoint; = 3
-    //	extern int const DualSetPointWithDeadBand; = 4
-    state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(HeatZoneNum).CTSchedIndex).CurrentValue =
-        static_cast<int>(HVAC::ThermostatType::SingleHeating);
-    state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(CoolZoneNum).CTSchedIndex).CurrentValue =
-        static_cast<int>(HVAC::ThermostatType::SingleCooling);
-    state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(CoolHeatZoneNum).CTSchedIndex).CurrentValue =
-        static_cast<int>(HVAC::ThermostatType::SingleHeatCool);
-
-    state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(DualZoneNum).CTSchedIndex).CurrentValue =
-        0; // simulate no thermostat or non-controlled zone
+    //	extern int const DualHeatCool; = 4
+    state->dataZoneCtrls->TempControlledZone(HeatZoneNum).setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeat;
+    state->dataZoneCtrls->TempControlledZone(CoolZoneNum).setptTypeSched->currentVal = (int)HVAC::SetptType::SingleCool;
+    state->dataZoneCtrls->TempControlledZone(CoolHeatZoneNum).setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeatCool;
+    state->dataZoneCtrls->TempControlledZone(DualZoneNum).setptTypeSched->currentVal = (int)HVAC::SetptType::Uncontrolled;
 
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired =
         0.0; // no load and no thermostat since control type is set to 0 above
     CalcZoneAirTempSetPoints(*state);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).calcPredictedSystemLoad(*state, 1.0, DualZoneNum);
 
-    EXPECT_EQ(0.0,
-              state->dataHeatBalFanSys->TempZoneThermostatSetPoint(
-                  DualZoneNum)); // Set point initialized to 0 and never set since thermostat control type = 0
+    EXPECT_EQ(
+        0.0,
+        state->dataHeatBalFanSys->zoneTstatSetpts(DualZoneNum).setpt); // Set point initialized to 0 and never set since thermostat control type = 0
 
-    state->dataScheduleMgr->Schedule(state->dataZoneCtrls->TempControlledZone(DualZoneNum).CTSchedIndex).CurrentValue =
-        static_cast<int>(HVAC::ThermostatType::DualSetPointWithDeadBand); // reset Tstat control schedule to dual thermostat control
+    state->dataZoneCtrls->TempControlledZone(DualZoneNum).setptTypeSched->currentVal =
+        (int)HVAC::SetptType::DualHeatCool; // reset Tstat control schedule to dual thermostat control
 
     // set up a back calculated load
     // for the first few, TempIndZnLd() = 0.0
     // LoadToHeatingSetPoint = ( TempDepZnLd( ZoneNum ) * ( TempZoneThermostatSetPoint( ZoneNum ) ) - TempIndZnLd( ZoneNum ) );
     // LoadToCoolingSetPoint = ( TempDepZnLd( ZoneNum ) * ( TempZoneThermostatSetPoint( ZoneNum ) ) - TempIndZnLd( ZoneNum ) );
-    int SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(HeatZoneNum).SchIndx_SingleHeatSetPoint;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 20.0;
+    state->dataZoneCtrls->TempControlledZone(HeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched->currentVal = 20.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum).TotalOutputRequired = -1000.0; // cooling load
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(HeatZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(HeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched->currentVal;
 
     CalcZoneAirTempSetPoints(*state);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(HeatZoneNum).calcPredictedSystemLoad(*state, 1.0, HeatZoneNum);
 
-    EXPECT_EQ(20.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(HeatZoneNum));
+    EXPECT_EQ(20.0, state->dataHeatBalFanSys->zoneTstatSetpts(HeatZoneNum).setpt);
     EXPECT_EQ(-1000.0,
               state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum)
                   .TotalOutputRequired); // TotalOutputRequired gets updated in CalcPredictedSystemLoad based on the load
     EXPECT_TRUE(state->dataZoneEnergyDemand->CurDeadBandOrSetback(HeatZoneNum)); // Tstat should show there is no load on a single heating SP
 
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(HeatZoneNum).SchIndx_SingleHeatSetPoint;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 21.0;
+    state->dataZoneCtrls->TempControlledZone(HeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched->currentVal = 21.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum).TotalOutputRequired = 1000.0; // heating load
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(HeatZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(HeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched->currentVal;
 
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(CoolZoneNum).SchIndx_SingleCoolSetPoint;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 23.0;
+    state->dataZoneCtrls->TempControlledZone(CoolZoneNum).setpts[(int)HVAC::SetptType::SingleCool].coolSetptSched->currentVal = 23.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(CoolZoneNum).TotalOutputRequired = -3000.0; // cooling load
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(CoolZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(CoolZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(CoolZoneNum).setpts[(int)HVAC::SetptType::SingleCool].coolSetptSched->currentVal;
 
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(CoolHeatZoneNum).SchIndx_SingleHeatCoolSetPoint;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 22.0;
+    state->dataZoneCtrls->TempControlledZone(CoolHeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeatCool].heatSetptSched->currentVal = 22.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(CoolHeatZoneNum).TotalOutputRequired = -4000.0; // cooling load
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(CoolHeatZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(CoolHeatZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(CoolHeatZoneNum).setpts[(int)HVAC::SetptType::SingleHeatCool].heatSetptSched->currentVal;
 
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(DualZoneNum).SchIndx_DualSetPointWDeadBandCool;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 24.0;
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(DualZoneNum).SchIndx_DualSetPointWDeadBandHeat;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 20.0;
+    state->dataZoneCtrls->TempControlledZone(DualZoneNum).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched->currentVal = 24.0;
+    state->dataZoneCtrls->TempControlledZone(DualZoneNum).setpts[(int)HVAC::SetptType::DualHeatCool].heatSetptSched->currentVal = 20.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired = 2500.0; // heating load
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(DualZoneNum).setpts[(int)HVAC::SetptType::DualHeatCool].heatSetptSched->currentVal;
 
     CalcZoneAirTempSetPoints(*state);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(HeatZoneNum).calcPredictedSystemLoad(*state, 1.0, HeatZoneNum);
 
-    EXPECT_EQ(21.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(HeatZoneNum));
+    EXPECT_EQ(21.0, state->dataHeatBalFanSys->zoneTstatSetpts(HeatZoneNum).setpt);
     EXPECT_FALSE(state->dataZoneEnergyDemand->CurDeadBandOrSetback(HeatZoneNum)); // Tstat should show there is load on a single heating SP
     EXPECT_EQ(1000.0,
               state->dataZoneEnergyDemand->ZoneSysEnergyDemand(HeatZoneNum)
@@ -570,7 +559,7 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
 
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(CoolZoneNum).calcPredictedSystemLoad(*state, 1.0, CoolZoneNum);
 
-    EXPECT_EQ(23.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(CoolZoneNum));
+    EXPECT_EQ(23.0, state->dataHeatBalFanSys->zoneTstatSetpts(CoolZoneNum).setpt);
     EXPECT_FALSE(state->dataZoneEnergyDemand->CurDeadBandOrSetback(CoolZoneNum)); // Tstat should show there is load on a single cooling SP
     EXPECT_EQ(-3000.0,
               state->dataZoneEnergyDemand->ZoneSysEnergyDemand(CoolZoneNum)
@@ -578,7 +567,7 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
 
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(CoolHeatZoneNum).calcPredictedSystemLoad(*state, 1.0, CoolHeatZoneNum);
 
-    ASSERT_EQ(22.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(CoolHeatZoneNum));
+    ASSERT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(CoolHeatZoneNum).setpt);
     EXPECT_FALSE(
         state->dataZoneEnergyDemand->CurDeadBandOrSetback(CoolHeatZoneNum)); // Tstat should show there is load on a single heating or cooling SP
     EXPECT_EQ(-4000.0,
@@ -587,25 +576,24 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_ReportingTest)
 
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).calcPredictedSystemLoad(*state, 1.0, DualZoneNum);
 
-    EXPECT_EQ(20.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(DualZoneNum));
+    EXPECT_EQ(20.0, state->dataHeatBalFanSys->zoneTstatSetpts(DualZoneNum).setpt);
     EXPECT_FALSE(state->dataZoneEnergyDemand->CurDeadBandOrSetback(DualZoneNum)); // Tstat should show there is load on a dual SP
     EXPECT_EQ(2500.0,
               state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum)
                   .TotalOutputRequired); // TotalOutputRequired gets updated in CalcPredictedSystemLoad based on the load
 
-    SetPointTempSchedIndex = state->dataZoneCtrls->TempControlledZone(DualZoneNum).SchIndx_DualSetPointWDeadBandCool;
-    state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue = 25.0;
+    state->dataZoneCtrls->TempControlledZone(DualZoneNum).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched->currentVal = 25.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired = 1000.0;
     // LoadToCoolingSetPoint = ( TempDepZnLd( ZoneNum ) * ( TempZoneThermostatSetPoint( ZoneNum ) ) - TempIndZnLd( ZoneNum ) );
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).tempDepLoad =
         state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired /
-        state->dataScheduleMgr->Schedule(SetPointTempSchedIndex).CurrentValue;
+        state->dataZoneCtrls->TempControlledZone(DualZoneNum).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched->currentVal;
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).tempIndLoad = 3500.0; // results in a cooling load
 
     CalcZoneAirTempSetPoints(*state);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(DualZoneNum).calcPredictedSystemLoad(*state, 1.0, DualZoneNum);
 
-    EXPECT_EQ(25.0, state->dataHeatBalFanSys->TempZoneThermostatSetPoint(DualZoneNum));
+    EXPECT_EQ(25.0, state->dataHeatBalFanSys->zoneTstatSetpts(DualZoneNum).setpt);
     EXPECT_FALSE(state->dataZoneEnergyDemand->CurDeadBandOrSetback(DualZoneNum)); // Tstat should show there is load on a dual SP
     EXPECT_EQ(-2500.0, state->dataZoneEnergyDemand->ZoneSysEnergyDemand(DualZoneNum).TotalOutputRequired); // should show a cooling load
 }
@@ -797,6 +785,8 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_AdaptiveThermostat)
 
     ASSERT_TRUE(process_idf(idf_objects)); // Tstat should show if the idf is legel
 
+    state->init_state(*state);
+
     int ZoneNum(4);
     int CoolZoneASHNum(1);
     int CoolZoneCENNum(2);
@@ -937,6 +927,8 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_calcZoneOrSpaceSums_SurfCon
     // DATE WRITTEN: Jan 2017
     // #5906 Adaptive convection resulting in extremely low zone temperature which causes fatal error
 
+    state->init_state(*state);
+
     int ZoneNum = 1; // Zone number
 
     state->dataHeatBal->ZoneIntGain.allocate(ZoneNum);
@@ -1055,6 +1047,7 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_EMSOverrideSetpointTest)
     // AUTHOR: L. Gu, FSEC
     // DATE WRITTEN: Jun. 2017
     // #5870 EMS actuators for Zone Temperature Control not working
+    state->init_state(*state);
 
     state->dataZoneCtrls->NumTempControlledZones = 1;
     state->dataZoneCtrls->NumComfortControlledZones = 0;
@@ -1067,14 +1060,12 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_EMSOverrideSetpointTest)
 
     state->dataHeatBalFanSys->TempControlType.allocate(1);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(1);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     OverrideAirSetPointsforEMSCntrl(*state);
-    EXPECT_EQ(23.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(23.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
     state->dataZoneCtrls->NumTempControlledZones = 0;
     state->dataZoneCtrls->NumComfortControlledZones = 1;
@@ -1083,13 +1074,13 @@ TEST_F(EnergyPlusFixture, ZoneTempPredictorCorrector_EMSOverrideSetpointTest)
     state->dataZoneCtrls->ComfortControlledZone(1).ActualZoneNum = 1;
     state->dataZoneCtrls->ComfortControlledZone(1).EMSOverrideHeatingSetPointOn = true;
     state->dataZoneCtrls->ComfortControlledZone(1).EMSOverrideCoolingSetPointOn = true;
-    state->dataHeatBalFanSys->ComfortControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->ComfortControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneCtrls->ComfortControlledZone(1).EMSOverrideHeatingSetPointValue = 22;
     state->dataZoneCtrls->ComfortControlledZone(1).EMSOverrideCoolingSetPointValue = 25;
 
     OverrideAirSetPointsforEMSCntrl(*state);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(25.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(25.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 }
 
 TEST_F(EnergyPlusFixture, temperatureAndCountInSch_test)
@@ -1133,9 +1124,10 @@ TEST_F(EnergyPlusFixture, temperatureAndCountInSch_test)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 4;
-    state->dataGlobal->MinutesPerTimeStep = 15;
+    state->dataGlobal->TimeStepsInHour = 4;
+    state->dataGlobal->MinutesInTimeStep = 15;
     state->dataEnvrn->CurrentYearIsLeapYear = false;
+    state->init_state(*state);
 
     Real64 valueAtTime;
     int numDays;
@@ -1143,52 +1135,52 @@ TEST_F(EnergyPlusFixture, temperatureAndCountInSch_test)
     constexpr int wednesday = 4;
 
     state->dataEnvrn->Latitude = 30.; // northern hemisphere
-    int sched1Index = GetScheduleIndex(*state, "SCHED1");
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched1Index, false, wednesday, 11);
+    auto *sched1 = Sched::GetSchedule(*state, "SCHED1");
+    std::tie(valueAtTime, numDays, monthAssumed) = sched1->getValAndCountOnDay(*state, false, Sched::DayType::Wednesday, 11);
 
     EXPECT_EQ(20, valueAtTime);
     EXPECT_EQ(365, numDays);
     EXPECT_EQ("January", monthAssumed);
 
     // test month selected based on hemisphere and isSummer flag.
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched1Index, true, wednesday, 11);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched1->getValAndCountOnDay(*state, true, Sched::DayType::Wednesday, 11);
     EXPECT_EQ("July", monthAssumed);
 
     state->dataEnvrn->Latitude = -30.; // southern hemisphere
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched1Index, false, wednesday, 11);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched1->getValAndCountOnDay(*state, false, Sched::DayType::Wednesday, 11);
     EXPECT_EQ("July", monthAssumed);
 
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched1Index, true, wednesday, 11);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched1->getValAndCountOnDay(*state, true, Sched::DayType::Wednesday, 11);
     EXPECT_EQ("January", monthAssumed);
 
     state->dataEnvrn->Latitude = 30.; // northern hemisphere
-    int sched2Index = GetScheduleIndex(*state, "SCHED2");
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched2Index, false, wednesday, 11);
+    auto *sched2 = Sched::GetSchedule(*state, "SCHED2");
+    std::tie(valueAtTime, numDays, monthAssumed) = sched2->getValAndCountOnDay(*state, false, Sched::DayType::Wednesday, 11);
 
     EXPECT_EQ(24, valueAtTime);
     EXPECT_EQ(31, numDays);
     EXPECT_EQ("January", monthAssumed);
 
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched2Index, true, wednesday, 11);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched2->getValAndCountOnDay(*state, true, Sched::DayType::Wednesday, 11);
 
     EXPECT_EQ(26, valueAtTime);
     EXPECT_EQ(334, numDays);
     EXPECT_EQ("July", monthAssumed);
 
-    int sched3Index = GetScheduleIndex(*state, "SCHED3");
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched3Index, false, wednesday, 11);
+    auto *sched3 = Sched::GetSchedule(*state, "SCHED3");
+    std::tie(valueAtTime, numDays, monthAssumed) = sched3->getValAndCountOnDay(*state, false, Sched::DayType::Wednesday, 11);
 
     EXPECT_EQ(26, valueAtTime);
     EXPECT_EQ(365, numDays);
     EXPECT_EQ("January", monthAssumed);
 
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched3Index, true, wednesday, 11);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched3->getValAndCountOnDay(*state, true, Sched::DayType::Wednesday, 11);
 
     EXPECT_EQ(26, valueAtTime);
     EXPECT_EQ(365, numDays);
     EXPECT_EQ("July", monthAssumed);
 
-    std::tie(valueAtTime, numDays, monthAssumed) = temperatureAndCountInSch(*state, sched3Index, false, wednesday, 19);
+    std::tie(valueAtTime, numDays, monthAssumed) = sched3->getValAndCountOnDay(*state, false, Sched::DayType::Wednesday, 19);
 
     EXPECT_EQ(24, valueAtTime);
     EXPECT_EQ(31, numDays);
@@ -1198,15 +1190,11 @@ TEST_F(EnergyPlusFixture, temperatureAndCountInSch_test)
 TEST_F(EnergyPlusFixture, SetPointWithCutoutDeltaT_test)
 {
     // On/Off thermostat
-    state->dataScheduleMgr->Schedule.allocate(3);
-
     state->dataZoneCtrls->NumTempControlledZones = 1;
 
     // SingleHeatingSetPoint
     state->dataZoneCtrls->TempControlledZone.allocate(state->dataZoneCtrls->NumTempControlledZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(1);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->DeadBandOrSetback.allocate(1);
     state->dataHeatBal->Zone.allocate(1);
@@ -1220,14 +1208,17 @@ TEST_F(EnergyPlusFixture, SetPointWithCutoutDeltaT_test)
 
     state->dataZoneCtrls->TempControlledZone(1).DeltaTCutSet = 2.0;
     state->dataZoneCtrls->TempControlledZone(1).ActualZoneNum = 1;
-    state->dataZoneCtrls->TempControlledZone(1).CTSchedIndex = 1;
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1;
+    auto *setptTypeSched = state->dataZoneCtrls->TempControlledZone(1).setptTypeSched = Sched::AddScheduleConstant(*state, "SETPT TYPE-1");
+    state->dataZoneCtrls->TempControlledZone(1).setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeat;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(1);
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleHeatSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeating.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeating(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 22.0;
+    auto *heatSetptSched = Sched::AddScheduleConstant(*state, "HEAT SETPT-1");
+    auto *coolSetptSched = Sched::AddScheduleConstant(*state, "COOL SETPT-1");
+
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeat].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeat](1).heatSched = heatSetptSched;
+    heatSetptSched->currentVal = 22.0;
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(1);
     state->dataZoneTempPredictorCorrector->spaceHeatBalance.allocate(1);
     auto &thisZoneHB = state->dataZoneTempPredictorCorrector->zoneHeatBalance(1);
@@ -1241,60 +1232,62 @@ TEST_F(EnergyPlusFixture, SetPointWithCutoutDeltaT_test)
 
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
 
     thisZoneHB.MAT = 23.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = false;
 
     // SingleCoolingSetPoint
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 2;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleCoolSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleCooling.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleCooling(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 26.0;
+    setptTypeSched->currentVal = (int)HVAC::SetptType::SingleCool;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleCool].coolSetptSched = coolSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleCool].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleCool](1).coolSched = coolSetptSched;
+    coolSetptSched->currentVal = 26.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
 
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLast = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLast = false;
 
     thisZoneHB.MAT = 27.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
     // SingleHeatCoolSetPoint
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 3;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleHeatCoolSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeatCool.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeatCool(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 24.0;
+    setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeatCool;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeatCool].heatSetptSched = heatSetptSched;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeatCool].coolSetptSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool](1).heatSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool](1).coolSched = heatSetptSched;
+    heatSetptSched->currentVal = 24.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
 
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
-    // DualSetPointWithDeadBand : Adjust cooling setpoint
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool.allocate(1);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 4;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandHeat = 2;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandCool = 3;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).HeatTempSchedIndex = 2;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).CoolTempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(2).CurrentValue = 22.0;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 26.0;
+    // DualHeatCool : Adjust cooling setpoint
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool].allocate(1);
+    setptTypeSched->currentVal = (int)HVAC::SetptType::DualHeatCool;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::DualHeatCool].heatSetptSched = heatSetptSched;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched = coolSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool](1).heatSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool](1).coolSched = coolSetptSched;
+    heatSetptSched->currentVal = 22.0;
+    coolSetptSched->currentVal = 26.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
 
@@ -1302,38 +1295,36 @@ TEST_F(EnergyPlusFixture, SetPointWithCutoutDeltaT_test)
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = false;
 
-    // DualSetPointWithDeadBand : Adjust heating setpoint
+    // DualHeatCool : Adjust heating setpoint
     thisZoneHB.MAT = 21.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
-    // DualSetPointWithDeadBand : Adjust cooling setpoint
+    // DualHeatCool : Adjust cooling setpoint
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLast = true;
     thisZoneHB.MAT = 27.0;
     thisZoneHB.T1 = thisZoneHB.MAT;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 }
 
 TEST_F(EnergyPlusFixture, TempAtPrevTimeStepWithCutoutDeltaT_test)
 {
-    state->dataScheduleMgr->Schedule.allocate(3);
+    state->init_state(*state);
     state->dataZoneCtrls->NumTempControlledZones = 1;
 
     // SingleHeatingSetPoint
     state->dataZoneCtrls->TempControlledZone.allocate(state->dataZoneCtrls->NumTempControlledZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(1);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->DeadBandOrSetback.allocate(1);
     state->dataHeatBal->Zone.allocate(1);
@@ -1347,14 +1338,20 @@ TEST_F(EnergyPlusFixture, TempAtPrevTimeStepWithCutoutDeltaT_test)
 
     state->dataZoneCtrls->TempControlledZone(1).DeltaTCutSet = 2.0;
     state->dataZoneCtrls->TempControlledZone(1).ActualZoneNum = 1;
-    state->dataZoneCtrls->TempControlledZone(1).CTSchedIndex = 1;
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1;
+
+    auto *setptTypeSched = Sched::AddScheduleConstant(*state, "SETPT TYPE-1");
+    state->dataZoneCtrls->TempControlledZone(1).setptTypeSched = setptTypeSched;
+    setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeat;
+
+    auto *heatSetptSched = Sched::AddScheduleConstant(*state, "HEAT SETPT-1");
+    auto *coolSetptSched = Sched::AddScheduleConstant(*state, "COOL SETPT-1");
+
     state->dataHeatBalFanSys->TempControlType.allocate(1);
     state->dataHeatBalFanSys->TempControlTypeRpt.allocate(1);
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleHeatSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeating.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeating(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 22.0;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeat].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeat](1).heatSched = heatSetptSched;
+    heatSetptSched->currentVal = 22.0;
     state->dataZoneTempPredictorCorrector->spaceHeatBalance.allocate(1);
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(1);
     auto &thisZoneHB = state->dataZoneTempPredictorCorrector->zoneHeatBalance(1);
@@ -1368,56 +1365,58 @@ TEST_F(EnergyPlusFixture, TempAtPrevTimeStepWithCutoutDeltaT_test)
 
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
 
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLastSave = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, true, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
 
     // SingleCoolingSetPoint
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 2;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleCoolSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleCooling.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleCooling(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 26.0;
+    setptTypeSched->currentVal = (int)HVAC::SetptType::SingleCool;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleCool].coolSetptSched = coolSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleCool].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleCool](1).coolSched = coolSetptSched;
+    coolSetptSched->currentVal = 26.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.XMPT = 27;
 
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLast = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLast = false;
 
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLastSave = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, true, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
     // SingleHeatCoolSetPoint
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 3;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_SingleHeatCoolSetPoint = 3;
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeatCool.allocate(1);
-    state->dataZoneTempPredictorCorrector->SetPointSingleHeatCool(1).TempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 24.0;
+    setptTypeSched->currentVal = (int)HVAC::SetptType::SingleHeatCool;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeatCool].heatSetptSched = heatSetptSched;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeatCool].coolSetptSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool].allocate(1);
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool](1).heatSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::SingleHeatCool](1).coolSched = heatSetptSched;
+    heatSetptSched->currentVal = 24.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.XMPT = thisZoneHB.MAT;
 
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
-    // DualSetPointWithDeadBand : Adjust cooling setpoint
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool.allocate(1);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 4;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandHeat = 2;
-    state->dataZoneCtrls->TempControlledZone(1).SchIndx_DualSetPointWDeadBandCool = 3;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).HeatTempSchedIndex = 2;
-    state->dataZoneTempPredictorCorrector->SetPointDualHeatCool(1).CoolTempSchedIndex = 3;
-    state->dataScheduleMgr->Schedule(2).CurrentValue = 22.0;
-    state->dataScheduleMgr->Schedule(3).CurrentValue = 26.0;
+    // DualHeatCool : Adjust cooling setpoint
+    setptTypeSched->currentVal = (int)HVAC::SetptType::DualHeatCool;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool].allocate(1);
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::DualHeatCool].heatSetptSched = heatSetptSched;
+    state->dataZoneCtrls->TempControlledZone(1).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched = coolSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool](1).heatSched = heatSetptSched;
+    state->dataZoneTempPredictorCorrector->tempSetptScheds[(int)HVAC::SetptType::DualHeatCool](1).coolSched = coolSetptSched;
+    heatSetptSched->currentVal = 22.0;
+    coolSetptSched->currentVal = 26.0;
     thisZoneHB.MAT = 25.0;
     thisZoneHB.XMPT = 21.0;
 
@@ -1425,28 +1424,30 @@ TEST_F(EnergyPlusFixture, TempAtPrevTimeStepWithCutoutDeltaT_test)
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, false, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLast = false;
 
-    // DualSetPointWithDeadBand : Adjust heating setpoint
+    // DualHeatCool : Adjust heating setpoint
     state->dataZoneCtrls->TempControlledZone(1).HeatModeLastSave = true;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, true, false, 0.01);
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(26.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(26.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 
-    // DualSetPointWithDeadBand : Adjust cooling setpoint
+    // DualHeatCool : Adjust cooling setpoint
     state->dataZoneCtrls->TempControlledZone(1).CoolModeLastSave = true;
     thisZoneHB.XMPT = 27.0;
     CalcZoneAirTempSetPoints(*state);
     PredictSystemLoads(*state, true, false, 0.01);
-    EXPECT_EQ(22.0, state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1));
-    EXPECT_EQ(24.0, state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1));
+    EXPECT_EQ(22.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo);
+    EXPECT_EQ(24.0, state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi);
 }
 
 TEST_F(EnergyPlusFixture, ReportMoistLoadsZoneMultiplier_Test)
 {
+    state->init_state(*state);
+
     int zoneNum = 1;
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(zoneNum);
     auto &thisZoneSysMoistureDemand = state->dataZoneEnergyDemand->ZoneSysMoistureDemand(zoneNum);
@@ -1527,6 +1528,8 @@ TEST_F(EnergyPlusFixture, ReportMoistLoadsZoneMultiplier_Test)
 
 TEST_F(EnergyPlusFixture, ReportSensibleLoadsZoneMultiplier_Test)
 {
+    state->init_state(*state);
+
     int zoneNum = 1;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(zoneNum);
     auto &thisZoneSysEnergyDemand = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(zoneNum);
@@ -1654,9 +1657,11 @@ TEST_F(EnergyPlusFixture, ReportSensibleLoadsZoneMultiplier_Test)
 
 TEST_F(EnergyPlusFixture, DownInterpolate4HistoryValues_Test)
 {
-    Real64 PriorTimeStep = 0.25;
     state->dataHVACGlobal->TimeStepSys = 0.125;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+    state->init_state(*state);
+
+    Real64 PriorTimeStep = 0.25;
     Real64 myVarValue = 5.0;
     Real64 HistoryValue1 = 1.0;
     Real64 HistoryValue2 = 2.0;
@@ -1699,6 +1704,7 @@ TEST_F(EnergyPlusFixture, DownInterpolate4HistoryValues_Test)
 
 TEST_F(EnergyPlusFixture, HybridModel_processInverseModelMultpHMTest)
 {
+    state->init_state(*state);
     // Test added for fix to GitHub Issue #10508
     Real64 calcHMmult;
     Real64 calcHMsum = 0.0;
@@ -1767,10 +1773,11 @@ TEST_F(EnergyPlusFixture, HybridModel_processInverseModelMultpHMTest)
     EXPECT_NEAR(calcHMavg, expectedHMavg, allowableTolerance);
     EXPECT_NE(state->dataZoneTempPredictorCorrector->zoneHeatBalance(numZones).hmThermalMassMultErrIndex,
               0); // This is now set, won't be zero anymore
-    std::string const error_string =
-        delimited_string({"   ** Warning ** Hybrid model thermal mass multiplier higher than the limit for Hybrid Zone",
-                          "   **   ~~~   ** This means that the ratio of the zone air heat capacity for the current time step to the",
-                          "   **   ~~~   ** zone air heat storage is higher than the maximum limit of 30.0."});
+    std::string const error_string = delimited_string(
+        {format("   ** Warning ** Version: missing in IDF, processing for EnergyPlus version=\"{}\"", DataStringGlobals::MatchVersion),
+         "   ** Warning ** Hybrid model thermal mass multiplier higher than the limit for Hybrid Zone",
+         "   **   ~~~   ** This means that the ratio of the zone air heat capacity for the current time step to the",
+         "   **   ~~~   ** zone air heat storage is higher than the maximum limit of 30.0."});
     EXPECT_TRUE(compare_err_stream(error_string, true));
 
     // Test 5: Repeat of Test 1--verifying that it won't impact the statistical variables.  No error message.
@@ -1789,10 +1796,8 @@ TEST_F(EnergyPlusFixture, HybridModel_processInverseModelMultpHMTest)
 
 TEST_F(EnergyPlusFixture, FillPredefinedTableOnThermostatSchedules_Test)
 {
+    state->init_state(*state);
     using namespace EnergyPlus::OutputReportPredefined;
-
-    state->dataScheduleMgr->Schedule.allocate(5);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
 
     auto &orp = *state->dataOutRptPredefined;
     auto &dzc = *state->dataZoneCtrls;
@@ -1804,49 +1809,30 @@ TEST_F(EnergyPlusFixture, FillPredefinedTableOnThermostatSchedules_Test)
 
     dzc.TempControlledZone(1).ZoneName = "zoneA";
     dzc.TempControlledZone(1).Name = "stat A";
-    dzc.TempControlledZone(1).ControlTypeSchedName = "control schedule A";
-    dzc.TempControlledZone(1).NumControlTypes = 1;
-    dzc.TempControlledZone(1).ControlTypeEnum.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(1).ControlTypeName.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(1).ControlTypeEnum(1) = HVAC::ThermostatType::SingleHeating;
-    dzc.TempControlledZone(1).ControlTypeName(1) = "control A";
-    dzc.TempControlledZone(1).SchIndx_SingleHeatSetPoint = 1;
-    state->dataScheduleMgr->Schedule(1).Name = "schA";
+
+    dzc.TempControlledZone(1).setptTypeSched = Sched::AddScheduleConstant(*state, "control schedule A");
+    dzc.TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeat].Name = "control A";
+    dzc.TempControlledZone(1).setpts[(int)HVAC::SetptType::SingleHeat].heatSetptSched = Sched::AddScheduleConstant(*state, "SINGLEHEATSCH");
 
     dzc.TempControlledZone(2).ZoneName = "zoneB";
     dzc.TempControlledZone(2).Name = "stat B";
-    dzc.TempControlledZone(2).ControlTypeSchedName = "control schedule B";
-    dzc.TempControlledZone(2).NumControlTypes = 1;
-    dzc.TempControlledZone(2).ControlTypeEnum.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(2).ControlTypeName.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(2).ControlTypeEnum(1) = HVAC::ThermostatType::SingleCooling;
-    dzc.TempControlledZone(2).ControlTypeName(1) = "control B";
-    dzc.TempControlledZone(2).SchIndx_SingleCoolSetPoint = 2;
-    state->dataScheduleMgr->Schedule(2).Name = "schB";
+    dzc.TempControlledZone(2).setptTypeSched = Sched::AddScheduleConstant(*state, "control schedule B");
+    dzc.TempControlledZone(2).setpts[(int)HVAC::SetptType::SingleCool].Name = "control B";
+    dzc.TempControlledZone(2).setpts[(int)HVAC::SetptType::SingleCool].coolSetptSched = Sched::AddScheduleConstant(*state, "SINGLECOOLSCH");
 
     dzc.TempControlledZone(3).ZoneName = "zoneC";
     dzc.TempControlledZone(3).Name = "stat C";
-    dzc.TempControlledZone(3).ControlTypeSchedName = "control schedule C";
-    dzc.TempControlledZone(3).NumControlTypes = 1;
-    dzc.TempControlledZone(3).ControlTypeEnum.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(3).ControlTypeName.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(3).ControlTypeEnum(1) = HVAC::ThermostatType::SingleHeatCool;
-    dzc.TempControlledZone(3).ControlTypeName(1) = "control C";
-    dzc.TempControlledZone(3).SchIndx_SingleHeatCoolSetPoint = 3;
-    state->dataScheduleMgr->Schedule(3).Name = "schC";
+    dzc.TempControlledZone(3).setptTypeSched = Sched::AddScheduleConstant(*state, "control schedule C");
+    dzc.TempControlledZone(3).setpts[(int)HVAC::SetptType::SingleHeatCool].Name = "control C";
+    dzc.TempControlledZone(3).setpts[(int)HVAC::SetptType::SingleHeatCool].heatSetptSched = Sched::AddScheduleConstant(*state, "SINGLEHEATCOOLSCH");
+    dzc.TempControlledZone(3).setpts[(int)HVAC::SetptType::SingleHeatCool].coolSetptSched = Sched::GetSchedule(*state, "SINGLEHEATCOOLSCH");
 
     dzc.TempControlledZone(4).ZoneName = "zoneD";
     dzc.TempControlledZone(4).Name = "stat D";
-    dzc.TempControlledZone(4).ControlTypeSchedName = "control schedule D";
-    dzc.TempControlledZone(4).NumControlTypes = 1;
-    dzc.TempControlledZone(4).ControlTypeEnum.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(4).ControlTypeName.allocate(dzc.TempControlledZone(1).NumControlTypes);
-    dzc.TempControlledZone(4).ControlTypeEnum(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
-    dzc.TempControlledZone(4).ControlTypeName(1) = "control D";
-    dzc.TempControlledZone(4).SchIndx_DualSetPointWDeadBandHeat = 4;
-    dzc.TempControlledZone(4).SchIndx_DualSetPointWDeadBandCool = 5;
-    state->dataScheduleMgr->Schedule(4).Name = "schD";
-    state->dataScheduleMgr->Schedule(5).Name = "schE";
+    dzc.TempControlledZone(4).setptTypeSched = Sched::AddScheduleConstant(*state, "control schedule D");
+    dzc.TempControlledZone(4).setpts[(int)HVAC::SetptType::DualHeatCool].Name = "control D";
+    dzc.TempControlledZone(4).setpts[(int)HVAC::SetptType::DualHeatCool].heatSetptSched = Sched::AddScheduleConstant(*state, "DUALHEATCOOLHEATSCH");
+    dzc.TempControlledZone(4).setpts[(int)HVAC::SetptType::DualHeatCool].coolSetptSched = Sched::AddScheduleConstant(*state, "DUALHEATCOOLCOOLSCH");
 
     FillPredefinedTableOnThermostatSchedules(*state);
 
@@ -1854,27 +1840,100 @@ TEST_F(EnergyPlusFixture, FillPredefinedTableOnThermostatSchedules_Test)
     EXPECT_EQ("control schedule A", RetrievePreDefTableEntry(*state, orp.pdchStatCtrlTypeSchd, "zoneA"));
     EXPECT_EQ("SingleHeating", RetrievePreDefTableEntry(*state, orp.pdchStatSchdType1, "zoneA"));
     EXPECT_EQ("control A", RetrievePreDefTableEntry(*state, orp.pdchStatSchdTypeName1, "zoneA"));
-    EXPECT_EQ("schA", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneA"));
-    EXPECT_EQ("NOT FOUND", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneA"));
+    EXPECT_EQ("SINGLEHEATSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneA"));
+    EXPECT_EQ("NOT FOUND", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneA"));
 
     EXPECT_EQ("stat B", RetrievePreDefTableEntry(*state, orp.pdchStatName, "zoneB"));
     EXPECT_EQ("control schedule B", RetrievePreDefTableEntry(*state, orp.pdchStatCtrlTypeSchd, "zoneB"));
     EXPECT_EQ("SingleCooling", RetrievePreDefTableEntry(*state, orp.pdchStatSchdType1, "zoneB"));
     EXPECT_EQ("control B", RetrievePreDefTableEntry(*state, orp.pdchStatSchdTypeName1, "zoneB"));
-    EXPECT_EQ("NOT FOUND", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneB"));
-    EXPECT_EQ("schB", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneB"));
+    EXPECT_EQ("NOT FOUND", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneB"));
+    EXPECT_EQ("SINGLECOOLSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneB"));
 
     EXPECT_EQ("stat C", RetrievePreDefTableEntry(*state, orp.pdchStatName, "zoneC"));
     EXPECT_EQ("control schedule C", RetrievePreDefTableEntry(*state, orp.pdchStatCtrlTypeSchd, "zoneC"));
     EXPECT_EQ("SingleHeatCool", RetrievePreDefTableEntry(*state, orp.pdchStatSchdType1, "zoneC"));
     EXPECT_EQ("control C", RetrievePreDefTableEntry(*state, orp.pdchStatSchdTypeName1, "zoneC"));
-    EXPECT_EQ("schC", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneC"));
-    EXPECT_EQ("schC", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneC"));
+    EXPECT_EQ("SINGLEHEATCOOLSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneC"));
+    EXPECT_EQ("SINGLEHEATCOOLSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneC"));
 
     EXPECT_EQ("stat D", RetrievePreDefTableEntry(*state, orp.pdchStatName, "zoneD"));
     EXPECT_EQ("control schedule D", RetrievePreDefTableEntry(*state, orp.pdchStatCtrlTypeSchd, "zoneD"));
     EXPECT_EQ("DualSetPointWithDeadBand", RetrievePreDefTableEntry(*state, orp.pdchStatSchdType1, "zoneD"));
     EXPECT_EQ("control D", RetrievePreDefTableEntry(*state, orp.pdchStatSchdTypeName1, "zoneD"));
-    EXPECT_EQ("schE", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneD"));
-    EXPECT_EQ("schD", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneD"));
+    EXPECT_EQ("DUALHEATCOOLHEATSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, "zoneD"));
+    EXPECT_EQ("DUALHEATCOOLCOOLSCH", RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, "zoneD"));
 }
+
+#ifdef GET_OUT
+TEST_F(EnergyPlusFixture, FillPredefinedTableOnThermostatSchedules_MultipleControls)
+{
+    using namespace EnergyPlus::OutputReportPredefined;
+
+    auto &orp = *state->dataOutRptPredefined;
+    auto &dzc = *state->dataZoneCtrls;
+
+    SetPredefinedTables(*state);
+
+    constexpr int NumControlTypes = 4;
+    dzc.NumTempControlledZones = NumControlTypes;
+    dzc.TempControlledZone.allocate(dzc.NumTempControlledZones);
+
+    // [1, 2, 3, 4]
+    std::vector<int> order(NumControlTypes);
+    std::iota(order.begin(), order.end(), 1);
+    for (size_t i = 0; i < order.size(); ++i) {
+        char zoneLetter = char(int('A') + i);
+        // Simple left rotate: [2, 3, 4, 1], etc
+        std::rotate(order.begin(), std::next(order.begin()), order.end());
+        auto &tcz = dzc.TempControlledZone(i + 1);
+
+        const std::string ZoneName = fmt::format("ZONE {}", zoneLetter);
+        tcz.ZoneName = ZoneName;
+        tcz.Name = fmt::format("TSTAT {}", zoneLetter);
+        tcz.ControlTypeSchedName = state->dataScheduleMgr->Schedule(CTSchedIndex).Name;
+        tcz.CTSchedIndex = CTSchedIndex;
+        tcz.NumControlTypes = NumControlTypes;
+        tcz.ControlTypeEnum.allocate(NumControlTypes);
+        tcz.ControlTypeName.allocate(NumControlTypes);
+
+        tcz.ControlTypeEnum(order.at(0)) = HVAC::ThermostatType::SingleHeating;
+        tcz.ControlTypeName(order.at(0)) = "SINGLEHEATING CTRL";
+        tcz.SchIndx_SingleHeatSetPoint = SingleHeatingSchIndex;
+
+        tcz.ControlTypeEnum(order.at(1)) = HVAC::ThermostatType::SingleCooling;
+        tcz.ControlTypeName(order.at(1)) = "SINGLECOOLING CTRL";
+        tcz.SchIndx_SingleCoolSetPoint = SingleCoolingSchIndex;
+
+        tcz.ControlTypeEnum(order.at(2)) = HVAC::ThermostatType::SingleHeatCool;
+        tcz.ControlTypeName(order.at(2)) = "SINGLEHEATCOOL CTRL";
+        tcz.SchIndx_SingleHeatCoolSetPoint = SingleHeatCoolSchIndex;
+
+        tcz.ControlTypeEnum(order.at(3)) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+        tcz.ControlTypeName(order.at(3)) = "DUALSETPOINTWITHDEADBAND CTRL";
+        tcz.SchIndx_DualSetPointWDeadBandHeat = DualSetPointWDeadBandHeatSchIndex;
+        tcz.SchIndx_DualSetPointWDeadBandCool = DualSetPointWDeadBandCoolSchIndex;
+    }
+
+    FillPredefinedTableOnThermostatSchedules(*state);
+
+    for (size_t i = 0; i < order.size(); ++i) {
+        char zoneLetter = char(int('A') + i);
+        const std::string ZoneName = fmt::format("ZONE {}", zoneLetter);
+        EXPECT_EQ(fmt::format("TSTAT {}", zoneLetter), RetrievePreDefTableEntry(*state, orp.pdchStatName, ZoneName)) << "Failed for " << ZoneName;
+        EXPECT_EQ("CONTROL SCHEDULE", RetrievePreDefTableEntry(*state, orp.pdchStatCtrlTypeSchd, ZoneName)) << "Failed for " << ZoneName;
+        EXPECT_EQ("DualSetPointWithDeadBand, SingleCooling, SingleHeatCool, SingleHeating",
+                  RetrievePreDefTableEntry(*state, orp.pdchStatSchdType1, ZoneName))
+            << "Failed for " << ZoneName;
+        EXPECT_EQ("DUALSETPOINTWITHDEADBAND CTRL, SINGLECOOLING CTRL, SINGLEHEATCOOL CTRL, SINGLEHEATING CTRL",
+                  RetrievePreDefTableEntry(*state, orp.pdchStatSchdTypeName1, ZoneName))
+            << "Failed for " << ZoneName;
+        EXPECT_EQ("DUALSETPOINTWDEADBANDHEATSCH, SINGLEHEATCOOLSCH, SINGLEHEATINGSCH",
+                  RetrievePreDefTableEntry(*state, orp.pdchStatSchdHeatName, ZoneName))
+            << "Failed for " << ZoneName;
+        EXPECT_EQ("DUALSETPOINTWDEADBANDCOOLSCH, SINGLECOOLINGSCH, SINGLEHEATCOOLSCH",
+                  RetrievePreDefTableEntry(*state, orp.pdchStatSchdCoolName, ZoneName))
+            << "Failed for " << ZoneName;
+    }
+}
+#endif // GET_OUT

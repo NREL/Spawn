@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -91,7 +91,6 @@ using namespace EnergyPlus::DataAirLoop;
 using namespace EnergyPlus::DataAirSystems;
 using namespace EnergyPlus::DataSizing;
 using namespace EnergyPlus::DataHeatBalance;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::DataEnvironment;
 using namespace EnergyPlus::DataZoneEquipment;
 using namespace EnergyPlus::DataLoopNode;
@@ -110,13 +109,12 @@ using namespace EnergyPlus::SizingManager;
 using EnergyPlus::Curve::CurveValue;
 using EnergyPlus::Curve::GetCurveName;
 using EnergyPlus::Curve::GetNormalPoint;
-using EnergyPlus::Psychrometrics::PsyHFnTdbRhPb;
-using EnergyPlus::Psychrometrics::PsyRhFnTdbWPb;
-using EnergyPlus::Psychrometrics::PsyWFnTdbRhPb;
-using namespace EnergyPlus::ScheduleManager;
 using EnergyPlus::HybridEvapCoolingModel::CMode;
 using EnergyPlus::HybridEvapCoolingModel::CSetting;
 using EnergyPlus::HybridEvapCoolingModel::Model;
+using EnergyPlus::Psychrometrics::PsyHFnTdbRhPb;
+using EnergyPlus::Psychrometrics::PsyRhFnTdbWPb;
+using EnergyPlus::Psychrometrics::PsyWFnTdbRhPb;
 using namespace EnergyPlus::HybridUnitaryAirConditioners;
 
 namespace EnergyPlus {
@@ -126,6 +124,10 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_Unittest)
     ASSERT_TRUE(process_idf(
         delimited_string(read_lines_in_file(configured_source_directory() / "tst/EnergyPlus/unit/Resources/UnitaryHybridUnitTest_DOSA.idf"))));
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     // setup environment
     bool ErrorsFound(false);
     GetZoneData(*state, ErrorsFound);
@@ -133,9 +135,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_Unittest)
     // Initialize schedule values
     state->dataGlobal->TimeStep = 1;
     state->dataHVACGlobal->TimeStepSys = 1;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -144,7 +144,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_Unittest)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataGlobal->WarmupFlag = false;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Initialize zone areas and volumes - too many other things need to be set up to do these in the normal routines
     state->dataHeatBal->Zone(1).FloorArea = 232.26;
     state->dataEnvrn->StdRhoAir = 1.225;
@@ -157,8 +157,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_Unittest)
     // Setup performance tables
     using namespace EnergyPlus::DataEnvironment;
     // process schedules
-    ProcessScheduleInput(*state); // read schedules
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Get Unitary system
     GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);
     EXPECT_EQ(1, state->dataHybridUnitaryAC->ZoneHybridUnitaryAirConditioner.size());
@@ -390,9 +389,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_Unittest)
 
     // Setup performance tables
     using namespace EnergyPlus::DataEnvironment;
-    // process schedules
-    ProcessScheduleInput(*state); // read schedules
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Get Unitary system: no, we don't want to do it twice! Otherwise the Output Variables will be duplicated
     // GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);
     EXPECT_EQ(1, state->dataHybridUnitaryAC->ZoneHybridUnitaryAirConditioner.size());
@@ -1255,6 +1252,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_ModelOperatingSetting
         "3.25;                    !- Output Value 1",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Curve::GetCurveInput(*state);
     state->dataCurveManager->GetCurvesInputFlag = false;
@@ -1430,6 +1428,8 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_ValidateOptionalError
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
+
     bool ErrorsFound = false;
     GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);
     // Design Specification Outdoor Air Object Name 'SZ DSOA SPACE2-1' is not defined in this model, thus an error is thrown
@@ -1444,6 +1444,10 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_RuntimeFraction_Initi
     ASSERT_TRUE(process_idf(
         delimited_string(read_lines_in_file(configured_source_directory() / "tst/EnergyPlus/unit/Resources/UnitaryHybridUnitTest_DOSA.idf"))));
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     // setup environment
     bool ErrorsFound(false);
     GetZoneData(*state, ErrorsFound);
@@ -1451,9 +1455,8 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_RuntimeFraction_Initi
     // Initialize schedule values
     state->dataGlobal->TimeStep = 1;
     state->dataHVACGlobal->TimeStepSys = 1;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -1462,7 +1465,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_RuntimeFraction_Initi
     state->dataEnvrn->HolidayIndex = 0;
     state->dataGlobal->WarmupFlag = false;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Initialize zone areas and volumes - too many other things need to be set up to do these in the normal routines
     state->dataHeatBal->Zone(1).FloorArea = 232.26;
     state->dataEnvrn->StdRhoAir = 1.225;
@@ -1474,9 +1477,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_RuntimeFraction_Initi
 
     // Setup performance tables
     using namespace EnergyPlus::DataEnvironment;
-    // process schedules
-    ProcessScheduleInput(*state); // read schedules
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     // Get Unitary system
     GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);
     // All to get OA requirements

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -555,11 +555,7 @@ namespace CTElectricGenerator {
             int heatRecInNode = this->HeatRecInletNodeNum;
             heatRecInTemp = state.dataLoopNodes->Node(heatRecInNode).Temp;
 
-            heatRecCp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).FluidName,
-                                                               heatRecInTemp,
-                                                               state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            heatRecCp = state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).glycol->getSpecificHeat(state, heatRecInTemp, RoutineName);
             if (FirstHVACIteration && RunFlag) {
                 heatRecMdot = this->DesignHeatRecMassFlowRate;
             } else {
@@ -810,11 +806,7 @@ namespace CTElectricGenerator {
             int HeatRecOutletNode = this->HeatRecOutletNodeNum;
 
             // size mass flow rate
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).FluidName,
-                                                           Constant::InitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->HRPlantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
 
             this->DesignHeatRecMassFlowRate = rho * this->DesignHeatRecVolFlowRate;
 

@@ -89,7 +89,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,24.2;
+  Version,25.1;
 
   Timestep,4;
 
@@ -652,6 +652,9 @@
     7.5,                     !- X-Coordinate of Reference Point {m}
     7.5,                     !- Y-Coordinate of Reference Point {m}
     0.7;                     !- Z-Coordinate of Reference Point {m}
+
+  OutputControl:ResilienceSummaries,
+    Simplified;
 
   Output:Variable,*,Site Outdoor Air Barometric Pressure,hourly;
 

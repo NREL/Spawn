@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -134,6 +134,7 @@ void GetMicroCHPGeneratorInput(EnergyPlusData &state)
 
     // METHODOLOGY EMPLOYED:
     // EnergyPlus input processor
+    static constexpr std::string_view routineName = "GetMicroCHPGeneratorInput";
 
     Array1D_string AlphArray(25);  // character string data
     Array1D<Real64> NumArray(200); // numeric data TODO deal with allocatable for extensible
@@ -266,7 +267,7 @@ void GetMicroCHPGeneratorInput(EnergyPlusData &state)
         }
 
         if (!(allocated(state.dataCHPElectGen->MicroCHP))) {
-            state.dataCHPElectGen->MicroCHP.allocate(state.dataCHPElectGen->NumMicroCHPs); // inits handeled in derived type definitions
+            state.dataCHPElectGen->MicroCHP.allocate(state.dataCHPElectGen->NumMicroCHPs); // inits handled in derived type definitions
         }
 
         // load in Micro CHPs
@@ -283,6 +284,9 @@ void GetMicroCHPGeneratorInput(EnergyPlusData &state)
                                                                      state.dataIPShortCut->lAlphaFieldBlanks,
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, state.dataIPShortCut->cCurrentModuleObject, AlphArray(1)};
+
             Util::IsNameEmpty(state, AlphArray(1), state.dataIPShortCut->cCurrentModuleObject, ErrorsFound);
 
             // GENERATOR:MICRO CHP,
@@ -372,14 +376,10 @@ void GetMicroCHPGeneratorInput(EnergyPlusData &state)
             }
 
             if (state.dataIPShortCut->lAlphaFieldBlanks(9)) {
-                state.dataCHPElectGen->MicroCHP(GeneratorNum).AvailabilitySchedID = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                state.dataCHPElectGen->MicroCHP(GeneratorNum).AvailabilitySchedID = ScheduleManager::GetScheduleIndex(state, AlphArray(9));
-                if (state.dataCHPElectGen->MicroCHP(GeneratorNum).AvailabilitySchedID == 0) {
-                    ShowSevereError(state, format("Invalid, {} = {}", state.dataIPShortCut->cAlphaFieldNames(9), AlphArray(9)));
-                    ShowContinueError(state, format("Entered in {}={}", state.dataIPShortCut->cCurrentModuleObject, AlphArray(1)));
-                    ErrorsFound = true;
-                }
+                state.dataCHPElectGen->MicroCHP(GeneratorNum).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((state.dataCHPElectGen->MicroCHP(GeneratorNum).availSched = Sched::GetSchedule(state, AlphArray(9))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(9), AlphArray(9));
+                ErrorsFound = true;
             }
             state.dataCHPElectGen->MicroCHP(GeneratorNum).A42Model.TengLast = 20.0;      // inits
             state.dataCHPElectGen->MicroCHP(GeneratorNum).A42Model.TempCWOutLast = 20.0; // inits
@@ -696,11 +696,8 @@ void MicroCHPDataStruct::onInitLoopEquip(EnergyPlusData &state, const EnergyPlus
 {
     static constexpr std::string_view RoutineName("MicroCHPDataStruct::onInitLoopEquip");
 
-    Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                   state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                   state.dataLoopNodes->Node(this->PlantInletNodeID).Temp,
-                                                   state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                   RoutineName);
+    Real64 rho = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum)
+                     .glycol->getDensity(state, state.dataLoopNodes->Node(this->PlantInletNodeID).Temp, RoutineName);
     if (this->A42Model.InternalFlowControl) { // got a curve
         this->PlantMassFlowRateMax =
             2.0 * Curve::CurveValue(
@@ -884,7 +881,7 @@ void MicroCHPDataStruct::CalcMicroCHPNoNormalizeGeneratorModel(EnergyPlusData &s
     Real64 ThermEff = 0.0;
 
     switch (CurrentOpMode) {
-    case DataGenerators::OperatingMode::Off: { // same as standby in model spec but no Pnet standby electicity losses.
+    case DataGenerators::OperatingMode::Off: { // same as standby in model spec but no Pnet standby electricity losses.
 
         Qgenss = 0.0;
         TcwIn = state.dataLoopNodes->Node(this->PlantInletNodeID).Temp; // C
@@ -959,7 +956,7 @@ void MicroCHPDataStruct::CalcMicroCHPNoNormalizeGeneratorModel(EnergyPlusData &s
                 NdotFuel = MdotFuel / state.dataGenerator->FuelSupply(this->FuelSupplyID).KmolPerSecToKgPerSec;
                 Qgross = NdotFuel * (state.dataGenerator->FuelSupply(this->FuelSupplyID).LHV * 1000.0 * 1000.0);
 
-                for (int i = 1; i <= 20; ++i) { // iterating here  could add use of seach method
+                for (int i = 1; i <= 20; ++i) { // iterating here  could add use of search method
                     Pnetss = Qgross * ElecEff;
                     if (this->A42Model.InternalFlowControl) {
                         MdotCW = GeneratorDynamicsManager::FuncDetermineCWMdotForInternalFlowControl(state, this->DynamicsControlID, Pnetss, TcwIn);
@@ -1066,7 +1063,7 @@ void MicroCHPDataStruct::CalcMicroCHPNoNormalizeGeneratorModel(EnergyPlusData &s
             NdotFuel = MdotFuel / state.dataGenerator->FuelSupply(this->FuelSupplyID).KmolPerSecToKgPerSec;
             Qgross = NdotFuel * (state.dataGenerator->FuelSupply(this->FuelSupplyID).LHV * 1000.0 * 1000.0);
 
-            for (int i = 1; i <= 20; ++i) { // iterating here,  could add use of seach method error signal
+            for (int i = 1; i <= 20; ++i) { // iterating here,  could add use of search method error signal
                 Pnetss = Qgross * ElecEff;
                 if (this->A42Model.InternalFlowControl) {
                     MdotCW = GeneratorDynamicsManager::FuncDetermineCWMdotForInternalFlowControl(state, this->DynamicsControlID, Pnetss, TcwIn);
@@ -1159,11 +1156,7 @@ void MicroCHPDataStruct::CalcMicroCHPNoNormalizeGeneratorModel(EnergyPlusData &s
         Teng = FuncDetermineEngineTemp(
             TcwOut, this->A42Model.MCeng, this->A42Model.UAhx, this->A42Model.UAskin, thisAmbientTemp, Qgenss, this->A42Model.TengLast, dt);
 
-        Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                           TcwIn,
-                                                           state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+        Real64 Cp = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, TcwIn, RoutineName);
 
         TcwOut =
             FuncDetermineCoolantWaterExitTemp(TcwIn, this->A42Model.MCcw, this->A42Model.UAhx, MdotCW * Cp, Teng, this->A42Model.TempCWOutLast, dt);
@@ -1219,7 +1212,7 @@ Real64 FuncDetermineEngineTemp(Real64 const TcwOut,   // hot water leaving temp
     //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS FUNCTION:
-    // Calculate engine temperaure,
+    // Calculate engine temperature,
 
     // METHODOLOGY EMPLOYED:
     // model is dynamic in that previous condition affects current timestep
@@ -1248,7 +1241,7 @@ Real64 FuncDetermineCoolantWaterExitTemp(Real64 const TcwIn,      // hot water i
     //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS FUNCTION:
-    // Calculate coolan water leaving temperaure,
+    // Calculate coolant water leaving temperature,
 
     // METHODOLOGY EMPLOYED:
     // model is dynamic in that previous condition affects current timestep
@@ -1376,11 +1369,7 @@ void MicroCHPDataStruct::CalcUpdateHeatRecovery(EnergyPlusData &state) const
 
     state.dataLoopNodes->Node(this->PlantOutletNodeID).Temp = this->A42Model.TcwOut;
 
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                       this->A42Model.TcwIn,
-                                                       state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+    Real64 Cp = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, this->A42Model.TcwIn, RoutineName);
 
     state.dataLoopNodes->Node(this->PlantOutletNodeID).Enthalpy = this->A42Model.TcwOut * Cp;
 }
@@ -1411,11 +1400,7 @@ void MicroCHPDataStruct::UpdateMicroCHPGeneratorRecords(EnergyPlusData &state) /
     this->A42Model.ACEnergyGen = this->A42Model.Pnet * state.dataHVACGlobal->TimeStepSysSec;     // energy produced (J)
     this->A42Model.QdotHX = this->A42Model.UAhx * (this->A42Model.Teng - this->A42Model.TcwOut); //  heat recovered rate (W)
 
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                       this->A42Model.TcwIn,
-                                                       state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+    Real64 Cp = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, this->A42Model.TcwIn, RoutineName);
 
     this->A42Model.QdotHR = this->PlantMassFlowRate * Cp * (this->A42Model.TcwOut - this->A42Model.TcwIn);
     this->A42Model.TotalHeatEnergyRec = this->A42Model.QdotHR * state.dataHVACGlobal->TimeStepSysSec; // heat recovered energy (J)
@@ -1426,12 +1411,12 @@ void MicroCHPDataStruct::UpdateMicroCHPGeneratorRecords(EnergyPlusData &state) /
     this->A42Model.FuelCompressPower = state.dataGenerator->FuelSupply(this->FuelSupplyID).PfuelCompEl;
     // electrical power used by fuel supply compressor [W]
     this->A42Model.FuelCompressEnergy =
-        state.dataGenerator->FuelSupply(this->FuelSupplyID).PfuelCompEl * state.dataHVACGlobal->TimeStepSys * Constant::SecInHour; // elect energy
+        state.dataGenerator->FuelSupply(this->FuelSupplyID).PfuelCompEl * state.dataHVACGlobal->TimeStepSys * Constant::rSecsInHour; // elect energy
     this->A42Model.FuelCompressSkinLoss = state.dataGenerator->FuelSupply(this->FuelSupplyID).QskinLoss;
     // heat rate of losses.by fuel supply compressor [W]
     this->A42Model.FuelEnergyHHV = this->A42Model.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupplyID).HHV *
                                    state.dataGenerator->FuelSupply(this->FuelSupplyID).KmolPerSecToKgPerSec * state.dataHVACGlobal->TimeStepSys *
-                                   Constant::SecInHour;
+                                   Constant::rSecsInHour;
     // reporting: Fuel Energy used (W)
     this->A42Model.FuelEnergyUseRateHHV = this->A42Model.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupplyID).HHV *
                                           state.dataGenerator->FuelSupply(this->FuelSupplyID).KmolPerSecToKgPerSec;

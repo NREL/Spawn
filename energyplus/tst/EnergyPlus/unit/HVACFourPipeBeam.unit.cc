@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -211,6 +211,8 @@ TEST_F(EnergyPlusFixture, Beam_FactoryAllAutosize)
         });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
+
     state->dataGlobal->NumOfZones = 1;
 
     state->dataHeatBal->Zone.allocate(state->dataGlobal->NumOfZones);
@@ -307,13 +309,6 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "    0,                       !- Lower Limit Value",
                           "    4,                       !- Upper Limit Value",
                           "    DISCRETE;                !- Numeric Type",
-
-                          "    Schedule:Compact,",
-                          "    ALWAYS_ON,               !- Name",
-                          "    On/Off,                  !- Schedule Type Limits Name",
-                          "    Through: 12/31,          !- Field 1",
-                          "    For: AllDays,            !- Field 2",
-                          "    Until: 24:00,1;          !- Field 3",
 
                           "    Schedule:Compact,",
                           "    ACTIVITY_SCH,            !- Name",
@@ -902,7 +897,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  Fan:VariableVolume,",
                           "    CV_1_Fan,               !- Name",
-                          "    always_on,       !- Availability Schedule Name",
+                          "    CONSTANT-1.0,       !- Availability Schedule Name",
                           "    0.6045,                  !- Fan Total Efficiency",
                           "    1017.592,                !- Pressure Rise {Pa}",
                           "    AUTOSIZE,                !- Maximum Flow Rate {m3/s}",
@@ -922,7 +917,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  Coil:Heating:Water,",
                           "    CV_1_HeatC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- U-Factor Times Area Value {W/K}",
                           "    AUTOSIZE,                !- Maximum Water Flow Rate {m3/s}",
                           "    CV_1_HeatCDemand Inlet Node,  !- Water Inlet Node Name",
@@ -939,7 +934,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  Coil:Cooling:Water,",
                           "    CV_1_CoolC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- Design Water Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Air Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Inlet Water Temperature {C}",
@@ -1020,7 +1015,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  AvailabilityManager:Scheduled,",
                           "    CV_1 Avail,   !- Name",
-                          "    always_on;    !- Schedule Name",
+                          "    CONSTANT-1.0;    !- Schedule Name",
 
                           "  NodeList,",
                           "    CV_1_OANode List,       !- Name",
@@ -1266,7 +1261,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "    SOURCE Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:CoolingLoad,  !- Control Scheme 1 Object Type",
                           "    SOURCE Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:CoolingLoad,",
                           "    SOURCE Purchased Only,   !- Name",
@@ -1417,7 +1412,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
                           "    HeatSys1 Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:HeatingLoad,  !- Control Scheme 1 Object Type",
                           "    HeatSys1 Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:HeatingLoad,",
                           "    HeatSys1 Purchased Only,   !- Name",
@@ -1590,9 +1585,9 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
                           "  AirTerminal:SingleDuct:ConstantVolume:FourPipeBeam,",
                           "    Zone One 4pipe Beam, !- Name",
-                          "    ALWAYS_ON , !- Primary Air Availability Schedule Name",
-                          "    ALWAYS_ON , !- Cooling Availability Schedule Name",
-                          "    ALWAYS_ON , !- Heating Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Primary Air Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Cooling Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Heating Availability Schedule Name",
                           "    Zone One 4pipe Beam Inlet Node Name , !- Primary Air Inlet Node Name",
                           "    Zone One 4pipe Beam Outlet Node Name , !- Primary Air Outlet Node Name",
                           "    Zone One 4pipe Beam CW Inlet Node , !- Chilled Water Inlet Node Name",
@@ -1721,11 +1716,11 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateOneZone)
 
     ASSERT_TRUE(process_idf(idf_objects));
     SimulationManager::PostIPProcessing(*state);
+    state->init_state(*state);
 
     bool ErrorsFound = false;
 
     state->dataGlobal->BeginSimFlag = true;
-    SimulationManager::GetProjectData(*state);
 
     OutputReportPredefined::SetPredefinedTables(*state);
     HeatBalanceManager::SetPreConstructionInputParameters(*state); // establish array bounds for constructions early
@@ -1886,13 +1881,6 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
                           "    0,                       !- Lower Limit Value",
                           "    4,                       !- Upper Limit Value",
                           "    DISCRETE;                !- Numeric Type",
-
-                          "    Schedule:Compact,",
-                          "    ALWAYS_ON,               !- Name",
-                          "    On/Off,                  !- Schedule Type Limits Name",
-                          "    Through: 12/31,          !- Field 1",
-                          "    For: AllDays,            !- Field 2",
-                          "    Until: 24:00,1;          !- Field 3",
 
                           "    Schedule:Compact,",
                           "    ACTIVITY_SCH,            !- Name",
@@ -2481,7 +2469,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  Fan:VariableVolume,",
                           "    CV_1_Fan,               !- Name",
-                          "    always_on,       !- Availability Schedule Name",
+                          "    CONSTANT-1.0,       !- Availability Schedule Name",
                           "    0.6045,                  !- Fan Total Efficiency",
                           "    1017.592,                !- Pressure Rise {Pa}",
                           "    AUTOSIZE,                !- Maximum Flow Rate {m3/s}",
@@ -2501,7 +2489,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  Coil:Heating:Water,",
                           "    CV_1_HeatC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- U-Factor Times Area Value {W/K}",
                           "    AUTOSIZE,                !- Maximum Water Flow Rate {m3/s}",
                           "    CV_1_HeatCDemand Inlet Node,  !- Water Inlet Node Name",
@@ -2518,7 +2506,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  Coil:Cooling:Water,",
                           "    CV_1_CoolC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- Design Water Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Air Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Inlet Water Temperature {C}",
@@ -2599,7 +2587,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  AvailabilityManager:Scheduled,",
                           "    CV_1 Avail,   !- Name",
-                          "    always_on;    !- Schedule Name",
+                          "    CONSTANT-1.0;    !- Schedule Name",
 
                           "  NodeList,",
                           "    CV_1_OANode List,       !- Name",
@@ -2845,7 +2833,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
                           "    SOURCE Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:CoolingLoad,  !- Control Scheme 1 Object Type",
                           "    SOURCE Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:CoolingLoad,",
                           "    SOURCE Purchased Only,   !- Name",
@@ -2996,7 +2984,7 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
                           "    HeatSys1 Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:HeatingLoad,  !- Control Scheme 1 Object Type",
                           "    HeatSys1 Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:HeatingLoad,",
                           "    HeatSys1 Purchased Only,   !- Name",
@@ -3169,9 +3157,9 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
                           "  AirTerminal:SingleDuct:ConstantVolume:FourPipeBeam,",
                           "    Zone One 4pipe Beam, !- Name",
-                          "    ALWAYS_ON , !- Primary Air Availability Schedule Name",
-                          "    ALWAYS_ON , !- Cooling Availability Schedule Name",
-                          "    ALWAYS_ON , !- Heating Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Primary Air Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Cooling Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Heating Availability Schedule Name",
                           "    Zone One 4pipe Beam Inlet Node Name , !- Primary Air Inlet Node Name",
                           "    Zone One 4pipe Beam Outlet Node Name , !- Primary Air Outlet Node Name",
                           "    Zone One 4pipe Beam CW Inlet Node , !- Chilled Water Inlet Node Name",
@@ -3300,11 +3288,11 @@ TEST_F(EnergyPlusFixture, Beam_fatalWhenSysSizingOff)
 
     ASSERT_TRUE(process_idf(idf_objects));
     SimulationManager::PostIPProcessing(*state);
+    state->init_state(*state);
 
     bool ErrorsFound = false;
 
     state->dataGlobal->BeginSimFlag = true;
-    SimulationManager::GetProjectData(*state);
 
     OutputReportPredefined::SetPredefinedTables(*state);
     HeatBalanceManager::SetPreConstructionInputParameters(*state); // establish array bounds for constructions early
@@ -3380,13 +3368,6 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "    0,                       !- Lower Limit Value",
                           "    4,                       !- Upper Limit Value",
                           "    DISCRETE;                !- Numeric Type",
-
-                          "    Schedule:Compact,",
-                          "    ALWAYS_ON,               !- Name",
-                          "    On/Off,                  !- Schedule Type Limits Name",
-                          "    Through: 12/31,          !- Field 1",
-                          "    For: AllDays,            !- Field 2",
-                          "    Until: 24:00,1;          !- Field 3",
 
                           "    Schedule:Compact,",
                           "    ACTIVITY_SCH,            !- Name",
@@ -3978,7 +3959,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  Fan:VariableVolume,",
                           "    CV_1_Fan,               !- Name",
-                          "    always_on,       !- Availability Schedule Name",
+                          "    CONSTANT-1.0,       !- Availability Schedule Name",
                           "    0.6045,                  !- Fan Total Efficiency",
                           "    1017.592,                !- Pressure Rise {Pa}",
                           "    AUTOSIZE,                !- Maximum Flow Rate {m3/s}",
@@ -3998,7 +3979,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  Coil:Heating:Water,",
                           "    CV_1_HeatC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- U-Factor Times Area Value {W/K}",
                           "    AUTOSIZE,                !- Maximum Water Flow Rate {m3/s}",
                           "    CV_1_HeatCDemand Inlet Node,  !- Water Inlet Node Name",
@@ -4015,7 +3996,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  Coil:Cooling:Water,",
                           "    CV_1_CoolC,             !- Name",
-                          "    ALWAYS_ON,               !- Availability Schedule Name",
+                          "    CONSTANT-1.0,               !- Availability Schedule Name",
                           "    AUTOSIZE,                !- Design Water Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Air Flow Rate {m3/s}",
                           "    AUTOSIZE,                !- Design Inlet Water Temperature {C}",
@@ -4096,7 +4077,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  AvailabilityManager:Scheduled,",
                           "    CV_1 Avail,   !- Name",
-                          "    always_on;    !- Schedule Name",
+                          "    CONSTANT-1.0;    !- Schedule Name",
 
                           "  NodeList,",
                           "    CV_1_OANode List,       !- Name",
@@ -4342,7 +4323,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "    SOURCE Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:CoolingLoad,  !- Control Scheme 1 Object Type",
                           "    SOURCE Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:CoolingLoad,",
                           "    SOURCE Purchased Only,   !- Name",
@@ -4493,7 +4474,7 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
                           "    HeatSys1 Loop Operation,   !- Name",
                           "    PlantEquipmentOperation:HeatingLoad,  !- Control Scheme 1 Object Type",
                           "    HeatSys1 Purchased Only,   !- Control Scheme 1 Name",
-                          "    Always_On;        !- Control Scheme 1 Schedule Name",
+                          "    CONSTANT-1.0;        !- Control Scheme 1 Schedule Name",
 
                           "  PlantEquipmentOperation:HeatingLoad,",
                           "    HeatSys1 Purchased Only,   !- Name",
@@ -4666,9 +4647,9 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
                           "  AirTerminal:SingleDuct:ConstantVolume:FourPipeBeam,",
                           "    Zone One 4pipe Beam, !- Name",
-                          "    ALWAYS_ON , !- Primary Air Availability Schedule Name",
-                          "    ALWAYS_ON , !- Cooling Availability Schedule Name",
-                          "    ALWAYS_ON , !- Heating Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Primary Air Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Cooling Availability Schedule Name",
+                          "    CONSTANT-1.0 , !- Heating Availability Schedule Name",
                           "    Zone One 4pipe Beam Inlet Node Name , !- Primary Air Inlet Node Name",
                           "    Zone One 4pipe Beam Outlet Node Name , !- Primary Air Outlet Node Name",
                           "    Zone One 4pipe Beam CW Inlet Node , !- Chilled Water Inlet Node Name",
@@ -4797,11 +4778,10 @@ TEST_F(EnergyPlusFixture, Beam_sizeandSimulateHighOA)
 
     ASSERT_TRUE(process_idf(idf_objects));
     SimulationManager::PostIPProcessing(*state);
-
+    state->init_state(*state);
     bool ErrorsFound = false;
 
     state->dataGlobal->BeginSimFlag = true;
-    SimulationManager::GetProjectData(*state);
 
     OutputReportPredefined::SetPredefinedTables(*state);
     HeatBalanceManager::SetPreConstructionInputParameters(*state); // establish array bounds for constructions early

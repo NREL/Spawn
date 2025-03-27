@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -49,7 +49,7 @@
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array1D.hh>
 #include <ObjexxFCL/ArrayS.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/member.functions.hh>
 
 // EnergyPlus Headers
@@ -170,7 +170,7 @@ void GetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
 
     auto &patternZoneInfo = state.dataRoomAir->AirPatternZoneInfo(ZoneNum);
     auto const &zoneHeatBal = state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum);
-    // intialize in preperation for calculations
+    // initialize in preparation for calculations
     patternZoneInfo.Tstat = zoneHeatBal.MAT;
     patternZoneInfo.Tleaving = zoneHeatBal.MAT;
     patternZoneInfo.Texhaust = zoneHeatBal.MAT;
@@ -198,11 +198,10 @@ void CalcTempDistModel(EnergyPlusData &state, int const ZoneNum) // index number
 
     // Using/Aliasing
     using General::FindNumberInList;
-    using ScheduleManager::GetCurrentScheduleValue;
 
     auto &patternZoneInfo = state.dataRoomAir->AirPatternZoneInfo(ZoneNum);
     // first determine availability
-    Real64 AvailTest = GetCurrentScheduleValue(state, patternZoneInfo.AvailSchedID);
+    Real64 AvailTest = patternZoneInfo.availSched->getCurrentVal();
 
     if ((AvailTest != 1.0) || (!patternZoneInfo.IsUsed)) {
         // model not to be used. Use complete mixing method
@@ -217,7 +216,7 @@ void CalcTempDistModel(EnergyPlusData &state, int const ZoneNum) // index number
 
     } else { // choose pattern and call subroutine
 
-        int CurntPatternKey = GetCurrentScheduleValue(state, patternZoneInfo.PatternSchedID);
+        int CurntPatternKey = patternZoneInfo.patternSched->getCurrentVal();
 
         int CurPatrnID = FindNumberInList(CurntPatternKey, state.dataRoomAir->AirPattern, &TemperaturePattern::PatrnID);
 
@@ -300,7 +299,7 @@ void FigureHeightPattern(EnergyPlusData &state, int const PattrnID, int const Zo
     // treat profile as lookup table and interpolate
 
     // Using/Aliasing
-    using FluidProperties::FindArrayIndex;
+    using Fluid::FindArrayIndex;
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
@@ -357,7 +356,7 @@ void FigureTwoGradInterpPattern(EnergyPlusData &state, int const PattrnID, int c
     Real64 Grad; // vertical temperature gradient C/m
 
     auto &patternZoneInfo = state.dataRoomAir->AirPatternZoneInfo(ZoneNum);
-    auto &pattern = state.dataRoomAir->AirPattern(PattrnID);
+    auto const &pattern = state.dataRoomAir->AirPattern(PattrnID);
 
     if (state.dataRoomAirModelTempPattern->MyOneTimeFlag2) {
         state.dataRoomAirModelTempPattern->SetupOutputFlag.dimension(state.dataGlobal->NumOfZones, true); // init
@@ -491,7 +490,7 @@ void FigureConstGradPattern(EnergyPlusData &state, int const PattrnID, int const
     //       DATE WRITTEN   August 2005
 
     auto &patternZoneInfo = state.dataRoomAir->AirPatternZoneInfo(ZoneNum);
-    auto &pattern = state.dataRoomAir->AirPattern(PattrnID);
+    auto const &pattern = state.dataRoomAir->AirPattern(PattrnID);
     Real64 Tmean = patternZoneInfo.TairMean;  // MAT
     Real64 Grad = pattern.GradPatrn.Gradient; // Vertical temperature gradient
 
@@ -539,7 +538,7 @@ Real64 FigureNDheightInZone(EnergyPlusData &state, int const thisHBsurf) // inde
     Real64 ZMin = 0.0;
     int Count = 0;
     for (int spaceNum : zone.spaceIndexes) {
-        auto &thisSpace = state.dataHeatBal->space(spaceNum);
+        auto const &thisSpace = state.dataHeatBal->space(spaceNum);
         for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
             auto const &surf = state.dataSurface->Surface(SurfNum);
             if (surf.Class == DataSurfaces::SurfaceClass::Floor) {
@@ -644,7 +643,7 @@ void SetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
     // What if ZoneNodeID is 0?
 
     auto &zoneNode = state.dataLoopNodes->Node(patternZoneInfo.ZoneNodeID);
-    auto &zone = state.dataHeatBal->Zone(ZoneNum);
+    auto const &zone = state.dataHeatBal->Zone(ZoneNum);
     auto &zoneHeatBal = state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum);
 
     int ZoneMult = zone.Multiplier * zone.ListMultiplier;
@@ -673,7 +672,7 @@ void SetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
 
         if (zone.HasAirFlowWindowReturn) {
             for (int spaceNum : zone.spaceIndexes) {
-                auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
                     if (state.dataSurface->SurfWinAirflowThisTS(SurfNum) > 0.0 &&
                         state.dataSurface->SurfWinAirflowDestination(SurfNum) == DataSurfaces::WindowAirFlowDestination::Return) {
@@ -733,7 +732,7 @@ void SetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
 
         Real64 H2OHtOfVap = PsyHgAirFnWTdb(zoneNode.HumRat, returnNode.Temp);
 
-        // Include impact of under case returns for refrigerated display cases when updateing return node
+        // Include impact of under case returns for refrigerated display cases when updating return node
         // humidity ratio
         if (!zone.NoHeatToReturnAir) {
             if (MassFlowRA > 0) {
@@ -772,7 +771,7 @@ void SetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
 
     // set results for all surface
     for (int spaceNum : zone.spaceIndexes) {
-        auto &thisSpace = state.dataHeatBal->space(spaceNum);
+        auto const &thisSpace = state.dataHeatBal->space(spaceNum);
         for (int i = thisSpace.HTSurfaceFirst, j = 0; i <= thisSpace.HTSurfaceLast; ++i) {
             state.dataHeatBal->SurfTempEffBulkAir(i) = patternZoneInfo.Surf(++j).TadjacentAir;
         }
@@ -780,7 +779,7 @@ void SetSurfHBDataForTempDistModel(EnergyPlusData &state, int const ZoneNum) // 
 
     // set flag for reference air temperature mode
     for (int spaceNum : zone.spaceIndexes) {
-        auto &thisSpace = state.dataHeatBal->space(spaceNum);
+        auto const &thisSpace = state.dataHeatBal->space(spaceNum);
         for (int i = thisSpace.HTSurfaceFirst; i <= thisSpace.HTSurfaceLast; ++i) {
             state.dataSurface->SurfTAirRef(i) = DataSurfaces::RefAirTemp::AdjacentAirTemp;
             state.dataSurface->SurfTAirRefRpt(i) = DataSurfaces::SurfTAirRefReportVals[state.dataSurface->SurfTAirRef(i)];

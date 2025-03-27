@@ -58,6 +58,7 @@ templates_path = ['.templates']
 html_theme_options = {
     "titles_only": True,
 }
+numfig = True
 # html_sidebars = {
 #     '**': [
 #         'about.html',
@@ -134,7 +135,7 @@ print("* Generating epJSON schema")
 # # OK, now we need to make sure the epJSON schema is generated so we can process it
 # Since this will primarily just be run by readthedocs, I'm just going to re-run the schema generator
 try:
-    check_call(['python3', 'idd/schema/generate_epJSON_schema.py', 'idd'], cwd=repo_root)
+    check_call([sys.executable, 'idd/schema/generate_epJSON_schema.py', 'idd'], cwd=repo_root)
 except CalledProcessError as e:
     raise Exception(f"Schema Generation failed! Exception string: {str(e)}") from None
 except FileNotFoundError as e:

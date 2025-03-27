@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -94,7 +94,6 @@ using namespace EnergyPlus::HeatBalanceManager;
 using namespace EnergyPlus::OutputReportPredefined;
 using namespace EnergyPlus::DataPlant;
 using namespace EnergyPlus::Psychrometrics;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::SZVAVModel;
 using namespace EnergyPlus::UnitarySystems;
 using namespace EnergyPlus::WaterCoils;
@@ -168,6 +167,7 @@ TEST_F(EnergyPlusFixture, SZVAV_PTUnit_Testing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataEnvrn->StdRhoAir = 1.0;
 
@@ -231,9 +231,6 @@ TEST_F(EnergyPlusFixture, SZVAV_PTUnit_Testing)
     state->dataZoneEquip->ZoneEquipConfig.allocate(1);
     state->dataZoneEquip->ZoneEquipConfig(1).ZoneNode = 1;
 
-    state->dataScheduleMgr->Schedule.allocate(1);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
-
     thisUnit.m_SimASHRAEModel = true;
     thisUnit.m_CoolingCoilUpstream = true;
     thisUnit.m_FanExists = true;
@@ -250,8 +247,8 @@ TEST_F(EnergyPlusFixture, SZVAV_PTUnit_Testing)
     thisUnit.m_CoolingCoilIndex = 1;
     thisUnit.m_HeatingCoilIndex = 2;
     thisUnit.m_FanIndex = 1;
-    thisUnit.m_SysAvailSchedPtr = 1;
-    thisUnit.m_FanAvailSchedPtr = 1;
+    thisUnit.m_sysAvailSched = Sched::GetSchedule(*state, "ONSCHED");
+    thisUnit.m_fanAvailSched = Sched::GetSchedule(*state, "ONSCHED");
     thisUnit.m_FanPlace = HVAC::FanPlace::BlowThru;
     // ensure constant fan mode is used
     thisUnit.m_FanOpMode = HVAC::FanOp::Continuous;
@@ -273,7 +270,6 @@ TEST_F(EnergyPlusFixture, SZVAV_PTUnit_Testing)
     state->dataEnvrn->OutDryBulbTemp = 30.0;
     state->dataEnvrn->OutBaroPress = 101325.0;
     OutputReportPredefined::SetPredefinedTables(*state);
-    Psychrometrics::InitializePsychRoutines(*state);
     createCoilSelectionReportObj(*state);
 
     int UnitNum = 0;
@@ -315,7 +311,8 @@ TEST_F(EnergyPlusFixture, SZVAV_PTUnit_Testing)
     state->dataLoopNodes->Node(zoneNodeNum).Enthalpy = 52120.0;
 
     // turn the availability schedule on
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
+    Sched::GetSchedule(*state, "ONSCHED")->currentVal = 1.0;
+
     state->dataUnitarySystems->CoolingLoad = CoolingLoad;
     state->dataUnitarySystems->HeatingLoad = HeatingLoad;
     // set fan inlet max avail so fan doesn't shut down flow
@@ -520,9 +517,9 @@ TEST_F(EnergyPlusFixture, SZVAV_FanCoilUnit_Testing)
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.20;
     state->dataWaterCoils->GetWaterCoilsInputFlag = true;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->MinutesInTimeStep = 60;
     state->dataSize->CurZoneEqNum = 1;
 
     std::string const idf_objects = delimited_string({
@@ -642,21 +639,20 @@ TEST_F(EnergyPlusFixture, SZVAV_FanCoilUnit_Testing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     state->dataEnvrn->StdRhoAir = 1.0;
 
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.20;
     state->dataWaterCoils->GetWaterCoilsInputFlag = true;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
     state->dataSize->CurZoneEqNum = 1;
-    InitializePsychRoutines(*state);
     GetZoneData(*state, ErrorsFound);
     EXPECT_EQ("WEST ZONE", state->dataHeatBal->Zone(1).Name);
     GetZoneEquipmentData(*state);
-    ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     GetFanCoilUnits(*state);
     auto &thisFanCoil(state->dataFanCoilUnits->FanCoil(1));
     EXPECT_ENUM_EQ(CCM::ASHRAE, thisFanCoil.CapCtrlMeth_Num);
@@ -718,9 +714,8 @@ TEST_F(EnergyPlusFixture, SZVAV_FanCoilUnit_Testing)
     // chilled water plant loop
     auto &CWLoop(state->dataPlnt->PlantLoop(1));
     CWLoop.Name = "ChilledWaterLoop";
-    CWLoop.FluidName = "ChilledWater";
-    CWLoop.FluidIndex = 1;
     CWLoop.FluidName = "WATER";
+    CWLoop.glycol = Fluid::GetWater(*state);
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = CWCoil.Name;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = DataPlant::PlantEquipmentType::CoilWaterCooling;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = CWCoil.WaterInletNodeNum;
@@ -742,7 +737,7 @@ TEST_F(EnergyPlusFixture, SZVAV_FanCoilUnit_Testing)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     state->dataSize->ZoneEqSizing.allocate(1);
     state->dataSize->ZoneSizingRunDone = true;
     thisFanCoil.DesignHeatingCapacity = 10000.0;

@@ -2057,6 +2057,8 @@ This value can be one of several things depending on the actual kind of surface.
   \item
     \textbf{Zone} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent zone when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
   \item
+    \textbf{Space} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent space when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
+  \item
     \textbf{Outdoors} -- if this surface is exposed to outside temperature conditions, then this is the choice. See Sun Exposure and Wind Exposure below for further specifications on this kind of surface.
   \item
     \textbf{Foundation} - uses an alternative model (currently only the Kiva\textsuperscript{TM} model) to account for the multi-dimensional heat transfer of foundation surfaces. The Outside Boundary Condition Object will refer to the name of a \hyperref[foundationkiva]{Foundation:Kiva} object (or be left blank to use the default foundation without extra insulation).
@@ -2086,11 +2088,11 @@ This value can be one of several things depending on the actual kind of surface.
 
 \paragraph{Field: Outside Boundary Condition Object}\label{field-outside-boundary-condition-object-6}
 
-If neither Surface, Zone, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
+If neither Surface, Zone, Space, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
 
 As stated above, if the Outside Boundary Condition is ``Surface'', then this field's value must be the surface name whose inside face temperature will be forced on the outside face of the base surface. This permits heat exchange between adjacent zones (interzone heat transfer) when multiple zones are simulated, but can also be used to simulate middle zone behavior without modeling the adjacent zones. This is done by specifying a surface within the zone. For example, a middle floor zone can be modeled by making the floor the Outside Boundary Condition Object for the ceiling, and the ceiling the Outside Boundary Condition Object for the floor.
 
-If the Outside Boundary Condition is Zone, then this field should contain the zone name of the adjacent zone for the surface.
+If the Outside Boundary Condition is Zone or Space, then this field should contain the zone or space name for the adjacent surface.
 
 \begin{callout}
 Note: Zones with interzone heat transfer are not adiabatic and the internal surfaces contribute to gains or losses. Adiabatic surfaces are modeled by specifying the base surface itself in this field. Also, for interzone heat transfer, both surfaces must be represented -- for example, if you want interzone heat transfer to an attic space, the ceiling in the lower zone must have a surface object with the outside face environment as the floor in the attic and, likewise, there must be a floor surface object in the attic that references the ceiling surface name in the lower zone.
@@ -2174,6 +2176,8 @@ This value can be one of several things depending on the actual kind of surface.
   \item
     \textbf{Zone} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent zone when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
   \item
+    \textbf{Space} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent space when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
+  \item
     \textbf{Outdoors} -- if this surface is exposed to outside temperature conditions, then this is the choice. See Sun Exposure and Wind Exposure below for further specifications on this kind of surface.
   \item
     \textbf{Ground} -- The temperature on the outside of this surface will be the Ground Temperature.
@@ -2199,11 +2203,11 @@ This value can be one of several things depending on the actual kind of surface.
 
 \paragraph{Field: Outside Boundary Condition Object}\label{field-outside-boundary-condition-object-7}
 
-If neither Surface, Zone, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
+If neither Surface, Zone, Space, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
 
 As stated above, if the Outside Boundary Condition is ``Surface'', then this field's value must be the surface name whose inside face temperature will be forced on the outside face of the base surface. This permits heat exchange between adjacent zones (interzone heat transfer) when multiple zones are simulated, but can also be used to simulate middle zone behavior without modeling the adjacent zones. This is done by specifying a surface within the zone. For example, a middle floor zone can be modeled by making the floor the Outside Boundary Condition Object for the ceiling, and the ceiling the Outside Boundary Condition Object for the floor.
 
-If the Outside Boundary Condition is Zone, then this field should contain the zone name of the adjacent zone for the surface.
+If the Outside Boundary Condition is Zone or Space, then this field should contain the zone or space name for the adjacent surface.
 
 \begin{callout}
 Note: Zones with interzone heat transfer are not adiabatic and the internal surfaces contribute to gains or losses. Adiabatic surfaces are modeled by specifying the base surface itself in this field. Also, for interzone heat transfer, both surfaces must be represented -- for example, if you want interzone heat transfer to an attic space, the ceiling in the lower zone must have a surface object with the outside face environment as the floor in the attic and, likewise, there must be a floor surface object in the attic that references the ceiling surface name in the lower zone.
@@ -2287,6 +2291,8 @@ This value can be one of several things depending on the actual kind of surface.
   \item
     \textbf{Zone} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent zone when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
   \item
+    \textbf{Space} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent space when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
+  \item
     \textbf{Outdoors} -- if this surface is exposed to outside temperature conditions, then this is the choice. See Sun Exposure and Wind Exposure below for further specifications on this kind of surface.
   \item
     \textbf{Foundation} - uses an alternative model (currently only the Kiva\textsuperscript{TM} model) to account for the multi-dimensional heat transfer of foundation surfaces. The Outside Boundary Condition Object will refer to the name of a \hyperref[foundationkiva]{Foundation:Kiva} object (or be left blank to use the default foundation without extra insulation).
@@ -2316,11 +2322,11 @@ This value can be one of several things depending on the actual kind of surface.
 
 \paragraph{Field: Outside Boundary Condition Object}\label{field-outside-boundary-condition-object-8}
 
-If neither Surface, Zone, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
+If neither Surface, Zone, Space, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
 
 As stated above, if the Outside Boundary Condition is ``Surface'', then this field's value must be the surface name whose inside face temperature will be forced on the outside face of the base surface. This permits heat exchange between adjacent zones (interzone heat transfer) when multiple zones are simulated, but can also be used to simulate middle zone behavior without modeling the adjacent zones. This is done by specifying a surface within the zone. For example, a middle floor zone can be modeled by making the floor the Outside Boundary Condition Object for the ceiling, and the ceiling the Outside Boundary Condition Object for the floor.
 
-If the Outside Boundary Condition is Zone, then this field should contain the zone name of the adjacent zone for the surface.
+If the Outside Boundary Condition is Zone or Space, then this field should contain the zone or space name for the adjacent surface.
 
 \begin{callout}
 Note: Zones with interzone heat transfer are not adiabatic and the internal surfaces contribute to gains or losses. Adiabatic surfaces are modeled by specifying the base surface itself in this field. Also, for interzone heat transfer, both surfaces must be represented -- for example, if you want interzone heat transfer to an attic space, the ceiling in the lower zone must have a surface object with the outside face environment as the floor in the attic and, likewise, there must be a floor surface object in the attic that references the ceiling surface name in the lower zone.
@@ -2460,6 +2466,8 @@ This value can be one of several things depending on the actual kind of surface.
   \item
     \textbf{Zone} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent zone when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
   \item
+    \textbf{Space} -- this is similar to Surface but EnergyPlus will automatically create the required surface in the adjacent space when this is entered for the surface. If there are windows or doors on the surface, EnergyPlus automatically creates appropriate sub-surfaces as well.
+  \item
     \textbf{Outdoors} -- if this surface is exposed to outside temperature conditions, then this is the choice. See Sun Exposure and Wind Exposure below for further specifications on this kind of surface.
   \item
     \textbf{Foundation} - uses an alternative model (currently only the Kiva\textsuperscript{TM} model) to account for the multi-dimensional heat transfer of foundation surfaces. The Outside Boundary Condition Object will refer to the name of a \hyperref[foundationkiva]{Foundation:Kiva} object (or be left blank to use the default foundation without extra insulation).
@@ -2489,11 +2497,11 @@ This value can be one of several things depending on the actual kind of surface.
 
 \paragraph{Field: Outside Boundary Condition Object}\label{field-outside-boundary-condition-object-9}
 
-If neither Surface, Zone, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
+If neither Surface, Zone, Space, Foundation, OtherSideCoefficients, or OtherSideConditionsModel are specified for the Outside Boundary Condition (previous field), then this field should be left blank.
 
 As stated above, if the Outside Boundary Condition is ``Surface'', then this field's value must be the surface name whose inside face temperature will be forced on the outside face of the base surface. This permits heat exchange between adjacent zones (interzone heat transfer) when multiple zones are simulated, but can also be used to simulate middle zone behavior without modeling the adjacent zones. This is done by specifying a surface within the zone. For example, a middle floor zone can be modeled by making the floor the Outside Boundary Condition Object for the ceiling, and the ceiling the Outside Boundary Condition Object for the floor.
 
-If the Outside Boundary Condition is Zone, then this field should contain the zone name of the adjacent zone for the surface.
+If the Outside Boundary Condition is Zone or Space, then this field should contain the zone or space name for the adjacent surface.
 
 \begin{callout}
 Note: Zones with interzone heat transfer are not adiabatic and the internal surfaces contribute to gains or losses. Adiabatic surfaces are modeled by specifying the base surface itself in this field. Also, for interzone heat transfer, both surfaces must be represented -- for example, if you want interzone heat transfer to an attic space, the ceiling in the lower zone must have a surface object with the outside face environment as the floor in the attic and, likewise, there must be a floor surface object in the attic that references the ceiling surface name in the lower zone.
@@ -2619,7 +2627,7 @@ This is the name of a surface that contains this subsurface. Certain kinds of su
 
 If the base surface has Outside Boundary Condition = Surface or OtherSideCoefficients, then this field must also be specified for the subsurface. Otherwise, it can be left blank.
 
-If the base surface has Outside Boundary Condition = Zone, then this surface retains that characteristic and uses the same zone of the base surface. It can be entered here for clarity or it can be left blank.
+If the base surface has Outside Boundary Condition = Zone or Space, then this surface retains that characteristic and uses the same zone or space of the base surface. It can be entered here for clarity or it can be left blank.
 
 If Outside Boundary Condition for the base surface is Surface, this field should specify the subsurface in the opposing zone that is the counterpart to this subsurface. The constructions of the subsurface and opposing subsurface must match, except that, for multi-layer constructions, the layer order of the opposing subsurface's construction must be the reverse of that of the subsurface.
 

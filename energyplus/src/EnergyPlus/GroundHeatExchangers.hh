@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -58,7 +58,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
-#include <EnergyPlus/GroundTemperatureModeling/GroundTemperatureModelManager.hh>
+#include <EnergyPlus/GroundTemperatureModeling/BaseGroundTemperatureModel.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 #include <EnergyPlus/Plant/PlantLocation.hh>
 #include <EnergyPlus/PlantComponent.hh>
@@ -69,9 +69,6 @@ namespace EnergyPlus {
 struct EnergyPlusData;
 
 namespace GroundHeatExchangers {
-
-    // Using/Aliasing
-    using namespace GroundTemperatureManager;
 
     struct ThermophysicalProps // LCOV_EXCL_LINE
     {
@@ -201,9 +198,9 @@ namespace GroundHeatExchangers {
         int numGFuncPairs;                                       // Number of g-function pairs
         Real64 gRefRatio;                                        // Reference ratio of g-function set
         Real64 maxSimYears;                                      // Maximum length of simulation in years
-        Array1D<Real64> time;                                    // response time in seconds
-        Array1D<Real64> LNTTS;                                   // natural log of Non Dimensional Time Ln(t/ts)
-        Array1D<Real64> GFNC;                                    // G-function ( Non Dimensional temperature response factors)
+        std::vector<Real64> time;                                // response time in seconds
+        std::vector<Real64> LNTTS;                               // natural log of non-dimensional time Ln(t/ts)
+        std::vector<Real64> GFNC;                                // g-function (non-dimensional temperature response factors)
         std::shared_ptr<GLHEVertProps> props;                    // Properties
         std::vector<std::shared_ptr<GLHEVertSingle>> myBorholes; // Boreholes used by this response factors object
 
@@ -249,11 +246,11 @@ namespace GroundHeatExchangers {
         bool myEnvrnFlag;
         bool gFunctionsExist;
         Real64 lastQnSubHr;
-        Real64 HXResistance;    // The thermal resistance of the GHX, (K per W/m)
-        Real64 totalTubeLength; // The total length of pipe. NumBoreholes * BoreholeDepth OR Pi * Dcoil * NumCoils
-        Real64 timeSS;          // Steady state time
-        Real64 timeSSFactor;    // Steady state time factor for calculation
-        std::shared_ptr<BaseGroundTempsModel> groundTempModel;
+        Real64 HXResistance;                               // The thermal resistance of the GHX, (K per W/m)
+        Real64 totalTubeLength;                            // The total length of pipe. NumBoreholes * BoreholeDepth OR Pi * Dcoil * NumCoils
+        Real64 timeSS;                                     // Steady state time
+        Real64 timeSSFactor;                               // Steady state time factor for calculation
+        GroundTemp::BaseGroundTempsModel *groundTempModel; // non-owning pointer
 
         // some statics pulled out into member variables
         bool firstTime;
@@ -454,7 +451,7 @@ namespace GroundHeatExchangers {
 
         Real64 doubleIntegral(int m, int n, int m1, int n1, Real64 t, int I0, int J0);
 
-        Real64 integral(int m, int n, int m1, int n1, Real64 t, Real64 eta, Real64 J0);
+        Real64 integral(int m, int n, int m1, int n1, Real64 t, Real64 eta, int J0);
 
         Real64 distance(int m, int n, int m1, int n1, Real64 eta, Real64 theta);
 
@@ -497,7 +494,7 @@ namespace GroundHeatExchangers {
 
     std::shared_ptr<GLHEVertArray> GetVertArray(EnergyPlusData &state, std::string const &objectName);
 
-    std::vector<Real64> TDMA(std::vector<Real64> a, std::vector<Real64> b, std::vector<Real64> c, std::vector<Real64> d);
+    std::vector<Real64> TDMA(std::vector<Real64> const &a, std::vector<Real64> const &b, std::vector<Real64> &c, std::vector<Real64> &d);
 
 } // namespace GroundHeatExchangers
 
@@ -529,6 +526,10 @@ struct GroundHeatExchangerData : BaseGlobalStruct
     std::vector<std::shared_ptr<GroundHeatExchangers::GLHEVertProps>> vertPropsVector;
     std::vector<std::shared_ptr<GroundHeatExchangers::GLHEResponseFactors>> responseFactorsVector;
     std::vector<std::shared_ptr<GroundHeatExchangers::GLHEVertSingle>> singleBoreholesVector;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

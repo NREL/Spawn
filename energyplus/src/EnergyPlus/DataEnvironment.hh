@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,10 +50,14 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array1D.hh>
+#include <ObjexxFCL/Vector3.hh>
+
+using ObjexxFCL::Vector3;
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -205,11 +209,15 @@ struct EnvironmentData : BaseGlobalStruct
     std::string EnvironmentStartEnd;   // Start/End dates for Environment
     bool CurrentYearIsLeapYear =
         false; // true when current year is leap year (convoluted logic dealing with whether weather file allows leap years, runperiod inputs.
-    int varyingLocationSchedIndexLat = 0;
-    int varyingLocationSchedIndexLong = 0;
-    int varyingOrientationSchedIndex = 0;
+    Sched::Schedule *varyingLocationLatSched = nullptr;
+    Sched::Schedule *varyingLocationLongSched = nullptr;
+    Sched::Schedule *varyingOrientationSched = nullptr;
     bool forceBeginEnvResetSuppress = false; // for PerformancePrecisionTradeoffs
     bool oneTimeCompRptHeaderFlag = true;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

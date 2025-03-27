@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,7 +70,6 @@ using namespace DataHeatBalance;
 using namespace DataZoneEquipment;
 using namespace DataSizing;
 using namespace Fans;
-using namespace ScheduleManager;
 
 TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test1)
 {
@@ -106,6 +105,8 @@ TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test1)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
+
     state->dataEnvrn->StdRhoAir = 1.0;
     state->dataZoneEquip->ZoneEquipConfig.allocate(1);
     state->dataZoneEquip->ZoneEquipConfig(1).ZoneName = "Zone 1";
@@ -120,10 +121,10 @@ TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test1)
     state->dataHeatBal->People.allocate(state->dataHeatBal->TotPeople);
     state->dataHeatBal->People(1).ZonePtr = 1;
     state->dataHeatBal->People(1).NumberOfPeople = 100.0;
-    state->dataHeatBal->People(1).NumberOfPeoplePtr = ScheduleManager::ScheduleAlwaysOn; // From dataglobals, always returns a 1 for schedule value
+    state->dataHeatBal->People(1).sched = Sched::GetScheduleAlwaysOn(*state);
     state->dataHeatBal->People(2).ZonePtr = 1;
     state->dataHeatBal->People(2).NumberOfPeople = 200.0;
-    state->dataHeatBal->People(2).NumberOfPeoplePtr = ScheduleManager::ScheduleAlwaysOn; // From dataglobals, always returns a 1 for schedule value
+    state->dataHeatBal->People(2).sched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataHVACStandAloneERV->StandAloneERV.allocate(1);
 
@@ -209,9 +210,9 @@ TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test2)
     ASSERT_TRUE(process_idf(idf_objects));
     state->dataEnvrn->StdRhoAir = 1.0;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetFanInput(*state);
 
@@ -237,10 +238,10 @@ TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test2)
     state->dataHeatBal->People.allocate(state->dataHeatBal->TotPeople);
     state->dataHeatBal->People(1).ZonePtr = 1;
     state->dataHeatBal->People(1).NumberOfPeople = 10.0;
-    state->dataHeatBal->People(1).NumberOfPeoplePtr = ScheduleManager::ScheduleAlwaysOn; // always returns a 1 for schedule value
+    state->dataHeatBal->People(1).sched = Sched::GetScheduleAlwaysOn(*state);
     state->dataHeatBal->People(2).ZonePtr = 1;
     state->dataHeatBal->People(2).NumberOfPeople = 20.0;
-    state->dataHeatBal->People(2).NumberOfPeoplePtr = ScheduleManager::ScheduleAlwaysOn; // always returns a 1 for schedule value
+    state->dataHeatBal->People(2).sched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataHVACStandAloneERV->StandAloneERV.allocate(1);
     auto &erv = state->dataHVACStandAloneERV->StandAloneERV(1);

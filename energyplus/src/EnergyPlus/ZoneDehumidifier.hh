@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -76,7 +76,7 @@ namespace ZoneDehumidifier {
         // input data and others required during calculations
         std::string Name;                                                     // Name of unit
         std::string UnitType;                                                 // Type of unit
-        int SchedPtr = 0;                                                     // Index number to availability schedule
+        Sched::Schedule *availSched = nullptr;                                // availability schedule
         Real64 RatedWaterRemoval = 0.0;                                       // Rated water removal [liters/day]
         Real64 RatedEnergyFactor = 0.0;                                       // Rated energy factor [liters/kWh]
         Real64 RatedAirVolFlow = 0.0;                                         // Rated air flow rate through the dehumidifier [m3/s]
@@ -161,6 +161,10 @@ struct ZoneDehumidifierData : BaseGlobalStruct
 {
     bool GetInputFlag = true; // Set to FALSE after first time input is "gotten"
     EPVector<ZoneDehumidifier::ZoneDehumidifierParams> ZoneDehumid;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

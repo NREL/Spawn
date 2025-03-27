@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -174,7 +174,7 @@ namespace ExhaustAirSystemManager {
                 } else {
                     auto *fan = state.dataFans->fans(centralFanIndex);
 
-                    thisExhSys.AvailScheduleNum = fan->availSchedNum;
+                    thisExhSys.availSched = fan->availSched;
 
                     BranchNodeConnections::SetUpCompSets(state,
                                                          cCurrentModuleObject,
@@ -362,6 +362,8 @@ namespace ExhaustAirSystemManager {
 
         // Use the json helper to process input
         constexpr std::string_view RoutineName("GetZoneExhaustControlInput: ");
+        constexpr std::string_view routineName = "GetZoneExhaustControlInput";
+
         std::string const cCurrentModuleObject = "ZoneHVAC:ExhaustControl";
         auto &ip = state.dataInputProcessing->inputProcessor;
         auto const instances = ip->epJSON.find(cCurrentModuleObject);
@@ -381,22 +383,20 @@ namespace ExhaustAirSystemManager {
                 ++exhCtrlNum;
                 auto const &objectFields = instance.value();
                 auto &thisExhCtrl = state.dataZoneEquip->ZoneExhaustControlSystem(exhCtrlNum);
+
+                ErrorObjectHeader eoh{routineName, cCurrentModuleObject, instance.key()};
+
                 thisExhCtrl.Name = Util::makeUPPER(instance.key());
                 ip->markObjectAsUsed(cCurrentModuleObject, instance.key());
 
                 std::string availSchName = ip->getAlphaFieldValue(objectFields, objectSchemaProps, "availability_schedule_name");
-                if (availSchName == "") {
+                if (availSchName.empty()) {
                     // blank
-                    thisExhCtrl.AvailScheduleNum = ScheduleManager::ScheduleAlwaysOn;
-                } else {
-                    thisExhCtrl.AvailScheduleNum = ScheduleManager::GetScheduleIndex(state, availSchName);
-                    if (thisExhCtrl.AvailScheduleNum == 0) {
-                        // mismatch, reset to always on
-                        thisExhCtrl.AvailScheduleNum = ScheduleManager::ScheduleAlwaysOn;
-                        ShowWarningError(state, format("{}{}={}", RoutineName, cCurrentModuleObject, thisExhCtrl.Name));
-                        ShowContinueError(state, format("Avaiability Schedule Name = {} not found.", availSchName));
-                        ShowContinueError(state, "Availability Schedule is reset to Always ON.");
-                    }
+                    thisExhCtrl.availSched = Sched::GetScheduleAlwaysOn(state);
+                } else if ((thisExhCtrl.availSched = Sched::GetSchedule(state, availSchName)) == nullptr) {
+                    // mismatch, reset to always on
+                    thisExhCtrl.availSched = Sched::GetScheduleAlwaysOn(state);
+                    ShowWarningItemNotFound(state, eoh, "Avaiability Schedule Name", availSchName, "Availability Schedule is reset to Always ON.");
                 }
 
                 std::string zoneName = ip->getAlphaFieldValue(objectFields, objectSchemaProps, "zone_name");
@@ -444,23 +444,15 @@ namespace ExhaustAirSystemManager {
                 thisExhCtrl.FlowControlOption =
                     static_cast<ZoneExhaustControl::FlowControlType>(getEnumValue(flowControlTypeNamesUC, flowControlTypeName));
 
-                std::string exhaustFlowFractionScheduleName =
+                std::string exhaustFlowFractionSchedName =
                     ip->getAlphaFieldValue(objectFields, objectSchemaProps, "exhaust_flow_fraction_schedule_name");
-                // Schedule matching
-                int exhaustFlowFractionScheduleNum = 0;
-                exhaustFlowFractionScheduleNum = ScheduleManager::GetScheduleIndex(state, exhaustFlowFractionScheduleName);
 
-                if (exhaustFlowFractionScheduleNum > 0) {
-                    // normal conditions
-                } else if (exhaustFlowFractionScheduleNum == 0) {
-                    // blank, treat as always available
-                } else {
-                    exhaustFlowFractionScheduleNum = 0;
-                    // a regular warning
-                    ShowWarningError(state, format("{}{}={}", RoutineName, cCurrentModuleObject, thisExhCtrl.Name));
-                    ShowContinueError(state, format("Schedule Name = {} not found.", exhaustFlowFractionScheduleName));
+                if (exhaustFlowFractionSchedName.empty()) {
+                    thisExhCtrl.exhaustFlowFractionSched =
+                        Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+                } else if ((thisExhCtrl.exhaustFlowFractionSched = Sched::GetSchedule(state, exhaustFlowFractionSchedName)) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, "Exhaust Flow Fraction Schedule Name", exhaustFlowFractionSchedName);
                 }
-                thisExhCtrl.ExhaustFlowFractionScheduleNum = exhaustFlowFractionScheduleNum;
 
                 thisExhCtrl.SupplyNodeOrNodelistName = ip->getAlphaFieldValue(objectFields, objectSchemaProps, "supply_node_or_nodelist_name");
 
@@ -501,71 +493,38 @@ namespace ExhaustAirSystemManager {
                     SizeExhaustControlFlow(state, exhCtrlNum, thisExhCtrl.SuppNodeNums);
                 }
 
-                std::string minZoneTempLimitScheduleName =
+                std::string minZoneTempLimitSchedName =
                     ip->getAlphaFieldValue(objectFields, objectSchemaProps, "minimum_zone_temperature_limit_schedule_name");
-                int minZoneTempLimitScheduleNum = 0;
-                minZoneTempLimitScheduleNum = ScheduleManager::GetScheduleIndex(state, minZoneTempLimitScheduleName);
-
-                if (minZoneTempLimitScheduleNum > 0) {
-                    // normal conditions
-                } else if (minZoneTempLimitScheduleNum == 0) {
-                    // blank or anything like that, treat as no comparision
-                } else {
-                    minZoneTempLimitScheduleNum = 0;
-                    // a regular warning
-                    ShowWarningError(state, format("{}{}={}", RoutineName, cCurrentModuleObject, thisExhCtrl.Name));
-                    ShowContinueError(state, format("Schedule Name ={} not found.", minZoneTempLimitScheduleName));
+                if (minZoneTempLimitSchedName.empty()) {
+                } else if ((thisExhCtrl.minZoneTempLimitSched = Sched::GetSchedule(state, minZoneTempLimitSchedName)) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, "Minimum Zone Temperature Limit Schedule Name", minZoneTempLimitSchedName);
                 }
-                thisExhCtrl.MinZoneTempLimitScheduleNum = minZoneTempLimitScheduleNum;
 
-                std::string minExhFlowFracScheduleName =
+                std::string minExhFlowFracSchedName =
                     ip->getAlphaFieldValue(objectFields, objectSchemaProps, "minimum_exhaust_flow_fraction_schedule_name");
                 // to do so schedule matching
-                int minExhFlowFracScheduleNum = 0;
-                minExhFlowFracScheduleNum = ScheduleManager::GetScheduleIndex(state, minExhFlowFracScheduleName);
-
-                if (minExhFlowFracScheduleNum > 0) {
-                    // normal conditions
-                } else if (minExhFlowFracScheduleNum == 0) {
-                    // blank, meaning minimum is zero
-                } else {
-                    minExhFlowFracScheduleNum = 0;
-                    // a regular warning
-                    ShowWarningError(state, format("{}{}={}", RoutineName, cCurrentModuleObject, thisExhCtrl.Name));
-                    ShowContinueError(state, format("Schedule Name ={} not found.", minExhFlowFracScheduleName));
+                if (minExhFlowFracSchedName.empty()) {
+                } else if ((thisExhCtrl.minExhFlowFracSched = Sched::GetSchedule(state, minExhFlowFracSchedName)) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, "Minimum Exhaust Flow Fraction Schedule Name", minExhFlowFracSchedName);
                 }
-                thisExhCtrl.MinExhFlowFracScheduleNum = minExhFlowFracScheduleNum;
 
-                std::string balancedExhFracScheduleName =
+                std::string balancedExhFracSchedName =
                     ip->getAlphaFieldValue(objectFields, objectSchemaProps, "balanced_exhaust_fraction_schedule_name");
                 // to do so schedule matching
-                int balancedExhFracScheduleNum = 0;
-                balancedExhFracScheduleNum = ScheduleManager::GetScheduleIndex(state, balancedExhFracScheduleName);
-
-                if (balancedExhFracScheduleNum > 0) {
-                    // normal conditions
-                } else if (balancedExhFracScheduleNum == 0) {
-                    // blank, treated as not activated
-                } else {
-                    balancedExhFracScheduleNum = 0;
-                    // a regular warning
-                    ShowWarningError(state, format("{}{}={}", RoutineName, cCurrentModuleObject, thisExhCtrl.Name));
-                    ShowContinueError(state, format("Schedule Name ={} not found.", balancedExhFracScheduleName));
+                if (balancedExhFracSchedName.empty()) {
+                } else if ((thisExhCtrl.balancedExhFracSched = Sched::GetSchedule(state, balancedExhFracSchedName)) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, "Balanced Exhaust Fraction Schedule Name", balancedExhFracSchedName);
                 }
 
                 // Maybe an additional check per IORef:
                 // This input field must be blank when the zone air flow balance is enforced. If user specifies a schedule and zone air flow balance
                 // is enforced, then EnergyPlus throws a warning error message, ignores the schedule and simulation continues.
-
-                thisExhCtrl.BalancedExhFracScheduleNum = balancedExhFracScheduleNum;
             }
 
             state.dataZoneEquip->NumZoneExhaustControls = numZoneExhaustControls; // or exhCtrlNum
 
             // Done with creating a map that contains a table of for each zone to exhasut controls
             state.dataExhAirSystemMrg->mappingDone = true;
-        } else {
-            // If no exhaust systems are defined, then do something <or nothing>:
         }
 
         if (ErrorsFound) {
@@ -599,7 +558,7 @@ namespace ExhaustAirSystemManager {
         auto &thisExhOutlet = state.dataLoopNodes->Node(OutletNode);
         Real64 MassFlow;
         Real64 Tin = state.dataZoneTempPredictorCorrector->zoneHeatBalance(thisExhCtrl.ZoneNum).ZT;
-        Real64 thisExhCtrlAvailScheVal = ScheduleManager::GetCurrentScheduleValue(state, thisExhCtrl.AvailScheduleNum);
+        Real64 thisExhCtrlAvailScheVal = thisExhCtrl.availSched->getCurrentVal();
 
         if (FlowRatio >= 0.0) {
             thisExhCtrl.BalancedFlow *= FlowRatio;
@@ -617,8 +576,8 @@ namespace ExhaustAirSystemManager {
 
             Real64 DesignFlowRate = thisExhCtrl.DesignExhaustFlowRate;
             Real64 FlowFrac = 0.0;
-            if (thisExhCtrl.MinExhFlowFracScheduleNum > 0) {
-                FlowFrac = ScheduleManager::GetCurrentScheduleValue(state, thisExhCtrl.ExhaustFlowFractionScheduleNum);
+            if (thisExhCtrl.minExhFlowFracSched != nullptr) {
+                FlowFrac = thisExhCtrl.exhaustFlowFractionSched->getCurrentVal();
                 if (FlowFrac < 0.0) {
                     ShowWarningError(
                         state, format("Exhaust Flow Fraction Schedule value is negative for Zone Exhaust Control Named: {};", thisExhCtrl.Name));
@@ -628,8 +587,8 @@ namespace ExhaustAirSystemManager {
             }
 
             Real64 MinFlowFrac = 0.0;
-            if (thisExhCtrl.MinExhFlowFracScheduleNum > 0) {
-                MinFlowFrac = ScheduleManager::GetCurrentScheduleValue(state, thisExhCtrl.MinExhFlowFracScheduleNum);
+            if (thisExhCtrl.minExhFlowFracSched != nullptr) {
+                MinFlowFrac = thisExhCtrl.minExhFlowFracSched->getCurrentVal();
                 if (MinFlowFrac < 0.0) {
                     ShowWarningError(
                         state,
@@ -644,8 +603,8 @@ namespace ExhaustAirSystemManager {
             }
 
             if (thisExhCtrlAvailScheVal > 0.0) { // available
-                if (thisExhCtrl.MinZoneTempLimitScheduleNum > 0) {
-                    if (Tin >= ScheduleManager::GetCurrentScheduleValue(state, thisExhCtrl.MinZoneTempLimitScheduleNum)) {
+                if (thisExhCtrl.minZoneTempLimitSched != nullptr) {
+                    if (Tin >= thisExhCtrl.minZoneTempLimitSched->getCurrentVal()) {
                     } else {
                         FlowFrac = MinFlowFrac;
                     }
@@ -667,10 +626,10 @@ namespace ExhaustAirSystemManager {
                 MassFlow = DesignFlowRate * FlowFrac;
             }
 
-            if (thisExhCtrl.BalancedExhFracScheduleNum > 0) {
+            if (thisExhCtrl.balancedExhFracSched != nullptr) {
                 thisExhCtrl.BalancedFlow = // state.dataHVACGlobal->BalancedExhMassFlow =
                     MassFlow *             // state.dataHVACGlobal->UnbalExhMassFlow *
-                    ScheduleManager::GetCurrentScheduleValue(state, thisExhCtrl.BalancedExhFracScheduleNum);
+                    thisExhCtrl.balancedExhFracSched->getCurrentVal();
                 thisExhCtrl.UnbalancedFlow =  // state.dataHVACGlobal->UnbalExhMassFlow =
                     MassFlow -                // = state.dataHVACGlobal->UnbalExhMassFlow -
                     thisExhCtrl.BalancedFlow; // state.dataHVACGlobal->BalancedExhMassFlow;

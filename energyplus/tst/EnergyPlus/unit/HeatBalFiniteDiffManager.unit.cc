@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -294,103 +294,108 @@ TEST_F(EnergyPlusFixture, HeatBalFiniteDiffManager_adjustPropertiesForPhaseChang
     SurfaceFD.deallocate();
 }
 
-TEST_F(EnergyPlusFixture, DISABLED_HeatBalFiniteDiffManager_skipNotUsedConstructionAndAirLayer)
-{
-    bool ErrorsFound(false);
-    // create three construction objects with one object not in use and another object assigned to surfaces, and one object as air wall.
-    std::string const idf_objects = delimited_string({
-        "Material,",
-        "   MAT - CC05 4 HW CONCRETE, !- Name",
-        "   Rough, !- Roughness",
-        "   0.1016, !- Thickness{ m }",
-        "   1.311, !- Conductivity{ W / m - K }",
-        "   2240, !- Density{ kg / m3 }",
-        "   836.800000000001, !- Specific Heat{ J / kg - K }",
-        "   0.9, !- Thermal Absorptance",
-        "   0.85, !- Solar Absorptance",
-        "   0.85;                    !- Visible Absorptance",
-        "Material:AirGap,",
-        "   F05 Ceiling air space resistance, !- Name",
-        "   0.18;                    !- Thermal Resistance{ m2 - K / W }",
-        "Material:NoMass,",
-        "   CP02 CARPET PAD, !- Name",
-        "   Smooth, !- Roughness",
-        "   0.1, !- Thermal Resistance{ m2 - K / W }",
-        "   0.9, !- Thermal Absorptance",
-        "   0.8, !- Solar Absorptance",
-        "   0.8;                     !- Visible Absorptance",
-
-        "Material,",
-        "   F16 Acoustic tile, !- Name",
-        "   MediumSmooth, !- Roughness",
-        "   0.0191, !- Thickness{ m }",
-        "   0.06, !- Conductivity{ W / m - K }",
-        "   368, !- Density{ kg / m3 }",
-        "   590.000000000002, !- Specific Heat{ J / kg - K }",
-        "   0.9, !- Thermal Absorptance",
-        "   0.3, !- Solar Absorptance",
-        "   0.3;                     !- Visible Absorptance",
-
-        "Material,",
-        "   M11 100mm lightweight concrete, !- Name",
-        "   MediumRough, !- Roughness",
-        "   0.1016, !- Thickness{ m }",
-        "   0.53, !- Conductivity{ W / m - K }",
-        "   1280, !- Density{ kg / m3 }",
-        "   840.000000000002, !- Specific Heat{ J / kg - K }",
-        "   0.9, !- Thermal Absorptance",
-        "   0.5, !- Solar Absorptance",
-        "   0.5;                     !- Visible Absorptance",
-
-        "Construction,",
-        "  ExtSlabCarpet 4in ClimateZone 1 - 8, !- Name",
-        "  MAT - CC05 4 HW CONCRETE, !- Outside Layer",
-        "  CP02 CARPET PAD;         !- Layer 2",
-        "Construction,",
-        "   Interior Floor, !- Name",
-        "   F16 Acoustic tile, !- Outside Layer",
-        "   F05 Ceiling air space resistance, !- Layer 2",
-        "   M11 100mm lightweight concrete;  !- Layer 3",
-        "Construction:AirBoundary,",
-        "   Air Wall_ConstructionAirBoundary,  !- Name",
-        "   None,                    !- Air Exchange Method",
-        "   0;                       !- Simple Mixing Air Changes per Hour {1 / hr}",
-        "Output:Constructions,",
-        "Constructions;",
-        "Output:Constructions,",
-        "Materials;",
-    });
-
-    ASSERT_TRUE(process_idf(idf_objects));
-
-    ErrorsFound = false;
-    Material::GetMaterialData(*state, ErrorsFound); // read material data
-    EXPECT_FALSE(ErrorsFound);                      // expect no errors
-
-    ErrorsFound = false;
-    HeatBalanceManager::GetConstructData(*state, ErrorsFound); // read construction data
-    EXPECT_FALSE(ErrorsFound);                                 // expect no errors
-
-    // allocate properties for construction objects when it is used or not for building surfaces in the model
-
-    state->dataConstruction->Construct(1).IsUsed = false;
-    state->dataConstruction->Construct(2).IsUsed = true;
-    state->dataConstruction->Construct(3).IsUsed = true;
-
-    // call the function for initialization of finite difference calculation
-    InitialInitHeatBalFiniteDiff(*state);
-    auto &ConstructFD = state->dataHeatBalFiniteDiffMgr->ConstructFD;
-    // check the values are correct
-    EXPECT_EQ(0, ConstructFD(1).Name.size());
-    EXPECT_EQ(3, ConstructFD(2).Name.size());
-    EXPECT_EQ(0, ConstructFD(3).Name.size());
-    EXPECT_EQ("F16 ACOUSTIC TILE", ConstructFD(2).Name(1));
-    EXPECT_EQ("F05 CEILING AIR SPACE RESISTANCE", ConstructFD(2).Name(2));
-    EXPECT_EQ("M11 100MM LIGHTWEIGHT CONCRETE", ConstructFD(2).Name(3));
-
-    // deallocate
-    ConstructFD.deallocate();
-}
+// I'm not sure how this test was intended to work, there doesn't appear to be anything setting the constructions
+// to finite difference, and there aren't any surfaces.  So it fails when enabled.  Feel free to fix it up and get it running.
+// TEST_F(EnergyPlusFixture, HeatBalFiniteDiffManager_skipNotUsedConstructionAndAirLayer)
+// {
+//     bool ErrorsFound(false);
+//     // create three construction objects with one object not in use and another object assigned to surfaces, and one object as air wall.
+//     std::string const idf_objects = delimited_string({
+//         "Material,",
+//         "   MAT - CC05 4 HW CONCRETE, !- Name",
+//         "   Rough, !- Roughness",
+//         "   0.1016, !- Thickness{ m }",
+//         "   1.311, !- Conductivity{ W / m - K }",
+//         "   2240, !- Density{ kg / m3 }",
+//         "   836.800000000001, !- Specific Heat{ J / kg - K }",
+//         "   0.9, !- Thermal Absorptance",
+//         "   0.85, !- Solar Absorptance",
+//         "   0.85;                    !- Visible Absorptance",
+//         "Material:AirGap,",
+//         "   F05 Ceiling air space resistance, !- Name",
+//         "   0.18;                    !- Thermal Resistance{ m2 - K / W }",
+//         "Material:NoMass,",
+//         "   CP02 CARPET PAD, !- Name",
+//         "   Smooth, !- Roughness",
+//         "   0.1, !- Thermal Resistance{ m2 - K / W }",
+//         "   0.9, !- Thermal Absorptance",
+//         "   0.8, !- Solar Absorptance",
+//         "   0.8;                     !- Visible Absorptance",
+//
+//         "Material,",
+//         "   F16 Acoustic tile, !- Name",
+//         "   MediumSmooth, !- Roughness",
+//         "   0.0191, !- Thickness{ m }",
+//         "   0.06, !- Conductivity{ W / m - K }",
+//         "   368, !- Density{ kg / m3 }",
+//         "   590.000000000002, !- Specific Heat{ J / kg - K }",
+//         "   0.9, !- Thermal Absorptance",
+//         "   0.3, !- Solar Absorptance",
+//         "   0.3;                     !- Visible Absorptance",
+//
+//         "Material,",
+//         "   M11 100mm lightweight concrete, !- Name",
+//         "   MediumRough, !- Roughness",
+//         "   0.1016, !- Thickness{ m }",
+//         "   0.53, !- Conductivity{ W / m - K }",
+//         "   1280, !- Density{ kg / m3 }",
+//         "   840.000000000002, !- Specific Heat{ J / kg - K }",
+//         "   0.9, !- Thermal Absorptance",
+//         "   0.5, !- Solar Absorptance",
+//         "   0.5;                     !- Visible Absorptance",
+//
+//         "Construction,",
+//         "  ExtSlabCarpet 4in ClimateZone 1 - 8, !- Name",
+//         "  MAT - CC05 4 HW CONCRETE, !- Outside Layer",
+//         "  CP02 CARPET PAD;         !- Layer 2",
+//         "Construction,",
+//         "   Interior Floor, !- Name",
+//         "   F16 Acoustic tile, !- Outside Layer",
+//         "   F05 Ceiling air space resistance, !- Layer 2",
+//         "   M11 100mm lightweight concrete;  !- Layer 3",
+//         "Construction:AirBoundary,",
+//         "   Air Wall_ConstructionAirBoundary,  !- Name",
+//         "   None,                    !- Air Exchange Method",
+//         "   0;                       !- Simple Mixing Air Changes per Hour {1 / hr}",
+//         "Output:Constructions,",
+//         "Constructions;",
+//         "Output:Constructions,",
+//         "Materials;",
+//     });
+//
+//     ASSERT_TRUE(process_idf(idf_objects));
+//
+//     state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+//     state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+//
+//     ErrorsFound = false;
+//     Material::GetMaterialData(*state, ErrorsFound); // read material data
+//     EXPECT_FALSE(ErrorsFound);                      // expect no errors
+//
+//     ErrorsFound = false;
+//     HeatBalanceManager::GetConstructData(*state, ErrorsFound); // read construction data
+//     EXPECT_FALSE(ErrorsFound);                                 // expect no errors
+//
+//     // allocate properties for construction objects when it is used or not for building surfaces in the model
+//
+//     state->dataConstruction->Construct(1).IsUsed = false;
+//     state->dataConstruction->Construct(2).IsUsed = true;
+//     state->dataConstruction->Construct(3).IsUsed = true;
+//
+//     // call the function for initialization of finite difference calculation
+//     InitialInitHeatBalFiniteDiff(*state);
+//     auto &ConstructFD = state->dataHeatBalFiniteDiffMgr->ConstructFD;
+//     // check the values are correct
+//     EXPECT_EQ(0, ConstructFD(1).Name.size());
+//     EXPECT_EQ(3, ConstructFD(2).Name.size());
+//     EXPECT_EQ(0, ConstructFD(3).Name.size());
+//     EXPECT_EQ("F16 ACOUSTIC TILE", ConstructFD(2).Name(1));
+//     EXPECT_EQ("F05 CEILING AIR SPACE RESISTANCE", ConstructFD(2).Name(2));
+//     EXPECT_EQ("M11 100MM LIGHTWEIGHT CONCRETE", ConstructFD(2).Name(3));
+//
+//     // deallocate
+//     ConstructFD.deallocate();
+// }
 
 TEST_F(EnergyPlusFixture, HeatBalFiniteDiffManager_findAnySurfacesUsingConstructionAndCondFDTest)
 {
@@ -469,7 +474,7 @@ TEST_F(EnergyPlusFixture, HeatBalFiniteDiffManager_findAnySurfacesUsingConstruct
     state->dataHeatBalSurf->SurfOpaqInsFaceCondFlux.allocate(thisData->TotSurfaces);
     state->dataHeatBalSurf->SurfOpaqOutFaceCondFlux.allocate(thisData->TotSurfaces);
     state->dataGlobal->TimeStepZoneSec = 600.0;
-    state->dataGlobal->NumOfTimeStepInHour = 6;
+    state->dataGlobal->TimeStepsInHour = 6;
 
     // call the function for initialization of finite difference calculation
     std::string const error_string = delimited_string({"   ** Severe  ** InitialInitHeatBalFiniteDiff: Found Material that is too thin and/or too "

@@ -126,7 +126,7 @@
 ! Report Variables:            All available in RDD (442 requested, monthly and annual results)
 !
 
-  Version,24.2;
+  Version,25.1;
 
   Building,
     Small Office 2 Story 4 zone 550 m2,  !- Name
@@ -3730,9 +3730,9 @@
 
   Output:Variable,*,Zone People Total Heating Energy,annual;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,monthly;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,monthly;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,annual;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,annual;
 
   Output:Variable,*,Zone Infiltration Mass,monthly;
 
