@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -301,6 +301,8 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_GetInput_Test)
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream("");
 
+    state->init_state(*state);
+
     GetExhaustAbsorberInput(*state);
 
     compare_err_stream("");
@@ -331,6 +333,7 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_GetInput_Test)
 
 TEST_F(EnergyPlusFixture, ExhAbsorption_getDesignCapacities_Test)
 {
+    state->init_state(*state);
     state->dataPlnt->TotNumLoops = 3;
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
 
@@ -634,6 +637,8 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_calcHeater_Fix_Test)
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream("");
 
+    state->init_state(*state);
+
     GetExhaustAbsorberInput(*state);
 
     auto &thisChillerHeater = state->dataChillerExhaustAbsorption->ExhaustAbsorber(1);
@@ -647,7 +652,7 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_calcHeater_Fix_Test)
     thisChillerHeater.HWPlantLoc.loopSideNum = DataPlant::LoopSideLocation::Demand;
     auto &hwPlantLoop = state->dataPlnt->PlantLoop(1);
     hwPlantLoop.FluidName = "WATER";
-    hwPlantLoop.FluidIndex = 1;
+    hwPlantLoop.glycol = Fluid::GetWater(*state);
     hwPlantLoop.LoopDemandCalcScheme = DataPlant::LoopDemandCalcScheme::SingleSetPoint;
     hwPlantLoop.LoopSide(DataPlant::LoopSideLocation::Demand).FlowLock = DataPlant::FlowLock::Locked;
 
@@ -685,7 +690,7 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_calcHeater_Fix_Test)
     bool const runflaginput = true;
     thisChillerHeater.calcHeater(*state, loadinput, runflaginput);
 
-    const Real64 CpHW = FluidProperties::GetSpecificHeatGlycol(*state, hwPlantLoop.FluidName, hwReturnTemp, hwPlantLoop.FluidIndex, "UnitTest");
+    const Real64 CpHW = hwPlantLoop.glycol->getSpecificHeat(*state, hwReturnTemp, "UnitTest");
     EXPECT_EQ(4185.0, CpHW);
     const Real64 expectedHeatingLoad = (hwSupplySetpoint - hwReturnTemp) * hwMassFlow * CpHW;
 
@@ -1121,6 +1126,8 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_GetInput_Multiple_Objects_Test)
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream("");
 
+    state->init_state(*state);
+
     GetExhaustAbsorberInput(*state);
 
     compare_err_stream("");
@@ -1430,6 +1437,8 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_calcChiller_Err_Msg_Test)
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream("");
 
+    state->init_state(*state);
+
     GetExhaustAbsorberInput(*state);
 
     auto &thisChillerHeater = state->dataChillerExhaustAbsorption->ExhaustAbsorber(1);
@@ -1445,7 +1454,7 @@ TEST_F(EnergyPlusFixture, ExhAbsorption_calcChiller_Err_Msg_Test)
     thisChillerHeater.CWPlantLoc.loopSideNum = DataPlant::LoopSideLocation::Demand;
 
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopDemandCalcScheme = DataPlant::LoopDemandCalcScheme::SingleSetPoint;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).FlowLock = DataPlant::FlowLock::Locked;
     state->dataLoopNodes->Node(3).Temp = 60.0;

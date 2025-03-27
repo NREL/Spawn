@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -86,7 +86,7 @@ namespace EnergyPlus::ChillerExhaustAbsorption {
 //                   for Gas Research Institute (Original module GasAbsoptionChiller)
 //    DATE WRITTEN   March 2001
 //    MODIFIED       Brent Griffith, Nov 2010 plant upgrades, generalize fluid properties
-//                   Mahabir Bhandari, ORNL, Aug 2011, modified to accomodate Exhaust Fired Absorption Chiller
+//                   Mahabir Bhandari, ORNL, Aug 2011, modified to accommodate Exhaust Fired Absorption Chiller
 
 // PURPOSE OF THIS MODULE:
 //    This module simulates the performance of the Exhaust fired double effect
@@ -238,7 +238,7 @@ void ExhaustAbsorberSpecs::getDesignCapacities(
 
     if (!matchfound) {
         // Error, nodes do not match
-        ShowSevereError(state, format("SimExhaustAbsorber: Invalid call to Exhaust Absorbtion Chiller-Heater {}", this->Name));
+        ShowSevereError(state, format("SimExhaustAbsorber: Invalid call to Exhaust Absorption Chiller-Heater {}", this->Name));
         ShowContinueError(state, "Node connections in branch are not consistent with object nodes.");
         ShowFatalError(state, "Preceding conditions cause termination.");
     } // Operate as Chiller or Heater
@@ -442,7 +442,7 @@ void GetExhaustAbsorberInput(EnergyPlusData &state)
             ShowContinueError(state, format("Entered in {}={}", cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
             ShowContinueError(state, "resetting to ENTERING-CONDENSER, simulation continues");
         }
-        // Assign Other Paramters
+        // Assign Other Parameters
         if (Util::SameString(state.dataIPShortCut->cAlphaArgs(16), "AirCooled")) {
             thisChiller.isWaterCooled = false;
         } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(16), "WaterCooled")) {
@@ -937,7 +937,7 @@ void ExhaustAbsorberSpecs::initialize(EnergyPlusData &state)
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     Real64 rho;  // local fluid density
-    Real64 mdot; // lcoal fluid mass flow rate
+    Real64 mdot; // local fluid mass flow rate
 
     int CondInletNode = this->CondReturnNodeNum;
     int CondOutletNode = this->CondSupplyNodeNum;
@@ -949,11 +949,7 @@ void ExhaustAbsorberSpecs::initialize(EnergyPlusData &state)
         if (this->isWaterCooled) {
             // init max available condenser water flow rate
             if (this->CDPlantLoc.loopNum > 0) {
-                rho = FluidProperties::GetDensityGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidName,
-                                                        Constant::CWInitConvTemp,
-                                                        state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
+                rho = state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
             } else {
                 rho = Psychrometrics::RhoH2O(Constant::InitConvTemp);
             }
@@ -963,11 +959,7 @@ void ExhaustAbsorberSpecs::initialize(EnergyPlusData &state)
         }
 
         if (this->HWPlantLoc.loopNum > 0) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->HWPlantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->HWPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->HWPlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
         } else {
             rho = Psychrometrics::RhoH2O(Constant::InitConvTemp);
         }
@@ -976,11 +968,7 @@ void ExhaustAbsorberSpecs::initialize(EnergyPlusData &state)
         PlantUtilities::InitComponentNodes(state, 0.0, this->DesHeatMassFlowRate, HeatInletNode, HeatOutletNode);
 
         if (this->CWPlantLoc.loopNum > 0) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                    Constant::CWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
         } else {
             rho = Psychrometrics::RhoH2O(Constant::InitConvTemp);
         }
@@ -1066,16 +1054,8 @@ void ExhaustAbsorberSpecs::size(EnergyPlusData &state)
 
     if (PltSizCoolNum > 0) {
         if (state.dataSize->PlantSizData(PltSizCoolNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                        Constant::CWInitConvTemp,
-                                                        state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                    Constant::CWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            Cp = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::CWInitConvTemp, RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
             tmpNomCap = Cp * rho * state.dataSize->PlantSizData(PltSizCoolNum).DeltaT * state.dataSize->PlantSizData(PltSizCoolNum).DesVolFlowRate *
                         this->SizFac;
             if (!this->NomCoolingCapWasAutoSized) tmpNomCap = this->NomCoolingCap;
@@ -1296,16 +1276,8 @@ void ExhaustAbsorberSpecs::size(EnergyPlusData &state)
     if (PltSizCondNum > 0 && PltSizCoolNum > 0) {
         if (state.dataSize->PlantSizData(PltSizCoolNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow && tmpNomCap > 0.0) {
 
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidName,
-                                                        this->TempDesCondReturn,
-                                                        state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidName,
-                                                    this->TempDesCondReturn,
-                                                    state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            Cp = state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).glycol->getSpecificHeat(state, this->TempDesCondReturn, RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).glycol->getDensity(state, this->TempDesCondReturn, RoutineName);
             tmpCondVolFlowRate = tmpNomCap * (1.0 + this->ThermalEnergyCoolRatio) / (state.dataSize->PlantSizData(PltSizCondNum).DeltaT * Cp * rho);
             if (!this->CondVolFlowRateWasAutoSized) tmpCondVolFlowRate = this->CondVolFlowRate;
 
@@ -1448,7 +1420,7 @@ void ExhaustAbsorberSpecs::calcChiller(EnergyPlusData &state, Real64 &MyLoad)
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Jason Glazer
     //       DATE WRITTEN   March 2001
-    //       MODIFIED       Mahabir Bhandari, ORNL, Aug 2011, modified to accomodate exhaust fired chiller
+    //       MODIFIED       Mahabir Bhandari, ORNL, Aug 2011, modified to accommodate exhaust fired chiller
 
     // PURPOSE OF THIS SUBROUTINE:
     // Simulate a Exhaust fired (Exhaust consuming) absorption chiller using
@@ -1515,7 +1487,7 @@ void ExhaustAbsorberSpecs::calcChiller(EnergyPlusData &state, Real64 &MyLoad)
     int lThermalEnergyCoolFPLRCurve = this->ThermalEnergyCoolFPLRCurve;
     int lElecCoolFTCurve = this->ElecCoolFTCurve;
     int lElecCoolFPLRCurve = this->ElecCoolFPLRCurve;
-    bool lIsEnterCondensTemp = this->isEnterCondensTemp; // if using entering conderser water temperature is TRUE, exiting is FALSE
+    bool lIsEnterCondensTemp = this->isEnterCondensTemp; // if using entering condenser water temperature is TRUE, exiting is FALSE
     bool lIsWaterCooled = this->isWaterCooled;           // if water cooled it is TRUE
     Real64 lCHWLowLimitTemp = this->CHWLowLimitTemp;
     Real64 lHeatElectricPower = this->HeatElectricPower;               // parasitic electric power used  for heating
@@ -1542,17 +1514,9 @@ void ExhaustAbsorberSpecs::calcChiller(EnergyPlusData &state, Real64 &MyLoad)
     Real64 lExhaustInFlow = state.dataLoopNodes->Node(lExhaustAirInletNodeNum).MassFlowRate;
     Real64 lExhaustAirHumRat = state.dataLoopNodes->Node(lExhaustAirInletNodeNum).HumRat;
 
-    Real64 Cp_CW = FluidProperties::GetSpecificHeatGlycol(state,
-                                                          state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                          lChillReturnTemp,
-                                                          state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                          RoutineName);
+    Real64 Cp_CW = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, lChillReturnTemp, RoutineName);
     if (this->CDPlantLoc.loopNum > 0) {
-        Cp_CD = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidName,
-                                                       lChillReturnTemp,
-                                                       state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+        Cp_CD = state.dataPlnt->PlantLoop(this->CDPlantLoc.loopNum).glycol->getSpecificHeat(state, lChillReturnTemp, RoutineName);
     }
 
     // If no loop demand or Absorber OFF, return
@@ -1722,7 +1686,7 @@ void ExhaustAbsorberSpecs::calcChiller(EnergyPlusData &state, Real64 &MyLoad)
                              Curve::CurveValue(state, lElecCoolFTCurve, lChillSupplyTemp, calcCondTemp) *
                              Curve::CurveValue(state, lElecCoolFPLRCurve, lCoolPartLoadRatio);
 
-        // determine conderser load which is cooling load plus the
+        // determine condenser load which is cooling load plus the
         // ThermalEnergy used for cooling plus
         // the electricity used
         lTowerLoad = lCoolingLoad + lCoolThermalEnergyUseRate / lThermalEnergyHeatRatio + lCoolElectricPower;
@@ -1754,7 +1718,7 @@ void ExhaustAbsorberSpecs::calcChiller(EnergyPlusData &state, Real64 &MyLoad)
                 this->ExhTempLTAbsLeavingTempIndex,
                 lExhaustInTemp,
                 AbsLeavingTemp);
-            // If exhaust is not available, it means the avilable thermal energy is 0.0 and Chiller is not available
+            // If exhaust is not available, it means the available thermal energy is 0.0 and Chiller is not available
             lCoolThermalEnergyUseRate = 0.0;
             lTowerLoad = 0.0;
             lCoolElectricPower = 0.0;
@@ -1835,7 +1799,7 @@ void ExhaustAbsorberSpecs::calcHeater(EnergyPlusData &state, Real64 &MyLoad, boo
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Jason Glazer and Michael J. Witte
     //       DATE WRITTEN   March 2001
-    //       MODIFIED       Mahabir Bhandari, ORNL, Aug 2011, modified to accomodate exhaust fired double effect absorption chiller
+    //       MODIFIED       Mahabir Bhandari, ORNL, Aug 2011, modified to accommodate exhaust fired double effect absorption chiller
 
     // PURPOSE OF THIS SUBROUTINE:
     // Simulate a Exhaust fired (Exhaust consuming) absorption chiller using
@@ -1905,8 +1869,7 @@ void ExhaustAbsorberSpecs::calcHeater(EnergyPlusData &state, Real64 &MyLoad, boo
         lFractionOfPeriodRunning = min(1.0, max(lHeatPartLoadRatio, this->CoolPartLoadRatio) / this->MinPartLoadRat);
     } else {
 
-        Real64 const Cp_HW =
-            FluidProperties::GetSpecificHeatGlycol(state, hwPlantLoop.FluidName, heatReturnNode.Temp, hwPlantLoop.FluidIndex, RoutineName);
+        Real64 const Cp_HW = hwPlantLoop.glycol->getSpecificHeat(state, heatReturnNode.Temp, RoutineName);
 
         // Determine available heating capacity using the current cooling load
         lAvailableHeatingCapacity = this->NomHeatCoolRatio * this->NomCoolingCap *
@@ -1967,7 +1930,7 @@ void ExhaustAbsorberSpecs::calcHeater(EnergyPlusData &state, Real64 &MyLoad, boo
         // Calculate electric parasitics used
         // for heating based on nominal capacity not available capacity
         lHeatElectricPower = this->NomCoolingCap * this->NomHeatCoolRatio * this->ElecHeatRatio * lFractionOfPeriodRunning;
-        // Coodinate electric parasitics for heating and cooling to avoid double counting
+        // Coordinate electric parasitics for heating and cooling to avoid double counting
         // Total electric is the max of heating electric or cooling electric
         // If heating electric is greater, leave cooling electric and subtract if off of heating elec
         // If cooling electric is greater, set heating electric to zero
@@ -1997,7 +1960,7 @@ void ExhaustAbsorberSpecs::calcHeater(EnergyPlusData &state, Real64 &MyLoad, boo
                                            this->ExhTempLTAbsLeavingHeatingTempIndex,
                                            lExhaustInTemp,
                                            AbsLeavingTemp);
-            // If exhaust is not available, it means the avilable thermal energy is 0.0 and Chiller is not available
+            // If exhaust is not available, it means the available thermal energy is 0.0 and Chiller is not available
             lHeatThermalEnergyUseRate = 0.0;
             lHeatElectricPower = 0.0;
             lHotWaterSupplyTemp = heatReturnNode.Temp;

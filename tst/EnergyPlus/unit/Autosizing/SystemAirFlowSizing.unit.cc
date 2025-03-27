@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -120,8 +120,8 @@ TEST_F(AutoSizingFixture, SystemAirFlowSizingGauntlet)
     state->dataSize->FinalZoneSizing(1).HeatDDNum = 2;
     state->dataSize->FinalZoneSizing(1).TimeStepNumAtCoolMax = 12;
     state->dataSize->FinalZoneSizing(1).TimeStepNumAtHeatMax = 6;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
     state->dataEnvrn->TotDesDays = 2;
     state->dataWeather->DesDayInput.allocate(2);
     state->dataWeather->DesDayInput(1).Month = 7;
@@ -960,6 +960,25 @@ TEST_F(AutoSizingFixture, SystemAirFlowSizingGauntlet)
     eiooutput = std::string(" Component Sizing Information, Coil:Heating:Water, MyWaterCoil, Design Size Maximum Flow Rate [m3/s], 3.50000\n"
                             " Component Sizing Information, Coil:Heating:Water, MyWaterCoil, User-Specified Maximum Flow Rate [m3/s], 2.20000\n");
     EXPECT_TRUE(compare_eio_stream(eiooutput, true));
+
+    // Test 58 - DOAS fan air flow rate autosizing
+    state->dataSize->HRFlowSizingFlag = false;
+    state->dataSize->CurOASysNum = 1;
+    state->dataAirLoop->OutsideAirSys(1).AirLoopDOASNum = 0;
+    AirLoopHVACDOAS::AirLoopDOAS thisDOAS;
+    state->dataAirLoopHVACDOAS->airloopDOAS.push_back(thisDOAS);
+    // use 0.53 m3/s multiplied by StdRhoAir = 1.2
+    state->dataAirLoopHVACDOAS->airloopDOAS[state->dataAirLoop->OutsideAirSys(1).AirLoopDOASNum].SizingMassFlow = 0.53 * 1.2;
+    inputValue = DataSizing::AutoSize;
+
+    // do sizing
+    sizer.wasAutoSized = false;
+    printFlag = true;
+    sizer.initializeWithinEP(*this->state, "Fan:SystemModel", "MyDOASFan", printFlag, routineName);
+    sizedValue = sizer.size(*this->state, inputValue, errorsFound);
+    EXPECT_ENUM_EQ(AutoSizingResultType::NoError, sizer.errorType); // cumulative of previous calls
+    EXPECT_TRUE(sizer.wasAutoSized);
+    EXPECT_NEAR(0.53, sizedValue, 0.01); // auto-sized value
 }
 
 } // namespace EnergyPlus

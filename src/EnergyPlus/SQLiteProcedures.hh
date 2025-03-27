@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -668,7 +668,7 @@ private:
                         int const nominalLightingNumber,
                         DataHeatBalance::LightsData const &nominalLightingData)
             : SQLiteData(errorStream, db), number(nominalLightingNumber), name(nominalLightingData.Name), zonePtr(nominalLightingData.ZonePtr),
-              schedulePtr(nominalLightingData.SchedPtr), designLevel(nominalLightingData.DesignLevel),
+              sched(nominalLightingData.sched), designLevel(nominalLightingData.DesignLevel),
               fractionReturnAir(nominalLightingData.FractionReturnAir), fractionRadiant(nominalLightingData.FractionRadiant),
               fractionShortWave(nominalLightingData.FractionShortWave), fractionReplaceable(nominalLightingData.FractionReplaceable),
               fractionConvected(nominalLightingData.FractionConvected), endUseSubcategory(nominalLightingData.EndUseSubcategory)
@@ -681,7 +681,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionReturnAir;
         double const &fractionRadiant;
@@ -699,10 +699,10 @@ private:
                       int const nominalPeopleNumber,
                       DataHeatBalance::PeopleData const &nominalPeopleData)
             : SQLiteData(errorStream, db), number(nominalPeopleNumber), name(nominalPeopleData.Name), zonePtr(nominalPeopleData.ZonePtr),
-              numberOfPeople(nominalPeopleData.NumberOfPeople), numberOfPeoplePtr(nominalPeopleData.NumberOfPeoplePtr),
-              activityLevelPtr(nominalPeopleData.ActivityLevelPtr), fractionRadiant(nominalPeopleData.FractionRadiant),
-              fractionConvected(nominalPeopleData.FractionConvected), workEffPtr(nominalPeopleData.WorkEffPtr),
-              clothingPtr(nominalPeopleData.ClothingPtr), airVelocityPtr(nominalPeopleData.AirVelocityPtr), fanger(nominalPeopleData.Fanger),
+              numberOfPeople(nominalPeopleData.NumberOfPeople), numberOfPeopleSched(nominalPeopleData.sched),
+              activityLevelSched(nominalPeopleData.activityLevelSched), fractionRadiant(nominalPeopleData.FractionRadiant),
+              fractionConvected(nominalPeopleData.FractionConvected), workEffSched(nominalPeopleData.workEffSched),
+              clothingSched(nominalPeopleData.clothingSched), airVelocitySched(nominalPeopleData.airVelocitySched), fanger(nominalPeopleData.Fanger),
               pierce(nominalPeopleData.Pierce), ksu(nominalPeopleData.KSU), mrtCalcType(nominalPeopleData.MRTCalcType),
               surfacePtr(nominalPeopleData.SurfacePtr), angleFactorListName(nominalPeopleData.AngleFactorListName),
               angleFactorListPtr(nominalPeopleData.AngleFactorListPtr), userSpecSensFrac(nominalPeopleData.UserSpecSensFrac),
@@ -717,13 +717,13 @@ private:
         std::string const &name;
         int const &zonePtr;
         double const &numberOfPeople;
-        int const &numberOfPeoplePtr;
-        int const &activityLevelPtr;
+        Sched::Schedule const *numberOfPeopleSched;
+        Sched::Schedule const *activityLevelSched;
         double const &fractionRadiant;
         double const &fractionConvected;
-        int const &workEffPtr;
-        int const &clothingPtr;
-        int const &airVelocityPtr;
+        Sched::Schedule const *workEffSched;
+        Sched::Schedule const *clothingSched;
+        Sched::Schedule const *airVelocitySched;
         bool const &fanger;
         bool const &pierce;
         bool const &ksu;
@@ -743,7 +743,7 @@ private:
                                  int const nominalElectricEquipmentNumber,
                                  DataHeatBalance::ZoneEquipData const &nominalElectricEquipmentData)
             : SQLiteData(errorStream, db), number(nominalElectricEquipmentNumber), name(nominalElectricEquipmentData.Name),
-              zonePtr(nominalElectricEquipmentData.ZonePtr), schedulePtr(nominalElectricEquipmentData.SchedPtr),
+              zonePtr(nominalElectricEquipmentData.ZonePtr), sched(nominalElectricEquipmentData.sched),
               designLevel(nominalElectricEquipmentData.DesignLevel), fractionLatent(nominalElectricEquipmentData.FractionLatent),
               fractionRadiant(nominalElectricEquipmentData.FractionRadiant), fractionLost(nominalElectricEquipmentData.FractionLost),
               fractionConvected(nominalElectricEquipmentData.FractionConvected), endUseSubcategory(nominalElectricEquipmentData.EndUseSubcategory)
@@ -756,7 +756,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionLatent;
         double const &fractionRadiant;
@@ -773,10 +773,10 @@ private:
                             int const nominalGasEquipmentNumber,
                             DataHeatBalance::ZoneEquipData const &nominalGasEquipmentData)
             : SQLiteData(errorStream, db), number(nominalGasEquipmentNumber), name(nominalGasEquipmentData.Name),
-              zonePtr(nominalGasEquipmentData.ZonePtr), schedulePtr(nominalGasEquipmentData.SchedPtr),
-              designLevel(nominalGasEquipmentData.DesignLevel), fractionLatent(nominalGasEquipmentData.FractionLatent),
-              fractionRadiant(nominalGasEquipmentData.FractionRadiant), fractionLost(nominalGasEquipmentData.FractionLost),
-              fractionConvected(nominalGasEquipmentData.FractionConvected), endUseSubcategory(nominalGasEquipmentData.EndUseSubcategory)
+              zonePtr(nominalGasEquipmentData.ZonePtr), sched(nominalGasEquipmentData.sched), designLevel(nominalGasEquipmentData.DesignLevel),
+              fractionLatent(nominalGasEquipmentData.FractionLatent), fractionRadiant(nominalGasEquipmentData.FractionRadiant),
+              fractionLost(nominalGasEquipmentData.FractionLost), fractionConvected(nominalGasEquipmentData.FractionConvected),
+              endUseSubcategory(nominalGasEquipmentData.EndUseSubcategory)
         {
         }
 
@@ -786,7 +786,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionLatent;
         double const &fractionRadiant;
@@ -803,10 +803,10 @@ private:
                               int const nominalSteamEquipmentNumber,
                               DataHeatBalance::ZoneEquipData const &nominalSteamEquipmentData)
             : SQLiteData(errorStream, db), number(nominalSteamEquipmentNumber), name(nominalSteamEquipmentData.Name),
-              zonePtr(nominalSteamEquipmentData.ZonePtr), schedulePtr(nominalSteamEquipmentData.SchedPtr),
-              designLevel(nominalSteamEquipmentData.DesignLevel), fractionLatent(nominalSteamEquipmentData.FractionLatent),
-              fractionRadiant(nominalSteamEquipmentData.FractionRadiant), fractionLost(nominalSteamEquipmentData.FractionLost),
-              fractionConvected(nominalSteamEquipmentData.FractionConvected), endUseSubcategory(nominalSteamEquipmentData.EndUseSubcategory)
+              zonePtr(nominalSteamEquipmentData.ZonePtr), sched(nominalSteamEquipmentData.sched), designLevel(nominalSteamEquipmentData.DesignLevel),
+              fractionLatent(nominalSteamEquipmentData.FractionLatent), fractionRadiant(nominalSteamEquipmentData.FractionRadiant),
+              fractionLost(nominalSteamEquipmentData.FractionLost), fractionConvected(nominalSteamEquipmentData.FractionConvected),
+              endUseSubcategory(nominalSteamEquipmentData.EndUseSubcategory)
         {
         }
 
@@ -816,7 +816,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionLatent;
         double const &fractionRadiant;
@@ -833,7 +833,7 @@ private:
                                  int const nominalHotWaterEquipmentNumber,
                                  DataHeatBalance::ZoneEquipData const &nominalHotWaterEquipmentData)
             : SQLiteData(errorStream, db), number(nominalHotWaterEquipmentNumber), name(nominalHotWaterEquipmentData.Name),
-              zonePtr(nominalHotWaterEquipmentData.ZonePtr), schedulePtr(nominalHotWaterEquipmentData.SchedPtr),
+              zonePtr(nominalHotWaterEquipmentData.ZonePtr), sched(nominalHotWaterEquipmentData.sched),
               designLevel(nominalHotWaterEquipmentData.DesignLevel), fractionLatent(nominalHotWaterEquipmentData.FractionLatent),
               fractionRadiant(nominalHotWaterEquipmentData.FractionRadiant), fractionLost(nominalHotWaterEquipmentData.FractionLost),
               fractionConvected(nominalHotWaterEquipmentData.FractionConvected), endUseSubcategory(nominalHotWaterEquipmentData.EndUseSubcategory)
@@ -846,7 +846,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionLatent;
         double const &fractionRadiant;
@@ -863,10 +863,10 @@ private:
                               int const nominalOtherEquipmentNumber,
                               DataHeatBalance::ZoneEquipData const &nominalOtherEquipmentData)
             : SQLiteData(errorStream, db), number(nominalOtherEquipmentNumber), name(nominalOtherEquipmentData.Name),
-              zonePtr(nominalOtherEquipmentData.ZonePtr), schedulePtr(nominalOtherEquipmentData.SchedPtr),
-              designLevel(nominalOtherEquipmentData.DesignLevel), fractionLatent(nominalOtherEquipmentData.FractionLatent),
-              fractionRadiant(nominalOtherEquipmentData.FractionRadiant), fractionLost(nominalOtherEquipmentData.FractionLost),
-              fractionConvected(nominalOtherEquipmentData.FractionConvected), endUseSubcategory(nominalOtherEquipmentData.EndUseSubcategory)
+              zonePtr(nominalOtherEquipmentData.ZonePtr), sched(nominalOtherEquipmentData.sched), designLevel(nominalOtherEquipmentData.DesignLevel),
+              fractionLatent(nominalOtherEquipmentData.FractionLatent), fractionRadiant(nominalOtherEquipmentData.FractionRadiant),
+              fractionLost(nominalOtherEquipmentData.FractionLost), fractionConvected(nominalOtherEquipmentData.FractionConvected),
+              endUseSubcategory(nominalOtherEquipmentData.EndUseSubcategory)
         {
         }
 
@@ -876,7 +876,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedulePtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
         double const &fractionLatent;
         double const &fractionRadiant;
@@ -893,7 +893,7 @@ private:
                              int const nominalBaseboardHeatNumber,
                              DataHeatBalance::BBHeatData const &nominalBaseboardHeatData)
             : SQLiteData(errorStream, db), number(nominalBaseboardHeatNumber), name(nominalBaseboardHeatData.Name),
-              zonePtr(nominalBaseboardHeatData.ZonePtr), schedPtr(nominalBaseboardHeatData.SchedPtr),
+              zonePtr(nominalBaseboardHeatData.ZonePtr), sched(nominalBaseboardHeatData.sched),
               capatLowTemperature(nominalBaseboardHeatData.CapatLowTemperature), lowTemperature(nominalBaseboardHeatData.LowTemperature),
               capatHighTemperature(nominalBaseboardHeatData.CapatHighTemperature), highTemperature(nominalBaseboardHeatData.HighTemperature),
               fractionRadiant(nominalBaseboardHeatData.FractionRadiant), fractionConvected(nominalBaseboardHeatData.FractionConvected),
@@ -907,7 +907,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedPtr;
+        Sched::Schedule const *sched;
         double const &capatLowTemperature;
         double const &lowTemperature;
         double const &capatHighTemperature;
@@ -925,7 +925,7 @@ private:
                      int const infiltrationNumber,
                      DataHeatBalance::InfiltrationData const &infiltrationData)
             : SQLiteData(errorStream, db), number(infiltrationNumber), name(infiltrationData.Name), zonePtr(infiltrationData.ZonePtr),
-              schedPtr(infiltrationData.SchedPtr), designLevel(infiltrationData.DesignLevel)
+              sched(infiltrationData.sched), designLevel(infiltrationData.DesignLevel)
         {
         }
 
@@ -935,7 +935,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedPtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
     };
 
@@ -947,7 +947,7 @@ private:
                     int const ventilationNumber,
                     DataHeatBalance::VentilationData const &ventilationData)
             : SQLiteData(errorStream, db), number(ventilationNumber), name(ventilationData.Name), zonePtr(ventilationData.ZonePtr),
-              schedPtr(ventilationData.SchedPtr), designLevel(ventilationData.DesignLevel)
+              sched(ventilationData.availSched), designLevel(ventilationData.DesignLevel)
         {
         }
 
@@ -957,7 +957,7 @@ private:
         int const number;
         std::string const &name;
         int const &zonePtr;
-        int const &schedPtr;
+        Sched::Schedule const *sched;
         double const &designLevel;
     };
 
@@ -1012,6 +1012,10 @@ void CreateSQLiteZoneExtendedOutput(EnergyPlusData &state);
 struct SQLiteProceduresData : BaseGlobalStruct
 {
     std::unique_ptr<SQLite> sqlite;
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
     }

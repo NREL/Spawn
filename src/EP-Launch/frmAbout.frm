@@ -75,7 +75,7 @@ Begin VB.Form frmAbout
       Width           =   3855
    End
    Begin VB.Label lblTitle 
-      Caption         =   "EP-Launch  -  Version 2.15"
+      Caption         =   "EP-Launch  -  Version 2.16"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   12
@@ -116,7 +116,7 @@ If eplUI.getOSVersion() = 1 Then
 Else
   lblPlatform.Caption = "Running on Windows NT, 2000, XP, Vista, 7, 8, 10, 11"
 End If
-txtNotice.Text = "Copyright (c) 2000-2024 GARD Analytics, " & vbCrLf
+txtNotice.Text = "Copyright (c) 2000-2025 GARD Analytics, " & vbCrLf
 txtNotice.Text = txtNotice.Text & "All rights reserved.                    " & vbCrLf
 txtNotice.Text = txtNotice.Text & "                                        " & vbCrLf
 txtNotice.Text = txtNotice.Text & "NOTICE: The U.S. Government is granted  " & vbCrLf
@@ -200,7 +200,7 @@ End Sub
 '     WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
 '     the specific language governing rights and limitations under the License.
 '
-'     Copyright © 1996-2014 GARD Analytics.  All rights reserved.
+'     Copyright © 1996-2025 GARD Analytics.  All rights reserved.
 '
 '     NOTICE: The U.S. Government is granted for itself and others acting on its
 '     behalf a paid-up, nonexclusive, irrevocable, worldwide license in this data to

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -173,7 +173,7 @@
 // from the SQLite project (http://www.sqlite.org/).
 
 #ifdef _WIN32
-#include <Windows.h>
+#    include <Windows.h>
 #endif
 
 // C++ Headers
@@ -183,11 +183,11 @@
 #include <vector>
 
 #ifdef DEBUG_ARITHM_GCC_OR_CLANG
-#include <EnergyPlus/fenv_missing.h>
+#    include <EnergyPlus/fenv_missing.h>
 #endif
 
 #ifdef DEBUG_ARITHM_MSVC
-#include <cfloat>
+#    include <cfloat>
 #endif
 
 // ObjexxFCL Headers
@@ -218,10 +218,10 @@
 #include <EnergyPlus/api/EnergyPlusPgm.hh>
 
 #ifdef _WIN32
-#include <direct.h>
-#include <stdlib.h>
+#    include <direct.h>
+#    include <stdlib.h>
 #else // Mac or Linux
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 
 int EnergyPlusPgm(const std::vector<std::string> &args, std::string const &filepath)
@@ -269,12 +269,12 @@ void commonInitialize(EnergyPlus::EnergyPlusData &state)
 #endif
 
 #ifdef _MSC_VER
-#ifndef _DEBUG
+#    ifndef _DEBUG
     // If _MSC_VER and not debug then prevent dialogs on error
     SetErrorMode(SEM_NOGPFAULTERRORBOX);
     _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
     _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-#endif
+#    endif
 #endif
 
     state.dataSysVars->runtimeTimer.tick();
@@ -367,8 +367,10 @@ int wrapUpEnergyPlus(EnergyPlus::EnergyPlusData &state)
         Psychrometrics::ShowPsychrometricSummary(state, state.files.audit);
 
         state.dataInputProcessing->inputProcessor->reportOrphanRecordObjects(state);
-        FluidProperties::ReportOrphanFluids(state);
-        ScheduleManager::ReportOrphanSchedules(state);
+
+        Fluid::ReportOrphanFluids(state);
+        Sched::ReportOrphanSchedules(state);
+
         if (state.dataSQLiteProcedures->sqlite) {
             state.dataSQLiteProcedures->sqlite.reset();
         }

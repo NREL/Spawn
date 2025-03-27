@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -159,7 +159,7 @@ namespace Dayltg {
     // sky is conveniently given by SurfAnisoSkyMult.  NOTE:  The solar shading code was modified to allow sunlit
     // fraction, sunlit area, SurfAnisoSkyMult, etc. to be calculated for attached shading surfaces.
     // Future shelf model improvements:
-    // 1. Allow beam and downgoing flux to pass the end of the inside shelf depending on actual shelf goemetry.
+    // 1. Allow beam and downgoing flux to pass the end of the inside shelf depending on actual shelf geometry.
     // 2. Reduce outside shelf view factor to sky (for daylighting) by taking into account anisotropic sky
     //    distribution and shading, i.e. the daylighting equivalent of SurfAnisoSkyMult.
     // 3. Expand view factor to shelf calculation to handle more complicated geometry.
@@ -210,8 +210,8 @@ namespace Dayltg {
             state.dataDaylightingDevices->COSAngle(1) = 0.0;
             state.dataDaylightingDevices->COSAngle(NumOfAngles) = 1.0;
 
-            Real64 dTheta = 90.0 * Constant::DegToRadians / (NumOfAngles - 1.0);
-            Real64 Theta = 90.0 * Constant::DegToRadians;
+            Real64 dTheta = 90.0 * Constant::DegToRad / (NumOfAngles - 1.0);
+            Real64 Theta = 90.0 * Constant::DegToRad;
             for (int AngleNum = 2; AngleNum <= NumOfAngles - 1; ++AngleNum) {
                 Theta -= dTheta;
                 state.dataDaylightingDevices->COSAngle(AngleNum) = std::cos(Theta);
@@ -256,7 +256,7 @@ namespace Dayltg {
                         TDDPipeStored(NumStored).TransBeam(NumOfAngles) = 1.0;
 
                         // Calculate intermediate beam transmittances between 0 and 90 degrees
-                        Theta = 90.0 * Constant::DegToRadians;
+                        Theta = 90.0 * Constant::DegToRad;
                         for (int AngleNum = 2; AngleNum <= NumOfAngles - 1; ++AngleNum) {
                             Theta -= dTheta;
                             TDDPipeStored(NumStored).TransBeam(AngleNum) =
@@ -752,10 +752,10 @@ namespace Dayltg {
             } // PipeNum
 
             if (state.dataDaylightingDevices->GetTDDInputErrorsFound) ShowFatalError(state, "Errors in DaylightingDevice:Tubular input.");
-            state.dataDayltg->TDDTransVisBeam.allocate(Constant::HoursInDay, NumOfTDDPipes);
-            state.dataDayltg->TDDFluxInc.allocate(Constant::HoursInDay, NumOfTDDPipes);
-            state.dataDayltg->TDDFluxTrans.allocate(Constant::HoursInDay, NumOfTDDPipes);
-            for (int hr = 1; hr <= Constant::HoursInDay; ++hr) {
+            state.dataDayltg->TDDTransVisBeam.allocate(Constant::iHoursInDay, NumOfTDDPipes);
+            state.dataDayltg->TDDFluxInc.allocate(Constant::iHoursInDay, NumOfTDDPipes);
+            state.dataDayltg->TDDFluxTrans.allocate(Constant::iHoursInDay, NumOfTDDPipes);
+            for (int hr = 1; hr <= Constant::iHoursInDay; ++hr) {
                 for (int tddNum = 1; tddNum <= NumOfTDDPipes; ++tddNum) {
                     state.dataDayltg->TDDTransVisBeam(hr, tddNum) = 0.0;
                     state.dataDayltg->TDDFluxInc(hr, tddNum) = Illums();
@@ -919,7 +919,7 @@ namespace Dayltg {
                             state.dataDaylightingDevices->GetShelfInputErrorsFound = true;
                         }
 
-                        if (state.dataSurface->Surface(SurfNum).SchedShadowSurfIndex > 0) {
+                        if (state.dataSurface->Surface(SurfNum).shadowSurfSched != nullptr) {
                             ShowSevereError(state,
                                             format("{} = {}:  Outside shelf {} must not have a transmittance schedule.",
                                                    cCurrentModuleObject,
@@ -1129,8 +1129,8 @@ namespace Dayltg {
         Real64 COSI;            // Cosine of incident angle
         Real64 SINI;            // Sine of incident angle
 
-        Real64 const dPH = 90.0 * Constant::DegToRadians / NPH; // Altitude angle of sky element
-        Real64 PH = 0.5 * dPH;                                  // Altitude angle increment
+        Real64 const dPH = 90.0 * Constant::DegToRad / NPH; // Altitude angle of sky element
+        Real64 PH = 0.5 * dPH;                              // Altitude angle increment
 
         // Integrate from 0 to Pi/2 altitude
         for (int N = 1; N <= NPH; ++N) {
@@ -1194,15 +1194,15 @@ namespace Dayltg {
         Real64 Theta;           // TDD:DOME azimuth angle
 
         CosPhi = std::cos(Constant::PiOvr2 -
-                          state.dataSurface->Surface(state.dataDaylightingDevicesData->TDDPipe(PipeNum).Dome).Tilt * Constant::DegToRadians);
-        Theta = state.dataSurface->Surface(state.dataDaylightingDevicesData->TDDPipe(PipeNum).Dome).Azimuth * Constant::DegToRadians;
+                          state.dataSurface->Surface(state.dataDaylightingDevicesData->TDDPipe(PipeNum).Dome).Tilt * Constant::DegToRad);
+        Theta = state.dataSurface->Surface(state.dataDaylightingDevicesData->TDDPipe(PipeNum).Dome).Azimuth * Constant::DegToRad;
 
         if (CosPhi > 0.01) { // Dome has a view of the horizon
             // Integrate over the semicircle
             Real64 const THMIN = Theta - Constant::PiOvr2; // Minimum azimuth integration limit
             // Real64 const THMAX = Theta + PiOvr2; // Maximum azimuth integration limit
-            Real64 const dTH = 180.0 * Constant::DegToRadians / NTH; // Azimuth angle increment
-            Real64 TH = THMIN + 0.5 * dTH;                           // Azimuth angle of sky horizon element
+            Real64 const dTH = 180.0 * Constant::DegToRad / NTH; // Azimuth angle increment
+            Real64 TH = THMIN + 0.5 * dTH;                       // Azimuth angle of sky horizon element
 
             for (int N = 1; N <= NTH; ++N) {
                 // Calculate incident angle between dome outward normal and horizon element
@@ -1328,9 +1328,6 @@ namespace Dayltg {
         // Swift, P. D., and Smith, G. B.  "Cylindrical Mirror Light Pipes",
         //   Solar Energy Materials and Solar Cells 36 (1995), pp. 159-168.
 
-        // Using/Aliasing
-        using General::POLYF;
-
         // Return value
         Real64 TransTDD;
 
@@ -1353,7 +1350,7 @@ namespace Dayltg {
         // Get the transmittance of each component and of total TDD
         switch (RadiationType) {
         case RadType::VisibleBeam: {
-            transDome = POLYF(COSI, state.dataConstruction->Construct(constDome).TransVisBeamCoef);
+            transDome = Window::POLYF(COSI, state.dataConstruction->Construct(constDome).TransVisBeamCoef);
             transPipe = InterpolatePipeTransBeam(state, COSI, state.dataDaylightingDevicesData->TDDPipe(PipeNum).PipeTransVisBeam);
             transDiff = state.dataConstruction->Construct(constDiff).TransDiffVis; // May want to change to POLYF also!
 
@@ -1361,7 +1358,7 @@ namespace Dayltg {
 
         } break;
         case RadType::SolarBeam: {
-            transDome = POLYF(COSI, state.dataConstruction->Construct(constDome).TransSolBeamCoef);
+            transDome = Window::POLYF(COSI, state.dataConstruction->Construct(constDome).TransSolBeamCoef);
             transPipe = InterpolatePipeTransBeam(state, COSI, state.dataDaylightingDevicesData->TDDPipe(PipeNum).PipeTransSolBeam);
             transDiff = state.dataConstruction->Construct(constDiff).TransDiff; // May want to change to POLYF also!
 
@@ -1400,7 +1397,7 @@ namespace Dayltg {
         // REFERENCES: na
 
         // Using/Aliasing
-        using FluidProperties::FindArrayIndex; // USEd code could be copied here to eliminate dependence on FluidProperties
+        using Fluid::FindArrayIndex; // USEd code could be copied here to eliminate dependence on FluidProperties
 
         // Return value
         Real64 InterpolatePipeTransBeam;
@@ -1789,7 +1786,7 @@ namespace Dayltg {
         //       DATE WRITTEN   Dec 2011
 
         // PURPOSE OF THIS SUBROUTINE:
-        // intialize zone gains at begin new environment
+        // initialize zone gains at begin new environment
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 

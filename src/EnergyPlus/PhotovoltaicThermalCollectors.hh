@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -97,7 +97,7 @@ namespace PhotovoltaicThermalCollectors {
         Real64 ThermalActiveFract = 0.0;                       // fraction of surface area with active thermal collection
         ThermEfficEnum ThermEfficMode = ThermEfficEnum::FIXED; // setting for how therm effic is determined
         Real64 ThermEffic = 0.0;                               // fixed or current Therm efficiency
-        int ThermEffSchedNum = 0;                              // pointer to schedule for therm effic (if any)
+        Sched::Schedule *thermEffSched = nullptr;              // pointer to schedule for therm effic (if any)
         Real64 SurfEmissivity = 0.0;                           // surface emittance in long wave IR
         Real64 LastCollectorTemp = 0.0;                        // store previous temperature
     };
@@ -105,27 +105,27 @@ namespace PhotovoltaicThermalCollectors {
     struct BIPVTModelStruct
     {
         std::string Name;
-        std::string OSCMName;               // OtherSideConditionsModel
-        int OSCMPtr = 0;                    // OtherSideConditionsModel index
-        int SchedPtr = 0;                   // Availablity schedule
-        Real64 PVEffGapWidth = 0.0;         // Effective Gap Plenum Behind PV modules (m)
-        Real64 PVCellTransAbsProduct = 0.0; // PV cell Transmittance-Absorptance prodiuct
-        Real64 BackMatTranAbsProduct = 0.0; // Backing Material Normal Transmittance-Absorptance Product
-        Real64 CladTranAbsProduct = 0.0;    // Cladding Normal Transmittance-Absorptance Product
-        Real64 PVAreaFract = 0.0;           // Fraction of collector gross area covered by PV module
-        Real64 PVCellAreaFract = 0.0;       // Fraction of PV cell area to module area
-        Real64 PVRTop = 0.0;                // PV module top thermal resistance (m2-DegC/W)
-        Real64 PVRBot = 0.0;                // PV module bottom thermal resistance (m2-DegC/W)
-        Real64 PVGEmiss = 0.0;              // Emissivity PV modules
-        Real64 BackMatEmiss = 0.0;          // Emissivity of backing material
-        Real64 ThGlass = 0.0;               // Glass thickness (m)
-        Real64 RIndGlass = 0.0;             // Glass refraction index
-        Real64 ECoffGlass = 0.0;            // Glass extinction coefficient
-        Real64 LastCollectorTemp = 0.0;     // store previous temperature (DegC)
-        Real64 Tplen = 20.0;                // modeled drybulb temperature for air through BIPVT channel (DegC)
-        Real64 Tcoll = 20.0;                // modeled temperature of BIPVT channel surface on PV side (DegC)
-        Real64 HrPlen = 1.0;                // Modeled radiation coef for OSCM (W/m2-C)
-        Real64 HcPlen = 10.0;               // Modeled Convection coef for OSCM (W/m2-C)
+        std::string OSCMName;                  // OtherSideConditionsModel
+        int OSCMPtr = 0;                       // OtherSideConditionsModel index
+        Sched::Schedule *availSched = nullptr; // Availablity schedule
+        Real64 PVEffGapWidth = 0.0;            // Effective Gap Plenum Behind PV modules (m)
+        Real64 PVCellTransAbsProduct = 0.0;    // PV cell Transmittance-Absorptance prodiuct
+        Real64 BackMatTranAbsProduct = 0.0;    // Backing Material Normal Transmittance-Absorptance Product
+        Real64 CladTranAbsProduct = 0.0;       // Cladding Normal Transmittance-Absorptance Product
+        Real64 PVAreaFract = 0.0;              // Fraction of collector gross area covered by PV module
+        Real64 PVCellAreaFract = 0.0;          // Fraction of PV cell area to module area
+        Real64 PVRTop = 0.0;                   // PV module top thermal resistance (m2-DegC/W)
+        Real64 PVRBot = 0.0;                   // PV module bottom thermal resistance (m2-DegC/W)
+        Real64 PVGEmiss = 0.0;                 // Emissivity PV modules
+        Real64 BackMatEmiss = 0.0;             // Emissivity of backing material
+        Real64 ThGlass = 0.0;                  // Glass thickness (m)
+        Real64 RIndGlass = 0.0;                // Glass refraction index
+        Real64 ECoffGlass = 0.0;               // Glass extinction coefficient
+        Real64 LastCollectorTemp = 0.0;        // store previous temperature (DegC)
+        Real64 Tplen = 20.0;                   // modeled drybulb temperature for air through BIPVT channel (DegC)
+        Real64 Tcoll = 20.0;                   // modeled temperature of BIPVT channel surface on PV side (DegC)
+        Real64 HrPlen = 1.0;                   // Modeled radiation coef for OSCM (W/m2-C)
+        Real64 HcPlen = 10.0;                  // Modeled Convection coef for OSCM (W/m2-C)
     };
 
     struct PVTReportStruct
@@ -255,6 +255,10 @@ struct PhotovoltaicThermalCollectorsData : BaseGlobalStruct
     bool GetInputFlag = true; // First time, input is "gotten"
     int NumPVT = 0;           // count of all types of PVT in input file
     Array1D<PhotovoltaicThermalCollectors::PVTCollectorStruct> PVT;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

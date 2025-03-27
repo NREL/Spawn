@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -117,7 +117,7 @@ namespace AirLoopHVACDOAS {
 
         int m_AirLoopDOASNum = 0;
         int m_OASystemNum = 0;
-        int m_AvailManagerSchedPtr = 0;
+        Sched::Schedule *m_AvailManagerSched = nullptr;
         int m_AirLoopMixerIndex = -1;
         int m_AirLoopSplitterIndex = -1;
         int NumOfAirLoops = 0;
@@ -183,6 +183,10 @@ struct AirLoopHVACDOASData : BaseGlobalStruct
     std::vector<AirLoopHVACDOAS::AirLoopDOAS> airloopDOAS;
     std::vector<AirLoopHVACDOAS::AirLoopMixer> airloopMixer;
     std::vector<AirLoopHVACDOAS::AirLoopSplitter> airloopSplitter;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

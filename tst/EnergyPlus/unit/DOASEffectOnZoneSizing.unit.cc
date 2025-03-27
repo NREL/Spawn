@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -81,6 +81,7 @@ using namespace DataHeatBalance;
 
 TEST_F(EnergyPlusFixture, DOASEffectOnZoneSizing_CalcDOASSupCondsForSizing)
 {
+    state->init_state(*state);
     // locals
     Real64 OutDB;        // outside air temperature [C]
     Real64 OutHR;        // outside humidity ratio [kg Water / kg Dry Air]
@@ -148,9 +149,7 @@ TEST_F(EnergyPlusFixture, DOASEffectOnZoneSizing_SizeZoneEquipment)
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(2);
     state->dataZoneEquip->ZoneEquipConfig.allocate(2);
     state->dataHeatBalFanSys->TempControlType.allocate(2);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(2);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(2);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(2);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(2);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(2);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(2);
     state->dataZoneEnergyDemand->DeadBandOrSetback.allocate(2);
@@ -159,19 +158,21 @@ TEST_F(EnergyPlusFixture, DOASEffectOnZoneSizing_SizeZoneEquipment)
     state->dataZoneEquip->ZoneEquipConfig(2).InletNode.allocate(2);
     state->dataZoneEquip->ZoneEquipConfig(1).ExhaustNode.allocate(1);
     state->dataZoneEquip->ZoneEquipConfig(2).ExhaustNode.allocate(1);
+    state->dataZoneEquip->ZoneEquipConfig(1).returnFlowFracSched = Sched::GetScheduleAlwaysOff(*state);
+    state->dataZoneEquip->ZoneEquipConfig(2).returnFlowFracSched = Sched::GetScheduleAlwaysOff(*state);
     state->dataHeatBalFanSys->ZoneMassBalanceFlag.allocate(2);
     state->dataGlobal->NumOfZones = 2;
     state->dataHeatBal->MassConservation.allocate(state->dataGlobal->NumOfZones);
     HeatBalanceManager::AllocateHeatBalArrays(*state);
     state->afn->AirflowNetworkNumOfExhFan = 0;
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
-    state->dataHeatBalFanSys->TempControlType(2) = HVAC::ThermostatType::DualSetPointWithDeadBand;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 0.0;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(2) = 0.0;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1) = 22.;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(2) = 22.;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1) = 24.;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(2) = 24.;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
+    state->dataHeatBalFanSys->TempControlType(2) = HVAC::SetptType::DualHeatCool;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 0.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(2).setpt = 0.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo = 22.;
+    state->dataHeatBalFanSys->zoneTstatSetpts(2).setptLo = 22.;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi = 24.;
+    state->dataHeatBalFanSys->zoneTstatSetpts(2).setptHi = 24.;
     state->dataSize->CurOverallSimDay = 1;
     state->dataZoneEquip->ZoneEquipConfig(1).IsControlled = true;
     state->dataZoneEquip->ZoneEquipConfig(2).IsControlled = true;
@@ -316,7 +317,7 @@ TEST_F(EnergyPlusFixture, DOASEffectOnZoneSizing_SizeZoneEquipment)
 
 TEST_F(EnergyPlusFixture, TestAutoCalcDOASControlStrategy)
 {
-
+    state->init_state(*state);
     state->dataSize->NumZoneSizingInput = 2;
     state->dataSize->ZoneSizingInput.allocate(state->dataSize->NumZoneSizingInput);
     state->dataSize->ZoneSizingInput(1).AccountForDOAS = false;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,7 +57,7 @@
 #include <nlohmann/json.hpp>
 
 #ifdef _OPENMP
-#include <omp.h>
+#    include <omp.h>
 #endif
 
 #include <array>
@@ -255,12 +255,18 @@ bool processErrors(std::unique_ptr<IdfParser> const &idf_parser, std::unique_ptr
         displayMessage(warning);
     }
     for (auto const &error : validation_errors) {
-        if (isDDY) {
-            if ((error.find("Missing required property 'Building'") != std::string::npos) ||
-                (error.find("Missing required property 'GlobalGeometryRules'") != std::string::npos)) {
+        bool const missing_building = error.find("Missing required property 'Building'") != std::string::npos;
+        bool const missing_geometry = error.find("Missing required property 'GlobalGeometryRules'") != std::string::npos;
+        // if we encountered one of the expected missing building/geometry errors, we should handle them special
+        if (missing_building || missing_geometry) {
+            if (isDDY) { // for DDY files just ignore it completely
                 continue;
             }
+            // for other IDFs, go ahead and emit a message, but don't trigger a failure
+            displayMessage(error);
+            continue;
         }
+        // and if it wasn't a missing building or missing geometry error, we will emit that as a proper error and fail
         hasValidationErrors = true;
         displayMessage(error);
     }
@@ -543,12 +549,13 @@ Select one (case insensitive):
 #ifdef _OPENMP
     omp_set_num_threads(number_of_threads);
 
-#pragma omp parallel default(none) shared(files, number_files, fileCount, schema, outputType, outputTypeStr, outputDirectoryPath, convertHVACTemplate)
+#    pragma omp parallel default(none)                                                                                                               \
+        shared(files, number_files, fileCount, schema, outputType, outputTypeStr, outputDirectoryPath, convertHVACTemplate)
     {
-#pragma omp for
+#    pragma omp for
         for (int i = 0; i < number_files; ++i) {
             const bool successful = processInput(files[i], schema, outputType, outputDirectoryPath, outputTypeStr, convertHVACTemplate);
-#pragma omp atomic
+#    pragma omp atomic
             ++fileCount;
             if (successful) {
                 displayMessage(

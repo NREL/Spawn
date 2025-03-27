@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -88,7 +88,6 @@
 using namespace EnergyPlus;
 using namespace EnergyPlus::DataZoneEquipment;
 using namespace EnergyPlus::HeatBalanceManager;
-using namespace EnergyPlus::ScheduleManager;
 
 using namespace EnergyPlus::WindowEquivalentLayer;
 
@@ -1973,7 +1972,7 @@ TEST_F(EnergyPlusFixture, WindowEquivalentLayer_VBEffectiveEmissivityTest)
     // get venetian blind material index
     int VBMatNum = Material::GetMaterialNum(*state, "WMTEUQL_BLND_KINDV_RF80_T02_A18_Rb45");
     auto const *matVenetBlind = dynamic_cast<Material::MaterialBlindEQL const *>(state->dataMaterial->materials(VBMatNum));
-    // get equivalent layer window contruction index
+    // get equivalent layer window construction index
     for (int ConstrPtr = 1; ConstrPtr <= state->dataHeatBal->TotConstructs; ++ConstrPtr) {
         if (state->dataConstruction->Construct(ConstrPtr).WindowTypeEQL) {
             ConstrNum = ConstrPtr;

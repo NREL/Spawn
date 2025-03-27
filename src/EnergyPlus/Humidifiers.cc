@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -103,7 +103,6 @@ namespace Humidifiers {
     // Using/Aliasing
     using namespace DataLoopNode;
     using HVAC::SmallMassFlow;
-    using namespace ScheduleManager;
 
     void SimHumidifier(EnergyPlusData &state,
                        std::string_view CompName,                      // name of the humidifier unit
@@ -215,6 +214,7 @@ namespace Humidifiers {
 
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("GetHumidifierInputs: "); // include trailing blank space
+        static constexpr std::string_view routineName = "GetHumidifierInputs";  // include trailing blank space
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         int HumidifierIndex;             // loop index
@@ -276,28 +276,20 @@ namespace Humidifiers {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
             HumNum = HumidifierIndex;
             auto &Humidifier = state.dataHumidifiers->Humidifier(HumNum);
             GlobalNames::VerifyUniqueInterObjectName(
                 state, state.dataHumidifiers->HumidifierUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
             Humidifier.Name = Alphas(1);
             Humidifier.HumType = HumidType::Electric;
-            Humidifier.Sched = Alphas(2);
+
             if (lAlphaBlanks(2)) {
-                Humidifier.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                Humidifier.SchedPtr = GetScheduleIndex(state, Alphas(2)); // convert schedule name to pointer
-                if (Humidifier.SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}: invalid {} entered ={} for {}={}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(2),
-                                           Alphas(2),
-                                           cAlphaFields(1),
-                                           Alphas(1)));
-                    ErrorsFound = true;
-                }
+                Humidifier.availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((Humidifier.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+                ErrorsFound = true;
             }
             Humidifier.NomCapVol = Numbers(1);
             Humidifier.NomPower = Numbers(2);
@@ -348,28 +340,21 @@ namespace Humidifiers {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             HumNum = NumElecSteamHums + HumidifierIndex;
             auto &Humidifier = state.dataHumidifiers->Humidifier(HumNum);
             GlobalNames::VerifyUniqueInterObjectName(
                 state, state.dataHumidifiers->HumidifierUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
             Humidifier.Name = Alphas(1);
             Humidifier.HumType = HumidType::Gas;
-            Humidifier.Sched = Alphas(2);
+
             if (lAlphaBlanks(2)) {
-                Humidifier.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                Humidifier.SchedPtr = GetScheduleIndex(state, Alphas(2)); // convert schedule name to pointer
-                if (Humidifier.SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}: invalid {} entered ={} for {}={}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(2),
-                                           Alphas(2),
-                                           cAlphaFields(1),
-                                           Alphas(1)));
-                    ErrorsFound = true;
-                }
+                Humidifier.availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((Humidifier.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+                ErrorsFound = true;
             }
             Humidifier.NomCapVol = Numbers(1);
             Humidifier.NomPower = Numbers(2); // nominal gas use rate for gas fired steam humidifier
@@ -708,8 +693,6 @@ namespace Humidifiers {
 
         // Using/Aliasing
         using DataSizing::AutoSize;
-        using FluidProperties::GetSatEnthalpyRefrig;
-        using FluidProperties::GetSpecificHeatGlycol;
 
         using Psychrometrics::PsyRhoAirFnPbTdbW;
         using Psychrometrics::RhoH2O;
@@ -862,12 +845,12 @@ namespace Humidifiers {
             }
 
             NomCap = RhoH2O(Constant::InitConvTemp) * NomCapVol;
-            int RefrigerantIndex = FluidProperties::GetRefrigNum(state, format(fluidNameSteam));
-            int WaterIndex = FluidProperties::GetGlycolNum(state, format(fluidNameWater));
-            SteamSatEnthalpy = GetSatEnthalpyRefrig(state, format(fluidNameSteam), TSteam, 1.0, RefrigerantIndex, CalledFrom);
-            WaterSatEnthalpy = GetSatEnthalpyRefrig(state, format(fluidNameSteam), TSteam, 0.0, RefrigerantIndex, CalledFrom);
-            WaterSpecHeatAvg = 0.5 * (GetSpecificHeatGlycol(state, format(fluidNameWater), TSteam, WaterIndex, CalledFrom) +
-                                      GetSpecificHeatGlycol(state, format(fluidNameWater), Tref, WaterIndex, CalledFrom));
+
+            auto *water = Fluid::GetWater(state);
+            auto *steam = Fluid::GetSteam(state);
+            SteamSatEnthalpy = steam->getSatEnthalpy(state, TSteam, 1.0, CalledFrom);
+            WaterSatEnthalpy = steam->getSatEnthalpy(state, TSteam, 0.0, CalledFrom);
+            WaterSpecHeatAvg = 0.5 * (water->getSpecificHeat(state, TSteam, CalledFrom) + water->getSpecificHeat(state, Tref, CalledFrom));
             NominalPower = NomCap * ((SteamSatEnthalpy - WaterSatEnthalpy) + WaterSpecHeatAvg * (TSteam - Tref));
 
             if (NomPower == AutoSize) {
@@ -1004,7 +987,7 @@ namespace Humidifiers {
         UnitOn = true;
         if (HumRatSet <= 0.0) UnitOn = false;
         if (AirInMassFlowRate <= SmallMassFlow) UnitOn = false;
-        if (GetCurrentScheduleValue(state, SchedPtr) <= 0.0) UnitOn = false;
+        if (availSched->getCurrentVal() <= 0.0) UnitOn = false;
         if (AirInHumRat >= HumRatSet) UnitOn = false;
         HumRatSatIn = PsyWFnTdbRhPb(state, AirInTemp, 1.0, state.dataEnvrn->OutBaroPress, RoutineName);
         if (AirInHumRat >= HumRatSatIn) UnitOn = false;
@@ -1117,7 +1100,7 @@ namespace Humidifiers {
         }
         if (WaterAdd > 0.0) {
             ElecUseRate = (WaterAdd / NomCap) * NomPower + FanPower + StandbyPower;
-        } else if (GetCurrentScheduleValue(state, SchedPtr) > 0.0) {
+        } else if (availSched->getCurrentVal() > 0.0) {
             ElecUseRate = StandbyPower;
         } else {
             ElecUseRate = 0.0;
@@ -1146,8 +1129,6 @@ namespace Humidifiers {
 
         // Using/Aliasing
         using Curve::CurveValue;
-        using FluidProperties::GetSatEnthalpyRefrig;
-        using FluidProperties::GetSpecificHeatGlycol;
         using Psychrometrics::PsyHFnTdbW;
         using Psychrometrics::PsyTdbFnHW;
         using Psychrometrics::PsyWFnTdbRhPb;
@@ -1234,12 +1215,12 @@ namespace Humidifiers {
                     CurMakeupWaterTemp = state.dataEnvrn->WaterMainsTemp;
                 }
                 Tref = CurMakeupWaterTemp;
-                int RefrigerantIndex = FluidProperties::GetRefrigNum(state, format(fluidNameSteam));
-                int WaterIndex = FluidProperties::GetGlycolNum(state, format(fluidNameWater));
-                SteamSatEnthalpy = GetSatEnthalpyRefrig(state, format(fluidNameSteam), TSteam, 1.0, RefrigerantIndex, RoutineName);
-                WaterSatEnthalpy = GetSatEnthalpyRefrig(state, format(fluidNameSteam), TSteam, 0.0, RefrigerantIndex, RoutineName);
-                WaterSpecHeatAvg = 0.5 * (GetSpecificHeatGlycol(state, format(fluidNameWater), TSteam, WaterIndex, RoutineName) +
-                                          GetSpecificHeatGlycol(state, format(fluidNameWater), Tref, WaterIndex, RoutineName));
+
+                auto *water = Fluid::GetWater(state);
+                auto *steam = Fluid::GetSteam(state);
+                SteamSatEnthalpy = steam->getSatEnthalpy(state, TSteam, 1.0, RoutineName);
+                WaterSatEnthalpy = steam->getSatEnthalpy(state, TSteam, 0.0, RoutineName);
+                WaterSpecHeatAvg = 0.5 * (water->getSpecificHeat(state, TSteam, RoutineName) + water->getSpecificHeat(state, Tref, RoutineName));
                 GasUseRateAtRatedEff = WaterAdd * ((SteamSatEnthalpy - WaterSatEnthalpy) + WaterSpecHeatAvg * (TSteam - Tref)) / ThermalEffRated;
             }
             PartLoadRatio = GasUseRateAtRatedEff / NomPower;
@@ -1254,7 +1235,7 @@ namespace Humidifiers {
             }
             AuxElecUseRate = FanPower + StandbyPower;
 
-        } else if (GetCurrentScheduleValue(state, SchedPtr) > 0.0) {
+        } else if (availSched->getCurrentVal() > 0.0) {
             AuxElecUseRate = StandbyPower;
         } else {
             AuxElecUseRate = 0.0;

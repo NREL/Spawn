@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -149,8 +149,8 @@ namespace FaultsManager {
         // Members
         std::string Name;
         FaultType type = FaultType::Invalid;
-        int availSchedNum = 0;
-        int severitySchedNum = 0;
+        Sched::Schedule *availSched = nullptr;
+        Sched::Schedule *severitySched = nullptr;
         Real64 Offset = 0.0; // offset, + means sensor reading is higher than actual value
         bool Status = false; // for future use
 
@@ -246,7 +246,7 @@ namespace FaultsManager {
         int fanNum = 0;
         HVAC::FanType fanType = HVAC::FanType::Invalid; // The type of the fan corresponding to the fouled air filter
         int fanCurveNum = 0;                            // The index to the curve
-        int pressFracSchedNum = 0;                      // The pointer to the schedule
+        Sched::Schedule *pressFracSched = nullptr;      // The pointer to the schedule
         Real64 fanPressInc = 0.0;                       // The increase of the fan pressure due to fouled air filter
         Real64 fanFlowDec = 0.0;                        // The decrease of the fan airflow rate due to fouled air filter
 
@@ -416,6 +416,10 @@ struct FaultsManagerData : BaseGlobalStruct
     Array1D<FaultsManager::FaultPropertiesBoilerFouling> FaultsBoilerFouling;
     Array1D<FaultsManager::FaultPropertiesChillerFouling> FaultsChillerFouling;
     Array1D<FaultsManager::FaultPropertiesEvapCoolerFouling> FaultsEvapCoolerFouling;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -586,10 +586,10 @@ namespace HeatBalFiniteDiffManager {
 
         //  set a Delt that fits the zone time step and keeps it below 200s.
 
-        s_hbfd->fracTimeStepZone_Hour = 1.0 / double(state.dataGlobal->NumOfTimeStepInHour);
+        s_hbfd->fracTimeStepZone_Hour = 1.0 / double(state.dataGlobal->TimeStepsInHour);
 
         for (int index = 1; index <= 20; ++index) {
-            Delt = (s_hbfd->fracTimeStepZone_Hour * Constant::SecInHour) / index; // TimeStepZone = Zone time step in fractional hours
+            Delt = (s_hbfd->fracTimeStepZone_Hour * Constant::rSecsInHour) / index; // TimeStepZone = Zone time step in fractional hours
             if (Delt <= 200) break;
         }
 
@@ -1135,7 +1135,8 @@ namespace HeatBalFiniteDiffManager {
         auto &surfaceFD = s_hbfd->SurfaceFD(Surf);
 
         Real64 HMovInsul = 0;
-        if (state.dataSurface->AnyMovableInsulation) HMovInsul = state.dataHeatBalSurf->SurfMovInsulHExt(Surf);
+        if (state.dataSurface->AnyMovableInsulation)
+            HMovInsul = state.dataSurface->extMovInsuls(Surf).H; // Even if this is not a movable insulation surface?
         // Start stepping through the slab with time.
         for (int J = 1, J_end = nint(state.dataGlobal->TimeStepZoneSec / Delt); J <= J_end; ++J) { // PT testing higher time steps
 
@@ -1364,7 +1365,7 @@ namespace HeatBalFiniteDiffManager {
                       ThisNum,
                       construct.TotLayers,
                       int(constructFD.TotNodes + 1),
-                      constructFD.DeltaTime / Constant::SecInHour);
+                      constructFD.DeltaTime / Constant::rSecsInHour);
 
                 for (int Layer = 1; Layer <= construct.TotLayers; ++Layer) {
                     static constexpr std::string_view Format_701(" Material CondFD Summary,{},{:.4R},{},{:.8R},{:.8R},{:.8R}\n");

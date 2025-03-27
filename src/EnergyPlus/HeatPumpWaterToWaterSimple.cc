@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -729,30 +729,14 @@ void GshpSpecs::InitWatertoWaterHP(EnergyPlusData &state,
         this->MustRun = true;
 
         if (this->WWHPType == DataPlant::PlantEquipmentType::HPWaterEFHeating) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
             this->LoadSideDesignMassFlow = this->RatedLoadVolFlowHeat * rho;
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                    Constant::CWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
             this->SourceSideDesignMassFlow = this->RatedSourceVolFlowHeat * rho;
         } else if (this->WWHPType == DataPlant::PlantEquipmentType::HPWaterEFCooling) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                    Constant::CWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
             this->LoadSideDesignMassFlow = this->RatedLoadVolFlowCool * rho;
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
             this->SourceSideDesignMassFlow = this->RatedSourceVolFlowCool * rho;
         }
 
@@ -806,7 +790,7 @@ void GshpSpecs::InitWatertoWaterHP(EnergyPlusData &state,
             state, this->reportLoadSideMassFlowRate, this->LoadSideInletNodeNum, this->LoadSideOutletNodeNum, this->LoadPlantLoc);
         PlantUtilities::SetComponentFlowRate(
             state, this->reportSourceSideMassFlowRate, this->SourceSideInletNodeNum, this->SourceSideOutletNodeNum, this->SourcePlantLoc);
-        // if there's no flowin one, turn the entire "heat pump off"
+        // if there's no flowing one, turn the entire "heat pump off"
         if (this->reportLoadSideMassFlowRate <= 0.0 || this->reportSourceSideMassFlowRate <= 0.0) {
 
             this->reportLoadSideMassFlowRate = 0.0;
@@ -881,29 +865,13 @@ void GshpSpecs::sizeCoolingWaterToWaterHP(EnergyPlusData &state)
                 // store flow rate right away regardless of PlantFirstSizesOkayToFinalize so that data are available
                 this->RatedLoadVolFlowCool = tmpLoadSideVolFlowRate;
             }
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                           Constant::CWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                               Constant::CWInitConvTemp,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::CWInitConvTemp, RoutineName);
             tmpCoolingCap = Cp * rho * state.dataSize->PlantSizData(pltLoadSizNum).DeltaT * tmpLoadSideVolFlowRate;
         } else if (this->companionIdentified && this->RatedLoadVolFlowHeat > 0.0) {
             tmpLoadSideVolFlowRate = this->RatedLoadVolFlowHeat;
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                           Constant::CWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                               Constant::CWInitConvTemp,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::CWInitConvTemp, RoutineName);
             tmpCoolingCap = Cp * rho * state.dataSize->PlantSizData(pltLoadSizNum).DeltaT * tmpLoadSideVolFlowRate;
         } else {
             if (this->ratedCapCoolWasAutoSized) tmpCoolingCap = 0.0;
@@ -1069,16 +1037,8 @@ void GshpSpecs::sizeCoolingWaterToWaterHP(EnergyPlusData &state)
     if (!this->ratedLoadVolFlowCoolWasAutoSized) tmpLoadSideVolFlowRate = this->RatedLoadVolFlowCool;
     int pltSourceSizNum = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).PlantSizNum;
     if (pltSourceSizNum > 0) {
-        Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                       Constant::CWInitConvTemp,
-                                                       state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
-        Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                           Constant::CWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+        Real64 rho = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
+        Real64 Cp = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::CWInitConvTemp, RoutineName);
         tmpSourceSideVolFlowRate = tmpCoolingCap * (1.0 + (1.0 / this->refCOP)) / (state.dataSize->PlantSizData(pltSourceSizNum).DeltaT * Cp * rho);
     } else {
         tmpSourceSideVolFlowRate = tmpLoadSideVolFlowRate; // set source side flow equal to load side flow, assumption
@@ -1237,29 +1197,13 @@ void GshpSpecs::sizeHeatingWaterToWaterHP(EnergyPlusData &state)
                 // PlantFirstSizesOkayToFinalize is true
                 this->RatedLoadVolFlowHeat = tmpLoadSideVolFlowRate;
             }
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                           Constant::HWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                               Constant::HWInitConvTemp,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
             tmpHeatingCap = Cp * rho * state.dataSize->PlantSizData(pltLoadSizNum).DeltaT * tmpLoadSideVolFlowRate;
         } else if (this->companionIdentified && this->RatedLoadVolFlowCool > 0.0) {
             tmpLoadSideVolFlowRate = this->RatedLoadVolFlowCool;
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                           Constant::HWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                               Constant::HWInitConvTemp,
-                                                               state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
             tmpHeatingCap = Cp * rho * state.dataSize->PlantSizData(pltLoadSizNum).DeltaT * tmpLoadSideVolFlowRate;
         } else {
             if (this->ratedCapHeatWasAutoSized) tmpHeatingCap = 0.0;
@@ -1424,16 +1368,8 @@ void GshpSpecs::sizeHeatingWaterToWaterHP(EnergyPlusData &state)
     if (!this->ratedLoadVolFlowHeatWasAutoSized) tmpLoadSideVolFlowRate = this->RatedLoadVolFlowHeat;
     int pltSourceSizNum = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).PlantSizNum;
     if (pltSourceSizNum > 0) {
-        Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                       Constant::HWInitConvTemp,
-                                                       state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
-        Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                           Constant::HWInitConvTemp,
-                                                           state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+        Real64 rho = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+        Real64 Cp = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
         tmpSourceSideVolFlowRate = tmpHeatingCap * (1.0 - (1.0 / this->refCOP)) / (state.dataSize->PlantSizData(pltSourceSizNum).DeltaT * Cp * rho);
     } else {
         tmpSourceSideVolFlowRate = tmpLoadSideVolFlowRate; // set source side flow equal to load side flow, assumption
@@ -1565,7 +1501,7 @@ void GshpSpecs::CalcWatertoWaterHPCooling(EnergyPlusData &state, Real64 const My
     //       RE-ENGINEERED
 
     // PURPOSE OF THIS SUBROUTINE:
-    // This routine simulate the heat pump peformance in cooling mode
+    // This routine simulate the heat pump performance in cooling mode
 
     // REFERENCES:
     // (1) Tang,C.C.. 2005. Modeling Packaged Heat Pumps in a Quasi-Steady
@@ -1622,17 +1558,9 @@ void GshpSpecs::CalcWatertoWaterHPCooling(EnergyPlusData &state, Real64 const My
         return;
     }
 
-    rhoLoadSide = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                    LoadSideInletTemp,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+    rhoLoadSide = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, LoadSideInletTemp, RoutineName);
 
-    rhoSourceSide = FluidProperties::GetDensityGlycol(state,
-                                                      state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                      SourceSideInletTemp,
-                                                      state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                      RoutineName);
+    rhoSourceSide = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, SourceSideInletTemp, RoutineName);
 
     func1 = ((LoadSideInletTemp + CelsiustoKelvin) / Tref);
     func2 = ((SourceSideInletTemp + CelsiustoKelvin) / Tref);
@@ -1697,17 +1625,9 @@ void GshpSpecs::CalcWatertoWaterHPCooling(EnergyPlusData &state, Real64 const My
         QSource *= PartLoadRatio;
     }
 
-    CpLoadSide = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                        LoadSideInletTemp,
-                                                        state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
+    CpLoadSide = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, LoadSideInletTemp, RoutineName);
 
-    CpSourceSide = FluidProperties::GetSpecificHeatGlycol(state,
-                                                          state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                          SourceSideInletTemp,
-                                                          state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                          RoutineName);
+    CpSourceSide = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getSpecificHeat(state, SourceSideInletTemp, RoutineName);
 
     LoadSideOutletTemp = LoadSideInletTemp - QLoad / (LoadSideMassFlowRate * CpLoadSide);
     SourceSideOutletTemp = SourceSideInletTemp + QSource / (SourceSideMassFlowRate * CpSourceSide);
@@ -1731,7 +1651,7 @@ void GshpSpecs::CalcWatertoWaterHPHeating(EnergyPlusData &state, Real64 const My
     //       RE-ENGINEERED
 
     // PURPOSE OF THIS SUBROUTINE:
-    // This routine simulate the heat pump peformance in heating mode
+    // This routine simulate the heat pump performance in heating mode
 
     // REFERENCES:
     // (1) Tang,C.C.. 2005. Modeling Packaged Heat Pumps in a Quasi-Steady
@@ -1786,17 +1706,9 @@ void GshpSpecs::CalcWatertoWaterHPHeating(EnergyPlusData &state, Real64 const My
     if (!this->MustRun) {
         return;
     }
-    rhoLoadSide = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                    LoadSideInletTemp,
-                                                    state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+    rhoLoadSide = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getDensity(state, LoadSideInletTemp, RoutineName);
 
-    rhoSourceSide = FluidProperties::GetDensityGlycol(state,
-                                                      state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                      SourceSideInletTemp,
-                                                      state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                      RoutineName);
+    rhoSourceSide = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getDensity(state, SourceSideInletTemp, RoutineName);
 
     func1 = ((LoadSideInletTemp + CelsiustoKelvin) / Tref);
     func2 = ((SourceSideInletTemp + CelsiustoKelvin) / Tref);
@@ -1860,17 +1772,9 @@ void GshpSpecs::CalcWatertoWaterHPHeating(EnergyPlusData &state, Real64 const My
         QSource *= PartLoadRatio;
     }
 
-    CpLoadSide = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidName,
-                                                        LoadSideInletTemp,
-                                                        state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
+    CpLoadSide = state.dataPlnt->PlantLoop(this->LoadPlantLoc.loopNum).glycol->getSpecificHeat(state, LoadSideInletTemp, RoutineName);
 
-    CpSourceSide = FluidProperties::GetSpecificHeatGlycol(state,
-                                                          state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidName,
-                                                          SourceSideInletTemp,
-                                                          state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).FluidIndex,
-                                                          RoutineName);
+    CpSourceSide = state.dataPlnt->PlantLoop(this->SourcePlantLoc.loopNum).glycol->getSpecificHeat(state, SourceSideInletTemp, RoutineName);
 
     LoadSideOutletTemp = LoadSideInletTemp + QLoad / (LoadSideMassFlowRate * CpLoadSide);
     SourceSideOutletTemp = SourceSideInletTemp - QSource / (SourceSideMassFlowRate * CpSourceSide);

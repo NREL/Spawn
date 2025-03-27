@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -174,6 +174,15 @@ namespace DataHeatBalance {
         Invalid = -1,
         DesignFlowRate,
         WindAndStack,
+        Num
+    };
+
+    enum class InfVentDensityBasis
+    {
+        Invalid = -1,
+        Outdoor,
+        Standard,
+        Indoor,
         Num
     };
 
@@ -547,6 +556,19 @@ namespace DataHeatBalance {
         {
         }
     };
+
+    enum class HeatIndexMethod : int
+    {
+        Invalid = -1,
+        Simplified,
+        Extended,
+        Num
+    };
+    static constexpr std::array<std::string_view, static_cast<int>(HeatIndexMethod::Num)> HeatIndexMethodUC = {
+        "SIMPLIFIED",
+        "EXTENDED",
+    };
+
     struct ZoneData : ZoneSpaceData
     {
         // Members
@@ -633,16 +655,16 @@ namespace DataHeatBalance {
         bool HasLtsRetAirGain = false;       // TRUE means that zone lights return air heat > 0.0 calculated from plenum temperature
         bool HasAirFlowWindowReturn = false; // TRUE means that zone has return air flow from windows
         // from refrigeration cases for this zone
-        Real64 InternalHeatGains = 0.0;                      // internal loads (W)
-        Real64 NominalInfilVent = 0.0;                       // internal infiltration/ventilation
-        Real64 NominalMixing = 0.0;                          // internal mixing/cross mixing
-        bool TempOutOfBoundsReported = false;                // if any temp out of bounds errors, first will show zone details.
-        bool EnforcedReciprocity = false;                    // if zone/space required forced reciprocity -- less out of bounds temp errors allowed
-        int ZoneMinCO2SchedIndex = 0;                        // Index for the schedule the schedule which determines minimum CO2 concentration
-        int ZoneMaxCO2SchedIndex = 0;                        // Index for the schedule the schedule which determines maximum CO2 concentration
-        int ZoneContamControllerSchedIndex = 0;              // Index for this schedule
-        bool FlagCustomizedZoneCap = false;                  // True if customized Zone Capacitance Multiplier is used
-        std::vector<Constant::eFuel> otherEquipFuelTypeNums; // List of fuel types used by other equipment in this zone
+        Real64 InternalHeatGains = 0.0;                       // internal loads (W)
+        Real64 NominalInfilVent = 0.0;                        // internal infiltration/ventilation
+        Real64 NominalMixing = 0.0;                           // internal mixing/cross mixing
+        bool TempOutOfBoundsReported = false;                 // if any temp out of bounds errors, first will show zone details.
+        bool EnforcedReciprocity = false;                     // if zone/space required forced reciprocity -- less out of bounds temp errors allowed
+        Sched::Schedule *zoneMinCO2Sched = nullptr;           // Index for the schedule the schedule which determines minimum CO2 concentration
+        Sched::Schedule *zoneMaxCO2Sched = nullptr;           // Index for the schedule the schedule which determines maximum CO2 concentration
+        Sched::Schedule *zoneContamControllerSched = nullptr; // Index for this schedule
+        bool FlagCustomizedZoneCap = false;                   // True if customized Zone Capacitance Multiplier is used
+        std::vector<Constant::eFuel> otherEquipFuelTypeNums;  // List of fuel types used by other equipment in this zone
 
         // Hybrid Modeling
         Real64 ZoneMeasuredTemperature = 0.0;               // Measured zone air temperature input by user
@@ -728,28 +750,28 @@ namespace DataHeatBalance {
     struct PeopleData
     {
         // Members
-        std::string Name;               // PEOPLE object name
-        int ZonePtr = 0;                // Zone index for this people statement
-        int spaceIndex = 0;             // Space index for this people statement
-        Real64 NumberOfPeople = 0.0;    // Maximum number of people for this statement
-        int NumberOfPeoplePtr = -1;     // Pointer to schedule for number of people
-        bool EMSPeopleOn = false;       // EMS actuating number of people if .TRUE.
-        Real64 EMSNumberOfPeople = 0.0; // Value EMS is directing to use for override
+        std::string Name;                 // PEOPLE object name
+        int ZonePtr = 0;                  // Zone index for this people statement
+        int spaceIndex = 0;               // Space index for this people statement
+        Real64 NumberOfPeople = 0.0;      // Maximum number of people for this statement
+        Sched::Schedule *sched = nullptr; // schedule for number of people
+        bool EMSPeopleOn = false;         // EMS actuating number of people if .TRUE.
+        Real64 EMSNumberOfPeople = 0.0;   // Value EMS is directing to use for override
         // Note that the schedule and maximum number was kept for people since it seemed likely that
         // users would want to assign the same schedule to multiple people statements.
-        int ActivityLevelPtr = -1;    // Pointer to schedule for activity level
-        Real64 FractionRadiant = 0.0; // Percentage (fraction 0.0-1.0) of sensible heat gain from people
+        Sched::Schedule *activityLevelSched = nullptr; // schedule for activity level
+        Real64 FractionRadiant = 0.0;                  // Percentage (fraction 0.0-1.0) of sensible heat gain from people
         // that is radiant
         Real64 FractionConvected = 0.0; // Percentage (fraction 0.0-1.0) of sensible heat gain from people
         // that is convective
-        Real64 NomMinNumberPeople = 0.0; // Nominal Minimum Number of People (min sch X number of people)
-        Real64 NomMaxNumberPeople = 0.0; // Nominal Maximum Number of People (min sch X number of people)
-        int WorkEffPtr = -1;             // Pointer to schedule for work efficiency
-        int ClothingPtr = -1;            // Pointer to schedule for clothing insulation
-        int ClothingMethodPtr = -1;
+        Real64 NomMinNumberPeople = 0.0;          // Nominal Minimum Number of People (min sch X number of people)
+        Real64 NomMaxNumberPeople = 0.0;          // Nominal Maximum Number of People (min sch X number of people)
+        Sched::Schedule *workEffSched = nullptr;  // schedule for work efficiency
+        Sched::Schedule *clothingSched = nullptr; // schedule for clothing insulation
+        Sched::Schedule *clothingMethodSched = nullptr;
         ClothingType clothingType = ClothingType::Invalid; // Clothing type
-        int AirVelocityPtr = -1;                           // Pointer to schedule for air velocity in zone
-        int AnkleAirVelocityPtr = -1;                      // Pointer to schedule for air velocity in zone
+        Sched::Schedule *airVelocitySched = nullptr;       // schedule for air velocity in zone
+        Sched::Schedule *ankleAirVelocitySched = nullptr;  // schedule for ankle air velocity in zone
         bool Fanger = false;                               // True when Fanger calculation to be performed
         bool Pierce = false;                               // True when Pierce 2-node calculation to be performed
         bool KSU = false;                                  // True when KSU 2-node calculation to be performed
@@ -799,7 +821,7 @@ namespace DataHeatBalance {
         std::string Name;                 // LIGHTS object name
         int ZonePtr = 0;                  // Which zone lights are in
         int spaceIndex = 0;               // Space index for this lights instance
-        int SchedPtr = -1;                // Schedule for lights
+        Sched::Schedule *sched = nullptr; // Schedule for lights
         Real64 DesignLevel = 0.0;         // design level for lights [W]
         bool EMSLightsOn = false;         // EMS actuating Lighting power if .TRUE.
         Real64 EMSLightingPower = 0.0;    // Value EMS is directing to use for override
@@ -842,7 +864,7 @@ namespace DataHeatBalance {
         std::string Name;                    // EQUIPMENT object name
         int ZonePtr = 0;                     // Which zone internal gain is in
         int spaceIndex = 0;                  // Space index for this equipment instance
-        int SchedPtr = 0;                    // Schedule for internal gain
+        Sched::Schedule *sched = nullptr;    // Schedule for internal gain
         Real64 DesignLevel = 0.0;            // design level for internal gain [W]
         bool EMSZoneEquipOverrideOn = false; // EMS actuating equipment power if .TRUE.
         Real64 EMSEquipPower = 0.0;          // Value EMS is directing to use for override
@@ -976,8 +998,8 @@ namespace DataHeatBalance {
         Real64 NomMinDesignLevel = 0.0;            // Nominal Minimum Design Level (min sch X design level)
         Real64 NomMaxDesignLevel = 0.0;            // Nominal Maximum Design Level (max sch X design level)
         Real64 DesignFanPowerFrac = 0.0;           // Fraction (0.0-1.0) of design power level that is fans
-        int OperSchedPtr = 0;                      // Schedule pointer for design power input or operating schedule
-        int CPULoadSchedPtr = 0;                   // Schedule pointer for CPU loading schedule
+        Sched::Schedule *operSched = nullptr;      // Schedule for design power input or operating schedule
+        Sched::Schedule *cpuLoadSched = nullptr;   // Schedule for CPU loading schedule
         Real64 SizingTAirIn = 0.0;                 // Entering air dry-bulb temperature at maximum value during sizing[C]
         Real64 DesignTAirIn = 0.0;                 // Design entering air dry-bulb temperature [C]
         Real64 DesignFanPower = 0.0;               // Design fan power input [W]
@@ -992,24 +1014,25 @@ namespace DataHeatBalance {
         int OutletRoomAirNodeNum = 0;                                              // Room air model node number for air outlet
         int SupplyAirNodeNum = 0;                                                  // Node number for supply air inlet
         Real64 DesignRecircFrac = 0.0;                                             // Design recirculation fraction (0.0-0.5)
-        int RecircFLTCurve = 0;             // Index for recirculation function of CPULoadFrac (x) and TSupply (y) curve
-        Real64 DesignUPSEfficiency = 0.0;   // Design power supply efficiency (>0.0 - 1.0)
-        int UPSEfficFPLRCurve = 0;          // Index for recirculation function of part load ratio
-        Real64 UPSLossToZoneFrac = 0.0;     // Fraction of UPS power loss to zone (0.0 - 1.0); remainder is lost
-        std::string EndUseSubcategoryCPU;   // User defined name for the end use category for the CPU
-        std::string EndUseSubcategoryFan;   // User defined name for the end use category for the Fans
-        std::string EndUseSubcategoryUPS;   // User defined name for the end use category for the power supply
-        bool EMSCPUPowerOverrideOn = false; // EMS actuating CPU power if .TRUE.
-        Real64 EMSCPUPower = 0.0;           // Value EMS is directing to use for override of CPU power [W]
-        bool EMSFanPowerOverrideOn = false; // EMS actuating Fan power if .TRUE.
-        Real64 EMSFanPower = 0.0;           // Value EMS is directing to use for override of Fan power [W]
-        bool EMSUPSPowerOverrideOn = false; // EMS actuating UPS power if .TRUE.
-        Real64 EMSUPSPower = 0.0;           // Value EMS is directing to use for override of UPS power [W]
-        Real64 SupplyApproachTemp = 0.0;    // The difference of the IT inlet temperature from the AHU supply air temperature
-        int SupplyApproachTempSch = 0;      // The difference schedule of the IT inlet temperature from the AHU supply air temperature
-        Real64 ReturnApproachTemp = 0.0;    // The difference of the unit outlet temperature from the well mixed zone temperature
-        int ReturnApproachTempSch = 0;      // The difference schedule of the unit outlet temperature from the well mixed zone temperature
-        bool inControlledZone = false;      // True if in a controlled zone
+        int RecircFLTCurve = 0;                             // Index for recirculation function of CPULoadFrac (x) and TSupply (y) curve
+        Real64 DesignUPSEfficiency = 0.0;                   // Design power supply efficiency (>0.0 - 1.0)
+        int UPSEfficFPLRCurve = 0;                          // Index for recirculation function of part load ratio
+        Real64 UPSLossToZoneFrac = 0.0;                     // Fraction of UPS power loss to zone (0.0 - 1.0); remainder is lost
+        std::string EndUseSubcategoryCPU;                   // User defined name for the end use category for the CPU
+        std::string EndUseSubcategoryFan;                   // User defined name for the end use category for the Fans
+        std::string EndUseSubcategoryUPS;                   // User defined name for the end use category for the power supply
+        bool EMSCPUPowerOverrideOn = false;                 // EMS actuating CPU power if .TRUE.
+        Real64 EMSCPUPower = 0.0;                           // Value EMS is directing to use for override of CPU power [W]
+        bool EMSFanPowerOverrideOn = false;                 // EMS actuating Fan power if .TRUE.
+        Real64 EMSFanPower = 0.0;                           // Value EMS is directing to use for override of Fan power [W]
+        bool EMSUPSPowerOverrideOn = false;                 // EMS actuating UPS power if .TRUE.
+        Real64 EMSUPSPower = 0.0;                           // Value EMS is directing to use for override of UPS power [W]
+        Real64 SupplyApproachTemp = 0.0;                    // The difference of the IT inlet temperature from the AHU supply air temperature
+        Sched::Schedule *supplyApproachTempSched = nullptr; // The difference schedule of the IT inlet temperature from the AHU supply air temperature
+        Real64 ReturnApproachTemp = 0.0;                    // The difference of the unit outlet temperature from the well mixed zone temperature
+        Sched::Schedule *returnApproachTempSched =
+            nullptr;                   // The difference schedule of the unit outlet temperature from the well mixed zone temperature
+        bool inControlledZone = false; // True if in a controlled zone
 
         // Report variables
         std::array<Real64, (int)PERptVars::Num> PowerRpt;
@@ -1044,7 +1067,7 @@ namespace DataHeatBalance {
         std::string Name; // BASEBOARD HEAT object name
         int ZonePtr = 0;
         int spaceIndex = 0; // Space index for this equipment instance
-        int SchedPtr = 0;
+        Sched::Schedule *sched = nullptr;
         Real64 CapatLowTemperature = 0.0;
         Real64 LowTemperature = 0.0;
         Real64 CapatHighTemperature = 0.0;
@@ -1073,8 +1096,9 @@ namespace DataHeatBalance {
         std::string Name;
         int ZonePtr = 0;                                                  // Which zone infiltration is in
         int spaceIndex = 0;                                               // Space index for this infiltration instance
-        int SchedPtr = 0;                                                 // Schedule for infiltration
+        Sched::Schedule *sched = nullptr;                                 // Schedule for infiltration
         InfiltrationModelType ModelType = InfiltrationModelType::Invalid; // which model is used for infiltration
+        InfVentDensityBasis densityBasis = InfVentDensityBasis::Outdoor;  // which density is used to convert to mass flow
         // Design Flow Rate model terms
         Real64 DesignLevel = 0.0;
         Real64 ConstantTermCoef = 0.0;
@@ -1086,29 +1110,32 @@ namespace DataHeatBalance {
         Real64 BasicStackCoefficient = 0.0; // "Cs" Stack coefficient
         Real64 BasicWindCoefficient = 0.0;  // "Cw" wind coefficient
         // Flow Coefficient, AIM-2, Walker and Wilson terms
-        Real64 FlowCoefficient = 0.0;       // "c" Flow coefficient
-        Real64 AIM2StackCoefficient = 0.0;  // "Cs" stack coefficient
-        Real64 AIM2WindCoefficient = 0.0;   // "Cw" wind coefficient
-        Real64 PressureExponent = 0.0;      // "n" pressure power law exponent
-        Real64 ShelterFactor = 0.0;         // "s" shelter factor
-        bool EMSOverrideOn = false;         // if true then EMS is requesting to override
-        Real64 EMSAirFlowRateValue = 0.0;   // value EMS is setting for air flow rate
-        Real64 VolumeFlowRate = 0.0;        // infiltration air volume flow rate
-        Real64 MassFlowRate = 0.0;          // infiltration air mass flow rate
-        Real64 MCpI_temp = 0.0;             // INFILTRATION MASS FLOW * AIR SPECIFIC HEAT
-        Real64 InfilHeatGain = 0.0;         // Heat Gain {J} due to infiltration
-        Real64 InfilHeatLoss = 0.0;         // Heat Loss {J} due to infiltration
-        Real64 InfilLatentGain = 0.0;       // Latent Gain {J} due to infiltration
-        Real64 InfilLatentLoss = 0.0;       // Latent Loss {J} due to infiltration
-        Real64 InfilTotalGain = 0.0;        // Total Gain {J} due to infiltration (sensible+latent)
-        Real64 InfilTotalLoss = 0.0;        // Total Loss {J} due to infiltration (sensible+latent)
-        Real64 InfilVolumeCurDensity = 0.0; // Volume of Air {m3} due to infiltration at current zone air density
-        Real64 InfilVolumeStdDensity = 0.0; // Volume of Air {m3} due to infiltration at standard density (adjusted for elevation)
-        Real64 InfilVdotCurDensity = 0.0;   // Volume flow rate of Air {m3/s} due to infiltration at current zone air density
-        Real64 InfilVdotStdDensity = 0.0;   // Volume flow rate of Air {m3/s} due to infiltration standard density (adjusted elevation)
-        Real64 InfilMdot = 0.0;             // Mass flow rate {kg/s} due to infiltration for reporting
-        Real64 InfilMass = 0.0;             // Mass of Air {kg} due to infiltration
-        Real64 InfilAirChangeRate = 0.0;    // Infiltration air change rate {ach}
+        Real64 FlowCoefficient = 0.0;              // "c" Flow coefficient
+        Real64 AIM2StackCoefficient = 0.0;         // "Cs" stack coefficient
+        Real64 AIM2WindCoefficient = 0.0;          // "Cw" wind coefficient
+        Real64 PressureExponent = 0.0;             // "n" pressure power law exponent
+        Real64 ShelterFactor = 0.0;                // "s" shelter factor
+        bool EMSOverrideOn = false;                // if true then EMS is requesting to override
+        Real64 EMSAirFlowRateValue = 0.0;          // value EMS is setting for air flow rate
+        Real64 VolumeFlowRate = 0.0;               // infiltration air volume flow rate
+        Real64 MassFlowRate = 0.0;                 // infiltration air mass flow rate
+        Real64 MCpI_temp = 0.0;                    // INFILTRATION MASS FLOW * AIR SPECIFIC HEAT
+        Real64 InfilHeatGain = 0.0;                // Heat Gain {J} due to infiltration
+        Real64 InfilHeatLoss = 0.0;                // Heat Loss {J} due to infiltration
+        Real64 InfilLatentGain = 0.0;              // Latent Gain {J} due to infiltration
+        Real64 InfilLatentLoss = 0.0;              // Latent Loss {J} due to infiltration
+        Real64 InfilTotalGain = 0.0;               // Total Gain {J} due to infiltration (sensible+latent)
+        Real64 InfilTotalLoss = 0.0;               // Total Loss {J} due to infiltration (sensible+latent)
+        Real64 InfilVolumeCurDensity = 0.0;        // Volume of Air {m3} due to infiltration at current zone air density
+        Real64 InfilVolumeStdDensity = 0.0;        // Volume of Air {m3} due to infiltration at standard density (adjusted for elevation)
+        Real64 InfilVdotCurDensity = 0.0;          // Volume flow rate of Air {m3/s} due to infiltration at current zone air density
+        Real64 InfilVdotStdDensity = 0.0;          // Volume flow rate of Air {m3/s} due to infiltration standard density (adjusted elevation)
+        Real64 InfilVdotOutDensity = 0.0;          // Volume flow rate of Air {m3/s} due to infiltration at current outdoor air density
+        Real64 InfilMdot = 0.0;                    // Mass flow rate {kg/s} due to infiltration for reporting
+        Real64 InfilMass = 0.0;                    // Mass of Air {kg} due to infiltration
+        Real64 InfilAirChangeRateCurDensity = 0.0; // Infiltration air change rate {ach} at current zone air density
+        Real64 InfilAirChangeRateStdDensity = 0.0; // Infiltration air change rate {ach} at standard density (adjusted elevation)
+        Real64 InfilAirChangeRateOutDensity = 0.0; // Infiltration air change rate {ach} at current outdoor air density
     };
 
     struct VentilationData
@@ -1117,9 +1144,9 @@ namespace DataHeatBalance {
         std::string Name;
         int ZonePtr = 0;
         int spaceIndex = 0; // Space index for this ventilation instance
-        int SchedPtr = 0;
-        VentilationModelType ModelType =
-            VentilationModelType::Invalid; // which model is used for ventilation: DesignFlowRate and WindandStackOpenArea
+        Sched::Schedule *availSched = nullptr;
+        VentilationModelType ModelType = VentilationModelType::Invalid;  // DesignFlowRate or WindandStackOpenArea
+        InfVentDensityBasis densityBasis = InfVentDensityBasis::Outdoor; // which density is used to convert to mass flow
         Real64 DesignLevel = 0.0;
         bool EMSSimpleVentOn = false;      // EMS actuating ventilation flow rate if .TRUE.
         Real64 EMSimpleVentFlowRate = 0.0; // Value EMS is directing to use for override
@@ -1138,11 +1165,11 @@ namespace DataHeatBalance {
         Real64 MinOutdoorTemperature = -100.0;
         Real64 MaxOutdoorTemperature = 100.0;
         Real64 MaxWindSpeed = 40.0;
-        int MinIndoorTempSchedPtr = 0;                            // Minimum indoor temperature schedule index
-        int MaxIndoorTempSchedPtr = 0;                            // Maximum indoor temperature schedule index
-        int DeltaTempSchedPtr = 0;                                // Delta temperature schedule index
-        int MinOutdoorTempSchedPtr = 0;                           // Minimum outdoor temperature schedule index
-        int MaxOutdoorTempSchedPtr = 0;                           // Maximum outdoor temperature schedule index
+        Sched::Schedule *minIndoorTempSched = nullptr;            // Minimum indoor temperature schedule
+        Sched::Schedule *maxIndoorTempSched = nullptr;            // Maximum indoor temperature schedule
+        Sched::Schedule *deltaTempSched = nullptr;                // Delta temperature schedule
+        Sched::Schedule *minOutdoorTempSched = nullptr;           // Minimum outdoor temperature schedule
+        Sched::Schedule *maxOutdoorTempSched = nullptr;           // Maximum outdoor temperature schedule
         int IndoorTempErrCount = 0;                               // Indoor temperature error count
         int OutdoorTempErrCount = 0;                              // Outdoor temperature error count
         int IndoorTempErrIndex = 0;                               // Indoor temperature error Index
@@ -1151,13 +1178,13 @@ namespace DataHeatBalance {
         int HybridControlMasterNum = 0;                           // Hybrid ventilation control master object number
         bool HybridControlMasterStatus = false;                   // Hybrid ventilation control master object opening status
         // WindandStackOpenArea
-        Real64 OpenArea = 0.0;    // Opening area [m2]
-        int OpenAreaSchedPtr = 0; // Opening area fraction schedule pointer
-        Real64 OpenEff = 0.0;     // Opening effectiveness [dimensionless]
-        Real64 EffAngle = 0.0;    // Effective angle [degree]
-        Real64 DH = 0.0;          // Height difference [m]
-        Real64 DiscCoef = 0.0;    // Discharge coefficient
-        Real64 MCP = 0.0;         // Product of mass flow rate and Cp
+        Real64 OpenArea = 0.0;                        // Opening area [m2]
+        Sched::Schedule *openAreaFracSched = nullptr; // Opening area fraction schedule
+        Real64 OpenEff = 0.0;                         // Opening effectiveness [dimensionless]
+        Real64 EffAngle = 0.0;                        // Effective angle [degree]
+        Real64 DH = 0.0;                              // Height difference [m]
+        Real64 DiscCoef = 0.0;                        // Discharge coefficient
+        Real64 MCP = 0.0;                             // Product of mass flow rate and Cp
     };
 
     struct ZoneAirBalanceData
@@ -1168,7 +1195,7 @@ namespace DataHeatBalance {
         int ZonePtr = 0;                             // Zone number
         AirBalance BalanceMethod = AirBalance::None; // Air Balance Method
         Real64 InducedAirRate = 0.0;                 // Induced Outdoor Air Due to Duct Leakage Unbalance [m3/s]
-        int InducedAirSchedPtr = 0;                  // Induced Outdoor Air Fraction Schedule
+        Sched::Schedule *inducedAirSched = nullptr;  // Induced Outdoor Air Fraction Schedule
         Real64 BalMassFlowRate = 0.0;                // balanced mass flow rate
         Real64 InfMassFlowRate = 0.0;                // unbalanced mass flow rate from infiltration
         Real64 NatMassFlowRate = 0.0;                // unbalanced mass flow rate from natural ventilation
@@ -1187,7 +1214,7 @@ namespace DataHeatBalance {
         std::string Name;
         int ZonePtr = 0;
         int spaceIndex = 0; // Space index for this mixing instance
-        int SchedPtr = 0;
+        Sched::Schedule *sched = nullptr;
         Real64 DesignLevel = 0.0;
         int FromZone = 0;
         int fromSpaceIndex = 0; // Source space index for this mixing instance
@@ -1195,13 +1222,13 @@ namespace DataHeatBalance {
         Real64 DesiredAirFlowRate = 0.0;
         Real64 DesiredAirFlowRateSaved = 0.0;
         Real64 MixingMassFlowRate = 0.0;
-        int DeltaTempSchedPtr = 0;                                // Delta temperature schedule index
-        int MinIndoorTempSchedPtr = 0;                            // Minimum indoor temperature schedule index
-        int MaxIndoorTempSchedPtr = 0;                            // Maximum indoor temperature schedule index
-        int MinSourceTempSchedPtr = 0;                            // Minimum source zone temperature schedule index
-        int MaxSourceTempSchedPtr = 0;                            // Maximum source zone temperature schedule index
-        int MinOutdoorTempSchedPtr = 0;                           // Minimum outdoor temperature schedule index
-        int MaxOutdoorTempSchedPtr = 0;                           // Maximum outdoor temperature schedule index
+        Sched::Schedule *deltaTempSched = nullptr;                // Delta temperature schedule index
+        Sched::Schedule *minIndoorTempSched = nullptr;            // Minimum indoor temperature schedule index
+        Sched::Schedule *maxIndoorTempSched = nullptr;            // Maximum indoor temperature schedule index
+        Sched::Schedule *minSourceTempSched = nullptr;            // Minimum source zone temperature schedule index
+        Sched::Schedule *maxSourceTempSched = nullptr;            // Maximum source zone temperature schedule index
+        Sched::Schedule *minOutdoorTempSched = nullptr;           // Minimum outdoor temperature schedule index
+        Sched::Schedule *maxOutdoorTempSched = nullptr;           // Maximum outdoor temperature schedule index
         int IndoorTempErrCount = 0;                               // Indoor temperature error count
         int SourceTempErrCount = 0;                               // Source zone temperature error count
         int OutdoorTempErrCount = 0;                              // Outdoor temperature error count
@@ -1218,23 +1245,23 @@ namespace DataHeatBalance {
         Array1D_bool EMSRefDoorMixingOn;
         Array1D<Real64> EMSRefDoorFlowRate;
         Array1D<Real64> VolRefDoorFlowRate;
-        Array1D_int OpenSchedPtr;            // Schedule for Refrigeration door open fraction
-        Array1D<Real64> DoorHeight;          // Door height for refrigeration door, m
-        Array1D<Real64> DoorArea;            // Door area for refrigeration door, m2
-        Array1D<Real64> Protection;          // Refrigeration door protection factor, dimensionless
-        Array1D_int MateZonePtr;             // Zone connected by refrigeration door (MateZone > ZonePtr)
-        Array1D_string DoorMixingObjectName; // Used in one error statement and eio
-        Array1D_string DoorProtTypeName;     // Used in eio
-                                             // Note, for mixing and crossmixing, this type dimensioned by number of mixing objects.
+        Array1D<Sched::Schedule *> openScheds; // Schedule for Refrigeration door open fraction
+        Array1D<Real64> DoorHeight;            // Door height for refrigeration door, m
+        Array1D<Real64> DoorArea;              // Door area for refrigeration door, m2
+        Array1D<Real64> Protection;            // Refrigeration door protection factor, dimensionless
+        Array1D_int MateZonePtr;               // Zone connected by refrigeration door (MateZone > ZonePtr)
+        Array1D_string DoorMixingObjectName;   // Used in one error statement and eio
+        Array1D_string DoorProtTypeName;       // Used in eio
+                                               // Note, for mixing and crossmixing, this type dimensioned by number of mixing objects.
         // For ref door mixing, dimensioned by number of zones.
     };
 
     struct AirBoundaryMixingSpecs
     {
-        int space1;                  // Air boundary simple mixing space 1
-        int space2;                  // Air boundary simple mixing space 2
-        int scheduleIndex;           // Air boundary simple mixing schedule index
-        Real64 mixingVolumeFlowRate; // Air boundary simple mixing volume flow rate [m3/s]
+        int space1;                       // Air boundary simple mixing space 1
+        int space2;                       // Air boundary simple mixing space 2
+        Sched::Schedule *sched = nullptr; // Air boundary simple mixing schedule index
+        Real64 mixingVolumeFlowRate;      // Air boundary simple mixing volume flow rate [m3/s]
     };
 
     struct ZoneAirMassFlowConservation
@@ -1366,60 +1393,68 @@ namespace DataHeatBalance {
     struct AirReportVars
     {
         // Members
-        Real64 MeanAirTemp = 0.0;            // Mean Air Temperature {C}
-        Real64 OperativeTemp = 0.0;          // Average of Mean Air Temperature {C} and Mean Radiant Temperature {C}
-        Real64 WetbulbGlobeTemp = 0.0;       // Wet-bulb Globe Temperature
-        Real64 MeanAirHumRat = 0.0;          // Mean Air Humidity Ratio {kg/kg} (averaged over zone time step)
-        Real64 MeanAirDewPointTemp = 0.0;    // Mean Air Dewpoint Temperature {C}
-        Real64 ThermOperativeTemp = 0.0;     // Mix of MRT and MAT for Zone Control:Thermostatic:Operative Temperature {C}
-        Real64 InfilHeatGain = 0.0;          // Heat Gain {J} due to infiltration
-        Real64 InfilHeatLoss = 0.0;          // Heat Loss {J} due to infiltration
-        Real64 InfilLatentGain = 0.0;        // Latent Gain {J} due to infiltration
-        Real64 InfilLatentLoss = 0.0;        // Latent Loss {J} due to infiltration
-        Real64 InfilTotalGain = 0.0;         // Total Gain {J} due to infiltration (sensible+latent)
-        Real64 InfilTotalLoss = 0.0;         // Total Loss {J} due to infiltration (sensible+latent)
-        Real64 InfilVolumeCurDensity = 0.0;  // Volume of Air {m3} due to infiltration at current zone air density
-        Real64 InfilVolumeStdDensity = 0.0;  // Volume of Air {m3} due to infiltration at standard density (adjusted for elevation)
-        Real64 InfilVdotCurDensity = 0.0;    // Volume flow rate of Air {m3/s} due to infiltration at current zone air density
-        Real64 InfilVdotStdDensity = 0.0;    // Volume flow rate of Air {m3/s} due to infiltration standard density (adjusted elevation)
-        Real64 InfilMass = 0.0;              // Mass of Air {kg} due to infiltration
-        Real64 InfilMdot = 0.0;              // Mass flow rate of Air (kg/s) due to infiltration
-        Real64 InfilAirChangeRate = 0.0;     // Infiltration air change rate {ach}
-        Real64 VentilHeatLoss = 0.0;         // Heat Gain {J} due to ventilation
-        Real64 VentilHeatGain = 0.0;         // Heat Loss {J} due to ventilation
-        Real64 VentilLatentLoss = 0.0;       // Latent Gain {J} due to ventilation
-        Real64 VentilLatentGain = 0.0;       // Latent Loss {J} due to ventilation
-        Real64 VentilTotalLoss = 0.0;        // Total Gain {J} due to ventilation
-        Real64 VentilTotalGain = 0.0;        // Total Loss {J} due to ventilation
-        Real64 VentilVolumeCurDensity = 0.0; // Volume of Air {m3} due to ventilation at current zone air density
-        Real64 VentilVolumeStdDensity = 0.0; // Volume of Air {m3} due to ventilation at standard density (adjusted for elevation)
-        Real64 VentilVdotCurDensity = 0.0;   // Volume flow rate of Air {m3/s} due to ventilation at current zone air density
-        Real64 VentilVdotStdDensity = 0.0;   // Volume flow rate of Air {m3/s} due to ventilation at standard density (adjusted elevation)
-        Real64 VentilMass = 0.0;             // Mass of Air {kg} due to ventilation
-        Real64 VentilMdot = 0.0;             // Mass flow rate of Air {kg/s} due to ventilation
-        Real64 VentilAirChangeRate = 0.0;    // Ventilation air change rate (ach)
-        Real64 VentilFanElec = 0.0;          // Fan Electricity {W} due to ventilation
-        Real64 VentilAirTemp = 0.0;          // Air Temp {C} of ventilation
-        Real64 MixVolume = 0.0;              // Mixing volume of Air {m3}
-        Real64 MixVdotCurDensity = 0.0;      // Mixing volume flow rate of Air {m3/s} at current zone air density
-        Real64 MixVdotStdDensity = 0.0;      // Mixing volume flow rate of Air {m3/s} at standard density (adjusted for elevation)
-        Real64 MixMass = 0.0;                // Mixing mass of air {kg}
-        Real64 MixMdot = 0.0;                // Mixing mass flow rate of air {kg/s}
-        Real64 MixHeatLoss = 0.0;            // Heat Gain {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 MixHeatGain = 0.0;            // Heat Loss {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 MixLatentLoss = 0.0;          // Latent Gain {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 MixLatentGain = 0.0;          // Latent Loss {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 MixTotalLoss = 0.0;           // Total Gain {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 MixTotalGain = 0.0;           // Total Loss {J} due to mixing and cross mixing and refrigeration door mixing
-        Real64 SysInletMass = 0.0;           // Total mass of Air {kg} from all system inlets
-        Real64 SysOutletMass = 0.0;          // Total mass of Air {kg} from all system outlets
-        Real64 ExfilMass = 0.0;              // Mass of Air {kg} due to exfiltration
-        Real64 ExfilTotalLoss = 0.0;         // Total Loss rate {W} due to exfiltration (sensible+latent)
-        Real64 ExfilSensiLoss = 0.0;         // Sensible Loss rate {W} due to exfiltration
-        Real64 ExfilLatentLoss = 0.0;        // Latent Loss rate {W} due to exfiltration
-        Real64 ExhTotalLoss = 0.0;           // Total Loss rate {W} due to zone exhaust air (sensible+latent)
-        Real64 ExhSensiLoss = 0.0;           // Sensible Loss rate {W} due to zone exhaust air
-        Real64 ExhLatentLoss = 0.0;          // Latent Loss rate {W} due to zone exhaust air
+        Real64 MeanAirTemp = 0.0;                   // Mean Air Temperature {C}
+        Real64 OperativeTemp = 0.0;                 // Average of Mean Air Temperature {C} and Mean Radiant Temperature {C}
+        Real64 WetbulbGlobeTemp = 0.0;              // Wet-bulb Globe Temperature
+        Real64 MeanAirHumRat = 0.0;                 // Mean Air Humidity Ratio {kg/kg} (averaged over zone time step)
+        Real64 MeanAirDewPointTemp = 0.0;           // Mean Air Dewpoint Temperature {C}
+        Real64 ThermOperativeTemp = 0.0;            // Mix of MRT and MAT for Zone Control:Thermostatic:Operative Temperature {C}
+        Real64 InfilHeatGain = 0.0;                 // Heat Gain {J} due to infiltration
+        Real64 InfilHeatLoss = 0.0;                 // Heat Loss {J} due to infiltration
+        Real64 InfilLatentGain = 0.0;               // Latent Gain {J} due to infiltration
+        Real64 InfilLatentLoss = 0.0;               // Latent Loss {J} due to infiltration
+        Real64 InfilTotalGain = 0.0;                // Total Gain {J} due to infiltration (sensible+latent)
+        Real64 InfilTotalLoss = 0.0;                // Total Loss {J} due to infiltration (sensible+latent)
+        Real64 InfilVolumeCurDensity = 0.0;         // Volume of Air {m3} due to infiltration at current zone air density
+        Real64 InfilVolumeStdDensity = 0.0;         // Volume of Air {m3} due to infiltration at standard density (adjusted for elevation)
+        Real64 InfilVdotCurDensity = 0.0;           // Volume flow rate of Air {m3/s} due to infiltration at current zone air density
+        Real64 InfilVdotStdDensity = 0.0;           // Volume flow rate of Air {m3/s} due to infiltration standard density (adjusted elevation)
+        Real64 InfilVdotOutDensity = 0.0;           // Volume flow rate of Air {m3/s} due to infiltration  at current outdoor density
+        Real64 InfilMass = 0.0;                     // Mass of Air {kg} due to infiltration
+        Real64 InfilMdot = 0.0;                     // Mass flow rate of Air (kg/s) due to infiltration
+        Real64 InfilAirChangeRateCurDensity = 0.0;  // Infiltration air change rate {ach} at current zone air density
+        Real64 InfilAirChangeRateStdDensity = 0.0;  // Infiltration air change rate {ach} at standard density (adjusted elevation)
+        Real64 InfilAirChangeRateOutDensity = 0.0;  // Infiltration air change rate {ach} at current outdoor density
+        Real64 VentilHeatLoss = 0.0;                // Heat Gain {J} due to ventilation
+        Real64 VentilHeatGain = 0.0;                // Heat Loss {J} due to ventilation
+        Real64 VentilLatentLoss = 0.0;              // Latent Gain {J} due to ventilation
+        Real64 VentilLatentGain = 0.0;              // Latent Loss {J} due to ventilation
+        Real64 VentilTotalLoss = 0.0;               // Total Gain {J} due to ventilation
+        Real64 VentilTotalGain = 0.0;               // Total Loss {J} due to ventilation
+        Real64 VentilVolumeCurDensity = 0.0;        // Volume of Air {m3} due to ventilation at current zone air density
+        Real64 VentilVolumeStdDensity = 0.0;        // Volume of Air {m3} due to ventilation at standard density (adjusted for elevation)
+        Real64 VentilVdotCurDensity = 0.0;          // Volume flow rate of Air {m3/s} due to ventilation at current zone air density
+        Real64 VentilVdotStdDensity = 0.0;          // Volume flow rate of Air {m3/s} due to ventilation at standard density (adjusted elevation)
+        Real64 VentilVdotOutDensity = 0.0;          // Volume flow rate of Air {m3/s} due to ventilation at outdoor density
+        Real64 VentilMass = 0.0;                    // Mass of Air {kg} due to ventilation
+        Real64 VentilMdot = 0.0;                    // Mass flow rate of Air {kg/s} due to ventilation
+        Real64 VentilAirChangeRateCurDensity = 0.0; // Ventilation air change rate (ach) at current zone air density
+        Real64 VentilAirChangeRateStdDensity = 0.0; // Ventilation air change rate (ach) at standard density (adjusted elevation)
+        Real64 VentilAirChangeRateOutDensity = 0.0; // Ventilation air change rate (ach) at current outdoor density
+        Real64 VentilFanElec = 0.0;                 // Fan Electricity {W} due to ventilation
+        Real64 VentilAirTemp = 0.0;                 // Air Temp {C} of ventilation
+        Real64 MixVolume = 0.0;                     // Mixing volume of Air {m3}
+        Real64 MixVdotCurDensity = 0.0;             // Mixing volume flow rate of Air {m3/s} at current zone air density
+        Real64 MixVdotStdDensity = 0.0;             // Mixing volume flow rate of Air {m3/s} at standard density (adjusted for elevation)
+        Real64 MixMass = 0.0;                       // Mixing mass of air {kg}
+        Real64 MixMdot = 0.0;                       // Mixing mass flow rate of air {kg/s}
+        Real64 MixSenLoad = 0.0;                    // Heat Gain(+)/Loss(-) {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixLatLoad = 0.0;                    // Latent Gain(+)/Loss(-) {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixHeatLoss = 0.0;                   // Heat Gain {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixHeatGain = 0.0;                   // Heat Loss {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixLatentLoss = 0.0;                 // Latent Gain {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixLatentGain = 0.0;                 // Latent Loss {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixTotalLoss = 0.0;                  // Total Gain {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 MixTotalGain = 0.0;                  // Total Loss {J} due to mixing and cross mixing and refrigeration door mixing
+        Real64 SysInletMass = 0.0;                  // Total mass of Air {kg} from all system inlets
+        Real64 SysOutletMass = 0.0;                 // Total mass of Air {kg} from all system outlets
+        Real64 ExfilMass = 0.0;                     // Mass of Air {kg} due to exfiltration
+        Real64 ExfilTotalLoss = 0.0;                // Total Loss rate {W} due to exfiltration (sensible+latent)
+        Real64 ExfilSensiLoss = 0.0;                // Sensible Loss rate {W} due to exfiltration
+        Real64 ExfilLatentLoss = 0.0;               // Latent Loss rate {W} due to exfiltration
+        Real64 ExhTotalLoss = 0.0;                  // Total Loss rate {W} due to zone exhaust air (sensible+latent)
+        Real64 ExhSensiLoss = 0.0;                  // Sensible Loss rate {W} due to zone exhaust air
+        Real64 ExhLatentLoss = 0.0;                 // Latent Loss rate {W} due to zone exhaust air
         // air heat balance component load summary results
         Real64 SumIntGains = 0.0;     // Zone sum of convective internal gains
         Real64 SumHADTsurfs = 0.0;    // Zone sum of Hc*Area*(Tsurf - Tz)
@@ -1847,6 +1882,7 @@ struct HeatBalanceData : BaseGlobalStruct
     bool NoRegularMaterialsUsed = true;
     bool DoLatentSizing = false; // true when latent sizing is performed during zone sizing
     bool isAnyLatentLoad = false;
+    DataHeatBalance::HeatIndexMethod heatIndexMethod = DataHeatBalance::HeatIndexMethod::Simplified;
 
     Array1D<Real64> ZoneListSNLoadHeatEnergy;
     Array1D<Real64> ZoneListSNLoadCoolEnergy;
@@ -1990,7 +2026,7 @@ struct HeatBalanceData : BaseGlobalStruct
     EPVector<DataHeatBalance::HeatReclaimDataBase> HeatReclaimRefrigeratedRack;
     EPVector<DataHeatBalance::HeatReclaimRefrigCondenserData> HeatReclaimRefrigCondenser;
     EPVector<DataHeatBalance::HeatReclaimDataBase> HeatReclaimDXCoil;
-    EPVector<DataHeatBalance::HeatReclaimDataBase> HeatReclaimVS_DXCoil;
+    EPVector<DataHeatBalance::HeatReclaimDataBase> HeatReclaimVS_Coil;
     EPVector<DataHeatBalance::HeatReclaimDataBase> HeatReclaimSimple_WAHPCoil;
     EPVector<DataHeatBalance::AirReportVars> ZnAirRpt;
     EPVector<DataHeatBalance::AirReportVars> spaceAirRpt;
@@ -2003,6 +2039,10 @@ struct HeatBalanceData : BaseGlobalStruct
     bool MundtFirstTimeFlag = true;
     EPVector<std::string> spaceTypes;
     EPVector<DataHeatBalance::ExtVentedCavityStruct> ExtVentedCavity;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

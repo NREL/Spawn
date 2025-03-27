@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -87,6 +87,8 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     });
 
     ASSERT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
+
     GetOutsideEnergySourcesInput(*state);
 
     // GetOutsideEnergySourcesInput() finds DistrictHeating:Water, DistrictCooling, and DistrictHeating:Steam, respectively
@@ -120,7 +122,7 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     PlantLocation locHotWater(1, DataPlant::LoopSideLocation::Supply, 1, 1);
     thisHotWaterLoop.Name = "HotWaterLoop";
     thisHotWaterLoop.FluidName = "WATER";
-    thisHotWaterLoop.FluidIndex = 1;
+    thisHotWaterLoop.glycol = Fluid::GetWater(*state);
     thisHotWaterLoop.MinTemp = 1.0;
     thisHotWaterLoop.MaxTemp = 99.0;
     thisHotWaterLoop.MinMassFlowRate = 0.001;
@@ -139,8 +141,7 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     thisDistrictHeatingWater.BeginEnvrnInitFlag = true;
     thisDistrictHeatingWater.simulate(*state, locHotWater, firstHVAC, MyLoad, RunFlag);
 
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(
-        *state, thisHotWaterLoop.FluidName, thisDistrictHeatingWater.InletTemp, thisHotWaterLoop.FluidIndex, RoutineName);
+    Real64 Cp = thisHotWaterLoop.glycol->getSpecificHeat(*state, thisDistrictHeatingWater.InletTemp, RoutineName);
     Real64 calOutletTemp =
         (MyLoad + thisHotWaterLoop.MaxMassFlowRate * Cp * thisDistrictHeatingWater.InletTemp) / (thisHotWaterLoop.MaxMassFlowRate * Cp);
 
@@ -152,7 +153,8 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     PlantLocation locChilledWater(2, DataPlant::LoopSideLocation::Supply, 1, 1);
     thisChilledWaterLoop.Name = "ChilledWaterLoop";
     thisChilledWaterLoop.FluidName = "WATER";
-    thisChilledWaterLoop.FluidIndex = 1;
+    thisChilledWaterLoop.glycol = Fluid::GetWater(*state);
+
     thisChilledWaterLoop.MinTemp = 1.0;
     thisChilledWaterLoop.MaxTemp = 99.0;
     thisChilledWaterLoop.MinMassFlowRate = 0.001;
@@ -173,8 +175,7 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     thisDistrictCooling.BeginEnvrnInitFlag = true;
     thisDistrictCooling.simulate(*state, locChilledWater, firstHVAC, MyLoad, RunFlag);
 
-    Cp = FluidProperties::GetSpecificHeatGlycol(
-        *state, thisChilledWaterLoop.FluidName, thisDistrictCooling.InletTemp, thisChilledWaterLoop.FluidIndex, RoutineName);
+    Cp = thisChilledWaterLoop.glycol->getSpecificHeat(*state, thisDistrictCooling.InletTemp, RoutineName);
     calOutletTemp =
         (MyLoad + thisChilledWaterLoop.MaxMassFlowRate * Cp * thisDistrictCooling.InletTemp) / (thisChilledWaterLoop.MaxMassFlowRate * Cp);
 
@@ -185,7 +186,8 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     PlantLocation locSteam(3, DataPlant::LoopSideLocation::Supply, 1, 1);
     thisSteamLoop.Name = "SteamLoop";
     thisSteamLoop.FluidName = "STEAM";
-    thisSteamLoop.FluidIndex = 1;
+    thisSteamLoop.steam = Fluid::GetSteam(*state);
+    thisSteamLoop.glycol = Fluid::GetWater(*state);
     thisSteamLoop.MinMassFlowRate = 0.00001;
     thisSteamLoop.MaxMassFlowRate = 20;
     thisSteamLoop.TempSetPointNodeNum = thisDistrictHeatingSteam.OutletNodeNum;
@@ -204,15 +206,11 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     thisDistrictHeatingSteam.BeginEnvrnInitFlag = true;
     thisDistrictHeatingSteam.simulate(*state, locSteam, firstHVAC, MyLoad, RunFlag);
 
-    Real64 SatTempAtmPress = FluidProperties::GetSatTemperatureRefrig(
-        *state, thisSteamLoop.FluidName, DataEnvironment::StdPressureSeaLevel, thisSteamLoop.FluidIndex, RoutineName);
-    Real64 CpCondensate = FluidProperties::GetSpecificHeatGlycol(
-        *state, thisSteamLoop.FluidName, thisDistrictHeatingSteam.InletTemp, thisSteamLoop.FluidIndex, RoutineName);
+    Real64 SatTempAtmPress = thisSteamLoop.steam->getSatTemperature(*state, DataEnvironment::StdPressureSeaLevel, RoutineName);
+    Real64 CpCondensate = thisSteamLoop.glycol->getSpecificHeat(*state, thisDistrictHeatingSteam.InletTemp, RoutineName);
     Real64 deltaTsensible = SatTempAtmPress - thisDistrictHeatingSteam.InletTemp;
-    Real64 EnthSteamInDry = FluidProperties::GetSatEnthalpyRefrig(
-        *state, thisSteamLoop.FluidName, thisDistrictHeatingSteam.InletTemp, 1.0, thisSteamLoop.FluidIndex, RoutineName);
-    Real64 EnthSteamOutWet = FluidProperties::GetSatEnthalpyRefrig(
-        *state, thisSteamLoop.FluidName, thisDistrictHeatingSteam.InletTemp, 0.0, thisSteamLoop.FluidIndex, RoutineName);
+    Real64 EnthSteamInDry = thisSteamLoop.steam->getSatEnthalpy(*state, thisDistrictHeatingSteam.InletTemp, 1.0, RoutineName);
+    Real64 EnthSteamOutWet = thisSteamLoop.steam->getSatEnthalpy(*state, thisDistrictHeatingSteam.InletTemp, 0.0, RoutineName);
     Real64 LatentHeatSteam = EnthSteamInDry - EnthSteamOutWet;
     Real64 calOutletMdot = MyLoad / (LatentHeatSteam + (CpCondensate * deltaTsensible));
 

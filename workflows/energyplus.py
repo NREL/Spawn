@@ -1,4 +1,4 @@
-# EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University
+# EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University
 # of Illinois, The Regents of the University of California, through Lawrence
 # Berkeley National Laboratory (subject to receipt of any required approvals
 # from the U.S. Dept. of Energy), Oak Ridge National Laboratory, managed by UT-
@@ -185,6 +185,7 @@ class EPlusRunManager(object):
             ".mtd",
             "Zsz.csv",
             "Ssz.csv",
+            "Spsz.csv",
             "DElight.in",
             "DElight.out",
             "Map.csv",
@@ -229,6 +230,8 @@ class EPlusRunManager(object):
             "Zsz.txt",
             "Ssz.tab",
             "Ssz.txt",
+            "Spsz.tab",
+            "Spsz.txt",
             "Map.tab",
             "Map.txt",
         ]

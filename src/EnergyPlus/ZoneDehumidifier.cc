@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -47,9 +47,6 @@
 
 // C++ Headers
 #include <cmath>
-
-// ObjexxFCL Headers
-#include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/CurveManager.hh>
@@ -108,7 +105,6 @@ namespace ZoneDehumidifier {
 
     // Using/Aliasing
     using namespace DataLoopNode;
-    using namespace ScheduleManager;
 
     void SimZoneDehumidifier(EnergyPlusData &state,
                              std::string const &CompName,                    // Name of the zone dehumidifier
@@ -204,7 +200,7 @@ namespace ZoneDehumidifier {
         using WaterManager::SetupTankSupplyComponent;
 
         // SUBROUTINE PARAMETER DEFINITIONS:
-        static constexpr std::string_view RoutineName("GetZoneDehumidifierInput");
+        static constexpr std::string_view routineName = "GetZoneDehumidifierInput";
         static std::string const CurrentModuleObject("ZoneHVAC:Dehumidifier:DX");
         Real64 constexpr RatedInletAirTemp(26.7);
         Real64 constexpr RatedInletAirRH(60.0);
@@ -251,6 +247,9 @@ namespace ZoneDehumidifier {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             // A1,  \field Name
@@ -259,16 +258,10 @@ namespace ZoneDehumidifier {
 
             // A2,  \field Availability Schedule Name
             if (lAlphaBlanks(2)) {
-                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr =
-                    GetScheduleIndex(state, Alphas(2)); // Convert schedule name to pointer
-                if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).SchedPtr == 0) {
-                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(2), Alphas(2)));
-                    ShowContinueError(
-                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
-                    ErrorsFound = true;
-                }
+                state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+                ErrorsFound = true;
             }
 
             // A3 , \field Air Inlet Node Name
@@ -330,17 +323,9 @@ namespace ZoneDehumidifier {
                 GetCurveIndex(state, Alphas(5)); // Convert curve name to index number
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex == 0) {
                 if (lAlphaBlanks(5)) {
-                    ShowSevereError(state,
-                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(5),
-                                           cAlphaFields(1),
-                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereEmptyField(state, eoh, cAlphaFields(5));
                 } else {
-                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(5), Alphas(5)));
-                    ShowContinueError(
-                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereItemNotFound(state, eoh, cAlphaFields(5), Alphas(5));
                 }
                 ErrorsFound = true;
             } else {
@@ -348,7 +333,7 @@ namespace ZoneDehumidifier {
                 ErrorsFound |= Curve::CheckCurveDims(state,
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).WaterRemovalCurveIndex, // Curve index
                                                      {2},                                                            // Valid dimensions
-                                                     RoutineName,                                                    // Routine name
+                                                     routineName,                                                    // Routine name
                                                      CurrentModuleObject,                                            // Object Type
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name, // Object Name
                                                      cAlphaFields(5));                                               // Field Name
@@ -369,17 +354,9 @@ namespace ZoneDehumidifier {
                 GetCurveIndex(state, Alphas(6)); // convert curve name to number
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex == 0) {
                 if (lAlphaBlanks(6)) {
-                    ShowSevereError(state,
-                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(6),
-                                           cAlphaFields(1),
-                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereEmptyField(state, eoh, cAlphaFields(6));
                 } else {
-                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(6), Alphas(6)));
-                    ShowContinueError(
-                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereItemNotFound(state, eoh, cAlphaFields(6), Alphas(6));
                 }
                 ErrorsFound = true;
             } else {
@@ -387,7 +364,7 @@ namespace ZoneDehumidifier {
                 ErrorsFound |= Curve::CheckCurveDims(state,
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).EnergyFactorCurveIndex, // Curve index
                                                      {2},                                                            // Valid dimensions
-                                                     RoutineName,                                                    // Routine name
+                                                     routineName,                                                    // Routine name
                                                      CurrentModuleObject,                                            // Object Type
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name, // Object Name
                                                      cAlphaFields(6));                                               // Field Name
@@ -408,17 +385,9 @@ namespace ZoneDehumidifier {
                 GetCurveIndex(state, Alphas(7)); // convert curve name to number
             if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).PartLoadCurveIndex == 0) {
                 if (lAlphaBlanks(7)) {
-                    ShowSevereError(state,
-                                    format("{}:{}=\"{}\" is required, missing for {} = {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(7),
-                                           cAlphaFields(1),
-                                           state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereEmptyField(state, eoh, cAlphaFields(7));
                 } else {
-                    ShowSevereError(state, format("{} not found = {}", cAlphaFields(7), Alphas(7)));
-                    ShowContinueError(
-                        state, format("Occurs in {} = {}", CurrentModuleObject, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name));
+                    ShowSevereItemNotFound(state, eoh, cAlphaFields(7), Alphas(7));
                 }
                 ErrorsFound = true;
             } else {
@@ -426,7 +395,7 @@ namespace ZoneDehumidifier {
                 ErrorsFound |= Curve::CheckCurveDims(state,
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).PartLoadCurveIndex, // Curve index
                                                      {1},                                                                          // Valid dimensions
-                                                     RoutineName,                                                                  // Routine name
+                                                     routineName,                                                                  // Routine name
                                                      CurrentModuleObject,                                                          // Object Type
                                                      state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumidIndex).Name,               // Object Name
                                                      cAlphaFields(7));                                                             // Field Name
@@ -483,7 +452,7 @@ namespace ZoneDehumidifier {
         lNumericBlanks.deallocate();
 
         if (ErrorsFound) {
-            ShowFatalError(state, format("{}:{}: Errors found in input.", RoutineName, CurrentModuleObject));
+            ShowFatalError(state, format("{}:{}: Errors found in input.", routineName, CurrentModuleObject));
         }
 
         for (ZoneDehumidIndex = 1; ZoneDehumidIndex <= NumDehumidifiers; ++ZoneDehumidIndex) {
@@ -767,7 +736,7 @@ namespace ZoneDehumidifier {
         InletAirHumRat = state.dataLoopNodes->Node(AirInletNodeNum).HumRat;
         InletAirRH = 100.0 * PsyRhFnTdbWPb(state, InletAirTemp, InletAirHumRat, state.dataEnvrn->OutBaroPress, RoutineName); // RH in percent (%)
 
-        if (QZnDehumidReq < 0.0 && GetCurrentScheduleValue(state, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).SchedPtr) > 0.0 &&
+        if (QZnDehumidReq < 0.0 && state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).availSched->getCurrentVal() > 0.0 &&
             InletAirTemp >= state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).MinInletAirTemp &&
             InletAirTemp <= state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).MaxInletAirTemp) {
             // A dehumidification load is being requested and dehumidifier is available (schedule value > 0)
@@ -806,7 +775,7 @@ namespace ZoneDehumidifier {
             WaterRemovalVolRate = WaterRemovalRateFactor * state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).RatedWaterRemoval;
 
             WaterRemovalMassRate =
-                WaterRemovalVolRate / (24.0 * Constant::SecInHour * 1000.0) *
+                WaterRemovalVolRate / (Constant::rSecsInDay * 1000.0) *
                 RhoH2O(max((InletAirTemp - 11.0), 1.0)); //(L/d)/(24 hr/day *3600 sec/hr * 1000 L/m3) | Density of water, minimum temp = 1.0C
 
             if (WaterRemovalMassRate > 0.0) {
@@ -988,7 +957,7 @@ namespace ZoneDehumidifier {
             state.dataLoopNodes->Node(AirInletNodeNum).MassFlowRate = 0.0;
             // If available but didn't operate, then set electric power = off cycle parasitic load.
             // Else, electric power = 0.0
-            if (GetCurrentScheduleValue(state, state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).SchedPtr) > 0.0) {
+            if (state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).availSched->getCurrentVal() > 0.0) {
                 ElectricPowerAvg =
                     state.dataZoneDehumidifier->ZoneDehumid(ZoneDehumNum).OffCycleParasiticLoad; // off cycle parasitic is on entire timestep
             } else {

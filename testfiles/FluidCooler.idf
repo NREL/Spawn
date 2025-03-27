@@ -100,7 +100,7 @@
 ! Utility Tariffs:                None
 !
 
-  Version,24.2;
+  Version,25.1;
 
   Timestep,6;
 
@@ -1535,7 +1535,7 @@
   Branch,
     Condenser Supply FLUIDCOOLER Branch,  !- Name
     ,                        !- Pressure Drop Curve Name
-    Fluidcooler:SingleSpeed, !- Component 1 Object Type
+    FluidCooler:SingleSpeed, !- Component 1 Object Type
     Big FLUIDCOOLER,         !- Component 1 Name
     Condenser FLUIDCOOLER Inlet Node,  !- Component 1 Inlet Node Name
     Condenser FLUIDCOOLER Outlet Node;  !- Component 1 Outlet Node Name
@@ -1676,10 +1676,10 @@
 
   CondenserEquipmentList,
     All FLUIDCOOLERs,        !- Name
-    Fluidcooler:SingleSpeed, !- Equipment 1 Object Type
+    FluidCooler:SingleSpeed, !- Equipment 1 Object Type
     Big FLUIDCOOLER;         !- Equipment 1 Name
 
-  Fluidcooler:SingleSpeed,
+  FluidCooler:SingleSpeed,
     Big FLUIDCOOLER,         !- Name
     Condenser FLUIDCOOLER Inlet Node,  !- Water Inlet Node Name
     Condenser FLUIDCOOLER Outlet Node,  !- Water Outlet Node Name

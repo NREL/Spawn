@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -84,11 +85,10 @@ namespace CoolTower {
         // Members
         std::string Name;                                                  // The component name
         std::string CompType;                                              // Type of component
-        std::string Schedule;                                              // Available schedule
-        int SchedPtr = 0;                                                  // Index to schedule
+        Sched::Schedule *availSched = nullptr;                             // schedule
         int ZonePtr = 0;                                                   // Index to zone
         int spacePtr = 0;                                                  // Index to space (if applicable)
-        int PumpSchedPtr = 0;                                              // Index to schedule for water pump
+        Sched::Schedule *pumpSched = nullptr;                              // Index to schedule for water pump
         FlowCtrl FlowCtrlType = FlowCtrl::Invalid;                         // Type of cooltower operation
         WaterSupplyMode CoolTWaterSupplyMode = WaterSupplyMode::FromMains; // Type of water source
         std::string CoolTWaterSupplyName;                                  // Name of water source
@@ -144,6 +144,10 @@ struct CoolTowerData : BaseGlobalStruct
 
     bool GetInputFlag = true;
     Array1D<CoolTower::CoolTowerParams> CoolTowerSys;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

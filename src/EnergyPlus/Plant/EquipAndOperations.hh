@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -52,6 +52,7 @@
 #include <EnergyPlus/Plant/PlantLocation.hh>
 #include <EnergyPlus/PlantComponent.hh>
 #include <EnergyPlus/PlantLoopHeatPumpEIR.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 #include <ObjexxFCL/Array1D.hh>
 
 namespace EnergyPlus::DataPlant {
@@ -258,31 +259,29 @@ struct ChillerHeaterSupervisoryOperationData
 struct OperationData
 {
     // Members
-    std::string Name;               // The name of each item in the list
-    std::string TypeOf;             // The 'keyWord' identifying each item in the list
-    DataPlant::OpScheme Type;       // Op scheme type (from keyword)
-    std::string Sched;              // The name of the schedule associated with the list
-    int SchedPtr;                   // ALLOCATABLE to the schedule (for valid schedules)
-    bool Available;                 // TRUE = designated component or operation scheme available
-    int NumEquipLists;              // number of equipment lists
-    int CurListPtr;                 // points to the current equipment list
-    Array1D<EquipOpList> EquipList; // Component type list
-    int EquipListNumForLastStage;   // points to the equipment list with the highest upper limit
-    std::string ReferenceNodeName;  // DELTA CTRL ONLY--for calculation of delta Temp
-    int ReferenceNodeNumber;        // DELTA CTRL ONLY--for calculation of delta Temp
-    int ErlSimProgramMngr;          // EMS:ProgramManager to always run when this model is called
-    int ErlInitProgramMngr;         // EMS:ProgramManager to run when this model is initialized and setup
-    int initPluginLocation;         // If Python Plugins are used to init this, this defines the location in the plugin structure
-    int simPluginLocation;          // If Python Plugins are used to simulate this, this defines the location in the plugin structure
-    Real64 EMSIntVarLoopDemandRate; // EMS internal variable for loop-level demand rate, neg cooling [W]
+    std::string Name;                 // The name of each item in the list
+    std::string TypeOf;               // The 'keyWord' identifying each item in the list
+    DataPlant::OpScheme Type;         // Op scheme type (from keyword)
+    Sched::Schedule *sched = nullptr; // schedule associated with the list
+    bool Available;                   // TRUE = designated component or operation scheme available
+    int NumEquipLists;                // number of equipment lists
+    int CurListPtr;                   // points to the current equipment list
+    Array1D<EquipOpList> EquipList;   // Component type list
+    int EquipListNumForLastStage;     // points to the equipment list with the highest upper limit
+    std::string ReferenceNodeName;    // DELTA CTRL ONLY--for calculation of delta Temp
+    int ReferenceNodeNumber;          // DELTA CTRL ONLY--for calculation of delta Temp
+    int ErlSimProgramMngr;            // EMS:ProgramManager to always run when this model is called
+    int ErlInitProgramMngr;           // EMS:ProgramManager to run when this model is initialized and setup
+    int initPluginLocation;           // If Python Plugins are used to init this, this defines the location in the plugin structure
+    int simPluginLocation;            // If Python Plugins are used to simulate this, this defines the location in the plugin structure
+    Real64 EMSIntVarLoopDemandRate;   // EMS internal variable for loop-level demand rate, neg cooling [W]
     bool MyEnvrnFlag;
     ChillerHeaterSupervisoryOperationData *ChillerHeaterSupervisoryOperation = nullptr;
 
     // Default Constructor
     OperationData()
-        : Type(DataPlant::OpScheme::Invalid), SchedPtr(0), Available(false), NumEquipLists(0), CurListPtr(0), EquipListNumForLastStage(0),
-          ReferenceNodeNumber(0), ErlSimProgramMngr(0), ErlInitProgramMngr(0), initPluginLocation(-1), simPluginLocation(-1),
-          EMSIntVarLoopDemandRate(0.0), MyEnvrnFlag(true)
+        : Type(DataPlant::OpScheme::Invalid), Available(false), NumEquipLists(0), CurListPtr(0), EquipListNumForLastStage(0), ReferenceNodeNumber(0),
+          ErlSimProgramMngr(0), ErlInitProgramMngr(0), initPluginLocation(-1), simPluginLocation(-1), EMSIntVarLoopDemandRate(0.0), MyEnvrnFlag(true)
     {
     }
 };

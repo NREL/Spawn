@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -300,9 +300,9 @@ namespace PlantValves {
                 for (auto &thisPlantLoop : state.dataPlnt->PlantLoop) {
                     for (auto &thisLoopSide : thisPlantLoop.LoopSide) {
                         int branchCtr = 0;
-                        for (auto &thisBranch : thisLoopSide.Branch) {
+                        for (auto const &thisBranch : thisLoopSide.Branch) {
                             branchCtr++;
-                            for (auto &thisComp : thisBranch.Comp) {
+                            for (auto const &thisComp : thisBranch.Comp) {
 
                                 if ((thisComp.Type == DataPlant::PlantEquipmentType::ValveTempering) &&
                                     (thisComp.Name == this->Name)) { // we found it.
@@ -341,9 +341,9 @@ namespace PlantValves {
                                     } // has mixer
 
                                     // is pump node really the outlet of a branch with a pump?
-                                    for (auto &thisInnerBranch : thisLoopSide.Branch) {
+                                    for (auto const &thisInnerBranch : thisLoopSide.Branch) {
                                         if (thisInnerBranch.NodeNumOut == this->PltPumpOutletNodeNum) {
-                                            for (auto &thisInnerComp : thisInnerBranch.Comp) {
+                                            for (auto const &thisInnerComp : thisInnerBranch.Comp) {
                                                 if (DataPlant::PlantEquipmentTypeIsPump[static_cast<int>(thisInnerComp.Type)]) {
                                                     PumpOutNodeOkay = true;
                                                 }

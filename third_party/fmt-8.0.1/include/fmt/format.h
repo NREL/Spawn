@@ -316,8 +316,10 @@ template <> constexpr auto num_bits<fallback_uintptr>() -> int {
 
 FMT_INLINE void assume(bool condition) {
   (void)condition;
-#if FMT_HAS_BUILTIN(__builtin_assume)
+#if FMT_HAS_BUILTIN(__builtin_assume) && !FMT_ICC_VERSION
   __builtin_assume(condition);
+#elif FMT_GCC_VERSION
+  if (!condition) __builtin_unreachable();
 #endif
 }
 
@@ -751,8 +753,18 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
   T* new_data =
       std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
-  std::uninitialized_copy(old_data, old_data + this->size(),
-                          detail::make_checked(new_data, new_capacity));
+  // std::uninitialized_copy(old_data, old_data + this->size(),
+  //                         detail::make_checked(new_data, new_capacity));
+  // ****** MYOLDMOPAR MANUAL EDIT
+  // I manually applied some of the changes from this commit
+  // https://github.com/fmtlib/fmt/commit/fb97cb2318dd14b5c791699232e1e73782be7e57
+  // Because of a GCC 13 false positive issuing a string overflow warning
+  // fmt issue: https://github.com/fmtlib/fmt/issues/3533
+  // upstream report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109717
+  // An updated FMT version could mute this with the FMT_SYSTEM_HEADERS CMake flag turned on, but it seems fmt-8.0.1 doesn't respond to that
+  detail::assume(this->size() <= new_capacity);
+  std::uninitialized_copy_n(old_data, this->size(), new_data);
+  // ******
   this->set(new_data, new_capacity);
   // deallocate must not throw according to the standard, but even if it does,
   // the buffer already uses the new storage and will deallocate it in

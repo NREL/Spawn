@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -168,6 +168,7 @@ namespace FuelCellElectricGenerator {
 
         // METHODOLOGY EMPLOYED:
         // EnergyPlus input processor
+        static constexpr std::string_view routineName = "getFuelCellInput";
 
         int NumAlphas;                 // Number of elements in the alpha array
         int NumNums;                   // Number of elements in the numeric array
@@ -272,12 +273,12 @@ namespace FuelCellElectricGenerator {
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.UpTranLimit = NumArray(8);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.DownTranLimit = NumArray(9);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.StartUpTime =
-                    NumArray(10) / Constant::SecInHour; // convert to hours from seconds
+                    NumArray(10) / Constant::rSecsInHour; // convert to hours from seconds
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.StartUpFuel = NumArray(11);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.StartUpElectConsum = NumArray(12);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.StartUpElectProd = NumArray(13);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.ShutDownTime =
-                    NumArray(14) / Constant::SecInHour; // convert to hours from seconds
+                    NumArray(14) / Constant::rSecsInHour; // convert to hours from seconds
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.ShutDownFuel = NumArray(15);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.ShutDownElectConsum = NumArray(16);
                 state.dataFuelCellElectGen->FuelCell(thisFuelCell).FCPM.ANC0 = NumArray(17);
@@ -608,6 +609,7 @@ namespace FuelCellElectricGenerator {
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
 
+            ErrorObjectHeader eoh{routineName, state.dataIPShortCut->cCurrentModuleObject, AlphArray(1)};
             int thisFuelCell = Util::FindItemInList(AlphArray(1), state.dataFuelCellElectGen->FuelCell, &FCDataStruct::NameFCWaterSup);
 
             if (thisFuelCell > 0) {
@@ -674,13 +676,11 @@ namespace FuelCellElectricGenerator {
                     ErrorsFound = true;
                 }
 
-                state.dataFuelCellElectGen->FuelCell(thisFuelCell).WaterSup.SchedNum = ScheduleManager::GetScheduleIndex(state, AlphArray(6));
-                if ((state.dataFuelCellElectGen->FuelCell(thisFuelCell).WaterSup.SchedNum == 0) &&
+                state.dataFuelCellElectGen->FuelCell(thisFuelCell).WaterSup.sched = Sched::GetSchedule(state, AlphArray(6));
+                if ((state.dataFuelCellElectGen->FuelCell(thisFuelCell).WaterSup.sched == nullptr) &&
                     (state.dataFuelCellElectGen->FuelCell(thisFuelCell).WaterSup.WaterTempMode ==
                      DataGenerators::WaterTemperatureMode::WaterInReformSchedule)) {
-                    ShowSevereError(state, format("Invalid, {} = {}", state.dataIPShortCut->cAlphaFieldNames(6), AlphArray(6)));
-                    ShowContinueError(state, format("Entered in {}={}", state.dataIPShortCut->cCurrentModuleObject, AlphArray(1)));
-                    ShowContinueError(state, "Schedule was not found");
+                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(6), AlphArray(6));
                     ErrorsFound = true;
                 }
 
@@ -1223,7 +1223,7 @@ namespace FuelCellElectricGenerator {
             SetupOutputVariable(state,
                                 "Generator Power Module Entering Air Enthalpy",
                                 Constant::Units::W,
-                                this->Report.TotAirInEnthalphy,
+                                this->Report.TotAirInEnthalpy,
                                 OutputProcessor::TimeStepType::System,
                                 OutputProcessor::StoreType::Average,
                                 this->Name);
@@ -1606,7 +1606,7 @@ namespace FuelCellElectricGenerator {
                     double(state.dataGlobal->DayOfSim) +
                     (int(state.dataGlobal->CurrentTime) +
                      (state.dataHVACGlobal->SysTimeElapsed + (state.dataGlobal->CurrentTime - int(state.dataGlobal->CurrentTime)))) /
-                        Constant::HoursInDay;
+                        Constant::rHoursInDay;
                 this->FCPM.HasBeenOn = false;
 
                 if (this->FCPM.ShutDownTime > 0.0) this->FCPM.DuringShutDown = true;
@@ -1627,7 +1627,7 @@ namespace FuelCellElectricGenerator {
                 double(state.dataGlobal->DayOfSim) +
                 (int(state.dataGlobal->CurrentTime) +
                  (state.dataHVACGlobal->SysTimeElapsed + (state.dataGlobal->CurrentTime - int(state.dataGlobal->CurrentTime)))) /
-                    Constant::HoursInDay;
+                    Constant::rHoursInDay;
 
             this->FCPM.HasBeenOn = true;
             ++this->FCPM.NumCycles; // increment cycling counter
@@ -1761,7 +1761,7 @@ namespace FuelCellElectricGenerator {
             } else if (state.dataGenerator->FuelSupply(this->FuelSupNum).FuelTempMode == DataGenerators::FuelTemperatureMode::FuelInTempSchedule) {
 
                 state.dataGenerator->FuelSupply(this->FuelSupNum).TfuelIntoCompress =
-                    ScheduleManager::GetCurrentScheduleValue(state, state.dataGenerator->FuelSupply(this->FuelSupNum).SchedNum);
+                    state.dataGenerator->FuelSupply(this->FuelSupNum).sched->getCurrentVal();
             }
 
             //  evaluate  heat capacity at average temperature using shomate
@@ -1804,7 +1804,7 @@ namespace FuelCellElectricGenerator {
 
             // units, NdotFuel in kmol/sec. Hmolfule in KJ/mol ,
             //        factor of 1000's to get to J/s or watts
-            this->FCPM.TotFuelInEnthalphy = Hmolfuel * 1000.0 * this->FCPM.NdotFuel * 1000.0;
+            this->FCPM.TotFuelInEnthalpy = Hmolfuel * 1000.0 * this->FCPM.NdotFuel * 1000.0;
 
             // Calculation Step 6, water compressor calculations
 
@@ -1823,7 +1823,7 @@ namespace FuelCellElectricGenerator {
                 this->WaterSup.TwaterIntoCompress = state.dataLoopNodes->Node(this->WaterSup.NodeNum).Temp;
             } break;
             case DataGenerators::WaterTemperatureMode::WaterInReformSchedule: {
-                this->WaterSup.TwaterIntoCompress = ScheduleManager::GetCurrentScheduleValue(state, this->WaterSup.SchedNum);
+                this->WaterSup.TwaterIntoCompress = this->WaterSup.sched->getCurrentVal();
             } break;
             default:
                 break;
@@ -1921,7 +1921,7 @@ namespace FuelCellElectricGenerator {
 
             // units, NdotAir in kmol/sec.; Hmolfuel in KJ/mol ,
             //        factor of 1000's to get to J/s or watts
-            this->FCPM.TotAirInEnthalphy = Hmolair * 1000.0 * this->FCPM.NdotAir * 1000.0;
+            this->FCPM.TotAirInEnthalpy = Hmolair * 1000.0 * this->FCPM.NdotAir * 1000.0;
 
             // calculation Step 8, Figure Product Gases
 
@@ -2001,7 +2001,7 @@ namespace FuelCellElectricGenerator {
             // all the oxygen in the excess air stream
             this->FCPM.ConstitMolalFract(3) = Ndot02 / this->FCPM.NdotProdGas;
 
-            // all the H2O comming in plus the new H2O from reactions and the H2O from water used in reforming
+            // all the H2O coming in plus the new H2O from reactions and the H2O from water used in reforming
             this->FCPM.ConstitMolalFract(4) = NdotH2O / this->FCPM.NdotProdGas;
 
             // all the argon coming in.
@@ -2013,9 +2013,9 @@ namespace FuelCellElectricGenerator {
 
             // units, NdotProdGas in kmol/sec.; HmolProdGases in KJ/mol ,
             //        factor of 1000's to get to J/s or watts
-            this->FCPM.TotProdGasEnthalphy = HmolProdGases * 1000.0 * this->FCPM.NdotProdGas * 1000.0;
+            this->FCPM.TotProdGasEnthalpy = HmolProdGases * 1000.0 * this->FCPM.NdotProdGas * 1000.0;
 
-            // calculation Step 9, Figure Skin lossess
+            // calculation Step 9, Figure Skin losses
 
             if (this->FCPM.SkinLossMode == DataGenerators::SkinLoss::ConstantRate) {
                 // do nothing just use QdotSkin
@@ -2054,15 +2054,15 @@ namespace FuelCellElectricGenerator {
             // calculation Step 13, Calculate Heat balance
             //    move all terms in Equation 7 to RHS and calculate imbalance
 
-            Real64 MagofImbalance = -this->FCPM.TotFuelInEnthalphy - this->FCPM.TotAirInEnthalphy - this->FCPM.WaterInEnthalpy -
+            Real64 MagofImbalance = -this->FCPM.TotFuelInEnthalpy - this->FCPM.TotAirInEnthalpy - this->FCPM.WaterInEnthalpy -
                                     this->FCPM.DilutionAirInEnthalpy -
                                     this->FCPM.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupNum).LHV * 1000000.0 -
-                                    this->FCPM.PelancillariesAC + this->FCPM.Pel + this->FCPM.TotProdGasEnthalphy + this->FCPM.WaterOutEnthalpy +
+                                    this->FCPM.PelancillariesAC + this->FCPM.Pel + this->FCPM.TotProdGasEnthalpy + this->FCPM.WaterOutEnthalpy +
                                     this->FCPM.QdotStackCool + this->FCPM.QdotSkin + this->FCPM.DilutionAirOutEnthalpy;
 
-            // Now find a new total prod Gas Enthalphy that would result in an energy balance
+            // Now find a new total prod Gas Enthalpy that would result in an energy balance
             // TODO check signs...
-            Real64 tmpTotProdGasEnthalpy = this->FCPM.TotProdGasEnthalphy - MagofImbalance;
+            Real64 tmpTotProdGasEnthalpy = this->FCPM.TotProdGasEnthalpy - MagofImbalance;
 
             // solve for a new TprodGasLeavingFCPM using regula falsi method
 
@@ -2339,7 +2339,7 @@ namespace FuelCellElectricGenerator {
 
         // loop through fuel constituents and sum up Cp
 
-        // two different themodynamic curve fits might be used
+        // two different thermodynamic curve fits might be used
 
         Real64 tempCp = 0.0;
 
@@ -2905,18 +2905,18 @@ namespace FuelCellElectricGenerator {
         //       AUTHOR         Brent Griffith
         //       DATE WRITTEN   Aug 2005
 
-        Real64 PelInput = Pel; // hold initial value of inout var
+        Real64 PelInput = Pel; // hold initial value of input var
 
         Real64 CurrentFractionalDay = double(state.dataGlobal->DayOfSim) +
                                       (int(state.dataGlobal->CurrentTime) + (state.dataHVACGlobal->SysTimeElapsed +
                                                                              (state.dataGlobal->CurrentTime - int(state.dataGlobal->CurrentTime)))) /
-                                          Constant::HoursInDay;
+                                          Constant::rHoursInDay;
 
         // Check if in start up and if it still should be
         if (this->FCPM.DuringStartUp) {
 
             // calculate time for end of start up period
-            Real64 EndingFractionalDay = this->FCPM.FractionalDayofLastStartUp + this->FCPM.StartUpTime / Constant::HoursInDay;
+            Real64 EndingFractionalDay = this->FCPM.FractionalDayofLastStartUp + this->FCPM.StartUpTime / Constant::rHoursInDay;
 
             if (CurrentFractionalDay > EndingFractionalDay) {
                 // start up period is now over
@@ -2928,7 +2928,7 @@ namespace FuelCellElectricGenerator {
         if (this->FCPM.DuringShutDown) {
 
             // calculate time for end of shut down period
-            Real64 EndingFractionalDay = this->FCPM.FractionalDayofLastShutDown + this->FCPM.ShutDownTime / Constant::HoursInDay;
+            Real64 EndingFractionalDay = this->FCPM.FractionalDayofLastShutDown + this->FCPM.ShutDownTime / Constant::rHoursInDay;
 
             if (CurrentFractionalDay > EndingFractionalDay) {
                 // start up period is now over
@@ -3032,11 +3032,7 @@ namespace FuelCellElectricGenerator {
 
             this->ExhaustHX.THXexh = TprodGasIn - this->ExhaustHX.qHX / (NdotGas * CpProdGasMol * 1000.0);
 
-            Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                               state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                               TwaterIn,
-                                                               state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+            Real64 Cp = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getSpecificHeat(state, TwaterIn, RoutineName);
 
             if (this->ExhaustHX.WaterMassFlowRate * Cp <= 0.0) {
                 this->ExhaustHX.WaterOutletTemp = TwaterIn;
@@ -3068,7 +3064,7 @@ namespace FuelCellElectricGenerator {
                 this->ExhaustHX.THXexh =
                     ((1.0 - NdotCpAuxMix / NdotCpWater) / (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                         TauxMix +
-                    ((std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - 1.0) /
+                    (std::expm1(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) /
                      (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                         TwaterIn;
 
@@ -3113,7 +3109,7 @@ namespace FuelCellElectricGenerator {
                 this->ExhaustHX.THXexh =
                     ((1.0 - NdotCpAuxMix / NdotCpWater) / (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                         TauxMix +
-                    ((std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - 1.0) /
+                    (std::expm1(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) /
                      (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                         TwaterIn;
 
@@ -3174,7 +3170,7 @@ namespace FuelCellElectricGenerator {
                     this->ExhaustHX.THXexh = ((1.0 - NdotCpAuxMix / NdotCpWater) /
                                               (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                                                  TauxMix +
-                                             ((std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - 1.0) /
+                                             (std::expm1(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) /
                                               (std::exp(UAeff * (1.0 / NdotCpAuxMix - 1.0 / NdotCpWater)) - NdotCpAuxMix / NdotCpWater)) *
                                                  TwaterIn;
 
@@ -3330,12 +3326,12 @@ namespace FuelCellElectricGenerator {
             this->FCPM.Eel = 0.0;
             this->FCPM.PelancillariesAC = 0.0;
             this->FCPM.NdotFuel = 0.0;
-            this->FCPM.TotFuelInEnthalphy = 0.0;
+            this->FCPM.TotFuelInEnthalpy = 0.0;
             this->FCPM.NdotProdGas = 0.0;
             this->FCPM.TprodGasLeavingFCPM = 0.0;
-            this->FCPM.TotProdGasEnthalphy = 0.0;
+            this->FCPM.TotProdGasEnthalpy = 0.0;
             this->FCPM.NdotAir = 0.0;
-            this->FCPM.TotAirInEnthalphy = 0.0;
+            this->FCPM.TotAirInEnthalpy = 0.0;
             this->FCPM.NdotLiqwater = 0.0;
             this->FCPM.TwaterInlet = 0.0;
             this->FCPM.WaterInEnthalpy = 0.0;
@@ -3368,11 +3364,7 @@ namespace FuelCellElectricGenerator {
             this->Inverter.PCUlosses = 0.0;
             this->Inverter.QairIntake = 0.0;
 
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidName,
-                                                           DataGenerators::InitHRTemp,
-                                                           state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(this->CWPlantLoc.loopNum).glycol->getDensity(state, DataGenerators::InitHRTemp, RoutineName);
 
             this->ExhaustHX.WaterMassFlowRateDesign = this->ExhaustHX.WaterVolumeFlowMax * rho;
             this->ExhaustHX.WaterMassFlowRate = this->ExhaustHX.WaterMassFlowRateDesign;
@@ -3405,7 +3397,7 @@ namespace FuelCellElectricGenerator {
             this->ElecStorage.LastTimeStepStateOfCharge = this->ElecStorage.ThisTimeStepStateOfCharge;
             this->FCPM.PelLastTimeStep = this->FCPM.Pel;
 
-            // intialize flow rate in water loop, this is "requesting" flow
+            // initialize flow rate in water loop, this is "requesting" flow
             Real64 mdot = this->ExhaustHX.WaterMassFlowRateDesign;
 
             PlantUtilities::SetComponentFlowRate(state, mdot, this->ExhaustHX.WaterInNode, this->ExhaustHX.WaterOutNode, this->CWPlantLoc);
@@ -3548,7 +3540,7 @@ namespace FuelCellElectricGenerator {
         this->Report.TairInlet = this->AirSup.TairIntoBlower;                                       // State point 1
         this->Report.TairIntoFCPM = this->AirSup.TairIntoFCPM;                                      // State point 4
         this->Report.NdotAir = this->FCPM.NdotAir;                                                  // air flow in kmol/sec
-        this->Report.TotAirInEnthalphy = this->FCPM.TotAirInEnthalphy;                              // State point 4
+        this->Report.TotAirInEnthalpy = this->FCPM.TotAirInEnthalpy;                                // State point 4
         this->Report.BlowerPower = this->AirSup.PairCompEl;                                         // electrical power used by air supply blower
         this->Report.BlowerEnergy = this->AirSup.PairCompEl * state.dataHVACGlobal->TimeStepSysSec; // electrical energy
         this->Report.BlowerSkinLoss = this->AirSup.QskinLoss;                                       // heat rate of losses by blower
@@ -3556,11 +3548,11 @@ namespace FuelCellElectricGenerator {
         this->Report.TfuelInlet = state.dataGenerator->FuelSupply(this->FuelSupNum).TfuelIntoCompress; // State point 2
         this->Report.TfuelIntoFCPM = state.dataGenerator->FuelSupply(this->FuelSupNum).TfuelIntoFCPM;  // TEmperature state point 5 [C]
         this->Report.NdotFuel = this->FCPM.NdotFuel;                                                   // fuel flow in kmol/sec
-        this->Report.TotFuelInEnthalpy = this->FCPM.TotFuelInEnthalphy;                                // enthalpy at state point 5 [W]
+        this->Report.TotFuelInEnthalpy = this->FCPM.TotFuelInEnthalpy;                                 // enthalpy at state point 5 [W]
         this->Report.FuelCompressPower = state.dataGenerator->FuelSupply(this->FuelSupNum).PfuelCompEl;
         // electrical power used by fuel supply compressor [W]
         this->Report.FuelCompressEnergy =
-            state.dataGenerator->FuelSupply(this->FuelSupNum).PfuelCompEl * state.dataHVACGlobal->TimeStepSys * Constant::SecInHour; // elect energy
+            state.dataGenerator->FuelSupply(this->FuelSupNum).PfuelCompEl * state.dataHVACGlobal->TimeStepSys * Constant::rSecsInHour; // elect energy
         this->Report.FuelCompressSkinLoss = state.dataGenerator->FuelSupply(this->FuelSupNum).QskinLoss;
         // heat rate of losses.by fuel supply compressor [W]
         this->Report.FuelEnergyLHV = this->FCPM.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupNum).LHV * 1000000.0 *
@@ -3569,7 +3561,7 @@ namespace FuelCellElectricGenerator {
             this->FCPM.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupNum).LHV * 1000000.0; // reporting: Fuel Energy used (W)
         this->Report.FuelEnergyHHV = this->FCPM.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupNum).HHV *
                                      state.dataGenerator->FuelSupply(this->FuelSupNum).KmolPerSecToKgPerSec * state.dataHVACGlobal->TimeStepSys *
-                                     Constant::SecInHour;
+                                     Constant::rSecsInHour;
 
         this->Report.FuelEnergyUseRateHHV = this->FCPM.NdotFuel * state.dataGenerator->FuelSupply(this->FuelSupNum).HHV *
                                             state.dataGenerator->FuelSupply(this->FuelSupNum).KmolPerSecToKgPerSec;
@@ -3583,9 +3575,9 @@ namespace FuelCellElectricGenerator {
         this->Report.WaterPumpEnergy = this->WaterSup.PwaterCompEl * state.dataHVACGlobal->TimeStepSysSec; // electrical energy
         this->Report.WaterIntoFCPMEnthalpy = this->FCPM.WaterInEnthalpy;
 
-        this->Report.TprodGas = this->FCPM.TprodGasLeavingFCPM;      // temperature at State point 7
-        this->Report.EnthalProdGas = this->FCPM.TotProdGasEnthalphy; // enthalpy at State point 7
-        this->Report.NdotProdGas = this->FCPM.NdotProdGas;           // flow rate at point 7 [kmol/sec]
+        this->Report.TprodGas = this->FCPM.TprodGasLeavingFCPM;     // temperature at State point 7
+        this->Report.EnthalProdGas = this->FCPM.TotProdGasEnthalpy; // enthalpy at State point 7
+        this->Report.NdotProdGas = this->FCPM.NdotProdGas;          // flow rate at point 7 [kmol/sec]
         this->Report.NdotProdAr = this->FCPM.ConstitMolalFract(5) * this->FCPM.NdotProdGas;
         this->Report.NdotProdCO2 = this->FCPM.ConstitMolalFract(1) * this->FCPM.NdotProdGas;
         this->Report.NdotProdH2O = this->FCPM.ConstitMolalFract(4) * this->FCPM.NdotProdGas;

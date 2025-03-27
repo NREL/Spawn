@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -95,12 +95,12 @@ namespace Material {
             Tau2 = this->deltaTempMeltingHigh;
             if (updatedTempTDT < TempLowPCM) {
                 phaseChangeState = Phase::Crystallized;
-            } else if (updatedTempTDT >= TempLowPCM && updatedTempTDT <= TempHighPCM) {
+            } else if (updatedTempTDT <= TempHighPCM) {
                 phaseChangeState = Phase::Melting;
                 if (prevPhaseChangeState == Phase::Freezing || prevPhaseChangeState == Phase::Transition) {
                     phaseChangeState = Phase::Transition;
                 }
-            } else if (updatedTempTDT > TempHighPCM) {
+            } else {
                 phaseChangeState = Phase::Liquid;
             }
         } else { // phaseChangeDeltaT > 0
@@ -109,12 +109,12 @@ namespace Material {
             Tau2 = this->deltaTempFreezingHigh;
             if (updatedTempTDT < TempLowPCF) {
                 phaseChangeState = Phase::Crystallized;
-            } else if (updatedTempTDT >= TempLowPCF && updatedTempTDT <= TempHighPCF) {
+            } else if (updatedTempTDT <= TempHighPCF) {
                 phaseChangeState = Phase::Freezing;
                 if (prevPhaseChangeState == Phase::Melting || prevPhaseChangeState == Phase::Transition) {
                     phaseChangeState = Phase::Transition;
                 }
-            } else if (updatedTempTDT > TempHighPCF) {
+            } else {
                 phaseChangeState = Phase::Liquid;
             }
         }
@@ -266,13 +266,11 @@ namespace Material {
             return (Cp1 + DEta1);
         } else if (T == criticalTemperature) {
             return (EnthalpyNew - EnthalpyOld) / (temperatureCurrent - temperaturePrev);
-        } else if (T > criticalTemperature) {
+        } else {
             Real64 DEta2 = (this->totalLatentHeat * (T - criticalTemperature) * exp(-2 * std::abs(T - criticalTemperature) / tau2)) /
                            (tau2 * std::abs(T - criticalTemperature));
             Real64 Cp2 = this->specificHeatLiquid;
             return Cp2 + DEta2;
-        } else {
-            return 0;
         }
     }
 
@@ -352,26 +350,25 @@ namespace Material {
 
             auto *mat = s_mat->materials(matNum);
             if (mat->group != Group::Regular) {
-                ShowSevereCustomMessage(state, eoh, format("Material {} is not a Regular material.", mat->Name));
+                ShowSevereCustom(state, eoh, format("Material {} is not a Regular material.", mat->Name));
                 ErrorsFound = true;
                 continue;
             }
 
             if (mat->hasPCM) {
-                ShowSevereCustomMessage(
-                    state, eoh, format("Material {} already has {} properties defined.", mat->Name, s_ipsc->cCurrentModuleObject));
+                ShowSevereCustom(state, eoh, format("Material {} already has {} properties defined.", mat->Name, s_ipsc->cCurrentModuleObject));
                 ErrorsFound = true;
                 continue;
             }
 
             if (mat->hasEMPD) {
-                ShowSevereCustomMessage(state, eoh, format("Material {} already has EMPD properties defined.", mat->Name));
+                ShowSevereCustom(state, eoh, format("Material {} already has EMPD properties defined.", mat->Name));
                 ErrorsFound = true;
                 continue;
             }
 
             if (mat->hasHAMT) {
-                ShowSevereCustomMessage(state, eoh, format("Material {} already has HAMT properties defined.", mat->Name));
+                ShowSevereCustom(state, eoh, format("Material {} already has HAMT properties defined.", mat->Name));
                 ErrorsFound = true;
                 continue;
             }

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -95,6 +95,7 @@ TEST_F(EnergyPlusFixture, HighTempRadiantSystemTest_GetHighTempRadiantSystem)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataHeatBal->Zone.allocate(1);
     state->dataHeatBal->Zone(1).Name = "ZONE1";
@@ -109,8 +110,8 @@ TEST_F(EnergyPlusFixture, HighTempRadiantSystemTest_GetHighTempRadiantSystem)
     GetHighTempRadiantSystem(*state, ErrorsFound);
 
     std::string const error_string01 =
-        delimited_string({"   ** Severe  ** Heating Setpoint Temperature Schedule Name not found: RADIANT HEATING SETPOINTS",
-                          "   **   ~~~   ** Occurs for ZoneHVAC:HighTemperatureRadiant = ZONERADHEATER",
+        delimited_string({"   ** Severe  ** GetHighTempRadiantSystem: ZoneHVAC:HighTemperatureRadiant = ZONERADHEATER",
+                          "   **   ~~~   ** Heating Setpoint Temperature Schedule Name = RADIANT HEATING SETPOINTS, item not found.",
                           "   ** Severe  ** Fraction of radiation distributed to surfaces and people sums up to less than 1 for ZONERADHEATER",
                           "   **   ~~~   ** This would result in some of the radiant energy delivered by the high temp radiant heater being lost.",
                           "   **   ~~~   ** The sum of all radiation fractions to surfaces = 0.80000",
@@ -129,6 +130,7 @@ TEST_F(EnergyPlusFixture, HighTempRadiantSystemTest_GetHighTempRadiantSystem)
 
 TEST_F(EnergyPlusFixture, HighTempRadiantSystemTest_SizeHighTempRadiantSystemScalableFlagSetTest)
 {
+    state->init_state(*state);
     int RadSysNum;
     int SizingTypesNum;
 

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -142,6 +142,8 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
     // This subroutine obtains input data for EarthTube units and
     // stores it in the EarthTube data structure.
 
+    static constexpr std::string_view routineName = "GetEarthTube";
+
     // SUBROUTINE PARAMETER DEFINITIONS:
     Real64 constexpr EarthTubeTempLimit(100.0); // degrees Celsius
 
@@ -157,228 +159,210 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
     // Following used for reporting
     state.dataEarthTube->ZnRptET.allocate(state.dataGlobal->NumOfZones);
 
-    std::string_view cCurrentModuleObject = "ZoneEarthtube:Parameters";
-    int totEarthTubePars = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
+    auto &s_ipsc = state.dataIPShortCut;
+
+    s_ipsc->cCurrentModuleObject = "ZoneEarthtube:Parameters";
+
+    int totEarthTubePars = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
     state.dataEarthTube->EarthTubePars.allocate(totEarthTubePars);
 
     for (Loop = 1; Loop <= totEarthTubePars; ++Loop) {
         auto &thisEarthTubePars = state.dataEarthTube->EarthTubePars(Loop);
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 cCurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  Loop,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlpha,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNumber,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
 
-        thisEarthTubePars.nameParameters = state.dataIPShortCut->cAlphaArgs(1);
+        thisEarthTubePars.nameParameters = s_ipsc->cAlphaArgs(1);
         // Check to make sure name is unique
         for (int otherParams = 1; otherParams < Loop; ++otherParams) {
             if (Util::SameString(thisEarthTubePars.nameParameters, state.dataEarthTube->EarthTubePars(otherParams).nameParameters)) {
-                ShowSevereError(state,
-                                format("{}: {} = {} is not a unique name.",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-                ShowContinueError(state, format("Check the other {} names for a duplicate.", cCurrentModuleObject));
+                ShowSevereError(
+                    state,
+                    format("{}: {} = {} is not a unique name.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaFieldNames(1), s_ipsc->cAlphaArgs(1)));
+                ShowContinueError(state, format("Check the other {} names for a duplicate.", s_ipsc->cCurrentModuleObject));
                 ErrorsFound = true;
             }
         }
 
-        thisEarthTubePars.numNodesAbove = state.dataIPShortCut->rNumericArgs(1);
-        thisEarthTubePars.numNodesBelow = state.dataIPShortCut->rNumericArgs(2);
-        thisEarthTubePars.dimBoundAbove = state.dataIPShortCut->rNumericArgs(3);
-        thisEarthTubePars.dimBoundBelow = state.dataIPShortCut->rNumericArgs(4);
-        thisEarthTubePars.width = state.dataIPShortCut->rNumericArgs(5);
+        thisEarthTubePars.numNodesAbove = s_ipsc->rNumericArgs(1);
+        thisEarthTubePars.numNodesBelow = s_ipsc->rNumericArgs(2);
+        thisEarthTubePars.dimBoundAbove = s_ipsc->rNumericArgs(3);
+        thisEarthTubePars.dimBoundBelow = s_ipsc->rNumericArgs(4);
+        thisEarthTubePars.width = s_ipsc->rNumericArgs(5);
     }
 
-    cCurrentModuleObject = "ZoneEarthtube";
-    totEarthTube = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
+    s_ipsc->cCurrentModuleObject = "ZoneEarthtube";
+    totEarthTube = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
     state.dataEarthTube->EarthTubeSys.allocate(totEarthTube);
 
     for (Loop = 1; Loop <= totEarthTube; ++Loop) {
         auto &thisEarthTube = state.dataEarthTube->EarthTubeSys(Loop);
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 cCurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  Loop,
-                                                                 state.dataIPShortCut->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumAlpha,
-                                                                 state.dataIPShortCut->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNumber,
                                                                  IOStat,
-                                                                 state.dataIPShortCut->lNumericFieldBlanks,
-                                                                 state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                 state.dataIPShortCut->cAlphaFieldNames,
-                                                                 state.dataIPShortCut->cNumericFieldNames);
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
+
+        ErrorObjectHeader eoh{routineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)};
 
         // First Alpha is Zone Name
-        thisEarthTube.ZonePtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(1), state.dataHeatBal->Zone);
+        thisEarthTube.ZonePtr = Util::FindItemInList(s_ipsc->cAlphaArgs(1), state.dataHeatBal->Zone);
         if (thisEarthTube.ZonePtr == 0) {
-            ShowSevereError(
-                state,
-                format("{}: {} not found={}", cCurrentModuleObject, state.dataIPShortCut->cAlphaFieldNames(1), state.dataIPShortCut->cAlphaArgs(1)));
+            ShowSevereError(state, format("{}: {} not found={}", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaFieldNames(1), s_ipsc->cAlphaArgs(1)));
             ErrorsFound = true;
         }
 
         // Second Alpha is Schedule Name
-        thisEarthTube.SchedPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(2));
-        if (thisEarthTube.SchedPtr == 0) {
-            if (state.dataIPShortCut->lAlphaFieldBlanks(2)) {
-                ShowSevereError(state,
-                                format("{}: {} is required, missing for {}={}",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(2),
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-            } else {
-                ShowSevereError(state,
-                                format("{}: invalid {} entered={} for {}={}",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(2),
-                                       state.dataIPShortCut->cAlphaArgs(2),
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1)));
-            }
+        if (s_ipsc->lAlphaFieldBlanks(2)) {
+            ShowSevereEmptyField(state, eoh, s_ipsc->cAlphaFieldNames(2));
+            ErrorsFound = true;
+        } else if ((thisEarthTube.availSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaArgs(2));
             ErrorsFound = true;
         }
 
         // Overall parameters and their limits
-        thisEarthTube.DesignLevel = state.dataIPShortCut->rNumericArgs(1);
+        thisEarthTube.DesignLevel = s_ipsc->rNumericArgs(1);
 
-        thisEarthTube.MinTemperature = state.dataIPShortCut->rNumericArgs(2);
+        thisEarthTube.MinTemperature = s_ipsc->rNumericArgs(2);
         if ((thisEarthTube.MinTemperature < -EarthTubeTempLimit) || (thisEarthTube.MinTemperature > EarthTubeTempLimit)) {
             ShowSevereError(state,
                             format("{}: {}={} must have a minimum temperature between -{:.0R}C and {:.0R}C",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
                                    EarthTubeTempLimit,
                                    EarthTubeTempLimit));
             ShowContinueError(state, format("Entered value={:.0R}", thisEarthTube.MinTemperature));
             ErrorsFound = true;
         }
 
-        thisEarthTube.MaxTemperature = state.dataIPShortCut->rNumericArgs(3);
+        thisEarthTube.MaxTemperature = s_ipsc->rNumericArgs(3);
         if ((thisEarthTube.MaxTemperature < -EarthTubeTempLimit) || (thisEarthTube.MaxTemperature > EarthTubeTempLimit)) {
             ShowSevereError(state,
                             format("{}: {}={} must have a maximum temperature between -{:.0R}C and {:.0R}C",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
                                    EarthTubeTempLimit,
                                    EarthTubeTempLimit));
             ShowContinueError(state, format("Entered value={:.0R}", thisEarthTube.MaxTemperature));
             ErrorsFound = true;
         }
 
-        thisEarthTube.DelTemperature = state.dataIPShortCut->rNumericArgs(4); //  3/12/03  Negative del temp now allowed COP
+        thisEarthTube.DelTemperature = s_ipsc->rNumericArgs(4); //  3/12/03  Negative del temp now allowed COP
 
         // if we have a blank, then just set it to the Natural type, otherwise, search on it
-        if (state.dataIPShortCut->cAlphaArgs(3).empty()) {
+        if (s_ipsc->cAlphaArgs(3).empty()) {
             thisEarthTube.FanType = Ventilation::Natural;
         } else {
-            thisEarthTube.FanType = static_cast<Ventilation>(getEnumValue(ventilationNamesUC, state.dataIPShortCut->cAlphaArgs(3)));
+            thisEarthTube.FanType = static_cast<Ventilation>(getEnumValue(ventilationNamesUC, s_ipsc->cAlphaArgs(3)));
             if (thisEarthTube.FanType == Ventilation::Invalid) {
-                ShowSevereError(state,
-                                format("{}: {}={}, {} invalid={}",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cAlphaFieldNames(3),
-                                       state.dataIPShortCut->cAlphaArgs(3)));
+                ShowSevereInvalidKey(state, eoh, s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3));
                 ErrorsFound = true;
             }
         }
 
-        thisEarthTube.FanPressure = state.dataIPShortCut->rNumericArgs(5);
+        thisEarthTube.FanPressure = s_ipsc->rNumericArgs(5);
         if (thisEarthTube.FanPressure < 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(5),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(5),
                                    thisEarthTube.FanPressure));
             ErrorsFound = true;
         }
 
-        thisEarthTube.FanEfficiency = state.dataIPShortCut->rNumericArgs(6);
+        thisEarthTube.FanEfficiency = s_ipsc->rNumericArgs(6);
         if ((thisEarthTube.FanEfficiency <= 0.0) || (thisEarthTube.FanEfficiency > 1.0)) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be greater than zero and less than or equal to one, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(6),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(6),
                                    thisEarthTube.FanEfficiency));
             ErrorsFound = true;
         }
 
-        thisEarthTube.r1 = state.dataIPShortCut->rNumericArgs(7);
+        thisEarthTube.r1 = s_ipsc->rNumericArgs(7);
         if (thisEarthTube.r1 <= 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(7),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(7),
                                    thisEarthTube.r1));
             ErrorsFound = true;
         }
 
-        thisEarthTube.r2 = state.dataIPShortCut->rNumericArgs(8);
+        thisEarthTube.r2 = s_ipsc->rNumericArgs(8);
         if (thisEarthTube.r2 <= 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(8),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(8),
                                    thisEarthTube.r2));
             ErrorsFound = true;
         }
 
         thisEarthTube.r3 = 2.0 * thisEarthTube.r1;
 
-        thisEarthTube.PipeLength = state.dataIPShortCut->rNumericArgs(9);
+        thisEarthTube.PipeLength = s_ipsc->rNumericArgs(9);
         if (thisEarthTube.PipeLength <= 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(9),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(9),
                                    thisEarthTube.PipeLength));
             ErrorsFound = true;
         }
 
-        thisEarthTube.PipeThermCond = state.dataIPShortCut->rNumericArgs(10);
+        thisEarthTube.PipeThermCond = s_ipsc->rNumericArgs(10);
         if (thisEarthTube.PipeThermCond <= 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(10),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(10),
                                    thisEarthTube.PipeThermCond));
             ErrorsFound = true;
         }
 
-        thisEarthTube.z = state.dataIPShortCut->rNumericArgs(11);
+        thisEarthTube.z = s_ipsc->rNumericArgs(11);
         if (thisEarthTube.z <= 0.0) {
             ShowSevereError(state,
                             format("{}: {}={}, {} must be positive, entered value={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(11),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(11),
                                    thisEarthTube.z));
             ErrorsFound = true;
         }
@@ -387,37 +371,31 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
             // code in initEarthTubeVertical must be modified
             ShowSevereError(state,
                             format("{}: {}={}, {} must be greater than 3*{} + {} entered value={:.2R} ref sum={:.2R}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cNumericFieldNames(11),
-                                   state.dataIPShortCut->cNumericFieldNames(7),
-                                   state.dataIPShortCut->cNumericFieldNames(8),
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1),
+                                   s_ipsc->cNumericFieldNames(11),
+                                   s_ipsc->cNumericFieldNames(7),
+                                   s_ipsc->cNumericFieldNames(8),
                                    thisEarthTube.z,
                                    thisEarthTube.r1 + thisEarthTube.r2 + thisEarthTube.r3));
             ErrorsFound = true;
         }
 
-        SoilType soilType = static_cast<SoilType>(getEnumValue(soilTypeNamesUC, state.dataIPShortCut->cAlphaArgs(4)));
+        SoilType soilType = static_cast<SoilType>(getEnumValue(soilTypeNamesUC, s_ipsc->cAlphaArgs(4)));
         constexpr std::array<Real64, static_cast<int>(SoilType::Num)> thermalDiffusivity = {0.0781056, 0.055728, 0.0445824, 0.024192};
         constexpr std::array<Real64, static_cast<int>(SoilType::Num)> thermalConductivity = {2.42, 1.3, 0.865, 0.346};
         if (soilType == SoilType::Invalid) {
-            ShowSevereError(state,
-                            format("{}: {}={}, {} invalid={}",
-                                   cCurrentModuleObject,
-                                   state.dataIPShortCut->cAlphaFieldNames(1),
-                                   state.dataIPShortCut->cAlphaArgs(1),
-                                   state.dataIPShortCut->cAlphaFieldNames(4),
-                                   state.dataIPShortCut->cAlphaArgs(4)));
+            ShowSevereInvalidKey(state, eoh, s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4));
             ErrorsFound = true;
         } else {
             thisEarthTube.SoilThermDiff = thermalDiffusivity[static_cast<int>(soilType)];
             thisEarthTube.SoilThermCond = thermalConductivity[static_cast<int>(soilType)];
         }
 
-        thisEarthTube.AverSoilSurTemp = state.dataIPShortCut->rNumericArgs(12);
-        thisEarthTube.ApmlSoilSurTemp = state.dataIPShortCut->rNumericArgs(13);
-        thisEarthTube.SoilSurPhaseConst = int(state.dataIPShortCut->rNumericArgs(14));
+        thisEarthTube.AverSoilSurTemp = s_ipsc->rNumericArgs(12);
+        thisEarthTube.ApmlSoilSurTemp = s_ipsc->rNumericArgs(13);
+        thisEarthTube.SoilSurPhaseConst = int(s_ipsc->rNumericArgs(14));
 
         // Override any user input for cases where natural ventilation is being used
         if (thisEarthTube.FanType == Ventilation::Natural) {
@@ -425,25 +403,19 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
             thisEarthTube.FanEfficiency = 1.0;
         }
 
-        thisEarthTube.ConstantTermCoef = state.dataIPShortCut->rNumericArgs(15);
-        thisEarthTube.TemperatureTermCoef = state.dataIPShortCut->rNumericArgs(16);
-        thisEarthTube.VelocityTermCoef = state.dataIPShortCut->rNumericArgs(17);
-        thisEarthTube.VelocitySQTermCoef = state.dataIPShortCut->rNumericArgs(18);
+        thisEarthTube.ConstantTermCoef = s_ipsc->rNumericArgs(15);
+        thisEarthTube.TemperatureTermCoef = s_ipsc->rNumericArgs(16);
+        thisEarthTube.VelocityTermCoef = s_ipsc->rNumericArgs(17);
+        thisEarthTube.VelocitySQTermCoef = s_ipsc->rNumericArgs(18);
 
         // cAlphaArgs(5)--Model type: basic or vertical
         // only process cAlphaArgs(6) if cAlphaArgs(5) is "Vertical"
-        if (state.dataIPShortCut->cAlphaArgs(5).empty()) {
+        if (s_ipsc->cAlphaArgs(5).empty()) {
             thisEarthTube.ModelType = EarthTubeModelType::Basic;
         } else {
-            thisEarthTube.ModelType = static_cast<EarthTubeModelType>(getEnumValue(solutionTypeNamesUC, state.dataIPShortCut->cAlphaArgs(5)));
+            thisEarthTube.ModelType = static_cast<EarthTubeModelType>(getEnumValue(solutionTypeNamesUC, s_ipsc->cAlphaArgs(5)));
             if (thisEarthTube.ModelType == EarthTubeModelType::Invalid) {
-                ShowSevereError(state,
-                                format("{}: {}={}, {} invalid={}",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cAlphaFieldNames(5),
-                                       state.dataIPShortCut->cAlphaArgs(5)));
+                ShowSevereInvalidKey(state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5));
                 ErrorsFound = true;
             }
         }
@@ -453,19 +425,13 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
             // Process the parameters based on the name (link via index)
             thisEarthTube.vertParametersPtr = 0;
             for (int parIndex = 1; parIndex <= totEarthTubePars; ++parIndex) {
-                if (Util::SameString(state.dataIPShortCut->cAlphaArgs(6), state.dataEarthTube->EarthTubePars(parIndex).nameParameters)) {
+                if (Util::SameString(s_ipsc->cAlphaArgs(6), state.dataEarthTube->EarthTubePars(parIndex).nameParameters)) {
                     thisEarthTube.vertParametersPtr = parIndex;
                     break;
                 }
             }
             if (thisEarthTube.vertParametersPtr == 0) { // didn't find a match
-                ShowSevereError(state,
-                                format("{}: {}={}, Parameter Object {} was not found in the input file.",
-                                       cCurrentModuleObject,
-                                       state.dataIPShortCut->cAlphaFieldNames(1),
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cAlphaArgs(6)));
-                ShowContinueError(state, "Check this name and make sure one of the earth tube parameters objects matches it.");
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6));
                 ErrorsFound = true;
             }
         }
@@ -601,10 +567,10 @@ void GetEarthTube(EnergyPlusData &state, bool &ErrorsFound) // If errors found i
         }
     }
 
-    CheckEarthTubesInZones(state, state.dataIPShortCut->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
+    CheckEarthTubesInZones(state, s_ipsc->cAlphaArgs(1), s_ipsc->cCurrentModuleObject, ErrorsFound);
 
     if (ErrorsFound) {
-        ShowFatalError(state, format("{}: Errors getting input.  Program terminates.", cCurrentModuleObject));
+        ShowFatalError(state, format("{}: Errors getting input.  Program terminates.", s_ipsc->cCurrentModuleObject));
     }
 }
 
@@ -654,7 +620,7 @@ void initEarthTubeVertical(EnergyPlusData &state)
             Real64 thickBottom = thickBase * thisEarthTubeParams.dimBoundBelow / float(thisEarthTubeParams.numNodesBelow);
             Real64 thickEarthTube = 4.0 * thisEarthTube.r1;
             Real64 deltat = state.dataGlobal->TimeStepZone;
-            Real64 thermDiff = thisEarthTube.SoilThermDiff / Constant::HoursInDay; // convert to "per hour" from "per day"
+            Real64 thermDiff = thisEarthTube.SoilThermDiff / Constant::rHoursInDay; // convert to "per hour" from "per day"
 
             // Node equations determine the _Coeff terms--see Engineering Referenve for details on these equation types
             // Note that node numbers are shifted for c++ arrays that go from 0 to numNodes-1.
@@ -874,7 +840,7 @@ void CalcEarthTube(EnergyPlusData &state)
         if (tempShutDown) {
             EVF = 0.0;
         } else {
-            EVF = thisEarthTube.DesignLevel * ScheduleManager::GetCurrentScheduleValue(state, thisEarthTube.SchedPtr);
+            EVF = thisEarthTube.DesignLevel * thisEarthTube.availSched->getCurrentVal();
         }
         thisZoneHB.MCPE =
             EVF * AirDensity * AirSpecHeat *

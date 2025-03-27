@@ -109,7 +109,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,24.2;
+  Version,25.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -2257,36 +2257,31 @@
     SPACE1-1 Contaminant Controller,  !- Name
     SPACE1-1,                !- Zone Name
     HVACTemplate-Always 1,   !- Carbon Dioxide Control Availability Schedule Name
-    Zone Setpoint CO2 Concentration,  !- Carbon Dioxide Setpoint Schedule Name
-    Zone Minimum CO2 Concentration;  !- Minimum Carbon Dioxide Concentration Schedule Name
+    Zone Setpoint CO2 Concentration;  !- Carbon Dioxide Setpoint Schedule Name
 
   ZoneControl:ContaminantController,
     SPACE2-1 Contaminant Controller,  !- Name
     SPACE2-1,                !- Zone Name
     HVACTemplate-Always 1,   !- Carbon Dioxide Control Availability Schedule Name
-    Zone Setpoint CO2 Concentration,  !- Carbon Dioxide Setpoint Schedule Name
-    Zone Minimum CO2 Concentration;  !- Minimum Carbon Dioxide Concentration Schedule Name
+    Zone Setpoint CO2 Concentration;  !- Carbon Dioxide Setpoint Schedule Name
 
   ZoneControl:ContaminantController,
     SPACE3-1 Contaminant Controller,  !- Name
     SPACE3-1,                !- Zone Name
     HVACTemplate-Always 1,   !- Carbon Dioxide Control Availability Schedule Name
-    Zone Setpoint CO2 Concentration,  !- Carbon Dioxide Setpoint Schedule Name
-    Zone Minimum CO2 Concentration;  !- Minimum Carbon Dioxide Concentration Schedule Name
+    Zone Setpoint CO2 Concentration;  !- Carbon Dioxide Setpoint Schedule Name
 
   ZoneControl:ContaminantController,
     SPACE4-1 Contaminant Controller,  !- Name
     SPACE4-1,                !- Zone Name
     HVACTemplate-Always 1,   !- Carbon Dioxide Control Availability Schedule Name
-    Zone Setpoint CO2 Concentration,  !- Carbon Dioxide Setpoint Schedule Name
-    Zone Minimum CO2 Concentration;  !- Minimum Carbon Dioxide Concentration Schedule Name
+    Zone Setpoint CO2 Concentration;  !- Carbon Dioxide Setpoint Schedule Name
 
   ZoneControl:ContaminantController,
     SPACE5-1 Contaminant Controller,  !- Name
     SPACE5-1,                !- Zone Name
     HVACTemplate-Always 1,   !- Carbon Dioxide Control Availability Schedule Name
-    Zone Setpoint CO2 Concentration,  !- Carbon Dioxide Setpoint Schedule Name
-    Zone Minimum CO2 Concentration;  !- Minimum Carbon Dioxide Concentration Schedule Name
+    Zone Setpoint CO2 Concentration;  !- Carbon Dioxide Setpoint Schedule Name
 
 !-   ===========  ALL OBJECTS IN CLASS: THERMOSTATSETPOINT:DUALSETPOINT ===========
 

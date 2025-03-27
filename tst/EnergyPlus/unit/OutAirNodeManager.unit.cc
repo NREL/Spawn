@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,7 +67,6 @@ TEST_F(EnergyPlusFixture, OutAirNodeManager_OATdbTwbOverrideTest)
     state->dataOutAirNodeMgr->NumOutsideAirNodes = 3;
     state->dataOutAirNodeMgr->OutsideAirNodeList.allocate(3);
     state->dataLoopNodes->Node.allocate(3);
-    state->dataScheduleMgr->Schedule.allocate(2);
 
     state->dataEnvrn->OutDryBulbTemp = 25.0;
     state->dataEnvrn->OutWetBulbTemp = 15.0;
@@ -77,13 +76,14 @@ TEST_F(EnergyPlusFixture, OutAirNodeManager_OATdbTwbOverrideTest)
     state->dataEnvrn->OutHumRat =
         Psychrometrics::PsyWFnTdbTwbPb(*state, state->dataEnvrn->OutDryBulbTemp, state->dataEnvrn->OutWetBulbTemp, state->dataEnvrn->OutBaroPress);
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 24.0;
     state->dataOutAirNodeMgr->OutsideAirNodeList(1) = 1;
     state->dataOutAirNodeMgr->OutsideAirNodeList(2) = 2;
     state->dataOutAirNodeMgr->OutsideAirNodeList(3) = 3;
     // Scheduled value
     state->dataLoopNodes->Node(1).IsLocalNode = true;
-    state->dataLoopNodes->Node(1).OutAirDryBulbSchedNum = 1;
+    state->dataLoopNodes->Node(1).outAirDryBulbSched = Sched::AddScheduleConstant(*state, "Out Air Dry Bulb");
+    state->dataLoopNodes->Node(1).outAirDryBulbSched->currentVal = 24.0;
+
     state->dataLoopNodes->Node(1).OutAirDryBulb = state->dataEnvrn->OutDryBulbTemp;
     state->dataLoopNodes->Node(1).OutAirWetBulb = state->dataEnvrn->OutWetBulbTemp;
     // EMS override value

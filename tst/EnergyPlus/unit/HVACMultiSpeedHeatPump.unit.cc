@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -84,7 +84,6 @@ using namespace EnergyPlus::DataZoneEnergyDemands;
 using namespace EnergyPlus::HeatBalanceManager;
 using namespace EnergyPlus::HVACMultiSpeedHeatPump;
 using namespace EnergyPlus::MixedAir;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::SimAirServingZones;
 using namespace EnergyPlus::SingleDuct;
 using namespace EnergyPlus::SplitterComponent;
@@ -1259,9 +1258,9 @@ TEST_F(EnergyPlusFixture, HVACMultiSpeedHeatPump_ReportVariableInitTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);                            // zones are specified in the idf snippet
@@ -1325,14 +1324,15 @@ TEST_F(EnergyPlusFixture, HVACMultiSpeedHeatPump_ReportVariableInitTest)
     state->dataHVACMultiSpdHP->MSHeatPump(2).TotCoolEnergyRate = 1000.0;
     state->dataHVACMultiSpdHP->MSHeatPump(1).FlowFraction = 1.0;
     state->dataHVACMultiSpdHP->MSHeatPump(2).FlowFraction = 1.0;
-    // because sizing isn't occuring, we must set these
+    // because sizing isn't occurring, we must set these
     for (auto &dxCoil : state->dataDXCoils->DXCoil) {
         for (int i = 1; i <= dxCoil.NumOfSpeeds; ++i) {
             dxCoil.MSRatedAirMassFlowRate(i) = dxCoil.MSRatedAirVolFlowRate(i) * 1.2;
         }
     }
-    state->dataScheduleMgr->Schedule(17).CurrentValue = 1.0;
-    state->dataScheduleMgr->Schedule(9).CurrentValue = 1.0;
+
+    Sched::GetSchedule(*state, "AC-24SCHED")->currentVal = 1.0;
+    Sched::GetSchedule(*state, "AC-25 SCHED")->currentVal = 1.0;
     state->dataEnvrn->StdRhoAir = 1.2;
     state->dataEnvrn->OutDryBulbTemp = 35.0;
     state->dataEnvrn->OutHumRat = 0.012;
@@ -1472,7 +1472,7 @@ TEST_F(EnergyPlusFixture, HVACMultiSpeedHeatPump_HeatRecoveryTest)
 
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
 
     state->dataLoopNodes->Node(HeatRecInNode).MassFlowRate = 0.0; // test heat recovery result with 0 water flow rate
     HVACMultiSpeedHeatPump::MSHPHeatRecovery(*state, 1);
@@ -2138,9 +2138,9 @@ TEST_F(EnergyPlusFixture, HVACMSHP_UnitarySystemElectricityRateTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);                            // zones are specified in the idf snippet
@@ -2193,7 +2193,7 @@ TEST_F(EnergyPlusFixture, HVACMSHP_UnitarySystemElectricityRateTest)
     auto &dxClgCoilMain = state->dataDXCoils->DXCoil(1);
     auto &dxHtgCoilMain = state->dataDXCoils->DXCoil(2);
     auto &elecHtgCoilSupp = state->dataHeatingCoils->HeatingCoil(msHeatPump.SuppHeatCoilNum);
-    state->dataScheduleMgr->Schedule(11).CurrentValue = 1.0;
+    Sched::GetSchedule(*state, "AC-24SCHED")->currentVal = 1.0;
     state->dataEnvrn->StdRhoAir = 1.2;
     supplyFan->rhoAirStdInit = state->dataEnvrn->StdRhoAir;
     state->dataGlobal->DoCoilDirectSolutions = false;
@@ -2218,7 +2218,7 @@ TEST_F(EnergyPlusFixture, HVACMSHP_UnitarySystemElectricityRateTest)
     zoneAirNode.Temp = 21.1;
     zoneAirNode.HumRat = 0.0035;
     zoneAirNode.Enthalpy = Psychrometrics::PsyHFnTdbW(zoneAirNode.Temp, zoneAirNode.HumRat);
-    // set maixed air node conditions
+    // set mixed air node conditions
     auto &mixedAirNode =
         state->dataLoopNodes->Node(Util::FindItemInList("AC-24 SF INLET AIR NODE", state->dataLoopNodes->NodeID, state->dataLoopNodes->NumOfNodes));
     mixedAirNode.Temp = 10.0;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,7 +50,7 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/string.functions.hh>
 
 // EnergyPlus Headers
@@ -112,7 +112,6 @@ namespace EnergyPlus::PurchasedAirManager {
 // humidity ratio are adjusted to meet the zone load.
 
 // Using/Aliasing
-using namespace ScheduleManager;
 using Psychrometrics::PsyCpAirFnW;
 using Psychrometrics::PsyHFnTdbW;
 using Psychrometrics::PsyRhoAirFnPbTdbW;
@@ -214,7 +213,9 @@ void GetPurchasedAir(EnergyPlusData &state)
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     static constexpr std::string_view RoutineName("GetPurchasedAir: "); // include trailing blank space
-    bool ErrorsFound(false);                                            // If errors detected in input
+    static constexpr std::string_view routineName = "GetPurchasedAir";
+
+    bool ErrorsFound(false); // If errors detected in input
     auto &cCurrentModuleObject = state.dataIPShortCut->cCurrentModuleObject;
     cCurrentModuleObject = "ZoneHVAC:IdealLoadsAirSystem";
 
@@ -248,6 +249,8 @@ void GetPurchasedAir(EnergyPlusData &state)
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
 
+            ErrorObjectHeader eoh{routineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)};
+
             state.dataPurchasedAirMgr->PurchAirNumericFields(PurchAirNum).FieldNames.allocate(NumNums);
             state.dataPurchasedAirMgr->PurchAirNumericFields(PurchAirNum).FieldNames = "";
             state.dataPurchasedAirMgr->PurchAirNumericFields(PurchAirNum).FieldNames = state.dataIPShortCut->cNumericFieldNames;
@@ -255,18 +258,11 @@ void GetPurchasedAir(EnergyPlusData &state)
 
             PurchAir(PurchAirNum).Name = state.dataIPShortCut->cAlphaArgs(1);
             // get optional  availability schedule
-            PurchAir(PurchAirNum).AvailSched = state.dataIPShortCut->cAlphaArgs(2);
             if (state.dataIPShortCut->lAlphaFieldBlanks(2)) {
-                PurchAir(PurchAirNum).AvailSchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                PurchAir(PurchAirNum).AvailSchedPtr = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(2));
-                if (PurchAir(PurchAirNum).AvailSchedPtr == 0) {
-                    ShowSevereError(state, format("{}{}=\"{} invalid data", RoutineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(
-                        state,
-                        format("Invalid-not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(2), state.dataIPShortCut->cAlphaArgs(2)));
-                    ErrorsFound = true;
-                }
+                PurchAir(PurchAirNum).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((PurchAir(PurchAirNum).availSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(2), state.dataIPShortCut->cAlphaArgs(2));
+                ErrorsFound = true;
             }
             // Purchased air supply air node is an outlet node
             PurchAir(PurchAirNum).ZoneSupplyAirNodeNum = GetOnlySingleNode(state,
@@ -401,33 +397,21 @@ void GetPurchasedAir(EnergyPlusData &state)
             PurchAir(PurchAirNum).MaxCoolTotCap = state.dataIPShortCut->rNumericArgs(8);
 
             // get optional heating availability schedule
-            PurchAir(PurchAirNum).HeatSched = state.dataIPShortCut->cAlphaArgs(8);
             if (state.dataIPShortCut->lAlphaFieldBlanks(8)) {
-                PurchAir(PurchAirNum).HeatSchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                PurchAir(PurchAirNum).HeatSchedPtr = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(8));
-                if (PurchAir(PurchAirNum).HeatSchedPtr == 0) {
-                    ShowSevereError(state, format("{}{}=\"{} invalid data", RoutineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(
-                        state,
-                        format("Invalid-not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(8), state.dataIPShortCut->cAlphaArgs(8)));
-                    ErrorsFound = true;
-                }
+                PurchAir(PurchAirNum).heatAvailSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((PurchAir(PurchAirNum).heatAvailSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(8))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(8), state.dataIPShortCut->cAlphaArgs(8));
+                ErrorsFound = true;
             }
+
             // get optional cooling availability schedule
-            PurchAir(PurchAirNum).CoolSched = state.dataIPShortCut->cAlphaArgs(9);
             if (state.dataIPShortCut->lAlphaFieldBlanks(9)) {
-                PurchAir(PurchAirNum).CoolSchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                PurchAir(PurchAirNum).CoolSchedPtr = GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(9));
-                if (PurchAir(PurchAirNum).CoolSchedPtr == 0) {
-                    ShowSevereError(state, format("{}{}=\"{} invalid data", RoutineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)));
-                    ShowContinueError(
-                        state,
-                        format("Invalid-not found {}=\"{}\".", state.dataIPShortCut->cAlphaFieldNames(9), state.dataIPShortCut->cAlphaArgs(9)));
-                    ErrorsFound = true;
-                }
+                PurchAir(PurchAirNum).coolAvailSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((PurchAir(PurchAirNum).coolAvailSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(9))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(9), state.dataIPShortCut->cAlphaArgs(9));
+                ErrorsFound = true;
             }
+
             // get Dehumidification control type
             if (Util::SameString(state.dataIPShortCut->cAlphaArgs(10), "None")) {
                 PurchAir(PurchAirNum).DehumidCtrlType = HumControl::None;
@@ -1302,21 +1286,22 @@ void InitPurchasedAir(EnergyPlusData &state, int const PurchAirNum, int const Co
         state.dataPurchasedAirMgr->InitPurchasedAirMyEnvrnFlag(PurchAirNum) = true;
     }
 
+    auto const &zoneTstatSetpt = state.dataHeatBalFanSys->zoneTstatSetpts(ControlledZoneNum);
+
     // These initializations are done every iteration
     // check that supply air temps can meet the zone thermostat setpoints
-    if (PurchAir.MinCoolSuppAirTemp > state.dataHeatBalFanSys->ZoneThermostatSetPointHi(ControlledZoneNum) &&
-        state.dataHeatBalFanSys->ZoneThermostatSetPointHi(ControlledZoneNum) != 0 && PurchAir.CoolingLimit == LimitType::NoLimit) {
+    if (PurchAir.MinCoolSuppAirTemp > zoneTstatSetpt.setptHi && zoneTstatSetpt.setptHi != 0 && PurchAir.CoolingLimit == LimitType::NoLimit) {
         // Check if the unit is scheduled off
         UnitOn = true;
-        //        IF (PurchAir%AvailSchedPtr > 0) THEN
-        if (GetCurrentScheduleValue(state, PurchAir.AvailSchedPtr) <= 0) {
+        //        IF (PurchAir(PurchAirNum)%AvailSchedPtr > 0) THEN
+        if (PurchAir.availSched->getCurrentVal() <= 0) {
             UnitOn = false;
         }
         //        END IF
         // Check if cooling available
         bool CoolOn = true;
-        //        IF (PurchAir%CoolSchedPtr > 0) THEN
-        if (GetCurrentScheduleValue(state, PurchAir.CoolSchedPtr) <= 0) {
+        //        IF (PurchAir(PurchAirNum)%CoolSchedPtr > 0) THEN
+        if (PurchAir.coolAvailSched->getCurrentVal() <= 0) {
             CoolOn = false;
         }
         //        END IF
@@ -1331,7 +1316,7 @@ void InitPurchasedAir(EnergyPlusData &state, int const PurchAirNum, int const Co
                                   format("..the minimum supply air temperature for cooling [{:.2R}] is greater than the zone cooling mean air "
                                          "temperature (MAT) setpoint [{:.2R}].",
                                          PurchAir.MinCoolSuppAirTemp,
-                                         state.dataHeatBalFanSys->ZoneThermostatSetPointHi(ControlledZoneNum)));
+                                         zoneTstatSetpt.setptHi));
                 ShowContinueError(state, "..For operative and comfort thermostat controls, the MAT setpoint is computed.");
                 ShowContinueError(state, "..This error may indicate that the mean radiant temperature or another comfort factor is too warm.");
                 ShowContinueError(state, "Unit availability is nominally ON and Cooling availability is nominally ON.");
@@ -1351,19 +1336,20 @@ void InitPurchasedAir(EnergyPlusData &state, int const PurchAirNum, int const Co
                                           "C");
         }
     }
-    if (PurchAir.MaxHeatSuppAirTemp < state.dataHeatBalFanSys->ZoneThermostatSetPointLo(ControlledZoneNum) &&
-        state.dataHeatBalFanSys->ZoneThermostatSetPointLo(ControlledZoneNum) != 0 && PurchAir.HeatingLimit == LimitType::NoLimit) {
+
+    if (PurchAir.MaxHeatSuppAirTemp < zoneTstatSetpt.setptLo && zoneTstatSetpt.setptLo != 0 && PurchAir.HeatingLimit == LimitType::NoLimit) {
         // Check if the unit is scheduled off
         UnitOn = true;
-        //        IF (PurchAir%AvailSchedPtr > 0) THEN
-        if (GetCurrentScheduleValue(state, PurchAir.AvailSchedPtr) <= 0) {
+        //        IF (PurchAir(PurchAirNum)%AvailSchedPtr > 0) THEN
+        if (PurchAir.availSched->getCurrentVal() <= 0) {
             UnitOn = false;
         }
         //        END IF
         // Check if heating and cooling available
+
         bool HeatOn = true;
-        //        IF (PurchAir%HeatSchedPtr > 0) THEN
-        if (GetCurrentScheduleValue(state, PurchAir.HeatSchedPtr) <= 0) {
+        //        IF (PurchAir(PurchAirNum)%HeatSchedPtr > 0) THEN
+        if (PurchAir.heatAvailSched->getCurrentVal() <= 0) {
             HeatOn = false;
         }
         //        END IF
@@ -1378,7 +1364,7 @@ void InitPurchasedAir(EnergyPlusData &state, int const PurchAirNum, int const Co
                                   format("..the maximum supply air temperature for heating [{:.2R}] is less than the zone mean air temperature "
                                          "heating setpoint [{:.2R}].",
                                          PurchAir.MaxHeatSuppAirTemp,
-                                         state.dataHeatBalFanSys->ZoneThermostatSetPointLo(ControlledZoneNum)));
+                                         zoneTstatSetpt.setptLo));
                 ShowContinueError(state, "..For operative and comfort thermostat controls, the MAT setpoint is computed.");
                 ShowContinueError(state, "..This error may indicate that the mean radiant temperature or another comfort factor is too cold.");
                 ShowContinueError(state, "Unit availability is nominally ON and Heating availability is nominally ON.");
@@ -1990,7 +1976,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
     int RecircNodeNum;                 // Return air or zone exhaust node
     OpMode OperatingMode;              // current operating mode, Off, Heat, Cool, or DeadBand
     Real64 SupplyMassFlowRate;         // System supply air mass flow rate [kg/s]
-    Real64 SupplyMassFlowRateForHumid; // System supply air mass flow rate required to meet humdification load [kg/s]
+    Real64 SupplyMassFlowRateForHumid; // System supply air mass flow rate required to meet humidification load [kg/s]
     Real64 SupplyMassFlowRateForDehum; // System supply air mass flow rate required to meet dehumidification load [kg/s]
     Real64 SupplyMassFlowRateForCool;  // System supply air mass flow rate required to meet sensible cooling load[kg/s]
     Real64 SupplyMassFlowRateForHeat;  // System supply air mass flow rate required to meet sensible heating load[kg/s]
@@ -2000,10 +1986,10 @@ void CalcPurchAirLoads(EnergyPlusData &state,
     Real64 OAVolFlowRate;              // Outdoor air volume flow rate at standard density [m3/s]
     Real64 MinOASensOutput;            // Minimum Outdoor air sensible output [W], <0 means OA is cooler than zone air
     Real64 MinOALatOutput;             // Minimum Outdoor air moisture load [kg/s]
-    Real64 SensOutput;                 // Sensible output [W] (psitive means heating, negative means cooling)
+    Real64 SensOutput;                 // Sensible output [W] (positive means heating, negative means cooling)
     Real64 HeatSensOutput;             // Heating sensible output [W]
-    Real64 CoolSensOutput;             // Cooling sensible output [W] (positive value menas cooling)
-    Real64 LatOutput;                  // Latent output [W] (positive value means hudmification, negative means dehumidification)
+    Real64 CoolSensOutput;             // Cooling sensible output [W] (positive value means cooling)
+    Real64 LatOutput;                  // Latent output [W] (positive value means humidification, negative means dehumidification)
     Real64 CoolLatOutput;              // Cooling latent output [W] (positive value means dehumidification)
     Real64 CoolTotOutput;              // Cooling total output [W] (positive value means cooling)
     Real64 DeltaT;                     // Delta temperature - reused in multiple places
@@ -2013,8 +1999,8 @@ void CalcPurchAirLoads(EnergyPlusData &state,
     Real64 MdotZnHumidSP;              // Load required to meet humidifying setpoint [kgWater/s] (>0 = a humidify load)
     Real64 MdotZnDehumidSP;            // Load required to meet dehumidifying setpoint [kgWater/s] (<0 = a dehumidify load)
     bool UnitOn;
-    bool HeatOn;             // Flag for heating and humidification availbility schedule, true if heating is on
-    bool CoolOn;             // Flag for cooling and dehumidification availbility schedule, true if cooling is on
+    bool HeatOn;             // Flag for heating and humidification availability schedule, true if heating is on
+    bool CoolOn;             // Flag for cooling and dehumidification availability schedule, true if cooling is on
     bool EconoOn;            // Flag for economizer operation, true if economizer is on
     Real64 SupplyHumRatOrig; // Supply inlet to zone humidity ratio before saturation check [kgWater/kgDryAir]
     Real64 SupplyHumRatSat;  // Supply inlet to zone humidity ratio saturation at SupplyTemp [kgWater/kgDryAir]
@@ -2063,21 +2049,18 @@ void CalcPurchAirLoads(EnergyPlusData &state,
     }
 
     // Check if the unit is scheduled off
-    //         IF (PurchAir%AvailSchedPtr > 0) THEN
-    if (GetCurrentScheduleValue(state, PurchAir.AvailSchedPtr) <= 0) {
+    if (PurchAir.availSched->getCurrentVal() <= 0) {
         UnitOn = false;
     }
     //         END IF
     // Check if heating and cooling available
     HeatOn = true;
-    //         IF (PurchAir%HeatSchedPtr > 0) THEN
-    if (GetCurrentScheduleValue(state, PurchAir.HeatSchedPtr) <= 0) {
+    if (PurchAir.heatAvailSched->getCurrentVal() <= 0) {
         HeatOn = false;
     }
-    //         END IF
+
     CoolOn = true;
-    //         IF (PurchAir%CoolSchedPtr > 0) THEN
-    if (GetCurrentScheduleValue(state, PurchAir.CoolSchedPtr) <= 0) {
+    if (PurchAir.coolAvailSched->getCurrentVal() <= 0) {
         CoolOn = false;
     }
     //         END IF
@@ -2106,7 +2089,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
         // Check if cooling of the supply air stream is required
 
         // Cooling operation
-        if ((MinOASensOutput >= QZnCoolSP) && (state.dataHeatBalFanSys->TempControlType(ControlledZoneNum) != HVAC::ThermostatType::SingleHeating)) {
+        if ((MinOASensOutput >= QZnCoolSP) && (state.dataHeatBalFanSys->TempControlType(ControlledZoneNum) != HVAC::SetptType::SingleHeat)) {
             OperatingMode = OpMode::Cool;
             // Calculate supply mass flow, temp and humidity with the following constraints:
             //  Min cooling supply temp
@@ -2369,7 +2352,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
                                 break;
                             }
                             // Limit supply humidity ratio to saturation at supply outlet temp
-                            // If saturation exceeded, then honor capacity limit and set to dew point at supplyenthalpy
+                            // If saturation exceeded, then honor capacity limit and set to dew point at supply enthalpy
 
                             SupplyHumRatOrig = PurchAir.SupplyHumRat;
                             SupplyHumRatSat = PsyWFnTdbRhPb(state, PurchAir.SupplyTemp, 1.0, state.dataEnvrn->OutBaroPress, RoutineName);
@@ -2406,8 +2389,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
             }
             // Heating or no-load operation
         } else { // Heating or no-load case
-            if ((MinOASensOutput < QZnHeatSP) &&
-                (state.dataHeatBalFanSys->TempControlType(ControlledZoneNum) != HVAC::ThermostatType::SingleCooling)) {
+            if ((MinOASensOutput < QZnHeatSP) && (state.dataHeatBalFanSys->TempControlType(ControlledZoneNum) != HVAC::SetptType::SingleCool)) {
                 OperatingMode = OpMode::Heat;
             } else { // DeadBand mode shuts off heat recovery and economizer
                 OperatingMode = OpMode::DeadBand;
@@ -2636,7 +2618,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
         } // Cooling or heating required
 
         if (SupplyMassFlowRate > 0.0) {
-            // EMS override point  Purch air supply temp and humidty ratio ..... but only if unit is on, SupplyMassFlowRate>0.0
+            // EMS override point  Purch air supply temp and humidity ratio ..... but only if unit is on, SupplyMassFlowRate>0.0
             if (PurchAir.EMSOverrideSupplyTempOn) {
                 PurchAir.SupplyTemp = PurchAir.EMSValueSupplyTemp;
             }
@@ -2674,7 +2656,7 @@ void CalcPurchAirLoads(EnergyPlusData &state,
                 PurchAir.SupplyHumRat = PurchAir.MixedAirHumRat;
             }
 
-            // Double-check if saturation exceeded, then thow warning, shouldn't happen here, don't reset, just warn
+            // Double-check if saturation exceeded, then throw warning, shouldn't happen here, don't reset, just warn
 
             SupplyHumRatOrig = PurchAir.SupplyHumRat;
             SupplyHumRatSat = PsyWFnTdbRhPb(state, PurchAir.SupplyTemp, 1.0, state.dataEnvrn->OutBaroPress, RoutineName);
@@ -3004,7 +2986,7 @@ void UpdatePurchasedAir(EnergyPlusData &state, int const PurchAirNum, bool const
     bool FirstCall;
     bool SupPathInletChanged;
 
-    FirstCall = true;            // just used to avoid redundant calulations
+    FirstCall = true;            // just used to avoid redundant calculations
     SupPathInletChanged = false; // don't care if something changes
 
     auto &PurchAir = state.dataPurchasedAirMgr->PurchAir(PurchAirNum);
@@ -3137,7 +3119,7 @@ Real64 GetPurchasedAirOutAirMassFlow(EnergyPlusData &state, int const PurchAirNu
     // lookup function for OA inlet mass flow for ventilation rate reporting
 
     // METHODOLOGY EMPLOYED:
-    // most analagous functions look up an outside air node but this function
+    // most analogous functions look up an outside air node but this function
     // gets the actual mass flow of outdoor air, following the features of the model
 
     if (state.dataPurchasedAirMgr->GetPurchAirInputFlag) {
@@ -3226,7 +3208,7 @@ Real64 GetPurchasedAirMixedAirTemp(EnergyPlusData &state, int const PurchAirNum)
     // lookup function for mixed air Temp for ventilation rate reporting
 
     // METHODOLOGY EMPLOYED:
-    // most analagous functions look up an outside air node but this function
+    // most analogous functions look up an outside air node but this function
     // gets the actual mass flow of outdoor air, following the features of the model
 
     if (state.dataPurchasedAirMgr->GetPurchAirInputFlag) {
@@ -3315,13 +3297,13 @@ void InitializePlenumArrays(EnergyPlusData &state, int const PurchAirNum)
     //      PurchAirPlenumArrays( 1 ).IsSimulated( 1 ) = true, ideal loads air system #1 has been simulated this iteration
     //      PurchAirPlenumArrays( 1 ).IsSimulated( 2 ) = false, ideal loads air system #3 has not yet been simulated this iteration
     //
-    //      Ideal loads air sytems keep track of which plenum they are connected to
+    //      Ideal loads air systems keep track of which plenum they are connected to
     //      PurchAir( 1 ).PlenumArrayIndex = 1
     //      PurchAir( 1 ).ReturnPlenumName = ReturnPlenum2;
     //      PurchAir( 3 ).PlenumArrayIndex = 1
     //      PurchAir( 3 ).ReturnPlenumName = ReturnPlenum2;
     //
-    //      The ideal loads air sytems also keep track of which item they are in the int and bool arrays
+    //      The ideal loads air systems also keep track of which item they are in the int and bool arrays
     //      PurchAir( 1 ).PurchAirArrayIndex = 1
     //      PurchAir( 3 ).PurchAirArrayIndex = 2
     //
@@ -3334,7 +3316,7 @@ void InitializePlenumArrays(EnergyPlusData &state, int const PurchAirNum)
     //      PurchAirPlenumArrays( 2 ).IsSimulated( 2 ) = false, ideal loads air system #5 has not yet been simulated this iteration
     //      PurchAirPlenumArrays( 2 ).IsSimulated( 3 ) = false, ideal loads air system #6 has not yet been simulated this iteration
     //
-    //      Ideal loads air sytems keep track of which plenum they are connected to
+    //      Ideal loads air systems keep track of which plenum they are connected to
     //      PurchAir( 2 ).PlenumArrayIndex = 2;
     //      PurchAir( 2 ).ReturnPlenumName = ReturnPlenum3;
     //      PurchAir( 5 ).PlenumArrayIndex = 2;
@@ -3342,7 +3324,7 @@ void InitializePlenumArrays(EnergyPlusData &state, int const PurchAirNum)
     //      PurchAir( 6 ).PlenumArrayIndex = 2;
     //      PurchAir( 6 ).ReturnPlenumName = ReturnPlenum3;
     //
-    //      The ideal loads air sytems also keep track of which item they are in the int and bool arrays
+    //      The ideal loads air systems also keep track of which item they are in the int and bool arrays
     //      PurchAir( 2 ).PurchAirArrayIndex = 1;
     //      PurchAir( 5 ).PurchAirArrayIndex = 2;
     //      PurchAir( 6 ).PurchAirArrayIndex = 3;

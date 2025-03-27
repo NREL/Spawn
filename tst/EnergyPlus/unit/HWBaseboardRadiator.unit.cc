@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -68,7 +68,6 @@
 
 using namespace EnergyPlus;
 using namespace DataZoneEnergyDemands;
-using namespace ScheduleManager;
 using namespace Psychrometrics;
 using namespace HWBaseboardRadiator;
 using namespace DataLoopNode;
@@ -102,13 +101,13 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_CalcHWBaseboard)
     HWBaseboard(1).WaterInletNode = 1;
     HWBaseboard(1).WaterMassFlowRateMax = 0.40;
     HWBaseboard(1).AirMassFlowRateStd = 0.5;
-    HWBaseboard(1).SchedPtr = -1;
+    HWBaseboard(1).availSched = Sched::GetScheduleAlwaysOn(*state);
     HWBaseboard(1).plantLoc.loopNum = 1;
     HWBaseboard(1).UA = 370;
     HWBaseboard(1).QBBRadSource = 0.0;
     state->dataPlnt->PlantLoop(1).FluidName = "Water";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidType = DataLoopNode::NodeFluidType::Water;
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
 
     CalcHWBaseboard(*state, BBNum, LoadMet);
 
@@ -126,8 +125,11 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_CalcHWBaseboard)
 
 TEST_F(EnergyPlusFixture, HWBaseboardRadiator_HWBaseboardWaterFlowResetTest)
 {
+    state->init_state(*state);
     Real64 LoadMet;
     int BBNum;
+
+    state->dataFluid->init_state(*state);
 
     BBNum = 1;
     LoadMet = 0.0;
@@ -154,15 +156,15 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_HWBaseboardWaterFlowResetTest)
     HWBaseboard(1).WaterOutletNode = 2;
     HWBaseboard(1).WaterMassFlowRateMax = 0.40;
     HWBaseboard(1).AirMassFlowRateStd = 0.5;
-    HWBaseboard(1).SchedPtr = -1;
+    HWBaseboard(1).availSched = Sched::GetScheduleAlwaysOn(*state);
     HWBaseboard(1).plantLoc.loopNum = 1;
     HWBaseboard(1).plantLoc.loopSideNum = DataPlant::LoopSideLocation::Demand;
     HWBaseboard(1).plantLoc.branchNum = 1;
     HWBaseboard(1).UA = 400.0;
     HWBaseboard(1).QBBRadSource = 0.0;
     state->dataPlnt->PlantLoop(1).FluidName = "Water";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidType = DataLoopNode::NodeFluidType::Water;
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
 
     state->dataLoopNodes->Node(HWBaseboard(1).WaterInletNode).MassFlowRate = 0.2;
     state->dataLoopNodes->Node(HWBaseboard(1).WaterInletNode).MassFlowRateMax = 0.4;
@@ -180,9 +182,8 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_HWBaseboardWaterFlowResetTest)
         loopsidebranch.Comp.allocate(1);
     }
     state->dataPlnt->PlantLoop(1).Name = "HotWaterLoop";
-    state->dataPlnt->PlantLoop(1).FluidName = "HotWater";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = HWBaseboard(1).Name;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = HWBaseboard(1).EquipType;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = HWBaseboard(1).WaterInletNode;
@@ -291,6 +292,7 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_HWBaseboardWaterInputTest)
 
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     errorFound = false;
     HeatBalanceManager::GetZoneData(*state, errorFound);
@@ -309,8 +311,8 @@ TEST_F(EnergyPlusFixture, HWBaseboardRadiator_HWBaseboardWaterInputTest)
     errorFound = false;
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(1);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(1);
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
     SurfaceGeometry::GetSurfaceData(*state, errorFound);

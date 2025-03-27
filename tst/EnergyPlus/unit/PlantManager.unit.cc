@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,7 +70,6 @@ namespace PlantManager {
     using namespace DataPlant;
     using namespace DataLoopNode;
     using namespace DataSizing;
-    using namespace ScheduleManager;
     using namespace SetPointManager;
 
     TEST_F(EnergyPlusFixture, PlantManager_SizePlantLoopTest)
@@ -81,7 +80,7 @@ namespace PlantManager {
         state->dataPlnt->PlantLoop(1).MaxVolFlowRate = 5;
         state->dataPlnt->PlantLoop(1).CirculationTime = 2;
         state->dataPlnt->PlantLoop(1).FluidType = DataLoopNode::NodeFluidType::Water;
-        state->dataPlnt->PlantLoop(1).FluidIndex = 1;
+        state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
         SizePlantLoop(*state, 1, true);
         int TestVolume = 600;
         EXPECT_EQ(TestVolume, state->dataPlnt->PlantLoop(1).Volume);
@@ -205,6 +204,7 @@ namespace PlantManager {
         });
 
         ASSERT_TRUE(process_idf(idf_objects));
+        state->init_state(*state);
 
         // get input and checks if there are two setpointmanagers
         // for a TwoWayCommonPipe and one of them setpoints can be
@@ -271,6 +271,8 @@ namespace UserDefinedComponents {
         });
 
         ASSERT_TRUE(process_idf(idf_objects));
+        state->init_state(*state);
+
         OutAirNodeManager::SetOutAirNodes(*state);
         EMSManager::CheckIfAnyEMS(*state);
         state->dataEMSMgr->FinishProcessingUserInput = true;

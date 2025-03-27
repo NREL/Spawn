@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 
 namespace EnergyPlus {
 
@@ -85,16 +86,15 @@ namespace UnitHeater {
     {
         // Members
         // Input data
-        std::string Name;      // name of unit
-        std::string SchedName; // availability schedule
-        int SchedPtr;          // index to schedule
-        int AirInNode;         // inlet air node number
-        int AirOutNode;        // outlet air node number
-        HVAC::FanType fanType; // Fan type number (see DataHVACGlobals)
-        std::string FanName;   // name of fan
+        std::string Name;                      // name of unit
+        Sched::Schedule *availSched = nullptr; // availability schedule
+        int AirInNode;                         // inlet air node number
+        int AirOutNode;                        // outlet air node number
+        HVAC::FanType fanType;                 // Fan type number (see DataHVACGlobals)
+        std::string FanName;                   // name of fan
         int Fan_Index;
-        int FanSchedPtr;      // index to fan operating mode schedule
-        int FanAvailSchedPtr; // index to fan availability schedule
+        Sched::Schedule *fanOpModeSched = nullptr; // fan operating mode schedule
+        Sched::Schedule *fanAvailSched = nullptr;  // fan availability schedule
         int ControlCompTypeNum;
         int CompErrIndex;
         Real64 MaxAirVolFlow;                   // m3/s
@@ -108,7 +108,7 @@ namespace UnitHeater {
         std::string HCoilName;                    // name of heating coil
         int HCoil_Index;
         DataPlant::PlantEquipmentType HeatingCoilType;
-        int HCoil_FluidIndex;
+        Fluid::RefrigProps *HCoil_fluid = nullptr;
         Real64 MaxVolHotWaterFlow; // m3/s
         Real64 MaxVolHotSteamFlow; // m3/s
         Real64 MaxHotWaterFlow;    // kg/s
@@ -137,13 +137,12 @@ namespace UnitHeater {
 
         // Default Constructor
         UnitHeaterData()
-            : SchedPtr(0), AirInNode(0), AirOutNode(0), fanType(HVAC::FanType::Invalid), Fan_Index(0), FanSchedPtr(0), FanAvailSchedPtr(0),
-              ControlCompTypeNum(0), CompErrIndex(0), MaxAirVolFlow(0.0), MaxAirMassFlow(0.0), FanOutletNode(0), HCoil_Index(0),
-              HeatingCoilType(DataPlant::PlantEquipmentType::Invalid), HCoil_FluidIndex(0), MaxVolHotWaterFlow(0.0), MaxVolHotSteamFlow(0.0),
-              MaxHotWaterFlow(0.0), MaxHotSteamFlow(0.0), MinVolHotWaterFlow(0.0), MinVolHotSteamFlow(0.0), MinHotWaterFlow(0.0),
-              MinHotSteamFlow(0.0), HotControlNode(0), HotControlOffset(0.0), HotCoilOutNodeNum(0), HWplantLoc{}, PartLoadFrac(0.0), HeatPower(0.0),
-              HeatEnergy(0.0), ElecPower(0.0), ElecEnergy(0.0), FanOffNoHeating(false), FanPartLoadRatio(0.0), ZonePtr(0), HVACSizingIndex(0),
-              FirstPass(true)
+            : AirInNode(0), AirOutNode(0), fanType(HVAC::FanType::Invalid), Fan_Index(0), ControlCompTypeNum(0), CompErrIndex(0), MaxAirVolFlow(0.0),
+              MaxAirMassFlow(0.0), FanOutletNode(0), HCoil_Index(0), HeatingCoilType(DataPlant::PlantEquipmentType::Invalid), MaxVolHotWaterFlow(0.0),
+              MaxVolHotSteamFlow(0.0), MaxHotWaterFlow(0.0), MaxHotSteamFlow(0.0), MinVolHotWaterFlow(0.0), MinVolHotSteamFlow(0.0),
+              MinHotWaterFlow(0.0), MinHotSteamFlow(0.0), HotControlNode(0), HotControlOffset(0.0), HotCoilOutNodeNum(0), HWplantLoc{},
+              PartLoadFrac(0.0), HeatPower(0.0), HeatEnergy(0.0), ElecPower(0.0), ElecEnergy(0.0), FanOffNoHeating(false), FanPartLoadRatio(0.0),
+              ZonePtr(0), HVACSizingIndex(0), FirstPass(true)
         {
         }
     };
@@ -232,7 +231,9 @@ struct UnitHeatersData : BaseGlobalStruct
     Array1D_bool MyPlantScanFlag;
     Array1D_bool MyZoneEqFlag; // used to set up zone equipment availability managers
 
-    int RefrigIndex = 0;
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
@@ -254,7 +255,6 @@ struct UnitHeatersData : BaseGlobalStruct
         this->MyEnvrnFlag.deallocate();
         this->MyPlantScanFlag.deallocate();
         this->MyZoneEqFlag.deallocate();
-        this->RefrigIndex = 0;
     }
 
     // Default Constructor

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -127,7 +127,7 @@ namespace Photovoltaics {
                Real64 const AA,   // passed in from CalcPV
                Real64 const EPS,  // passed in from CalcPV
                Real64 &II,        // current [A]
-               Real64 &VV,        // voltage [V]
+               Real64 const VV,   // voltage [V]
                Real64 &PP         // power [W]
     );
 
@@ -149,10 +149,10 @@ namespace Photovoltaics {
                 Real64 &B,
                 Real64 &P,
                 int &K,
-                Real64 &IO,
-                Real64 &IL,
-                Real64 &RSER,
-                Real64 &AA,
+                Real64 const IO,
+                Real64 const IL,
+                Real64 const RSER,
+                Real64 const AA,
                 Real64 const EPS,
                 int const KMAX);
 
@@ -333,6 +333,10 @@ struct PhotovoltaicStateData : BaseGlobalStruct
     bool firstTime = true;
     Real64 PVTimeStep; // internal timestep (in seconds) for cell temperature mode 3
     Array1D_bool MyEnvrnFlag;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

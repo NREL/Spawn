@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/PlantComponent.hh>
 
 namespace EnergyPlus {
@@ -285,7 +286,7 @@ namespace RefrigeratedCase {
         std::string Name;                                             // Name of refrigerated display case
         std::string ZoneName;                                         // Zone or Location of Display Case
         int NumSysAttach = 0;                                         // Number of systems attached to case, error if /=1
-        int SchedPtr = 0;                                             // Index to the correct availability schedule
+        Sched::Schedule *availSched = nullptr;                        // Availability schedule
         int ZoneNodeNum = 0;                                          // Index to Zone Node
         int ActualZoneNum = 0;                                        // Index to Zone
         int ZoneRANode = 0;                                           // Node number of return node in zone
@@ -305,7 +306,7 @@ namespace RefrigeratedCase {
         Real64 OperatingFanPower = 0.0;                              // Operating power of refrigerated case fan [W/m]
         Real64 RatedLightingPower = 0.0;                             // Rated (consis w RateTotCapPerLength) power of refrigerated case lights [W/m]
         Real64 LightingPower = 0.0;                                  // Installed power of refrigerated case lights [W/m]
-        int LightingSchedPtr = 0;                                    // Index to the correct case lighting schedule
+        Sched::Schedule *lightingSched = nullptr;                    // case lighting schedule
         Real64 AntiSweatPower = 0.0;                                 // Rated power of refrigerated case anti-sweat heaters [W/m]
         Real64 MinimumASPower = 0.0;                                 // Minimum power output of case anti-sweat heaters [W/m]
         ASHtrCtrlType AntiSweatControlType = ASHtrCtrlType::Invalid; // Type of anti-sweat heater control:
@@ -314,30 +315,30 @@ namespace RefrigeratedCase {
         Real64 Height = 0.0;                                          // case height for AS heater with heat balance control
         RefCaseDefrostType defrostType = RefCaseDefrostType::Invalid; // Case defrost control type, Off-cycle,Timed,Hot-gas,Electric
         Real64 DefrostPower = 0.0;                                    // Rated power of refrigerated case defrost [W/m]
-        int DefrostSchedPtr = 0;                                      // Index to the correct defrost schedule
-        int DefrostDripDownSchedPtr = 0;                              // Index to the correct fail-safe schedule
+        Sched::Schedule *defrostSched = nullptr;                      // defrost schedule
+        Sched::Schedule *defrostDripDownSched = nullptr;              // correct fail-safe schedule
         Real64 Length = 0.0;                                          // Length of refrigerated case [m]
         Real64 Temperature = 0.0;                                     // Rated case temperature [C]
         Real64 RAFrac = 0.0;                                          // HVAC under case return air fraction [0-1]
-        int StockingSchedPtr = 0;                                     // Index to the correct product stocking schedule
+        Sched::Schedule *stockingSched = nullptr;                     // product stocking schedule
         Real64 LightingFractionToCase = 0.0;                          // Fraction of lighting energy that directly contributes to the
         // case cooling load. The remainder contributes to the zone load
         // (air heat balance).
         Real64 ASHeaterFractionToCase = 0.0; // Fraction of anti-sweat heater energy that results in a direct
         // heat load to the case. The remainder is a heating load
         // to the zone where the refrigerated case is located.
-        Real64 DesignSensCaseCredit = 0.0;  // Design sensible case credit applied to zone load
-        Real64 EvapTempDesign = 0.0;        // Design evaporator temperature
-        Real64 RefrigInventory = 0.0;       // Design refrigerant inventory [kg/m]
-        Real64 DesignRefrigInventory = 0.0; // Design refrigerant inventory [kg total for the case]
-        Real64 DesignRatedCap = 0.0;        // Design total case capacity=RatedTotCap*Length [W]
-        Real64 DesignLatentCap = 0.0;       // Design latent case capacity=DesignRAtedCap*LatentHeatRatio*RTF [W]
-        Real64 DesignDefrostCap = 0.0;      // Design defrost case capacity=DefrostPower*Length [W]
-        Real64 DesignLighting = 0.0;        // Design case lighting=LightingPower*Length [W]
-        Real64 DesignFanPower = 0.0;        // Design power of case fan=Operatingpower*Length [W]
-        Real64 StoredEnergy = 0.0;          // Cumulative Stored Energy not met by evaporator [J]
-        Real64 StoredEnergySaved = 0.0;     // Cumulative Stored Energy not met by evaporator [J]
-        int CaseCreditFracSchedPtr = 0;     // Index to the case credit reduction schedule
+        Real64 DesignSensCaseCredit = 0.0;              // Design sensible case credit applied to zone load
+        Real64 EvapTempDesign = 0.0;                    // Design evaporator temperature
+        Real64 RefrigInventory = 0.0;                   // Design refrigerant inventory [kg/m]
+        Real64 DesignRefrigInventory = 0.0;             // Design refrigerant inventory [kg total for the case]
+        Real64 DesignRatedCap = 0.0;                    // Design total case capacity=RatedTotCap*Length [W]
+        Real64 DesignLatentCap = 0.0;                   // Design latent case capacity=DesignRAtedCap*LatentHeatRatio*RTF [W]
+        Real64 DesignDefrostCap = 0.0;                  // Design defrost case capacity=DefrostPower*Length [W]
+        Real64 DesignLighting = 0.0;                    // Design case lighting=LightingPower*Length [W]
+        Real64 DesignFanPower = 0.0;                    // Design power of case fan=Operatingpower*Length [W]
+        Real64 StoredEnergy = 0.0;                      // Cumulative Stored Energy not met by evaporator [J]
+        Real64 StoredEnergySaved = 0.0;                 // Cumulative Stored Energy not met by evaporator [J]
+        Sched::Schedule *caseCreditFracSched = nullptr; // case credit reduction schedule
         // Report Variables
         Real64 TotalCoolingLoad = 0.0;         // Refrigerated case total cooling rate (W)
         Real64 TotalCoolingEnergy = 0.0;       // Refrigerated case total cooling energy (J)
@@ -456,7 +457,7 @@ namespace RefrigeratedCase {
         Real64 EvapPumpConsumption = 0.0;                         // Evaporative cooling water pump electric consumption (J)
         Real64 EvapWaterConsumpRate = 0.0;                        // Evaporative condenser water consumption rate (m3/s)
         Real64 EvapWaterConsumption = 0.0;                        // Evaporative condenser water consumption (m3)
-        int EvapSchedPtr = 0;                                     // Index to the correct evap condenser availability schedule
+        Sched::Schedule *evapAvailSched = nullptr;                // evap condenser availability schedule
         Real64 BasinHeaterPowerFTempDiff = 0.0;                   // Basin heater capacity per degree K below setpoint (W/K)
         Real64 BasinHeaterSetPointTemp = 2.0;                     // Setpoint temperature for basin heater operation (C)
         Real64 BasinHeaterPower = 0.0;                            // Power demand from basin heater (W)
@@ -499,7 +500,7 @@ namespace RefrigeratedCase {
         int PlantTypeOfNum = 0;                               // Water-cooled condenser plant equipment type
         PlantLocation plantLoc;                               // Water-cooled condenser plant location
         Real64 OutletTemp = 0.0;                              // Water-cooling condenser outlet temperature (C)
-        int OutletTempSchedPtr = 0;                           // Schedule pointer for condenser outlet temp setting
+        Sched::Schedule *outletTempSched = nullptr;           // Schedule for condenser outlet temp setting
         Real64 VolFlowRate = 0.0;                             // Water-cooled condenser volumetric flow rate (m3/s)
         Real64 DesVolFlowRate = 0.0;                          // Water-cooled condenser design volumetric flow rate (m3/s)
         Real64 MassFlowRate = 0.0;                            // Water-cooled condenser mass flow rate (kg/s)
@@ -554,8 +555,9 @@ namespace RefrigeratedCase {
 
     struct RefrigSystemData
     {
-        std::string Name;                    // Name of refrigeration system
-        std::string RefrigerantName;         // Name of refrigerant, must match name in FluidName
+        std::string Name;            // Name of refrigeration system
+        std::string RefrigerantName; // Name of refrigerant, must match name in FluidName
+        Fluid::RefrigProps *refrig = nullptr;
         std::string EndUseSubcategory;       // Used for reporting purposes
         bool SystemRejectHeatToZone = false; // Flag to show air-cooled condenser located inside zone
         bool CoilFlag = false;               // Flag to show if coil type load on system (even if below in a secondary)
@@ -589,7 +591,6 @@ namespace RefrigeratedCase {
         int NumNonCascadeLoads = 0;    // Sum of NumCases, NumWalk-Ins, NumCoils, and NumSecondarys
         int NumCascadeLoads = 0;       // Number of cascade condensers cooled by this system
         int NumTransferLoads = 0;      // Sum of NumCascadeLoads and NumSecondarys
-        int RefIndex = 0;              // Index number of refrigerant, automatically assigned on first call to fluid property
         //   and used thereafter
         int SuctionPipeActualZoneNum = 0;      // ID number for zone where suction pipes gain heat
         int SuctionPipeZoneNodeNum = 0;        // ID number for zone node where suction pipes gain heat
@@ -699,6 +700,8 @@ namespace RefrigeratedCase {
         std::string Name;            // Name of transcritical CO2 refrigeration system
         std::string RefrigerantName; // Name of refrigerant, must match name in FluidName
         //    (see fluidpropertiesrefdata.idf)
+        Fluid::RefrigProps *refrig = nullptr;
+
         std::string EndUseSubcategory;       // Used for reporting purposes
         bool SystemRejectHeatToZone = false; // Flag to show air-cooled gas cooler located inside zone
         Array1D_int CaseNumMT;               // absolute Index of medium temperature cases (allocated NumCasesMT)
@@ -715,7 +718,6 @@ namespace RefrigeratedCase {
         int NumGasCoolers = 1;               // Number of gas coolers on this system
         int NumWalkInsLT = 0;                // Number of low temperature walk in coolers on this system
         int NumWalkInsMT = 0;                // Number of medium temperature walk in coolers on this system
-        int RefIndex = 0;                    // Index number of refrigerant, automatically assigned on first call to fluid property
         //   and used thereafter
         int SuctionPipeActualZoneNumMT = 0;     // ID number for zone where medium temperature suction pipes gain heat
         int SuctionPipeZoneNodeNumMT = 0;       // ID number for zone node where medium temperature suction pipes gain heat
@@ -864,14 +866,14 @@ namespace RefrigeratedCase {
         int HighFlowWarnIndex = 0;                                        // Water outlet high flow warning index
         int HighInletWarnIndex = 0;                                       // Water inlet high temp warning index
         int InletNode = 0;                                                // Water-cooled condenser inlet node number
-        int EvapSchedPtr = 0;                                             // Index to the correct evap condenser availability schedule
+        Sched::Schedule *evapAvailSched = nullptr;                        // Evap condenser availability schedule
         WaterSupply EvapWaterSupplyMode = WaterSupply::FromMains;         // Source of water for evap condenser cooling
         int EvapWaterSupTankID = 0;                                       // TankID when evap condenser uses water from storage tank
         int EvapWaterTankDemandARRID = 0;                                 // Demand index when evap condenser uses water from storage tank
         int OutletNode = 0;                                               // Water-cooled condenser outlet node number
         int PlantTypeOfNum = 0;                                           // Water-cooled condenser plant equipment type
         PlantLocation plantLoc;                                           // Water-cooled condenser plant location
-        int OutletTempSchedPtr = 0;                                       // Schedule pointer for condenser outlet temp setting
+        Sched::Schedule *outletTempSched = nullptr;                       // Schedule for condenser outlet temp setting
         int InletAirNodeNum = 0;                                          // Inlet air node number, can be outside or in a zone
         int InletAirZoneNum = 0;                                          // Inlet air zone number, if located in a zone
         FanSpeedCtrlType FanSpeedControlType = FanSpeedCtrlType::Invalid; // fixed, two-speed, or variable
@@ -1087,9 +1089,11 @@ namespace RefrigeratedCase {
 
     struct SecondaryLoopData
     {
-        bool CoilFlag = false;                              // Flag to show if coil type load on secondary system
-        std::string Name;                                   // Name of refrigeration system
-        std::string FluidName;                              // Name of circulating fluid
+        bool CoilFlag = false; // Flag to show if coil type load on secondary system
+        std::string Name;      // Name of refrigeration system
+        std::string FluidName; // Name of circulating fluid
+        Fluid::GlycolProps *glycol = nullptr;
+        Fluid::RefrigProps *refrig = nullptr;
         std::string EndUseSubcategory;                      // Used for reporting purposes
         Array1D_int CaseNum;                                // Absolute Index of cases (dimensioned 1 to NumCases)
         Array1D_int CoilNum;                                // Absolute Index of coils (dimensioned 1 to NumCoils)
@@ -1098,7 +1102,6 @@ namespace RefrigeratedCase {
         int DistPipeZoneNodeNum = 0;                        // ID number for zone node where distribution pipe gain heat
         Real64 DistPipeZoneHeatGain = 0.0;                  // ! sensible heat gain rate to zone with pipe
         SecFluidType FluidType = SecFluidType::Invalid;     // Indicates whether fluid always liquid or undergoes phase change
-        int FluidID = 0;                                    // Numerical ID used for calls to properties subroutine
         int NumSysAttach = 0;                               // Used to check for non-unique and unused secondary loops
         int NumPumps = 0;                                   // Number of pumps (or pump stages) serving this system
         int NumCases = 0;                                   // Number of Cases served by this secondary loop
@@ -1183,19 +1186,19 @@ namespace RefrigeratedCase {
         std::string Name; // Name of walk in cooler
         Array1D_string ZoneName;
         // Names of zones exchanging energy with cooler
-        int CircFanSchedPtr = 0;                                          // Index to the correct availability schedule
-        int DefrostDripDownSchedPtr = 0;                                  // Index to the correct fail-safe schedule
-        int DefrostSchedPtr = 0;                                          // Index to the correct defrost schedule
+        Sched::Schedule *circFanAvailSched = nullptr;                     // Index to the correct availability schedule
+        Sched::Schedule *defrostDripDownSched = nullptr;                  // fail-safe schedule
+        Sched::Schedule *defrostSched = nullptr;                          // defrost schedule
         DefrostCtrlType DefrostControlType = DefrostCtrlType::Invalid;    // WalkIn defrost control type, Timed,Frost level
         WalkinClrDefrostType defrostType = WalkinClrDefrostType::Invalid; // WalkIn defrost type, Hot-gas,Electric, Hot-brine
-        int HeaterSchedPtr = 0;                                           // Index to the correct availability schedule
-        int LightingSchedPtr = 0;                                         // Index to the correct WalkIn lighting schedule
+        Sched::Schedule *heaterSched = nullptr;                           // heater availability schedule
+        Sched::Schedule *lightingSched = nullptr;                         // walkIn lighting schedule
         int NumSysAttach = 0;                                             // Number of systems attached to WalkIn, error if /=1
         int NumZones = 0;                                                 // Number of zones exchanging energy with WalkIn
-        int SchedPtr = 0;                                                 // Index to the correct availability schedule
-        int StockingSchedPtr = 0;                                         // Index to the correct product stocking schedule
-        Array1D_int GlassDoorOpenSchedPtr;                                // Index to the door opening schedule
-        Array1D_int StockDoorOpenSchedPtr;                                // Index to the door opening schedule
+        Sched::Schedule *availSched = nullptr;                            // availability schedule
+        Sched::Schedule *stockingSched = nullptr;                         // product stocking schedule
+        Array1D<Sched::Schedule *> glassDoorOpenScheds;                   // door opening schedule
+        Array1D<Sched::Schedule *> stockDoorOpenScheds;                   // door opening schedule
         Array1D<WIStockDoor> StockDoorProtectType;                        // Index to door protection type
         Array1D_int ZoneNodeNum;                                          // Index to Zone Node
         Array1D_int ZoneNum;                                              // Index to Zone
@@ -1313,16 +1316,16 @@ namespace RefrigeratedCase {
         bool SecStatusLast = false;                                    // Flag to show if this is the last coil on a particular secondary
         bool SysStatusFirst = false;                                   // Flag to show if this is the first coil on a particular primary
         bool SysStatusLast = false;                                    // Flag to show if this is the last coil on a particular primary
-        int CoilFanSchedPtr = 0;                                       // Index to the correct availability schedule
-        int DefrostDripDownSchedPtr = 0;                               // Index to the correct fail-safe schedule
-        int DefrostSchedPtr = 0;                                       // Index to the correct defrost schedule
+        Sched::Schedule *coilFanAvaildSched = nullptr;                 // availability schedule
+        Sched::Schedule *defrostDripDownSched = nullptr;               // fail-safe schedule
+        Sched::Schedule *defrostSched = nullptr;                       // defrost schedule
         DefrostCtrlType DefrostControlType = DefrostCtrlType::Invalid; // Coil defrost control type, Timed,Frost level
         DefrostType defrostType = DefrostType::Invalid;                // Coil defrost type, Hot-gas,Electric, Hot-brine
         FanSpeedCtrlType FanType = FanSpeedCtrlType::Invalid;          // Index to coil fan type (fixed, two-speed, etc.)
-        int HeaterSchedPtr = 0;                                        // Index to the correct availability schedule
+        Sched::Schedule *heaterAvailSched = nullptr;                   // availability schedule
         int NumSysAttach = 0;                                          // Number of refrigerating systems cooling this coil (error check purpose)
         RatingType ratingType = RatingType::Invalid;                   // Indicates which type of manufacturer's rating is used
-        int SchedPtr = 0;                                              // Index to the correct availability schedule
+        Sched::Schedule *availSched = nullptr;                         // availability schedule
         int SCIndex = 0;                                               // IDs which of European standard conditions is used for rating
         int SecServeID = 0;                                            // Index to the refrigeration system serving this coil
         SHRCorrectionType SHRCorrType = SHRCorrectionType::Invalid;    // Index to type of correction for sensible heat ratio
@@ -1426,13 +1429,13 @@ namespace RefrigeratedCase {
         Array1D_int CoilNum;  // ID number of Individual Chiller in set
         int ChillerSetID = 0; // ID number for this set of chillers (all serving one zone,
         //                       but can be chilled by multi systems)
-        int SchedPtr = 0;        // Schedule to take whole set off-line if needed
-        int NodeNumInlet = 0;    // Node ID Number of inlet for chiller set as a whole, not identified for specific coils
-        int NodeNumOutlet = 0;   // Node ID Number of outlet for chiller set as a whole, not identified for specific coils
-        int NumCoils = 0;        // Number of individual chillers in set
-        int ZoneNum = 0;         // ID number of zone where chiller set is located
-        int ZoneNodeNum = 0;     // ID number of zone node giving mixed conditions of zone where chiller set is located
-        Real64 QZnReqSens = 0.0; // Sensible heat needed by the zone to reach setpoint [W]
+        Sched::Schedule *availSched = nullptr; // Schedule to take whole set off-line if needed // availability?
+        int NodeNumInlet = 0;                  // Node ID Number of inlet for chiller set as a whole, not identified for specific coils
+        int NodeNumOutlet = 0;                 // Node ID Number of outlet for chiller set as a whole, not identified for specific coils
+        int NumCoils = 0;                      // Number of individual chillers in set
+        int ZoneNum = 0;                       // ID number of zone where chiller set is located
+        int ZoneNodeNum = 0;                   // ID number of zone node giving mixed conditions of zone where chiller set is located
+        Real64 QZnReqSens = 0.0;               // Sensible heat needed by the zone to reach setpoint [W]
 
         void CalculateAirChillerSets(EnergyPlusData &state);
     };
@@ -1625,6 +1628,10 @@ struct RefrigeratedCaseData : BaseGlobalStruct
     Real64 MyCurrentTimeSaved = 0.0;   // Used to determine whether the zone time step is a repetition
     Real64 MyStepStartTimeSaved = 0.0; // Used to determine whether the system time step is a repetition
     Real64 TimeStepFraction = 0.0;     // Used to calculate my current time
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

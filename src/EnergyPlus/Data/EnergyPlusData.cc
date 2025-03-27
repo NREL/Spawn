@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -78,7 +78,7 @@ EnergyPlusData::EnergyPlusData()
     this->dataChillerIndirectAbsorption = std::make_unique<ChillerIndirectAbsoprtionData>();
     this->dataChillerReformulatedEIR = std::make_unique<ChillerReformulatedEIRData>();
     this->dataChillerElectricASHRAE205 = std::make_unique<ChillerElectricASHRAE205Data>();
-    this->dataCoilCooingDX = std::make_unique<CoilCoolingDXData>();
+    this->dataCoilCoolingDX = std::make_unique<CoilCoolingDXData>();
     this->dataCondenserLoopTowers = std::make_unique<CondenserLoopTowersData>();
     this->dataConstruction = std::make_unique<ConstructionData>();
     this->dataContaminantBalance = std::make_unique<ContaminantBalanceData>();
@@ -117,7 +117,7 @@ EnergyPlusData::EnergyPlusData()
     this->dataFans = std::make_unique<FansData>();
     this->dataFaultsMgr = std::make_unique<FaultsManagerData>();
     this->dataFluidCoolers = std::make_unique<FluidCoolersData>();
-    this->dataFluidProps = std::make_unique<FluidData>();
+    this->dataFluid = std::make_unique<FluidData>();
     this->dataFourPipeBeam = std::make_unique<FourPipeBeamData>();
     this->dataFuelCellElectGen = std::make_unique<FuelCellElectricGeneratorData>();
     this->dataFurnaces = std::make_unique<FurnacesData>();
@@ -233,7 +233,7 @@ EnergyPlusData::EnergyPlusData()
     this->dataRuntimeLang = std::make_unique<RuntimeLanguageData>();
     this->dataRuntimeLangProcessor = std::make_unique<RuntimeLanguageProcessorData>();
     this->dataSQLiteProcedures = std::make_unique<SQLiteProceduresData>();
-    this->dataScheduleMgr = std::make_unique<ScheduleManagerData>();
+    this->dataSched = std::make_unique<ScheduleManagerData>();
     this->dataSetPointManager = std::make_unique<SetPointManagerData>();
     this->dataShadowComb = std::make_unique<ShadowCombData>();
     this->dataSimAirServingZones = std::make_unique<SimAirServingZonesData>();
@@ -310,6 +310,7 @@ void EnergyPlusData::clear_state()
 {
     this->ready = true;
     this->init_state_called = false;
+    this->init_constant_state_called = false;
     this->dataAirLoop->clear_state();
     this->dataAirLoopHVACDOAS->clear_state();
     this->dataAirSystemsData->clear_state();
@@ -334,7 +335,7 @@ void EnergyPlusData::clear_state()
     this->dataChillerIndirectAbsorption->clear_state();
     this->dataChillerReformulatedEIR->clear_state();
     this->dataChillerElectricASHRAE205->clear_state();
-    this->dataCoilCooingDX->clear_state();
+    this->dataCoilCoolingDX->clear_state();
     this->dataCondenserLoopTowers->clear_state();
     this->dataConstruction->clear_state();
     this->dataContaminantBalance->clear_state();
@@ -373,7 +374,7 @@ void EnergyPlusData::clear_state()
     this->dataFans->clear_state();
     this->dataFaultsMgr->clear_state();
     this->dataFluidCoolers->clear_state();
-    this->dataFluidProps->clear_state();
+    this->dataFluid->clear_state();
     this->dataFourPipeBeam->clear_state();
     this->dataFuelCellElectGen->clear_state();
     this->dataFurnaces->clear_state();
@@ -489,7 +490,7 @@ void EnergyPlusData::clear_state()
     this->dataRuntimeLang->clear_state();
     this->dataRuntimeLangProcessor->clear_state();
     this->dataSQLiteProcedures->clear_state();
-    this->dataScheduleMgr->clear_state();
+    this->dataSched->clear_state();
     this->dataSetPointManager->clear_state();
     this->dataShadowComb->clear_state();
     this->dataSimAirServingZones->clear_state();
@@ -570,17 +571,283 @@ void EnergyPlusData::clear_state()
     this->files.spsz.close();
 }
 
+void EnergyPlusData::init_constant_state(EnergyPlusData &state)
+{
+    if (this->init_constant_state_called) {
+        return;
+    }
+
+    this->init_constant_state_called = true;
+
+    // The order of these should not matter, but we are mirroring init_state() order which does matter.
+    this->dataSimulationManager->init_constant_state(state);
+    this->dataEMSMgr->init_constant_state(state);
+    this->dataPsychrometrics->init_constant_state(state);
+    this->dataFluid->init_constant_state(state);
+    this->dataSched->init_constant_state(state);
+
+    this->dataAirLoop->init_constant_state(state);
+    this->dataAirLoopHVACDOAS->init_constant_state(state);
+    this->dataAirSystemsData->init_constant_state(state);
+    this->afn->init_constant_state(state);
+    this->dataBSDFWindow->init_constant_state(state);
+    this->dataBaseSizerFanHeatInputs->init_constant_state(state);
+    this->dataBaseSizerScalableInputs->init_constant_state(state);
+    this->dataBaseboardElectric->init_constant_state(state);
+    this->dataBaseboardRadiator->init_constant_state(state);
+    this->dataBoilerSteam->init_constant_state(state);
+    this->dataBoilers->init_constant_state(state);
+    this->dataBranchAirLoopPlant->init_constant_state(state);
+    this->dataBranchInputManager->init_constant_state(state);
+    this->dataBranchNodeConnections->init_constant_state(state);
+    this->dataCHPElectGen->init_constant_state(state);
+    this->dataCTElectricGenerator->init_constant_state(state);
+    this->dataChilledCeilingPanelSimple->init_constant_state(state);
+    this->dataChillerAbsorber->init_constant_state(state);
+    this->dataChillerElectricEIR->init_constant_state(state);
+    this->dataChillerExhaustAbsorption->init_constant_state(state);
+    this->dataChillerGasAbsorption->init_constant_state(state);
+    this->dataChillerIndirectAbsorption->init_constant_state(state);
+    this->dataChillerReformulatedEIR->init_constant_state(state);
+    this->dataChillerElectricASHRAE205->init_constant_state(state);
+    this->dataCoilCoolingDX->init_constant_state(state);
+    this->dataCondenserLoopTowers->init_constant_state(state);
+    this->dataConstruction->init_constant_state(state);
+    this->dataContaminantBalance->init_constant_state(state);
+    this->dataConvect->init_constant_state(state);
+    this->dataConvergeParams->init_constant_state(state);
+    this->dataCoolTower->init_constant_state(state);
+    this->dataCostEstimateManager->init_constant_state(state);
+    this->dataCrossVentMgr->init_constant_state(state);
+    this->dataCurveManager->init_constant_state(state);
+    this->dataDXCoils->init_constant_state(state);
+    this->dataDXFEarClipping->init_constant_state(state);
+    this->dataDaylightingDevices->init_constant_state(state);
+    this->dataDaylightingDevicesData->init_constant_state(state);
+    this->dataDayltg->init_constant_state(state);
+    this->dataDefineEquipment->init_constant_state(state);
+    this->dataDemandManager->init_constant_state(state);
+    this->dataDesiccantDehumidifiers->init_constant_state(state);
+    this->dataDispVentMgr->init_constant_state(state);
+    this->dataDualDuct->init_constant_state(state);
+    this->dataEIRFuelFiredHeatPump->init_constant_state(state);
+    this->dataEIRPlantLoopHeatPump->init_constant_state(state);
+    this->dataEarthTube->init_constant_state(state);
+    this->dataEcoRoofMgr->init_constant_state(state);
+    this->dataEconLifeCycleCost->init_constant_state(state);
+    this->dataEconTariff->init_constant_state(state);
+    this->dataElectBaseboardRad->init_constant_state(state);
+    this->dataElectPwrSvcMgr->init_constant_state(state);
+    this->dataEnvrn->init_constant_state(state);
+    this->dataErrTracking->init_constant_state(state);
+    this->dataEvapCoolers->init_constant_state(state);
+    this->dataEvapFluidCoolers->init_constant_state(state);
+    this->dataExteriorEnergyUse->init_constant_state(state);
+    this->dataExternalInterface->init_constant_state(state);
+    this->dataFanCoilUnits->init_constant_state(state);
+    this->dataFans->init_constant_state(state);
+    this->dataFaultsMgr->init_constant_state(state);
+    this->dataFluidCoolers->init_constant_state(state);
+    this->dataFourPipeBeam->init_constant_state(state);
+    this->dataFuelCellElectGen->init_constant_state(state);
+    this->dataFurnaces->init_constant_state(state);
+    this->dataGeneral->init_constant_state(state);
+    this->dataGeneralRoutines->init_constant_state(state);
+    this->dataGenerator->init_constant_state(state);
+    this->dataGeneratorFuelSupply->init_constant_state(state);
+    this->dataGlobal->init_constant_state(state);
+    this->dataGlobalNames->init_constant_state(state);
+    this->dataGrndTempModelMgr->init_constant_state(state);
+    this->dataGroundHeatExchanger->init_constant_state(state);
+    this->dataHPWaterToWaterClg->init_constant_state(state);
+    this->dataHPWaterToWaterHtg->init_constant_state(state);
+    this->dataHPWaterToWaterSimple->init_constant_state(state);
+    this->dataHVACAssistedCC->init_constant_state(state);
+    this->dataHVACControllers->init_constant_state(state);
+    this->dataHVACCooledBeam->init_constant_state(state);
+    this->dataHVACCtrl->init_constant_state(state);
+    this->dataHVACDXHeatPumpSys->init_constant_state(state);
+    this->dataHVACDuct->init_constant_state(state);
+    this->dataHVACGlobal->init_constant_state(state);
+    this->dataHVACInterfaceMgr->init_constant_state(state);
+    this->dataHVACMgr->init_constant_state(state);
+    this->dataHVACMultiSpdHP->init_constant_state(state);
+    this->dataHVACSingleDuctInduc->init_constant_state(state);
+    this->dataHVACSizingSimMgr->init_constant_state(state);
+    this->dataHVACStandAloneERV->init_constant_state(state);
+    this->dataHVACUnitaryBypassVAV->init_constant_state(state);
+    this->dataHVACVarRefFlow->init_constant_state(state);
+    this->dataHWBaseboardRad->init_constant_state(state);
+    this->dataHeatBal->init_constant_state(state);
+    this->dataHeatBalAirMgr->init_constant_state(state);
+    this->dataHeatBalFanSys->init_constant_state(state);
+    this->dataHeatBalFiniteDiffMgr->init_constant_state(state);
+    this->dataHeatBalHAMTMgr->init_constant_state(state);
+    this->dataHeatBalIntHeatGains->init_constant_state(state);
+    this->dataHeatBalIntRadExchg->init_constant_state(state);
+    this->dataHeatBalMgr->init_constant_state(state);
+    this->dataHeatBalSurf->init_constant_state(state);
+    this->dataHeatBalSurfMgr->init_constant_state(state);
+    this->dataHeatRecovery->init_constant_state(state);
+    this->dataHeatingCoils->init_constant_state(state);
+    this->dataHighTempRadSys->init_constant_state(state);
+    this->dataHumidifiers->init_constant_state(state);
+    this->dataHybridModel->init_constant_state(state);
+    this->dataHybridUnitaryAC->init_constant_state(state);
+    this->dataHysteresisPhaseChange->init_constant_state(state);
+    this->dataICEngElectGen->init_constant_state(state);
+    this->dataIPShortCut->init_constant_state(state);
+    this->dataIceThermalStorage->init_constant_state(state);
+    this->dataIndoorGreen->init_constant_state(state);
+    this->dataInputProcessing->init_constant_state(state);
+    this->dataIntegratedHP->init_constant_state(state);
+    this->dataInternalHeatGains->init_constant_state(state);
+    this->dataLoopNodes->init_constant_state(state);
+    this->dataLowTempRadSys->init_constant_state(state);
+    this->dataMaterial->init_constant_state(state);
+    this->dataMatrixDataManager->init_constant_state(state);
+    this->dataMircoturbElectGen->init_constant_state(state);
+    this->dataMixedAir->init_constant_state(state);
+    this->dataMixerComponent->init_constant_state(state);
+    this->dataMoistureBalEMPD->init_constant_state(state);
+    this->dataMstBal->init_constant_state(state);
+    this->dataMstBalEMPD->init_constant_state(state);
+    this->dataMundtSimMgr->init_constant_state(state);
+    this->dataNodeInputMgr->init_constant_state(state);
+    this->dataOutAirNodeMgr->init_constant_state(state);
+    this->dataOutRptPredefined->init_constant_state(state);
+    this->dataOutRptTab->init_constant_state(state);
+    this->dataOutdoorAirUnit->init_constant_state(state);
+    this->dataOutput->init_constant_state(state);
+    this->dataOutputProcessor->init_constant_state(state);
+    this->dataOutputReportTabularAnnual->init_constant_state(state);
+    this->dataOutputReports->init_constant_state(state);
+    this->dataOutsideEnergySrcs->init_constant_state(state);
+    this->dataPackagedThermalStorageCoil->init_constant_state(state);
+    this->dataPhotovoltaic->init_constant_state(state);
+    this->dataPhotovoltaicState->init_constant_state(state);
+    this->dataPhotovoltaicThermalCollector->init_constant_state(state);
+    this->dataPipeHT->init_constant_state(state);
+    this->dataPipes->init_constant_state(state);
+    this->dataPlantCentralGSHP->init_constant_state(state);
+    this->dataPlantChillers->init_constant_state(state);
+    this->dataPlantCompTempSrc->init_constant_state(state);
+    this->dataPlantCondLoopOp->init_constant_state(state);
+    this->dataPlantHXFluidToFluid->init_constant_state(state);
+    this->dataPlantLoadProfile->init_constant_state(state);
+    this->dataPlantMgr->init_constant_state(state);
+    this->dataPlantPipingSysMgr->init_constant_state(state);
+    this->dataPlantPressureSys->init_constant_state(state);
+    this->dataPlantUtilities->init_constant_state(state);
+    this->dataPlantValves->init_constant_state(state);
+    this->dataPlnt->init_constant_state(state);
+    this->dataPluginManager->init_constant_state(state);
+    this->dataPollution->init_constant_state(state);
+    this->dataPondGHE->init_constant_state(state);
+    this->dataPowerInductionUnits->init_constant_state(state);
+    this->dataPsychCache->init_constant_state(state);
+    this->dataPumps->init_constant_state(state);
+    this->dataPurchasedAirMgr->init_constant_state(state);
+    this->dataRefrigCase->init_constant_state(state);
+    this->dataReportFlag->init_constant_state(state);
+    this->dataResultsFramework->init_constant_state(state);
+    this->dataRetAirPathMrg->init_constant_state(state);
+    this->dataExhAirSystemMrg->init_constant_state(state);
+    this->dataExhCtrlSystemMrg->init_constant_state(state);
+    this->dataRoomAir->init_constant_state(state);
+    this->dataRoomAirModelTempPattern->init_constant_state(state);
+    this->dataRoomAirflowNetModel->init_constant_state(state);
+    this->dataRootFinder->init_constant_state(state);
+    this->dataRptCoilSelection->init_constant_state(state);
+    this->dataRuntimeLang->init_constant_state(state);
+    this->dataRuntimeLangProcessor->init_constant_state(state);
+    this->dataSQLiteProcedures->init_constant_state(state);
+    this->dataSetPointManager->init_constant_state(state);
+    this->dataShadowComb->init_constant_state(state);
+    this->dataSimAirServingZones->init_constant_state(state);
+    this->dataSingleDuct->init_constant_state(state);
+    this->dataSize->init_constant_state(state);
+    this->dataSizingManager->init_constant_state(state);
+    this->dataSolarCollectors->init_constant_state(state);
+    this->dataSolarReflectionManager->init_constant_state(state);
+    this->dataSolarShading->init_constant_state(state);
+    this->dataSplitterComponent->init_constant_state(state);
+    this->dataSteamBaseboardRadiator->init_constant_state(state);
+    this->dataSteamCoils->init_constant_state(state);
+    this->dataStrGlobals->init_constant_state(state);
+    this->dataSurfColor->init_constant_state(state);
+    this->dataSurfLists->init_constant_state(state);
+    this->dataSurface->init_constant_state(state);
+    this->dataSurfaceGeometry->init_constant_state(state);
+    this->dataSurfaceGroundHeatExchangers->init_constant_state(state);
+    this->dataSwimmingPools->init_constant_state(state);
+    this->dataSysAirFlowSizer->init_constant_state(state);
+    this->dataSysRpts->init_constant_state(state);
+    this->dataSysVars->init_constant_state(state);
+    this->dataAvail->init_constant_state(state);
+    this->dataTARCOGCommon->init_constant_state(state);
+    this->dataTARCOGOutputs->init_constant_state(state);
+    this->dataThermalChimneys->init_constant_state(state);
+    this->dataThermalComforts->init_constant_state(state);
+    this->dataThermalISO15099Calc->init_constant_state(state);
+    this->dataTARCOGGasses90->init_constant_state(state);
+    this->dataTARCOGMain->init_constant_state(state);
+    this->dataTarcogShading->init_constant_state(state);
+    this->dataTimingsData->init_constant_state(state);
+    this->dataTranspiredCollector->init_constant_state(state);
+    this->dataUFADManager->init_constant_state(state);
+    this->dataUnitHeaters->init_constant_state(state);
+    this->dataUnitVentilators->init_constant_state(state);
+    this->dataUnitarySystems->init_constant_state(state);
+    this->dataUserDefinedComponents->init_constant_state(state);
+    this->dataUtilityRoutines->init_constant_state(state);
+    this->dataVariableSpeedCoils->init_constant_state(state);
+    this->dataVectors->init_constant_state(state);
+    this->dataVentilatedSlab->init_constant_state(state);
+    this->dataViewFactor->init_constant_state(state);
+    this->dataWaterCoils->init_constant_state(state);
+    this->dataWaterData->init_constant_state(state);
+    this->dataWaterManager->init_constant_state(state);
+    this->dataWaterThermalTanks->init_constant_state(state);
+    this->dataWaterToAirHeatPump->init_constant_state(state);
+    this->dataWaterToAirHeatPumpSimple->init_constant_state(state);
+    this->dataWaterUse->init_constant_state(state);
+    this->dataWeather->init_constant_state(state);
+    this->dataWindTurbine->init_constant_state(state);
+    this->dataWindowAC->init_constant_state(state);
+    this->dataWindowComplexManager->init_constant_state(state);
+    this->dataWindowEquivLayer->init_constant_state(state);
+    this->dataWindowEquivalentLayer->init_constant_state(state);
+    this->dataWindowManager->init_constant_state(state);
+    this->dataWindowManagerExterior->init_constant_state(state);
+    this->dataZoneAirLoopEquipmentManager->init_constant_state(state);
+    this->dataZoneContaminantPredictorCorrector->init_constant_state(state);
+    this->dataZoneCtrls->init_constant_state(state);
+    this->dataZoneDehumidifier->init_constant_state(state);
+    this->dataZoneEnergyDemand->init_constant_state(state);
+    this->dataZoneEquip->init_constant_state(state);
+    this->dataZoneEquipmentManager->init_constant_state(state);
+    this->dataZonePlenum->init_constant_state(state);
+    this->dataZoneTempPredictorCorrector->init_constant_state(state);
+}
+
 void EnergyPlusData::init_state(EnergyPlusData &state)
 {
-    if (this->init_state_called) return;
+    if (this->init_state_called) {
+        return;
+    }
+
     this->init_state_called = true;
+
     // The order in which we do this matters.  We're going to try to
     // do this in "topological" order meaning the first to go are the
     // objects that do not reference any other objects, like fluids,
     // schedules, curves, etc.
     this->dataSimulationManager->init_state(state); // GetProjectData
-    this->dataFluidProps->init_state(state);        // GetFluidPropertiesData
+    this->dataEMSMgr->init_state(state);            // CheckIfAnyEMS
     this->dataPsychrometrics->init_state(state);    // InitializePsychRoutines
+    this->dataFluid->init_state(state);             // GetFluidPropertiesData
+    this->dataSched->init_state(state);             // GetScheduleData
 
     this->dataAirLoop->init_state(state);
     this->dataAirLoopHVACDOAS->init_state(state);
@@ -606,7 +873,7 @@ void EnergyPlusData::init_state(EnergyPlusData &state)
     this->dataChillerIndirectAbsorption->init_state(state);
     this->dataChillerReformulatedEIR->init_state(state);
     this->dataChillerElectricASHRAE205->init_state(state);
-    this->dataCoilCooingDX->init_state(state);
+    this->dataCoilCoolingDX->init_state(state);
     this->dataCondenserLoopTowers->init_state(state);
     this->dataConstruction->init_state(state);
     this->dataContaminantBalance->init_state(state);
@@ -628,7 +895,6 @@ void EnergyPlusData::init_state(EnergyPlusData &state)
     this->dataDualDuct->init_state(state);
     this->dataEIRFuelFiredHeatPump->init_state(state);
     this->dataEIRPlantLoopHeatPump->init_state(state);
-    this->dataEMSMgr->init_state(state);
     this->dataEarthTube->init_state(state);
     this->dataEcoRoofMgr->init_state(state);
     this->dataEconLifeCycleCost->init_state(state);
@@ -759,7 +1025,6 @@ void EnergyPlusData::init_state(EnergyPlusData &state)
     this->dataRuntimeLang->init_state(state);
     this->dataRuntimeLangProcessor->init_state(state);
     this->dataSQLiteProcedures->init_state(state);
-    this->dataScheduleMgr->init_state(state);
     this->dataSetPointManager->init_state(state);
     this->dataShadowComb->init_state(state);
     this->dataSimAirServingZones->init_state(state);

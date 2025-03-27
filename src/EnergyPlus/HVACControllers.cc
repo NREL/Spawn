@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -1022,11 +1022,8 @@ void InitController(EnergyPlusData &state, int const ControlNum, bool &IsConverg
     // Do the Begin Environment initializations
     if (state.dataGlobal->BeginEnvrnFlag && MyEnvrnFlag(ControlNum)) {
 
-        Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                       state.dataPlnt->PlantLoop(thisController.ActuatedNodePlantLoc.loopNum).FluidName,
-                                                       Constant::CWInitConvTemp,
-                                                       state.dataPlnt->PlantLoop(thisController.ActuatedNodePlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+        Real64 rho =
+            state.dataPlnt->PlantLoop(thisController.ActuatedNodePlantLoc.loopNum).glycol->getDensity(state, Constant::CWInitConvTemp, RoutineName);
 
         thisController.MinActuated = rho * thisController.MinVolFlowActuated;
         thisController.MaxActuated = rho * thisController.MaxVolFlowActuated;
@@ -2473,7 +2470,7 @@ Real64 GetCurrentHVACTime(const EnergyPlusData &state)
     // as real.
     Real64 const CurrentHVACTime =
         (state.dataGlobal->CurrentTime - state.dataGlobal->TimeStepZone) + state.dataHVACGlobal->SysTimeElapsed + state.dataHVACGlobal->TimeStepSys;
-    return CurrentHVACTime * Constant::SecInHour;
+    return CurrentHVACTime * Constant::rSecsInHour;
 }
 
 Real64 GetPreviousHVACTime(const EnergyPlusData &state)
@@ -2488,7 +2485,7 @@ Real64 GetPreviousHVACTime(const EnergyPlusData &state)
     // This is the correct formula that does not use MinutesPerSystemTimeStep, which would
     // erronously truncate all sub-minute system time steps down to the closest full minute.
     Real64 const PreviousHVACTime = (state.dataGlobal->CurrentTime - state.dataGlobal->TimeStepZone) + state.dataHVACGlobal->SysTimeElapsed;
-    return PreviousHVACTime * Constant::SecInHour;
+    return PreviousHVACTime * Constant::rSecsInHour;
 }
 
 std::string CreateHVACTimeString(const EnergyPlusData &state)

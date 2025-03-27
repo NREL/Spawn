@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -176,7 +176,6 @@ namespace RoomAir {
         // Using/Aliasing
         using namespace DataEnvironment;
         using namespace DataHeatBalance;
-        using ScheduleManager::GetScheduleIndex;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 HLD;      // Convection coefficient for the lower area of surface
@@ -513,8 +512,6 @@ namespace RoomAir {
 
         using Psychrometrics::PsyCpAirFnW;
         using Psychrometrics::PsyRhoAirFnPbTdbW;
-        using ScheduleManager::GetCurrentScheduleValue;
-        using ScheduleManager::GetScheduleIndex;
 
         // SUBROUTINE PARAMETER DEFINITIONS:
         Real64 const OneThird(1.0 / 3.0);
@@ -592,7 +589,7 @@ namespace RoomAir {
         for (int Ctd = 1; Ctd <= state.dataRoomAir->TotDispVent3Node; ++Ctd) {
             auto &zoneDV3N = state.dataRoomAir->ZoneDispVent3Node(Ctd);
             if (ZoneNum == zoneDV3N.ZonePtr) {
-                GainsFrac = GetCurrentScheduleValue(state, zoneDV3N.SchedGainsPtr);
+                GainsFrac = zoneDV3N.gainsSched->getCurrentVal();
                 NumPLPP = zoneDV3N.NumPlumesPerOcc;
                 HeightThermostat = zoneDV3N.ThermostatHeight;
                 HeightComfort = zoneDV3N.ComfortHeight;

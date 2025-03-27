@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -88,8 +88,7 @@ namespace HeatingCoils {
         std::string HeatingCoilModel; // Type of HeatingCoil ie. Simple, Detailed, etc.
         int HCoilType_Num = 0;
         Constant::eFuel FuelType = Constant::eFuel::Invalid; // Type of fuel used, reference resource type integers
-        std::string Schedule;                                // HeatingCoil Operation Schedule
-        int SchedPtr = 0;                                    // Pointer to the correct schedule
+        Sched::Schedule *availSched = nullptr;               // availability schedule
         int InsuffTemperatureWarn = 0;                       // Used for recurring error message
         Real64 InletAirMassFlowRate = 0.0;                   // MassFlow through the HeatingCoil being Simulated [kg/Sec]
         Real64 OutletAirMassFlowRate = 0.0;
@@ -221,10 +220,10 @@ namespace HeatingCoils {
                            bool &ErrorsFound            // set to true if problem
     );
 
-    int GetCoilAvailScheduleIndex(EnergyPlusData &state,
-                                  std::string const &CoilType, // must match coil types in this module
-                                  std::string const &CoilName, // must match coil names for the coil type
-                                  bool &ErrorsFound            // set to true if problem
+    Sched::Schedule *GetCoilAvailSched(EnergyPlusData &state,
+                                       std::string const &CoilType, // must match coil types in this module
+                                       std::string const &CoilName, // must match coil names for the coil type
+                                       bool &ErrorsFound            // set to true if problem
     );
 
     int GetCoilInletNode(EnergyPlusData &state,
@@ -315,6 +314,10 @@ struct HeatingCoilsData : BaseGlobalStruct
     Array1D_bool MySPTestFlag;          // used for error checking
     Array1D_bool ShowSingleWarning;     // Used for single warning message for desuperheater coil
     Array1D_bool MyEnvrnFlag;           // one time environment flag
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -136,11 +136,13 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpTest_SimWaterToAir)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
-    auto *refrig = new FluidProperties::RefrigProps;
+    auto *refrig = new Fluid::RefrigProps;
+
     refrig->Name = "R22";
-    state->dataFluidProps->refrigs.push_back(refrig);
-    refrig->Num = state->dataFluidProps->refrigs.isize();
+    state->dataFluid->refrigs.push_back(refrig);
+    refrig->Num = state->dataFluid->refrigs.isize();
 
     refrig->PsLowTempIndex = 1;
     refrig->PsHighTempIndex = 2;
@@ -229,9 +231,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpTest_SimWaterToAir)
     }
 
     state->dataPlnt->PlantLoop(1).Name = "ChilledWaterLoop";
-    state->dataPlnt->PlantLoop(1).FluidName = "ChilledWater";
-    state->dataPlnt->PlantLoop(1).FluidIndex = 1;
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPump->WatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -265,9 +266,8 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpTest_SimWaterToAir)
     HPNum = 2;
     state->dataWaterToAirHeatPump->WatertoAirHP(HPNum).plantLoc.loopNum = 2;
     state->dataPlnt->PlantLoop(2).Name = "HotWaterLoop";
-    state->dataPlnt->PlantLoop(2).FluidName = "HotWater";
-    state->dataPlnt->PlantLoop(2).FluidIndex = 1;
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(2).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name =
         state->dataWaterToAirHeatPump->WatertoAirHP(HPNum).Name;
     state->dataPlnt->PlantLoop(2).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type =
@@ -309,5 +309,4 @@ TEST_F(EnergyPlusFixture, WaterToAirHeatPumpTest_SimWaterToAir)
 
     // clean up
     state->dataWaterToAirHeatPump->WatertoAirHP.deallocate();
-    delete state->dataFluidProps->refrigs(1);
 }

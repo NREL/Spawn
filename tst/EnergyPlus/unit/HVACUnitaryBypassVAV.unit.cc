@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -94,9 +94,13 @@ public:
     bool ErrorsFound = false;
 
 protected:
-    virtual void SetUp()
+    virtual void SetUp() // Please don't do this
     {
         EnergyPlusFixture::SetUp(); // Sets up the base fixture first.
+
+        state->init_state(*state);
+
+        state->dataGlobal->TimeStepZone = 0; // Why do we need to override this?  Why is it not okay to just set this?
 
         state->dataGlobal->DayOfSim = 1;
         state->dataGlobal->HourOfDay = 1;
@@ -120,7 +124,7 @@ protected:
         state->dataZoneEquip->ZoneEquipConfig(1).ReturnNode(1) = 21;
         state->dataZoneEquip->ZoneEquipConfig(1).FixedReturnFlow.allocate(1);
         state->dataHeatBal->Zone(1).SystemZoneNodeNumber = state->dataZoneEquip->ZoneEquipConfig(1).ZoneNode;
-        state->dataZoneEquip->ZoneEquipConfig(1).ReturnFlowSchedPtrNum = ScheduleManager::ScheduleAlwaysOn;
+        state->dataZoneEquip->ZoneEquipConfig(1).returnFlowFracSched = Sched::GetScheduleAlwaysOn(*state);
         state->dataZoneEquip->ZoneEquipList(1).Name = "ZONEEQUIPMENT";
         int maxEquipCount = 1;
         state->dataZoneEquip->ZoneEquipList(1).NumOfEquipTypes = maxEquipCount;
@@ -190,7 +194,7 @@ protected:
         auto &cbvav(state->dataHVACUnitaryBypassVAV->CBVAV(1));
         cbvav.Name = "CBVAVAirLoop";
         cbvav.UnitType = "AirLoopHVAC:UnitaryHeatCool:VAVChangeoverBypass";
-        cbvav.SchedPtr = -1;
+        cbvav.availSched = Sched::GetScheduleAlwaysOn(*state);
         cbvav.ControlledZoneNodeNum.allocate(1);
         cbvav.ControlledZoneNodeNum(1) = 1;
         cbvav.DXCoolCoilIndexNum = 1;
@@ -224,7 +228,7 @@ protected:
         state->dataDXCoils->DXCoil(1).RatedEIR(1) = 0.3;
         state->dataDXCoils->DXCoil(1).RatedSHR.allocate(1);
         state->dataDXCoils->DXCoil(1).RatedSHR(1) = 0.7;
-        state->dataDXCoils->DXCoil(1).SchedPtr = -1;
+        state->dataDXCoils->DXCoil(1).availSched = Sched::GetScheduleAlwaysOn(*state);
         state->dataDXCoils->DXCoilOutletTemp.allocate(1);
         state->dataDXCoils->DXCoilOutletHumRat.allocate(1);
         state->dataDXCoils->DXCoilPartLoadRatio.allocate(1);
@@ -281,7 +285,7 @@ protected:
         cbvav.HeatingCoilOutletNode = state->dataHeatingCoils->HeatingCoil(1).AirOutletNodeNum;
         state->dataHeatingCoils->HeatingCoil(1).NominalCapacity = 10000.0;
         state->dataHeatingCoils->HeatingCoil(1).Efficiency = 1.0;
-        state->dataHeatingCoils->HeatingCoil(1).SchedPtr = -1;
+        state->dataHeatingCoils->HeatingCoil(1).availSched = Sched::GetScheduleAlwaysOn(*state);
 
         cbvav.CBVAVBoxOutletNode.allocate(1);
         cbvav.CBVAVBoxOutletNode(1) = 11;
@@ -644,10 +648,11 @@ TEST_F(EnergyPlusFixture, UnitaryBypassVAV_GetInputZoneEquipment)
 
     ASSERT_TRUE(process_idf(idf_objects)); // read idf objects
 
+    state->init_state(*state);
+
     bool ErrorsFound = false;
     bool firstHVACIteration = true;
     // Read objects
-    SimulationManager::GetProjectData(*state);
     HeatBalanceManager::GetProjectControlData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
     HeatBalanceManager::GetHeatBalanceInput(*state);
@@ -753,7 +758,6 @@ TEST_F(CBVAVSys, UnitaryBypassVAV_AutoSize)
 
 TEST_F(CBVAVSys, UnitaryBypassVAV_NoOASys)
 {
-
     //  reference CBVAV data
     auto &cbvav(state->dataHVACUnitaryBypassVAV->CBVAV(1));
     cbvav.FanVolFlow = 0.5;
@@ -1649,12 +1653,13 @@ TEST_F(EnergyPlusFixture, UnitaryBypassVAV_ParentElectricityRateTest)
 
     ASSERT_TRUE(process_idf(idf_objects)); // read idf objects
 
+    state->init_state(*state);
+
     int CBVAVNum = 1;
     bool HXUnitOn = false;
     bool ErrorsFound = false;
     bool firstHVACIteration = true;
     // get various objects
-    SimulationManager::GetProjectData(*state);
     HeatBalanceManager::GetProjectControlData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
     HeatBalanceManager::GetHeatBalanceInput(*state);
@@ -1736,7 +1741,7 @@ TEST_F(EnergyPlusFixture, UnitaryBypassVAV_ParentElectricityRateTest)
     BypassVAV.changeOverTimer = -1.0;
     state->dataGlobal->DayOfSim = 15;
     state->dataGlobal->HourOfDay = 6;
-    state->dataScheduleMgr->Schedule(BypassVAV.SchedPtr).CurrentValue = 1.0;
+    BypassVAV.availSched->currentVal = 1.0;
 
     Real64 QUnitOut = 0.0;
     Real64 OnOffAirFlowRatio = 1;

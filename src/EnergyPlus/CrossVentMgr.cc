@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -387,7 +387,7 @@ namespace RoomAir {
 
         // Check if wind direction is within +/- 90 degrees of the outward normal of the dominant surface
         SurfNorm = thisSurface.Azimuth;
-        CosPhi = std::cos((state.dataEnvrn->WindDir - SurfNorm) * Constant::DegToRadians);
+        CosPhi = std::cos((state.dataEnvrn->WindDir - SurfNorm) * Constant::DegToRad);
         if (CosPhi <= 0) {
             state.dataRoomAir->AirModel(ZoneNum).SimAirModel = false;
             auto flows(state.dataRoomAir->CrossVentJetRecFlows(_, ZoneNum)); // This is an array slice, need to get rid of this (THIS_AUTO_OK)
@@ -736,7 +736,7 @@ namespace RoomAir {
 
         for (int Ctd = 1; Ctd <= state.dataRoomAir->TotCrossVent; ++Ctd) {
             if (ZoneNum == state.dataRoomAir->ZoneCrossVent(Ctd).ZonePtr) {
-                GainsFrac = ScheduleManager::GetCurrentScheduleValue(state, state.dataRoomAir->ZoneCrossVent(Ctd).SchedGainsPtr);
+                GainsFrac = state.dataRoomAir->ZoneCrossVent(Ctd).gainsSched->getCurrentVal();
             }
         }
 

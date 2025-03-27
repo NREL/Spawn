@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -49,8 +49,6 @@
 #define DataGlobalConstants_hh_INCLUDED
 
 // EnergyPlus Headers
-#include <fmt/format.h>
-// #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 
 namespace EnergyPlus {
@@ -477,21 +475,6 @@ namespace Constant {
         "customEMS"         // customEMS
     };
 
-    inline std::string unitToString(Units unit)
-    {
-        switch (unit) {
-        case Units::Invalid:
-            return "invalid";
-        default:
-            const int iUnit = static_cast<int>(unit);
-            constexpr int numUnitNames = unitNames.size();
-            if (0 <= iUnit && iUnit < numUnitNames) {
-                return fmt::format("[{}]", unitNames[iUnit]);
-            }
-            return "invalid-out-of-range";
-        }
-    }
-
     constexpr std::array<std::string_view, (int)Units::Num> unitNamesUC = {
         "KG/S",             // kg_s
         "C",                // C
@@ -597,13 +580,24 @@ namespace Constant {
     Real64 constexpr Pi = 3.14159265358979324; // Pi 3.1415926535897932384626435
     Real64 constexpr PiOvr2 = Pi / 2.0;        // Pi/2
     Real64 constexpr TwoPi = 2.0 * Pi;         // 2*Pi 6.2831853071795864769252868
-    Real64 constexpr GravityConstant = 9.807;
-    Real64 constexpr DegToRadians = Pi / 180.0;                           // Conversion for Degrees to Radians
-    Real64 constexpr DegToRad = Pi / 180.0;                               // Why is it DegToRadians and RadToDeg? Why? WHY?
-    Real64 constexpr RadToDeg = 180.0 / Pi;                               // Conversion for Radians to Degrees
-    Real64 constexpr SecInHour = 3600.0;                                  // Conversion for hours to seconds
-    Real64 constexpr HoursInDay = 24.0;                                   // Number of Hours in Day
-    Real64 constexpr SecsInDay = SecInHour * HoursInDay;                  // Number of seconds in Day
+    Real64 constexpr Gravity = 9.807;
+    Real64 constexpr DegToRad = Pi / 180.0; // Why is it DegToRadians and RadToDeg? Why? WHY?
+    Real64 constexpr RadToDeg = 180.0 / Pi; // Conversion for Radians to Degrees
+
+    int constexpr iSecsInMinute = 60;                           // Conversion for hours to seconds
+    int constexpr iMinutesInHour = 60;                          // Conversion for hours to minutes
+    int constexpr iSecsInHour = iSecsInMinute * iMinutesInHour; // Conversion for hours to seconds
+    int constexpr iHoursInDay = 24;                             // Number of Hours in Day
+    int constexpr iMinutesInDay = iMinutesInHour * iHoursInDay; // Number of seconds in Day
+    int constexpr iSecsInDay = iSecsInHour * iHoursInDay;       // Number of seconds in Day
+
+    Real64 constexpr rSecsInMinute = 60.0;                         // Conversion for hours to seconds
+    Real64 constexpr rMinutesInHour = 60.0;                        // Conversion for hours to minutes
+    Real64 constexpr rSecsInHour = rSecsInMinute * rMinutesInHour; // Conversion for hours to seconds
+    Real64 constexpr rHoursInDay = 24.0;                           // Number of Hours in Day
+    Real64 constexpr rMinutesInDay = rMinutesInHour * rHoursInDay; // Number of seconds in Day
+    Real64 constexpr rSecsInDay = rSecsInHour * rHoursInDay;       // Number of seconds in Day
+
     Real64 constexpr BigNumber = std::numeric_limits<Real64>::max();      // Max Number real used for initializations
     Real64 constexpr rTinyValue = std::numeric_limits<Real64>::epsilon(); // Tiny value to replace use of TINY(x)
     std::string::size_type constexpr MaxNameLength =

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -84,7 +84,7 @@ constexpr std::array<Material::Gas, 10> gases = {
 
 constexpr std::array<std::string_view, (int)EcoRoofCalcMethod::Num> ecoRoofCalcMethodNamesUC = {"SIMPLE", "ADVANCED"};
 
-int GetMaterialNum(EnergyPlusData &state, std::string const &matName)
+int GetMaterialNum(EnergyPlusData const &state, std::string const &matName)
 {
     auto const &s_mat = state.dataMaterial;
     auto found = s_mat->materialMap.find(Util::makeUPPER(matName));
@@ -485,8 +485,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
         if (mat->windowOpticalData == Window::OpticalDataModel::Spectral) {
             if (s_ipsc->lAlphaFieldBlanks(3)) {
-                ShowSevereCustomMessage(
-                    state, eoh, format("{} = Spectral but {} is blank.", s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaFieldNames(3)));
+                ShowSevereCustom(state, eoh, format("{} = Spectral but {} is blank.", s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaFieldNames(3)));
                 ErrorsFound = true;
             } else if ((mat->GlassSpectralDataPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(3), s_mat->SpectralData)) == 0) {
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3));
@@ -499,82 +498,82 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
             if (s_ipsc->rNumericArgs(2) + s_ipsc->rNumericArgs(3) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(2), s_ipsc->cNumericFieldNames(3)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(2), s_ipsc->cNumericFieldNames(3)));
             }
 
             if (s_ipsc->rNumericArgs(2) + s_ipsc->rNumericArgs(4) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(2), s_ipsc->cNumericFieldNames(4)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(2), s_ipsc->cNumericFieldNames(4)));
             }
 
             if (s_ipsc->rNumericArgs(5) + s_ipsc->rNumericArgs(6) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(5), s_ipsc->cNumericFieldNames(6)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(5), s_ipsc->cNumericFieldNames(6)));
             }
 
             if (s_ipsc->rNumericArgs(5) + s_ipsc->rNumericArgs(7) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(5), s_ipsc->cNumericFieldNames(7)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(5), s_ipsc->cNumericFieldNames(7)));
             }
 
             if (s_ipsc->rNumericArgs(8) + s_ipsc->rNumericArgs(9) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(8), s_ipsc->cNumericFieldNames(9)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(8), s_ipsc->cNumericFieldNames(9)));
             }
 
             if (s_ipsc->rNumericArgs(8) + s_ipsc->rNumericArgs(10) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(8), s_ipsc->cNumericFieldNames(10)));
+                ShowSevereCustom(state, eoh, format("{} + {} not <= 1.0", s_ipsc->cNumericFieldNames(8), s_ipsc->cNumericFieldNames(10)));
             }
 
             if (s_ipsc->rNumericArgs(2) < 0.0) {
-                ShowSevereCustomMessage(state, eoh, format("{} not >= 0.0", s_ipsc->cNumericFieldNames(2)));
+                ShowSevereCustom(state, eoh, format("{} not >= 0.0", s_ipsc->cNumericFieldNames(2)));
                 ErrorsFound = true;
             }
 
             if (s_ipsc->rNumericArgs(2) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(2)));
+                ShowSevereCustom(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(2)));
             }
 
             if (s_ipsc->rNumericArgs(3) < 0.0 || s_ipsc->rNumericArgs(3) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(3)));
+                ShowSevereCustom(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(3)));
             }
 
             if (s_ipsc->rNumericArgs(4) < 0.0 || s_ipsc->rNumericArgs(4) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(4)));
+                ShowSevereCustom(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(4)));
             }
 
             if (s_ipsc->rNumericArgs(5) < 0.0) {
-                ShowWarningCustomMessage(state, eoh, format("{} not >= 0.0", s_ipsc->cNumericFieldNames(5)));
+                ShowWarningCustom(state, eoh, format("{} not >= 0.0", s_ipsc->cNumericFieldNames(5)));
             }
 
             if (s_ipsc->rNumericArgs(5) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(5)));
+                ShowSevereCustom(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(5)));
             }
 
             if (s_ipsc->rNumericArgs(6) < 0.0 || s_ipsc->rNumericArgs(6) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(6)));
+                ShowSevereCustom(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(6)));
             }
 
             if (s_ipsc->rNumericArgs(7) < 0.0 || s_ipsc->rNumericArgs(7) > 1.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(7)));
+                ShowSevereCustom(state, eoh, format("{} not >= 0.0 and <= 1.0", s_ipsc->cNumericFieldNames(7)));
             }
         }
 
         if (s_ipsc->rNumericArgs(8) > 1.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(8)));
+            ShowSevereCustom(state, eoh, format("{} not <= 1.0", s_ipsc->cNumericFieldNames(8)));
         }
 
         if (s_ipsc->rNumericArgs(9) <= 0.0 || s_ipsc->rNumericArgs(9) >= 1.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} not > 0.0 and < 1.0", s_ipsc->cNumericFieldNames(9)));
+            ShowSevereCustom(state, eoh, format("{} not > 0.0 and < 1.0", s_ipsc->cNumericFieldNames(9)));
         }
 
         if (s_ipsc->rNumericArgs(10) <= 0.0 || s_ipsc->rNumericArgs(10) >= 1.0) {
@@ -585,17 +584,17 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
         if (s_ipsc->rNumericArgs(11) <= 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(11)));
+            ShowSevereCustom(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(11)));
         }
 
         if (s_ipsc->rNumericArgs(13) < 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(13)));
+            ShowSevereCustom(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(13)));
         }
 
         if (s_ipsc->rNumericArgs(14) < 0.0 || s_ipsc->rNumericArgs(14) >= 1.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} not > 0.0 and < 1.0", s_ipsc->cNumericFieldNames(14)));
+            ShowSevereCustom(state, eoh, format("{} not > 0.0 and < 1.0", s_ipsc->cNumericFieldNames(14)));
         }
 
         if (s_ipsc->cAlphaArgs(4) == "") {
@@ -631,38 +630,38 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                 GetCurveMinMaxValues(state, mat->GlassSpecAngTransDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
                 if (minAngValue > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
 
                 if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 90.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 90.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
 
                 if (minLamValue < 0.1) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.1 micron in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
 
                 if (maxLamValue > 4.0) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 4.0 microns in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 4.0 microns in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
             }
 
@@ -684,35 +683,35 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                 GetCurveMinMaxValues(state, mat->GlassSpecAngFRefleDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
                 if (minAngValue > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 90.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 90.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (minLamValue < 0.1) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.1 micron in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (maxLamValue > 4.0) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 4.0 microns in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 4.0 microns in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
             }
 
@@ -734,35 +733,35 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                 GetCurveMinMaxValues(state, mat->GlassSpecAngBRefleDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
                 if (minAngValue > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 90.0 in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 90.0 in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (minLamValue < 0.1) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the minumum value = 0.1 micron in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
                 if (maxLamValue > 4.0) {
                     ErrorsFound = true;
-                    ShowSevereCustomMessage(state,
-                                            eoh,
-                                            format("{} requires the maximum value = 4.0 microns in the entered table name={}",
-                                                   s_ipsc->cAlphaFieldNames(5),
-                                                   s_ipsc->cAlphaArgs(5)));
+                    ShowSevereCustom(state,
+                                     eoh,
+                                     format("{} requires the maximum value = 4.0 microns in the entered table name={}",
+                                            s_ipsc->cAlphaFieldNames(5),
+                                            s_ipsc->cAlphaArgs(5)));
                 }
             }
         }
@@ -841,7 +840,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
         if (s_ipsc->rNumericArgs(6) + s_ipsc->rNumericArgs(7) >= 1.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} + {} not < 1.0", s_ipsc->cNumericFieldNames(6), s_ipsc->cNumericFieldNames(7)));
+            ShowSevereCustom(state, eoh, format("{} + {} not < 1.0", s_ipsc->cNumericFieldNames(6), s_ipsc->cNumericFieldNames(7)));
         }
 
         if (s_ipsc->cAlphaArgs(2) == "") {
@@ -1024,11 +1023,11 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
             if (matGas->gases[0].vis.c0 <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(5)));
+                ShowSevereCustom(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(5)));
             }
             if (matGas->gases[0].cp.c0 <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(8)));
+                ShowSevereCustom(state, eoh, format("{} not > 0.0", s_ipsc->cNumericFieldNames(8)));
             }
             if (matGas->gases[0].wght <= 0.0) {
                 ErrorsFound = true;
@@ -1993,7 +1992,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
         // Minimum and maximum slat angles allowed by slat geometry
         if (matBlind->SlatWidth > matBlind->SlatSeparation) {
-            MinSlatAngGeom = std::asin(matBlind->SlatThickness / (matBlind->SlatThickness + matBlind->SlatSeparation)) / Constant::DegToRadians;
+            MinSlatAngGeom = std::asin(matBlind->SlatThickness / (matBlind->SlatThickness + matBlind->SlatSeparation)) / Constant::DegToRad;
         } else {
             MinSlatAngGeom = 0.0;
         }
@@ -2340,7 +2339,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
         s_mat->materialMap.insert_or_assign(nameUC, mat->Num);
 
         if (NumNums + 1 != NumAlphas) {
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("Check number of {} compared to number of {}", s_ipsc->cAlphaFieldNames(2), s_ipsc->cNumericFieldNames(1)));
             ErrorsFound = true;
             continue;
@@ -2365,7 +2364,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             auto *matGlass = s_mat->materials(matRef.matNum);
             // test that named material is of the right type
             if (matGlass->group != Group::Glass) {
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state,
                     eoh,
                     format("{} = {}, Material is not a window glazing ", s_ipsc->cAlphaFieldNames(1 + iMatRef), s_ipsc->cAlphaArgs(1 + iMatRef)));
@@ -2462,13 +2461,13 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
         mat->Thickness = s_ipsc->rNumericArgs(1);
         if (s_ipsc->rNumericArgs(1) <= 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} must be > 0, entered {:.2R}", s_ipsc->cNumericFieldNames(1), s_ipsc->rNumericArgs(1)));
+            ShowSevereCustom(state, eoh, format("{} must be > 0, entered {:.2R}", s_ipsc->cNumericFieldNames(1), s_ipsc->rNumericArgs(1)));
         }
 
         mat->Pressure = s_ipsc->rNumericArgs(2);
         if (s_ipsc->rNumericArgs(2) <= 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(state, eoh, format("{} must be > 0, entered {:.2R}", s_ipsc->cNumericFieldNames(2), s_ipsc->rNumericArgs(2)));
+            ShowSevereCustom(state, eoh, format("{} must be > 0, entered {:.2R}", s_ipsc->cNumericFieldNames(2), s_ipsc->rNumericArgs(2)));
         }
 
         if (!s_ipsc->lAlphaFieldBlanks(2)) {
@@ -2496,14 +2495,14 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                 continue;
             }
 
-            auto const &instances = itInstances.value();
-            auto itObj = instances.begin();
+            auto const &instances2 = itInstances.value();
+            auto itObj = instances2.begin();
             // Can't use find here because epJSON keys are not upper-cased
-            for (; itObj != instances.end(); ++itObj) {
+            for (; itObj != instances2.end(); ++itObj) {
                 if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(3)) break;
             }
 
-            if (itObj == instances.end()) {
+            if (itObj == instances2.end()) {
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3));
                 ErrorsFound = true;
                 continue;
@@ -2523,15 +2522,15 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                 continue;
             }
 
-            auto const &instances = itInstances.value();
+            auto const &instances3 = itInstances.value();
 
-            auto itObj = instances.begin();
+            auto itObj = instances3.begin();
             // Can't use find here because epJSON keys are not upper-cased
-            for (; itObj != instances.end(); ++itObj) {
+            for (; itObj != instances3.end(); ++itObj) {
                 if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(4)) break;
             }
 
-            if (itObj == instances.end()) {
+            if (itObj == instances3.end()) {
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(4), s_ipsc->cAlphaArgs(4));
                 ErrorsFound = true;
                 continue;
@@ -2609,87 +2608,84 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
         if (s_ipsc->rNumericArgs(1) <= 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
-                state, eoh, format("{} must be > 0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(1), s_ipsc->rNumericArgs(1)));
+            ShowSevereCustom(state, eoh, format("{} must be > 0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(1), s_ipsc->rNumericArgs(1)));
         }
 
         if (s_ipsc->rNumericArgs(2) <= 0.0) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
-                state, eoh, format("{} must be > 0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(2), s_ipsc->rNumericArgs(2)));
+            ShowSevereCustom(state, eoh, format("{} must be > 0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(2), s_ipsc->rNumericArgs(2)));
         }
 
         if ((s_ipsc->rNumericArgs(3) < 0.0) || (s_ipsc->rNumericArgs(3) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} value must be >= 0 and <= 1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(3), s_ipsc->rNumericArgs(3)));
         }
 
         if ((s_ipsc->rNumericArgs(4) <= 0.0) || (s_ipsc->rNumericArgs(4) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} value must be >= 0 and <= 1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(4), s_ipsc->rNumericArgs(4)));
         }
 
         if ((s_ipsc->rNumericArgs(5) <= 0.0) || (s_ipsc->rNumericArgs(5) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} value must be >= 0 and <= 1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(5), s_ipsc->rNumericArgs(5)));
         }
 
         if ((s_ipsc->rNumericArgs(6) < 0.0) || (s_ipsc->rNumericArgs(6) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} must be >= 0 or <= 1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(6), s_ipsc->rNumericArgs(6)));
         }
 
         if ((s_ipsc->rNumericArgs(7) < 0.0) || (s_ipsc->rNumericArgs(7) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
-                state, eoh, format("{} must be >=0 or <=1, entered {:.2R}", s_ipsc->cNumericFieldNames(7), s_ipsc->rNumericArgs(7)));
+            ShowSevereCustom(state, eoh, format("{} must be >=0 or <=1, entered {:.2R}", s_ipsc->cNumericFieldNames(7), s_ipsc->rNumericArgs(7)));
         }
 
         if ((s_ipsc->rNumericArgs(8) < 0.0) || (s_ipsc->rNumericArgs(8) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} must be >=0 or <=1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(8), s_ipsc->rNumericArgs(8)));
         }
 
         if ((s_ipsc->rNumericArgs(9) < 0.0) || (s_ipsc->rNumericArgs(9) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} must be >=0 or <=1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(9), s_ipsc->rNumericArgs(9)));
         }
 
         if ((s_ipsc->rNumericArgs(10) < 0.0) || (s_ipsc->rNumericArgs(10) > 1.0)) {
             ErrorsFound = true;
-            ShowSevereCustomMessage(
+            ShowSevereCustom(
                 state, eoh, format("{} must be >=0 or <=1, entered value = {:.2R}", s_ipsc->cNumericFieldNames(10), s_ipsc->rNumericArgs(10)));
         }
 
         if ((mat->LayerType == TARCOGParams::TARCOGLayerType::VENETBLIND_HORIZ) ||
-            (mat->LayerType == TARCOGParams::TARCOGLayerType::VENETBLIND_HORIZ)) {
+            (mat->LayerType == TARCOGParams::TARCOGLayerType::VENETBLIND_VERT)) {
             if (s_ipsc->rNumericArgs(11) <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state, eoh, format("{} must be >0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(11), s_ipsc->rNumericArgs(11)));
             }
 
             if (s_ipsc->rNumericArgs(12) <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state, eoh, format("{} must be >0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(12), s_ipsc->rNumericArgs(12)));
             }
 
             if (s_ipsc->rNumericArgs(13) <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state, eoh, format("{} must be >0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(13), s_ipsc->rNumericArgs(13)));
             }
 
             if ((s_ipsc->rNumericArgs(14) < -90.0) || (s_ipsc->rNumericArgs(14) > 90.0)) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state,
                     eoh,
                     format("{} must be >=-90 and <=90, entered value = {:.2R}", s_ipsc->cNumericFieldNames(14), s_ipsc->rNumericArgs(14)));
@@ -2697,18 +2693,18 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
 
             if (s_ipsc->rNumericArgs(15) <= 0.0) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(
+                ShowSevereCustom(
                     state, eoh, format("{} must be >0, entered value = {:.2R}", s_ipsc->cNumericFieldNames(15), s_ipsc->rNumericArgs(15)));
             }
 
             if ((s_ipsc->rNumericArgs(16) < 0.0) ||
                 ((s_ipsc->rNumericArgs(16) > 0.0) && (s_ipsc->rNumericArgs(16) < (s_ipsc->rNumericArgs(11) / 2)))) {
                 ErrorsFound = true;
-                ShowSevereCustomMessage(state,
-                                        eoh,
-                                        format("{} must be =0 or greater than SlatWidth/2, entered value = {:.2R}",
-                                               s_ipsc->cNumericFieldNames(16),
-                                               s_ipsc->rNumericArgs(16)));
+                ShowSevereCustom(state,
+                                 eoh,
+                                 format("{} must be = 0 or greater than SlatWidth/2, entered value = {:.2R}",
+                                        s_ipsc->cNumericFieldNames(16),
+                                        s_ipsc->rNumericArgs(16)));
             }
         }
 
@@ -2845,13 +2841,13 @@ void GetVariableAbsorptanceInput(EnergyPlusData &state, bool &errorsFound)
 
         mat->absorpVarCtrlSignal = VariableAbsCtrlSignal::SurfaceTemperature; // default value
         mat->absorpVarCtrlSignal = static_cast<VariableAbsCtrlSignal>(getEnumValue(variableAbsCtrlSignalNamesUC, s_ipsc->cAlphaArgs(3)));
-        //    init to 0 as GetScheduleIndex returns 0 for not-found schedule
+
         mat->absorpThermalVarFuncIdx = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(4));
-        mat->absorpThermalVarSchedIdx = ScheduleManager::GetScheduleIndex(state, s_ipsc->cAlphaArgs(5));
+        mat->absorpThermalVarSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(5));
         mat->absorpSolarVarFuncIdx = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(6));
-        mat->absorpSolarVarSchedIdx = ScheduleManager::GetScheduleIndex(state, s_ipsc->cAlphaArgs(7));
+        mat->absorpSolarVarSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(7));
         if (mat->absorpVarCtrlSignal == VariableAbsCtrlSignal::Scheduled) {
-            if ((mat->absorpThermalVarSchedIdx == 0) && (mat->absorpSolarVarSchedIdx == 0)) {
+            if ((mat->absorpThermalVarSched == nullptr) && (mat->absorpSolarVarSched == nullptr)) {
                 ShowSevereError(
                     state,
                     format("{}: Control signal \"Scheduled\" is chosen but both thermal and solar absorptance schedules are undefined, for object {}",
@@ -2879,7 +2875,7 @@ void GetVariableAbsorptanceInput(EnergyPlusData &state, bool &errorsFound)
                 errorsFound = true;
                 return;
             }
-            if ((mat->absorpThermalVarSchedIdx > 0) || (mat->absorpSolarVarSchedIdx > 0)) {
+            if ((mat->absorpThermalVarSched != nullptr) || (mat->absorpSolarVarSched != nullptr)) {
                 ShowWarningError(state,
                                  format("{}: Non-schedule control signal is chosen. Thermal or solar absorptance schedule name is going to be "
                                         "ignored, for object {}",
@@ -2954,7 +2950,7 @@ void GetWindowGlassSpectralData(EnergyPlusData &state, bool &ErrorsFound) // set
         specData.Name = s_ipsc->cAlphaArgs(1);
         int TotLam = NumNums / 4;
         if (mod(NumNums, 4) != 0) {
-            ShowWarningCustomMessage(
+            ShowWarningCustom(
                 state,
                 eoh,
                 format("{} of items in data set is not a multiple of 4 (Wavelength,Trans,ReflFront,ReflBack), remainder items set to 0.0", NumNums));
@@ -2963,7 +2959,7 @@ void GetWindowGlassSpectralData(EnergyPlusData &state, bool &ErrorsFound) // set
         }
 
         if (TotLam > MaxSpectralDataElements) {
-            ShowSevereCustomMessage(state, eoh, format("More than {} entries in set ({})", MaxSpectralDataElements, NumNums));
+            ShowSevereCustom(state, eoh, format("More than {} entries in set ({})", MaxSpectralDataElements, NumNums));
             ErrorsFound = true;
             continue;
         }

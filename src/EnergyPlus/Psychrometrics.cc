@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -49,7 +49,7 @@
 #include <cstdlib>
 
 // ObjexxFCL Headers
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/CommandLineInterface.hh>
@@ -63,15 +63,15 @@
 namespace EnergyPlus {
 
 #ifdef EP_nocache_Psychrometrics
-#undef EP_cache_PsyTwbFnTdbWPb
-#undef EP_cache_PsyPsatFnTemp
-#undef EP_cache_PsyTsatFnPb
-#undef EP_cache_PsyTsatFnHPb
+#    undef EP_cache_PsyTwbFnTdbWPb
+#    undef EP_cache_PsyPsatFnTemp
+#    undef EP_cache_PsyTsatFnPb
+#    undef EP_cache_PsyTsatFnHPb
 #else
-#define EP_cache_PsyTwbFnTdbWPb
-#define EP_cache_PsyPsatFnTemp
-#define EP_cache_PsyTsatFnPb
-#define EP_cache_PsyTsatFnHPb
+#    define EP_cache_PsyTwbFnTdbWPb
+#    define EP_cache_PsyPsatFnTemp
+#    define EP_cache_PsyTsatFnPb
+#    define EP_cache_PsyTsatFnHPb
 #endif
 
 namespace Psychrometrics {
@@ -285,8 +285,6 @@ namespace Psychrometrics {
         // FUNCTION INFORMATION:
         //       AUTHOR         Linda Lawrie/Amir Roth
         //       DATE WRITTEN   August 2011
-        //       MODIFIED       na
-        //       RE-ENGINEERED  na
 
         // PURPOSE OF THIS FUNCTION:
         // Provide a "cache" of results for the given arguments and wetbulb (twb) output result.
@@ -295,32 +293,12 @@ namespace Psychrometrics {
         // Use grid shifting and masking to provide hash into the cache. Use Equivalence to
         // make Fortran ignore "types".
 
-        // REFERENCES:
-        // na
-
-        // USE STATEMENTS:
-        // na
-
-        // Return value
-        Real64 Twb_result; // result=> Temperature Wet-Bulb {C}
-
-        // Locals
-        // FUNCTION ARGUMENT DEFINITIONS:
-
         // FUNCTION PARAMETER DEFINITIONS:
         std::uint64_t constexpr Grid_Shift = 64 - 12 - twbprecision_bits;
 
-        // INTERFACE BLOCK SPECIFICATIONS:
-        // na
-
-        // DERIVED TYPE DEFINITIONS:
-        // na
-
-        // FUNCTION LOCAL VARIABLE DECLARATIONS:
-
-#ifdef EP_psych_stats
+#    ifdef EP_psych_stats
         ++state.dataPsychCache->NumTimesCalled[static_cast<int>(PsychrometricFunction::TwbFnTdbWPb_cache)];
-#endif
+#    endif
 
         DISABLE_WARNING_PUSH
         DISABLE_WARNING_STRICT_ALIASING
@@ -359,11 +337,7 @@ namespace Psychrometrics {
             cached_Twb[hash].Twb = PsyTwbFnTdbWPb_raw(state, Tdb_tag_r, W_tag_r, Pb_tag_r, CalledFrom);
         }
 
-        //  Twbresult_last = cached_Twb(hash)%Twb
-        //  Twb_result = Twbresult_last
-        Twb_result = cached_Twb[hash].Twb;
-
-        return Twb_result;
+        return cached_Twb[hash].Twb;
     }
 
     Real64 PsyTwbFnTdbWPb_raw(EnergyPlusData &state,
@@ -420,14 +394,13 @@ namespace Psychrometrics {
         Real64 PSatstar; // Saturation pressure at wet bulb temperature
         int iter;        // Iteration counter
         int icvg;        // Iteration convergence flag
-        bool FlagError;  // set when errors should be flagged
 
 #ifdef EP_psych_stats
         ++state.dataPsychCache->NumTimesCalled[static_cast<int>(PsychrometricFunction::TwbFnTdbWPb)];
 #endif
 
         // CHECK TDB IN RANGE.
-        FlagError = false;
+        bool FlagError = false;
 #ifdef EP_psych_errors
         if (TDB <= -100.0 || TDB >= 200.0) {
             if (!state.dataGlobal->WarmupFlag) {
@@ -963,7 +936,7 @@ namespace Psychrometrics {
 
         if (H >= 0.0) {
             Hloc = max(0.00001, H);
-        } else if (H < 0.0) {
+        } else {
             Hloc = min(-0.00001, H);
         }
 
@@ -1326,16 +1299,15 @@ namespace Psychrometrics {
         // na
 
         // FUNCTION LOCAL VARIABLE DECLARATIONS:
-        bool FlagError; // set when errors should be flagged
-        Real64 tSat;    // Water temperature guess
-        int iter;       // Iteration counter
+        Real64 tSat; // Water temperature guess
+        int iter;    // Iteration counter
 
 #ifdef EP_psych_stats
         ++state.dataPsychCache->NumTimesCalled[static_cast<int>(PsychrometricFunction::TsatFnPb)];
 #endif
 
         // Check press in range.
-        FlagError = false;
+        bool FlagError = false;
 #ifdef EP_psych_errors
         if (!state.dataGlobal->WarmupFlag) {
             if (Press <= 0.0017 || Press >= 1555000.0) {
@@ -1364,18 +1336,17 @@ namespace Psychrometrics {
             return state.dataPsychrometrics->tSat_Save;
         }
         state.dataPsychrometrics->Press_Save = Press;
+        iter = 0;
         if (state.dataPsychrometrics->useInterpolationPsychTsatFnPb) {
             int n_sample = 1651; // sample bin size = 64 Pa; continous sample size = 1651
             // CSpline interpolation
             tSat = CSplineint(n_sample, Press); // Cubic spline interpolation
-            iter = 0;
         } else {
             // Uses an iterative process to determine the saturation temperature at a given
             // pressure by correlating saturated water vapor as a function of temperature.
 
             // Initial guess of boiling temperature
             tSat = 100.0;
-            iter = 0;
 
             // If above 1555000,set value of Temp corresponding to Saturation Pressure of 1555000 Pascal.
             if (Press >= 1555000.0) {

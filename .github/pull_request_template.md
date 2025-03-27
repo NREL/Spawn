@@ -1,12 +1,18 @@
 Pull request overview
 ---------------------
- - Fixes #ISSUENUMBERHERE (IF THIS IS A DEFECT)
- - DESCRIBE PURPOSE OF THIS PULL REQUEST
 
-**NOTE: ENHANCEMENTS MUST FOLLOW A SUBMISSION PROCESS INCLUDING A FEATURE PROPOSAL AND DESIGN DOCUMENT PRIOR TO SUBMITTING CODE**
+- Fixes #ISSUENUMBERHERE <!-- IF THIS IS A DEFECT -->
+
+<!-- NOTE: ENHANCEMENTS MUST FOLLOW A SUBMISSION PROCESS INCLUDING A FEATURE PROPOSAL AND DESIGN DOCUMENT PRIOR TO SUBMITTING CODE -->
+
+### Description of the purpose of this PR
+
+<!-- DESCRIBE PURPOSE OF THIS PULL REQUEST -->
 
 ### Pull Request Author
-Add to this list or remove from it as applicable.  This is a simple templated set of guidelines.
+
+<!-- Add to this list or remove from it as applicable.  This is a simple templated set of guidelines. -->
+
  - [ ] Title of PR should be user-synopsis style (clearly understandable in a standalone changelog context)
  - [ ] Label the PR with at least one of: Defect, Refactoring, NewFeature, Performance, and/or DoNoPublish
  - [ ] Pull requests that impact EnergyPlus code must also include unit tests to cover enhancement or defect repair
@@ -19,7 +25,9 @@ Add to this list or remove from it as applicable.  This is a simple templated se
  - [ ] If adding/removing any LaTeX docs or figures, update that document's CMakeLists file dependencies
 
 ### Reviewer
-This will not be exhaustively relevant to every PR.
+
+<!-- This will not be exhaustively relevant to every PR. -->
+
  - [ ] Perform a Code Review on GitHub
  - [ ] If branch is behind develop, merge develop and build locally to check for side effects of the merge
  - [ ] If defect, verify by running develop branch and reproducing defect, then running PR and reproducing fix

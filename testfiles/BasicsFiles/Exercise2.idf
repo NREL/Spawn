@@ -31,7 +31,7 @@
 !
 !
 
-  Version,24.2;
+  Version,25.1;
 
   Building,
     Exercise 2,              !- Name
@@ -1752,7 +1752,7 @@
 
   Output:Variable,*,Zone Electric Equipment Total Heating Energy,Hourly;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,Hourly;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,Hourly;
 
   Output:Variable,*,Zone Infiltration Sensible Heat Loss Energy,Hourly;
 

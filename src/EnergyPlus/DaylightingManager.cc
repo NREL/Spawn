@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -449,7 +449,7 @@ void CalcDayltgCoefficients(EnergyPlusData &state)
     // Zero daylighting factor arrays
     if (numTDD > 0) {
         int iHrBeg = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : 1;
-        int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::HoursInDay;
+        int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::iHoursInDay;
         for (int iHr = iHrBeg; iHr <= iHrEnd; ++iHr) {
             for (int iTDD = 1; iTDD <= numTDD; ++iTDD) {
                 dl->TDDTransVisBeam(iHr, iTDD) = 0.0;
@@ -465,7 +465,7 @@ void CalcDayltgCoefficients(EnergyPlusData &state)
             dl->sunAngles = SunAngles();
             dl->sunAnglesHr = {SunAngles()};
             dl->horIllum = {Illums()};
-            for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+            for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
                 auto const &surfSunCosHr = s_surf->SurfSunCosHourly(IHR);
                 if (surfSunCosHr.z < DataEnvironment::SunIsUpValue)
                     continue; // Skip if sun is below horizon //Autodesk SurfSunCosHourly was uninitialized here
@@ -604,7 +604,7 @@ void CalcDayltgCoefficients(EnergyPlusData &state)
                               s_surf->Surface(windowSurfNum).Name);
                     }
 
-                    for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+                    for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
                         // For each Daylight Reference Point
                         auto &daylFacHr = thisDayltgCtrl.daylFac[IHR];
                         for (int refPtNum = 1; refPtNum <= thisDayltgCtrl.TotalDaylRefPoints; ++refPtNum) {
@@ -776,7 +776,7 @@ void CalcDayltgCoeffsRefPoints(EnergyPlusData &state, int const daylightCtrlNum)
     // Azimuth of view vector in absolute coord sys
     Real64 AZVIEW = (thisDayltgCtrl.ViewAzimuthForGlare + state.dataHeatBal->Zone(zoneNum).RelNorth + state.dataHeatBal->BuildingAzimuth +
                      state.dataHeatBal->BuildingRotationAppendixG) *
-                    Constant::DegToRadians;
+                    Constant::DegToRad;
     // View vector components in absolute coord sys
     VIEWVC = {std::sin(AZVIEW), std::cos(AZVIEW), 0.0};
 
@@ -790,7 +790,7 @@ void CalcDayltgCoeffsRefPoints(EnergyPlusData &state, int const daylightCtrlNum)
     }
 
     int iHrBeg = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : 1;
-    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::HoursInDay;
+    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::iHoursInDay;
     int numExtWins = thisEnclDaylight.NumOfDayltgExtWins;
     int numRefPts = thisDayltgCtrl.TotalDaylRefPoints;
 
@@ -922,7 +922,7 @@ void CalcDayltgCoeffsRefPoints(EnergyPlusData &state, int const daylightCtrlNum)
 
                     if (!state.dataSysVars->DetailedSolarTimestepIntegration) {
                         ISunPos = 0;
-                        for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+                        for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
 
                             FigureDayltgCoeffsAtPointsForSunPosition(state,
                                                                      daylightCtrlNum,
@@ -1024,7 +1024,7 @@ void CalcDayltgCoeffsRefPoints(EnergyPlusData &state, int const daylightCtrlNum)
 
             if (!state.dataSysVars->DetailedSolarTimestepIntegration) {
                 ISunPos = 0;
-                for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+                for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
                     FigureRefPointDayltgFactorsToAddIllums(state, daylightCtrlNum, ILB, IHR, ISunPos, IWin, loopwin, NWX, NWY, ICtrl);
 
                 } // End of sun position loop, IHR
@@ -1150,7 +1150,7 @@ void CalcDayltgCoeffsMapPoints(EnergyPlusData &state, int const mapNum)
     }
 
     int iHrBeg = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : 1;
-    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::HoursInDay;
+    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::iHoursInDay;
 
     for (int iHr = iHrBeg; iHr <= iHrEnd; ++iHr) {
         auto &daylFacHr = illumMap.daylFac[iHr];
@@ -1276,7 +1276,7 @@ void CalcDayltgCoeffsMapPoints(EnergyPlusData &state, int const mapNum)
                     // that do not depend on sun position.
                     if (!state.dataSysVars->DetailedSolarTimestepIntegration) {
                         ISunPos = 0;
-                        for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+                        for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
                             // daylightingCtrlNum parameter is unused for map points
                             FigureDayltgCoeffsAtPointsForSunPosition(state,
                                                                      0,
@@ -1375,7 +1375,7 @@ void CalcDayltgCoeffsMapPoints(EnergyPlusData &state, int const mapNum)
                 // direct and inter-reflected illum components, then dividing by exterior horiz illum.
                 // Also calculate corresponding glare factors.
                 ILB = IL;
-                for (int IHR = 1; IHR <= Constant::HoursInDay; ++IHR) {
+                for (int IHR = 1; IHR <= Constant::iHoursInDay; ++IHR) {
                     FigureMapPointDayltgFactorsToAddIllums(state, mapNum, ILB, IHR, IWin, loopwin, ICtrl);
                 } // End of sun position loop, IHR
             } else {
@@ -1526,7 +1526,7 @@ void FigureDayltgCoeffsAtPointsSetupForWindow(EnergyPlusData &state,
     LSHCAL = 0;
 
     // Visible transmittance at normal incidence
-    s_surf->SurfWinVisTransSelected(IWin) = General::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
+    s_surf->SurfWinVisTransSelected(IWin) = Window::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
     // For windows with switchable glazing, ratio of visible transmittance at normal
     // incidence for fully switched (dark) state to that of unswitched state
     s_surf->SurfWinVisTransRatio(IWin) = 1.0;
@@ -1534,8 +1534,8 @@ void FigureDayltgCoeffsAtPointsSetupForWindow(EnergyPlusData &state,
         if (ShType == WinShadingType::SwitchableGlazing) {
             int IConstShaded = surf.activeShadedConstruction; // Shaded construction counter
             s_surf->SurfWinVisTransRatio(IWin) =
-                General::SafeDivide(General::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef),
-                                    General::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef));
+                General::SafeDivide(Window::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef),
+                                    Window::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef));
         }
     }
 
@@ -1759,7 +1759,7 @@ void FigureDayltgCoeffsAtPointsSetupForWindow(EnergyPlusData &state,
     }
 
     int iHrBeg = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : 1;
-    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::HoursInDay;
+    int iHrEnd = state.dataSysVars->DetailedSolarTimestepIntegration ? state.dataGlobal->HourOfDay : Constant::iHoursInDay;
 
     for (int iHr = iHrBeg; iHr <= iHrEnd; ++iHr) {
         // Initialize sky and sun components of direct illuminance (arrays EDIRSK, EDIRSU, EDIRSUdisk)
@@ -1929,7 +1929,7 @@ void FigureDayltgCoeffsAtPointsForWindowElements(
     } else { // Regular window
         if (s_surf->SurfWinWindowModelType(IWin) != WindowModel::BSDF) {
             // Vis trans of glass for COSB incidence angle
-            TVISB = General::POLYF(COSB, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
+            TVISB = Window::POLYF(COSB, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
         } else {
             // Complex fenestration needs to use different equation for visible transmittance.  That will be calculated later
             // in the code since it depends on different incoming directions.  For now, just put zero to differentiate from
@@ -1963,7 +1963,7 @@ void FigureDayltgCoeffsAtPointsForWindowElements(
                             IntWinHitNum = 0;
                             continue;
                         }
-                        TVISIntWin = General::POLYF(COSBIntWin, state.dataConstruction->Construct(surfIntWin.Construction).TransVisBeamCoef);
+                        TVISIntWin = Window::POLYF(COSBIntWin, state.dataConstruction->Construct(surfIntWin.Construction).TransVisBeamCoef);
                         TVISB *= TVISIntWin;
                         break; // Ray passes thru interior window; exit from DO loop
                     }
@@ -2107,7 +2107,7 @@ void InitializeCFSDaylighting(EnergyPlusData &state,
     int zoneNum = dl->daylightControl(daylightCtrlNum).zoneIndex;
     Real64 AZVIEW = (dl->daylightControl(daylightCtrlNum).ViewAzimuthForGlare + state.dataHeatBal->Zone(zoneNum).RelNorth +
                      state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) *
-                    Constant::DegToRadians;
+                    Constant::DegToRad;
 
     // Perform necessary calculations for window coordinates and vectors.  This will be used to calculate centroids for
     // each window element
@@ -2341,7 +2341,7 @@ void InitializeCFSStateData(EnergyPlusData &state,
                         V = HitPt - Centroid;                // vector array from window ctr to hit pt
                         LeastHitDsq = V.magnitude_squared(); // dist^2 window ctr to hit pt
                         TmpHSurfDSq(1, NReflSurf) = LeastHitDsq;
-                        if (!surf2.HeatTransSurf && surf2.SchedShadowSurfIndex != 0) {
+                        if (!surf2.HeatTransSurf && surf2.shadowSurfSched != nullptr) {
                             TransRSurf = 1.0; // If a shadowing surface may have a scheduled transmittance, treat it here as completely transparent
                         } else {
                             TransRSurf = 0.0;
@@ -2359,7 +2359,7 @@ void InitializeCFSStateData(EnergyPlusData &state,
                                             break;
                                         }
                                     }
-                                    if (!surf2.HeatTransSurf && surf2.SchedShadowSurfIndex == 0) {
+                                    if (!surf2.HeatTransSurf && surf2.shadowSurfSched == nullptr) {
                                         //  The new hit is opaque, so we can drop all the hits further away
                                         TmpHSurfNo(J, NReflSurf) = JSurf;
                                         TmpHitPt(J, NReflSurf) = HitPt;
@@ -2387,7 +2387,7 @@ void InitializeCFSStateData(EnergyPlusData &state,
                             //  A new closest hit.  If it is opaque, drop the current hit list,
                             //    otherwise add it at the front
                             LeastHitDsq = HitDsq;
-                            if (!surf2.HeatTransSurf && surf2.SchedShadowSurfIndex != 0) {
+                            if (!surf2.HeatTransSurf && surf2.shadowSurfSched != nullptr) {
                                 TransRSurf = 1.0; // New closest hit is transparent, keep the existing hit list
                                 for (int I = TotHits; I >= 1; --I) {
                                     TmpHSurfNo(I + 1, NReflSurf) = TmpHSurfNo(I, NReflSurf);
@@ -3114,7 +3114,7 @@ void FigureDayltgCoeffsAtPointsForSunPosition(
                                 continue;
                             }
                             TVISIntWinDisk =
-                                General::POLYF(COSBIntWin, state.dataConstruction->Construct(surfIntWinDisk.Construction).TransVisBeamCoef);
+                                Window::POLYF(COSBIntWin, state.dataConstruction->Construct(surfIntWinDisk.Construction).TransVisBeamCoef);
                             break;
                         } // for (IntWinDisk)
                     }     // for (spaceNum)
@@ -3170,7 +3170,7 @@ void FigureDayltgCoeffsAtPointsForSunPosition(
                         TVISS = 0.0;
                     } else {
                         // Beam transmittance for bare window and all types of blinds
-                        TVISS = General::POLYF(COSI, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac *
+                        TVISS = Window::POLYF(COSI, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac *
                                 surfWin.lightWellEff;
                         if (extWinType == ExtWinType::AdjZone && hitIntWinDisk) TVISS *= TVISIntWinDisk;
                     }
@@ -3343,15 +3343,15 @@ void FigureDayltgCoeffsAtPointsForSunPosition(
                             if (s_surf->Surface(ReflSurfNum).Class == SurfaceClass::Window) {
                                 int const ConstrNumRefl = s_surf->SurfActiveConstruction(ReflSurfNum);
                                 SpecReflectance =
-                                    General::POLYF(std::abs(CosIncAngRefl), state.dataConstruction->Construct(ConstrNumRefl).ReflSolBeamFrontCoef);
+                                    Window::POLYF(std::abs(CosIncAngRefl), state.dataConstruction->Construct(ConstrNumRefl).ReflSolBeamFrontCoef);
                             }
                             if (s_surf->Surface(ReflSurfNum).IsShadowing && s_surf->SurfShadowGlazingConstruct(ReflSurfNum) > 0)
                                 SpecReflectance =
                                     s_surf->SurfShadowGlazingFrac(ReflSurfNum) *
-                                    General::POLYF(
+                                    Window::POLYF(
                                         std::abs(CosIncAngRefl),
                                         state.dataConstruction->Construct(s_surf->SurfShadowGlazingConstruct(ReflSurfNum)).ReflSolBeamFrontCoef);
-                            TVisRefl = General::POLYF(CosIncAngRec, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac *
+                            TVisRefl = Window::POLYF(CosIncAngRec, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac *
                                        surfWin.lightWellEff;
                             dl->dirIllum(iHour)[iWinCover_Bare].sunDisk += SunVecMir.z * SpecReflectance * TVisRefl; // Bare window
 
@@ -3659,10 +3659,10 @@ void GetDaylightingParametersInput(EnergyPlusData &state)
     if (!dl->getDaylightingParametersInputFlag) return;
     dl->getDaylightingParametersInputFlag = false;
 
-    auto const &ipsc = state.dataIPShortCut;
-    ipsc->cCurrentModuleObject = "Daylighting:Controls";
+    auto const &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "Daylighting:Controls";
     bool ErrorsFound = false;
-    int TotDaylightingControls = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    int TotDaylightingControls = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     if (TotDaylightingControls > 0) {
         dl->enclDaylight.allocate(state.dataViewFactor->NumOfSolarEnclosures);
         GetInputDayliteRefPt(state, ErrorsFound);
@@ -3911,27 +3911,27 @@ void GetDaylightingParametersInput(EnergyPlusData &state)
     // RJH DElight Modification End - Calls to DElight preprocessing subroutines
 
     // TH 6/3/2010, added to report daylight factors
-    ipsc->cCurrentModuleObject = "Output:DaylightFactors";
-    int NumReports = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    s_ipsc->cCurrentModuleObject = "Output:DaylightFactors";
+    int NumReports = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     if (NumReports > 0) {
         int NumNames;
         int NumNumbers;
         int IOStat;
         state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                 ipsc->cCurrentModuleObject,
+                                                                 s_ipsc->cCurrentModuleObject,
                                                                  1,
-                                                                 ipsc->cAlphaArgs,
+                                                                 s_ipsc->cAlphaArgs,
                                                                  NumNames,
-                                                                 ipsc->rNumericArgs,
+                                                                 s_ipsc->rNumericArgs,
                                                                  NumNumbers,
                                                                  IOStat,
-                                                                 ipsc->lNumericFieldBlanks,
-                                                                 ipsc->lAlphaFieldBlanks,
-                                                                 ipsc->cAlphaFieldNames,
-                                                                 ipsc->cNumericFieldNames);
-        if (has_prefix(ipsc->cAlphaArgs(1), "SIZINGDAYS")) {
+                                                                 s_ipsc->lNumericFieldBlanks,
+                                                                 s_ipsc->lAlphaFieldBlanks,
+                                                                 s_ipsc->cAlphaFieldNames,
+                                                                 s_ipsc->cNumericFieldNames);
+        if (has_prefix(s_ipsc->cAlphaArgs(1), "SIZINGDAYS")) {
             dl->DFSReportSizingDays = true;
-        } else if (has_prefix(ipsc->cAlphaArgs(1), "ALLSHADOWCALCULATIONDAYS")) {
+        } else if (has_prefix(s_ipsc->cAlphaArgs(1), "ALLSHADOWCALCULATIONDAYS")) {
             dl->DFSReportAllShadowCalculationDays = true;
         }
     }
@@ -3948,11 +3948,11 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
 
     Array1D_bool ZoneMsgDone;
 
-    Real64 CosBldgRelNorth = std::cos(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRadians);
-    Real64 SinBldgRelNorth = std::sin(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRadians);
+    Real64 CosBldgRelNorth = std::cos(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRad);
+    Real64 SinBldgRelNorth = std::sin(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRad);
     // these are only for Building Rotation for Appendix G when using world coordinate system
-    Real64 CosBldgRotAppGonly = std::cos(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRadians);
-    Real64 SinBldgRotAppGonly = std::sin(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRadians);
+    Real64 CosBldgRotAppGonly = std::cos(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRad);
+    Real64 SinBldgRotAppGonly = std::sin(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRad);
 
     bool doTransform = false;
     Real64 OldAspectRatio = 1.0;
@@ -3960,9 +3960,10 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
 
     CheckForGeometricTransform(state, doTransform, OldAspectRatio, NewAspectRatio);
 
-    auto const &ipsc = state.dataIPShortCut;
-    ipsc->cCurrentModuleObject = "Output:IlluminanceMap";
-    int TotIllumMaps = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    auto &ip = state.dataInputProcessing->inputProcessor;
+    auto const &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "Output:IlluminanceMap";
+    int TotIllumMaps = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
     dl->illumMaps.allocate(TotIllumMaps);
 
@@ -3973,21 +3974,21 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
         auto &ip = state.dataInputProcessing->inputProcessor;
         for (int MapNum = 1; MapNum <= TotIllumMaps; ++MapNum) {
             ip->getObjectItem(state,
-                              ipsc->cCurrentModuleObject,
+                              s_ipsc->cCurrentModuleObject,
                               MapNum,
-                              ipsc->cAlphaArgs,
+                              s_ipsc->cAlphaArgs,
                               NumAlpha,
-                              ipsc->rNumericArgs,
+                              s_ipsc->rNumericArgs,
                               NumNumber,
                               IOStat,
-                              ipsc->lNumericFieldBlanks,
-                              ipsc->lAlphaFieldBlanks,
-                              ipsc->cAlphaFieldNames,
-                              ipsc->cNumericFieldNames);
+                              s_ipsc->lNumericFieldBlanks,
+                              s_ipsc->lAlphaFieldBlanks,
+                              s_ipsc->cAlphaFieldNames,
+                              s_ipsc->cNumericFieldNames);
 
             auto &illumMap = dl->illumMaps(MapNum);
-            illumMap.Name = ipsc->cAlphaArgs(1);
-            int const zoneNum = Util::FindItemInList(ipsc->cAlphaArgs(2), state.dataHeatBal->Zone);
+            illumMap.Name = s_ipsc->cAlphaArgs(1);
+            int const zoneNum = Util::FindItemInList(s_ipsc->cAlphaArgs(2), state.dataHeatBal->Zone);
             if (zoneNum > 0) {
                 illumMap.zoneIndex = zoneNum;
                 // set enclosure index for first space in zone
@@ -3999,8 +4000,8 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
                     if (enclNum != state.dataHeatBal->space(spaceNum).solarEnclosureNum) {
                         ShowSevereError(state,
                                         format("{}=\"{}\" All spaces in the zone must be in the same enclosure for daylighting illuminance maps.",
-                                               ipsc->cCurrentModuleObject,
-                                               ipsc->cAlphaArgs(1)));
+                                               s_ipsc->cCurrentModuleObject,
+                                               s_ipsc->cAlphaArgs(1)));
                         ShowContinueError(
                             state, format("Zone=\"{}\" spans multiple enclosures. Use a Space Name instead.", state.dataHeatBal->Zone(zoneNum).Name));
                         ErrorsFound = true;
@@ -4012,10 +4013,10 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
                 if (spaceNum == 0) {
                     ShowSevereError(state,
                                     format("{}=\"{}\", invalid {}=\"{}\".",
-                                           ipsc->cCurrentModuleObject,
-                                           ipsc->cAlphaArgs(1),
-                                           ipsc->cAlphaFieldNames(2),
-                                           ipsc->cAlphaArgs(2)));
+                                           s_ipsc->cCurrentModuleObject,
+                                           s_ipsc->cAlphaArgs(1),
+                                           s_ipsc->cAlphaFieldNames(2),
+                                           s_ipsc->cAlphaArgs(2)));
                     ErrorsFound = true;
                 } else {
                     illumMap.spaceIndex = spaceNum;
@@ -4025,90 +4026,90 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
                 }
             }
 
-            illumMap.Z = ipsc->rNumericArgs(1);
-            illumMap.Xmin = ipsc->rNumericArgs(2);
-            illumMap.Xmax = ipsc->rNumericArgs(3);
-            if (ipsc->rNumericArgs(2) > ipsc->rNumericArgs(3)) {
-                ShowSevereError(state, format("{}=\"{}\", invalid entry.", ipsc->cCurrentModuleObject, ipsc->cAlphaArgs(1)));
+            illumMap.Z = s_ipsc->rNumericArgs(1);
+            illumMap.Xmin = s_ipsc->rNumericArgs(2);
+            illumMap.Xmax = s_ipsc->rNumericArgs(3);
+            if (s_ipsc->rNumericArgs(2) > s_ipsc->rNumericArgs(3)) {
+                ShowSevereError(state, format("{}=\"{}\", invalid entry.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state,
                                   format("...{} {:.2R} must be <= {} {:.2R}.",
-                                         ipsc->cNumericFieldNames(2),
-                                         ipsc->rNumericArgs(2),
-                                         ipsc->cNumericFieldNames(3),
-                                         ipsc->rNumericArgs(3)));
+                                         s_ipsc->cNumericFieldNames(2),
+                                         s_ipsc->rNumericArgs(2),
+                                         s_ipsc->cNumericFieldNames(3),
+                                         s_ipsc->rNumericArgs(3)));
                 ErrorsFound = true;
             }
-            illumMap.Xnum = ipsc->rNumericArgs(4);
+            illumMap.Xnum = s_ipsc->rNumericArgs(4);
             illumMap.Xinc = (illumMap.Xnum != 1) ? ((illumMap.Xmax - illumMap.Xmin) / (illumMap.Xnum - 1)) : 0.0;
 
-            illumMap.Ymin = ipsc->rNumericArgs(5);
-            illumMap.Ymax = ipsc->rNumericArgs(6);
-            if (ipsc->rNumericArgs(5) > ipsc->rNumericArgs(6)) {
-                ShowSevereError(state, format("{}=\"{}\", invalid entry.", ipsc->cCurrentModuleObject, ipsc->cAlphaArgs(1)));
+            illumMap.Ymin = s_ipsc->rNumericArgs(5);
+            illumMap.Ymax = s_ipsc->rNumericArgs(6);
+            if (s_ipsc->rNumericArgs(5) > s_ipsc->rNumericArgs(6)) {
+                ShowSevereError(state, format("{}=\"{}\", invalid entry.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state,
                                   format("...{} {:.2R} must be <= {} {:.2R}.",
-                                         ipsc->cNumericFieldNames(5),
-                                         ipsc->rNumericArgs(5),
-                                         ipsc->cNumericFieldNames(6),
-                                         ipsc->rNumericArgs(6)));
+                                         s_ipsc->cNumericFieldNames(5),
+                                         s_ipsc->rNumericArgs(5),
+                                         s_ipsc->cNumericFieldNames(6),
+                                         s_ipsc->rNumericArgs(6)));
                 ErrorsFound = true;
             }
-            illumMap.Ynum = ipsc->rNumericArgs(7);
+            illumMap.Ynum = s_ipsc->rNumericArgs(7);
             illumMap.Yinc = (illumMap.Ynum != 1) ? ((illumMap.Ymax - illumMap.Ymin) / (illumMap.Ynum - 1)) : 0.0;
 
             if (illumMap.Xnum * illumMap.Ynum > MaxMapRefPoints) {
-                ShowSevereError(state, format("{}=\"{}\", too many map points specified.", ipsc->cCurrentModuleObject, ipsc->cAlphaArgs(1)));
+                ShowSevereError(state, format("{}=\"{}\", too many map points specified.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state,
                                   format("...{}[{}] * {}[{}].= [{}] must be <= [{}].",
-                                         ipsc->cNumericFieldNames(4),
+                                         s_ipsc->cNumericFieldNames(4),
                                          illumMap.Xnum,
-                                         ipsc->cNumericFieldNames(7),
+                                         s_ipsc->cNumericFieldNames(7),
                                          illumMap.Ynum,
                                          illumMap.Xnum * illumMap.Ynum,
                                          MaxMapRefPoints));
                 ErrorsFound = true;
             }
         } // MapNum
-        ipsc->cCurrentModuleObject = "OutputControl:IlluminanceMap:Style";
-        int MapStyleIn = ip->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+        s_ipsc->cCurrentModuleObject = "OutputControl:IlluminanceMap:Style";
+        int MapStyleIn = ip->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
         if (MapStyleIn == 0) {
-            ipsc->cAlphaArgs(1) = "COMMA";
+            s_ipsc->cAlphaArgs(1) = "COMMA";
             dl->MapColSep = DataStringGlobals::CharComma; // comma
         } else if (MapStyleIn == 1) {
             ip->getObjectItem(state,
-                              ipsc->cCurrentModuleObject,
+                              s_ipsc->cCurrentModuleObject,
                               1,
-                              ipsc->cAlphaArgs,
+                              s_ipsc->cAlphaArgs,
                               NumAlpha,
-                              ipsc->rNumericArgs,
+                              s_ipsc->rNumericArgs,
                               NumNumber,
                               IOStat,
-                              ipsc->lNumericFieldBlanks,
-                              ipsc->lAlphaFieldBlanks,
-                              ipsc->cAlphaFieldNames,
-                              ipsc->cNumericFieldNames);
-            if (ipsc->cAlphaArgs(1) == "COMMA") {
+                              s_ipsc->lNumericFieldBlanks,
+                              s_ipsc->lAlphaFieldBlanks,
+                              s_ipsc->cAlphaFieldNames,
+                              s_ipsc->cNumericFieldNames);
+            if (s_ipsc->cAlphaArgs(1) == "COMMA") {
                 dl->MapColSep = DataStringGlobals::CharComma; // comma
-            } else if (ipsc->cAlphaArgs(1) == "TAB") {
+            } else if (s_ipsc->cAlphaArgs(1) == "TAB") {
                 dl->MapColSep = DataStringGlobals::CharTab; // tab
-            } else if (ipsc->cAlphaArgs(1) == "FIXED" || ipsc->cAlphaArgs(1) == "SPACE") {
+            } else if (s_ipsc->cAlphaArgs(1) == "FIXED" || s_ipsc->cAlphaArgs(1) == "SPACE") {
                 dl->MapColSep = DataStringGlobals::CharSpace; // space
             } else {
                 dl->MapColSep = DataStringGlobals::CharComma; // comma
                 ShowWarningError(state,
                                  format("{}: invalid {}=\"{}\", Commas will be used to separate fields.",
-                                        ipsc->cCurrentModuleObject,
-                                        ipsc->cAlphaFieldNames(1),
-                                        ipsc->cAlphaArgs(1)));
-                ipsc->cAlphaArgs(1) = "COMMA";
+                                        s_ipsc->cCurrentModuleObject,
+                                        s_ipsc->cAlphaFieldNames(1),
+                                        s_ipsc->cAlphaArgs(1)));
+                s_ipsc->cAlphaArgs(1) = "COMMA";
             }
         }
         print(state.files.eio, "! <Daylighting:Illuminance Maps>,#Maps,Style\n");
-        ConvertCaseToLower(ipsc->cAlphaArgs(1), ipsc->cAlphaArgs(2));
-        ipsc->cAlphaArgs(1).erase(1);
-        ipsc->cAlphaArgs(1) += ipsc->cAlphaArgs(2).substr(1);
-        print(state.files.eio, "Daylighting:Illuminance Maps,{},{}\n", TotIllumMaps, ipsc->cAlphaArgs(1));
+        ConvertCaseToLower(s_ipsc->cAlphaArgs(1), s_ipsc->cAlphaArgs(2));
+        s_ipsc->cAlphaArgs(1).erase(1);
+        s_ipsc->cAlphaArgs(1) += s_ipsc->cAlphaArgs(2).substr(1);
+        print(state.files.eio, "Daylighting:Illuminance Maps,{},{}\n", TotIllumMaps, s_ipsc->cAlphaArgs(1));
     }
 
     // Check for illuminance maps associated with this zone
@@ -4118,8 +4119,8 @@ void GetInputIlluminanceMap(EnergyPlusData &state, bool &ErrorsFound)
 
         auto &zone = state.dataHeatBal->Zone(illumMap.zoneIndex);
         // Calc cos and sin of Zone Relative North values for later use in transforming Reference Point coordinates
-        Real64 CosZoneRelNorth = std::cos(-zone.RelNorth * Constant::DegToRadians);
-        Real64 SinZoneRelNorth = std::sin(-zone.RelNorth * Constant::DegToRadians);
+        Real64 CosZoneRelNorth = std::cos(-zone.RelNorth * Constant::DegToRad);
+        Real64 SinZoneRelNorth = std::sin(-zone.RelNorth * Constant::DegToRad);
 
         if (illumMap.Xnum * illumMap.Ynum == 0) continue;
 
@@ -4302,6 +4303,8 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
     //       MODIFIED       Glazer - July 2016 - Move geometry transformation portion, rearrange input, allow more than three reference points
     // Obtain the user input data for Daylighting:Controls object in the input file.
 
+    static constexpr std::string_view routineName = "GetDaylightingControls";
+
     auto &dl = state.dataDayltg;
 
     int IOStat;
@@ -4315,9 +4318,9 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
     constexpr Real64 FractionTolerance(0.001);
 
     auto &ip = state.dataInputProcessing->inputProcessor;
-    auto const &ipsc = state.dataIPShortCut;
-    ipsc->cCurrentModuleObject = "Daylighting:Controls";
-    int totDaylightingControls = ip->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    auto const &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "Daylighting:Controls";
+    int totDaylightingControls = ip->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     dl->daylightControl.allocate(totDaylightingControls);
     Array1D<bool> spaceHasDaylightingControl;
     spaceHasDaylightingControl.dimension(state.dataGlobal->numSpaces, false);
@@ -4326,22 +4329,25 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
         state.dataViewFactor->EnclSolInfo(enclNum).TotalEnclosureDaylRefPoints = 0;
     }
     for (int controlNum = 1; controlNum <= totDaylightingControls; ++controlNum) {
-        ipsc->cAlphaArgs = "";
-        ipsc->rNumericArgs = 0.0;
+        s_ipsc->cAlphaArgs = "";
+        s_ipsc->rNumericArgs = 0.0;
         ip->getObjectItem(state,
-                          ipsc->cCurrentModuleObject,
+                          s_ipsc->cCurrentModuleObject,
                           controlNum,
-                          ipsc->cAlphaArgs,
+                          s_ipsc->cAlphaArgs,
                           NumAlpha,
-                          ipsc->rNumericArgs,
+                          s_ipsc->rNumericArgs,
                           NumNumber,
                           IOStat,
-                          ipsc->lNumericFieldBlanks,
-                          ipsc->lAlphaFieldBlanks,
-                          ipsc->cAlphaFieldNames,
-                          ipsc->cNumericFieldNames);
+                          s_ipsc->lNumericFieldBlanks,
+                          s_ipsc->lAlphaFieldBlanks,
+                          s_ipsc->cAlphaFieldNames,
+                          s_ipsc->cNumericFieldNames);
+
+        ErrorObjectHeader eoh{routineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)};
+
         auto &daylightControl = dl->daylightControl(controlNum);
-        daylightControl.Name = ipsc->cAlphaArgs(1);
+        daylightControl.Name = s_ipsc->cAlphaArgs(1);
 
         // Is it a zone or space name?
         int const zoneNum = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(2), state.dataHeatBal->Zone);
@@ -4356,9 +4362,9 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
                 if (daylightControl.enclIndex != state.dataHeatBal->space(zoneSpaceNum).solarEnclosureNum) {
                     ShowSevereError(state,
                                     format("{}: invalid {}=\"{}\" All spaces in the zone must be in the same enclosure for daylighting.",
-                                           ipsc->cCurrentModuleObject,
-                                           ipsc->cAlphaFieldNames(2),
-                                           ipsc->cAlphaArgs(2)));
+                                           s_ipsc->cCurrentModuleObject,
+                                           s_ipsc->cAlphaFieldNames(2),
+                                           s_ipsc->cAlphaArgs(2)));
                     ErrorsFound = true;
                     break;
                 }
@@ -4368,10 +4374,10 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
                 if (spaceHasDaylightingControl(zoneSpaceNum)) {
                     ShowWarningError(state,
                                      format("{}=\"{}\" Space=\"{}\" already has a {} object assigned to it.",
-                                            ipsc->cCurrentModuleObject,
+                                            s_ipsc->cCurrentModuleObject,
                                             daylightControl.Name,
                                             state.dataHeatBal->space(zoneSpaceNum).Name,
-                                            ipsc->cCurrentModuleObject));
+                                            s_ipsc->cCurrentModuleObject));
                     ShowContinueError(state, "This control will override the lighting power factor for this space.");
                 }
                 spaceHasDaylightingControl(zoneSpaceNum) = true;
@@ -4379,7 +4385,8 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
         } else {
             int const spaceNum = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(2), state.dataHeatBal->space);
             if (spaceNum == 0) {
-                ShowSevereError(state, format("{}: invalid {}=\"{}\".", ipsc->cCurrentModuleObject, ipsc->cAlphaFieldNames(2), ipsc->cAlphaArgs(2)));
+                ShowSevereError(state,
+                                format("{}: invalid {}=\"{}\".", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaArgs(2)));
                 ErrorsFound = true;
                 continue;
             } else {
@@ -4390,10 +4397,10 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
                 if (spaceHasDaylightingControl(spaceNum)) {
                     ShowWarningError(state,
                                      format("{}=\"{}\" Space=\"{}\" already has a {} object assigned to it.",
-                                            ipsc->cCurrentModuleObject,
+                                            s_ipsc->cCurrentModuleObject,
                                             daylightControl.Name,
                                             state.dataHeatBal->space(spaceNum).Name,
-                                            ipsc->cCurrentModuleObject));
+                                            s_ipsc->cCurrentModuleObject));
                     ShowContinueError(state, "This control will override the lighting power factor for this space.");
                 }
                 spaceHasDaylightingControl(spaceNum) = true;
@@ -4403,85 +4410,73 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
         dl->enclDaylight(daylightControl.enclIndex).daylightControlIndexes.emplace_back(controlNum);
         daylightControl.ZoneName = state.dataHeatBal->Zone(daylightControl.zoneIndex).Name;
 
-        if (ipsc->lAlphaFieldBlanks(3)) {
+        if (s_ipsc->lAlphaFieldBlanks(3)) {
             daylightControl.DaylightMethod = DaylightingMethod::SplitFlux;
         } else {
             daylightControl.DaylightMethod =
-                static_cast<DaylightingMethod>(getEnumValue(DaylightingMethodNamesUC, Util::makeUPPER(ipsc->cAlphaArgs(3))));
+                static_cast<DaylightingMethod>(getEnumValue(DaylightingMethodNamesUC, Util::makeUPPER(s_ipsc->cAlphaArgs(3))));
 
             if (daylightControl.DaylightMethod == DaylightingMethod::Invalid) {
                 daylightControl.DaylightMethod = DaylightingMethod::SplitFlux;
                 ShowWarningError(state,
                                  format("Invalid {} = {}, occurs in {}object for {}=\"{}",
-                                        ipsc->cAlphaFieldNames(3),
-                                        ipsc->cAlphaArgs(3),
-                                        ipsc->cCurrentModuleObject,
-                                        ipsc->cCurrentModuleObject,
-                                        ipsc->cAlphaArgs(1)));
+                                        s_ipsc->cAlphaFieldNames(3),
+                                        s_ipsc->cAlphaArgs(3),
+                                        s_ipsc->cCurrentModuleObject,
+                                        s_ipsc->cCurrentModuleObject,
+                                        s_ipsc->cAlphaArgs(1)));
                 ShowContinueError(state, "SplitFlux assumed, and the simulation continues.");
             }
         }
         dl->enclDaylight(daylightControl.enclIndex).hasSplitFluxDaylighting |= (daylightControl.DaylightMethod == DaylightingMethod::SplitFlux);
 
-        if (!ipsc->lAlphaFieldBlanks(4)) { // Field: Availability Schedule Name
-            daylightControl.AvailSchedNum = ScheduleManager::GetScheduleIndex(state, ipsc->cAlphaArgs(4));
-            if (daylightControl.AvailSchedNum == 0) {
-                ShowWarningError(state,
-                                 format("Invalid {} = {}, occurs in {}object for {}=\"{}",
-                                        ipsc->cAlphaFieldNames(4),
-                                        ipsc->cAlphaArgs(4),
-                                        ipsc->cCurrentModuleObject,
-                                        ipsc->cCurrentModuleObject,
-                                        ipsc->cAlphaArgs(1)));
-                ShowContinueError(state, "Schedule was not found so controls will always be available, and the simulation continues.");
-                daylightControl.AvailSchedNum = ScheduleManager::ScheduleAlwaysOn;
-            }
-        } else {
-            daylightControl.AvailSchedNum = ScheduleManager::ScheduleAlwaysOn;
+        if (s_ipsc->lAlphaFieldBlanks(4)) { // Field: Availability Schedule Name
+            daylightControl.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((daylightControl.availSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(4))) == nullptr) {
+            ShowWarningItemNotFound(state,
+                                    eoh,
+                                    s_ipsc->cAlphaFieldNames(4),
+                                    s_ipsc->cAlphaArgs(4),
+                                    "Schedule was not found so controls will always be available, and the simulation continues.");
+            daylightControl.availSched = Sched::GetScheduleAlwaysOn(state);
         }
 
-        daylightControl.LightControlType = static_cast<LtgCtrlType>(getEnumValue(LtgCtrlTypeNamesUC, Util::makeUPPER(ipsc->cAlphaArgs(5))));
+        daylightControl.LightControlType = static_cast<LtgCtrlType>(getEnumValue(LtgCtrlTypeNamesUC, s_ipsc->cAlphaArgs(5)));
         if (daylightControl.LightControlType == LtgCtrlType::Invalid) {
-            ShowWarningError(state,
-                             format("Invalid {} = {}, occurs in {}object for {}=\"{}",
-                                    ipsc->cAlphaFieldNames(5),
-                                    ipsc->cAlphaArgs(5),
-                                    ipsc->cCurrentModuleObject,
-                                    ipsc->cCurrentModuleObject,
-                                    ipsc->cAlphaArgs(1)));
-            ShowContinueError(state, "Continuous assumed, and the simulation continues.");
+            ShowWarningInvalidKey(
+                state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5), "Continuous assumed, and the simulation continues.");
         }
 
-        daylightControl.MinPowerFraction = ipsc->rNumericArgs(1);  // Field: Minimum Input Power Fraction for Continuous Dimming Control
-        daylightControl.MinLightFraction = ipsc->rNumericArgs(2);  // Field: Minimum Light Output Fraction for Continuous Dimming Control
-        daylightControl.LightControlSteps = ipsc->rNumericArgs(3); // Field: Number of Stepped Control Steps
+        daylightControl.MinPowerFraction = s_ipsc->rNumericArgs(1);  // Field: Minimum Input Power Fraction for Continuous Dimming Control
+        daylightControl.MinLightFraction = s_ipsc->rNumericArgs(2);  // Field: Minimum Light Output Fraction for Continuous Dimming Control
+        daylightControl.LightControlSteps = s_ipsc->rNumericArgs(3); // Field: Number of Stepped Control Steps
         daylightControl.LightControlProbability =
-            ipsc->rNumericArgs(4); // Field: Probability Lighting will be Reset When Needed in Manual Stepped Control
+            s_ipsc->rNumericArgs(4); // Field: Probability Lighting will be Reset When Needed in Manual Stepped Control
 
-        if (!ipsc->lAlphaFieldBlanks(6)) { // Field: Glare Calculation Daylighting Reference Point Name
-            daylightControl.glareRefPtNumber = Util::FindItemInList(ipsc->cAlphaArgs(6),
+        if (!s_ipsc->lAlphaFieldBlanks(6)) { // Field: Glare Calculation Daylighting Reference Point Name
+            daylightControl.glareRefPtNumber = Util::FindItemInList(s_ipsc->cAlphaArgs(6),
                                                                     dl->DaylRefPt,
                                                                     &RefPointData::Name); // Field: Glare Calculation Daylighting Reference Point Name
             if (daylightControl.glareRefPtNumber == 0) {
                 ShowSevereError(state,
                                 format("{}: invalid {}=\"{}\" for object named: {}",
-                                       ipsc->cCurrentModuleObject,
-                                       ipsc->cAlphaFieldNames(6),
-                                       ipsc->cAlphaArgs(6),
-                                       ipsc->cAlphaArgs(1)));
+                                       s_ipsc->cCurrentModuleObject,
+                                       s_ipsc->cAlphaFieldNames(6),
+                                       s_ipsc->cAlphaArgs(6),
+                                       s_ipsc->cAlphaArgs(1)));
                 ErrorsFound = true;
                 continue;
             }
         } else if (daylightControl.DaylightMethod == DaylightingMethod::SplitFlux) {
-            ShowWarningError(state, format("No {} provided for object named: {}", ipsc->cAlphaFieldNames(6), ipsc->cAlphaArgs(1)));
+            ShowWarningError(state, format("No {} provided for object named: {}", s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state, "No glare calculation performed, and the simulation continues.");
         }
 
         // Field: Glare Calculation Azimuth Angle of View Direction Clockwise from Zone y-Axis
-        daylightControl.ViewAzimuthForGlare = !ipsc->lNumericFieldBlanks(5) ? ipsc->rNumericArgs(5) : 0.0;
+        daylightControl.ViewAzimuthForGlare = !s_ipsc->lNumericFieldBlanks(5) ? s_ipsc->rNumericArgs(5) : 0.0;
 
-        daylightControl.MaxGlareallowed = ipsc->rNumericArgs(6);           // Field: Maximum Allowable Discomfort Glare Index
-        daylightControl.DElightGriddingResolution = ipsc->rNumericArgs(7); // Field: DElight Gridding Resolution
+        daylightControl.MaxGlareallowed = s_ipsc->rNumericArgs(6);           // Field: Maximum Allowable Discomfort Glare Index
+        daylightControl.DElightGriddingResolution = s_ipsc->rNumericArgs(7); // Field: DElight Gridding Resolution
 
         int curTotalDaylRefPts = NumAlpha - 6; // first six alpha fields are not part of extensible group
         daylightControl.TotalDaylRefPoints = curTotalDaylRefPts;
@@ -4491,12 +4486,12 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
         if ((NumNumber - 7) / 2 != daylightControl.TotalDaylRefPoints) {
             ShowSevereError(state,
                             format("{}The number of extensible numeric fields and alpha fields is inconsistent for: {}",
-                                   ipsc->cCurrentModuleObject,
-                                   ipsc->cAlphaArgs(1)));
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state,
                               format("For each field: {} there needs to be the following fields: Fraction Controlled by Reference Point and "
                                      "Illuminance Setpoint at Reference Point",
-                                     ipsc->cAlphaFieldNames(NumAlpha)));
+                                     s_ipsc->cAlphaFieldNames(NumAlpha)));
             ErrorsFound = true;
         }
 
@@ -4510,21 +4505,21 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
         for (int refPtNum = 1; refPtNum <= curTotalDaylRefPts; ++refPtNum) {
             auto &refPt = daylightControl.refPts(refPtNum);
             refPt.num =
-                Util::FindItemInList(ipsc->cAlphaArgs(6 + refPtNum), dl->DaylRefPt, &RefPointData::Name); // Field: Daylighting Reference Point Name
+                Util::FindItemInList(s_ipsc->cAlphaArgs(6 + refPtNum), dl->DaylRefPt, &RefPointData::Name); // Field: Daylighting Reference Point Name
             if (refPt.num == 0) {
                 ShowSevereError(state,
                                 format("{}: invalid {}=\"{}\" for object named: {}",
-                                       ipsc->cCurrentModuleObject,
-                                       ipsc->cAlphaFieldNames(6 + refPtNum),
-                                       ipsc->cAlphaArgs(6 + refPtNum),
-                                       ipsc->cAlphaArgs(1)));
+                                       s_ipsc->cCurrentModuleObject,
+                                       s_ipsc->cAlphaFieldNames(6 + refPtNum),
+                                       s_ipsc->cAlphaArgs(6 + refPtNum),
+                                       s_ipsc->cAlphaArgs(1)));
                 ErrorsFound = true;
                 continue;
             } else {
                 ++countRefPts;
             }
-            refPt.fracZoneDaylit = ipsc->rNumericArgs(6 + refPtNum * 2); // Field: Fraction Controlled by Reference Point
-            refPt.illumSetPoint = ipsc->rNumericArgs(7 + refPtNum * 2);  // Field: Illuminance Setpoint at Reference Point
+            refPt.fracZoneDaylit = s_ipsc->rNumericArgs(6 + refPtNum * 2); // Field: Fraction Controlled by Reference Point
+            refPt.illumSetPoint = s_ipsc->rNumericArgs(7 + refPtNum * 2);  // Field: Illuminance Setpoint at Reference Point
 
             if (daylightControl.DaylightMethod == DaylightingMethod::SplitFlux) {
                 SetupOutputVariable(state,
@@ -4560,7 +4555,7 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
 
         // Register Error if 0 DElight RefPts have been input for valid DElight object
         if (countRefPts < 1) {
-            ShowSevereError(state, format("No Reference Points input for {} zone ={}", ipsc->cCurrentModuleObject, daylightControl.ZoneName));
+            ShowSevereError(state, format("No Reference Points input for {} zone ={}", s_ipsc->cCurrentModuleObject, daylightControl.ZoneName));
             ErrorsFound = true;
         }
 
@@ -4573,14 +4568,14 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
             ShowWarningError(state, "GetDaylightingControls: Fraction of zone or space controlled by the Daylighting reference points is < 1.0.");
             ShowContinueError(state,
                               format("..discovered in {}=\"{}\", only {:.3R} of the zone or space is controlled.",
-                                     ipsc->cCurrentModuleObject,
+                                     s_ipsc->cCurrentModuleObject,
                                      daylightControl.Name,
                                      sumFracs));
         } else if ((sumFracs - 1.0) > FractionTolerance) {
             ShowSevereError(state, "GetDaylightingControls: Fraction of zone or space controlled by the Daylighting reference points is > 1.0.");
             ShowContinueError(state,
                               format("..discovered in {}=\"{}\", trying to control {:.3R} of the zone or space.",
-                                     ipsc->cCurrentModuleObject,
+                                     s_ipsc->cCurrentModuleObject,
                                      daylightControl.Name,
                                      sumFracs));
             ErrorsFound = true;
@@ -4588,7 +4583,8 @@ void GetDaylightingControls(EnergyPlusData &state, bool &ErrorsFound)
 
         if (daylightControl.LightControlType == LtgCtrlType::Stepped && daylightControl.LightControlSteps <= 0) {
             ShowWarningError(state, "GetDaylightingControls: For Stepped Control, the number of steps must be > 0");
-            ShowContinueError(state, format("..discovered in \"{}\" for Zone=\"{}\", will use 1", ipsc->cCurrentModuleObject, ipsc->cAlphaArgs(2)));
+            ShowContinueError(state,
+                              format("..discovered in \"{}\" for Zone=\"{}\", will use 1", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(2)));
             daylightControl.LightControlSteps = 1;
         }
         SetupOutputVariable(state,
@@ -4611,11 +4607,11 @@ void GeometryTransformForDaylighting(EnergyPlusData &state)
     auto const &s_surf = state.dataSurface;
 
     // Calc cos and sin of Building Relative North values for later use in transforming Reference Point coordinates
-    Real64 CosBldgRelNorth = std::cos(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRadians);
-    Real64 SinBldgRelNorth = std::sin(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRadians);
+    Real64 CosBldgRelNorth = std::cos(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRad);
+    Real64 SinBldgRelNorth = std::sin(-(state.dataHeatBal->BuildingAzimuth + state.dataHeatBal->BuildingRotationAppendixG) * Constant::DegToRad);
     // these are only for Building Rotation for Appendix G when using world coordinate system
-    Real64 CosBldgRotAppGonly = std::cos(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRadians);
-    Real64 SinBldgRotAppGonly = std::sin(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRadians);
+    Real64 CosBldgRotAppGonly = std::cos(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRad);
+    Real64 SinBldgRotAppGonly = std::sin(-state.dataHeatBal->BuildingRotationAppendixG * Constant::DegToRad);
 
     bool doTransform = false;
     Real64 OldAspectRatio = 1.0;
@@ -4626,8 +4622,8 @@ void GeometryTransformForDaylighting(EnergyPlusData &state)
         auto &zone = state.dataHeatBal->Zone(daylCntrl.zoneIndex);
 
         // Calc cos and sin of Zone Relative North values for later use in transforming Reference Point coordinates
-        Real64 CosZoneRelNorth = std::cos(-zone.RelNorth * Constant::DegToRadians);
-        Real64 SinZoneRelNorth = std::sin(-zone.RelNorth * Constant::DegToRadians);
+        Real64 CosZoneRelNorth = std::cos(-zone.RelNorth * Constant::DegToRad);
+        Real64 SinZoneRelNorth = std::sin(-zone.RelNorth * Constant::DegToRad);
 
         Real64 rLightLevel = InternalHeatGains::GetDesignLightingLevelForZone(state, daylCntrl.zoneIndex);
         InternalHeatGains::CheckLightsReplaceableMinMaxForZone(state, daylCntrl.zoneIndex);
@@ -4736,47 +4732,47 @@ void GetInputDayliteRefPt(EnergyPlusData &state, bool &ErrorsFound)
     // Glazer - July 2016
     auto const &dl = state.dataDayltg;
     auto &ip = state.dataInputProcessing->inputProcessor;
-    auto const &ipsc = state.dataIPShortCut;
-    ipsc->cCurrentModuleObject = "Daylighting:ReferencePoint";
+    auto const &s_ipsc = state.dataIPShortCut;
+    s_ipsc->cCurrentModuleObject = "Daylighting:ReferencePoint";
 
     int RefPtNum = 0;
     int IOStat;
     int NumAlpha;
     int NumNumber;
 
-    int TotRefPoints = ip->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    int TotRefPoints = ip->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
     dl->DaylRefPt.allocate(TotRefPoints);
     for (auto &pt : dl->DaylRefPt) {
         ip->getObjectItem(state,
-                          ipsc->cCurrentModuleObject,
+                          s_ipsc->cCurrentModuleObject,
                           ++RefPtNum,
-                          ipsc->cAlphaArgs,
+                          s_ipsc->cAlphaArgs,
                           NumAlpha,
-                          ipsc->rNumericArgs,
+                          s_ipsc->rNumericArgs,
                           NumNumber,
                           IOStat,
-                          ipsc->lNumericFieldBlanks,
-                          ipsc->lAlphaFieldBlanks,
-                          ipsc->cAlphaFieldNames,
-                          ipsc->cNumericFieldNames);
-        pt.Name = ipsc->cAlphaArgs(1);
-        pt.ZoneNum = Util::FindItemInList(ipsc->cAlphaArgs(2), state.dataHeatBal->Zone);
+                          s_ipsc->lNumericFieldBlanks,
+                          s_ipsc->lAlphaFieldBlanks,
+                          s_ipsc->cAlphaFieldNames,
+                          s_ipsc->cNumericFieldNames);
+        pt.Name = s_ipsc->cAlphaArgs(1);
+        pt.ZoneNum = Util::FindItemInList(s_ipsc->cAlphaArgs(2), state.dataHeatBal->Zone);
         if (pt.ZoneNum == 0) {
-            int spaceNum = Util::FindItemInList(ipsc->cAlphaArgs(2), state.dataHeatBal->space);
+            int spaceNum = Util::FindItemInList(s_ipsc->cAlphaArgs(2), state.dataHeatBal->space);
             if (spaceNum == 0) {
                 ShowSevereError(state,
                                 format("{}=\"{}\", invalid {}=\"{}\".",
-                                       ipsc->cCurrentModuleObject,
-                                       ipsc->cAlphaArgs(1),
-                                       ipsc->cAlphaFieldNames(2),
-                                       ipsc->cAlphaArgs(2)));
+                                       s_ipsc->cCurrentModuleObject,
+                                       s_ipsc->cAlphaArgs(1),
+                                       s_ipsc->cAlphaFieldNames(2),
+                                       s_ipsc->cAlphaArgs(2)));
                 ErrorsFound = true;
             } else {
                 pt.ZoneNum = state.dataHeatBal->space(spaceNum).zoneNum;
             }
         }
-        pt.coords = {ipsc->rNumericArgs(1), ipsc->rNumericArgs(2), ipsc->rNumericArgs(3)};
+        pt.coords = {s_ipsc->rNumericArgs(1), s_ipsc->rNumericArgs(2), s_ipsc->rNumericArgs(3)};
     }
 }
 
@@ -4892,32 +4888,32 @@ void GetLightWellData(EnergyPlusData &state, bool &ErrorsFound) // If errors fou
 
     auto &ip = state.dataInputProcessing->inputProcessor;
     auto &s_surf = state.dataSurface;
-    auto const &ipsc = state.dataIPShortCut;
+    auto const &s_ipsc = state.dataIPShortCut;
 
     // Get the total number of Light Well objects
-    ipsc->cCurrentModuleObject = "DaylightingDevice:LightWell";
-    TotLightWells = ip->getNumObjectsFound(state, ipsc->cCurrentModuleObject);
+    s_ipsc->cCurrentModuleObject = "DaylightingDevice:LightWell";
+    TotLightWells = ip->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
     if (TotLightWells == 0) return;
 
     for (int loop = 1; loop <= TotLightWells; ++loop) {
 
         ip->getObjectItem(state,
-                          ipsc->cCurrentModuleObject,
+                          s_ipsc->cCurrentModuleObject,
                           loop,
-                          ipsc->cAlphaArgs,
+                          s_ipsc->cAlphaArgs,
                           NumAlpha,
-                          ipsc->rNumericArgs,
+                          s_ipsc->rNumericArgs,
                           NumProp,
                           IOStat,
-                          ipsc->lNumericFieldBlanks,
-                          ipsc->lAlphaFieldBlanks,
-                          ipsc->cAlphaFieldNames,
-                          ipsc->cNumericFieldNames);
+                          s_ipsc->lNumericFieldBlanks,
+                          s_ipsc->lAlphaFieldBlanks,
+                          s_ipsc->cAlphaFieldNames,
+                          s_ipsc->cNumericFieldNames);
 
-        int SurfNum = Util::FindItemInList(ipsc->cAlphaArgs(1), s_surf->Surface);
+        int SurfNum = Util::FindItemInList(s_ipsc->cAlphaArgs(1), s_surf->Surface);
         if (SurfNum == 0) {
-            ShowSevereError(state,
-                            format("{}: invalid {}=\"{}\" not found.", ipsc->cCurrentModuleObject, ipsc->cAlphaFieldNames(1), ipsc->cAlphaArgs(1)));
+            ShowSevereError(
+                state, format("{}: invalid {}=\"{}\" not found.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaFieldNames(1), s_ipsc->cAlphaArgs(1)));
             ErrorsFound = true;
             continue;
         }
@@ -4927,25 +4923,26 @@ void GetLightWellData(EnergyPlusData &state, bool &ErrorsFound) // If errors fou
         // Check that associated surface is an exterior window
         // True if associated surface is not an exterior window
         if (surf.Class != SurfaceClass::Window && surf.ExtBoundCond != ExternalEnvironment) {
-            ShowSevereError(
-                state,
-                format(
-                    "{}: invalid {}=\"{}\" - not an exterior window.", ipsc->cCurrentModuleObject, ipsc->cAlphaFieldNames(1), ipsc->cAlphaArgs(1)));
+            ShowSevereError(state,
+                            format("{}: invalid {}=\"{}\" - not an exterior window.",
+                                   s_ipsc->cCurrentModuleObject,
+                                   s_ipsc->cAlphaFieldNames(1),
+                                   s_ipsc->cAlphaArgs(1)));
             ErrorsFound = true;
             continue;
         }
 
         // Associated surface is an exterior window; calculate light well efficiency.
         surfWin.lightWellEff = 1.0;
-        Real64 HeightWell = ipsc->rNumericArgs(1);  // Well height (from window to bottom of well) (m)
-        Real64 PerimWell = ipsc->rNumericArgs(2);   // Well perimeter (at bottom of well) (m)
-        Real64 AreaWell = ipsc->rNumericArgs(3);    // Well area (at bottom of well) (m2)
-        Real64 VisReflWell = ipsc->rNumericArgs(4); // Area-weighted visible reflectance of well walls
+        Real64 HeightWell = s_ipsc->rNumericArgs(1);  // Well height (from window to bottom of well) (m)
+        Real64 PerimWell = s_ipsc->rNumericArgs(2);   // Well perimeter (at bottom of well) (m)
+        Real64 AreaWell = s_ipsc->rNumericArgs(3);    // Well area (at bottom of well) (m2)
+        Real64 VisReflWell = s_ipsc->rNumericArgs(4); // Area-weighted visible reflectance of well walls
 
         // Warning if light well area is less than window area
         if (AreaWell < (surf.Area + s_surf->SurfWinDividerArea(SurfNum) - 0.1)) {
-            ShowSevereError(state,
-                            format("{}: invalid {}=\"{}\" - Areas.", ipsc->cCurrentModuleObject, ipsc->cAlphaFieldNames(1), ipsc->cAlphaArgs(1)));
+            ShowSevereError(
+                state, format("{}: invalid {}=\"{}\" - Areas.", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaFieldNames(1), s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state, format("has Area of Bottom of Well={:.1R} that is less than window area={:.1R}", surf.Area, AreaWell));
         }
 
@@ -5191,8 +5188,7 @@ Real64 DayltgHitObstruction(EnergyPlusData &state,
                 hit = PierceSurface(state, ISurf, R1, RN, DayltgHitObstructionHP);
                 if (hit) { // Shading surface is hit
                     // Get solar transmittance of the shading surface
-                    Real64 const Trans(
-                        surface.SchedShadowSurfIndex > 0 ? ScheduleManager::LookUpScheduleValue(state, surface.SchedShadowSurfIndex, IHOUR, 1) : 0.0);
+                    Real64 const Trans = (surface.shadowSurfSched != nullptr) ? surface.shadowSurfSched->getHrTsVal(state, IHOUR, 1) : 0.0;
                     if (Trans < 1.e-6) {
                         ObTrans = 0.0;
                         break;
@@ -5223,8 +5219,7 @@ Real64 DayltgHitObstruction(EnergyPlusData &state,
                 hit = PierceSurface(surface, R1, RN, HP);
                 if (hit) { // Shading surface is hit
                     // Get solar transmittance of the shading surface
-                    Real64 const Trans(
-                        surface.SchedShadowSurfIndex > 0 ? ScheduleManager::LookUpScheduleValue(state, surface.SchedShadowSurfIndex, IHOUR, 1) : 0.0);
+                    Real64 const Trans = (surface.shadowSurfSched != nullptr) ? surface.shadowSurfSched->getHrTsVal(state, IHOUR, 1) : 0.0;
                     if (Trans < 1.e-6) {
                         ObTrans = 0.0;
                         return true;
@@ -5637,7 +5632,7 @@ void manageDaylighting(EnergyPlusData &state)
             }
         }
         DayltgElecLightingControl(state);
-    } else if (dl->mapResultsToReport && state.dataGlobal->TimeStep == state.dataGlobal->NumOfTimeStepInHour) {
+    } else if (dl->mapResultsToReport && state.dataGlobal->TimeStep == state.dataGlobal->TimeStepsInHour) {
         for (int MapNum = 1; MapNum <= (int)dl->illumMaps.size(); ++MapNum) {
             ReportIllumMap(state, MapNum);
         }
@@ -5809,8 +5804,8 @@ void DayltgInteriorIllum(EnergyPlusData &state,
                 //  based on the master construction. They need to be adjusted by the VTRatio, including:
                 //  ZoneDaylight()%DaylIllFacSky, DaylIllFacSun, DaylIllFacSunDisk; DaylBackFacSky,
                 //  DaylBackFacSun, DaylBackFacSunDisk, DaylSourceFacSky, DaylSourceFacSun, DaylSourceFacSunDisk
-                VTNow = General::POLYF(1.0, construction.TransVisBeamCoef);
-                VTMaster = General::POLYF(1.0, state.dataConstruction->Construct(construction.TCMasterConstrNum).TransVisBeamCoef);
+                VTNow = Window::POLYF(1.0, construction.TransVisBeamCoef);
+                VTMaster = Window::POLYF(1.0, state.dataConstruction->Construct(construction.TCMasterConstrNum).TransVisBeamCoef);
                 VTRatio = VTNow / VTMaster;
             }
         }
@@ -6084,12 +6079,12 @@ void DayltgInteriorIllum(EnergyPlusData &state,
                     int const IConst = s_surf->SurfActiveConstruction(IWin);
                     // Vis trans at normal incidence of unswitched glass
                     shadeGroupLums.unswitchedTvis =
-                        General::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
+                        Window::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
 
                     // Vis trans at normal incidence of fully switched glass
                     int const IConstShaded = s_surf->Surface(IWin).activeShadedConstruction;
                     shadeGroupLums.switchedTvis =
-                        General::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
+                        Window::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
 
                     // Reset shading flag to indicate that window is shaded by being partially or fully switched
                     s_surf->SurfWinShadingFlag(IWin) = WinShadingType::SwitchableGlazing;
@@ -6304,12 +6299,12 @@ void DayltgInteriorIllum(EnergyPlusData &state,
                         int const IConst = s_surf->SurfActiveConstruction(IWin);
                         // Vis trans at normal incidence of unswitched glass
                         shadeGroupLums.unswitchedTvis =
-                            General::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
+                            Window::POLYF(1.0, state.dataConstruction->Construct(IConst).TransVisBeamCoef) * surfWin.glazedFrac;
 
                         // Vis trans at normal incidence of fully switched glass
                         int const IConstShaded = s_surf->Surface(IWin).activeShadedConstruction;
                         shadeGroupLums.switchedTvis =
-                            General::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
+                            Window::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
                     } // if (switchableGlazing)
                 }     // if (GlareControlIsActive)
             }         // for (IWin)
@@ -6710,7 +6705,7 @@ void DayltgElecLightingControl(EnergyPlusData &state)
         Real64 ZFTOT = 0.0;
 
         // check if scheduled to be available
-        if (ScheduleManager::GetCurrentScheduleValue(state, thisDayltgCtrl.AvailSchedNum) > 0.0) {
+        if (thisDayltgCtrl.availSched->getCurrentVal() > 0.0) {
 
             // Loop over reference points
             for (int IL = 1; IL <= thisDayltgCtrl.TotalDaylRefPoints; ++IL) {
@@ -6803,14 +6798,14 @@ void DayltgElecLightingControl(EnergyPlusData &state)
             auto &illumMap = dl->illumMaps(mapNum);
             if (state.dataGlobal->TimeStep == 1) dl->mapResultsToReport = false;
             for (auto &refPt : illumMap.refPts) {
-                refPt.lumsHr[iLum_Illum] += refPt.lums[iLum_Illum] / double(state.dataGlobal->NumOfTimeStepInHour);
+                refPt.lumsHr[iLum_Illum] += refPt.lums[iLum_Illum] / double(state.dataGlobal->TimeStepsInHour);
                 if (refPt.lumsHr[iLum_Illum] > 0.0) {
                     dl->mapResultsToReport = true;
                     dl->mapResultsReported = true;
                 }
             }
             ReportIllumMap(state, mapNum);
-            if (state.dataGlobal->TimeStep == state.dataGlobal->NumOfTimeStepInHour) {
+            if (state.dataGlobal->TimeStep == state.dataGlobal->TimeStepsInHour) {
                 for (auto &refPt : illumMap.refPts) {
                     refPt.lumsHr[iLum_Illum] = refPt.lums[iLum_Illum] = 0.0;
                 }
@@ -7287,7 +7282,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
 
             } else { // Bare window
                 // Transmittance of bare window for this sky/ground element
-                TVISBR = General::POLYF(COSB, construct.TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
+                TVISBR = Window::POLYF(COSB, construct.TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
 
                 if (InShelfSurf > 0) { // Inside daylighting shelf
                     // Daylighting shelf simplification:  All light is diffuse
@@ -7313,8 +7308,8 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                             if (hitObs) { // disk passes thru
                                 // cosine of incidence angle of light from sky or ground element for
                                 COSBintWin = SPH * std::sin(surfIntWin.phi) + CPH * std::cos(surfIntWin.phi) * std::cos(TH - surfIntWin.theta);
-                                TVISBR *= General::POLYF(COSBintWin,
-                                                         state.dataConstruction->Construct(s_surf->Surface(IntWinNum).Construction).TransVisBeamCoef);
+                                TVISBR *= Window::POLYF(COSBintWin,
+                                                        state.dataConstruction->Construct(s_surf->Surface(IntWinNum).Construction).TransVisBeamCoef);
                                 break;
                             }
                         }
@@ -7387,7 +7382,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                         transMult = TransTDD(state, PipeNum, COSB, RadType::VisibleBeam) * surfWin.glazedFrac;
                     } else { // Shade only, no TDD
                         // Calculate transmittance of the combined window and shading device for this sky/ground element
-                        transMult = General::POLYF(COSB, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
+                        transMult = Window::POLYF(COSB, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
                                     surfWin.lightWellEff;
                     }
 
@@ -7448,7 +7443,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                                     (1.0 - ReflGlDiffDiffFront * ReflBlDiffDiffBack) * surfWin.lightWellEff;
 
                     } else { // Between-glass blind
-                        Real64 t1 = General::POLYF(COSB, construct.tBareVisCoef(1));
+                        Real64 t1 = Window::POLYF(COSB, construct.tBareVisCoef(1));
                         td2 = construct.tBareVisDiff(2);
                         rbd1 = construct.rbBareVisDiff(1);
                         rfd2 = construct.rfBareVisDiff(2);
@@ -7459,7 +7454,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                         if (construct.TotGlassLayers == 2) { // 2 glass layers
                             transMult = t1 * (tfshBd * (1.0 + rfd2 * rbshd) + rfshB * rbd1 * tfshd) * td2 * surfWin.lightWellEff;
                         } else { // 3 glass layers; blind between layers 2 and 3
-                            Real64 t2 = General::POLYF(COSB, construct.tBareVisCoef(2));
+                            Real64 t2 = Window::POLYF(COSB, construct.tBareVisCoef(2));
                             td3 = construct.tBareVisDiff(3);
                             rfd3 = construct.rfBareVisDiff(3);
                             rbd2 = construct.rbBareVisDiff(2);
@@ -7470,7 +7465,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
 
                     transBmBmMult = TVISBR * matBlind->BeamBeamTrans(ProfAng, surfShade.blind.slatAng);
                 } else { // Diffusing glass
-                    transMult = General::POLYF(COSB, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
+                    transMult = Window::POLYF(COSB, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
                                 surfWin.lightWellEff;
                 } // End of check if shade, blind or diffusing glass
 
@@ -7594,7 +7589,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                 FLCW[iWinCover_Bare].sun += ZSU1 * TVISBSun * surfWin.fractionUpgoing;
 
             } else { // Bare window
-                TVISBSun = General::POLYF(COSBSun, construct.TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
+                TVISBSun = Window::POLYF(COSBSun, construct.TransVisBeamCoef) * surfWin.glazedFrac * surfWin.lightWellEff;
 
                 // Daylighting shelf simplification:  No beam makes it past end of shelf, all light is diffuse
                 if (InShelfSurf > 0) {                  // Inside daylighting shelf
@@ -7640,7 +7635,7 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                     } else {
                         int IConstShaded = s_surf->SurfWinActiveShadedConstruction(IWin);
                         if (s_surf->SurfWinSolarDiffusing(IWin)) IConstShaded = surf.Construction;
-                        transMult = General::POLYF(COSBSun, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
+                        transMult = Window::POLYF(COSBSun, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac *
                                     surfWin.lightWellEff;
                     }
 
@@ -7675,13 +7670,13 @@ void DayltgInterReflectedIllum(EnergyPlusData &state,
                                     surfWin.glazedFrac * surfWin.lightWellEff;
 
                     } else { // Between-glass blind
-                        Real64 t1 = General::POLYF(COSBSun, construct.tBareVisCoef(1));
+                        Real64 t1 = Window::POLYF(COSBSun, construct.tBareVisCoef(1));
                         Real64 tfshBd = Interp(btar.Vis.Ft.Bm[idxLo].DfTra, btar.Vis.Ft.Bm[idxHi].DfTra, interpFac);
                         Real64 rfshB = Interp(btar.Vis.Ft.Bm[idxLo].DfRef, btar.Vis.Ft.Bm[idxHi].DfRef, interpFac);
                         if (construct.TotGlassLayers == 2) { // 2 glass layers
                             transMult = t1 * (tfshBd * (1.0 + rfd2 * rbshd) + rfshB * rbd1 * tfshd) * td2 * surfWin.lightWellEff;
                         } else { // 3 glass layers; blind between layers 2 and 3
-                            Real64 t2 = General::POLYF(COSBSun, construct.tBareVisCoef(2));
+                            Real64 t2 = Window::POLYF(COSBSun, construct.tBareVisCoef(2));
                             transMult = t1 * t2 * (tfshBd * (1.0 + rfd3 * rbshd) + rfshB * (rbd2 * tfshd + td2 * rbd1 * td2 * tfshd)) * td3 *
                                         surfWin.lightWellEff;
                         }
@@ -8398,9 +8393,9 @@ Real64 ProfileAngle(EnergyPlusData &state,
         Real64 AzimSun = std::atan2(CosDirSun.y, CosDirSun.x);              // Sun azimuth (radians)
         return std::atan(std::sin(ElevSun) / std::abs(std::cos(ElevSun) * std::cos(AzimWin - AzimSun))) - ElevWin;
     } else { // Profile angle for vertical structures
-        Real64 ElevWin = Constant::PiOvr2 - surf.Tilt * Constant::DegToRadians;
-        Real64 AzimWin = surf.Azimuth * Constant::DegToRadians; // 7952
-        Real64 AzimSun = std::atan2(CosDirSun.x, CosDirSun.y);  // 7952
+        Real64 ElevWin = Constant::PiOvr2 - surf.Tilt * Constant::DegToRad;
+        Real64 AzimWin = surf.Azimuth * Constant::DegToRad;    // 7952
+        Real64 AzimSun = std::atan2(CosDirSun.x, CosDirSun.y); // 7952
 
         Real64 ProfileAng;
         if (std::abs(ElevWin) < 0.1) {      // Near-vertical window
@@ -8684,8 +8679,8 @@ void DayltgInteriorMapIllum(EnergyPlusData &state)
                     //  based on the master construction. They need to be adjusted by the VTRatio, including:
                     //  ZoneDaylight()%DaylIllFacSky, DaylIllFacSun, DaylIllFacSunDisk; DaylBackFacSky,
                     //  DaylBackFacSun, DaylBackFacSunDisk, DaylSourceFacSky, DaylSourceFacSun, DaylSourceFacSunDisk
-                    Real64 VTNow = General::POLYF(1.0, construction.TransVisBeamCoef);
-                    Real64 VTMaster = General::POLYF(1.0, state.dataConstruction->Construct(construction.TCMasterConstrNum).TransVisBeamCoef);
+                    Real64 VTNow = Window::POLYF(1.0, construction.TransVisBeamCoef);
+                    Real64 VTMaster = Window::POLYF(1.0, state.dataConstruction->Construct(construction.TCMasterConstrNum).TransVisBeamCoef);
                     VTRatio = VTNow / VTMaster;
                 }
             }
@@ -8793,7 +8788,7 @@ void DayltgInteriorMapIllum(EnergyPlusData &state)
                     int IConstShaded = s_surf->Surface(IWin).activeShadedConstruction;
                     if (IConstShaded > 0) {
                         // Visible transmittance (VT) of electrochromic (EC) windows in fully dark state
-                        Real64 VTDark = General::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
+                        Real64 VTDark = Window::POLYF(1.0, state.dataConstruction->Construct(IConstShaded).TransVisBeamCoef) * surfWin.glazedFrac;
                         if (VTDark > 0) VTMULT = s_surf->SurfWinVisTransSelected(IWin) / VTDark;
                     }
                 }
@@ -8891,7 +8886,7 @@ void ReportIllumMap(EnergyPlusData &state, int const MapNum)
     }
 
     if (!state.dataGlobal->WarmupFlag) {
-        if (state.dataGlobal->TimeStep == state.dataGlobal->NumOfTimeStepInHour) { // Report only hourly
+        if (state.dataGlobal->TimeStep == state.dataGlobal->TimeStepsInHour) { // Report only hourly
 
             int linelen = 0;
             // Write X scale column header
@@ -9317,7 +9312,7 @@ void DayltgSetupAdjZoneListsAndPointers(EnergyPlusData &state)
             for (int controlNum : thisEnclDaylight.daylightControlIndexes) {
                 auto &thisDayltgCtrl = dl->daylightControl(controlNum);
                 int refSize = thisDayltgCtrl.TotalDaylRefPoints;
-                for (int iHr = 1; iHr <= (int)Constant::HoursInDay; ++iHr) {
+                for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
                     thisDayltgCtrl.daylFac[iHr].allocate(winSize, refSize);
                 }
             }
@@ -9353,16 +9348,16 @@ void DayltgSetupAdjZoneListsAndPointers(EnergyPlusData &state)
             }
         }
 
-        for (int iHr = 1; iHr <= (int)Constant::HoursInDay; ++iHr) {
+        for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
             illumMap.daylFac[iHr].allocate(numExtWin, illumMap.TotalMapRefPoints);
         }
 
     } // End of map loop
 
-    dl->dirIllum.allocate(Constant::HoursInDay);
-    dl->reflIllum.allocate(Constant::HoursInDay);
-    dl->winLum.allocate(Constant::HoursInDay);
-    dl->avgWinLum.allocate(Constant::HoursInDay);
+    dl->dirIllum.allocate(Constant::iHoursInDay);
+    dl->reflIllum.allocate(Constant::iHoursInDay);
+    dl->winLum.allocate(Constant::iHoursInDay);
+    dl->avgWinLum.allocate(Constant::iHoursInDay);
 
     static constexpr std::string_view Format_700("! <Enclosure/Window Adjacency Daylighting Counts>, Enclosure Name, Number of Exterior Windows, "
                                                  "Number of Exterior Windows in Adjacent Enclosures\n");
@@ -9666,8 +9661,8 @@ void CheckForGeometricTransform(EnergyPlusData &state, bool &doTransform, Real64
     NewAspectRatio = 1.0;
 
     auto &ip = state.dataInputProcessing->inputProcessor;
-    auto const &ipsc = state.dataIPShortCut;
-    auto const &s_surf = state.dataSurface;
+    auto const &s_ipsc = state.dataIPShortCut;
+    auto &s_surf = state.dataSurface;
 
     if (ip->getNumObjectsFound(state, CurrentModuleObject) == 1) {
         int NAlphas;
@@ -9681,15 +9676,15 @@ void CheckForGeometricTransform(EnergyPlusData &state, bool &doTransform, Real64
                           rNumerics,
                           NNum,
                           IOStat,
-                          ipsc->lNumericFieldBlanks,
-                          ipsc->lAlphaFieldBlanks,
-                          ipsc->cAlphaFieldNames,
-                          ipsc->cNumericFieldNames);
+                          s_ipsc->lNumericFieldBlanks,
+                          s_ipsc->lAlphaFieldBlanks,
+                          s_ipsc->cAlphaFieldNames,
+                          s_ipsc->cNumericFieldNames);
         OldAspectRatio = rNumerics(1);
         NewAspectRatio = rNumerics(2);
         std::string transformPlane = cAlphas(1);
         if (transformPlane != "XY") {
-            ShowWarningError(state, format("{}: invalid {}=\"{}...ignored.", CurrentModuleObject, ipsc->cAlphaFieldNames(1), cAlphas(1)));
+            ShowWarningError(state, format("{}: invalid {}=\"{}...ignored.", CurrentModuleObject, s_ipsc->cAlphaFieldNames(1), cAlphas(1)));
         }
         doTransform = true;
         s_surf->AspectTransform = true;

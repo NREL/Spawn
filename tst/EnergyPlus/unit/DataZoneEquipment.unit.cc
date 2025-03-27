@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -71,7 +71,7 @@ using namespace EnergyPlus::DataZoneEquipment;
 
 TEST_F(EnergyPlusFixture, DataZoneEquipment_TestGetSystemNodeNumberForZone)
 {
-
+    state->init_state(*state);
     state->dataGlobal->NumOfZones = 2;
     state->dataZoneEquip->ZoneEquipConfig.allocate(state->dataGlobal->NumOfZones);
 
@@ -94,12 +94,11 @@ TEST_F(EnergyPlusFixture, DataZoneEquipment_TestGetSystemNodeNumberForZone)
 TEST_F(EnergyPlusFixture, DataZoneEquipment_TestCalcDesignSpecificationOutdoorAir)
 {
     // #6225
-
+    state->init_state(*state);
     state->dataHeatBal->Zone.allocate(1);
     state->dataSize->OARequirements.allocate(1);
     state->dataHeatBal->ZoneIntGain.allocate(1);
     state->dataHeatBal->People.allocate(1);
-    state->dataScheduleMgr->Schedule.allocate(2);
     state->dataContaminantBalance->ZoneCO2GainFromPeople.allocate(1);
     state->dataContaminantBalance->ZoneAirCO2.allocate(1);
     state->dataContaminantBalance->ZoneSysContDemand.allocate(1);
@@ -108,10 +107,10 @@ TEST_F(EnergyPlusFixture, DataZoneEquipment_TestCalcDesignSpecificationOutdoorAi
 
     state->dataHeatBal->Zone(1).FloorArea = 10.0;
     state->dataHeatBal->Zone(1).TotOccupants = 5.0;
-    state->dataHeatBal->Zone(1).ZoneContamControllerSchedIndex = 1;
+    state->dataHeatBal->Zone(1).zoneContamControllerSched = Sched::AddScheduleConstant(*state, "ZONE CONTAM CONTROLLER");
     state->dataHeatBal->People(1).ZonePtr = 1;
     state->dataHeatBal->TotPeople = 1;
-    state->dataHeatBal->People(1).ActivityLevelPtr = 2;
+    state->dataHeatBal->People(1).activityLevelSched = Sched::AddScheduleConstant(*state, "ACTIVITY LEVEL SCHED");
     state->dataHeatBal->People(1).CO2RateFactor = 3.82e-8;
     state->dataHeatBal->People(1).NumberOfPeople = state->dataHeatBal->Zone(1).TotOccupants;
 
@@ -125,8 +124,8 @@ TEST_F(EnergyPlusFixture, DataZoneEquipment_TestCalcDesignSpecificationOutdoorAi
     state->dataSize->OARequirements(1).OAFlowPerPerson = 0.002;
     state->dataSize->OARequirements(1).OAFlowPerArea = 0.003;
     state->dataHeatBal->ZoneIntGain(1).NOFOCC = 0.5;
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
-    state->dataScheduleMgr->Schedule(2).CurrentValue = 131.881995;
+    state->dataHeatBal->Zone(1).zoneContamControllerSched->currentVal = 1.0;
+    state->dataHeatBal->People(1).activityLevelSched->currentVal = 131.881995;
 
     Real64 OAVolumeFlowRate;
     // Test ZOAM_ProportionalControlSchOcc
@@ -154,7 +153,6 @@ TEST_F(EnergyPlusFixture, DataZoneEquipment_TestCalcDesignSpecificationOutdoorAi
     state->dataHeatBal->Zone.deallocate();
     state->dataSize->OARequirements.deallocate();
     state->dataHeatBal->ZoneIntGain.deallocate();
-    state->dataScheduleMgr->Schedule.deallocate();
     state->dataHeatBal->People.deallocate();
     state->dataContaminantBalance->ZoneCO2GainFromPeople.deallocate();
     state->dataContaminantBalance->ZoneAirCO2.deallocate();
@@ -386,9 +384,9 @@ TEST_F(EnergyPlusFixture, GetZoneEquipmentData_epJSON)
     state->dataIPShortCut->rNumericArgs.dimension(MaxNumeric, 0.0);
     state->dataIPShortCut->lNumericFieldBlanks.dimension(MaxNumeric, false);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -407,22 +405,22 @@ TEST_F(EnergyPlusFixture, GetZoneEquipmentData_epJSON)
     EXPECT_ENUM_EQ(DataZoneEquipment::ZoneEquipType::ExhaustFan, thisZoneEquipList.EquipType(1));
     EXPECT_EQ(1, thisZoneEquipList.CoolingPriority(1));
     EXPECT_EQ(1, thisZoneEquipList.HeatingPriority(1));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialCoolingFractionSchedPtr(1));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialHeatingFractionSchedPtr(1));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialCoolingFractionScheds(1));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialHeatingFractionScheds(1));
 
     EXPECT_EQ("ADU AIR TERMINAL SINGLE DUCT CONSTANT VOLUME NO REHEAT 1", thisZoneEquipList.EquipName(2));
     EXPECT_EQ("ZONEHVAC:AIRDISTRIBUTIONUNIT", thisZoneEquipList.EquipTypeName(2));
     EXPECT_ENUM_EQ(DataZoneEquipment::ZoneEquipType::AirDistributionUnit, thisZoneEquipList.EquipType(2));
     EXPECT_EQ(3, thisZoneEquipList.CoolingPriority(2));
     EXPECT_EQ(2, thisZoneEquipList.HeatingPriority(2));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialCoolingFractionSchedPtr(2));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialHeatingFractionSchedPtr(2));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialCoolingFractionScheds(2));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialHeatingFractionScheds(2));
 
     EXPECT_EQ("ADU AIR TERMINAL SINGLE DUCT VAV REHEAT 1", thisZoneEquipList.EquipName(3));
     EXPECT_EQ("ZONEHVAC:AIRDISTRIBUTIONUNIT", thisZoneEquipList.EquipTypeName(3));
     EXPECT_ENUM_EQ(DataZoneEquipment::ZoneEquipType::AirDistributionUnit, thisZoneEquipList.EquipType(3));
     EXPECT_EQ(2, thisZoneEquipList.CoolingPriority(3));
     EXPECT_EQ(3, thisZoneEquipList.HeatingPriority(3));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialCoolingFractionSchedPtr(3));
-    EXPECT_EQ(-1, thisZoneEquipList.SequentialHeatingFractionSchedPtr(3));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialCoolingFractionScheds(3));
+    EXPECT_EQ(Sched::GetScheduleAlwaysOn(*state), thisZoneEquipList.sequentialHeatingFractionScheds(3));
 }

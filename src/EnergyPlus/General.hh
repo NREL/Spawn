@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -81,17 +81,6 @@ namespace General {
                    const std::function<Real64(Real64)> &f,
                    Real64 X_0,  // 1st bound of interval that contains the solution
                    Real64 X_1); // 2nd bound of interval that contains the solution
-
-    constexpr Real64 POLYF(Real64 const X,          // Cosine of angle of incidence
-                           Array1D<Real64> const &A // Polynomial coefficients
-    )
-    {
-        if (X < 0.0 || X > 1.0) {
-            return 0.0;
-        } else {
-            return X * (A(1) + X * (A(2) + X * (A(3) + X * (A(4) + X * (A(5) + X * A(6))))));
-        }
-    }
 
     void MovingAvg(Array1D<Real64> &DataIn, int NumItemsInAvg);
 
@@ -345,6 +334,10 @@ struct GeneralData : BaseGlobalStruct
     std::string LineRptOption1;
     std::string VarDictOption1;
     std::string VarDictOption2;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

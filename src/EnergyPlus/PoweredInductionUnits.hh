@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,7 @@
 #include <EnergyPlus/DataDefineEquip.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 #include <EnergyPlus/Plant/PlantLocation.hh>
 
@@ -130,8 +131,7 @@ namespace PoweredInductionUnits {
         std::string Name;                                 // name of unit
         std::string UnitType;                             // type of unit
         DataDefineEquip::ZnAirLoopEquipType UnitType_Num; // index for type of unit
-        std::string Sched;                                // availability schedule
-        int SchedPtr;                                     // index to schedule
+        Sched::Schedule *availSched = nullptr;            // availability schedule
         Real64 MaxTotAirVolFlow;                          // m3/s  (series)
         Real64 MaxTotAirMassFlow;                         // kg/s  (series)
         Real64 MaxPriAirVolFlow;                          // m3/s
@@ -149,17 +149,17 @@ namespace PoweredInductionUnits {
         int HCoilInAirNode;                               // unit mixed air node number
         int ControlCompTypeNum;
         int CompErrIndex;
-        std::string MixerName; // name of air mixer component
-        int Mixer_Num;         // index for type of mixer
-        std::string FanName;   // name of fan component
-        HVAC::FanType fanType; // index for fan type
-        int Fan_Index;         // store index for this fan
-        int FanAvailSchedPtr;  // index to fan availability schedule
-        HtgCoilType HCoilType; // index for heating coil type
+        std::string MixerName;                    // name of air mixer component
+        int Mixer_Num;                            // index for type of mixer
+        std::string FanName;                      // name of fan component
+        HVAC::FanType fanType;                    // index for fan type
+        int Fan_Index;                            // store index for this fan
+        Sched::Schedule *fanAvailSched = nullptr; // fan availability schedule
+        HtgCoilType HCoilType;                    // index for heating coil type
         DataPlant::PlantEquipmentType HCoil_PlantType;
         std::string HCoil; // name of heating coil component
         int HCoil_Index;   // index to this heating coil
-        int HCoil_FluidIndex;
+        Fluid::RefrigProps *HCoil_fluid = nullptr;
         Real64 MaxVolHotWaterFlow; // m3/s
         Real64 MaxVolHotSteamFlow; // m3/s
         Real64 MaxHotWaterFlow;    // kg/s
@@ -207,15 +207,15 @@ namespace PoweredInductionUnits {
         int plenumIndex = 0;
         // Default Constructor
         PowIndUnitData()
-            : UnitType_Num(DataDefineEquip::ZnAirLoopEquipType::Invalid), SchedPtr(0), MaxTotAirVolFlow(0.0), MaxTotAirMassFlow(0.0),
-              MaxPriAirVolFlow(0.0), MaxPriAirMassFlow(0.0), MinPriAirFlowFrac(0.0), MinPriAirMassFlow(0.0), PriDamperPosition(0.0),
-              MaxSecAirVolFlow(0.0), MaxSecAirMassFlow(0.0), FanOnFlowFrac(0.0), FanOnAirMassFlow(0.0), PriAirInNode(0), SecAirInNode(0),
-              OutAirNode(0), HCoilInAirNode(0), ControlCompTypeNum(0), CompErrIndex(0), Mixer_Num(0), fanType(HVAC::FanType::Invalid), Fan_Index(0),
-              FanAvailSchedPtr(0), HCoilType(HtgCoilType::Invalid), HCoil_PlantType(DataPlant::PlantEquipmentType::Invalid), HCoil_Index(0),
-              HCoil_FluidIndex(0), MaxVolHotWaterFlow(0.0), MaxVolHotSteamFlow(0.0), MaxHotWaterFlow(0.0), MaxHotSteamFlow(0.0),
-              MinVolHotWaterFlow(0.0), MinHotSteamFlow(0.0), MinVolHotSteamFlow(0.0), MinHotWaterFlow(0.0), HotControlNode(0), HotCoilOutNodeNum(0),
-              HotControlOffset(0.0), HWplantLoc{}, ADUNum(0), InducesPlenumAir(false), HeatingRate(0.0), HeatingEnergy(0.0), SensCoolRate(0.0),
-              SensCoolEnergy(0.0), CtrlZoneNum(0), ctrlZoneInNodeIndex(0), AirLoopNum(0), OutdoorAirFlowRate(0.0)
+            : UnitType_Num(DataDefineEquip::ZnAirLoopEquipType::Invalid), MaxTotAirVolFlow(0.0), MaxTotAirMassFlow(0.0), MaxPriAirVolFlow(0.0),
+              MaxPriAirMassFlow(0.0), MinPriAirFlowFrac(0.0), MinPriAirMassFlow(0.0), PriDamperPosition(0.0), MaxSecAirVolFlow(0.0),
+              MaxSecAirMassFlow(0.0), FanOnFlowFrac(0.0), FanOnAirMassFlow(0.0), PriAirInNode(0), SecAirInNode(0), OutAirNode(0), HCoilInAirNode(0),
+              ControlCompTypeNum(0), CompErrIndex(0), Mixer_Num(0), fanType(HVAC::FanType::Invalid), Fan_Index(0), HCoilType(HtgCoilType::Invalid),
+              HCoil_PlantType(DataPlant::PlantEquipmentType::Invalid), HCoil_Index(0), MaxVolHotWaterFlow(0.0), MaxVolHotSteamFlow(0.0),
+              MaxHotWaterFlow(0.0), MaxHotSteamFlow(0.0), MinVolHotWaterFlow(0.0), MinHotSteamFlow(0.0), MinVolHotSteamFlow(0.0),
+              MinHotWaterFlow(0.0), HotControlNode(0), HotCoilOutNodeNum(0), HotControlOffset(0.0), HWplantLoc{}, ADUNum(0), InducesPlenumAir(false),
+              HeatingRate(0.0), HeatingEnergy(0.0), SensCoolRate(0.0), SensCoolEnergy(0.0), CtrlZoneNum(0), ctrlZoneInNodeIndex(0), AirLoopNum(0),
+              OutdoorAirFlowRate(0.0)
         {
         }
 
@@ -320,6 +320,10 @@ struct PoweredInductionUnitsData : BaseGlobalStruct
     Array1D_bool MyEnvrnFlag;
     Array1D_bool MySizeFlag;
     Array1D_bool MyPlantScanFlag;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

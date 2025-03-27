@@ -179,6 +179,9 @@ IF EXIST eplusout.sln   DEL eplusout.sln
 IF EXIST epluszsz.csv   DEL epluszsz.csv
 IF EXIST epluszsz.tab   DEL epluszsz.tab
 IF EXIST epluszsz.txt   DEL epluszsz.txt
+IF EXIST eplusspsz.csv  DEL eplusspsz.csv
+IF EXIST eplusspsz.tab  DEL eplusspsz.tab
+IF EXIST eplusspsz.txt  DEL eplusspsz.txt
 IF EXIST eplusssz.csv   DEL eplusssz.csv
 IF EXIST eplusssz.tab   DEL eplusssz.tab
 IF EXIST eplusssz.txt   DEL eplusssz.txt
@@ -409,6 +412,9 @@ IF EXIST "%epout%.sln" DEL "%epout%.sln"
 IF EXIST "%epout%Zsz.csv" DEL "%epout%Zsz.csv"
 IF EXIST "%epout%Zsz.tab" DEL "%epout%Zsz.tab"
 IF EXIST "%epout%Zsz.txt" DEL "%epout%Zsz.txt"
+IF EXIST "%epout%Spsz.csv" DEL "%epout%Spsz.csv"
+IF EXIST "%epout%Spsz.tab" DEL "%epout%Spsz.tab"
+IF EXIST "%epout%Spsz.txt" DEL "%epout%Spsz.txt"
 IF EXIST "%epout%Ssz.csv" DEL "%epout%Ssz.csv"
 IF EXIST "%epout%Ssz.tab" DEL "%epout%Ssz.tab"
 IF EXIST "%epout%Ssz.txt" DEL "%epout%Ssz.txt"
@@ -487,6 +493,9 @@ IF EXIST eplusout.sln MOVE eplusout.sln "%epout%.sln"
 IF EXIST epluszsz.csv MOVE epluszsz.csv "%epout%Zsz.csv"
 IF EXIST epluszsz.tab MOVE epluszsz.tab "%epout%Zsz.tab"
 IF EXIST epluszsz.txt MOVE epluszsz.txt "%epout%Zsz.txt"
+IF EXIST eplusspsz.csv MOVE eplusspsz.csv "%epout%Spsz.csv"
+IF EXIST eplusspsz.tab MOVE eplusspsz.tab "%epout%Spsz.tab"
+IF EXIST eplusspsz.txt MOVE eplusspsz.txt "%epout%Spsz.txt"
 IF EXIST eplusssz.csv MOVE eplusssz.csv "%epout%Ssz.csv"
 IF EXIST eplusssz.tab MOVE eplusssz.tab "%epout%Ssz.tab"
 IF EXIST eplusssz.txt MOVE eplusssz.txt "%epout%Ssz.txt"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University
+# EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University
 # of Illinois, The Regents of the University of California, through Lawrence
 # Berkeley National Laboratory (subject to receipt of any required approvals
 # from the U.S. Dept. of Energy), Oak Ridge National Laboratory, managed by UT-
@@ -96,7 +96,8 @@ SRC_DIR = os.path.abspath(os.path.join(REPO_ROOT, 'src', 'EnergyPlus'))
 # Files for which to ignore missing header warning
 EXPECT_MISSING_HEADER = ['src/EnergyPlus/main.cc',
                          'src/EnergyPlus/test_ep_as_library.cc',
-                         'EnergyPlusPgm.cc']
+                         'EnergyPlusPgm.cc',
+                         'src/EnergyPlus/WindowsGuiLauncher.cc']
 
 EXPECT_MISSING_NAMESPACE = []
 
@@ -271,7 +272,7 @@ CHECKED_AND_OKED = {
     },
     "HeatBalanceIntRadExchange.cc": {
         "UpdateMovableInsulationFlag": [
-            "MovableInsulationChange"
+            "change"
         ]
     },
     "HeatBalanceManager.cc": {
