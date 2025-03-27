@@ -1,67 +1,18 @@
 # Spawn 
-Spawn is a software package for performing co-simulations involving EnergyPlus and Modelica.
-This package bundles the following items in one self contained package.
+Spawn is a building energy and controls modeling tool that combines the EnergyPlus envelope and internal load calculations
+with advanced Modelica based HVAC and control representations.
 
-1. A method for connecting EnergyPlus models to Modelica
-2. A Modelica compiler toolchain for compiling and running Modelica models
-3. Modelica libraries and content, including the Modelica Buildings Library (MBL) 
-and the Modelica Standard Library.
-
-The Spawn installation package is fully self contained, and there are no external third party dependencies.
-Together the capabilities in this package, provide a single integrated environment for performing hybrid Modelica 
-and EnergyPlus simulations. The primary entry point is the `spawn` command line interface.
+As a component of Spawn, this repository contains the software implementation that links EnergyPlus and Modelica.
 
 ## Installation
-Binary packages are published on GitHub, https://github.com/NREL/Spawn/releases.
-Extract the package to a location of your choosing and optionally put the `bin/spawn` executable in your system path.
+Spawn is distributed as part of the [Modelica Buildings Library](https://simulationresearch.lbl.gov/modelica/index.html) and 
+the recommended installation method is to download and install the packages available [here](https://simulationresearch.lbl.gov/modelica/download.html).
+A third party Modelica environment such as Dymola, Open Modelica, or Optimica must be installed separately.
 
-Additional computer platforms, including versions of Mac OS and Windows will be supported in future releases.
+## Getting Started
+Getting started with Spawn is the same as using conventional Modelica based models,
+therefore end users can work within their preferred Modelica environment.
+The Modelica Buildings Library documentation provides details about the specific Modelica models provided by Spawn.
 
-## Example Usage
-Detailed help is built into the command line program `spawn --help`.
-
-* Compile a Modelica model. Models contained with the Modelica Buildings Library and
-the Modelica Standard Library are included and available to the compiler by default.
-
-```shell
-spawn modelica create-exe Buildings.Examples.Tutorial.Boiler.System1
-
-```
-* Compile and run a Modelica model, which internally leverages EnergyPlus.
-
-```shell
-spawn modelica simulate Buildings.ThermalZones.EnergyPlus.Validation.ThermalZone.OneZoneOneYear
-
-```
-
-## Compiling Spawn from source
-* Install EnergyPlus dependencies according to https://github.com/NREL/EnergyPlus/wiki/BuildingEnergyPlus
-* Ensure that your system has been setup the same as it would be for compiling EnergyPlus, but with a few additions,
-* Install clang development libraries. One Linux this would be...
-
-```shell
-apt install libllvm10 llvm-10-dev clang-10 libclang-10-dev liblld-10-dev liblld-10-dev gfortran
-```
-
-```shell
-pip install conan
-```
-
-* If neccessary add variables to locate llvm and clang. (not required for apt-get installed linux packages)
-
-```shell
-export LLVM_DIR=/path/to/llvm/
-export Clang_DIR=/path/to/clang/
-```
-
-* Then follow the normal cmake build process.
-
-```shell
-git clone --recurse-submodules https://github.com/NREL/spawn.git
-cd spawn
-mkdir build
-cd build
-cmake ../
-make -j
-```
-
+## Developer Notes
+Details about the software implementation and instructions for building this project are provided in docs/DEVELOPER.md
