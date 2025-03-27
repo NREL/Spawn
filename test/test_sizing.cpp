@@ -1,11 +1,8 @@
-#include "../energyplus_coroutine/spawn.hpp"
+#include "../coroutine/spawn.hpp"
 #include "../util/config.hpp"
-#include "../util/temp_directory.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <filesystem>
-#include <fmt/format.h>
-#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

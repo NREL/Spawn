@@ -1,4 +1,4 @@
-#include "spawn_cli/cli.hpp"
+#include "cli/cli.hpp"
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
 

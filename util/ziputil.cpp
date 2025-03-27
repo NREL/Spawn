@@ -3,20 +3,17 @@
 #include <cerrno>
 #include <cstring>
 #include <fmt/format.h>
-#include <iostream>
 #include <sys/stat.h>
 
 #if _MSC_VER
-#include "../energyplus_coroutine/msvc/dirent.h"
+#include "../coroutine/msvc/dirent.h"
 #else
 #include <dirent.h>
 #endif
 
 bool is_dir(const std::string &dir)
 {
-  struct stat st
-  {
-  };
+  struct stat st{};
   ::stat(dir.c_str(), &st);
   return S_ISDIR(st.st_mode); // NOLINT
 }

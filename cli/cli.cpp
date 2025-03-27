@@ -1,5 +1,5 @@
 #include "cli.hpp"
-#include "energyplus_coroutine/config.hpp"
+#include "coroutine/config.hpp"
 #include "paths.hpp"
 #include "util/config.hpp"
 #include <spdlog/spdlog.h>

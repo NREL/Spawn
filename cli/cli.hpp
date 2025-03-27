@@ -1,13 +1,10 @@
 #ifndef CLI_CLI_HPP_INCLUDED
 #define CLI_CLI_HPP_INCLUDED
 
-#include "energyplus_coroutine/actuator_types.hpp"
-#include "energyplus_coroutine/create_fmu.hpp"
-#include "energyplus_coroutine/output_types.hpp"
+#include "coroutine/actuator_types.hpp"
+#include "coroutine/create_fmu.hpp"
+#include "coroutine/output_types.hpp"
 #include "fmu/simulate.hpp"
-#include "modelica/create_exe.hpp"
-#include "modelica/create_fmu.hpp"
-#include "modelica/simulate.hpp"
 #include <CLI/CLI.hpp>
 
 namespace spawn::cli {
@@ -28,9 +25,6 @@ private:
 
   ::CLI::App app{"Spawn of EnergyPlus"};
 
-  spawn::modelica::CreateFMU modelica_create_fmu;
-  spawn::modelica::CreateEXE modelica_create_exe;
-  spawn::modelica::Simulate modelica_simulate;
   spawn::energyplus::CreateFMU energyplus_create_fmu;
   spawn::energyplus::ListOutputTypes list_output_types;
   spawn::energyplus::ListActuatorTypes list_actuator_types;
