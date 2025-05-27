@@ -23,8 +23,9 @@ if(ENABLE_BUILDINGS_LIBRARY)
     BUILD_ALWAYS 1
     BUILD_IN_SOURCE
     GIT_REPOSITORY https://github.com/lbl-srg/modelica-buildings.git
-    GIT_TAG 112520ad4e978393d3bde882525a9f92901343f3
+    GIT_TAG bdfb50e61e484ffe67131c03e4e758fe7dab643b
     GIT_SHALLOW
+    CMAKE_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND}
             -D MBL_ENERGYPLUS_VERSION_STRING=${MBL_ENERGYPLUS_VERSION_STRING}
@@ -56,6 +57,7 @@ if(ENABLE_BUILDINGS_LIBRARY)
     DEPENDS MBL
     SOURCE_DIR ${fmilib_project_source_dir}
     BINARY_DIR ${fmilib_project_build_dir}
+    CMAKE_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
     COMMAND ${CMAKE_COMMAND} -E copy ${fmilib_build_path} "${mbl_home}/${fmilib_install_path}"
     INSTALL_COMMAND "")
