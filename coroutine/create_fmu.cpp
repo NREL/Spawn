@@ -121,8 +121,8 @@ void createModelDescription([[maybe_unused]] const spawn::UserConfig &user_confi
 
   variable::Variables variables(user_config);
 
-  for (const auto &variable : variables.AllVariables()) {
-    xmlvariables.append_copy(variable->Metadata().document_element());
+  for (const auto &variable : variables.all_variables()) {
+    xmlvariables.append_copy(variable->metadata().document_element());
   }
 
   doc.save_file(savepath.c_str());

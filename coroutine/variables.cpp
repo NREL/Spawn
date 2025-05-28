@@ -1,15 +1,22 @@
 #include "variables.hpp"
+
+// C++ standard library headers
+#include <vector>
+
+// EnergyPlus headers
 #include "../energyplus/src/EnergyPlus/UtilityRoutines.hh"
+#include <EnergyPlusData.hh>
+
+// Third-party headers
+#include "spdlog/spdlog.h"
+
+// Spawn project headers
 #include "energyplus_helpers.hpp"
 #include "iddtypes.hpp"
 #include "input/user_config.hpp"
 #include "output_types.hpp"
-#include "spdlog/spdlog.h"
-#include <EnergyPlusData.hh>
-#include <vector>
 
 using json = nlohmann::json;
-using namespace spawn::units;
 
 namespace spawn::variable {
 
@@ -68,22 +75,22 @@ Variables::Variables([[maybe_unused]] const UserConfig &user_config)
   construction::TBack::CreateAll(user_config, *this);
 }
 
-const VariableVector &Variables::AllVariables() const
+const VariableVector &Variables::all_variables() const
 {
   return all_variables_;
 }
 
-const VariableRefs &Variables::Inputs() const
+const VariableRefs &Variables::inputs() const
 {
   return input_variables_;
 }
 
-const VariableRefs &Variables::Outputs() const
+const VariableRefs &Variables::outputs() const
 {
   return output_variables_;
 }
 
-const VariableRefs &Variables::Parameters() const
+const VariableRefs &Variables::parameters() const
 {
   return parameter_variables_;
 }
@@ -120,7 +127,7 @@ int Variables::VariableIndex(const std::string_view variable_name) const
 
 void Variables::AddVariable(std::unique_ptr<Variable> &&variable)
 {
-  variable_name_index_[std::string(variable->Name())] = variable->Index();
+  variable_name_index_[std::string(variable->name())] = variable->index();
   all_variables_.push_back(std::move(variable));
 }
 
@@ -143,33 +150,33 @@ Variable::Variable(Variables &variables,
                    std::string_view name,
                    units::UnitType ep_unit, // NOLINT
                    units::UnitType mo_unit)
-    : name_(name), ep_unit_(ep_unit), mo_unit_(mo_unit), index_((int)variables.AllVariables().size())
+    : name_(name), ep_unit_(ep_unit), mo_unit_(mo_unit), index_((int)variables.all_variables().size())
 {
   variables.AddVariable(std::unique_ptr<Variable>(this));
 }
 
-std::string_view Variable::Name() const
+std::string_view Variable::name() const
 {
   return name_;
 }
 
-int Variable::Index() const
+int Variable::index() const
 {
   return index_;
 }
 
-const pugi::xml_document &Variable::Metadata() const
+const pugi::xml_document &Variable::metadata() const
 {
   return metadata_;
 }
 
-std::optional<double> Variable::Value(const units::UnitSystem &unit) const
+std::optional<double> Variable::value(const units::UnitSystem &unit) const
 {
   if (value_) {
     switch (unit) {
-    case UnitSystem::MO:
+    case units::UnitSystem::MO:
       return value_;
-    case UnitSystem::EP:
+    case units::UnitSystem::EP:
       return units::convert({*value_, mo_unit_}, ep_unit_).value;
     }
   }
@@ -179,10 +186,10 @@ std::optional<double> Variable::Value(const units::UnitSystem &unit) const
 void Variable::SetValue(const double &value, const units::UnitSystem &unit)
 {
   switch (unit) {
-  case UnitSystem::MO:
+  case units::UnitSystem::MO:
     value_ = value;
     break;
-  case UnitSystem::EP:
+  case units::UnitSystem::EP:
     value_ = units::convert({value, ep_unit_}, mo_unit_).value;
     break;
   }
@@ -367,7 +374,7 @@ namespace zone {
 
   void QConSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    const double &value = energyplus::ZoneSums(energyplus_data, zone_num_.get(energyplus_data)).QConSenFlow();
+    const double &value = energyplus::ZoneSums(energyplus_data, zone_num_.get(energyplus_data)).q_con_sen_flow();
     Variable::SetValue(value, units::UnitSystem::EP);
   }
 
@@ -580,7 +587,7 @@ namespace zone {
 
   void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       energyplus::SetZoneTemperature(energyplus_data, zone_num_.get(energyplus_data), *v);
     }
   }
@@ -615,7 +622,7 @@ namespace zone {
 
   void X::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       energyplus::SetZoneHumidityRatio(energyplus_data, zone_num_.get(energyplus_data), *v);
     }
   }
@@ -653,7 +660,7 @@ namespace zone {
 
   void QGaiRadFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       energyplus::SetActuatorValue(energyplus_data, handle_.get(energyplus_data), *v);
     }
   }
@@ -1617,7 +1624,7 @@ namespace other {
 
   void Actuator::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       energyplus::SetActuatorValue(energyplus_data, actuator_handle_.get(energyplus_data), *v);
     } else {
       energyplus::ResetActuator(energyplus_data, actuator_handle_.get(energyplus_data));
@@ -1682,7 +1689,7 @@ namespace other {
 
   void Schedule::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       energyplus::SetActuatorValue(energyplus_data, handle_.get(energyplus_data), *v);
     }
   }
@@ -1800,7 +1807,7 @@ namespace surface {
 
   void T::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       for (const auto &h : actuator_handles_.get(energyplus_data)) {
         energyplus::SetActuatorValue(energyplus_data, h, *v);
       }
@@ -1956,7 +1963,7 @@ namespace construction {
 
   void TFront::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       for (const auto &h : actuator_handles_.get(energyplus_data)) {
         energyplus::SetActuatorValue(energyplus_data, h, *v);
       }
@@ -1996,7 +2003,7 @@ namespace construction {
 
   void TBack::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    if (const auto v = Value(units::UnitSystem::EP)) {
+    if (const auto v = value(units::UnitSystem::EP)) {
       for (const auto &h : actuator_handles_.get(energyplus_data)) {
         energyplus::SetActuatorValue(energyplus_data, h, *v);
       }

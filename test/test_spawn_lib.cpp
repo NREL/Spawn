@@ -89,17 +89,17 @@ TEST_CASE("Test one Spawn")
 {
   spawn::util::Temp_Directory working_path{};
   spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, working_path.dir());
-  spawn1.start();
-  CHECK(spawn1.currentTime() == 0.0);
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
 
   for (int day = 0; day <= 365; ++day) {
     auto time = spawn::days_to_seconds(day);
-    spawn1.setTime(time);
-    CHECK(spawn1.currentTime() == time);
+    spawn1.SetTime(time);
+    CHECK(spawn1.CurrentTime() == time);
     const auto lighting_power = spawn1.GetValue("Core_Zone_Lights_Output");
     CHECK(lighting_power > 0.0);
   }
-  spawn1.stop();
+  spawn1.Stop();
 }
 
 TEST_CASE("Test two Spawns")
@@ -110,18 +110,18 @@ TEST_CASE("Test two Spawns")
   spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, working_path1.dir());
   spawn::Spawn spawn2("spawn2", spawn::test::idd_path(), spawn_input, working_path2.dir());
 
-  spawn1.start();
-  spawn2.start();
+  spawn1.Start();
+  spawn2.Start();
 
-  CHECK(spawn1.currentTime() == 0.0);
-  CHECK(spawn2.currentTime() == 0.0);
+  CHECK(spawn1.CurrentTime() == 0.0);
+  CHECK(spawn2.CurrentTime() == 0.0);
 
   for (int day = 0; day <= 365; ++day) {
     auto time = spawn::days_to_seconds(day);
-    spawn1.setTime(time);
-    spawn2.setTime(time);
-    CHECK(spawn1.currentTime() == time);
-    CHECK(spawn2.currentTime() == time);
+    spawn1.SetTime(time);
+    spawn2.SetTime(time);
+    CHECK(spawn1.CurrentTime() == time);
+    CHECK(spawn2.CurrentTime() == time);
 
     const auto lighting_power1 = spawn1.GetValue("Core_Zone_Lights_Output");
     const auto lighting_power2 = spawn2.GetValue("Core_Zone_Lights_Output");
@@ -129,8 +129,8 @@ TEST_CASE("Test two Spawns")
     CHECK(all_lighting_power > 0.0);
   }
 
-  spawn1.stop();
-  spawn2.stop();
+  spawn1.Stop();
+  spawn2.Stop();
 }
 
 TEST_CASE("Test negative start time")
@@ -141,17 +141,17 @@ TEST_CASE("Test negative start time")
   spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_sfh_input, working_path1.dir());
   spawn::Spawn spawn2("spawn2", spawn::test::idd_path(), spawn_sfh_input, working_path2.dir());
 
-  spawn1.setStartTime(spawn::days_to_seconds(364));
-  spawn2.setStartTime(spawn::days_to_seconds(-1));
+  spawn1.SetStartTime(spawn::days_to_seconds(364));
+  spawn2.SetStartTime(spawn::days_to_seconds(-1));
 
-  spawn1.start();
-  spawn2.start();
+  spawn1.Start();
+  spawn2.Start();
 
   auto seconds_in_day = spawn::days_to_seconds(1);
 
   for (int day = 0; day <= 365; ++day) {
-    spawn1.setTime(spawn1.currentTime() + seconds_in_day);
-    spawn2.setTime(spawn2.currentTime() + seconds_in_day);
+    spawn1.SetTime(spawn1.CurrentTime() + seconds_in_day);
+    spawn2.SetTime(spawn2.CurrentTime() + seconds_in_day);
 
     const auto zone_temp_1 = spawn1.GetValue("GARAGE ZONE Temp");
     const auto zone_temp_2 = spawn2.GetValue("GARAGE ZONE Temp");
@@ -162,6 +162,6 @@ TEST_CASE("Test negative start time")
     // CHECK(zone_heat_1 == Approx(zone_heat_2));
   }
 
-  spawn1.stop();
-  spawn2.stop();
+  spawn1.Stop();
+  spawn2.Stop();
 }

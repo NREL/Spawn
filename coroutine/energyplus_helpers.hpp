@@ -1,3 +1,7 @@
+#ifndef SPAWN_COROUTINE_ENERGYPLUS_HELPERS_H_
+#define SPAWN_COROUTINE_ENERGYPLUS_HELPERS_H_
+
+// C++ standard library headers
 #include <string_view>
 #include <vector>
 
@@ -12,9 +16,9 @@ class ZoneSums
 public:
   ZoneSums(EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-  [[nodiscard]] double TempDepCoef() const;
-  [[nodiscard]] double TempIndCoef() const;
-  [[nodiscard]] double QConSenFlow() const;
+  [[nodiscard]] double temp_dep_coef() const;
+  [[nodiscard]] double temp_ind_coef() const;
+  [[nodiscard]] double q_con_sen_flow() const;
 
 private:
   double temp_dep_coef_;
@@ -147,3 +151,5 @@ void UpdateZoneHumidityRatio(EnergyPlus::EnergyPlusData &energyplus_data, const 
 void UpdateLatentGains(EnergyPlus::EnergyPlusData &energyplus_data);
 
 } // namespace spawn::energyplus
+
+#endif  // SPAWN_COROUTINE_ENERGYPLUS_HELPERS_H_

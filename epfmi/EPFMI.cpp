@@ -57,8 +57,8 @@ fmi2Status handle_fmi_exception(spawn::Spawn &comp)
     // This is the Lippincott pattern https://www.youtube.com/watch?v=-amJL3AyADI
     throw;
   } catch (const std::runtime_error &e) {
-    comp.logMessage(EnergyPlus::Error::Fatal, e.what());
-    comp.emptyLogMessageQueue();
+    comp.LogMessage(EnergyPlus::Error::Fatal, e.what());
+    comp.EmptyLogMessageQueue();
   } catch (...) {
     std::clog << "Unknown Exception\n";
   }
@@ -150,7 +150,7 @@ EPFMI_API fmi2Component fmi2Instantiate(fmi2String instanceName,
         functions->logger(env, instanceName, fmiLevel, "EnergyPlus Message", "%s", message.c_str());
       };
 
-      comp.setLogCallback(logger);
+      comp.SetLogCallback(logger);
     }
     return &comp;
   } catch (const std::runtime_error &e) {
@@ -168,14 +168,14 @@ EPFMI_API fmi2Status fmi2SetupExperiment(fmi2Component c,
                                          [[maybe_unused]] fmi2Boolean stopTimeDefined,
                                          [[maybe_unused]] fmi2Real stopTime)
 {
-  auto action = [&](spawn::Spawn &comp) { comp.setStartTime(starttime); };
+  auto action = [&](spawn::Spawn &comp) { comp.SetStartTime(starttime); };
 
   return spawn::with_spawn(c, action);
 }
 
 EPFMI_API fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
 {
-  auto action = [&](spawn::Spawn &comp) { comp.setTime(time); };
+  auto action = [&](spawn::Spawn &comp) { comp.SetTime(time); };
 
   return spawn::with_spawn(c, action);
 }
@@ -197,8 +197,8 @@ EPFMI_API fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[],
 {
   auto action = [&](spawn::Spawn &comp) {
     // Call to start will be a no op if the simulation is already running
-    comp.start();
-    comp.exchange();
+    comp.Start();
+    comp.Exchange();
     std::transform(vr, std::next(vr, static_cast<std::ptrdiff_t>(nvr)), values, [&](const auto valueRef) {
       return comp.GetValue(valueRef);
     });
@@ -211,7 +211,7 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo *event
 {
   auto action = [&](spawn::Spawn &comp) {
     eventInfo->newDiscreteStatesNeeded = fmi2False;
-    eventInfo->nextEventTime = comp.nextEventTime();
+    eventInfo->nextEventTime = comp.NextEventTime();
     eventInfo->nextEventTimeDefined = fmi2True;
     eventInfo->terminateSimulation = fmi2False;
   };
@@ -222,7 +222,7 @@ EPFMI_API fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo *event
 EPFMI_API fmi2Status fmi2Terminate(fmi2Component c)
 {
   auto action = [&](spawn::Spawn &comp) {
-    comp.stop();
+    comp.Stop();
     spawn::remove_spawn(comp);
   };
 
@@ -263,7 +263,7 @@ EPFMI_API fmi2Status fmi2EnterInitializationMode([[maybe_unused]] fmi2Component 
 
 EPFMI_API fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 {
-  auto action = [&](spawn::Spawn &comp) { comp.start(); };
+  auto action = [&](spawn::Spawn &comp) { comp.Start(); };
 
   return spawn::with_spawn(c, action);
 }

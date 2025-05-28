@@ -1,10 +1,13 @@
-#ifndef SPAWN_ENERGYPLUS_COROUTINE_START_TIME_INCLUDED
-#define SPAWN_ENERGYPLUS_COROUTINE_START_TIME_INCLUDED
+#ifndef SPAWN_COROUTINE_START_TIME_H_
+#define SPAWN_COROUTINE_START_TIME_H_
 
-#include "input/user_config.hpp"
-#include "util/datetime.hpp"
+// Third-party headers
 #include <boost/date_time/date_defs.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+
+// Spawn project headers
+#include "input/user_config.hpp"
+#include "util/datetime.hpp"
 
 namespace spawn {
 
@@ -27,27 +30,27 @@ public:
 
   // The desired start time in (possibly fractional) number of seconds from the Spawn epoch.
   // This value can be negative.
-  [[nodiscard]] double Seconds() const
+  [[nodiscard]] double seconds() const
   {
     return seconds_;
   }
 
   // The epoch of Spawn time, which is time 00:00 of January 1,
   // where the year is computed based on the start day of year.
-  [[nodiscard]] boost::gregorian::date SpawnEpoch() const
+  [[nodiscard]] boost::gregorian::date spawn_epoch() const
   {
     return spawn_epoch_;
   }
 
   // The epoch of EnergyPlus time, which correponds to the start date
   // of the EnergyPlus run period.
-  [[nodiscard]] boost::gregorian::date EnergyPlusEpoch() const
+  [[nodiscard]] boost::gregorian::date energyplus_epoch() const
   {
     return energyplus_epoch_;
   }
 
   // The Time differential in seconds between the EnergyPlus and Spawn epoch times.
-  [[nodiscard]] double EnergyPlusTimeDifferential() const
+  [[nodiscard]] double energyplus_time_differential() const
   {
     return energyplus_time_differential_;
   }
@@ -85,4 +88,4 @@ private:
 
 } // namespace spawn
 
-#endif // SPAWN_ENERGYPLUS_COROUTINE_START_TIME_INCLUDED
+#endif  // SPAWN_COROUTINE_START_TIME_H_

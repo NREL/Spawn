@@ -32,8 +32,8 @@ TEST_CASE("Test Zone Sizing Variables")
 
   spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, spawn::test::get_current_test_dir());
 
-  spawn1.start();
-  CHECK(spawn1.currentTime() == 0.0);
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
 
   double value = spawn1.GetValue("Core_ZN_QCooSen_flow");
   CHECK(value > 0.0);
@@ -60,7 +60,7 @@ TEST_CASE("Test Zone Sizing Variables")
   value = spawn1.GetValue("Core_ZN_THea");
   CHECK(value > 0.0);
 
-  spawn1.stop();
+  spawn1.Stop();
 }
 
 TEST_CASE("Test Zone Group Sizing Variables")
@@ -94,8 +94,8 @@ TEST_CASE("Test Zone Group Sizing Variables")
 
   spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, spawn::test::get_current_test_dir());
 
-  spawn1.start();
-  CHECK(spawn1.currentTime() == 0.0);
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
 
   double value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_QCooSen_flow");
   CHECK(value > 0.0);
@@ -122,5 +122,5 @@ TEST_CASE("Test Zone Group Sizing Variables")
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_THea");
   CHECK(value > 0.0);
 
-  spawn1.stop();
+  spawn1.Stop();
 }

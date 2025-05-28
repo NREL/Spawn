@@ -1,17 +1,23 @@
 #include "energyplus_helpers.hpp"
-#include "util/conversion.hpp"
+
+// C++ standard library headers
+#include <algorithm>
+#include <string_view>
+
+// EnergyPlus headers
 #include <DataEnvironment.hh>
 #include <DataGlobals.hh>
-#include <DataHeatBalSurface.hh>
 #include <DataHeatBalance.hh>
+#include <DataHeatBalSurface.hh>
 #include <DataSizing.hh>
 #include <EnergyPlusData.hh>
 #include <InternalHeatGains.hh>
 #include <Psychrometrics.hh>
 #include <ZoneTempPredictorCorrector.hh>
-#include <algorithm>
 #include <api/datatransfer.h>
-#include <string_view>
+
+// Spawn project headers
+#include "util/conversion.hpp"
 
 namespace spawn::energyplus {
 
@@ -28,17 +34,17 @@ ZoneSums::ZoneSums(EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
   q_con_sen_flow_ = temp_ind_coef_ - (temp_dep_coef_ * zone_heat_balance.MAT);
 }
 
-double ZoneSums::TempDepCoef() const
+double ZoneSums::temp_dep_coef() const
 {
   return temp_dep_coef_;
 }
 
-double ZoneSums::TempIndCoef() const
+double ZoneSums::temp_ind_coef() const
 {
   return temp_ind_coef_;
 }
 
-double ZoneSums::QConSenFlow() const
+double ZoneSums::q_con_sen_flow() const
 {
   return q_con_sen_flow_;
 }
@@ -605,12 +611,12 @@ void UpdateZoneTemperature(EnergyPlus::EnergyPlusData &energyplus_data, const in
       EnergyPlus::Psychrometrics::PsyCpAirFnW(zone_heat_balance.airHumRat); // / (TimeStepSys * SecInHour);
 
   const auto &sums = ZoneSums(energyplus_data, zonenum);
-  if (sums.TempDepCoef() == 0.0) { // B=0
-    newzonetemp = zonetemp + sums.TempIndCoef() / aircap * dt;
+  if (sums.temp_dep_coef() == 0.0) { // B=0
+    newzonetemp = zonetemp + sums.temp_ind_coef() / aircap * dt;
   } else {
     newzonetemp =
-        (zonetemp - sums.TempIndCoef() / sums.TempDepCoef()) * std::exp(min(700.0, -sums.TempDepCoef() / aircap * dt)) +
-        sums.TempIndCoef() / sums.TempDepCoef();
+        (zonetemp - sums.temp_ind_coef() / sums.temp_dep_coef()) * std::exp(min(700.0, -sums.temp_dep_coef() / aircap * dt)) +
+        sums.temp_ind_coef() / sums.temp_dep_coef();
   }
 
   SetZoneTemperature(energyplus_data, zonenum, newzonetemp);

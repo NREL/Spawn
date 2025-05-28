@@ -1,9 +1,12 @@
-#ifndef Spawn_warmupmanager_hh_INCLUDED
-#define Spawn_warmupmanager_hh_INCLUDED
+#ifndef SPAWN_COROUTINE_WARMUP_MANAGER_H_
+#define SPAWN_COROUTINE_WARMUP_MANAGER_H_
 
-#include "./manager.hpp"
+// C++ standard library headers
 #include <string>
 #include <vector>
+
+// Spawn project headers
+#include "./manager.hpp"
 
 namespace spawn {
 
@@ -14,22 +17,22 @@ public:
   explicit WarmupManager(EnergyPlus::EnergyPlusData &state);
 
 protected:
-  void initialize(EnergyPlus::EnergyPlusData &state) override;
-  void updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state);
-  void checkConvergence(EnergyPlus::EnergyPlusData &state);
+  void Initialize(EnergyPlus::EnergyPlusData &state) override;
+  void UpdateConvergenceMetrics(EnergyPlus::EnergyPlusData &state);
+  void CheckConvergence(EnergyPlus::EnergyPlusData &state);
 
 private:
-  std::vector<double> maxSurfTemp;
-  std::vector<double> minSurfTemp;
-  std::vector<double> prevMaxSurfTemp;
-  std::vector<double> prevMinSurfTemp;
+  std::vector<double> max_surf_temp_;
+  std::vector<double> min_surf_temp_;
+  std::vector<double> prev_max_surf_temp_;
+  std::vector<double> prev_min_surf_temp_;
 
-  int lastDayOfSim{0};
-  std::string lastDayOfSimChr{"0"};
+  int last_day_of_sim_{0};
+  std::string last_day_of_sim_chr_{"0"};
 
-  static constexpr double surfTempConvergTol{0.00001};
+  static constexpr double surf_temp_converg_tol_{0.00001};
 };
 
 } // namespace spawn
 
-#endif // Spawn_warmupmanager_hh_INCLUDED
+#endif  // SPAWN_COROUTINE_WARMUP_MANAGER_H_

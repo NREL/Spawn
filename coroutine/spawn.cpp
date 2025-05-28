@@ -27,10 +27,10 @@ Spawn::Spawn(const std::string_view name,
 {
 }
 
-void Spawn::start()
+void Spawn::Start()
 {
-  if (!is_running && !sim_exception_ptr && !sim_thread.joinable()) {
-    is_running = true;
+  if (!is_running_ && !sim_exception_ptr_ && !sim_thread_.joinable()) {
+    is_running_ = true;
 
     auto idfPath = user_config_.idfInputPath();
     auto idfjson = idf_to_json(idfPath);
@@ -53,147 +53,147 @@ void Spawn::start()
         std::vector<std::string> argv{
             "energyplus", "-d", working_dir_.string(), "-w", epw_path, "-i", idd_path_.string(), idfPath.string()};
 
-        registerErrorCallback(simState(),
-                              [this](const auto level, const auto &message) { logMessage(level, message); });
-        registerExternalHVACManager(simState(), [this](EnergyPlusState state) { externalHVACManager(state); });
-        sim_state.dataHeatBal->MaxAllowedDelTemp = user_config_.relativeSurfaceTolerance();
+        registerErrorCallback(SimState(),
+                              [this](const auto level, const auto &message) { LogMessage(level, message); });
+        registerExternalHVACManager(SimState(), [this](EnergyPlusState state) { ExternalHVACManager(state); });
+        sim_state_.dataHeatBal->MaxAllowedDelTemp = user_config_.relativeSurfaceTolerance();
 
-        runEnergyPlusAsLibrary(sim_state, argv);
+        runEnergyPlusAsLibrary(sim_state_, argv);
       } catch (...) {
-        sim_exception_ptr = std::current_exception();
-        EnergyPlus::AbortEnergyPlus(sim_state);
+        sim_exception_ptr_ = std::current_exception();
+        EnergyPlus::AbortEnergyPlus(sim_state_);
       }
 
       {
-        std::unique_lock<std::mutex> lk(sim_mutex);
-        iterate_flag = false;
-        is_running = false;
+        std::unique_lock<std::mutex> lk(sim_mutex_);
+        iterate_flag_ = false;
+        is_running_ = false;
       }
-      iterate_cv.notify_one();
+      iterate_cv_.notify_one();
     };
 
-    requested_time_ = start_time_.Seconds();
-    sim_thread = std::thread(simulation);
+    requested_time_ = start_time_.seconds();
+    sim_thread_ = std::thread(simulation);
     // This will make the EnergyPlus simulation thread go through startup/warmup,
     // and reach the requested start time.
-    iterate();
+    Iterate();
 
-    variables_.UpdateParameters(sim_state);
+    variables_.UpdateParameters(sim_state_);
 
     // This will make sure that we have a data exchange
-    setTime(start_time_.Seconds());
+    SetTime(start_time_.seconds());
   }
 }
 
-void Spawn::wait()
+void Spawn::Wait()
 {
-  std::unique_lock<std::mutex> lk(sim_mutex);
-  iterate_cv.wait(lk, [&]() { return (!iterate_flag) || (!is_running) || sim_exception_ptr; });
+  std::unique_lock<std::mutex> lk(sim_mutex_);
+  iterate_cv_.wait(lk, [&]() { return (!iterate_flag_) || (!is_running_) || sim_exception_ptr_; });
 
-  if (sim_exception_ptr) {
-    sim_thread.join();
-    std::rethrow_exception(sim_exception_ptr);
+  if (sim_exception_ptr_) {
+    sim_thread_.join();
+    std::rethrow_exception(sim_exception_ptr_);
   }
 }
 
-void Spawn::iterate()
+void Spawn::Iterate()
 {
   // Wait for any current iteration to complete
-  // There should never be a wait time (iterate_flag should be false)
-  // Consider throw if iterate_flag == true instead
-  wait();
+  // There should never be a wait time (iterate_flag_ should be false)
+  // Consider throw if iterate_flag_ == true instead
+  Wait();
 
   // Signal the iteration
   {
-    std::unique_lock<std::mutex> lk(sim_mutex);
-    iterate_flag = true;
+    std::unique_lock<std::mutex> lk(sim_mutex_);
+    iterate_flag_ = true;
   }
-  iterate_cv.notify_one();
+  iterate_cv_.notify_one();
 
   // Wait for EnergyPlus to complete the iteration
-  wait();
+  Wait();
 
-  emptyLogMessageQueue();
+  EmptyLogMessageQueue();
 }
 
-void Spawn::stop()
+void Spawn::Stop()
 {
   // This is a workaround to make sure one "complete" step has been made during the weather period.
   // This is required because some data structures that are used in closeout reporting are not initialized until
   // the first non warmup non sizing step
-  if (sim_state.dataGlobal->SimTimeSteps == 1) {
-    iterate();
+  if (sim_state_.dataGlobal->SimTimeSteps == 1) {
+    Iterate();
   }
 
   // This is an EnergyPlus API
-  stopSimulation(simState());
+  stopSimulation(SimState());
   // iterate the sim to allow EnergyPlus to go through shutdown;
-  iterate();
-  sim_thread.join();
+  Iterate();
+  sim_thread_.join();
 }
 
-bool Spawn::isRunning() const noexcept
+bool Spawn::IsRunning() const noexcept
 {
-  return is_running;
+  return is_running_;
 }
 
-void Spawn::isRunningCheck() const
+void Spawn::IsRunningCheck() const
 {
-  if (!is_running) {
+  if (!is_running_) {
     throw std::runtime_error("EnergyPlus is not running");
   }
 }
 
-double Spawn::startTime() const noexcept
+double Spawn::StartTime() const noexcept
 {
-  return start_time_.Seconds();
+  return start_time_.seconds();
 }
 
-void Spawn::setStartTime(const double &time) noexcept
+void Spawn::SetStartTime(const double &time) noexcept
 {
-  start_time_ = StartTime(day_from_string(user_config_.runPeriod.start_day_of_year), time);
+  start_time_ = spawn::StartTime(day_from_string(user_config_.runPeriod.start_day_of_year), time);
 }
 
-void Spawn::setTime(const double &time)
+void Spawn::SetTime(const double &time)
 {
-  isRunningCheck();
+  IsRunningCheck();
   requested_time_ = time;
-  exchange(true);
+  Exchange(true);
 
-  if (requested_time_ >= nextEventTime()) {
-    iterate();
+  if (requested_time_ >= NextEventTime()) {
+    Iterate();
   }
 }
 
-double Spawn::currentTime() const
+double Spawn::CurrentTime() const
 {
-  isRunningCheck();
-  return start_time_.EnergyPlusTimeDifferential() + ElapsedEnergyPlusTime();
+  IsRunningCheck();
+  return start_time_.energyplus_time_differential() + ElapsedEnergyPlusTime();
 }
 
 double Spawn::ElapsedEnergyPlusTime() const
 {
-  isRunningCheck();
-  return (sim_state.dataGlobal->SimTimeSteps - 1) * sim_state.dataGlobal->TimeStepZoneSec;
+  IsRunningCheck();
+  return (sim_state_.dataGlobal->SimTimeSteps - 1) * sim_state_.dataGlobal->TimeStepZoneSec;
 }
 
-double Spawn::nextEventTime() const
+double Spawn::NextEventTime() const
 {
-  isRunningCheck();
-  return currentTime() + sim_state.dataGlobal->TimeStepZoneSec;
+  IsRunningCheck();
+  return CurrentTime() + sim_state_.dataGlobal->TimeStepZoneSec;
 }
 
 void Spawn::SetValue(const unsigned int index, const double &value)
 {
-  const auto &variables = variables_.AllVariables();
+  const auto &variables = variables_.all_variables();
 
   if (index < variables.size()) {
     const auto &variable = variables[index];
-    const auto &cur_val = variable->Value();
+    const auto &cur_val = variable->value();
 
     if (!cur_val || std::abs(value) <= std::numeric_limits<float>::epsilon() ||
         std::abs(*cur_val - value) > std::numeric_limits<float>::epsilon()) {
-      need_update = true;
+      need_update_ = true;
       variable->SetValue(value, spawn::units::UnitSystem::MO);
     }
   } else {
@@ -203,10 +203,10 @@ void Spawn::SetValue(const unsigned int index, const double &value)
 
 double Spawn::GetValue(const unsigned int index) const
 {
-  const auto &variables = variables_.AllVariables();
+  const auto &variables = variables_.all_variables();
 
   if (index < variables.size()) {
-    const auto &value = variables[index]->Value();
+    const auto &value = variables[index]->value();
     if (value) {
       return *value;
     } else {
@@ -234,41 +234,41 @@ void Spawn::SetValue(const std::string_view name, const double &value)
   SetValue(index, value);
 }
 
-void Spawn::exchange(const bool force)
+void Spawn::Exchange(const bool force)
 {
-  isRunningCheck();
+  IsRunningCheck();
 
-  if (!force && !need_update) {
+  if (!force && !need_update_) {
     return;
   }
 
-  variables_.UpdateInputs(sim_state);
+  variables_.UpdateInputs(sim_state_);
 
   // Run some internal EnergyPlus functions to update outputs
-  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state);
-  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state);
-  EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state);
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceOutsideSurf(sim_state_);
+  EnergyPlus::HeatBalanceSurfaceManager::CalcHeatBalanceInsideSurf(sim_state_);
+  EnergyPlus::ZoneEquipmentManager::CalcAirFlowSimple(sim_state_);
   UpdateZoneConditions(true); // true means skip any connected zones which are not under EP control
-  EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state);
-  EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state);
-  EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state);
-  EnergyPlus::InternalHeatGains::ReportInternalHeatGains(sim_state);
-  EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state);
-  EnergyPlus::HeatBalanceSurfaceManager::ReportSurfaceHeatBalance(sim_state);
-  energyplus::UpdateLatentGains(sim_state);
+  EnergyPlus::HeatBalanceAirManager::ReportZoneMeanAirTemp(sim_state_);
+  EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state_);
+  EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state_);
+  EnergyPlus::InternalHeatGains::ReportInternalHeatGains(sim_state_);
+  EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state_);
+  EnergyPlus::HeatBalanceSurfaceManager::ReportSurfaceHeatBalance(sim_state_);
+  energyplus::UpdateLatentGains(sim_state_);
 
-  variables_.UpdateOutputs(sim_state);
+  variables_.UpdateOutputs(sim_state_);
 
-  need_update = false;
+  need_update_ = false;
 }
 
-void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
+void Spawn::ExternalHVACManager([[maybe_unused]] EnergyPlusState state)
 {
-  if (sim_state.dataGlobal->KickOffSimulation || sim_state.dataGlobal->DoingSizing) {
+  if (sim_state_.dataGlobal->KickOffSimulation || sim_state_.dataGlobal->DoingSizing) {
     // ManageHVAC initializes many structures that need to exist.
     // Withouth calling this during the simulation kick off, the simulation will crash.
     // After kick off, we skip this call, because the client is managing the HVAC.
-    EnergyPlus::HVACManager::ManageHVAC(sim_state);
+    EnergyPlus::HVACManager::ManageHVAC(sim_state_);
     // At this time, there is no data exchange or any other
     // interaction with the client during kick off, so this function returns and the
     // simulation continues through the startup process.
@@ -277,62 +277,62 @@ void Spawn::externalHVACManager([[maybe_unused]] EnergyPlusState state)
 
   // "exchange" to get inputs, update internal EnergyPlus state, set outputs
   // "exchange" does not itself trigger an iteraction with the client
-  exchange(true);
+  Exchange(true);
 
-  if (sim_state.dataGlobal->WarmupFlag) {
+  if (sim_state_.dataGlobal->WarmupFlag) {
     return;
   }
 
   // This is the part the signals and waits for the client
   // Only signal and wait for input if the current sim time is greather than or equal
   // to the requested time
-  if (currentTime() >= requested_time_) {
+  if (CurrentTime() >= requested_time_) {
     // Signal the end of the step
     {
-      std::unique_lock<std::mutex> lk(sim_mutex);
-      iterate_flag = false;
+      std::unique_lock<std::mutex> lk(sim_mutex_);
+      iterate_flag_ = false;
     }
 
-    iterate_cv.notify_one();
+    iterate_cv_.notify_one();
 
-    // Wait for the iterate_flag to signal another iteration
-    std::unique_lock<std::mutex> lk(sim_mutex);
-    iterate_cv.wait(lk, [&]() { return iterate_flag; });
+    // Wait for the iterate_flag_ to signal another iteration
+    std::unique_lock<std::mutex> lk(sim_mutex_);
+    iterate_cv_.wait(lk, [&]() { return iterate_flag_; });
   }
 }
 
-void Spawn::setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb)
+void Spawn::SetLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb)
 {
-  logCallback = std::move(cb);
+  log_callback_ = std::move(cb);
 }
 
-void Spawn::logMessage(EnergyPlus::Error level, const std::string &message)
+void Spawn::LogMessage(EnergyPlus::Error level, const std::string &message)
 {
-  if (logCallback && !message.empty() && (level != EnergyPlus::Error::Info)) {
-    log_message_queue.emplace_back(level, message);
+  if (log_callback_ && !message.empty() && (level != EnergyPlus::Error::Info)) {
+    log_message_queue_.emplace_back(level, message);
   }
 }
 
-void Spawn::emptyLogMessageQueue()
+void Spawn::EmptyLogMessageQueue()
 {
-  if (logCallback) {
-    while (!log_message_queue.empty()) {
-      auto m = log_message_queue.front();
-      logCallback(m.first, m.second);
-      log_message_queue.pop_front();
+  if (log_callback_) {
+    while (!log_message_queue_.empty()) {
+      auto m = log_message_queue_.front();
+      log_callback_(m.first, m.second);
+      log_message_queue_.pop_front();
     }
   }
 }
 
-EnergyPlusState Spawn::simState()
+EnergyPlusState Spawn::SimState()
 {
-  return static_cast<EnergyPlusState>(&sim_state);
+  return static_cast<EnergyPlusState>(&sim_state_);
 }
 
 void Spawn::UpdateZoneConditions(bool skipConnectedZones)
 {
-  const double dt = currentTime() - prevZoneUpdate;
-  prevZoneUpdate = currentTime();
+  const double dt = CurrentTime() - prev_zone_update_;
+  prev_zone_update_ = CurrentTime();
   if (dt > 0.0) {
 
     for (const auto &zone : user_config_.zones) {
@@ -340,9 +340,9 @@ void Spawn::UpdateZoneConditions(bool skipConnectedZones)
         continue;
       }
 
-      const auto zonenum = energyplus::ZoneNum(sim_state, zone.idfname);
-      energyplus::UpdateZoneTemperature(sim_state, zonenum, dt);
-      energyplus::UpdateZoneHumidityRatio(sim_state, zonenum, dt);
+      const auto zonenum = energyplus::ZoneNum(sim_state_, zone.idfname);
+      energyplus::UpdateZoneTemperature(sim_state_, zonenum, dt);
+      energyplus::UpdateZoneHumidityRatio(sim_state_, zonenum, dt);
     }
   }
 }

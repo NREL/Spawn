@@ -1,109 +1,111 @@
 #include "./warmup_manager.hpp"
+
+// EnergyPlus headers
 #include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../energyplus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../energyplus/src/EnergyPlus/DataHeatBalance.hh"
+#include "../energyplus/src/EnergyPlus/DataHeatBalSurface.hh"
 #include "../energyplus/src/EnergyPlus/EMSManager.hh"
 
 namespace spawn {
 
 WarmupManager::WarmupManager(EnergyPlus::EnergyPlusData &state) : Manager(state)
 {
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = [this](auto &state) {
-    updateConvergenceMetrics(state);
+  callbacks_[EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting] = [this](auto &state) {
+    UpdateConvergenceMetrics(state);
   };
 
-  callbacks[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] = [this](auto &state) {
-    checkConvergence(state);
+  callbacks_[EnergyPlus::EMSManager::EMSCallFrom::BeginNewEnvironmentAfterWarmUp] = [this](auto &state) {
+    CheckConvergence(state);
   };
 }
 
-void WarmupManager::initialize(EnergyPlus::EnergyPlusData &state)
+void WarmupManager::Initialize(EnergyPlus::EnergyPlusData &state)
 {
   const auto count = state.dataHeatBalSurf->SurfTempIn.size();
 
-  maxSurfTemp.clear();
-  minSurfTemp.clear();
-  prevMaxSurfTemp.clear();
-  prevMinSurfTemp.clear();
+  max_surf_temp_.clear();
+  min_surf_temp_.clear();
+  prev_max_surf_temp_.clear();
+  prev_min_surf_temp_.clear();
 
-  maxSurfTemp.resize(count);
-  minSurfTemp.resize(count);
-  prevMaxSurfTemp.resize(count);
-  prevMinSurfTemp.resize(count);
+  max_surf_temp_.resize(count);
+  min_surf_temp_.resize(count);
+  prev_max_surf_temp_.resize(count);
+  prev_min_surf_temp_.resize(count);
 
-  lastDayOfSim = state.dataGlobal->DayOfSim;
-  lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
+  last_day_of_sim_ = state.dataGlobal->DayOfSim;
+  last_day_of_sim_chr_ = state.dataGlobal->DayOfSimChr;
 
-  Manager::initialize(state);
+  Manager::Initialize(state);
 }
 
-void WarmupManager::updateConvergenceMetrics(EnergyPlus::EnergyPlusData &state)
+void WarmupManager::UpdateConvergenceMetrics(EnergyPlus::EnergyPlusData &state)
 {
   if (!state.dataGlobal->WarmupFlag) {
     return;
   }
 
-  if (!initialized) {
-    initialize(state);
+  if (!initialized_) {
+    Initialize(state);
   }
 
   const auto &surfTemp = state.dataHeatBalSurf->SurfTempIn;
-  lastDayOfSim = state.dataGlobal->DayOfSim;
-  lastDayOfSimChr = state.dataGlobal->DayOfSimChr;
+  last_day_of_sim_ = state.dataGlobal->DayOfSim;
+  last_day_of_sim_chr_ = state.dataGlobal->DayOfSimChr;
 
   if (state.dataGlobal->BeginDayFlag) {
-    prevMaxSurfTemp = maxSurfTemp;
-    prevMinSurfTemp = minSurfTemp;
+    prev_max_surf_temp_ = max_surf_temp_;
+    prev_min_surf_temp_ = min_surf_temp_;
     for (size_t i = 0; i < surfTemp.size(); ++i) {
-      maxSurfTemp[i] = surfTemp[i];
-      minSurfTemp[i] = surfTemp[i];
+      max_surf_temp_[i] = surfTemp[i];
+      min_surf_temp_[i] = surfTemp[i];
     }
   } else {
     for (size_t i = 0; i < surfTemp.size(); ++i) {
-      if (surfTemp[i] > maxSurfTemp[i]) {
-        maxSurfTemp[i] = surfTemp[i];
+      if (surfTemp[i] > max_surf_temp_[i]) {
+        max_surf_temp_[i] = surfTemp[i];
       }
 
-      if (surfTemp[i] < minSurfTemp[i]) {
-        minSurfTemp[i] = surfTemp[i];
+      if (surfTemp[i] < min_surf_temp_[i]) {
+        min_surf_temp_[i] = surfTemp[i];
       }
     }
   }
 }
 
-void WarmupManager::checkConvergence(EnergyPlus::EnergyPlusData &state)
+void WarmupManager::CheckConvergence(EnergyPlus::EnergyPlusData &state)
 {
   // If the max number of warmup days has been exceeded then return early,
   // and allow the simulation to continue into the run period
-  if (lastDayOfSim >= state.dataHeatBal->MaxNumberOfWarmupDays) {
+  if (last_day_of_sim_ >= state.dataHeatBal->MaxNumberOfWarmupDays) {
     state.dataGlobal->WarmupFlag = false;
     return;
   }
 
-  bool convergenceChecksFailed = false;
+  bool convergence_checks_failed = false;
 
-  for (size_t i = 0; i < maxSurfTemp.size(); ++i) {
-    const auto maxSurfTempDiff = std::abs(maxSurfTemp[i] - prevMaxSurfTemp[i]);
-    if (maxSurfTempDiff > surfTempConvergTol) {
-      convergenceChecksFailed = true;
+  for (size_t i = 0; i < max_surf_temp_.size(); ++i) {
+    const auto max_surf_temp_diff = std::abs(max_surf_temp_[i] - prev_max_surf_temp_[i]);
+    if (max_surf_temp_diff > surf_temp_converg_tol_) {
+      convergence_checks_failed = true;
       break;
     }
   }
 
-  for (size_t i = 0; i < minSurfTemp.size(); ++i) {
-    const auto minSurfTempDiff = std::abs(minSurfTemp[i] - prevMinSurfTemp[i]);
-    if (minSurfTempDiff > surfTempConvergTol) {
-      convergenceChecksFailed = true;
+  for (size_t i = 0; i < min_surf_temp_.size(); ++i) {
+    const auto min_surf_temp_diff = std::abs(min_surf_temp_[i] - prev_min_surf_temp_[i]);
+    if (min_surf_temp_diff > surf_temp_converg_tol_) {
+      convergence_checks_failed = true;
       break;
     }
   }
 
-  if (convergenceChecksFailed) {
+  if (convergence_checks_failed) {
     state.dataGlobal->WarmupFlag = true;
     // EnergyPlus will have reset these values after convergence was satisfied
     // Here they are restored to their last value before reset
-    state.dataGlobal->DayOfSim = lastDayOfSim;
-    state.dataGlobal->DayOfSimChr = lastDayOfSimChr;
+    state.dataGlobal->DayOfSim = last_day_of_sim_;
+    state.dataGlobal->DayOfSimChr = last_day_of_sim_chr_;
   }
 }
 

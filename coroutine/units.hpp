@@ -1,6 +1,7 @@
-#ifndef SPAWN_UNITS_INCLUDED
-#define SPAWN_UNITS_INCLUDED
+#ifndef SPAWN_COROUTINE_UNITS_H_
+#define SPAWN_COROUTINE_UNITS_H_
 
+// C++ standard library headers
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -114,4 +115,4 @@ struct Quantity
 
 } // namespace spawn::units
 
-#endif // SPAWN_UNITS_INCLUDED
+#endif  // SPAWN_COROUTINE_UNITS_H_

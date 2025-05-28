@@ -1,4 +1,6 @@
 #include "./manager.hpp"
+
+// EnergyPlus headers
 #include "../energyplus/src/EnergyPlus/PluginManager.hh"
 
 namespace spawn {
@@ -10,14 +12,14 @@ Manager::Manager(EnergyPlus::EnergyPlusData &state)
   // This is a firewall so that dirty void * doesn't spread
   auto f = [&](EnergyPlusState s) {
     auto *f_state = static_cast<EnergyPlus::EnergyPlusData *>(s);
-    registerCallbacks(*f_state);
+    RegisterCallbacks(*f_state);
   };
   EnergyPlus::PluginManagement::registerNewCallback(state, EnergyPlus::EMSManager::EMSCallFrom::SetupSimulation, f);
 }
 
-void Manager::registerCallbacks(EnergyPlus::EnergyPlusData &state)
+void Manager::RegisterCallbacks(EnergyPlus::EnergyPlusData &state)
 {
-  for (const auto &callback : callbacks) {
+  for (const auto &callback : callbacks_) {
     auto f = [&](EnergyPlusState s) {
       auto *f_state = static_cast<EnergyPlus::EnergyPlusData *>(s);
       callback.second(*f_state);
@@ -26,9 +28,9 @@ void Manager::registerCallbacks(EnergyPlus::EnergyPlusData &state)
   }
 }
 
-void Manager::initialize([[maybe_unused]] EnergyPlus::EnergyPlusData &state)
+void Manager::Initialize([[maybe_unused]] EnergyPlus::EnergyPlusData &state)
 {
-  initialized = true;
+  initialized_ = true;
 }
 
 } // namespace spawn

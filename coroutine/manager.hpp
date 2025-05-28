@@ -1,6 +1,7 @@
-#ifndef spawn_manager_hh_INCLUDED
-#define spawn_manager_hh_INCLUDED
+#ifndef SPAWN_COROUTINE_MANAGER_H_
+#define SPAWN_COROUTINE_MANAGER_H_
 
+// C++ standard library headers
 #include <functional>
 #include <map>
 
@@ -27,13 +28,13 @@ public:
   Manager(Manager &&) = delete;
 
 protected:
-  virtual void initialize(EnergyPlus::EnergyPlusData &state);
-  bool initialized{false};
-  void registerCallbacks(EnergyPlus::EnergyPlusData &state);
+  virtual void Initialize(EnergyPlus::EnergyPlusData &state);
+  bool initialized_{false};
+  void RegisterCallbacks(EnergyPlus::EnergyPlusData &state);
 
-  std::map<EnergyPlus::EMSManager::EMSCallFrom, std::function<void(EnergyPlus::EnergyPlusData &)>> callbacks;
+  std::map<EnergyPlus::EMSManager::EMSCallFrom, std::function<void(EnergyPlus::EnergyPlusData &)>> callbacks_;
 };
 
 } // namespace spawn
 
-#endif // spawn_manager_hh_INCLUDED
+#endif  // SPAWN_COROUTINE_MANAGER_H_

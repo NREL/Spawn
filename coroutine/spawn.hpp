@@ -1,14 +1,7 @@
-#ifndef Spawn_hh_INCLUDED
-#define Spawn_hh_INCLUDED
+#ifndef SPAWN_COROUTINE_SPAWN_H_
+#define SPAWN_COROUTINE_SPAWN_H_
 
-#include "../energyplus/src/EnergyPlus/Data/CommonIncludes.hh"
-#include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
-#include "../energyplus/src/EnergyPlus/api/state.h"
-#include "../util/filesystem.hpp"
-#include "input/user_config.hpp"
-#include "start_time.hpp"
-#include "variables.hpp"
-#include "warmup_manager.hpp"
+// C++ standard library headers
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -19,6 +12,18 @@
 #include <thread>
 #include <tuple>
 #include <vector>
+
+// EnergyPlus headers
+#include "../energyplus/src/EnergyPlus/Data/CommonIncludes.hh"
+#include "../energyplus/src/EnergyPlus/Data/EnergyPlusData.hh"
+#include "../energyplus/src/EnergyPlus/api/state.h"
+
+// Spawn project headers
+#include "../util/filesystem.hpp"
+#include "input/user_config.hpp"
+#include "start_time.hpp"
+#include "variables.hpp"
+#include "warmup_manager.hpp"
 
 namespace spawn {
 
@@ -40,14 +45,14 @@ public:
     return (this == &other);
   }
 
-  void start();
-  void stop();
-  [[nodiscard]] bool isRunning() const noexcept;
-  void setTime(const double &time);
+  void Start();
+  void Stop();
+  [[nodiscard]] bool IsRunning() const noexcept;
+  void SetTime(const double &time);
 
   [[nodiscard]] double ElapsedEnergyPlusTime() const;
-  [[nodiscard]] double currentTime() const;
-  [[nodiscard]] double nextEventTime() const;
+  [[nodiscard]] double CurrentTime() const;
+  [[nodiscard]] double NextEventTime() const;
 
   // Set value by index
   // Throws a std::exception if index is invalid or the simulation is not running
@@ -69,77 +74,78 @@ public:
   // Throws a std::exception if name is invalid or the simulation is not running
   [[nodiscard]] double GetValue(const std::string_view name) const;
 
-  [[nodiscard]] double startTime() const noexcept;
-  void setStartTime(const double &time) noexcept;
+  [[nodiscard]] double StartTime() const noexcept;
+  void SetStartTime(const double &time) noexcept;
 
-  void setLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
-  void logMessage(EnergyPlus::Error level, const std::string &message);
-  void emptyLogMessageQueue();
+  void SetLogCallback(std::function<void(EnergyPlus::Error, const std::string &)> cb);
+  void LogMessage(EnergyPlus::Error level, const std::string &message);
+  void EmptyLogMessageQueue();
 
-  void exchange(const bool force = false);
+  void Exchange(const bool force = false);
 
 private:
-  std::string instance_name_;
-  spawn_fs::path idd_path_;
-  UserConfig user_config_;
-  spawn_fs::path working_dir_;
+  // Member variables
+  std::string instance_name_;  // Name of this Spawn instance
+  spawn_fs::path idd_path_;    // Path to IDD file
+  UserConfig user_config_;     // User configuration
+  spawn_fs::path working_dir_; // Working directory
 
-  StartTime start_time_;
-  double requested_time_{0.0};
-  bool need_update{true};
+  spawn::StartTime start_time_; // Simulation start time
+  double requested_time_{0.0};  // Requested simulation time
+  bool need_update_{true};      // Flag indicating if an update is needed
 
   // Signal EnergyPlus to move through the simulation loop
   // Depending on the current simulation time, this may be an inner most hvac iteration,
   // or big "outer" zone iteration
-  void iterate();
-  // Wait for EnergyPlus to complete any current iteration. ie. iterate_flag == false
-  void wait();
-  // iterate flag == true when EnergyPlus is actively working
-  bool iterate_flag{false};
-  std::condition_variable iterate_cv;
-  // is_running is true for as long as the EnergyPlus process is running
-  // in contrast to iterate_flag which is only true when EnergyPlus is actively
+  void Iterate();
+  // Wait for EnergyPlus to complete any current iteration. ie. iterate_flag_ == false
+  void Wait();
+  // iterate_flag_ == true when EnergyPlus is actively working
+  bool iterate_flag_{false};
+  std::condition_variable iterate_cv_;
+  // is_running_ is true for as long as the EnergyPlus process is running
+  // in contrast to iterate_flag_ which is only true when EnergyPlus is actively
   // doing computation. In many cases the EnergyPlus process may be in wait mode,
-  // waiting for the condition_variable (iterate_flag) to signal an iteration
-  bool is_running{false};
-  // Throws if not is_running
-  void isRunningCheck() const;
+  // waiting for the condition_variable (iterate_flag_) to signal an iteration
+  bool is_running_{false};
+  // Throws if not is_running_
+  void IsRunningCheck() const;
 
-  EnergyPlus::EnergyPlusData sim_state;
-  EnergyPlusState simState();
+  EnergyPlus::EnergyPlusData sim_state_;
+  EnergyPlusState SimState();
 
-  std::mutex sim_mutex;
-  std::thread sim_thread;
+  std::mutex sim_mutex_;
+  std::thread sim_thread_;
 
-  std::exception_ptr sim_exception_ptr{nullptr};
+  std::exception_ptr sim_exception_ptr_{nullptr};
 
-  void externalHVACManager(EnergyPlusState state);
-  void UpdateZoneConditions(bool skipConnectedZones);
+  void ExternalHVACManager(EnergyPlusState state);
+  void UpdateZoneConditions(bool skip_connected_zones);
 
-  std::function<void(EnergyPlus::Error, const std::string &)> logCallback;
-  std::deque<std::pair<EnergyPlus::Error, std::string>> log_message_queue;
+  std::function<void(EnergyPlus::Error, const std::string &)> log_callback_;
+  std::deque<std::pair<EnergyPlus::Error, std::string>> log_message_queue_;
 
   // Given a zone name, return the index according to EnergyPlus
-  [[nodiscard]] int zoneNum(const std::string &zoneName) const;
+  [[nodiscard]] int ZoneNum(const std::string &zone_name) const;
 
   // Time in seconds of the last zone update
   // This is required for computing the dt in the
   // updateZoneTemperature and updateZoneHumidityRatio calculations
-  double prevZoneUpdate{};
+  double prev_zone_update_{};
   // State of the warmup flag during the previous zone update
-  // bool prevWarmupFlag{false};
+  // bool prev_warmup_flag_{false};
 
   // WarmupManager will register its own callbacks during construction
   // Maybe all of Spawn's implementation can be derived from "Manager" class
   // Maybe all of EnergyPlus can derive from Manager and the simulation is
   // a simple hierarchy of loops with callback points along the way
-  WarmupManager warmupManager{sim_state};
+  WarmupManager warmup_manager_{sim_state_};
 
   variable::Variables variables_{user_config_};
 };
 
-spawn_fs::path iddpath();
+spawn_fs::path IddPath();
 
 } // namespace spawn
 
-#endif
+#endif // SPAWN_COROUTINE_SPAWN_H_

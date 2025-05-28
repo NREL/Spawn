@@ -1,13 +1,18 @@
-#ifndef Variables_hh_INCLUDED
-#define Variables_hh_INCLUDED
+#ifndef SPAWN_COROUTINE_VARIABLES_H_
+#define SPAWN_COROUTINE_VARIABLES_H_
 
-#include "units.hpp"
+// C++ standard library headers
 #include <functional>
 #include <memory>
 #include <optional>
-#include <pugixml.hpp>
 #include <string>
 #include <vector>
+
+// Third-party headers
+#include <pugixml.hpp>
+
+// Spawn project headers
+#include "units.hpp"
 
 namespace EnergyPlus {
 struct EnergyPlusData;
@@ -49,11 +54,11 @@ public:
   Variable(Variable &&) = delete;
   virtual ~Variable() = default;
 
-  [[nodiscard]] std::string_view Name() const;
-  [[nodiscard]] int Index() const;
-  [[nodiscard]] const pugi::xml_document &Metadata() const;
+  [[nodiscard]] std::string_view name() const;
+  [[nodiscard]] int index() const;
+  [[nodiscard]] const pugi::xml_document &metadata() const;
 
-  [[nodiscard]] std::optional<double> Value(const units::UnitSystem &unit = units::UnitSystem::MO) const;
+  [[nodiscard]] std::optional<double> value(const units::UnitSystem &unit = units::UnitSystem::MO) const;
   virtual void SetValue(const double &value, const units::UnitSystem &unit);
   virtual void ResetValue();
 
@@ -165,16 +170,16 @@ public:
     new T(variables, std::forward<Args>(args)...);
   }
 
-  [[nodiscard]] const VariableVector &AllVariables() const;
-  [[nodiscard]] const VariableRefs &Inputs() const;
-  [[nodiscard]] const VariableRefs &Outputs() const;
-  [[nodiscard]] const VariableRefs &Parameters() const;
+  [[nodiscard]] const VariableVector &all_variables() const;
+  [[nodiscard]] const VariableRefs &inputs() const;
+  [[nodiscard]] const VariableRefs &outputs() const;
+  [[nodiscard]] const VariableRefs &parameters() const;
 
   void UpdateInputs(EnergyPlus::EnergyPlusData &energyplus_data);
   void UpdateOutputs(EnergyPlus::EnergyPlusData &energyplus_data);
   void UpdateParameters(EnergyPlus::EnergyPlusData &energyplus_data);
 
-  // Given a Variable's name, return its index into the AllVariables container
+  // Given a Variable's name, return its index into the all_variables container
   // Will throw on an invalid name
   [[nodiscard]] int VariableIndex(const std::string_view variable_name) const;
 
@@ -846,4 +851,4 @@ namespace construction {
 
 } // namespace spawn::variable
 
-#endif // Variables_hh_INCLUDED
+#endif  // SPAWN_COROUTINE_VARIABLES_H_
