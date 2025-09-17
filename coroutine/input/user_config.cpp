@@ -100,7 +100,17 @@ void UserConfig::setEPWInputPath(const spawn_fs::path &epwpath)
 
 bool UserConfig::autosize() const
 {
-  return spawnjson.value("EnergyPlus", json()).value("autosize", false);
+  // Check if any modelicaSystems have autosize set to true
+  const auto hvac_systems = spawnjson.value("model", json::object()).value("hvacSystems", std::vector<json>(0));
+
+  for (const auto &system : hvac_systems) {
+    const auto autosize_str = system.value("autosize", "false");
+    if (autosize_str == "true") {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void UserConfig::save(const spawn_fs::path &savepath) const

@@ -18,8 +18,7 @@ TEST_CASE("Test Zone Sizing Variables")
       "version": "0.1",
       "EnergyPlus": {{
         "idf": "{idfpath}",
-        "weather": "{epwpath}",
-        "autosize": true
+        "weather": "{epwpath}"
       }},
       "model": {{
         "zones": [
@@ -31,7 +30,7 @@ TEST_CASE("Test Zone Sizing Variables")
            {{ "name": "Core_ZN" }}
           ]
         }}],
-        "modelicaSystems": [{{
+        "hvacSystems": [{{
           "name": "sys1",
           "autosize": "true"
         }}]
@@ -80,8 +79,7 @@ TEST_CASE("Test Zone Group Sizing Variables")
       "version": "0.1",
       "EnergyPlus": {{
         "idf": "{idfpath}",
-        "weather": "{epwpath}",
-        "autosize": true
+        "weather": "{epwpath}"
       }},
       "model": {{
         "zones": [
@@ -101,7 +99,7 @@ TEST_CASE("Test Zone Group Sizing Variables")
            {{ "name": "Perimeter_ZN_4" }}
           ]
         }}],
-        "modelicaSystems": [{{
+        "hvacSystems": [{{
           "name": "conditioned_zones",
           "autosize": "true"
         }}]
@@ -150,8 +148,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
       "version": "0.1",
       "EnergyPlus": {{
         "idf": "{idfpath}",
-        "weather": "{epwpath}",
-        "autosize": true
+        "weather": "{epwpath}"
       }},
       "model": {{
         "zones": [
@@ -178,7 +175,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
             ]
           }}
         ],
-        "modelicaSystems": [
+        "hvacSystems": [
           {{
             "name": "conditioned_zones_1",
             "autosize": "true"

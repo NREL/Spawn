@@ -127,9 +127,9 @@ int Variables::VariableIndex(const std::string_view variable_name) const
 
 bool Variables::ShouldAutosizeGroup(const UserConfig &user_config, const std::string &group_name)
 {
-  const auto modelica_systems = user_config.spawnjson.value("model", json::object()).value("modelicaSystems", std::vector<json>(0));
+  const auto hvac_systems = user_config.spawnjson.value("model", json::object()).value("hvacSystems", std::vector<json>(0));
 
-  for (const auto &system : modelica_systems) {
+  for (const auto &system : hvac_systems) {
     const auto system_name = system.value("name", "");
     if (system_name == group_name) {
       const auto autosize_str = system.value("autosize", "false");
