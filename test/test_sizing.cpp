@@ -24,7 +24,17 @@ TEST_CASE("Test Zone Sizing Variables")
       "model": {{
         "zones": [
            {{ "name": "Core_ZN" }}
-        ]
+        ],
+        "hvacZones": [{{
+          "name": "sys1",
+          "zones": [
+           {{ "name": "Core_ZN" }}
+          ]
+        }}],
+        "modelicaSystems": [{{
+          "name": "sys1",
+          "autosize": "true"
+        }}]
       }}
     }})",
       fmt::arg("idfpath", idfpath.generic_string()),
@@ -75,7 +85,11 @@ TEST_CASE("Test Zone Group Sizing Variables")
       }},
       "model": {{
         "zones": [
-           {{ "name": "Core_ZN" }}
+           {{ "name": "Core_ZN" }},
+           {{ "name": "Perimeter_ZN_1" }},
+           {{ "name": "Perimeter_ZN_2" }},
+           {{ "name": "Perimeter_ZN_3" }},
+           {{ "name": "Perimeter_ZN_4" }}
         ],
         "hvacZones": [{{
           "name": "conditioned_zones",
@@ -86,6 +100,10 @@ TEST_CASE("Test Zone Group Sizing Variables")
            {{ "name": "Perimeter_ZN_3" }},
            {{ "name": "Perimeter_ZN_4" }}
           ]
+        }}],
+        "modelicaSystems": [{{
+          "name": "conditioned_zones",
+          "autosize": "true"
         }}]
       }}
     }})",
@@ -158,6 +176,16 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
              {{ "name": "Perimeter_ZN_3" }},
              {{ "name": "Perimeter_ZN_4" }}
             ]
+          }}
+        ],
+        "modelicaSystems": [
+          {{
+            "name": "conditioned_zones_1",
+            "autosize": "true"
+          }},
+          {{
+            "name": "conditioned_zones_2",
+            "autosize": "true"
           }}
         ]
       }}

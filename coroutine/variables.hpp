@@ -183,6 +183,12 @@ public:
   // Will throw on an invalid name
   [[nodiscard]] int VariableIndex(const std::string_view variable_name) const;
 
+  // Helper function to check if a zone group should be autosized
+  static bool ShouldAutosizeGroup(const UserConfig &user_config, const std::string &group_name);
+
+  // Helper function to check if a zone should have sizing variables (zone is in an autosized group)
+  static bool ShouldAutosizeZone(const UserConfig &user_config, const std::string &zone_name);
+
 private:
   void AddVariable(std::unique_ptr<Variable> &&variable);
   void AddVariable(Input &variable);
