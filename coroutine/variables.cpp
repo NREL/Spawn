@@ -127,7 +127,8 @@ int Variables::VariableIndex(const std::string_view variable_name) const
 
 bool Variables::ShouldAutosizeGroup(const UserConfig &user_config, const std::string &group_name)
 {
-  const auto hvac_systems = user_config.spawnjson.value("model", json::object()).value("hvacSystems", std::vector<json>(0));
+  const auto hvac_systems =
+      user_config.spawnjson.value("model", json::object()).value("hvacSystems", std::vector<json>(0));
 
   for (const auto &system : hvac_systems) {
     const auto system_name = system.value("name", "");
@@ -707,9 +708,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<QCooSenFlow>(variables, zone_name);
-      }
+      Variables::CreateOne<QCooSenFlow>(variables, zone_name);
     }
   }
 
@@ -744,9 +743,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<QCooLatFlow>(variables, zone_name);
-      }
+      Variables::CreateOne<QCooLatFlow>(variables, zone_name);
     }
   }
 
@@ -781,9 +778,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<TOutCoo>(variables, zone_name);
-      }
+      Variables::CreateOne<TOutCoo>(variables, zone_name);
     }
   }
 
@@ -818,9 +813,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<XOutCoo>(variables, zone_name);
-      }
+      Variables::CreateOne<XOutCoo>(variables, zone_name);
     }
   }
 
@@ -856,9 +849,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<MOutCooFlow>(variables, zone_name);
-      }
+      Variables::CreateOne<MOutCooFlow>(variables, zone_name);
     }
   }
 
@@ -894,9 +885,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<TCoo>(variables, zone_name);
-      }
+      Variables::CreateOne<TCoo>(variables, zone_name);
     }
   }
 
@@ -931,9 +920,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<QHeaFlow>(variables, zone_name);
-      }
+      Variables::CreateOne<QHeaFlow>(variables, zone_name);
     }
   }
 
@@ -968,9 +955,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<TOutHea>(variables, zone_name);
-      }
+      Variables::CreateOne<TOutHea>(variables, zone_name);
     }
   }
 
@@ -1005,9 +990,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<XOutHea>(variables, zone_name);
-      }
+      Variables::CreateOne<XOutHea>(variables, zone_name);
     }
   }
 
@@ -1043,9 +1026,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<MOutHeaFlow>(variables, zone_name);
-      }
+      Variables::CreateOne<MOutHeaFlow>(variables, zone_name);
     }
   }
 
@@ -1081,9 +1062,7 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      if (Variables::ShouldAutosizeZone(user_config, zone_name)) {
-        Variables::CreateOne<THea>(variables, zone_name);
-      }
+      Variables::CreateOne<THea>(variables, zone_name);
     }
   }
 
