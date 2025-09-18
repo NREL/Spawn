@@ -1100,13 +1100,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<QCooSenFlow>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<QCooSenFlow>(variables, group_name, zone_names);
     }
   }
 
@@ -1147,13 +1145,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<QCooLatFlow>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<QCooLatFlow>(variables, group_name, zone_names);
     }
   }
 
@@ -1194,13 +1190,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<TOutCoo>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<TOutCoo>(variables, group_name, zone_names);
     }
   }
 
@@ -1241,13 +1235,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<XOutCoo>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<XOutCoo>(variables, group_name, zone_names);
     }
   }
 
@@ -1286,13 +1278,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<MOutCooFlow>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<MOutCooFlow>(variables, group_name, zone_names);
     }
   }
 
@@ -1332,13 +1322,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<TCoo>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<TCoo>(variables, group_name, zone_names);
     }
   }
 
@@ -1376,13 +1364,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<QHeaFlow>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<QHeaFlow>(variables, group_name, zone_names);
     }
   }
 
@@ -1422,13 +1408,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<TOutHea>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<TOutHea>(variables, group_name, zone_names);
     }
   }
 
@@ -1467,13 +1451,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<XOutHea>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<XOutHea>(variables, group_name, zone_names);
     }
   }
 
@@ -1512,13 +1494,11 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<MOutHeaFlow>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<MOutHeaFlow>(variables, group_name, zone_names);
     }
   }
 
@@ -1558,17 +1538,17 @@ namespace zone_group_sizing {
 
     for (const auto &group : groups) {
       const auto group_name = group.value("name", "");
-      if (Variables::ShouldAutosizeGroup(user_config, group_name)) {
-        const auto zones = group.value("zones", std::vector<json>(0));
-        auto zone_names = std::vector<std::string>(zones.size());
-        std::transform(
-            zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-        Variables::CreateOne<THea>(variables, group_name, zone_names);
-      }
+      const auto zones = group.value("zones", std::vector<json>(0));
+      auto zone_names = std::vector<std::string>(zones.size());
+      std::transform(
+          zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
+      Variables::CreateOne<THea>(variables, group_name, zone_names);
     }
   }
 
-  THea::THea(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
+  THea::THea(Variables &variables,
+             const std::string_view group_name,
+             const std::vector<std::string> &zone_names)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_THea",
                   units::UnitType::s,
