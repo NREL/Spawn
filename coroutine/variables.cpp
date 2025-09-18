@@ -890,7 +890,7 @@ namespace zone {
   }
 
   TCoo::TCoo(Variables &variables, const std::string_view zone_name)
-      : Parameter(variables, std::string(zone_name) + "_TCoo", units::UnitType::s, units::UnitType::s),
+      : Parameter(variables, std::string(zone_name) + "_tCoo", units::UnitType::s, units::UnitType::s),
         zone_name_(zone_name),
         zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
   {
@@ -1067,7 +1067,7 @@ namespace zone {
   }
 
   THea::THea(Variables &variables, const std::string_view zone_name)
-      : Parameter(variables, std::string(zone_name) + "_THea", units::UnitType::s, units::UnitType::s),
+      : Parameter(variables, std::string(zone_name) + "_tHea", units::UnitType::s, units::UnitType::s),
         zone_name_(zone_name),
         zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
   {
@@ -1332,7 +1332,7 @@ namespace zone_group_sizing {
 
   TCoo::TCoo(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
       : Parameter(variables,
-                  std::string("hvac_sizing_group_") + std::string(group_name) + "_TCoo",
+                  std::string("hvac_sizing_group_") + std::string(group_name) + "_tCoo",
                   units::UnitType::s,
                   units::UnitType::s),
         zone_names_(zone_names),
@@ -1550,7 +1550,7 @@ namespace zone_group_sizing {
              const std::string_view group_name,
              const std::vector<std::string> &zone_names)
       : Parameter(variables,
-                  std::string("hvac_sizing_group_") + std::string(group_name) + "_THea",
+                  std::string("hvac_sizing_group_") + std::string(group_name) + "_tHea",
                   units::UnitType::s,
                   units::UnitType::s),
         zone_names_(zone_names),

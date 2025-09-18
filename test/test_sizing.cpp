@@ -56,7 +56,7 @@ TEST_CASE("Test Zone Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("Core_ZN_mOutCoo_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("Core_ZN_TCoo");
+  value = spawn1.GetValue("Core_ZN_tCoo");
   CHECK(value > 0.0);
   value = spawn1.GetValue("Core_ZN_QHea_flow");
   CHECK(value > 0.0);
@@ -66,7 +66,7 @@ TEST_CASE("Test Zone Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("Core_ZN_mOutHea_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("Core_ZN_THea");
+  value = spawn1.GetValue("Core_ZN_tHea");
   CHECK(value > 0.0);
 
   spawn1.Stop();
@@ -125,7 +125,7 @@ TEST_CASE("Test Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_mOutCoo_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_TCoo");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_tCoo");
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_QHea_flow");
   CHECK(value > 0.0);
@@ -135,7 +135,7 @@ TEST_CASE("Test Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_mOutHea_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_THea");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_tHea");
   CHECK(value > 0.0);
 
   spawn1.Stop();
@@ -207,7 +207,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_mOutCoo_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_TCoo");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_tCoo");
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_QHea_flow");
   CHECK(value > 0.0);
@@ -217,7 +217,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_mOutHea_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_THea");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_1_tHea");
   CHECK(value > 0.0);
 
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_QCooSen_flow");
@@ -232,7 +232,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_mOutCoo_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_TCoo");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_tCoo");
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_QHea_flow");
   CHECK(value > 0.0);
@@ -242,7 +242,7 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_mOutHea_flow");
   CHECK(value > 0.0);
-  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_THea");
+  value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_2_tHea");
   CHECK(value > 0.0);
 
   spawn1.Stop();
