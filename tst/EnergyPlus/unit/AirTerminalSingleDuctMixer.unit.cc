@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -102,7 +102,6 @@ using namespace EnergyPlus::HeatBalanceManager;
 using namespace EnergyPlus::HVACVariableRefrigerantFlow;
 using namespace EnergyPlus::OutputReportPredefined;
 using namespace EnergyPlus::Psychrometrics;
-using namespace EnergyPlus::ScheduleManager;
 using namespace EnergyPlus::SingleDuct;
 using namespace EnergyPlus::UnitVentilator;
 using namespace EnergyPlus::WaterCoils;
@@ -346,9 +345,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_GetInputPTAC_InletSide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ProcessScheduleInput(*state);               // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -596,11 +595,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMInletSide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -681,7 +680,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMInletSide)
     state->dataGlobal->SysSizingCalc = true;
 
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1).RemainingOutputReqToDehumidSP = 0.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
@@ -690,8 +689,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMInletSide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_SysAvailSchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataUnitarySystems->unitarySys[0].m_sysAvailSched->currentVal = 1.0; // unit is always available
+    state->dataUnitarySystems->unitarySys[0].m_fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -949,11 +948,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMSupplySide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -1035,7 +1034,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMSupplySide)
     state->dataGlobal->SysSizingCalc = true;
 
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1).RemainingOutputReqToDehumidSP = 0.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
@@ -1044,8 +1043,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTAC_ATMSupplySide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_SysAvailSchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataUnitarySystems->unitarySys[0].m_sysAvailSched->currentVal = 1.0; // unit is always available
+    state->dataUnitarySystems->unitarySys[0].m_fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -1388,11 +1387,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMInletSide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -1474,7 +1473,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMInletSide)
     state->dataGlobal->SysSizingCalc = true;
 
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1).RemainingOutputReqToDehumidSP = 0.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
@@ -1483,8 +1482,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMInletSide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_SysAvailSchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataUnitarySystems->unitarySys[0].m_sysAvailSched->currentVal = 1.0; // unit is always available
+    state->dataUnitarySystems->unitarySys[0].m_fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -1826,11 +1825,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMSupplySide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -1912,7 +1911,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMSupplySide)
     state->dataGlobal->SysSizingCalc = true;
 
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1).RemainingOutputReqToDehumidSP = 0.0;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
@@ -1921,8 +1920,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimPTHP_ATMSupplySide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_SysAvailSchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitarySystems->unitarySys[0].m_FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataUnitarySystems->unitarySys[0].m_sysAvailSched->currentVal = 1.0; // unit is always available
+    state->dataUnitarySystems->unitarySys[0].m_fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -2521,6 +2520,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMInletSide)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
 
     // set input variables
     state->dataEnvrn->OutBaroPress = 101325.0;
@@ -2529,11 +2531,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMInletSide)
     state->dataEnvrn->OutEnthalpy = Psychrometrics::PsyHFnTdbW(state->dataEnvrn->OutDryBulbTemp, state->dataEnvrn->OutHumRat);
     state->dataEnvrn->StdRhoAir = 1.20;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -2621,8 +2620,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMInletSide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).SchedPtr).CurrentValue = 1.0;         // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -3206,6 +3205,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMSupplySide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->TimeStep = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     // set input variables before input processing
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->OutDryBulbTemp = 35.0;
@@ -3213,11 +3217,6 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMSupplySide)
     state->dataEnvrn->OutEnthalpy = Psychrometrics::PsyHFnTdbW(state->dataEnvrn->OutDryBulbTemp, state->dataEnvrn->OutHumRat);
     state->dataEnvrn->StdRhoAir = 1.20;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -3302,8 +3301,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRF_ATMSupplySide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP = -4000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).SchedPtr).CurrentValue = 1.0;         // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -4978,10 +4977,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRFfluidCntrl_ATMInletSi
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -5075,8 +5075,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRFfluidCntrl_ATMInletSi
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP = -5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).SchedPtr).CurrentValue = 1.0;         // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).fanAvailSched->currentVal = 1.0; // fan is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -6756,11 +6756,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRFfluidCntrl_ATMSupplyS
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -6851,8 +6851,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimVRFfluidCntrl_ATMSupplyS
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP = -4000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputReqToCoolSP;
 
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).SchedPtr).CurrentValue = 1.0;         // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataHVACVarRefFlow->VRFTU(VRFTUNum).FanAvailSchedPtr).CurrentValue = 1.0; // fan is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataHVACVarRefFlow->VRFTU(VRFTUNum).fanAvailSched->currentVal = 1.0; // fan is always available
     state->dataHVACVarRefFlow->VRF(1).VRFCondCyclingRatio = 1.0;
     state->dataFans->fans(1)->set_size(*state); // add fan sizing
 
@@ -7009,11 +7009,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimUnitVent_ATMInletSide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -7098,11 +7098,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimUnitVent_ATMInletSide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = 5000.0;
     state->dataUnitVentilators->QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).SchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).FanAvailSchedPtr).CurrentValue =
-        1.0; // fan is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).MinOASchedPtr).CurrentValue =
-        0.5; // min OA fraction is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).fanAvailSched->currentVal = 1.0; // fan is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).minOASched->currentVal = 0.5;    // min OA fraction is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -7257,11 +7255,11 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimUnitVent_ATMSupplySide)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
 
     GetZoneData(*state, ErrorsFound);
@@ -7346,11 +7344,9 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimUnitVent_ATMSupplySide)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputRequired = 5000.0;
     QZnReq = state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired;
 
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).SchedPtr).CurrentValue = 1.0; // unit is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).FanAvailSchedPtr).CurrentValue =
-        1.0; // fan is always available
-    state->dataScheduleMgr->Schedule(state->dataUnitVentilators->UnitVent(UnitVentNum).MinOASchedPtr).CurrentValue =
-        0.5; // min OA fraction is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).availSched->currentVal = 1.0;    // unit is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).fanAvailSched->currentVal = 1.0; // fan is always available
+    state->dataUnitVentilators->UnitVent(UnitVentNum).minOASched->currentVal = 0.5;    // min OA fraction is always available
 
     // set secondary air mass flow rate to zero
     state->dataLoopNodes->Node(state->dataSingleDuct->SysATMixer(1).SecInNode).MassFlowRate = 0.0;
@@ -7512,6 +7508,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_GetInputDOASpecs)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+
+    state->init_state(*state);
 
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -7703,22 +7701,21 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimFCU_ATMInletSideTest)
     int ZoneNum(1);
     int FanCoilNum(1);
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->TimeStep = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     state->dataSize->CurZoneEqNum = 1;
+
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->OutBaroPress, 20.0, 0.0);
     state->dataWaterCoils->GetWaterCoilsInputFlag = true;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
     OutputReportPredefined::SetPredefinedTables(*state);
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
 
     GetZoneEquipmentData(*state);
-    ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     GetFanCoilUnits(*state);
 
     auto &thisFanCoil(state->dataFanCoilUnits->FanCoil(1));
@@ -7768,9 +7765,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimFCU_ATMInletSideTest)
     // chilled water plant loop
     auto &CWLoop(state->dataPlnt->PlantLoop(2));
     CWLoop.Name = "ChilledWaterLoop";
-    CWLoop.FluidName = "Water";
-    CWLoop.FluidIndex = 1;
     CWLoop.FluidName = "WATER";
+    CWLoop.glycol = Fluid::GetWater(*state);
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = CWCoil.Name;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = DataPlant::PlantEquipmentType::CoilWaterCooling;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = CWCoil.WaterInletNodeNum;
@@ -7785,9 +7781,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimFCU_ATMInletSideTest)
     // hot water plant loop
     auto &HWLoop(state->dataPlnt->PlantLoop(1));
     HWLoop.Name = "HotWaterLoop";
-    HWLoop.FluidName = "Water";
-    HWLoop.FluidIndex = 1;
     HWLoop.FluidName = "WATER";
+    HWLoop.glycol = Fluid::GetWater(*state);
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = HWCoil.Name;
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = HWCoil.WaterInletNodeNum;
@@ -7810,7 +7805,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimFCU_ATMInletSideTest)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     state->dataSize->ZoneEqSizing.allocate(1);
     auto &zoneEqSizing(state->dataSize->ZoneEqSizing(1));
@@ -7818,7 +7813,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_SimFCU_ATMInletSideTest)
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback(1) = false;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataSize->ZoneSizingRunDone = true;
 
     state->dataSize->FinalZoneSizing.allocate(1);
@@ -7950,14 +7945,6 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     std::string const idf_objects = delimited_string({
 
         "  Schedule:Compact,",
-        "    AlwaysOn,                !- Name",
-        "    Fraction,                !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,            !- Field 16",
-        "    1.0;                     !- Field 17",
-
-        "  Schedule:Compact,",
         "    FanAvailSched,           !- Name",
         "    Fraction,                !- Schedule Type Limits Name",
         "    Through: 12/31,          !- Field 1",
@@ -8050,7 +8037,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
 
         " Fan:VariableVolume,",
         "     FCU VarFan,              !- Name",
-        "     AlwaysOn,                !- Availability Schedule Name",
+        "     Constant-1.0,            !- Availability Schedule Name",
         "     0.6045,                  !- Fan Total Efficiency",
         "     600.0,                   !- Pressure Rise {Pa}",
         "     Autosize,                !- Maximum Flow Rate {m3/s}",
@@ -8070,7 +8057,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
 
         " Coil:Cooling:Water,",
         "     FCU Cooling Coil,        !- Name",
-        "     AlwaysOn,                !- Availability Schedule Name",
+        "     Constant-1.0,            !- Availability Schedule Name",
         "     Autosize,                !- Design Water Flow Rate {m3/s}",
         "     Autosize,                !- Design Air Flow Rate {m3/s}",
         "     Autosize,                !- Design Inlet Water Temperature {C}",
@@ -8087,7 +8074,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
 
         " Coil:Heating:Water,",
         "     FCU Heating Coil,        !- Name",
-        "     AlwaysOn,                !- Availability Schedule Name",
+        "     Constant-1.0,            !- Availability Schedule Name",
         "     Autosize,                !- U-Factor Times Area Value {W/K}",
         "     Autosize,                !- Maximum Water Flow Rate {m3/s}",
         "     Node 67,                 !- Water Inlet Node Name",
@@ -8109,7 +8096,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
 
         " AvailabilityManager:NightCycle,",
         "    NightCycle AvailMgr,     !- Name",
-        "    AlwaysOn,                !- Applicability Schedule Name",
+        "    Constant-1.0,            !- Applicability Schedule Name",
         "    FanAvailSched,           !- Fan Schedule Name",
         "    CycleOnControlZone,      !- Control Type",
         "    0.2,                     !- Thermostat Tolerance {deltaC}",
@@ -8136,18 +8123,16 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, state->dataEnvrn->OutBaroPress, 20.0, 0.0);
     state->dataWaterCoils->GetWaterCoilsInputFlag = true;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ProcessScheduleInput(*state); // read schedules
-    InitializePsychRoutines(*state);
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     OutputReportPredefined::SetPredefinedTables(*state);
     GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
 
     GetZoneEquipmentData(*state);
-    ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     GetFanCoilUnits(*state);
     Avail::GetSysAvailManagerInputs(*state);
 
@@ -8200,9 +8185,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     // chilled water plant loop
     auto &CWLoop(state->dataPlnt->PlantLoop(2));
     CWLoop.Name = "ChilledWaterLoop";
-    CWLoop.FluidName = "Water";
-    CWLoop.FluidIndex = 1;
     CWLoop.FluidName = "WATER";
+    CWLoop.glycol = Fluid::GetWater(*state);
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = CWCoil.Name;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = DataPlant::PlantEquipmentType::CoilWaterCooling;
     CWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = CWCoil.WaterInletNodeNum;
@@ -8217,9 +8201,8 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     // hot water plant loop
     auto &HWLoop(state->dataPlnt->PlantLoop(1));
     HWLoop.Name = "HotWaterLoop";
-    HWLoop.FluidName = "Water";
-    HWLoop.FluidIndex = 1;
     HWLoop.FluidName = "WATER";
+    HWLoop.glycol = Fluid::GetWater(*state);
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Name = HWCoil.Name;
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).Type = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
     HWLoop.LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn = HWCoil.WaterInletNodeNum;
@@ -8242,7 +8225,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     state->dataSize->ZoneEqSizing.allocate(1);
     auto &zoneEqSizing(state->dataSize->ZoneEqSizing(1));
@@ -8250,7 +8233,7 @@ TEST_F(EnergyPlusFixture, AirTerminalSingleDuctMixer_FCU_NightCycleTest)
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback(1) = false;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataSize->ZoneSizingRunDone = true;
 
     state->dataSize->FinalZoneSizing.allocate(1);

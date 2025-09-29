@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -126,5 +126,11 @@ namespace DataPlant {
         return state.dataPlnt->PlantLoop(plantLoc.loopNum).LoopSide(plantLoc.loopSideNum).Branch(plantLoc.branchNum).Comp(plantLoc.compNum);
     }
 
+    Real64 CompData::getDynamicMaxCapacity(EnergyPlusData &state) const
+    {
+        if (this->compPtr == NULL) return this->MaxLoad;
+        Real64 possibleLoad = this->compPtr->getDynamicMaxCapacity(state);
+        return (possibleLoad == 0) ? this->MaxLoad : possibleLoad;
+    }
 } // namespace DataPlant
 } // namespace EnergyPlus

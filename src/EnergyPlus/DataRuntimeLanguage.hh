@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -62,6 +62,7 @@
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EMSManager.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -247,13 +248,13 @@ namespace DataRuntimeLanguage {
         std::string OutputVarName; // name of output variable
         bool CheckedOkay;          // set to true once checked out okay
         OutputProcessor::VariableType VariableType;
-        int Index;       // ref index in output processor, points to variable
-        int VariableNum; // ref to global variable in runtime language
-        int SchedNum;    // ref index ptr to schedule service (filled if Schedule Value)
+        int Index;                        // ref index in output processor, points to variable
+        int VariableNum;                  // ref to global variable in runtime language
+        Sched::Schedule *sched = nullptr; // ref index ptr to schedule service (filled if Schedule Value)
         //  INTEGER                                 :: VarType       = 0
 
         // Default Constructor
-        OutputVarSensorType() : CheckedOkay(false), VariableType(OutputProcessor::VariableType::Invalid), Index(0), VariableNum(0), SchedNum(0)
+        OutputVarSensorType() : CheckedOkay(false), VariableType(OutputProcessor::VariableType::Invalid), Index(0), VariableNum(0)
         {
         }
     };
@@ -805,9 +806,11 @@ struct RuntimeLanguageData : BaseGlobalStruct
     DataRuntimeLanguage::ErlValueType True = DataRuntimeLanguage::ErlValueType(
         DataRuntimeLanguage::Value::Null, 0.0, "", 0, 0, false, 0, "", true); // special "True" Erl variable value instance, gets reset
 
-    // EMS Actuator fast duplicate check lookup support
-    std::unordered_set<std::tuple<std::string, std::string, std::string>, DataRuntimeLanguage::EMSActuatorKey_hash>
-        EMSActuator_lookup; // Fast duplicate lookup structure
+    std::map<std::tuple<std::string, std::string, std::string>, int> EMSActuatorAvailableMap;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
@@ -860,10 +863,11 @@ struct RuntimeLanguageData : BaseGlobalStruct
         this->EMSInternalVarsAvailable.deallocate();
         this->EMSInternalVarsUsed.deallocate();
         this->EMSProgramCallManager.deallocate();
-        this->EMSActuator_lookup.clear();
         this->Null = DataRuntimeLanguage::ErlValueType(DataRuntimeLanguage::Value::Null, 0.0, "", 0, 0, false, 0, "", true);
         this->False = DataRuntimeLanguage::ErlValueType(DataRuntimeLanguage::Value::Null, 0.0, "", 0, 0, false, 0, "", true);
         this->True = DataRuntimeLanguage::ErlValueType(DataRuntimeLanguage::Value::Null, 0.0, "", 0, 0, false, 0, "", true);
+
+        this->EMSActuatorAvailableMap.clear();
     }
 };
 

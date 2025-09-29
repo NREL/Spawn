@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -100,7 +100,7 @@ namespace ChillerElectricASHRAE205 {
         Real64 AuxiliaryEnergy{0};
 
         AmbientTempIndicator AmbientTempType{AmbientTempIndicator::Invalid};
-        int AmbientTempSchedule{0};       // Schedule index pointer
+        Sched::Schedule *ambientTempSched = nullptr;
         int AmbientTempZone{0};           // Number of ambient zone around tank
         int AmbientTempOutsideAirNode{0}; // Number of outside air node
         Real64 AmbientTemp{0};
@@ -149,6 +149,10 @@ struct ChillerElectricASHRAE205Data : BaseGlobalStruct
 {
     bool getInputFlag = true;
     Array1D<ChillerElectricASHRAE205::ASHRAE205ChillerSpecs> Electric205Chiller;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

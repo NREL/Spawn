@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -434,9 +434,8 @@ void InitExtConvCoeff(EnergyPlusData &state,
 
     if (surface.SurfHasSurroundingSurfProperty) {
         int SrdSurfsNum = surface.SurfSurroundingSurfacesNum;
-        if (state.dataSurface->SurroundingSurfsProperty(SrdSurfsNum).SkyTempSchNum != 0) {
-            TSky = ScheduleManager::GetCurrentScheduleValue(state, state.dataSurface->SurroundingSurfsProperty(SrdSurfsNum).SkyTempSchNum) +
-                   Constant::Kelvin;
+        if (state.dataSurface->SurroundingSurfsProperty(SrdSurfsNum).skyTempSched != nullptr) {
+            TSky = state.dataSurface->SurroundingSurfsProperty(SrdSurfsNum).skyTempSched->getCurrentVal() + Constant::Kelvin;
         }
         HSrdSurf = SurroundingSurfacesRadCoeffAverage(state, SurfNum, TSurf, AbsExt);
     }
@@ -1090,26 +1089,21 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userExtConvModel.SurfaceName = Alphas(1);
                     userExtConvModel.WhichSurface = surfNum;
                     userExtConvModel.overrideType = OverrideType::Schedule;
-                    userExtConvModel.ScheduleIndex = ScheduleManager::GetScheduleIndex(state, Alphas(Ptr + 2));
-                    if (userExtConvModel.ScheduleIndex == 0) {
+                    if ((userExtConvModel.sched = Sched::GetSchedule(state, Alphas(Ptr + 2))) == nullptr) {
                         ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(Ptr + 2), Alphas(Ptr + 2));
                         ErrorsFound = true;
-                    } else if (!ScheduleManager::CheckScheduleValueMinMax(state,
-                                                                          userExtConvModel.ScheduleIndex,
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->LowHConvLimit, // >=
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->HighHConvLimit)) { // <=
-                        ShowSevereScheduleOutOfRange(state,
-                                                     eoh,
-                                                     ipsc->cAlphaFieldNames(Ptr + 2),
-                                                     Alphas(Ptr + 2),
-                                                     state.dataHeatBal->LowHConvLimit,
-                                                     state.dataHeatBal->HighHConvLimit,
-                                                     "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                    } else if (!userExtConvModel.sched->checkMinMaxVals(
+                                   state, Clusive::In, state.dataHeatBal->LowHConvLimit, Clusive::In, state.dataHeatBal->HighHConvLimit)) {
+                        Sched::ShowSevereBadMinMax(state,
+                                                   eoh,
+                                                   ipsc->cAlphaFieldNames(Ptr + 2),
+                                                   Alphas(Ptr + 2),
+                                                   Clusive::In,
+                                                   state.dataHeatBal->LowHConvLimit,
+                                                   Clusive::In,
+                                                   state.dataHeatBal->HighHConvLimit,
+                                                   "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
-                    } else {
-                        userExtConvModel.ScheduleName = Alphas(Ptr + 2);
                     }
                     ApplyExtConvValue(state, surfNum, hcExt, state.dataSurface->TotUserExtConvModels);
                 } break;
@@ -1197,13 +1191,15 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userIntConvModel.SurfaceName = Alphas(1);
                     userIntConvModel.WhichSurface = surfNum;
                     if (Numbers(NumField) < state.dataHeatBal->LowHConvLimit || Numbers(NumField) > state.dataHeatBal->HighHConvLimit) {
-                        ShowSevereValueOutOfRange(state,
-                                                  eoh,
-                                                  ipsc->cNumericFieldNames(NumField),
-                                                  Numbers(NumField),
-                                                  state.dataHeatBal->LowHConvLimit,
-                                                  state.dataHeatBal->HighHConvLimit,
-                                                  "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                        ShowSevereBadMinMax(state,
+                                            eoh,
+                                            ipsc->cNumericFieldNames(NumField),
+                                            Numbers(NumField),
+                                            Clusive::In,
+                                            state.dataHeatBal->LowHConvLimit,
+                                            Clusive::In,
+                                            state.dataHeatBal->HighHConvLimit,
+                                            "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
                     }
                     userIntConvModel.overrideType = OverrideType::Value;
@@ -1225,26 +1221,21 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userIntConvModel.SurfaceName = Alphas(1);
                     userIntConvModel.WhichSurface = surfNum;
                     userIntConvModel.overrideType = OverrideType::Schedule;
-                    userIntConvModel.ScheduleIndex = ScheduleManager::GetScheduleIndex(state, Alphas(Ptr + 2));
-                    if (userIntConvModel.ScheduleIndex == 0) {
+                    if ((userIntConvModel.sched = Sched::GetSchedule(state, Alphas(Ptr + 2))) == nullptr) {
                         ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(Ptr + 2), Alphas(Ptr + 2));
                         ErrorsFound = true;
-                    } else if (!ScheduleManager::CheckScheduleValueMinMax(state,
-                                                                          userIntConvModel.ScheduleIndex,
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->LowHConvLimit,
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->HighHConvLimit)) {
-                        ShowSevereScheduleOutOfRange(state,
-                                                     eoh,
-                                                     ipsc->cAlphaFieldNames(Ptr + 2),
-                                                     Alphas(Ptr + 2),
-                                                     state.dataHeatBal->LowHConvLimit,
-                                                     state.dataHeatBal->HighHConvLimit,
-                                                     "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                    } else if (!userIntConvModel.sched->checkMinMaxVals(
+                                   state, Clusive::In, state.dataHeatBal->LowHConvLimit, Clusive::In, state.dataHeatBal->HighHConvLimit)) {
+                        Sched::ShowSevereBadMinMax(state,
+                                                   eoh,
+                                                   ipsc->cAlphaFieldNames(Ptr + 2),
+                                                   Alphas(Ptr + 2),
+                                                   Clusive::In,
+                                                   state.dataHeatBal->LowHConvLimit,
+                                                   Clusive::In,
+                                                   state.dataHeatBal->HighHConvLimit,
+                                                   "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
-                    } else {
-                        userIntConvModel.ScheduleName = Alphas(Ptr + 2);
                     }
                     ApplyIntConvValue(state, surfNum, hcInt, state.dataSurface->TotUserIntConvModels);
                 } break;
@@ -1332,13 +1323,15 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userExtConvModel.SurfaceName = Alphas(Ptr);
                     userExtConvModel.WhichSurface = -999;
                     if (Numbers(NumField) < state.dataHeatBal->LowHConvLimit || Numbers(NumField) > state.dataHeatBal->HighHConvLimit) {
-                        ShowSevereValueOutOfRange(state,
-                                                  eoh,
-                                                  ipsc->cNumericFieldNames(NumField),
-                                                  Numbers(NumField),
-                                                  state.dataHeatBal->LowHConvLimit,
-                                                  state.dataHeatBal->HighHConvLimit,
-                                                  "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                        ShowSevereBadMinMax(state,
+                                            eoh,
+                                            ipsc->cNumericFieldNames(NumField),
+                                            Numbers(NumField),
+                                            Clusive::In,
+                                            state.dataHeatBal->LowHConvLimit,
+                                            Clusive::In,
+                                            state.dataHeatBal->HighHConvLimit,
+                                            "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
                     }
                     userExtConvModel.overrideType = OverrideType::Value;
@@ -1360,26 +1353,21 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userExtConvModel.SurfaceName = Alphas(Ptr);
                     userExtConvModel.WhichSurface = -999;
                     userExtConvModel.overrideType = OverrideType::Schedule;
-                    userExtConvModel.ScheduleIndex = ScheduleManager::GetScheduleIndex(state, Alphas(Ptr + 2));
-                    if (userExtConvModel.ScheduleIndex == 0) {
+                    if ((userExtConvModel.sched = Sched::GetSchedule(state, Alphas(Ptr + 2))) == nullptr) {
                         ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(Ptr + 2), Alphas(Ptr + 2));
                         ErrorsFound = true;
-                    } else if (!ScheduleManager::CheckScheduleValueMinMax(state,
-                                                                          userExtConvModel.ScheduleIndex,
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->LowHConvLimit, // >=
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->HighHConvLimit)) { // <=
-                        ShowSevereScheduleOutOfRange(state,
-                                                     eoh,
-                                                     ipsc->cAlphaFieldNames(Ptr + 2),
-                                                     Alphas(Ptr + 2),
-                                                     state.dataHeatBal->LowHConvLimit,
-                                                     state.dataHeatBal->HighHConvLimit,
-                                                     "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                    } else if (!userExtConvModel.sched->checkMinMaxVals(
+                                   state, Clusive::In, state.dataHeatBal->LowHConvLimit, Clusive::In, state.dataHeatBal->HighHConvLimit)) {
+                        Sched::ShowSevereBadMinMax(state,
+                                                   eoh,
+                                                   ipsc->cAlphaFieldNames(Ptr + 2),
+                                                   Alphas(Ptr + 2),
+                                                   Clusive::In,
+                                                   state.dataHeatBal->LowHConvLimit,
+                                                   Clusive::In,
+                                                   state.dataHeatBal->HighHConvLimit,
+                                                   "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
-                    } else {
-                        userExtConvModel.ScheduleName = Alphas(Ptr + 2);
                     }
                     ApplyExtConvValueMulti(state, surfaceFilter, hcExt, state.dataSurface->TotUserExtConvModels);
                 } break;
@@ -1449,13 +1437,15 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userIntConvModel.SurfaceName = Alphas(Ptr);
                     userIntConvModel.WhichSurface = -999;
                     if (Numbers(NumField) < state.dataHeatBal->LowHConvLimit || Numbers(NumField) > state.dataHeatBal->HighHConvLimit) {
-                        ShowSevereValueOutOfRange(state,
-                                                  eoh,
-                                                  ipsc->cNumericFieldNames(NumField),
-                                                  Numbers(NumField),
-                                                  state.dataHeatBal->LowHConvLimit,
-                                                  state.dataHeatBal->HighHConvLimit,
-                                                  "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                        ShowSevereBadMinMax(state,
+                                            eoh,
+                                            ipsc->cNumericFieldNames(NumField),
+                                            Numbers(NumField),
+                                            Clusive::In,
+                                            state.dataHeatBal->LowHConvLimit,
+                                            Clusive::In,
+                                            state.dataHeatBal->HighHConvLimit,
+                                            "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
                     }
                     userIntConvModel.overrideType = OverrideType::Value;
@@ -1477,26 +1467,24 @@ void GetUserConvCoeffs(EnergyPlusData &state)
                     userIntConvModel.SurfaceName = Alphas(Ptr);
                     userIntConvModel.WhichSurface = -999;
                     userIntConvModel.overrideType = OverrideType::Schedule;
-                    userIntConvModel.ScheduleIndex = ScheduleManager::GetScheduleIndex(state, Alphas(Ptr + 2));
-                    if (userIntConvModel.ScheduleIndex == 0) {
+                    if ((userIntConvModel.sched = Sched::GetSchedule(state, Alphas(Ptr + 2))) == nullptr) {
                         ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(Ptr + 2), Alphas(Ptr + 2));
                         ErrorsFound = true;
-                    } else if (!ScheduleManager::CheckScheduleValueMinMax(state,
-                                                                          userIntConvModel.ScheduleIndex,
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->LowHConvLimit, // >=
-                                                                          ScheduleManager::Clusivity::Inclusive,
-                                                                          state.dataHeatBal->HighHConvLimit)) { // <=
-                        ShowSevereScheduleOutOfRange(state,
-                                                     eoh,
-                                                     ipsc->cAlphaFieldNames(Ptr + 2),
-                                                     Alphas(Ptr + 2),
-                                                     state.dataHeatBal->LowHConvLimit,
-                                                     state.dataHeatBal->HighHConvLimit,
-                                                     "Limits are set (or default) in HeatBalanceAlgorithm object.");
+                    } else if (!userIntConvModel.sched->checkMinMaxVals(state,
+                                                                        Clusive::In,
+                                                                        state.dataHeatBal->LowHConvLimit, // >=
+                                                                        Clusive::In,
+                                                                        state.dataHeatBal->HighHConvLimit)) { // <=
+                        Sched::ShowSevereBadMinMax(state,
+                                                   eoh,
+                                                   ipsc->cAlphaFieldNames(Ptr + 2),
+                                                   Alphas(Ptr + 2),
+                                                   Clusive::In,
+                                                   state.dataHeatBal->LowHConvLimit,
+                                                   Clusive::In,
+                                                   state.dataHeatBal->HighHConvLimit,
+                                                   "Limits are set (or default) in HeatBalanceAlgorithm object.");
                         ErrorsFound = true;
-                    } else {
-                        userIntConvModel.ScheduleName = Alphas(Ptr + 2);
                     }
                     ApplyIntConvValueMulti(state, surfaceFilter, hcInt, state.dataSurface->TotUserIntConvModels);
                 } break;
@@ -2027,7 +2015,7 @@ Real64 CalcZoneSystemACH(EnergyPlusData &state, int const ZoneNum)
         Real64 ZoneVolFlowRate = CalcZoneSystemVolFlowRate(state, ZoneNum);
 
         // Calculate ACH
-        return ZoneVolFlowRate / ZoneVolume * Constant::SecInHour;
+        return ZoneVolFlowRate / ZoneVolume * Constant::rSecsInHour;
     }
 }
 
@@ -2239,7 +2227,7 @@ void CalcCeilingDiffuserInletCorr(EnergyPlusData &state,
             ACH = 0.0;
         } else {
             // Calculate ACH (AR: can we please stop with these unparenthesized multiple divides? / / )
-            ACH = ZoneMassFlowRate / AirDensity / ZoneVolume * Constant::SecInHour;
+            ACH = ZoneMassFlowRate / AirDensity / ZoneVolume * Constant::rSecsInHour;
             // Limit ACH to range of correlation
             ACH = min(ACH, MaxACH);
             ACH = max(ACH, 0.0);
@@ -2433,7 +2421,7 @@ Real64 CalcNusselt(EnergyPlusData &state,
     auto const &surface = state.dataSurface->Surface(SurfNum);
 
     Real64 tilt = surface.Tilt;
-    Real64 tiltr = tilt * Constant::DegToRadians;
+    Real64 tiltr = tilt * Constant::DegToRad;
     Real64 costilt = surface.CosTilt;
     Real64 sintilt = surface.SinTilt;
     Real64 ra = gr * pr; // Rayleigh number
@@ -2509,7 +2497,7 @@ Real64 SetExtConvCoeff(EnergyPlusData &state, int const SurfNum) // Surface Numb
     } break;
 
     case OverrideType::Schedule: {
-        HExt = ScheduleManager::GetCurrentScheduleValue(state, userExtConvModel.ScheduleIndex);
+        HExt = userExtConvModel.sched->getCurrentVal();
         // Need to check for validity
         if (surface.ExtBoundCond == DataSurfaces::KivaFoundation) {
             state.dataSurfaceGeometry->kivaManager.surfaceConvMap[SurfNum].f = KIVA_HF_ZERO;
@@ -2573,7 +2561,7 @@ Real64 SetIntConvCoeff(EnergyPlusData &state, int const SurfNum) // Surface Numb
     } break;
 
     case OverrideType::Schedule: {
-        HInt = ScheduleManager::GetCurrentScheduleValue(state, userIntConvModel.ScheduleIndex);
+        HInt = userIntConvModel.sched->getCurrentVal();
         // Need to check for validity
         if (surface.ExtBoundCond == DataSurfaces::KivaFoundation) {
             state.dataSurfaceGeometry->kivaManager.surfaceConvMap[SurfNum].in = KIVA_CONST_CONV(HInt);
@@ -4668,7 +4656,7 @@ Real64 CalcUserDefinedIntHcModel(EnergyPlusData &state, int const SurfNum, int c
         auto const &zoneNode = state.dataLoopNodes->Node(zone.SystemZoneNodeNumber);
         Real64 AirDensity = Psychrometrics::PsyRhoAirFnPbTdbW(
             state, state.dataEnvrn->OutBaroPress, zoneNode.Temp, Psychrometrics::PsyWFnTdpPb(state, zoneNode.Temp, state.dataEnvrn->OutBaroPress));
-        AirChangeRate = (zoneNode.MassFlowRate * Constant::SecInHour) / (AirDensity * zone.Volume);
+        AirChangeRate = (zoneNode.MassFlowRate * Constant::rSecsInHour) / (AirDensity * zone.Volume);
 
         auto const &zoneEquipConfig = state.dataZoneEquip->ZoneEquipConfig(surface.Zone);
         if (zoneEquipConfig.EquipListIndex > 0) {
@@ -4779,12 +4767,12 @@ Real64 CalcUserDefinedExtHcModel(EnergyPlusData &state, int const SurfNum, int c
     case RefWind::ParallelComp:
         // WindSpeed , WindDir, surface Azimuth
         Theta = CalcWindSurfaceTheta(state.dataEnvrn->WindDir, surface.Azimuth);
-        ThetaRad = Theta * Constant::DegToRadians;
+        ThetaRad = Theta * Constant::DegToRad;
         break;
     case RefWind::ParallelCompAtZ:
         // Surface WindSpeed , Surface WindDir, surface Azimuth
         Theta = CalcWindSurfaceTheta(state.dataSurface->SurfOutWindDir(SurfNum), surface.Azimuth);
-        ThetaRad = Theta * Constant::DegToRadians;
+        ThetaRad = Theta * Constant::DegToRad;
         windVel = std::cos(ThetaRad) * state.dataSurface->SurfOutWindSpeed(SurfNum);
         break;
     default:
@@ -6383,7 +6371,7 @@ Real64 CalcASTMC1340ConvCoeff(EnergyPlusData &state, int const SurfNum, Real64 c
     Real64 Nuf; // Nusselt number for forced convection
     Real64 Grc; // Critical Grashof number
 
-    constexpr Real64 g = Constant::GravityConstant; // Acceleration of gravity, m/s2
+    constexpr Real64 g = Constant::Gravity; // Acceleration of gravity, m/s2
 
     auto const &surface = state.dataSurface->Surface(SurfNum);
 
@@ -6433,7 +6421,7 @@ Real64 CalcASTMC1340ConvCoeff(EnergyPlusData &state, int const SurfNum, Real64 c
             if (Tilt < 2) {
                 Nun = 0.58 * std::pow(Ra, 0.2);
             } else {
-                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRadians)), 0.25);
+                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRad)), 0.25);
             }
         } else { // heat flow up
             if (Tilt < 15) {
@@ -6447,7 +6435,7 @@ Real64 CalcASTMC1340ConvCoeff(EnergyPlusData &state, int const SurfNum, Real64 c
                 Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * 3.14159 / 180)), 0.25);
             } else {
                 Nun = 0.14 * (std::pow(Ra, Constant::OneThird) - std::pow(Grc * Pr, Constant::OneThird)) +
-                      0.56 * std::pow(Grc * Pr * (std::sin(Tilt * Constant::DegToRadians)), 0.25);
+                      0.56 * std::pow(Grc * Pr * (std::sin(Tilt * Constant::DegToRad)), 0.25);
             }
         }
     } else if (Tilt == 180) { // Horizontal surface: Floor
@@ -6463,7 +6451,7 @@ Real64 CalcASTMC1340ConvCoeff(EnergyPlusData &state, int const SurfNum, Real64 c
             if (Tilt > 178) {
                 Nun = 0.58 * std::pow(Ra, 0.2);
             } else {
-                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRadians)), 0.25);
+                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRad)), 0.25);
             }
         } else { // heat flow up
             if (Tilt > 165) {
@@ -6474,10 +6462,10 @@ Real64 CalcASTMC1340ConvCoeff(EnergyPlusData &state, int const SurfNum, Real64 c
                 Grc = 5000000000;
             }
             if ((Ra / Pr) <= Grc) {
-                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRadians)), 0.25);
+                Nun = 0.56 * std::pow(Ra * (std::sin(Tilt * Constant::DegToRad)), 0.25);
             } else {
                 Nun = 0.14 * (std::pow(Ra, Constant::OneThird) - std::pow(Grc * Pr, Constant::OneThird)) +
-                      0.56 * std::pow(Grc * Pr * (std::sin(Tilt * Constant::DegToRadians)), 0.25);
+                      0.56 * std::pow(Grc * Pr * (std::sin(Tilt * Constant::DegToRad)), 0.25);
             }
         }
     } else { // Vertical wall (Tilt = 90)
@@ -6516,29 +6504,6 @@ SurfOrientation GetSurfConvOrientation(Real64 const Tilt)
     } else {
         return SurfOrientation::Invalid;
     }
-}
-
-void ShowSevereValueOutOfRange(
-    EnergyPlusData &state, ErrorObjectHeader const &eoh, std::string_view fieldName, Real64 fieldVal, Real64 lo, Real64 hi, std::string const &msg)
-{
-    ShowSevereError(state, format("{}: {} = {} out of range value", eoh.routineName, eoh.objectType, eoh.objectName));
-    ShowContinueError(state, format("{} = [{:.5R}] is out-of-range", fieldName, fieldVal));
-    ShowContinueError(state, format("Low/high limits = [>={:.9R}, <={:.1R}].", lo, hi));
-    if (!msg.empty()) ShowContinueError(state, msg);
-}
-
-void ShowSevereScheduleOutOfRange(EnergyPlusData &state,
-                                  ErrorObjectHeader const &eoh,
-                                  std::string_view fieldName,
-                                  std::string_view fieldVal,
-                                  Real64 lo,
-                                  Real64 hi,
-                                  std::string const &msg)
-{
-    ShowSevereError(state, format("{}: {} = {} out of range value", eoh.routineName, eoh.objectType, eoh.objectName));
-    ShowContinueError(state, format("{} = {} contains an out-of-range value", fieldName, fieldVal));
-    ShowContinueError(state, format("Low/high limits = [>={:.9R}, <={:.1R}].", lo, hi));
-    if (!msg.empty()) ShowContinueError(state, msg);
 }
 
 Real64 SurroundingSurfacesRadCoeffAverage(EnergyPlusData &state, int const SurfNum, Real64 const TSurfK, Real64 const AbsExt)

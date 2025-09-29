@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -93,7 +93,6 @@ using namespace EnergyPlus::HVACManager;
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -135,6 +134,8 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
+
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -179,7 +180,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_MultiCrossMixingTest)
 {
-
     std::string const idf_objects = delimited_string({
         "  Zone,",
         "    SPACE1-1,                !- Name",
@@ -389,8 +389,8 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_MultiCrossMixingTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     state->dataHeatBalFanSys->ZoneReOrder.allocate(state->dataGlobal->NumOfZones);
 
@@ -412,12 +412,12 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_MultiCrossMixingTest)
     state->dataZoneTempPredictorCorrector->zoneHeatBalance(5).airHumRat = 0.001;
 
     state->dataHeatBal->AirFlowFlag = true;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "MIXINGAVAILSCHED")).CurrentValue = 1.0;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "MININDOORTEMP")).CurrentValue = 18.0;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "MAXINDOORTEMP")).CurrentValue = 100.0;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "DELTATEMP")).CurrentValue = 2.0;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "MINOUTDOORTEMP")).CurrentValue = -100.0;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "MAXOUTDOORTEMP")).CurrentValue = 100.0;
+    Sched::GetSchedule(*state, "MIXINGAVAILSCHED")->currentVal = 1.0;
+    Sched::GetSchedule(*state, "MININDOORTEMP")->currentVal = 18.0;
+    Sched::GetSchedule(*state, "MAXINDOORTEMP")->currentVal = 100.0;
+    Sched::GetSchedule(*state, "DELTATEMP")->currentVal = 2.0;
+    Sched::GetSchedule(*state, "MINOUTDOORTEMP")->currentVal = -100.0;
+    Sched::GetSchedule(*state, "MAXOUTDOORTEMP")->currentVal = 100.0;
     state->dataEnvrn->OutBaroPress = 101325.0;
 
     InitSimpleMixingConvectiveHeatGains(*state);
@@ -444,7 +444,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_MultiCrossMixingTest)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest2)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -498,6 +497,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest2)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -583,7 +583,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest2)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest3)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -632,6 +631,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest3)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -680,7 +680,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest3)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest4)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -732,6 +731,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest4)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -841,7 +841,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_CalcZoneMassBalanceTest4)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -925,6 +924,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -1016,7 +1016,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformLoad)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -1100,6 +1099,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformLoad)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -1202,7 +1202,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformLoad)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformPLR)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -1286,6 +1285,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformPLR)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -1311,7 +1311,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformPLR)
     // Set up capacities for PLR calcs
     state->dataSize->FinalZoneSizing.allocate(1);
     state->dataSize->FinalZoneSizing(ZoneNum).DesHeatLoad = 4000;
-    // For finalzonesizing, desing cooling load is positive
+    // For finalzonesizing, design cooling load is positive
     state->dataSize->FinalZoneSizing(ZoneNum).DesCoolLoad = 2500;
     auto &thisZEqList(state->dataZoneEquip->ZoneEquipList(ZoneNum));
     thisZEqList.HeatingCapacity(1) = 2000.0;
@@ -1425,7 +1425,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeUniformPLR)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialUniformPLR)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -1509,6 +1508,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialUniformPLR)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -1533,7 +1533,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialUniformPLR)
     // Set up capacities for PLR calcs
     state->dataSize->FinalZoneSizing.allocate(1);
     state->dataSize->FinalZoneSizing(ZoneNum).DesHeatLoad = 4000;
-    // For finalzonesizing, desing cooling load is positive
+    // For finalzonesizing, design cooling load is positive
     state->dataSize->FinalZoneSizing(ZoneNum).DesCoolLoad = 2500;
     auto &thisZEqList(state->dataZoneEquip->ZoneEquipList(ZoneNum));
     thisZEqList.HeatingCapacity(1) = 2000.0;
@@ -1740,7 +1740,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialUniformPLR)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEquip)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -1835,6 +1834,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -1846,7 +1846,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
     state->dataZoneEnergyDemand->CurDeadBandOrSetback(1) = false;
     state->dataZoneEnergyDemand->DeadBandOrSetback(1) = false;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
@@ -1939,7 +1939,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEquip_WithFractions)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -2061,6 +2060,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
@@ -2072,7 +2072,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
     state->dataZoneEnergyDemand->CurDeadBandOrSetback(1) = false;
     state->dataZoneEnergyDemand->DeadBandOrSetback(1) = false;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(1);
@@ -2088,10 +2088,10 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
     auto &moisture = state->dataZoneEnergyDemand->ZoneSysMoistureDemand(ZoneNum);
     state->dataZoneEquipmentManager->PrioritySimOrder.allocate(NumEquip);
 
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "AIR TERMINAL 1 ADU COOLING FRACTION")).CurrentValue = 0.3;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "AIR TERMINAL 1 ADU HEATING FRACTION")).CurrentValue = 0.4;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "IDEAL SYSTEM A COOLING FRACTION")).CurrentValue = 0.5;
-    state->dataScheduleMgr->Schedule(ScheduleManager::GetScheduleIndex(*state, "IDEAL SYSTEM A HEATING FRACTION")).CurrentValue = 0.6;
+    Sched::GetSchedule(*state, "AIR TERMINAL 1 ADU COOLING FRACTION")->currentVal = 0.3;
+    Sched::GetSchedule(*state, "AIR TERMINAL 1 ADU HEATING FRACTION")->currentVal = 0.4;
+    Sched::GetSchedule(*state, "IDEAL SYSTEM A COOLING FRACTION")->currentVal = 0.5;
+    Sched::GetSchedule(*state, "IDEAL SYSTEM A HEATING FRACTION")->currentVal = 0.6;
 
     // Sequential Test 1 - Heating, FirstHVACIteration = true
     energy.TotalOutputRequired = 1000.0;
@@ -2161,6 +2161,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_DistributeSequentialLoad_MixedEqu
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_RezeroZoneSizingArrays)
 {
+    state->init_state(*state);
 
     state->dataEnvrn->TotDesDays = 12;
     state->dataEnvrn->TotRunDesPersDays = 3;
@@ -2913,7 +2914,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_RezeroZoneSizingArrays)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrationFlow)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -2996,7 +2996,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.5,                         !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -3008,7 +3008,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
         "ZoneInfiltration:DesignFlowRate,",
         "  SZone Infiltration,          !- Name",
         "  SZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3022,7 +3022,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
         "ZoneInfiltration:DesignFlowRate,",
         "  RZone Infiltration,          !- Name",
         "  RZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3032,21 +3032,15 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
         "  0,                           !- Temperature Term Coefficient",
         "  0,                           !- Velocity Term Coefficient",
         "  0;                           !- Velocity Squared Term Coefficient",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
 
     int ZoneNum;
     int NodeNum;
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -3060,7 +3054,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
     EXPECT_ENUM_EQ(state->dataHeatBal->ZoneAirMassFlow.InfiltrationForZones, DataHeatBalance::InfiltrationZoneType::AllZones);
     GetSimpleAirModelInputs(*state, ErrorsFound);
     SetZoneMassConservationFlag(*state);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
     state->dataHeatBal->AirFlowFlag = 1;
     // set zone conditions
     state->dataEnvrn->StdRhoAir = 1.0;
@@ -3158,7 +3151,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_ZoneMassBalance_wAdjustInfiltrati
 
 TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -3241,7 +3233,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.5,                         !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -3253,7 +3245,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
         "ZoneInfiltration:DesignFlowRate,",
         "  SZone Infiltration,          !- Name",
         "  SZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3267,7 +3259,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
         "ZoneInfiltration:DesignFlowRate,",
         "  RZone Infiltration,          !- Name",
         "  RZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3277,20 +3269,14 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
         "  0,                           !- Temperature Term Coefficient",
         "  0,                           !- Velocity Term Coefficient",
         "  0;                           !- Velocity Squared Term Coefficient",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int ZoneNum;
     int NodeNum;
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -3304,7 +3290,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
     EXPECT_ENUM_EQ(state->dataHeatBal->ZoneAirMassFlow.InfiltrationForZones, DataHeatBalance::InfiltrationZoneType::AllZones);
     GetSimpleAirModelInputs(*state, ErrorsFound);
     SetZoneMassConservationFlag(*state);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
     state->dataHeatBal->AirFlowFlag = 1;
     // set zone conditions
     state->dataEnvrn->StdRhoAir = 1.2;
@@ -3419,7 +3404,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnOnly)
 
 TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -3502,7 +3486,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.5,                         !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -3514,7 +3498,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
         "ZoneInfiltration:DesignFlowRate,",
         "  SZone Infiltration,          !- Name",
         "  SZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3528,7 +3512,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
         "ZoneInfiltration:DesignFlowRate,",
         "  RZone Infiltration,          !- Name",
         "  RZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3538,20 +3522,14 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
         "  0,                           !- Temperature Term Coefficient",
         "  0,                           !- Velocity Term Coefficient",
         "  0;                           !- Velocity Squared Term Coefficient",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int ZoneNum;
     int NodeNum;
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -3565,7 +3543,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
     EXPECT_ENUM_EQ(state->dataHeatBal->ZoneAirMassFlow.InfiltrationForZones, DataHeatBalance::InfiltrationZoneType::AllZones);
     GetSimpleAirModelInputs(*state, ErrorsFound);
     SetZoneMassConservationFlag(*state);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
     state->dataHeatBal->AirFlowFlag = 1;
     // set zone conditions
     state->dataEnvrn->StdRhoAir = 1.2;
@@ -3692,7 +3669,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustReturnThenMixing)
 
 TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -3775,7 +3751,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.5,                         !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -3787,7 +3763,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
         "ZoneInfiltration:DesignFlowRate,",
         "  SZone Infiltration,          !- Name",
         "  SZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3801,7 +3777,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
         "ZoneInfiltration:DesignFlowRate,",
         "  RZone Infiltration,          !- Name",
         "  RZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -3811,20 +3787,14 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
         "  0,                           !- Temperature Term Coefficient",
         "  0,                           !- Velocity Term Coefficient",
         "  0;                           !- Velocity Squared Term Coefficient",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int ZoneNum;
     int NodeNum;
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -3838,7 +3808,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
     EXPECT_ENUM_EQ(state->dataHeatBal->ZoneAirMassFlow.InfiltrationTreatment, DataHeatBalance::InfiltrationFlow::Adjust);
     GetSimpleAirModelInputs(*state, ErrorsFound);
     SetZoneMassConservationFlag(*state);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
     state->dataHeatBal->AirFlowFlag = 1;
     // set zone conditions
     state->dataEnvrn->StdRhoAir = 1.2;
@@ -3957,7 +3926,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wAdjustMixingThenReturn)
 
 TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -4076,7 +4044,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
         "ZoneMixing,",
         "  RSZone ZoneMixing,           !- Name",
         "  RSZone,                      !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.852323,                    !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -4088,7 +4056,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.852323,                    !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -4100,7 +4068,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
         "ZoneInfiltration:DesignFlowRate,",
         "  SZone Infiltration,          !- Name",
         "  SZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -4114,7 +4082,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
         "ZoneInfiltration:DesignFlowRate,",
         "  RZone Infiltration,          !- Name",
         "  RZone,                       !- Zone or ZoneList Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  flow/zone,                   !- Design Flow Rate Calculation Method",
         "  0.05,                        !- Design Flow Rate{ m3 / s }",
         "  ,                            !- Flow per Zone Floor Area{ m3 / s - m2 }",
@@ -4124,20 +4092,14 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
         "  0,                           !- Temperature Term Coefficient",
         "  0,                           !- Velocity Term Coefficient",
         "  0;                           !- Velocity Squared Term Coefficient",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int ZoneNum;
     int NodeNum;
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -4151,7 +4113,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
     EXPECT_ENUM_EQ(state->dataHeatBal->ZoneAirMassFlow.InfiltrationForZones, DataHeatBalance::InfiltrationZoneType::AllZones);
     GetSimpleAirModelInputs(*state, ErrorsFound);
     SetZoneMassConservationFlag(*state);
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
     state->dataHeatBal->AirFlowFlag = 1;
     // set zone conditions
     state->dataEnvrn->StdRhoAir = 1.2;
@@ -4226,7 +4187,6 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_wSourceAndReceivingZone)
 
 TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_ZoneMixingInfiltrationFlowsFlags)
 {
-
     std::string const idf_objects = delimited_string({
 
         "ZoneAirMassFlowConservation,",
@@ -4345,7 +4305,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_ZoneMixingInfiltrationFlowsFlag
         "ZoneMixing,",
         "  RSZone ZoneMixing,           !- Name",
         "  RSZone,                      !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.852323,                    !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -4357,7 +4317,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_ZoneMixingInfiltrationFlowsFlag
         "ZoneMixing,",
         "  RZone ZoneMixing,            !- Name",
         "  RZone,                       !- Zone Name",
-        "  AlwaysOn,                    !- Schedule Name",
+        "  Constant-1.0,                !- Schedule Name",
         "  Flow/Zone,                   !- Design Flow Rate Calculation Method",
         "  0.852323,                    !- Design Flow Rate{m3/s}",
         "  ,                            !- Flow Rate per Zone Floor Area{m3/s-m2}",
@@ -4365,18 +4325,12 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_ZoneMixingInfiltrationFlowsFlag
         "  ,                            !- Air Changes per Hour{1/hr}",
         "  RSZone,                      !- Source Zone Name",
         "  0.0;                         !- Delta Temperature{deltaC}",
-
-        "Schedule:Constant,",
-        "AlwaysOn,",
-        "Fraction,",
-        "1.0;",
-
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
-    ScheduleManager::ProcessScheduleInput(*state);
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipmentData(*state);
@@ -4401,6 +4355,7 @@ TEST_F(EnergyPlusFixture, ZoneAirMassFlowBalance_ZoneMixingInfiltrationFlowsFlag
 
 TEST_F(EnergyPlusFixture, CalcAirFlowSimple_CO2andGCforRefrigerationDoorsTest)
 {
+    state->init_state(*state);
     state->dataGlobal->NumOfZones = 2;
 
     state->dataEnvrn->OutBaroPress = 101400.;
@@ -4461,6 +4416,7 @@ TEST_F(EnergyPlusFixture, CalcAirFlowSimple_CO2andGCforRefrigerationDoorsTest)
 
 TEST_F(EnergyPlusFixture, CZoeEquipmentManager_CalcZoneLeavingConditions_Test)
 {
+    state->init_state(*state);
     state->dataGlobal->NumOfZones = 1;
     state->dataHeatBal->Zone.allocate(1);
     state->dataHeatBal->Zone(1).Name = "LIVING ZONE";
@@ -4536,6 +4492,8 @@ TEST_F(EnergyPlusFixture, CZoeEquipmentManager_CalcZoneLeavingConditions_Test)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
 {
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->init_state(*state);
 
     state->dataLoopNodes->Node.allocate(10);
     state->dataGlobal->NumOfZones = 1;
@@ -4548,9 +4506,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEquip->ZoneEquipConfig.allocate(state->dataGlobal->NumOfZones);
     state->dataHeatBalFanSys->TempControlType.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(state->dataGlobal->NumOfZones);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(state->dataGlobal->NumOfZones);
     auto &zoneSysMoistureDemand = state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1);
@@ -4561,10 +4517,10 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
     state->dataHeatBalFanSys->ZoneMassBalanceFlag.allocate(state->dataGlobal->NumOfZones);
     state->dataHeatBal->MassConservation.allocate(state->dataGlobal->NumOfZones);
     HeatBalanceManager::AllocateHeatBalArrays(*state);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 22.;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1) = 22.;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1) = 24.;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 22.;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo = 22.;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi = 24.;
     state->dataZoneEquip->ZoneEquipConfig(1).IsControlled = true;
     state->dataSize->CalcZoneSizing(1, 1).ZoneNum = 1;
     state->dataSize->CurOverallSimDay = 1;
@@ -4584,6 +4540,8 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
     state->dataZoneEquip->ZoneEquipConfig(1).InletNode(2) = 2;
     state->dataZoneEquip->ZoneEquipConfig(1).ExhaustNode(1) = 3;
     state->dataZoneEquip->ZoneEquipConfig(1).NumReturnNodes = 0;
+    state->dataZoneEquip->ZoneEquipConfig(1).returnFlowFracSched = Sched::GetScheduleAlwaysOn(*state);
+
     state->dataEnvrn->StdBaroPress = 101325.;
     state->dataSize->CalcFinalZoneSizing(1).MinOA = 0.1;
     state->dataSize->CalcFinalZoneSizing(1).OutTempAtHeatPeak = 28;
@@ -4598,7 +4556,6 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
     SizeZoneEquipment(*state);
     UpdateZoneSizing(*state, Constant::CallIndicator::BeginDay);
     state->dataGlobal->HourOfDay = 1;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
     state->dataGlobal->TimeStep = 1;
     state->dataSize->NumTimeStepsInAvg = 1;
     state->dataHVACGlobal->FracTimeStepZone = 1;
@@ -4705,6 +4662,8 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_NoLoadTest)
 
 TEST_F(EnergyPlusFixture, CalcAirFlowSimple_WindAndStackArea)
 {
+    state->init_state(*state);
+
     state->dataGlobal->NumOfZones = 1;
 
     state->dataHeatBal->Zone.allocate(state->dataGlobal->NumOfZones);
@@ -4743,7 +4702,7 @@ TEST_F(EnergyPlusFixture, CalcAirFlowSimple_WindAndStackArea)
     thisVentilation.OpenEff = Constant::AutoCalculate;
     thisVentilation.EffAngle = 135; // Effective angle
     thisVentilation.OpenArea = 1.0;
-    thisVentilation.OpenAreaSchedPtr = -1; // Always on
+    thisVentilation.openAreaFracSched = Sched::GetScheduleAlwaysOn(*state); // Always on
     thisVentilation.ZonePtr = 1;
 
     thisVentilation.DiscCoef = 0.5;
@@ -4818,6 +4777,7 @@ TEST_F(EnergyPlusFixture, CalcAirFlowSimple_WindAndStackArea)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_DOASLoadTest)
 {
+    state->init_state(*state);
 
     state->dataLoopNodes->Node.allocate(10);
     state->dataGlobal->NumOfZones = 1;
@@ -4834,9 +4794,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_DOASLoadTest)
     state->dataZoneTempPredictorCorrector->zoneHeatBalance.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEquip->ZoneEquipConfig.allocate(state->dataGlobal->NumOfZones);
     state->dataHeatBalFanSys->TempControlType.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(state->dataGlobal->NumOfZones);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(state->dataGlobal->NumOfZones);
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(state->dataGlobal->NumOfZones);
     state->dataZoneEnergyDemand->ZoneSysMoistureDemand.allocate(state->dataGlobal->NumOfZones);
     auto &zoneSysMoistureDemand = state->dataZoneEnergyDemand->ZoneSysMoistureDemand(1);
@@ -4847,10 +4805,10 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_DOASLoadTest)
     state->dataHeatBalFanSys->ZoneMassBalanceFlag.allocate(state->dataGlobal->NumOfZones);
     state->dataHeatBal->MassConservation.allocate(state->dataGlobal->NumOfZones);
     HeatBalanceManager::AllocateHeatBalArrays(*state);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
-    state->dataHeatBalFanSys->TempZoneThermostatSetPoint(1) = 23.5;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1) = 22.5;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1) = 23.5;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setpt = 23.5;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo = 22.5;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi = 23.5;
     state->dataZoneEquip->ZoneEquipConfig(1).IsControlled = true;
     state->dataSize->CalcZoneSizing(1, 1).ZoneNum = 1;
     state->dataSize->CurOverallSimDay = 1;
@@ -4870,6 +4828,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_DOASLoadTest)
     state->dataZoneEquip->ZoneEquipConfig(1).InletNode(2) = 2;
     state->dataZoneEquip->ZoneEquipConfig(1).ExhaustNode(1) = 3;
     state->dataZoneEquip->ZoneEquipConfig(1).NumReturnNodes = 0;
+    state->dataZoneEquip->ZoneEquipConfig(1).returnFlowFracSched = Sched::GetScheduleAlwaysOn(*state);
     state->dataEnvrn->StdBaroPress = 101325.;
     state->dataEnvrn->StdRhoAir = 1.20;
 
@@ -4887,7 +4846,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_SizeZoneEquipment_DOASLoadTest)
     SizeZoneEquipment(*state);
     UpdateZoneSizing(*state, Constant::CallIndicator::BeginDay);
     state->dataGlobal->HourOfDay = 1;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     state->dataGlobal->TimeStep = 1;
     state->dataSize->NumTimeStepsInAvg = 1;
     state->dataHVACGlobal->FracTimeStepZone = 1;
@@ -5020,6 +4979,7 @@ TEST_F(EnergyPlusFixture, ZoneAirLoopEquipmentGetInputTest)
     )IDF";
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     int AirDistCompUnitNum = 1;
     ZoneAirLoopEquipmentManager::GetZoneAirLoopEquipment(*state);
@@ -5037,6 +4997,7 @@ TEST_F(EnergyPlusFixture, ZoneAirLoopEquipmentGetInputTest)
 
 TEST_F(EnergyPlusFixture, SpaceHVACSplitterTest)
 {
+    state->init_state(*state);
     state->dataZoneEquip->zoneEquipSplitter.resize(1);
     auto &thisSplitter = state->dataZoneEquip->zoneEquipSplitter[0];
     // Assume 3 spaces are served by this splitter
@@ -5088,6 +5049,8 @@ TEST_F(EnergyPlusFixture, SpaceHVACSplitterTest)
     space2Energy.RemainingOutputRequired = -40.0;
     space3Energy.RemainingOutputRequired = 10.0;
 
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
+
     int zone1Num = 1;
     int equipNum = 1;
 
@@ -5138,7 +5101,7 @@ TEST_F(EnergyPlusFixture, SpaceHVACSplitterTest)
     state->dataZoneEquip->ZoneEquipList.allocate(1);
     state->dataZoneEquip->ZoneEquipList(1).LoadDistScheme = DataZoneEquipment::LoadDist::Sequential;
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
     thisSplitter.distributeOutput(*state, zone1Num, sysOutputProvided, latOutputProvided, nonAirSysOutput, equipNum);
@@ -5179,10 +5142,9 @@ TEST_F(EnergyPlusFixture, SpaceHVACSplitterTest)
 
     // Case 3 - Max Control
     thisSplitter.tstatControl = ZoneEquipTstatControl::Maximum;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi.allocate(1);
-    state->dataHeatBalFanSys->ZoneThermostatSetPointLo(1) = 18.0;
-    state->dataHeatBalFanSys->ZoneThermostatSetPointHi(1) = 24.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts.allocate(1);
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptLo = 18.0;
+    state->dataHeatBalFanSys->zoneTstatSetpts(1).setptHi = 24.0;
     spaceHB1.T1 = 20.0; // Heating delta = 18-20=-2, cooling delta = 20-24=-4
     spaceHB2.T1 = 16.0; // Heating delta = 18-16=2, cooling delta = 16-24=-8 - This zone is the winner, space2, splitSpace3
     spaceHB3.T1 = 24.0; // Heating delta = 18-24=-6, cooling delta = 24-24=0
@@ -5200,6 +5162,7 @@ TEST_F(EnergyPlusFixture, SpaceHVACSplitterTest)
 
 TEST_F(EnergyPlusFixture, SpaceHVACMixerTest)
 {
+    state->init_state(*state);
     state->dataZoneEquip->zoneEquipMixer.resize(1);
     auto &thisMixer = state->dataZoneEquip->zoneEquipMixer[0];
     // Assume 3 spaces are served by this mixter
@@ -5289,7 +5252,6 @@ TEST_F(EnergyPlusFixture, SpaceHVACMixerTest)
 
 TEST_F(EnergyPlusFixture, ZoneEquipmentManager_GetZoneEquipmentTest)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  Space;                   !- Name",
@@ -5331,6 +5293,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_GetZoneEquipmentTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
     EXPECT_FALSE(has_err_output());
+    state->init_state(*state);
     bool ErrorsFound = false;
 
     // Test 0: The get flag should default to true
@@ -5338,7 +5301,7 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_GetZoneEquipmentTest)
 
     // Test 1: This should return no errors and the get flag should now be false.
     //         In addition, it should have populated arrays and set the time steps correctly.
-    state->dataGlobal->NumOfTimeStepInHour = 1;
+    state->dataGlobal->TimeStepsInHour = 1;
     GetZoneData(*state, ErrorsFound);
     AllocateHeatBalArrays(*state);
     GetZoneEquipment(*state);
@@ -5352,13 +5315,15 @@ TEST_F(EnergyPlusFixture, ZoneEquipmentManager_GetZoneEquipmentTest)
     //         The get flag should still be false and the number of time steps in a day should NOT change.
     //         In essence, this tests to make sure that GetZoneEquipment doesn't do anything after the
     //         first time it is called.
-    state->dataGlobal->NumOfTimeStepInHour = 2;
+    state->dataGlobal->TimeStepsInHour = 2;
     GetZoneEquipment(*state);
     EXPECT_FALSE(state->dataZoneEquipmentManager->GetZoneEquipmentInputFlag);
     EXPECT_EQ(state->dataZoneEquipmentManager->NumOfTimeStepInDay, 24);
 }
+
 TEST_F(EnergyPlusFixture, SpaceReturnMixerTest)
 {
+    state->init_state(*state);
     state->dataZoneEquip->zoneReturnMixer.resize(1);
     auto &thisMixer = state->dataZoneEquip->zoneReturnMixer[0];
     // Assume 3 spaces are served by this mixter
@@ -5424,6 +5389,10 @@ TEST_F(EnergyPlusFixture, SpaceReturnMixerTest)
     spaceEquipConfig1.FixedReturnFlow.allocate(1);
     spaceEquipConfig2.FixedReturnFlow.allocate(1);
     spaceEquipConfig3.FixedReturnFlow.allocate(1);
+
+    spaceEquipConfig1.returnFlowFracSched = Sched::GetScheduleAlwaysOff(*state);
+    spaceEquipConfig2.returnFlowFracSched = Sched::GetScheduleAlwaysOff(*state);
+    spaceEquipConfig3.returnFlowFracSched = Sched::GetScheduleAlwaysOff(*state);
 
     spaceEquipConfig1.ZoneNode = 5;
     spaceEquipConfig2.ZoneNode = 6;

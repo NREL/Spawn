@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -6942,10 +6942,15 @@ TEST_F(EnergyPlusFixture, VariableSpeedCoils_Coil_Defrost_Power_Fix_Test)
                                               OnOffAirFlowRatio);
 
     EXPECT_NEAR(state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).DefrostPower, 908.10992432432420, 1e-3);
-
-    // Check that when DefrostTime == 0 the performance of the coil is not degraded
     Real64 COPwDefrost = state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).COP;
-    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).DefrostTime == 0;
+    EXPECT_LT(state->dataVariableSpeedCoils->HeatingCapacityMultiplier, 1.0);
+    EXPECT_LT(state->dataVariableSpeedCoils->InputPowerMultiplier, 1.0);
+
+    // Frost Multiplier EMS actuators
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideOn = true;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideValue = 0.5;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideOn = true;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideValue = 0.6;
     VariableSpeedCoils::SimVariableSpeedCoils(*state,
                                               state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).Name,
                                               DXCoilNum,
@@ -6957,7 +6962,47 @@ TEST_F(EnergyPlusFixture, VariableSpeedCoils_Coil_Defrost_Power_Fix_Test)
                                               SensLoad,
                                               LatentLoad,
                                               OnOffAirFlowRatio);
-    EXPECT_NEAR(COPwDefrost, state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).COP, 0.001);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->HeatingCapacityMultiplier, 0.5);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->InputPowerMultiplier, 0.6);
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideOn = false;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideOn = false;
+
+    // Check that when DefrostTime == 0 the performance of the coil is not degraded
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).DefrostTime = 0;
+    VariableSpeedCoils::SimVariableSpeedCoils(*state,
+                                              state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).Name,
+                                              DXCoilNum,
+                                              fanOp,
+                                              compressorOp, // compressor on/off. 0 = off; 1= on
+                                              PartLoadFrac,
+                                              SpeedCal,
+                                              SpeedRatio,
+                                              SensLoad,
+                                              LatentLoad,
+                                              OnOffAirFlowRatio);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->HeatingCapacityMultiplier, 1.0);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->InputPowerMultiplier, 1.0);
+
+    // Frost Multiplier EMS actuators
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideOn = true;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideValue = 0.5;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideOn = true;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideValue = 0.6;
+    VariableSpeedCoils::SimVariableSpeedCoils(*state,
+                                              state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).Name,
+                                              DXCoilNum,
+                                              fanOp,
+                                              compressorOp, // compressor on/off. 0 = off; 1= on
+                                              PartLoadFrac,
+                                              SpeedCal,
+                                              SpeedRatio,
+                                              SensLoad,
+                                              LatentLoad,
+                                              OnOffAirFlowRatio);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->HeatingCapacityMultiplier, 1.0);
+    EXPECT_DOUBLE_EQ(state->dataVariableSpeedCoils->InputPowerMultiplier, 1.0);
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingCapacityMultiplierEMSOverrideOn = false;
+    state->dataVariableSpeedCoils->VarSpeedCoil(DXCoilNum).FrostHeatingInputPowerMultiplierEMSOverrideOn = false;
 
     // Now simulate the coil with "CompressorOperation" command to be "Off":
     // In this case, the "DefrostPower" need to be cleared to be zero if done correctly;

@@ -43,7 +43,7 @@ https://energyplushelp.freshdesk.com/
 
 The site is monitored by EnergyPlus developers and questions are
 attempted to be answered in a timely manner. Standard EnergyPlus support
-is provided free of charge by the U.S. Deparment of Energy, as part of a
+is provided free of charge by the U.S. Department of Energy, as part of a
 continuing effort to improve the EnergyPlus building simulation tool.
 Expedited, priority support may be available from other sources. The
 helpdesk has a files area where important (after release) files may be
@@ -133,7 +133,7 @@ Datasets aka Libraries
 ----------------------
 
 EnergyPlus uses the term DataSets for what many would call libraries.
-These files are included, for the most part, in the instalation package
+These files are included, for the most part, in the installation package
 but may be available from other sites (such as the helpdesk or Yahoo
 Groups).
 
@@ -141,7 +141,7 @@ There are two flavors of DataSets: **simple** and **Macro**. Some sets
 have files in both camps (for example, Solar Collectors). Both flavors
 contain IDF objects ready to be put into EnergyPlus input files. With
 the simple datasets, you may need to use a text editor or the IDF Editor
-to search the file for the one you want to use. With the macro datsets
+to search the file for the one you want to use. With the macro datasets
 and a simply structured imf (input macro file), you can name the item
 you want to include. (The macro program is described in the `Auxiliary
 Programs document <AuxiliaryPrograms.pdf>`__).
@@ -291,7 +291,7 @@ You can’t measure extraterrestrial unless you’re in outer space, but
 then it’s assumed to be constant anyway. For the various radiation and
 illuminance values, they can measured by various instrumentation ranging
 from the very cheap to the very expensive. Properly, radiation needs to
-be measured with a pyranometer (Eppley), which is pricy, but I’m also
+be measured with a pyranometer (Eppley), which is pricey, but I’m also
 seen people use simpler apparatus (Lycors) that are really photometers.
 Direct beam is generally not measured, but derived by subtracting the
 diffuse from the global. Diffuse is measured by adding a shadow band
@@ -432,13 +432,15 @@ EnergyPlus IDF Excerpt Data
 The preferred method of using WINDOW data in EnergyPlus is to excerpt or
 “report” a specific Window from the Window library screen (see below):
 
+.. _fig-window-screen-for-exporting-idf-window:
+
 .. figure:: media/image001.jpg
    :alt: WINDOW screen for exporting IDF Window specifications
    :name: fig:window-screen-for-exporting-idf-window
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    WINDOW screen for exporting IDF Window specifications
-   `fig:window-screen-for-exporting-idf-window`_
 
 The file can then be saved at a location of your choice and added into
 your overall simulation IDF file.
@@ -543,13 +545,15 @@ dimensions will be overridden by the systems dimensions from the Window
 data file. Two windows will be made and called WinOriginal and
 WinOriginal:2.**
 
+.. _fig-window-glazing-system-with-dual-glazing:
+
 .. figure:: media/image002.png
    :alt: Window Glazing system with dual glazing constructions
    :name: fig:window-glazing-system-with-dual-glazing
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Window Glazing system with dual glazing constructions
-   `fig:window-glazing-system-with-dual-glazing`_
 
 The Window Data File contains no information on shading devices. See
 “Specify the Material Name of the Shading Device” under
@@ -911,31 +915,33 @@ Describing Roof Overhangs
 
 Building heat transfer surfaces, such as roofs and walls, only cast
 shadows in a hemisphere in the direction of the outward facing normal
-(see
-Figure `fig:building-heat-transfer-surfaces-cast-shadows`_.
+(see :numref:`fig-building-heat-transfer-surfaces-cast-shadows`.
 Because roof surfaces generally face upward, a roof surface which
 extends beyond the walls of the building will not cast shadows on the
-walls below it (see
-Figure `fig:extended-roof-surface-will-not-shade`_.
+walls below it (see :numref: `fig-extended-roof-surface-will-not-shade`.
+
+.. _fig-building-heat-transfer-surfaces-cast-shadows:
 
 .. figure:: media/image003.png
    :alt: Building heat transfer surfaces cast shadows in the direction of outward facing normal.
    :name: fig:building-heat-transfer-surfaces-cast-shadows
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Building heat transfer surfaces cast shadows in the direction of
    outward facing normal.
-   `fig:building-heat-transfer-surfaces-cast-shadows`_
+
+.. _fig-extended-roof-surface-will-not-shade:
 
 .. figure:: media/image004.png
    :alt: Extended roof surface will not shade the walls below.
    :name: fig:extended-roof-surface-will-not-shade
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Extended roof surface will not shade the walls below.
-   `fig:extended-roof-surface-will-not-shade`_
 
-Figure `fig:proper-surface-configurations-for-roof`_
+:numref:`fig-proper-surface-configurations-for-roof`
 shows the proper surface configurations for two types of attic
 construction. In all cases, the roof surface should only include the
 area of the roof which contacts the zone below it. In these drawings,
@@ -956,13 +962,16 @@ downward. The central portion of the attic floor would be described as
 an interzone floor surface where the outside boundary condition is the
 ceiling surface in the zone below.
 
+.. _fig-proper-surface-configurations-for-roof:
+
 .. figure:: media/image005.png
    :alt: Proper surface configurations for roof overhangs for two types of attic construction.
    :name: fig:proper-surface-configurations-for-roof
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Proper surface configurations for roof overhangs for two types of
-   attic construction. [fig:proper-surface-configurations-for-roof]
+   attic construction.
 
 Solar Reflection from Shading Surfaces
 --------------------------------------
@@ -982,14 +991,16 @@ three areas A1, A2, and A3. Surface A should be entered as the shown
 three shading areas in order to correctly model sky diffuse solar
 reflection from Shading Surface A.
 
+.. _fig-limitations-in-modeling-reflections-from:
+
 .. figure:: media/image006.jpg
    :alt: Limitations in modeling reflections from surfaces
    :name: fig:limitations-in-modeling-reflections-from
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Limitations in modeling reflections from surfaces
-   [fig:limitations-in-modeling-reflections-from]
-
+   
 Air wall, Open air connection between zones
 -------------------------------------------
 
@@ -1024,7 +1035,7 @@ each other:
   and diffuse solar (and daylighting) to pass between the adjacent
   zones.
 
-* Radiant (long-wave thermal) transfer can be signifcant between exterior surfaces of a perimeter zone and
+* Radiant (long-wave thermal) transfer can be significant between exterior surfaces of a perimeter zone and
   interior surfaces of a core zone with an open boundary between them.
   Normally, there is no direct radiant exchange between surfaces in
   different thermal zones. Construction:AirBoundary groups adjacent
@@ -1133,7 +1144,7 @@ The Trombe wall convection algorithm is applicable to just about any
 vertical cavity with a high aspect ratio and relatively narrow width.
 I’m not sure if a double facade cavity would meet the aspect ratio
 requirement. But I do know the Trombe wall algorithm is not picky about
-whether the inner wall is highly absorbant, or about any particular
+whether the inner wall is highly absorbent, or about any particular
 properties of the walls. Actually the same basic algorithm is used by
 the window model to calculate the convection between the two panes of a
 window. The full reference is ISO 15099.
@@ -1168,12 +1179,15 @@ the original represents 4 zones (multiplier = 4) and the middle floor
 (ZoneGroup) represents 8 floors (ZoneGroup multiplier = 8). Clone
 representations were made for comparisons:
 
+.. _fig-original-multistory-idf:
+
 .. figure:: media/image007.png
    :alt: Original Multistory IDF
    :name: fig:original-multistory-idf
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
-   Original Multistory IDF [fig:original-multistory-idf]
+   Original Multistory IDF
 
 In the figure above, each “middle” zone represents 4 zones. The middle
 “floor” represents 8 floors. Additionally, each of the windows has a
@@ -1223,23 +1237,27 @@ uses the Zone object multiplier for the center zones. Specifically:
 
 For comparison purposes, clones of the middle zones were done.
 
+.. _fig-multistory-with-cloned-middle-zones:
+
 .. figure:: media/image008.png
    :alt: Multistory with cloned middle zones.
    :name: fig:multistory-with-cloned-middle-zones
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Multistory with cloned middle zones.
-   [fig:multistory-with-cloned-middle-zones.]
 
 And, finally, the entire building was created:
+
+.. _fig-multistory-building-fully-cloned:
 
 .. figure:: media/image009.png
    :alt: Multistory building – fully cloned.
    :name: fig:multistory-building-fully-cloned
-   :width: 90.0%
+   :align: center
+   :width: 50.0%
 
    Multistory building – fully cloned.
-   [fig:multistory-building-fully-cloned.]
 
 The building is autosized. For convenience in comparison, the extreme
 summer and winter days were used for autosizing and the simulation was
@@ -1254,12 +1272,11 @@ that are used during EnergyPlus development testing (i.e.small
 differences are within .001 or .5%; big differences are greater than
 those limits).
 
-For the purposes of dicussion, the buildings will be called:
+For the purposes of discussion, the buildings will be called:
 
-* Multistory 1 – the original 9 zone building (with multipliers and groups) ref: Figure `fig:original-multistory-idf`_;
-* Multistory 2 – the building shown in Figure `fig:multistory-with-cloned-middle-zones`_.
-* Multistory with cloned middle zones.
-* Multistory 3 – the fully configured building – ref Figure `fig:multistory-building-fully-cloned`_.
+* Multistory 1 – the original 9 zone building (with multipliers and groups) ref: :numref:`fig-original-multistory-idf`;
+* Multistory 2 – the building (with cloned middle zones) shown in :numref:`fig-multistory-with-cloned-middle-zones`.
+* Multistory 3 – the fully configured building – ref :numref:`fig-multistory-building-fully-cloned`.
 
 The following table illustrates the regression testing for Multistory 2
 and Multistory 3, group loads and meters versus Multistory 1 results.
@@ -1317,7 +1334,7 @@ With these included, the files were rerun with the following results:
 .. table:: Multiplier Results with negated height variation.
 
    +---------------+---------------------+---------------------+---------------------+---------------------+
-   |   Location    | Multi-story 2 Loahs | Multi-story 2 Meter | Multi-story 3 Loahs | Multi-story 3 Meter |
+   |   Location    | Multi-story 2 Loads | Multi-story 2 Meter | Multi-story 3 Loads | Multi-story 3 Meter |
    +===============+=====================+=====================+=====================+=====================+
    |    Chicago    |     Small diffs     |     Small diffs     |     Small diffs     |     Small diffs     |
    +---------------+---------------------+---------------------+---------------------+---------------------+
@@ -1796,7 +1813,7 @@ A coil will check its inlet air temperature compared to the set point
 temperature. For cooling, if the inlet air temperature is above the set
 point temp, the coil turns on. It’s opposite that for heating. In the
 5ZoneAutoDXVAV example file, a schedule temperature set point is placed
-at the system outlet node. This is the temperture the designer wants at
+at the system outlet node. This is the temperature the designer wants at
 the outlet. The mixed air SP manager is used to account for fan heat and
 places the required SP at the outlet of the cooling coil so the coil
 slightly overcools the air to overcome fan heat and meet the system
@@ -1828,7 +1845,7 @@ SetpointManager objects place a setpoint on a node, for example, one
 might place a setpoint of 12C on the node named “Main Cooling Coil Air
 Outlet Node”.
 
-In the case of Controler:WaterCoil which controls a hot water or chilled
+In the case of Controller:WaterCoil which controls a hot water or chilled
 water coil, the controller reads the setpoint and tries to adjust the
 water flow so that the air temperature at the controlled node matches
 the current setpoint. Continuing the example above:
@@ -2500,7 +2517,7 @@ Low Temperature Radiant Undersizing Issues
 ------------------------------------------
 
 Some users have noted difficulties when trying to size certain aspects
-of low temperature radiant systems, particulary in cooling mode for the
+of low temperature radiant systems, particularly in cooling mode for the
 hydronic (variable flow) and constant flow low temperature radiant
 systems when using autosize. The problem appears to be that the system
 is not sizing properly or is undersizing, leaving zone conditions that
@@ -3799,7 +3816,7 @@ buildings with large numbers of surfaces and shading surfaces):
 .. table:: Recommended Reduce Time Settings for Early Diagnostic runs
 
    ======================= ================================================================================
-   Object                  Recommenheh Early Diagnostic Setting
+   Object                  Recommended Early Diagnostic Setting
    Building                MinimalShadowing (Solar Distribution field)
    ShadowCalculation       200 (Maximum Figures in Shadow Overlap Calculations field)
    SizingPeriod:DesignDays Only perform design day or limited run period runs until you have the model set.

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -236,6 +236,8 @@ namespace HWBaseboardRadiator {
 
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("GetHWBaseboardInput:");
+        static constexpr std::string_view routineName = "GetHWBaseboardInput";
+
         Real64 constexpr MaxFraction(1.0);
         Real64 constexpr MinFraction(0.0);
         Real64 constexpr MaxWaterTempAvg(150.0);              // Maximum limit of average water temperature in degree C
@@ -250,7 +252,7 @@ namespace HWBaseboardRadiator {
         int constexpr iHeatDesignCapacityNumericNum(3);       // get input index to HW baseboard heating capacity
         int constexpr iHeatCapacityPerFloorAreaNumericNum(1); // get input index to HW baseboard heating capacity per floor area sizing
         int constexpr iHeatFracOfAutosizedCapacityNumericNum(
-            2); //  get input index to HW baseboard heating capacity sizing as fraction of autozized heating capacity
+            2); //  get input index to HW baseboard heating capacity sizing as fraction of autosized heating capacity
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         int BaseboardNum; // Baseboard number
@@ -439,6 +441,8 @@ namespace HWBaseboardRadiator {
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
 
+            ErrorObjectHeader eoh{routineName, cCMO_BBRadiator_Water, state.dataIPShortCut->cAlphaArgs(1)};
+
             HWBaseboardNumericFields.FieldNames.allocate(NumNumbers);
             HWBaseboardNumericFields.FieldNames = state.dataIPShortCut->cNumericFieldNames;
 
@@ -456,19 +460,10 @@ namespace HWBaseboardRadiator {
 
             // Get schedule
             if (state.dataIPShortCut->lAlphaFieldBlanks(3)) {
-                thisHWBaseboard.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                thisHWBaseboard.SchedPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(3));
-                if (thisHWBaseboard.SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", {}=\"{}\" not found.",
-                                           RoutineName,
-                                           cCMO_BBRadiator_Water,
-                                           state.dataIPShortCut->cAlphaArgs(1),
-                                           state.dataIPShortCut->cAlphaFieldNames(3),
-                                           state.dataIPShortCut->cAlphaArgs(3)));
-                    ErrorsFound = true;
-                }
+                thisHWBaseboard.availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((thisHWBaseboard.availSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(3))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3));
+                ErrorsFound = true;
             }
 
             // Get inlet node number
@@ -813,7 +808,7 @@ namespace HWBaseboardRadiator {
         // This subroutine initializes the baseboard units, and determines the UA values during simulation.
 
         // METHODOLOGY EMPLOYED:
-        // The initialization subrotines both in high temperature radiant radiator
+        // The initialization subroutines both in high temperature radiant radiator
         // and convective only baseboard radiator are combined and modified. In addition,
         // an UA value calculation by LMTD method is added.
         // The heater is assumed to be crossflow with both fluids unmixed.
@@ -880,11 +875,7 @@ namespace HWBaseboardRadiator {
             // Initialize
             WaterInletNode = HWBaseboard.WaterInletNode;
 
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
 
             HWBaseboard.WaterMassFlowRateMax = rho * HWBaseboard.WaterVolFlowRateMax;
 
@@ -892,11 +883,8 @@ namespace HWBaseboardRadiator {
 
             state.dataLoopNodes->Node(WaterInletNode).Temp = 60.0;
 
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum).FluidName,
-                                                        state.dataLoopNodes->Node(WaterInletNode).Temp,
-                                                        state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
+            Cp = state.dataPlnt->PlantLoop(HWBaseboard.plantLoc.loopNum)
+                     .glycol->getSpecificHeat(state, state.dataLoopNodes->Node(WaterInletNode).Temp, RoutineName);
 
             state.dataLoopNodes->Node(WaterInletNode).Enthalpy = Cp * state.dataLoopNodes->Node(WaterInletNode).Temp;
             state.dataLoopNodes->Node(WaterInletNode).Quality = 0.0;
@@ -1068,16 +1056,10 @@ namespace HWBaseboardRadiator {
                     CheckZoneSizing(state, cCMO_BBRadiator_Water, hWBaseboard.Name);
                     DesCoilLoad = RatedCapacityDes;
                     if (DesCoilLoad >= HVAC::SmallLoad) {
-                        Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                                    state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                                    Constant::HWInitConvTemp,
-                                                                    state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                                    RoutineName);
-                        rho = FluidProperties::GetDensityGlycol(state,
-                                                                state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                                Constant::HWInitConvTemp,
-                                                                state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                                RoutineName);
+                        Cp = state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum)
+                                 .glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
+                        rho =
+                            state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
                         WaterVolFlowRateMaxDes = DesCoilLoad / (state.dataSize->PlantSizData(PltSizHeatNum).DeltaT * Cp * rho);
                     } else {
                         WaterVolFlowRateMaxDes = 0.0;
@@ -1120,11 +1102,8 @@ namespace HWBaseboardRadiator {
                     WaterMassFlowRateStd = hWBaseboard.WaterMassFlowRateStd;
                 } else if (hWBaseboard.RatedCapacity == DataSizing::AutoSize || hWBaseboard.RatedCapacity == 0.0) {
                     DesCoilLoad = RatedCapacityDes;
-                    rho = FluidProperties::GetDensityGlycol(state,
-                                                            state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                            Constant::HWInitConvTemp,
-                                                            state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                            RoutineNameFull);
+                    rho =
+                        state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineNameFull);
                     WaterMassFlowRateStd = hWBaseboard.WaterVolFlowRateMax * rho;
                 }
                 if (DesCoilLoad >= HVAC::SmallLoad) {
@@ -1132,11 +1111,8 @@ namespace HWBaseboardRadiator {
                     // Air mass flow rate is obtained from the following linear equation
                     // m_dot = 0.0062 + 2.75e-05*q
                     AirMassFlowRate = Constant + Coeff * DesCoilLoad;
-                    Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                                state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                                hWBaseboard.WaterTempAvg,
-                                                                state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                                RoutineName);
+                    Cp =
+                        state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).glycol->getSpecificHeat(state, hWBaseboard.WaterTempAvg, RoutineName);
                     WaterInletTempStd = (DesCoilLoad / (2.0 * WaterMassFlowRateStd * Cp)) + hWBaseboard.WaterTempAvg;
                     WaterOutletTempStd = std::abs((2.0 * hWBaseboard.WaterTempAvg) - WaterInletTempStd);
                     AirOutletTempStd = (DesCoilLoad / (AirMassFlowRate * CPAirStd)) + AirInletTempStd;
@@ -1173,7 +1149,7 @@ namespace HWBaseboardRadiator {
                 BaseSizer::reportSizerOutput(state, cCMO_BBRadiator_Water, hWBaseboard.Name, "U-Factor times Area [W/C]", hWBaseboard.UA);
             }
         } else {
-            // if there is no heating Sizing:Plant object and autosizng was requested, issue an error message
+            // if there is no heating Sizing:Plant object and autosizing was requested, issue an error message
             if (hWBaseboard.WaterVolFlowRateMax == DataSizing::AutoSize || hWBaseboard.RatedCapacity == DataSizing::AutoSize ||
                 hWBaseboard.RatedCapacity == 0.0) {
                 ShowSevereError(state, "Autosizing of hot water baseboard requires a heating loop Sizing:Plant object");
@@ -1188,11 +1164,7 @@ namespace HWBaseboardRadiator {
                 WaterMassFlowRateStd = hWBaseboard.WaterMassFlowRateStd;
                 // m_dot = 0.0062 + 2.75e-05*q
                 AirMassFlowRate = Constant + Coeff * DesCoilLoad;
-                Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                            state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                            hWBaseboard.WaterTempAvg,
-                                                            state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                            RoutineName);
+                Cp = state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).glycol->getSpecificHeat(state, hWBaseboard.WaterTempAvg, RoutineName);
                 WaterInletTempStd = (DesCoilLoad / (2.0 * WaterMassFlowRateStd * Cp)) + hWBaseboard.WaterTempAvg;
                 WaterOutletTempStd = std::abs((2.0 * hWBaseboard.WaterTempAvg) - WaterInletTempStd);
                 AirOutletTempStd = (DesCoilLoad / (AirMassFlowRate * CPAirStd)) + AirInletTempStd;
@@ -1246,7 +1218,7 @@ namespace HWBaseboardRadiator {
 
         // PURPOSE OF THIS SUBROUTINE:
         // This subroutine calculates both the convective and radiant heat transfer rate
-        // in a hot water baseboard heater.  The heater is assumed to be crossflowwith
+        // in a hot water baseboard heater.  The heater is assumed to be crossflow with
         // both fluids unmixed.  The air flow is buoyancy driven and a constant airflow
         // and a constant airflow velocity of 0.5m/s is assumed.
 
@@ -1284,8 +1256,8 @@ namespace HWBaseboardRadiator {
         Real64 WaterInletTemp = hWBaseboard.WaterInletTemp;
         Real64 WaterMassFlowRate = state.dataLoopNodes->Node(hWBaseboard.WaterInletNode).MassFlowRate;
 
-        if (QZnReq > HVAC::SmallLoad && !state.dataZoneEnergyDemand->CurDeadBandOrSetback(ZoneNum) &&
-            (ScheduleManager::GetCurrentScheduleValue(state, hWBaseboard.SchedPtr) > 0) && (WaterMassFlowRate > 0.0)) {
+        if (QZnReq > HVAC::SmallLoad && !state.dataZoneEnergyDemand->CurDeadBandOrSetback(ZoneNum) && (hWBaseboard.availSched->getCurrentVal() > 0) &&
+            (WaterMassFlowRate > 0.0)) {
 
             HWBaseboardDesignData const &HWBaseboardDesignDataObject{
                 state.dataHWBaseboardRad->HWBaseboardDesignObject(hWBaseboard.DesignObjectPtr)}; // Contains the data for the design object
@@ -1293,11 +1265,7 @@ namespace HWBaseboardRadiator {
             // Calculate air mass flow rate
             AirMassFlowRate = hWBaseboard.AirMassFlowRateStd * (WaterMassFlowRate / hWBaseboard.WaterMassFlowRateMax);
             CapacitanceAir = Psychrometrics::PsyCpAirFnW(hWBaseboard.AirInletHumRat) * AirMassFlowRate;
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidName,
-                                                        WaterInletTemp,
-                                                        state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).FluidIndex,
-                                                        RoutineName);
+            Cp = state.dataPlnt->PlantLoop(hWBaseboard.plantLoc.loopNum).glycol->getSpecificHeat(state, WaterInletTemp, RoutineName);
 
             CapacitanceWater = Cp * WaterMassFlowRate;
             CapacitanceMax = max(CapacitanceAir, CapacitanceWater);
@@ -1391,7 +1359,7 @@ namespace HWBaseboardRadiator {
         //       MODIFIED       Aug 2007 Daeho Kang (Add the update of radiant source)
 
         // METHODOLOGY EMPLOYED:
-        // The update subrotines both in high temperature radiant radiator
+        // The update subroutines both in high temperature radiant radiator
         // and convective only baseboard radiator are combined and modified.
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
@@ -1473,7 +1441,7 @@ namespace HWBaseboardRadiator {
         //                      April 2010 Brent Griffith, max limit to protect surface temperature calcs
 
         // PURPOSE OF THIS SUBROUTINE:
-        // To distribute the gains from the hot water basebaord heater
+        // To distribute the gains from the hot water baseboard heater
         // as specified in the user input file.  This includes distribution
         // of long wavelength radiant gains to surfaces and "people."
 

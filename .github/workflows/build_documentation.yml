@@ -114,34 +114,6 @@ jobs:
       working-directory: ./doc/build
       run: cmake --build . -j 4
 
-    - name: Upload Acknowledgments
-      uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-24.04'
-      with:
-        name: Acknowledgments
-        path: ${{ github.workspace }}/doc/build/pdf/Acknowledgments.pdf
-
-    - name: Upload AuxiliaryPrograms
-      uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-24.04'
-      with:
-        name: AuxiliaryPrograms
-        path: ${{ github.workspace }}/doc/build/pdf/AuxiliaryPrograms.pdf
-
-    - name: Upload EMSApplicationGuide
-      uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-24.04'
-      with:
-        name: EMSApplicationGuide
-        path: ${{ github.workspace }}/doc/build/pdf/EMSApplicationGuide.pdf
-
-    - name: Upload EnergyPlusEssentials
-      uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-24.04'
-      with:
-        name: EnergyPlusEssentials
-        path: ${{ github.workspace }}/doc/build/pdf/EnergyPlusEssentials.pdf
-
     - name: Upload EngineeringReference
       uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-24.04'

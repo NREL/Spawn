@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -952,14 +952,11 @@ void DetailsForSurfaces(EnergyPlusData &state, int const RptType) // (1=Vertices
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     std::string BaseSurfName;
     std::string ConstructionName;
-    std::string ScheduleName;
     std::string IntConvCoeffCalc;
     std::string ExtConvCoeffCalc;
     Real64 NominalUwithConvCoeffs;
     std::string cNominalU;
     std::string cNominalUwithConvCoeffs;
-    std::string cSchedMin;
-    std::string cSchedMax;
     std::string SolarDiffusing;
     std::string AlgoName;
 
@@ -1030,10 +1027,13 @@ void DetailsForSurfaces(EnergyPlusData &state, int const RptType) // (1=Vertices
     int surf2 = 0;
     for (int surf : state.dataSurface->AllSurfaceListReportOrder) {
         surf2 = surf;
-        auto &thisSurface = state.dataSurface->Surface(surf);
+        auto const &thisSurface = state.dataSurface->Surface(surf);
         if (thisSurface.Zone != 0) break;
     }
     if ((surf2 - 1) > 0) {
+        std::string ScheduleName;
+        std::string cSchedMin;
+        std::string cSchedMax;
         *eiostream << "Shading Surfaces,"
                    << "Number of Shading Surfaces," << surf2 - 1 << '\n';
         for (int surf : state.dataSurface->AllSurfaceListReportOrder) {
@@ -1043,10 +1043,10 @@ void DetailsForSurfaces(EnergyPlusData &state, int const RptType) // (1=Vertices
             *eiostream << "Shading Surface," << thisSurface.Name << "," << cSurfaceClass(thisSurface.Class) << "," << thisSurface.BaseSurfName << ","
                        << AlgoName << ",";
             if (RptType == 10) {
-                if (thisSurface.SchedShadowSurfIndex > 0) {
-                    ScheduleName = ScheduleManager::GetScheduleName(state, thisSurface.SchedShadowSurfIndex);
-                    cSchedMin = format("{:.2R}", ScheduleManager::GetScheduleMinValue(state, thisSurface.SchedShadowSurfIndex));
-                    cSchedMax = format("{:.2R}", ScheduleManager::GetScheduleMaxValue(state, thisSurface.SchedShadowSurfIndex));
+                if (thisSurface.shadowSurfSched != nullptr) {
+                    ScheduleName = thisSurface.shadowSurfSched->Name;
+                    cSchedMin = format("{:.2R}", thisSurface.shadowSurfSched->getMinVal(state));
+                    cSchedMax = format("{:.2R}", thisSurface.shadowSurfSched->getMinVal(state));
                 } else {
                     ScheduleName = "";
                     cSchedMin = "0.0";
@@ -1060,10 +1060,10 @@ void DetailsForSurfaces(EnergyPlusData &state, int const RptType) // (1=Vertices
             } else if (RptType == 1) {
                 *eiostream << fmt::to_string(thisSurface.Sides) << ",";
             } else {
-                if (thisSurface.SchedShadowSurfIndex > 0) {
-                    ScheduleName = ScheduleManager::GetScheduleName(state, thisSurface.SchedShadowSurfIndex);
-                    cSchedMin = format("{:.2R}", ScheduleManager::GetScheduleMinValue(state, thisSurface.SchedShadowSurfIndex));
-                    cSchedMax = format("{:.2R}", ScheduleManager::GetScheduleMaxValue(state, thisSurface.SchedShadowSurfIndex));
+                if (thisSurface.shadowSurfSched != nullptr) {
+                    ScheduleName = thisSurface.shadowSurfSched->Name;
+                    cSchedMin = format("{:.2R}", thisSurface.shadowSurfSched->getMinVal(state));
+                    cSchedMax = format("{:.2R}", thisSurface.shadowSurfSched->getMinVal(state));
                 } else {
                     ScheduleName = "";
                     cSchedMin = "0.0";
@@ -1352,7 +1352,7 @@ void CostInfoOut(EnergyPlusData &state)
     uniqueSurf.dimension(state.dataSurface->TotSurfaces, true);
 
     for (int surf : state.dataSurface->AllSurfaceListReportOrder) {
-        auto &thisSurface = state.dataSurface->Surface(surf);
+        auto const &thisSurface = state.dataSurface->Surface(surf);
         if (thisSurface.ExtBoundCond > 0) {
             if (thisSurface.ExtBoundCond < surf) { // already cycled through
                 uniqueSurf(surf) = false;
@@ -1425,7 +1425,6 @@ void VRMLOut(EnergyPlusData &state, const std::string &PolygonAction, const std:
         "WALL", "WINDOW", "FIXEDSHADE", "SUBSHADE", "ROOF", "FLOOR", "BLDGSHADE"};
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    std::string ShadeType;
     bool ThickPolyline(false);
     bool RegularPolyline(false);
     std::string PolylineWidth(" 0.55");
@@ -1502,10 +1501,8 @@ void VRMLOut(EnergyPlusData &state, const std::string &PolygonAction, const std:
         if (thisSurface.Class == DataSurfaces::SurfaceClass::Detached_F) colorindex = Color::FixedShade;
         if (thisSurface.Class == DataSurfaces::SurfaceClass::Detached_B) colorindex = Color::BldgShade;
         if (thisSurface.Class == DataSurfaces::SurfaceClass::Detached_F) {
-            ShadeType = "Fixed Shading";
             print(wrlfile, "# Fixed Shading:{}\n", thisSurface.Name);
         } else if (thisSurface.Class == DataSurfaces::SurfaceClass::Detached_B) {
-            ShadeType = "Building Shading";
             print(wrlfile, "# Building Shading:{}", thisSurface.Name);
         }
         print<check_syntax(Format_801)>(wrlfile, Format_801, colorstring[static_cast<int>(colorindex)], "Surf", surf);

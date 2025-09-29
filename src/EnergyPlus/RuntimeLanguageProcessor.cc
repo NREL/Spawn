@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -53,7 +53,7 @@
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array2D.hh>
 #include <ObjexxFCL/ArrayS.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/char.functions.hh>
 #include <ObjexxFCL/random.hh>
 #include <ObjexxFCL/string.functions.hh>
@@ -118,9 +118,9 @@ void InitializeRuntimeLanguage(EnergyPlusData &state)
     // value(7)   Seconds (0-59)
     // value(8)   Milliseconds (0-999)
 
-    std::string datestring; // supposedly returns blank when no date available.
-
     if (state.dataRuntimeLangProcessor->InitializeOnce) {
+
+        std::string datestring; // supposedly returns blank when no date available.
 
         state.dataRuntimeLang->emsVarBuiltInStart = state.dataRuntimeLang->NumErlVariables + 1;
 
@@ -136,7 +136,7 @@ void InitializeRuntimeLanguage(EnergyPlusData &state)
         state.dataRuntimeLangProcessor->OnVariableNum = NewEMSVariable(state, "ON", 0, state.dataRuntimeLang->True);
         state.dataRuntimeLangProcessor->PiVariableNum = NewEMSVariable(state, "PI", 0, SetErlValueNumber(Constant::Pi));
         state.dataRuntimeLangProcessor->TimeStepsPerHourVariableNum =
-            NewEMSVariable(state, "TIMESTEPSPERHOUR", 0, SetErlValueNumber(double(state.dataGlobal->NumOfTimeStepInHour)));
+            NewEMSVariable(state, "TIMESTEPSPERHOUR", 0, SetErlValueNumber(double(state.dataGlobal->TimeStepsInHour)));
 
         // Create dynamic built-in variables
         state.dataRuntimeLangProcessor->YearVariableNum = NewEMSVariable(state, "YEAR", 0);
@@ -1967,11 +1967,11 @@ ErlValueType EvaluateExpression(EnergyPlusData &state, int const ExpressionNum, 
                 break;
 
             case ErlFunc::DegToRad:
-                ReturnValue = SetErlValueNumber(Operand(1).Number * Constant::DegToRadians);
+                ReturnValue = SetErlValueNumber(Operand(1).Number * Constant::DegToRad);
                 break;
 
             case ErlFunc::RadToDeg:
-                ReturnValue = SetErlValueNumber(Operand(1).Number / Constant::DegToRadians);
+                ReturnValue = SetErlValueNumber(Operand(1).Number / Constant::DegToRad);
                 break;
 
             case ErlFunc::Exp:
@@ -2545,7 +2545,7 @@ ErlValueType EvaluateExpression(EnergyPlusData &state, int const ExpressionNum, 
             case ErlFunc::TodayLiquidPrecip: {
                 int iHour = (Operand(1).Number + 1); // Operand 1 is hour from 0:23
                 int iTimeStep = Operand(2).Number;
-                if ((iHour > 0) && (iHour <= 24) && (iTimeStep > 0) && (iTimeStep <= state.dataGlobal->NumOfTimeStepInHour)) {
+                if ((iHour > 0) && (iHour <= 24) && (iTimeStep > 0) && (iTimeStep <= state.dataGlobal->TimeStepsInHour)) {
                     auto const &today = state.dataWeather->wvarsHrTsToday(iTimeStep, iHour);
                     ReturnValue.initialized = true;
                     ReturnValue.Type = Value::Number;
@@ -2621,7 +2621,7 @@ ErlValueType EvaluateExpression(EnergyPlusData &state, int const ExpressionNum, 
             case ErlFunc::TomorrowLiquidPrecip: {
                 int iHour = (Operand(1).Number + 1); // Operand 1 is hour from 0:23
                 int iTimeStep = Operand(2).Number;
-                if ((iHour > 0) && (iHour <= Constant::HoursInDay) && (iTimeStep > 0) && (iTimeStep <= state.dataGlobal->NumOfTimeStepInHour)) {
+                if ((iHour > 0) && (iHour <= Constant::iHoursInDay) && (iTimeStep > 0) && (iTimeStep <= state.dataGlobal->TimeStepsInHour)) {
                     auto const &tomorrow = state.dataWeather->wvarsHrTsTomorrow(iTimeStep, iHour);
                     ReturnValue.initialized = true;
                     ReturnValue.Type = Value::Number;

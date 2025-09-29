@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -288,8 +288,10 @@ TEST_F(EnergyPlusFixture, BaseSizer_GetCoilDesFlowT_NoPeak)
     EXPECT_DOUBLE_EQ(state->dataSize->FinalSysSizing(1).CoolSupTemp, designExitTemp);
     EXPECT_DOUBLE_EQ(0.002, designFlowValue);
 }
+
 TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingSystem)
 {
+    state->init_state(*state);
 
     std::string CompName;       // component name
     std::string CompType;       // component type
@@ -325,7 +327,6 @@ TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingSystem)
 
     state->dataEnvrn->StdBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.1583684;
-    InitializePsychRoutines(*state);
 
     state->dataSize->DataFlowUsedForSizing = state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).DesCoolVolFlow;
     // Need this to prevent crash in Sizers
@@ -437,6 +438,7 @@ TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingSystemWithFans)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Fans::GetFanInput(*state);
     state->dataSize->CurZoneEqNum = 0;
@@ -502,7 +504,6 @@ TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingSystemWithFans)
 
     state->dataEnvrn->StdBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.1583684;
-    InitializePsychRoutines(*state);
 
     state->dataSize->DataFlowUsedForSizing = state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).DesCoolVolFlow;
     // Need this to prevent crash in Sizers
@@ -571,6 +572,7 @@ TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingSystemWithFans)
 
 TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingZone)
 {
+    state->init_state(*state);
     int constexpr ZoneNum = 1;
     std::string CompName;       // component name
     std::string CompType;       // component type
@@ -597,7 +599,6 @@ TEST_F(EnergyPlusFixture, BaseSizer_RequestSizingZone)
     state->dataSize->ZoneSizingRunDone = true;
     state->dataEnvrn->StdBaroPress = 101325.0;
     state->dataEnvrn->StdRhoAir = 1.1583684;
-    InitializePsychRoutines(*state);
 
     // Need this to prevent crash in Sizers
     state->dataSize->ZoneEqSizing.allocate(1);
@@ -911,8 +912,8 @@ TEST_F(EnergyPlusFixture, BaseSizer_FanPeak)
 {
 
     // This is needed to compute time of Peak as a string
-    state->dataGlobal->NumOfTimeStepInHour = 4;
-    state->dataGlobal->MinutesPerTimeStep = 15;
+    state->dataGlobal->TimeStepsInHour = 4;
+    state->dataGlobal->MinutesInTimeStep = 15;
 
     // Setup the predefined tables, because that's where the info is written.
     EnergyPlus::OutputReportPredefined::SetPredefinedTables(*state);
@@ -1472,6 +1473,7 @@ TEST_F(EnergyPlusFixture, BaseSizer_SupplyAirTempLessThanZoneTStatTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->init_state(*state);
     SimulationManager::ManageSimulation(*state);
 
     int CtrlZoneNum(1);

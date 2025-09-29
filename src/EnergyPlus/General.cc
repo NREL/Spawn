@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -68,7 +68,7 @@
 #include <EnergyPlus/WeatherManager.hh>
 
 #if defined(_WIN32) && _MSC_VER < 1900
-#define snprintf _snprintf
+#    define snprintf _snprintf
 #endif
 
 namespace EnergyPlus::General {
@@ -186,7 +186,7 @@ void SolveRoot(const EnergyPlusData &state,
     Real64 X0 = X_0;   // present 1st bound
     Real64 X1 = X_1;   // present 2nd bound
     Real64 XTemp = X0; // new estimate
-    int NIte = 0;      // number of interations
+    int NIte = 0;      // number of iterations
     int AltIte = 0;    // an accounter used for Alternation choice
 
     Real64 Y0 = f(X0); // f at X0
@@ -207,7 +207,7 @@ void SolveRoot(const EnergyPlusData &state,
             break;
         }
         // new estimation
-        switch (state.dataRootFinder->HVACSystemRootFinding.HVACSystemRootSolver) {
+        switch (state.dataRootFinder->HVACSystemRootFinding.HVACSystemRootSolverMethod) {
         case HVACSystemRootSolverAlgorithm::RegulaFalsi: {
             XTemp = (Y0 * X1 - Y1 * X0) / DY;
             break;
@@ -236,6 +236,14 @@ void SolveRoot(const EnergyPlusData &state,
             if (AltIte > state.dataRootFinder->HVACSystemRootFinding.NumOfIter) {
                 XTemp = (X1 + X0) / 2.0;
                 if (AltIte >= 2 * state.dataRootFinder->HVACSystemRootFinding.NumOfIter) AltIte = 0;
+            } else {
+                XTemp = (Y0 * X1 - Y1 * X0) / DY;
+            }
+            break;
+        }
+        case HVACSystemRootSolverAlgorithm::ShortBisectionThenRegulaFalsi: {
+            if (NIte < 3) {
+                XTemp = (X1 + X0) / 2.0;
             } else {
                 XTemp = (Y0 * X1 - Y1 * X0) / DY;
             }
@@ -396,7 +404,7 @@ void DetermineDateTokens(EnergyPlusData &state,
     static constexpr std::array<std::string_view, NumSingleChars> SingleChars{"/", ":", "-"};
     static constexpr int NumDoubleChars(6);
     static constexpr std::array<std::string_view, NumDoubleChars> DoubleChars{
-        "ST ", "ND ", "RD ", "TH ", "OF ", "IN "}; // Need trailing spaces: Want thse only at end of words
+        "ST ", "ND ", "RD ", "TH ", "OF ", "IN "}; // Need trailing spaces: Want these only at end of words
     static constexpr std::array<std::string_view, 12> Months{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
     static constexpr std::array<std::string_view, 7> Weekdays{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 
@@ -701,7 +709,7 @@ bool BetweenDates(int const TestDate,  // Date to test
     // METHODOLOGY EMPLOYED:
     // The input dates are Julian Day format, year is irrelevant.
     // Thus, if StartDate > EndDate (i.e. StartDate = 1Dec and EndDate = 31Jan),
-    // this routine accomodates.
+    // this routine accommodates.
 
     // REFERENCES:
     // Adapted from BLAST BTWEEN function.
@@ -805,7 +813,7 @@ void Iterate(Real64 &ResultX,  // ResultX is the final Iteration result passed b
     //       DATE WRITTEN   March 2004
 
     // PURPOSE OF THIS SUBROUTINE:
-    // Iterately solves for the value of X which satisfies Y(X)=0.
+    // Iteratively solves for the value of X which satisfies Y(X)=0.
     // The subroutine tests for convergence and provides a new guess for the value of the
     // independent variable X.
 
@@ -1087,7 +1095,7 @@ void ScanForReports(EnergyPlusData &state,
                     state.dataGeneral->SurfDetWVert = true;
                     break;
                 case COSTINFO:
-                    //   Custom case for reporting surface info for cost estimates (for first costs in opitimzing)
+                    //   Custom case for reporting surface info for cost estimates (for first costs in optimizing)
                     state.dataGeneral->CostInfo = true;
                     break;
                 case VIEWFACTORINFO: // actual reporting is in HeatBalanceIntRadExchange

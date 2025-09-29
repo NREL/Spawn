@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -418,10 +418,10 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     ASSERT_TRUE(process_idf(idf_objects));
 
     state->dataGlobal->CurrentTime = 0.25;
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -431,7 +431,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
@@ -462,8 +462,8 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
 
     // configuration allows hot water mixing. A target temp schedule exists with either a hot temp schedule or a connnections object
     EXPECT_TRUE(thisWaterEquipment.allowHotControl);
-    EXPECT_TRUE(thisWaterEquipment.TargetTempSchedule);
-    EXPECT_TRUE(thisWaterEquipment.HotTempSchedule || thisWaterEquipment.Connections);
+    EXPECT_NE(thisWaterEquipment.targetTempSched, nullptr);
+    EXPECT_TRUE(thisWaterEquipment.hotTempSched != nullptr || thisWaterEquipment.Connections);
     EXPECT_GT(thisWaterEquipment.HotMassFlowRate, 0.0);
     EXPECT_NEAR(thisWaterEquipment.ColdMassFlowRate + thisWaterEquipment.HotMassFlowRate, thisWaterEquipment.TotalMassFlowRate, 0.00000001);
 
@@ -472,7 +472,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     thisWaterConnections.InitConnections(*state);
 
     // Set target temperature to 50C, above hot water temperature to trigger warning
-    state->dataScheduleMgr->Schedule(4).CurrentValue = 50;
+    Sched::GetSchedule(*state, "WATER EQUIPMENT TEMP SCHED")->currentVal = 50;
     thisWaterEquipment.WaterEquipmentType::CalcEquipmentFlowRates(*state);
 
     std::string const error_string2 = delimited_string({
@@ -490,7 +490,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     EXPECT_NEAR(thisWaterEquipment.ColdMassFlowRate + thisWaterEquipment.HotMassFlowRate, thisWaterEquipment.TotalMassFlowRate, 0.00000001);
 
     // Set target temperature to 0C, below cold water temperature to trigger warning
-    state->dataScheduleMgr->Schedule(4).CurrentValue = 0;
+    Sched::GetSchedule(*state, "WATER EQUIPMENT TEMP SCHED")->currentVal = 0;
     thisWaterEquipment.WaterEquipmentType::CalcEquipmentFlowRates(*state);
 
     std::string const error_string3 = delimited_string({
@@ -855,10 +855,10 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test1)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -868,7 +868,7 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test1)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
@@ -887,10 +887,10 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test1)
 
     // The target temp will default to the hot water temperature if there exists either a hot temp schedule or a water use connnections object.
     EXPECT_TRUE(thisWaterEquipment.allowHotControl);
-    EXPECT_FALSE(thisWaterEquipment.TargetTempSchedule);
+    EXPECT_EQ(thisWaterEquipment.targetTempSched, nullptr);
     EXPECT_NEAR(thisWaterEquipment.TargetTemp, 45, 1e-5);
 
-    EXPECT_TRUE(thisWaterEquipment.HotTempSchedule || thisWaterEquipment.Connections);
+    EXPECT_TRUE(thisWaterEquipment.hotTempSched != nullptr || thisWaterEquipment.Connections);
     EXPECT_GT(thisWaterEquipment.HotMassFlowRate, 0.0);
     EXPECT_NEAR(thisWaterEquipment.ColdMassFlowRate, 0.0, 1e-5);
     EXPECT_NEAR(thisWaterEquipment.ColdMassFlowRate + thisWaterEquipment.HotMassFlowRate, thisWaterEquipment.TotalMassFlowRate, 1e-8);
@@ -1230,10 +1230,10 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test2)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -1243,7 +1243,7 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test2)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
@@ -1257,10 +1257,10 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test2)
 
     // A target temp will default to cold water temperature is there is neither a hot temp schedule nor a water use connnections object.
     EXPECT_FALSE(thisWaterEquipment.allowHotControl);
-    EXPECT_FALSE(thisWaterEquipment.TargetTempSchedule);
+    EXPECT_EQ(thisWaterEquipment.targetTempSched, nullptr);
     EXPECT_NEAR(thisWaterEquipment.TargetTemp, 15, 1e-5);
 
-    EXPECT_FALSE((thisWaterEquipment.TargetTempSchedule && thisWaterEquipment.HotTempSchedule) || thisWaterEquipment.Connections);
+    EXPECT_FALSE((thisWaterEquipment.targetTempSched != nullptr && thisWaterEquipment.hotTempSched != nullptr) || thisWaterEquipment.Connections);
     EXPECT_GT(thisWaterEquipment.ColdMassFlowRate, 0.0);
     EXPECT_NEAR(thisWaterEquipment.HotMassFlowRate, 0.0, 1e-5);
 

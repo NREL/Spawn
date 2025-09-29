@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -72,11 +72,8 @@ TEST_F(EnergyPlusFixture, HVACCooledBeam_reportTerminalUnit)
 
     SetPredefinedTables(*state);
 
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
-    auto &sch = state->dataScheduleMgr->Schedule;
-    sch.allocate(5);
-    sch(1).Name = "schA";
-    sch(2).Name = "schB";
+    auto *schedA = Sched::AddScheduleConstant(*state, "schA");
+    auto *schedB = Sched::AddScheduleConstant(*state, "schB");
 
     auto &adu = state->dataDefineEquipment->AirDistUnit;
     adu.allocate(2);

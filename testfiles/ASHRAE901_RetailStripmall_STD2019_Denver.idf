@@ -4,7 +4,7 @@
 !-      Use '!' comments if they need to be retained when using the IDFEditor.
 !-   ===========  ALL OBJECTS IN CLASS: VERSION ===========
 
-  Version,24.2;
+  Version,25.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -852,7 +852,7 @@
     Until: 24:00,23.89,      !- Field 23
     For: Sunday Holidays AllOtherDays, !- Field 25
     Until:  8:00,29.44,      !- Field 26
-    Until:  8:00,26.67,      !- Field 28
+    Until:  8:00,26.67,      !- Field 28 Is this supposed to be 9:00?
     Until: 23:00,23.89,      !- Field 30
     Until: 24:00,23.89;      !- Field 32
 

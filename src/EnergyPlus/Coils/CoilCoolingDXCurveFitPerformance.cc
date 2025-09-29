@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -66,7 +66,10 @@ using namespace EnergyPlus;
 void CoilCoolingDXCurveFitPerformance::instantiateFromInputSpec(EnergyPlus::EnergyPlusData &state,
                                                                 const CoilCoolingDXCurveFitPerformanceInputSpecification &input_data)
 {
-    static constexpr std::string_view routineName("CoilCoolingDXCurveFitOperatingMode::instantiateFromInputSpec: ");
+    static constexpr std::string_view routineName = "CoilCoolingDXCurveFitOperatingMode::instantiateFromInputSpec";
+
+    ErrorObjectHeader eoh{routineName, this->object_name, input_data.name};
+
     bool errorsFound(false);
     this->original_input_specs = input_data;
     this->name = input_data.name;
@@ -75,6 +78,7 @@ void CoilCoolingDXCurveFitPerformance::instantiateFromInputSpec(EnergyPlus::Ener
     this->crankcaseHeaterCap = input_data.crankcase_heater_capacity;
     this->normalMode = CoilCoolingDXCurveFitOperatingMode(state, input_data.base_operating_mode_name);
     this->normalMode.oneTimeInit(state); // oneTimeInit does not need to be delayed in this use case
+
     if (Util::SameString(input_data.capacity_control, "CONTINUOUS")) {
         this->capControlMethod = CapControlMethod::CONTINUOUS;
     } else if (Util::SameString(input_data.capacity_control, "DISCRETE")) {
@@ -88,14 +92,10 @@ void CoilCoolingDXCurveFitPerformance::instantiateFromInputSpec(EnergyPlus::Ener
     this->evapCondBasinHeatCap = input_data.basin_heater_capacity;
     this->evapCondBasinHeatSetpoint = input_data.basin_heater_setpoint_temperature;
     if (input_data.basin_heater_operating_schedule_name.empty()) {
-        this->evapCondBasinHeatSchedulIndex = ScheduleManager::ScheduleAlwaysOn;
-    } else {
-        this->evapCondBasinHeatSchedulIndex = ScheduleManager::GetScheduleIndex(state, input_data.basin_heater_operating_schedule_name);
-    }
-    if (this->evapCondBasinHeatSchedulIndex == 0) {
-        ShowSevereError(state, std::string{routineName} + this->object_name + "=\"" + this->name + "\", invalid");
-        ShowContinueError(
-            state, "...Evaporative Condenser Basin Heater Operating Schedule Name=\"" + input_data.basin_heater_operating_schedule_name + "\".");
+        this->evapCondBasinHeatSched = Sched::GetScheduleAlwaysOn(state);
+    } else if ((this->evapCondBasinHeatSched = Sched::GetSchedule(state, input_data.basin_heater_operating_schedule_name)) == nullptr) {
+        ShowSevereItemNotFound(
+            state, eoh, "Evaporative Condenser Basin Heater Operating Schedule Name", input_data.basin_heater_operating_schedule_name);
         errorsFound = true;
     }
 
@@ -124,14 +124,25 @@ void CoilCoolingDXCurveFitPerformance::instantiateFromInputSpec(EnergyPlus::Ener
     if (!input_data.outdoor_temperature_dependent_crankcase_heater_capacity_curve_name.empty()) {
         this->crankcaseHeaterCapacityCurveIndex =
             Curve::GetCurveIndex(state, input_data.outdoor_temperature_dependent_crankcase_heater_capacity_curve_name);
-        // Verify Curve Object, only legal type is Quadratic and Cubic
-        errorsFound |= Curve::CheckCurveDims(state,
-                                             this->crankcaseHeaterCapacityCurveIndex,                                        // Curve index
-                                             {1},                                                                            // Valid dimensions
-                                             routineName,                                                                    // Routine name
-                                             this->object_name,                                                              // Object Type
-                                             this->name,                                                                     // Object Name
-                                             input_data.outdoor_temperature_dependent_crankcase_heater_capacity_curve_name); // Field Name
+        if (this->crankcaseHeaterCapacityCurveIndex == 0) { // can't find the curve
+            ShowSevereError(state,
+                            format("{} = {}:  {} not found = {}",
+                                   this->object_name,
+                                   this->name,
+                                   "Crankcase Heater Capacity Function of Temperature Curve Name",
+                                   input_data.outdoor_temperature_dependent_crankcase_heater_capacity_curve_name));
+
+            errorsFound = true;
+        } else {
+            // Verify Curve Object, only legal type is Quadratic and Cubic
+            errorsFound |= Curve::CheckCurveDims(state,
+                                                 this->crankcaseHeaterCapacityCurveIndex,                                        // Curve index
+                                                 {1},                                                                            // Valid dimensions
+                                                 routineName,                                                                    // Routine name
+                                                 this->object_name,                                                              // Object Type
+                                                 this->name,                                                                     // Object Name
+                                                 input_data.outdoor_temperature_dependent_crankcase_heater_capacity_curve_name); // Field Name
+        }
     }
     if (errorsFound) {
         ShowFatalError(
@@ -205,9 +216,8 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
                                                 const DataLoopNode::NodeData &inletNode,
                                                 DataLoopNode::NodeData &outletNode,
                                                 HVAC::CoilMode currentCoilMode,
-                                                Real64 &PLR,
-                                                int &speedNum,
-                                                Real64 &speedRatio,
+                                                int const speedNum,
+                                                Real64 const speedRatio,
                                                 HVAC::FanOp const fanOp,
                                                 DataLoopNode::NodeData &condInletNode,
                                                 DataLoopNode::NodeData &condOutletNode,
@@ -215,7 +225,7 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
                                                 Real64 LoadSHR)
 {
     static constexpr std::string_view RoutineName = "CoilCoolingDXCurveFitPerformance::simulate";
-    Real64 reportingConstant = state.dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    Real64 reportingConstant = state.dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     this->recoveredEnergyRate = 0.0;
     this->NormalSHR = 0.0;
 
@@ -233,7 +243,7 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
         Real64 EnthalpyNorOut;
         Real64 modeRatio;
 
-        this->calculate(state, this->normalMode, inletNode, outletNode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
+        this->calculate(state, this->normalMode, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
 
         // this->OperatingMode = 1;
         CalcComponentSensibleLatentOutput(
@@ -246,7 +256,7 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
             this->wasteHeatRate = this->normalMode.OpModeWasteHeat;
         }
 
-        if ((PLR != 0.0) && (LoadSHR != 0.0)) {
+        if ((speedRatio != 0.0) && (LoadSHR != 0.0)) {
             if (totalCoolingRate == 0.0) {
                 SysNorSHR = 1.0;
             } else {
@@ -260,7 +270,7 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
             if (LoadSHR < SysNorSHR) {
                 outletNode.MassFlowRate = inletNode.MassFlowRate;
                 this->calculate(
-                    state, this->alternateMode, inletNode, outletNode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
+                    state, this->alternateMode, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
                 CalcComponentSensibleLatentOutput(outletNode.MassFlowRate,
                                                   inletNode.Temp,
                                                   inletNode.HumRat,
@@ -272,17 +282,8 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
                 SysSubSHR = sensSubRate / totalCoolingRate;
                 if (LoadSHR < SysSubSHR) {
                     outletNode.MassFlowRate = inletNode.MassFlowRate;
-                    this->calculate(state,
-                                    this->alternateMode2,
-                                    inletNode,
-                                    outletNode,
-                                    PLR,
-                                    speedNum,
-                                    speedRatio,
-                                    fanOp,
-                                    condInletNode,
-                                    condOutletNode,
-                                    singleMode);
+                    this->calculate(
+                        state, this->alternateMode2, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
                     CalcComponentSensibleLatentOutput(outletNode.MassFlowRate,
                                                       inletNode.Temp,
                                                       inletNode.HumRat,
@@ -336,14 +337,13 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
             }
         }
     } else if (currentCoilMode == HVAC::CoilMode::Enhanced) {
-        this->calculate(
-            state, this->alternateMode, inletNode, outletNode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
+        this->calculate(state, this->alternateMode, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
         this->OperatingMode = 2;
         this->powerUse = this->alternateMode.OpModePower;
         this->RTF = this->alternateMode.OpModeRTF;
         this->wasteHeatRate = this->alternateMode.OpModeWasteHeat;
     } else {
-        this->calculate(state, this->normalMode, inletNode, outletNode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
+        this->calculate(state, this->normalMode, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
         this->OperatingMode = 1;
         this->powerUse = this->normalMode.OpModePower;
         this->RTF = this->normalMode.OpModeRTF;
@@ -363,8 +363,8 @@ void CoilCoolingDXCurveFitPerformance::simulate(EnergyPlus::EnergyPlusData &stat
     this->crankcaseHeaterElectricityConsumption = this->crankcaseHeaterPower * reportingConstant;
 
     // basin heater
-    if (this->evapCondBasinHeatSchedulIndex > 0) {
-        Real64 currentBasinHeaterAvail = ScheduleManager::GetCurrentScheduleValue(state, this->evapCondBasinHeatSchedulIndex);
+    if (this->evapCondBasinHeatSched != nullptr) {
+        Real64 currentBasinHeaterAvail = this->evapCondBasinHeatSched->getCurrentVal();
         if (this->evapCondBasinHeatCap > 0.0 && currentBasinHeaterAvail > 0.0) {
             this->basinHeaterPower = max(0.0, this->evapCondBasinHeatCap * (this->evapCondBasinHeatSetpoint - state.dataEnvrn->OutDryBulbTemp));
         }
@@ -407,9 +407,8 @@ void CoilCoolingDXCurveFitPerformance::calculate(EnergyPlus::EnergyPlusData &sta
                                                  CoilCoolingDXCurveFitOperatingMode &currentMode,
                                                  const DataLoopNode::NodeData &inletNode,
                                                  DataLoopNode::NodeData &outletNode,
-                                                 Real64 &PLR,
-                                                 int &speedNum,
-                                                 Real64 &speedRatio,
+                                                 int const speedNum,
+                                                 Real64 const speedRatio,
                                                  HVAC::FanOp const fanOp,
                                                  DataLoopNode::NodeData &condInletNode,
                                                  DataLoopNode::NodeData &condOutletNode,
@@ -417,7 +416,7 @@ void CoilCoolingDXCurveFitPerformance::calculate(EnergyPlus::EnergyPlusData &sta
 {
 
     // calculate the performance at this mode/speed
-    currentMode.CalcOperatingMode(state, inletNode, outletNode, PLR, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
+    currentMode.CalcOperatingMode(state, inletNode, outletNode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode);
 }
 
 void CoilCoolingDXCurveFitPerformance::calcStandardRatings210240(EnergyPlus::EnergyPlusData &state)
@@ -447,7 +446,7 @@ void CoilCoolingDXCurveFitPerformance::calcStandardRatings210240(EnergyPlus::Ene
     Real64 ElecPowerReducedCap(0.0);              // Net power consumption (Cond Fan+Compressor) at reduced test condition [W]
     Real64 NetCoolingCapReduced(0.0);             // Net Cooling Coil capacity at reduced conditions, accounting for supply fan heat [W]
     Real64 LoadFactor(0.0);                       // Fractional "on" time for last stage at the desired reduced capacity, (dimensionless)
-    Real64 DegradationCoeff(0.0);                 // Degradation coeficient, (dimenssionless)
+    Real64 DegradationCoeff(0.0);                 // Degradation coefficient, (dimensionless)
     Real64 OutdoorUnitInletAirDryBulbTempReduced; // Outdoor unit entering air dry-bulb temperature at reduced capacity [C]
 
     // *** SOME CONSTANTS FROM THE STANDARD

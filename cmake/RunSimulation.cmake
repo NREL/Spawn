@@ -71,7 +71,7 @@ if(BUILD_FORTRAN)
     find_program(PARAMETRIC_EXE ParametricPreprocessor PATHS "${PRODUCT_PATH}"
                  NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${IDF_PATH}" "${OUTPUT_DIR_PATH}")
-    execute_process(COMMAND "${PARAMETRIC_EXE}" "${IDF_FILE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}")
+    execute_process(COMMAND "${PARAMETRIC_EXE}" "${IDF_FILE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}" COMMAND_ERROR_IS_FATAL ANY)
 
     # this handles the LBuildingAppGRotPar parametric file
     if(EXISTS "${OUTPUT_DIR_PATH}/${IDF_NAME}-G000.idf")
@@ -100,29 +100,48 @@ if(BUILD_FORTRAN)
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${IDF_PATH}" "${OUTPUT_DIR_PATH}/in.idf")
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${EPW_PATH}" "${OUTPUT_DIR_PATH}/in.epw")
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PRODUCT_PATH}/Energy+.idd" "${OUTPUT_DIR_PATH}")
-    execute_process(COMMAND "${EXPANDOBJECTS_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}")
+    # This creates GHTIn.idf, and BasementGHTIn.idf IIF the GroundHeatTransfer:Control says to run it!
+    execute_process(COMMAND "${EXPANDOBJECTS_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}" COMMAND_ERROR_IS_FATAL ANY)
 
     if("${SLAB_RESULT}" GREATER -1)
+      if(NOT EXISTS "${OUTPUT_DIR_PATH}/GHTIn.idf")
+        string(REGEX MATCH "GroundHeatTransfer:Control.*Run Slab Preprocessor" GROUND_HT_CONTROL "${IDF_CONTENT}")
+        if (GROUND_HT_CONTROL)
+          message(FATAL_ERROR "Did not find ${OUTPUT_DIR_PATH}/GHTIn.idf, are you sure the GroundHeatTransfer:Control has Run Slab Preprocessor =  Yes?\nGROUND_HT_CONTROL=${GROUND_HT_CONTROL}")
+        else()
+          message(FATAL_ERROR "Did not find ${OUTPUT_DIR_PATH}/GHTIn.idf, are you sure the GroundHeatTransfer:Control has Run Slab Preprocessor =  Yes?")
+        endif()
+      endif()
       # Copy files needed for Slab
       file(COPY "${SOURCE_DIR}/idd/SlabGHT.idd" DESTINATION "${OUTPUT_DIR_PATH}")
       # Find and run slab
       find_program(SLAB_EXE Slab PATHS "${PRODUCT_PATH}" NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH
                                                          NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
       message("Executing Slab from ${SLAB_EXE}")
-      execute_process(COMMAND "${SLAB_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}")
+      # This creates SLABINP.TXT, SLABSplit Surface Temps.TXT, and SLABSurfaceTemps.TXT
+      execute_process(COMMAND "${SLAB_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}" COMMAND_ERROR_IS_FATAL ANY)
       # Then copy slab results into the expanded file
       file(READ "${OUTPUT_DIR_PATH}/SLABSurfaceTemps.TXT" SLAB_CONTENTS)
       file(APPEND "${OUTPUT_DIR_PATH}/expanded.idf" "${SLAB_CONTENTS}")
     endif()
 
     if("${BASEMENT_RESULT}" GREATER -1)
+      if(NOT EXISTS "${OUTPUT_DIR_PATH}/BasementGHTIn.idf")
+        string(REGEX MATCH "GroundHeatTransfer:Control.*Run Slab Preprocessor" GROUND_HT_CONTROL "${IDF_CONTENT}")
+        if (GROUND_HT_CONTROL)
+          message(FATAL_ERROR "Did not find ${OUTPUT_DIR_PATH}/BasementGHTIn.idf, are you sure the GroundHeatTransfer:Control has Run Basement Preprocessor =  Yes?\nGROUND_HT_CONTROL=${GROUND_HT_CONTROL}")
+        else()
+          message(FATAL_ERROR "Did not find ${OUTPUT_DIR_PATH}/BasementGHTIn.idf, are you sure the GroundHeatTransfer:Control has Run Basement Preprocessor =  Yes?")
+        endif()
+      endif()
+
       # Copy files needed for Basement
       file(COPY "${SOURCE_DIR}/idd/BasementGHT.idd" DESTINATION "${OUTPUT_DIR_PATH}")
       # Find and run basement
       find_program(BASEMENT_EXE Basement PATHS "${PRODUCT_PATH}" NO_DEFAULT_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH
                                                                  NO_CMAKE_SYSTEM_PATH NO_CMAKE_FIND_ROOT_PATH)
       message("Executing Basement from ${BASEMENT_EXE}")
-      execute_process(COMMAND "${BASEMENT_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}")
+      execute_process(COMMAND "${BASEMENT_EXE}" WORKING_DIRECTORY "${OUTPUT_DIR_PATH}" COMMAND_ERROR_IS_FATAL ANY)
       # Then copy basement results into the expanded file
       file(READ "${OUTPUT_DIR_PATH}/EPObjects.TXT" BASEMENT_CONTENTS)
       file(APPEND "${OUTPUT_DIR_PATH}/expanded.idf" "${BASEMENT_CONTENTS}")

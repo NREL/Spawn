@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -111,9 +111,9 @@ namespace Furnaces {
         std::string Name;                                          // Name of the Furnace
         HVAC::UnitarySysType type = HVAC::UnitarySysType::Invalid; // Numeric Equivalent for Furnace Type
         int FurnaceIndex;                                          // Index to furnace
-        int SchedPtr;                                              // Index to furnace operating schedule
-        int FanSchedPtr;                                           // Index to fan operating mode schedule
-        int FanAvailSchedPtr;                                      // Index to fan availability schedule
+        Sched::Schedule *availSched = nullptr;                     // furnace operating schedule
+        Sched::Schedule *fanOpModeSched = nullptr;                 // fan operating mode schedule
+        Sched::Schedule *fanAvailSched = nullptr;                  // fan availability schedule
         int ControlZoneNum;                                        // Index to controlled zone
         int ZoneSequenceCoolingNum;                                // Index to cooling sequence/priority for this zone
         int ZoneSequenceHeatingNum;                                // Index to heating sequence/priority for this zone
@@ -255,32 +255,32 @@ namespace Furnaces {
         int ErrCountVar2 = 0; // Counter used to minimize the occurrence of output warnings
 
         FurnaceEquipConditions()
-            : FurnaceIndex(0), SchedPtr(0), FanSchedPtr(0), FanAvailSchedPtr(0), ControlZoneNum(0), ZoneSequenceCoolingNum(0),
-              ZoneSequenceHeatingNum(0), CoolingCoilType_Num(0), CoolingCoilIndex(0), ActualDXCoilIndexForHXAssisted(0), CoolingCoilUpstream(true),
-              HeatingCoilType_Num(0), HeatingCoilIndex(0), ReheatingCoilType_Num(0), ReheatingCoilIndex(0), CoilControlNode(0), HWCoilAirInletNode(0),
-              HWCoilAirOutletNode(0), SuppCoilAirInletNode(0), SuppCoilAirOutletNode(0), SuppHeatCoilType_Num(0), SuppHeatCoilIndex(0),
-              SuppCoilControlNode(0), fanType(HVAC::FanType::Invalid), FanIndex(0), FurnaceInletNodeNum(0), FurnaceOutletNodeNum(0),
-              LastMode(Furnaces::ModeOfOperation::Invalid), AirFlowControl(AirFlowControlConstFan::Invalid), fanPlace(HVAC::FanPlace::Invalid),
-              NodeNumOfControlledZone(0), CoolingConvergenceTolerance(0.0), HeatingConvergenceTolerance(0.0), DesignHeatingCapacity(0.0),
-              DesignCoolingCapacity(0.0), CoolingCoilSensDemand(0.0), HeatingCoilSensDemand(0.0), CoolingCoilLatentDemand(0.0),
-              DesignSuppHeatingCapacity(0.0), DesignFanVolFlowRate(0.0), DesignFanVolFlowRateEMSOverrideOn(false),
-              DesignFanVolFlowRateEMSOverrideValue(0.0), DesignMassFlowRate(0.0), MaxCoolAirVolFlow(0.0), MaxCoolAirVolFlowEMSOverrideOn(false),
-              MaxCoolAirVolFlowEMSOverrideValue(0.0), MaxHeatAirVolFlow(0.0), MaxHeatAirVolFlowEMSOverrideOn(false),
-              MaxHeatAirVolFlowEMSOverrideValue(0.0), MaxNoCoolHeatAirVolFlow(0.0), MaxNoCoolHeatAirVolFlowEMSOverrideOn(false),
-              MaxNoCoolHeatAirVolFlowEMSOverrideValue(0.0), MaxCoolAirMassFlow(0.0), MaxHeatAirMassFlow(0.0), MaxNoCoolHeatAirMassFlow(0.0),
-              MaxHeatCoilFluidFlow(0.0), MaxSuppCoilFluidFlow(0.0), ControlZoneMassFlowFrac(0.0), DesignMaxOutletTemp(9999.0), MdotFurnace(0.0),
-              FanPartLoadRatio(0.0), CompPartLoadRatio(0.0), CoolPartLoadRatio(0.0), HeatPartLoadRatio(0.0), MinOATCompressorCooling(0.0),
-              MinOATCompressorHeating(0.0), MaxOATSuppHeat(0.0), CondenserNodeNum(0), Humidistat(false), InitHeatPump(false),
-              DehumidControlType_Num(DehumidificationControlMode::None), LatentMaxIterIndex(0), LatentRegulaFalsiFailedIndex(0),
-              LatentRegulaFalsiFailedIndex2(0), SensibleMaxIterIndex(0), SensibleRegulaFalsiFailedIndex(0), WSHPHeatMaxIterIndex(0),
-              WSHPHeatRegulaFalsiFailedIndex(0), DXHeatingMaxIterIndex(0), DXHeatingRegulaFalsiFailedIndex(0), HeatingMaxIterIndex(0),
-              HeatingMaxIterIndex2(0), HeatingRegulaFalsiFailedIndex(0), ActualFanVolFlowRate(0.0), HeatingSpeedRatio(1.0), CoolingSpeedRatio(1.0),
-              NoHeatCoolSpeedRatio(1.0), ZoneInletNode(0), SenLoadLoss(0.0), LatLoadLoss(0.0), SensibleLoadMet(0.0), LatentLoadMet(0.0),
-              DehumidInducedHeatingDemandRate(0.0), CoilOutletNode(0), plantLoc{}, SuppPlantLoc{}, HotWaterCoilMaxIterIndex(0),
-              HotWaterCoilMaxIterIndex2(0), EMSOverrideSensZoneLoadRequest(false), EMSSensibleZoneLoadValue(0.0),
-              EMSOverrideMoistZoneLoadRequest(false), EMSMoistureZoneLoadValue(0.0), HeatCoolMode(Furnaces::ModeOfOperation::Invalid),
-              NumOfSpeedCooling(0), NumOfSpeedHeating(0), IdleSpeedRatio(0.0), IdleVolumeAirRate(0.0), IdleMassFlowRate(0.0), FanVolFlow(0.0),
-              CheckFanFlow(true), HeatVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), HeatMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
+            : FurnaceIndex(0), ControlZoneNum(0), ZoneSequenceCoolingNum(0), ZoneSequenceHeatingNum(0), CoolingCoilType_Num(0), CoolingCoilIndex(0),
+              ActualDXCoilIndexForHXAssisted(0), CoolingCoilUpstream(true), HeatingCoilType_Num(0), HeatingCoilIndex(0), ReheatingCoilType_Num(0),
+              ReheatingCoilIndex(0), CoilControlNode(0), HWCoilAirInletNode(0), HWCoilAirOutletNode(0), SuppCoilAirInletNode(0),
+              SuppCoilAirOutletNode(0), SuppHeatCoilType_Num(0), SuppHeatCoilIndex(0), SuppCoilControlNode(0), fanType(HVAC::FanType::Invalid),
+              FanIndex(0), FurnaceInletNodeNum(0), FurnaceOutletNodeNum(0), LastMode(Furnaces::ModeOfOperation::Invalid),
+              AirFlowControl(AirFlowControlConstFan::Invalid), fanPlace(HVAC::FanPlace::Invalid), NodeNumOfControlledZone(0),
+              CoolingConvergenceTolerance(0.0), HeatingConvergenceTolerance(0.0), DesignHeatingCapacity(0.0), DesignCoolingCapacity(0.0),
+              CoolingCoilSensDemand(0.0), HeatingCoilSensDemand(0.0), CoolingCoilLatentDemand(0.0), DesignSuppHeatingCapacity(0.0),
+              DesignFanVolFlowRate(0.0), DesignFanVolFlowRateEMSOverrideOn(false), DesignFanVolFlowRateEMSOverrideValue(0.0), DesignMassFlowRate(0.0),
+              MaxCoolAirVolFlow(0.0), MaxCoolAirVolFlowEMSOverrideOn(false), MaxCoolAirVolFlowEMSOverrideValue(0.0), MaxHeatAirVolFlow(0.0),
+              MaxHeatAirVolFlowEMSOverrideOn(false), MaxHeatAirVolFlowEMSOverrideValue(0.0), MaxNoCoolHeatAirVolFlow(0.0),
+              MaxNoCoolHeatAirVolFlowEMSOverrideOn(false), MaxNoCoolHeatAirVolFlowEMSOverrideValue(0.0), MaxCoolAirMassFlow(0.0),
+              MaxHeatAirMassFlow(0.0), MaxNoCoolHeatAirMassFlow(0.0), MaxHeatCoilFluidFlow(0.0), MaxSuppCoilFluidFlow(0.0),
+              ControlZoneMassFlowFrac(0.0), DesignMaxOutletTemp(9999.0), MdotFurnace(0.0), FanPartLoadRatio(0.0), CompPartLoadRatio(0.0),
+              CoolPartLoadRatio(0.0), HeatPartLoadRatio(0.0), MinOATCompressorCooling(0.0), MinOATCompressorHeating(0.0), MaxOATSuppHeat(0.0),
+              CondenserNodeNum(0), Humidistat(false), InitHeatPump(false), DehumidControlType_Num(DehumidificationControlMode::None),
+              LatentMaxIterIndex(0), LatentRegulaFalsiFailedIndex(0), LatentRegulaFalsiFailedIndex2(0), SensibleMaxIterIndex(0),
+              SensibleRegulaFalsiFailedIndex(0), WSHPHeatMaxIterIndex(0), WSHPHeatRegulaFalsiFailedIndex(0), DXHeatingMaxIterIndex(0),
+              DXHeatingRegulaFalsiFailedIndex(0), HeatingMaxIterIndex(0), HeatingMaxIterIndex2(0), HeatingRegulaFalsiFailedIndex(0),
+              ActualFanVolFlowRate(0.0), HeatingSpeedRatio(1.0), CoolingSpeedRatio(1.0), NoHeatCoolSpeedRatio(1.0), ZoneInletNode(0),
+              SenLoadLoss(0.0), LatLoadLoss(0.0), SensibleLoadMet(0.0), LatentLoadMet(0.0), DehumidInducedHeatingDemandRate(0.0),
+              CoilOutletNode(0), plantLoc{}, SuppPlantLoc{}, HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0),
+              EMSOverrideSensZoneLoadRequest(false), EMSSensibleZoneLoadValue(0.0), EMSOverrideMoistZoneLoadRequest(false),
+              EMSMoistureZoneLoadValue(0.0), HeatCoolMode(Furnaces::ModeOfOperation::Invalid), NumOfSpeedCooling(0), NumOfSpeedHeating(0),
+              IdleSpeedRatio(0.0), IdleVolumeAirRate(0.0), IdleMassFlowRate(0.0), FanVolFlow(0.0), CheckFanFlow(true),
+              HeatVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), HeatMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
               CoolVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), CoolMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
               MSHeatingSpeedRatio(HVAC::MaxSpeedLevels, 0.0), MSCoolingSpeedRatio(HVAC::MaxSpeedLevels, 0.0), bIsIHP(false), CompSpeedNum(0),
               CompSpeedRatio(0.0), ErrIndexCyc(0), ErrIndexVar(0), iterationCounter(0), iterationMode(0), FirstPass(true)
@@ -576,6 +576,10 @@ struct FurnacesData : BaseGlobalStruct
     Real64 HeatPartLoadRatio;   // Part load ratio (greater of sensible or latent part load ratio for cooling)
     int SpeedNum = 1;           // Speed number
     Real64 SupHeaterLoad = 0.0; // supplement heater load
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

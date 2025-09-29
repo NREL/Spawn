@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -47,7 +47,6 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array1D.hh>
-#include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -130,7 +129,7 @@ namespace TarcogShading {
                  Array1D<TARCOGLayerType> LayerType,
                  Array1D<Real64> &Tgaps,
                  Array1D<Real64> &qv,
-                 Array1D<Real64> &hcv, // Heat transfer coeefficient in gaps including airlow
+                 Array1D<Real64> &hcv, // Heat transfer coefficient in gaps including airflow
                  int &nperr,
                  std::string &ErrorMessage,
                  Array1D<Real64> &vfreevent)
@@ -141,7 +140,7 @@ namespace TarcogShading {
         //  gap      Vector of gap widths (maxlay) [m]
         //  hgas    Convective part of gap effective conductivity
         //  frct    Fraction of gasses in a mixture (maxlay1,maxgas)
-        //  iprop    Vector of gas identifers (maxlay1,maxgas)
+        //  iprop    Vector of gas identifiers (maxlay1,maxgas)
         //  pressure  Vector of gas pressures [N/m^2]
         //  nmix    Vector of number of gasses for each mixture (maxgas=10)
         //  nlayer  Number of glazing layers
@@ -160,9 +159,9 @@ namespace TarcogShading {
         //  Input/Output:
         //  Tgaps    Vector of gap temperatures [K]
         //  Output:
-        //  qv      Vector of heat transfer to the gap by vetilation [W/m^2]
+        //  qv      Vector of heat transfer to the gap by ventilation [W/m^2]
         //  hhatv    Vector of all film coefficients for vented cavities (maxlay3)
-        //  hcv      Vector of surface-to-air heat transfer coefficients by condction/convection for vented cavities [W/(m^2*K)]
+        //  hcv      Vector of surface-to-air heat transfer coefficients by conduction/convection for vented cavities [W/(m^2*K)]
         //  Ebgap    Vector of emissive power of the vented cavities (maxlay3)
         //  nperr    Error flag
         // vfreevent   Vector of free ventilation velocities in gaps
@@ -229,7 +228,7 @@ namespace TarcogShading {
                 Ars = Ar(i);
                 Ahs = Ah(i);
 
-                // dr.....setting gas properies for two adjacent gaps (or enviroment)
+                // dr.....setting gas properties for two adjacent gaps (or environment)
                 nmix1 = nmix(i);
                 nmix2 = nmix(i + 1);
                 press1 = pressure(i);
@@ -460,7 +459,7 @@ namespace TarcogShading {
                     // exit on error
                     if ((nperr > 0) && (nperr < 1000)) return;
 
-                    // if (vvent(i).gt.0) then !not implemented for inside shadin yet
+                    // if (vvent(i).gt.0) then !not implemented for inside shading yet
                     //  nperr = 1006
                     //  ErrorMessage = 'Forced ventilation not implemented for internal SD layers.'
                     //  return
@@ -519,7 +518,7 @@ namespace TarcogShading {
         // Tinlet    Temperature of inlet air
         //  Output:
         //  hcv    Convective/conductive coefficient for vented gap
-        //  qv    Heat transfer to the gap by vetilation [W/m^2]
+        //  qv    Heat transfer to the gap by ventilation [W/m^2]
         //  nperr      Error flag
         // ErrorMessage string containing error message
         //**************************************************************************************************************
@@ -798,7 +797,7 @@ namespace TarcogShading {
             //  A = dens0 * T0 * GravityConstant * ABS(cos(tilt)) * ABS(Tgap1 - Tgap2) / (Tgap1 * Tgap2)
 
             // bi...Bug fix #00005:
-            A = dens0 * T0 * Constant::GravityConstant * H * std::abs(cos_Tilt) * std::abs(Tgap1 - Tgap2) / (Tgap1 * Tgap2);
+            A = dens0 * T0 * Constant::Gravity * H * std::abs(cos_Tilt) * std::abs(Tgap1 - Tgap2) / (Tgap1 * Tgap2);
 
             if (A == 0.0) {
                 qv1 = 0.0;
@@ -972,12 +971,12 @@ namespace TarcogShading {
         //  angle      Window angle [degrees]
         //  forcedspeed    Speed of forced ventilation [m/s]
         //  hc        Convective/conductive coefficient for non-vented gap
-        //  Tenv      Enviromental temperature
+        //  Tenv      Environmental temperature
         //  Tav        Average temperature of gap surfaces
         //  Output:
         //  Tgap      Temperature of vented gap
         //  hcv        Convective/conductive coefficient for vented gap
-        //  qv        Heat transfer to the gap by vetilation [W/m^2]
+        //  qv        Heat transfer to the gap by ventilation [W/m^2]
         //  nperr      Error flag
         //  speed      Air velocity
         //**************************************************************************************************************
@@ -1102,7 +1101,7 @@ namespace TarcogShading {
             //  A = dens0 * T0 * gravity * ABS(cos(tilt)) * ABS(Tgap - Tenv) / (Tgap * Tenv)
 
             // bi...Bug fix #00005:
-            A = dens0 * T0 * Constant::GravityConstant * H * abs_cos_tilt * std::abs(Tgap - Tenv) / (Tgap * Tenv);
+            A = dens0 * T0 * Constant::Gravity * H * abs_cos_tilt * std::abs(Tgap - Tenv) / (Tgap * Tenv);
             //  A = dens0 * T0 * GravityConstant * H * ABS(cos(tilt)) * (Tgap - Tenv) / (Tgap * Tenv)
 
             B1 = dens2 / 2;
@@ -1176,16 +1175,16 @@ namespace TarcogShading {
     void updateEffectiveMultipliers(int const nlayer,                          // Number of layers
                                     Real64 const width,                        // IGU width [m]
                                     Real64 const height,                       // IGU height [m]
-                                    const Array1D<Real64> &Atop,               // Top openning area [m2]
-                                    const Array1D<Real64> &Abot,               // Bottom openning area [m2]
-                                    const Array1D<Real64> &Al,                 // Left side openning area [m2]
-                                    const Array1D<Real64> &Ar,                 // Right side openning area [m2]
-                                    const Array1D<Real64> &Ah,                 // Front side openning area [m2]
-                                    Array1D<Real64> &Atop_eff,                 // Output - Effective top openning area [m2]
-                                    Array1D<Real64> &Abot_eff,                 // Output - Effective bottom openning area [m2]
-                                    Array1D<Real64> &Al_eff,                   // Output - Effective left side openning area [m2]
-                                    Array1D<Real64> &Ar_eff,                   // Output - Effective right side openning area [m2]
-                                    Array1D<Real64> &Ah_eff,                   // Output - Effective front side openning area [m2]
+                                    const Array1D<Real64> &Atop,               // Top opening area [m2]
+                                    const Array1D<Real64> &Abot,               // Bottom opening area [m2]
+                                    const Array1D<Real64> &Al,                 // Left side opening area [m2]
+                                    const Array1D<Real64> &Ar,                 // Right side opening area [m2]
+                                    const Array1D<Real64> &Ah,                 // Front side opening area [m2]
+                                    Array1D<Real64> &Atop_eff,                 // Output - Effective top opening area [m2]
+                                    Array1D<Real64> &Abot_eff,                 // Output - Effective bottom opening area [m2]
+                                    Array1D<Real64> &Al_eff,                   // Output - Effective left side opening area [m2]
+                                    Array1D<Real64> &Ar_eff,                   // Output - Effective right side opening area [m2]
+                                    Array1D<Real64> &Ah_eff,                   // Output - Effective front side opening area [m2]
                                     const Array1D<TARCOGLayerType> &LayerType, // Layer type
                                     const Array1D<Real64> &SlatAngle           // Venetian layer slat angle [deg]
     )

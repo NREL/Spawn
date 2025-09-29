@@ -68,19 +68,6 @@ set(PREVIOUS_IDD ${PREVIOUS_IDD} PARENT_SCOPE)
 install(FILES "${PREVIOUS_IDD}" DESTINATION "PreProcess/IDFVersionUpdater")
 
 if (BUILD_TESTING)
-  execute_process(COMMAND ${Python_EXECUTABLE} -m pytest --version
-    RESULT_VARIABLE _Pytest_STATUS
-        OUTPUT_VARIABLE Pytest_Version
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if(_Pytest_STATUS AND NOT _Pytest_STATUS EQUAL 0)
-    message(AUTHOR_WARNING "Pytest isn't installed on your system python, so some tests won't be run. Run `${Python_EXECUTABLE} -m pip install pytest`")
-    set(Pytest_AVAILABLE OFF)
-  else()
-    message(VERBOSE "Found Pytest: ${Pytest_Version}")
-    set(Pytest_AVAILABLE ON)
-  endif()
 
   if (Pytest_AVAILABLE)
     add_test(NAME idd_schema.test_idd_parser

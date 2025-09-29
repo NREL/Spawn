@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -80,6 +80,7 @@ TEST_F(EnergyPlusFixture, WaterManager_NormalAnnualPrecipitation)
         "1;",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     WaterManager::GetWaterManagerInput(*state);
     state->dataEnvrn->Year = 2000;
@@ -88,12 +89,12 @@ TEST_F(EnergyPlusFixture, WaterManager_NormalAnnualPrecipitation)
     state->dataGlobal->TimeStep = 2;
     state->dataGlobal->TimeStepZoneSec = 900;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
+    Sched::GetSchedule(*state, "PRECIPITATIONSCHD")->currentVal = 1.0;
 
     WaterManager::UpdatePrecipitation(*state);
 
     Real64 ExpectedNomAnnualRain = 0.80771;
-    Real64 ExpectedCurrentRate = 1.0 * (0.75 / 0.80771) / Constant::SecInHour;
+    Real64 ExpectedCurrentRate = 1.0 * (0.75 / 0.80771) / Constant::rSecsInHour;
 
     Real64 NomAnnualRain = state->dataWaterData->RainFall.NomAnnualRain;
     EXPECT_NEAR(NomAnnualRain, ExpectedNomAnnualRain, 0.000001);
@@ -119,6 +120,7 @@ TEST_F(EnergyPlusFixture, WaterManager_UpdatePrecipitation)
         "1;",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     WaterManager::GetWaterManagerInput(*state);
     state->dataGlobal->TimeStepZoneSec = 900;
     state->dataEnvrn->Year = 2000;
@@ -126,7 +128,7 @@ TEST_F(EnergyPlusFixture, WaterManager_UpdatePrecipitation)
     state->dataEnvrn->Month = 1;
     state->dataGlobal->TimeStep = 2;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 2.0;
+    Sched::GetSchedule(*state, "PRECIPITATIONSCHD")->currentVal = 2.0;
 
     state->dataEnvrn->LiquidPrecipitation = 0.5;
     WaterManager::UpdatePrecipitation(*state);
@@ -161,6 +163,7 @@ TEST_F(EnergyPlusFixture, WaterManager_ZeroAnnualPrecipitation)
         "1;",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     WaterManager::GetWaterManagerInput(*state);
     state->dataEnvrn->Year = 2000;
     state->dataEnvrn->EndYear = 2000;
@@ -168,7 +171,7 @@ TEST_F(EnergyPlusFixture, WaterManager_ZeroAnnualPrecipitation)
     state->dataGlobal->TimeStep = 2;
     state->dataGlobal->TimeStepZoneSec = 900;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
+    Sched::GetSchedule(*state, "PRECIPITATIONSCHD")->currentVal = 1.0;
 
     WaterManager::UpdatePrecipitation(*state);
 
@@ -228,6 +231,7 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     WaterManager::GetWaterManagerInput(*state);
     state->dataWaterManager->GetInputFlag = false;
@@ -248,7 +252,7 @@ TEST_F(EnergyPlusFixture, WaterManager_Fill)
 
     // Simulate a call for tank water that would produce 0.025m3 of draw in one timestep
     state->dataHVACGlobal->TimeStepSys = 10.0 / 60.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataWaterData->WaterStorage(TankNum).NumWaterDemands = 1;
     state->dataWaterData->WaterStorage(TankNum).VdotRequestDemand.allocate(1);
     Real64 draw = 0.025;
@@ -362,6 +366,7 @@ TEST_F(EnergyPlusFixture, WaterManager_MainsWater_Meter_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     WaterManager::GetWaterManagerInput(*state);
     state->dataWaterManager->GetInputFlag = false;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -362,6 +362,7 @@ TEST_F(EnergyPlusFixture, HPWHZoneEquipSeqenceNumberWarning)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -539,6 +540,7 @@ TEST_F(EnergyPlusFixture, HPWHWrappedDummyNodeConfig)
     std::string const idf_objects = delimited_string(idf_lines);
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     WaterThermalTanks::GetWaterThermalTankInput(*state);
 
@@ -727,6 +729,7 @@ TEST_F(EnergyPlusFixture, HPWHEnergyBalance)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     state->dataEnvrn->StdRhoAir = 1.0;
 
     ASSERT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
@@ -767,7 +770,7 @@ TEST_F(EnergyPlusFixture, HPWHEnergyBalance)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 10. / 60.;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
 
     Tank.TimeElapsed =
@@ -779,8 +782,7 @@ TEST_F(EnergyPlusFixture, HPWHEnergyBalance)
     state->dataOutRptPredefined->pdstHeatCoil = -1;
     state->dataWaterThermalTanks->mdotAir = 0.0993699992873531;
 
-    int GlycolIndex = 0;
-    const Real64 Cp = FluidProperties::GetSpecificHeatGlycol(*state, "WATER", Tank.TankTemp, GlycolIndex, "HPWHEnergyBalance");
+    const Real64 Cp = Fluid::GetWater(*state)->getSpecificHeat(*state, Tank.TankTemp, "HPWHEnergyBalance");
 
     Tank.CalcHeatPumpWaterHeater(*state, false);
 
@@ -1037,6 +1039,7 @@ TEST_F(EnergyPlusFixture, HPWHSizing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     state->dataEnvrn->StdRhoAir = 1.0;
 
     bool ErrorsFound = false;
@@ -1046,7 +1049,7 @@ TEST_F(EnergyPlusFixture, HPWHSizing)
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
     state->dataHVACGlobal->TimeStepSys = 1;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataEnvrn->OutBaroPress = 101325;
 
     SetPredefinedTables(*state);
@@ -1239,13 +1242,17 @@ TEST_F(EnergyPlusFixture, HPWHOutdoorAirMissingNodeNameWarning)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = WaterThermalTanks::GetWaterThermalTankInput(*state);
     EXPECT_TRUE(ErrorsFound);
     ASSERT_TRUE(ErrorsFound);
 
     std::string const error_string =
-        delimited_string({"   ** Severe  ** WaterHeater:HeatPump:PumpedCondenser=\"ZONE4HEATPUMPWATERHEATER\":",
+        delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = DUMMYSCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Severe  ** WaterHeater:HeatPump:PumpedCondenser=\"ZONE4HEATPUMPWATERHEATER\":",
                           "   **   ~~~   ** When Inlet Air Configuration=\"OUTDOORAIRONLY\".",
                           "   **   ~~~   ** Outdoor Air Node Name and Exhaust Air Node Name must be specified.",
                           "   ** Severe  ** WaterHeater:HeatPump:PumpedCondenser=\"ZONE4HEATPUMPWATERHEATER\":",
@@ -1406,19 +1413,20 @@ TEST_F(EnergyPlusFixture, HPWHTestSPControl)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     state->dataEnvrn->StdRhoAir = 1.0;
 
     state->dataHVACGlobal->TimeStepSys = 1;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60 / state->dataGlobal->NumOfTimeStepInHour;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60 / state->dataGlobal->TimeStepsInHour;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
     state->dataEnvrn->DayOfWeek = 1;
     state->dataEnvrn->DayOfYear_Schedule = 1;
     SetPredefinedTables(*state);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -1609,6 +1617,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankUseEnergy)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -1625,7 +1634,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankUseEnergy)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 10. / 60.;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
     Tank.TimeElapsed =
         state->dataGlobal->HourOfDay + state->dataGlobal->TimeStep * state->dataGlobal->TimeStepZone + state->dataHVACGlobal->SysTimeElapsed;
@@ -1706,17 +1715,15 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceTemperatures)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);
 
     InternalHeatGains::GetInternalHeatGainsInput(*state);
-
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
 
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -1727,7 +1734,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceTemperatures)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     int TankNum(1);
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
@@ -1755,7 +1762,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceTemperatures)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 15. / 60.;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
 
     Tank.CalcWaterThermalTankStratified(*state);
@@ -1822,6 +1829,7 @@ TEST_F(EnergyPlusFixture, MixedTankTimeNeededCalc)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -1837,7 +1845,7 @@ TEST_F(EnergyPlusFixture, MixedTankTimeNeededCalc)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1.0 / 60.0; // one-minute system time step
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     Tank.TankTemp = 60.0;
     Tank.AmbientTempZone = 20.0;
     Tank.AmbientTemp = 20.0;
@@ -1934,6 +1942,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankCalc)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -1946,7 +1955,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankCalc)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 20.0 / 60.0;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     constexpr int TankNum = 1;
     WaterThermalTanks::WaterThermalTankData &Tank = state->dataWaterThermalTanks->WaterThermalTank(TankNum);
     for (auto &node : Tank.Node) {
@@ -2026,7 +2035,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankCalc)
         auto &node = Tank.Node[i];
         TankNodeEnergy += node.Mass * (NodeTemps[i] - PrevNodeTemps[i]);
     }
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(*state, "WATER", 60.0, DummyIndex, "StratifiedTankCalcNoDraw");
+    Real64 Cp = Fluid::GetWater(*state)->getSpecificHeat(*state, 60.0, "StratifiedTankCalcNoDraw");
     TankNodeEnergy *= Cp;
     EXPECT_NEAR(Tank.NetHeatTransferRate * state->dataHVACGlobal->TimeStepSysSec, TankNodeEnergy, fabs(TankNodeEnergy * 0.0001));
 
@@ -2129,6 +2138,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceFlowRateCalc)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -2147,7 +2157,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceFlowRateCalc)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 20.0 / 60.0;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     // Test a constant temperature source flow rate
     for (auto &node : Tank.Node) {
@@ -2165,7 +2175,7 @@ TEST_F(EnergyPlusFixture, StratifiedTankSourceFlowRateCalc)
     Tank.SourceMassFlowRate = 6.30901964e-5 * 997; // 1 gal/min
 
     int DummyIndex = 1;
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(*state, "WATER", 60.0, DummyIndex, "StratifiedTankCalcNoDraw");
+    Real64 Cp = Fluid::GetWater(*state)->getSpecificHeat(*state, 60.0, "StratifiedTankCalcNoDraw");
 
     Tank.CalcWaterThermalTankStratified(*state);
 
@@ -2365,15 +2375,13 @@ TEST_F(EnergyPlusFixture, DesuperheaterTimeAdvanceCheck)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);
-
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
 
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -2384,7 +2392,7 @@ TEST_F(EnergyPlusFixture, DesuperheaterTimeAdvanceCheck)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     int TankNum = 1;
     int DXNum = 1;
@@ -2395,12 +2403,12 @@ TEST_F(EnergyPlusFixture, DesuperheaterTimeAdvanceCheck)
     WaterThermalTanks::WaterThermalTankData &Tank = state->dataWaterThermalTanks->WaterThermalTank(TankNum);
     WaterThermalTanks::WaterHeaterDesuperheaterData &Desuperheater = state->dataWaterThermalTanks->WaterHeaterDesuperheater(Tank.DesuperheaterNum);
 
-    // Inititate tank conditions
+    // Initialize tank conditions
     state->dataGlobal->HourOfDay = 0;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
 
     // First iteration condition set (extreme)
@@ -2643,15 +2651,13 @@ TEST_F(EnergyPlusFixture, StratifiedTank_GSHP_DesuperheaterSourceHeat)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);
-
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
 
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -2663,7 +2669,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_GSHP_DesuperheaterSourceHeat)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     state->dataPlnt->TotNumLoops = 1;
     int TankNum(1);
     int HPNum(1);
@@ -2687,7 +2693,8 @@ TEST_F(EnergyPlusFixture, StratifiedTank_GSHP_DesuperheaterSourceHeat)
     // Plant loop must be initialized
     state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum = 1;
     state->dataPlnt->PlantLoop.allocate(LoopNum);
-    state->dataPlnt->PlantLoop(state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum).FluidIndex = 1;
+    state->dataPlnt->PlantLoop(state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(HPNum).plantLoc.loopNum).glycol = Fluid::GetWater(*state);
     auto &SupplySideloop(state->dataPlnt->PlantLoop(LoopNum).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply));
     SupplySideloop.TotalBranches = 1;
     SupplySideloop.Branch.allocate(BranchNum);
@@ -2732,7 +2739,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_GSHP_DesuperheaterSourceHeat)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1. / 60.;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
     state->dataHeatBal->HeatReclaimSimple_WAHPCoil(1).AvailCapacity = 1000;
     state->dataWaterToAirHeatPumpSimple->SimpleWatertoAirHP(1).PartLoadRatio = 0.0;
@@ -2762,7 +2769,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_GSHP_DesuperheaterSourceHeat)
     EXPECT_EQ(Desuperheater.DXSysPLR, 0.8);
     // The heater rate is correctly calculated
     EXPECT_EQ(Desuperheater.HeaterRate, 1000 * 0.25 / Desuperheater.DXSysPLR * Desuperheater.DesuperheaterPLR);
-    // The source rate calculated in stratified tank calculation function is near the heater rate calcualted in desuperheater function
+    // The source rate calculated in stratified tank calculation function is near the heater rate calculated in desuperheater function
     EXPECT_NEAR(Tank.SourceRate, Desuperheater.HeaterRate, Tank.SourceRate * 0.05);
 }
 
@@ -3035,15 +3042,13 @@ TEST_F(EnergyPlusFixture, Desuperheater_Multispeed_Coil_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
     EXPECT_FALSE(ErrorsFound);
-
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
 
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -3054,7 +3059,7 @@ TEST_F(EnergyPlusFixture, Desuperheater_Multispeed_Coil_Test)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     int TankNum(1);
     int DXNum(1);
@@ -3079,15 +3084,15 @@ TEST_F(EnergyPlusFixture, Desuperheater_Multispeed_Coil_Test)
     state->dataDXCoils->DXCoil(1).InletAirTemp = 27.0;
     state->dataDXCoils->DXCoil(1).InletAirHumRat = 0.005;
     state->dataDXCoils->DXCoil(1).InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(27.0, 0.005);
-    state->dataDXCoils->DXCoil(1).SchedPtr = 1;
-    state->dataScheduleMgr->Schedule(state->dataDXCoils->DXCoil(1).SchedPtr).CurrentValue = 1.0; // enable the VRF condenser
+    state->dataDXCoils->DXCoil(1).availSched = Sched::GetSchedule(*state, "HOT WATER DEMAND SCHEDULE");
+    state->dataDXCoils->DXCoil(1).availSched->currentVal = 1.0; // enable the VRF condenser
     state->dataDXCoils->DXCoil(1).MSRatedCBF(1) = 0.1262;
     state->dataDXCoils->DXCoil(1).MSRatedCBF(2) = 0.0408;
 
     // Calculate multispeed DX cooling coils
     DXCoils::CalcMultiSpeedDXCoilCooling(*state, DXNum, 1, 1, 2, HVAC::FanOp::Cycling, HVAC::CompressorOp::On, 1);
 
-    // Source availably heat successfully passed to DataHeatBalance::HeatReclaimDXCoil data struct
+    // Source available heat successfully passed to DataHeatBalance::HeatReclaimDXCoil data struct
     EXPECT_EQ(state->dataHeatBal->HeatReclaimDXCoil(DXNum).AvailCapacity,
               state->dataDXCoils->DXCoil(DXNum).TotalCoolingEnergyRate + state->dataDXCoils->DXCoil(DXNum).ElecCoolingPower);
 
@@ -3095,12 +3100,12 @@ TEST_F(EnergyPlusFixture, Desuperheater_Multispeed_Coil_Test)
     WaterThermalTanks::WaterThermalTankData &Tank = state->dataWaterThermalTanks->WaterThermalTank(TankNum);
     WaterThermalTanks::WaterHeaterDesuperheaterData &Desuperheater = state->dataWaterThermalTanks->WaterHeaterDesuperheater(Tank.DesuperheaterNum);
 
-    // Inititate tank conditions
+    // Initialize tank conditions
     state->dataGlobal->HourOfDay = 0;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
     Tank.TankTemp = 45.0;
     Tank.AmbientTemp = 20.0;
@@ -3140,10 +3145,455 @@ TEST_F(EnergyPlusFixture, Desuperheater_Multispeed_Coil_Test)
     EXPECT_EQ(Tank.SourceRate, 0.0);
 }
 
+TEST_F(EnergyPlusFixture, Desuperheater_WAHP_VSEQ_Coil_Test)
+{
+    std::string const idf_objects = delimited_string({
+        "Schedule:Constant, Ambient Temp Schedule, , 20.0;",
+        "Schedule:Constant, Inlet Water Temperature, , 10.0;",
+        "Schedule:Constant, Desuperheater-Schedule, , 60.0;",
+        "Schedule:Constant, WH Setpoint Temp, , 45.0;",
+
+        "  Zone,",
+        "    Zone_TES,                !- Name",
+        "    0.0000,                  !- Direction of Relative North {deg}",
+        "    10.0,                    !- X Origin {m}",
+        "    10.0,                    !- Y Origin {m}",
+        "    0.0,                     !- Z Origin {m}",
+        "    1,                       !- Type",
+        "    1,                       !- Multiplier",
+        "    3.00,                    !- Ceiling Height {m}",
+        "    300.0,                   !- Volume {m3}",
+        "    100.0;                   !- Floor Area {m2}",
+
+        "  Schedule:Compact,",
+        "    ALWAYS_ON,               !- Name",
+        "    Fraction,                !- Schedule Type Limits Name",
+        "    Through: 12/31,          !- Field 1",
+        "    For: AllDays,            !- Field 2",
+        "    Until: 24:00,1.0;        !- Field 3",
+
+        "WaterHeater:Mixed,",
+        "  Mixed tank with desuperheater,          !- Name",
+        "  0.136274824222915,                      !- Tank Volume {m3}",
+        "  WH Setpoint Temp,                       !- Setpoint Temperature Schedule Name",
+        "  2,                                      !- Deadband Temperature Difference {deltaC}",
+        "  99,                                     !- Maximum Temperature Limit {C}",
+        "  Cycle,                                  !- Heater Control Type",
+        "  5500.06477392209,                       !- Heater Maximum Capacity {W}",
+        "  0,                                      !- Heater Minimum Capacity {W}",
+        "  0,                                      !- Heater Ignition Minimum Flow Rate {m3/s}",
+        "  0,                                      !- Heater Ignition Delay {s}",
+        "  Electricity,                            !- Heater Fuel Type",
+        "  0.8,                                    !- Heater Thermal Efficiency",
+        "  ,                                       !- Part Load Factor Curve Name",
+        "  0,                                      !- Off Cycle Parasitic Fuel Consumption Rate {W}",
+        "  Electricity,                            !- Off Cycle Parasitic Fuel Type",
+        "  0,                                      !- Off Cycle Parasitic Heat Fraction to Tank",
+        "  0,                                      !- On Cycle Parasitic Fuel Consumption Rate {W}",
+        "  Electricity,                            !- On Cycle Parasitic Fuel Type",
+        "  0,                                      !- On Cycle Parasitic Heat Fraction to Tank",
+        "  Schedule,                               !- Ambient Temperature Indicator",
+        "  Ambient Temp Schedule,                  !- Ambient Temperature Schedule Name",
+        "  ,                                 	   !- Ambient Temperature Zone Name",
+        "  ,                                       !- Ambient Temperature Outdoor Air Node Name",
+        "  0.704227539803499,                      !- Off Cycle Loss Coefficient to Ambient Temperature {W/K}",
+        "  1,                                      !- Off Cycle Loss Fraction to Zone",
+        "  0.704227539803499,                      !- On Cycle Loss Coefficient to Ambient Temperature {W/K}",
+        "  1,                                      !- On Cycle Loss Fraction to Zone",
+        "  ,                                       !- Peak Use Flow Rate {m3/s}",
+        "  ALWAYS_ON,                              !- Use Flow Rate Fraction Schedule Name",
+        "  ,                                       !- Cold Water Supply Temperature Schedule Name",
+        "  ,                                       !- Use Side Inlet Node Name",
+        "  ,                                       !- Use Side Outlet Node Name",
+        "  1,                                      !- Use Side Effectiveness",
+        "  DesuperheaterOut,			           !- Source Side Inlet Node Name",
+        "  DesuperheaterIn,         	           !- Source Side Outlet Node Name",
+        "  1,                                      !- Source Side Effectiveness",
+        "  0.00283433494640006,                    !- Use Side Design Flow Rate {m3/s}",
+        "  ,                                       !- Source Side Design Flow Rate {m3/s}",
+        "  1.5,                                    !- Indirect Water Heating Recovery Time {hr}",
+        "  IndirectHeatPrimarySetpoint,            !- Source Side Flow Control Mode",
+        "  ,                                       !- Indirect Alternate Setpoint Temperature Schedule Name",
+        "  General;                                !- End-Use Subcategory",
+
+        "Coil:WaterHeating:Desuperheater,",
+        "    Desuperheater,           !- Name",
+        "    ALWAYS_ON,               !- Availability Schedule Name",
+        "    Desuperheater-Schedule,  !- Setpoint Temperature Schedule Name",
+        "    5,                       !- Dead Band Temperature Difference {deltaC}",
+        "    0.25,                    !- Rated Heat Reclaim Recovery Efficiency",
+        "    50,                      !- Rated Inlet Water Temperature {C}",
+        "    35,                      !- Rated Outdoor Air Temperature {C}",
+        "    60,                      !- Maximum Inlet Water Temperature for Heat Reclaim {C}",
+        "    ,                        !- Heat Reclaim Efficiency Function of Temperature Curve Name",
+        "    DesuperheaterIn,         !- Water Inlet Node Name",
+        "    DesuperheaterOut,        !- Water Outlet Node Name",
+        "    WaterHeater:Mixed,       !- Tank Object Type",
+        "    Mixed tank with desuperheater,  !- Tank Name",
+        "    Coil:Cooling:WaterToAirHeatPump:VariableSpeedEquationFit,  !- Heating Source Object Type",
+        "    VarSpeed_WAHP_COIL,              !- Heating Source Name",
+        "    0.0001,                  !- Water Flow Rate {m3/s}",
+        "    ,                        !- Water Pump Power {W}",
+        "    0.2;                     !- Fraction of Pump Heat to Water",
+
+        "Coil:Cooling:WaterToAirHeatPump:VariableSpeedEquationFit,",
+        "  VarSpeed_WAHP_COIL,                        !- Name",
+        "  Node 11,          !-Water -  to - Refrigerant HX Water Inlet Node Name",
+        "  Node 12,          !-Water - to - Refrigerant HX Water Outlet Node Name",
+        "  ground source heat pump unitary system Fan - Cooling Coil Node,  !-Indoor Air Inlet Node Name ",
+        "  ground source heat pump unitary system Cooling Coil - Heating Coil Node,  !-Indoor Air Outlet Node Name",
+        "  2,                                      !- Number of Speeds {dimensionless}",
+        "  2,                                      !- Nominal Speed Level {dimensionless}",
+        "  10550.5585262,                          !- Gross Rated Total Cooling Capacity At Selected Nominal Speed Level {W}",
+        "  0.534280137734362,                      !- Rated Air Flow Rate At Selected Nominal Speed Level {m3/s}",
+        "  0.000567811767595478,                   !- Rated Water Flow Rate At Selected Nominal Speed Level {m3/s}",
+        "  1000,                                   !- Nominal Time for Condensate to Begin Leaving the Coil {s}",
+        "  1.5,                                    !- Initial Moisture Evaporation Rate Divided by Steady-State AC Latent Capacity {dimensionless}",
+        "  2.5,                                    !- Maximum Cycling Rate {cycles/hr}",
+        "  60,                                     !- Latent Capacity Time Constant {s}",
+        "  60,                                     !- Fan Delay Time {s}",
+        "  0,                                      !- Flag for Using Hot Gas Reheat, 0 or 1 {dimensionless}",
+        "  Cool-PLF-fPLR,                          !- Energy Part Load Fraction Curve Name",
+        "  7757.82568431486,                       !- Speed Reference Unit Gross Rated Total Cooling Capacity 1 {W}",
+        "  0.826314663574395,                      !- Speed Reference Unit Gross Rated Sensible Heat Ratio 1 {dimensionless}",
+        "  6.38335513447988,                       !- Speed Reference Unit Gross Rated Cooling COP 1 {W/W}",
+        "  0.489740135986507,                      !- Speed Reference Unit Rated Air Flow Rate 1 {m3/s}",
+        "  0.000417511992712955,                   !- Speed Reference Unit Rated Water Flow Rate 1 {m3/s}",
+        "  Cool-Cap-fT1,                           !- Speed Total Cooling Capacity Function of Temperature Curve Name 1",
+        "  Cool-Cap-fFF1,                          !- Speed Total Cooling Capacity Function of Air Flow Fraction Curve Name 1",
+        "  Cool-Cap-fWF1,                          !- Speed Total Cooling Capacity Function of Water Flow Fraction Curve Name 1",
+        "  Cool-EIR-fT1,                           !- Speed Energy Input Ratio Function of Temperature Curve Name 1",
+        "  Cool-EIR-fFF1,                          !- Speed Energy Input Ratio Function of Air Flow Fraction Curve Name 1",
+        "  Cool-EIR-fWF1,                          !- Speed Energy Input Ratio Function of Water Flow Fraction Curve Name 1",
+        "  0,                                      !- Speed Reference Unit Waste Heat Fraction of Input Power At Rated Conditions 1 {dimensionless}",
+        "  WasteHeat-FT1,                          !- Speed Waste Heat Function of Temperature Curve Name 1",
+        "  10550.5585262,                          !- Speed Reference Unit Gross Rated Total Cooling Capacity 2 {W}",
+        "  0.729756803683485,                      !- Speed Reference Unit Gross Rated Sensible Heat Ratio 2 {dimensionless}",
+        "  5.78817050916035,                       !- Speed Reference Unit Gross Rated Cooling COP 2 {W/W}",
+        "  0.534280137734362,                      !- Speed Reference Unit Rated Air Flow Rate 2 {m3/s}",
+        "  0.000567811767595478,                   !- Speed Reference Unit Rated Water Flow Rate 2 {m3/s}",
+        "  Cool-Cap-fT2,                           !- Speed Total Cooling Capacity Function of Temperature Curve Name 2",
+        "  Cool-Cap-fFF2,                          !- Speed Total Cooling Capacity Function of Air Flow Fraction Curve Name 2",
+        "  Cool-Cap-fWF2,                          !- Speed Total Cooling Capacity Function of Water Flow Fraction Curve Name 2",
+        "  Cool-EIR-fT2,                           !- Speed Energy Input Ratio Function of Temperature Curve Name 2",
+        "  Cool-EIR-fFF2,                          !- Speed Energy Input Ratio Function of Air Flow Fraction Curve Name 2",
+        "  Cool-EIR-fWF2,                          !- Speed Energy Input Ratio Function of Water Flow Fraction Curve Name 2",
+        "  0,                                      !- Speed Reference Unit Waste Heat Fraction of Input Power At Rated Conditions 2 {dimensionless}",
+        "  WasteHeat-FT2;                          !- Speed Waste Heat Function of Temperature Curve Name 2",
+
+        "Curve:Quadratic,",
+        "  Cool-PLF-fPLR,                         !- Name",
+        "  0.89,                                   !- Coefficient1 Constant",
+        "  0.11,                                   !- Coefficient2 x",
+        "  0,                                      !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  1,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0.7,                                    !- Minimum Curve Output {BasedOnField A3}",
+        "  1;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Biquadratic,",
+        "  Cool-Cap-fT1,                           !- Name",
+        "  0.4091067504,                           !- Coefficient1 Constant",
+        "  0.0387481208,                           !- Coefficient2 x",
+        "  -3.491e-07,                             !- Coefficient3 x**2",
+        "  0.0039166842,                           !- Coefficient4 y",
+        "  -0.0001299475,                          !- Coefficient5 y**2",
+        "  -0.0002883229,                          !- Coefficient6 x*y",
+        "  -100.0,                                 !- Minimum Value of x {BasedOnField A2}",
+        "  100.0,                                  !- Maximum Value of x {BasedOnField A2}",
+        "  -100.0,                                 !- Minimum Value of y {BasedOnField A3}",
+        "  100.0;                                  !- Maximum Value of y {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-Cap-fFF1,                          !- Name",
+        "  0.9064,                                 !- Coefficient1 Constant",
+        "  0.0793,                                 !- Coefficient2 x",
+        "  0.0143,                                 !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-Cap-fWF1,                          !- Name",
+        "  0.8387,                                 !- Coefficient1 Constant",
+        "  0.2903,                                 !- Coefficient2 x",
+        "  -0.129,                                 !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Biquadratic,",
+        "  Cool-EIR-fT1,                           !- Name",
+        "  1.0242580586,                           !- Coefficient1 Constant",
+        "  -0.0549907581,                          !- Coefficient2 x",
+        "  0.0017735749,                           !- Coefficient3 x**2",
+        "  0.0186562274,                           !- Coefficient4 y",
+        "  0.0008900852,                           !- Coefficient5 y**2",
+        "  -0.0016973518,                          !- Coefficient6 x*y",
+        "  -100.0,                                  !- Minimum Value of x {BasedOnField A2}",
+        "  100.0,                                  !- Maximum Value of x {BasedOnField A2}",
+        "  -100.0,                                  !- Minimum Value of y {BasedOnField A3}",
+        "  100.0;                                  !- Maximum Value of y {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-EIR-fFF1,                          !- Name",
+        "  0.7931,                                 !- Coefficient1 Constant",
+        "  0.2623,                                 !- Coefficient2 x",
+        "  -0.0552,                                !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-EIR-fWF1,                          !- Name",
+        "  1.7131,                                 !- Coefficient1 Constant",
+        "  -1.3055,                                 !- Coefficient2 x",
+        "  0.5924,                                !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Biquadratic,",
+        "  WasteHeat-FT1,                          !-Name",
+        "  1,                                      !- Coefficient1 Constant",
+        "  0,                                      !- Coefficient2 x",
+        "  0,                                      !- Coefficient3 x**2",
+        "  0,                                      !- Coefficient4 y",
+        "  0,                                      !- Coefficient5 y**2",
+        "  0,                                      !- Coefficient6 x*y",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  1,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Value of y {BasedOnField A3}",
+        "  1;                                      !- Maximum Value of y {BasedOnField A3}",
+
+        "  Curve:Biquadratic,",
+        "  Cool-Cap-fT2,                           !- Name",
+        "  0.442316103,                            !- Coefficient1 Constant",
+        "  0.0346534683,                           !- Coefficient2 x",
+        "  4.3691e-06,                             !- Coefficient3 x**2",
+        "  0.0046060534,                           !- Coefficient4 y",
+        "  -0.0001393465,                          !- Coefficient5 y**2",
+        "  -0.0002316,                             !- Coefficient6 x*y",
+        "  -100,                                   !- Minimum Value of x {BasedOnField A2}",
+        "  100,                                    !- Maximum Value of x {BasedOnField A2}",
+        "  -100,                                   !- Minimum Value of y {BasedOnField A3}",
+        "  100;                                    !- Maximum Value of y {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-Cap-fFF2,                          !- Name",
+        "  0.8551,                                 !- Coefficient1 Constant",
+        "  0.1688,                                 !- Coefficient2 x",
+        "  -0.0238,                                !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-Cap-fWF2,                          !- Name",
+        "  0.815,                                  !- Coefficient1 Constant",
+        "  0.325,                                  !- Coefficient2 x",
+        "  -0.14,                                  !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Biquadratic,",
+        "  Cool-EIR-fT2,                           !- Name",
+        "  1.0763155558,                           !- Coefficient1 Constant",
+        "  -0.0396246303,                          !- Coefficient2 x",
+        "  0.0010677382,                           !- Coefficient3 x**2",
+        "  0.0074160145,                           !- Coefficient4 y",
+        "  0.0006781567,                           !- Coefficient5 y**2",
+        "  -0.0009009811,                          !- Coefficient6 x*y",
+        "  -100,                                   !- Minimum Value of x {BasedOnField A2}",
+        "  100,                                    !- Maximum Value of x {BasedOnField A2}",
+        "  -100,                                   !- Minimum Value of y {BasedOnField A3}",
+        "  100;                                    !- Maximum Value of y {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-EIR-fFF2,                          !- Name",
+        "  0.8241,                                 !- Coefficient1 Constant",
+        "  0.1523,                                 !- Coefficient2 x",
+        "  0.0234,                                 !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Quadratic,",
+        "  Cool-EIR-fWF2,                          !- Name",
+        "  1.5872,                                 !- Coefficient1 Constant",
+        "  -1.055,                                 !- Coefficient2 x",
+        "  0.4678,                                 !- Coefficient3 x**2",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  2,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Curve Output {BasedOnField A3}",
+        "  2;                                      !- Maximum Curve Output {BasedOnField A3}",
+
+        "Curve:Biquadratic,",
+        "  WasteHeat-FT2,                          !- Name",
+        "  1,                                      !- Coefficient1 Constant",
+        "  0,                                      !- Coefficient2 x",
+        "  0,                                      !- Coefficient3 x**2",
+        "  0,                                      !- Coefficient4 y",
+        "  0,                                      !- Coefficient5 y**2",
+        "  0,                                      !- Coefficient6 x*y",
+        "  0,                                      !- Minimum Value of x {BasedOnField A2}",
+        "  1,                                      !- Maximum Value of x {BasedOnField A2}",
+        "  0,                                      !- Minimum Value of y {BasedOnField A3}",
+        "  1;                                      !- Maximum Value of y {BasedOnField A3}",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
+    bool ErrorsFound = false;
+    HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
+    EXPECT_FALSE(ErrorsFound);
+
+    state->dataGlobal->TimeStep = 1;
+    state->dataGlobal->HourOfDay = 1;
+    state->dataEnvrn->Month = 7;
+    state->dataEnvrn->DayOfMonth = 21;
+    state->dataGlobal->HourOfDay = 1;
+    state->dataEnvrn->DSTIndicator = 0;
+    state->dataEnvrn->DayOfWeek = 2;
+    state->dataEnvrn->HolidayIndex = 0;
+    state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
+    Sched::UpdateScheduleVals(*state);
+
+    int TankNum(1);
+    int DXNum(1);
+    int PlantLoopNum(1);
+
+    EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
+    // Source name and type successfully passed to DataHeatBalance::HeatReclaimVS_Coil data struct
+
+    DataHeatBalance::HeatReclaimDataBase &HeatReclaim = state->dataHeatBal->HeatReclaimVS_Coil(DXNum);
+    EXPECT_EQ(state->dataHeatBal->HeatReclaimVS_Coil(DXNum).Name, "VARSPEED_WAHP_COIL");
+    EXPECT_EQ(state->dataHeatBal->HeatReclaimVS_Coil(DXNum).SourceType, "Coil:Cooling:WaterToAirHeatPump:VariableSpeedEquationFit");
+
+    // Initiate conditions for multispeed coil calculation
+    state->dataEnvrn->OutDryBulbTemp = 32.0;
+    state->dataEnvrn->OutHumRat = 0.02;
+    state->dataEnvrn->OutBaroPress = 101325.0;
+    state->dataEnvrn->OutWetBulbTemp = Psychrometrics::PsyTwbFnTdbWPb(*state, 32.0, 0.02, 101325.0);
+
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirMassFlowRate(1) =
+        state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirVolFlowRate(1) * 1.2;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirMassFlowRate(2) =
+        state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirVolFlowRate(2) * 1.2;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterMassFlowRate(1) =
+        state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterVolFlowRate(1) * 1000.0;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterMassFlowRate(2) =
+        state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterVolFlowRate(2) * 1000.0;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).DesignAirMassFlowRate = state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirMassFlowRate(2);
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).DesignWaterMassFlowRate =
+        state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterMassFlowRate(2);
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).AirMassFlowRate = state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirMassFlowRate(2);
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).WaterMassFlowRate = state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedWaterMassFlowRate(2);
+
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).InletAirDBTemp = 27.0;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).InletAirHumRat = 0.005;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).InletAirEnthalpy = Psychrometrics::PsyHFnTdbW(27.0, 0.005);
+
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).InletWaterTemp = 27.0;
+
+    const Real64 Cp = Fluid::GetWater(*state)->getSpecificHeat(*state, 27.0, "WAHP_VSEQ_SOURCE");
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).InletWaterEnthalpy = 27.0 * Cp;
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).plantLoc.loopNum = PlantLoopNum;
+    state->dataPlnt->PlantLoop.allocate(PlantLoopNum);
+
+    state->dataPlnt->PlantLoop(PlantLoopNum).glycol = Fluid::GetWater(*state);
+    state->dataPlnt->PlantLoop(PlantLoopNum).FluidName = "WATER";
+    state->dataLoopNodes->Node(5).MassFlowRate = state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirMassFlowRate(2);
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedCBF(1) =
+        DXCoils::CalcCBF(*state,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).VarSpeedCoilType,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).Name,
+                         26.6667,
+                         0.0111847,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedTotCap(1),
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirVolFlowRate(1),
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedSHR(1),
+                         true);
+    state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedCBF(2) =
+        DXCoils::CalcCBF(*state,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).VarSpeedCoilType,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).Name,
+                         26.6667,
+                         0.0111847,
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedTotCap(2),
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedAirVolFlowRate(2),
+                         state->dataVariableSpeedCoils->VarSpeedCoil(1).MSRatedSHR(2),
+                         true);
+
+    // Calculate multispeed DX cooling coils
+    VariableSpeedCoils::CalcVarSpeedCoilCooling(*state, DXNum, HVAC::FanOp::Cycling, 1000.0, 100.0, HVAC::CompressorOp::On, 1.0, 1.0, 1.0, 2);
+
+    // Source available heat successfully passed to DataHeatBalance::HeatReclaimVS_Coil data struct
+    EXPECT_EQ(state->dataHeatBal->HeatReclaimVS_Coil(DXNum).AvailCapacity,
+              state->dataVariableSpeedCoils->VarSpeedCoil(DXNum).QLoadTotal + state->dataVariableSpeedCoils->Winput);
+
+    // Now move to the water thermal tank calculation
+    WaterThermalTanks::WaterThermalTankData &Tank = state->dataWaterThermalTanks->WaterThermalTank(TankNum);
+    WaterThermalTanks::WaterHeaterDesuperheaterData &Desuperheater = state->dataWaterThermalTanks->WaterHeaterDesuperheater(Tank.DesuperheaterNum);
+
+    // Initialize tank conditions
+    state->dataGlobal->HourOfDay = 0;
+    state->dataGlobal->TimeStep = 1;
+    state->dataGlobal->TimeStepZone = 1;
+    state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+    state->dataHVACGlobal->SysTimeElapsed = 0.0;
+    Tank.TankTemp = 45.0;
+    Tank.AmbientTemp = 20.0;
+    Tank.UseInletTemp = 10.0;
+    Tank.UseMassFlowRate = 0.00001;
+    Tank.SourceOutletTemp = 45.0;
+    state->dataLoopNodes->Node(Desuperheater.WaterInletNode).Temp = Tank.SourceOutletTemp;
+    Tank.SourceMassFlowRate = 0.003;
+    Tank.TimeElapsed = 0.0;
+    Desuperheater.SetPointTemp = 50.0;
+    Desuperheater.Mode = WaterThermalTanks::TankOperatingMode::Heating;
+
+    Tank.Mode = WaterThermalTanks::TankOperatingMode::Floating;
+    Tank.SetPointTemp = 40.0;
+    Desuperheater.FirstTimeThroughFlag = true;
+    Tank.CalcDesuperheaterWaterHeater(*state, true);
+
+    EXPECT_EQ(Desuperheater.DXSysPLR, state->dataVariableSpeedCoils->VarSpeedCoil(DXNum).PartLoadRatio);
+    // if desuperheater was not on through all the timestep, part load ratio is searched to meet load demand
+    EXPECT_GE(Desuperheater.DXSysPLR, Desuperheater.DesuperheaterPLR);
+    // used desuperheater reclaim heat is successfully stored in HeatReclaimVS_Coil data struct
+    EXPECT_EQ(state->dataHeatBal->HeatReclaimVS_Coil(DXNum).WaterHeatingDesuperheaterReclaimedHeat(Tank.DesuperheaterNum), Desuperheater.HeaterRate);
+    // Desuperheater heater rate is correctly calculated
+    EXPECT_EQ(Desuperheater.HeaterRate,
+              (state->dataHeatBal->HeatReclaimVS_Coil(DXNum).AvailCapacity) / Desuperheater.DXSysPLR * Desuperheater.DesuperheaterPLR * 0.25);
+
+    // Test the float mode
+    Tank.SavedTankTemp = 61.0;
+    Tank.SavedSourceOutletTemp = 61.0;
+    Desuperheater.SaveMode = WaterThermalTanks::TankOperatingMode::Floating;
+    state->dataLoopNodes->Node(Desuperheater.WaterInletNode).Temp = Tank.SavedSourceOutletTemp;
+    Tank.SourceMassFlowRate = 0.003;
+    VariableSpeedCoils::CalcVarSpeedCoilCooling(*state, DXNum, HVAC::FanOp::Cycling, 1000.0, 100.0, HVAC::CompressorOp::On, 1.0, 1.0, 1.0, 2);
+    Tank.CalcDesuperheaterWaterHeater(*state, false);
+    EXPECT_TRUE(Desuperheater.Mode == WaterThermalTanks::TankOperatingMode::Floating);
+    EXPECT_EQ(Desuperheater.HeaterRate, 0.0);
+    EXPECT_EQ(Tank.SourceRate, 0.0);
+}
+
 TEST_F(EnergyPlusFixture, MixedTankAlternateSchedule)
 {
-    using FluidProperties::GetDensityGlycol;
-
     std::string const idf_objects = delimited_string({
         "Schedule:Constant, Inlet Water Temperature, , 10.0;",
         "Schedule:Constant, Water Heater Setpoint Temperature, ,55.0;",
@@ -3199,11 +3649,9 @@ TEST_F(EnergyPlusFixture, MixedTankAlternateSchedule)
     ASSERT_TRUE(process_idf(idf_objects));
 
     // Schedules setup
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
-
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
     state->dataEnvrn->Month = 7;
@@ -3213,7 +3661,7 @@ TEST_F(EnergyPlusFixture, MixedTankAlternateSchedule)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -3230,7 +3678,7 @@ TEST_F(EnergyPlusFixture, MixedTankAlternateSchedule)
     // Source side is in the demand side of the plant loop
     Tank.SrcSidePlantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Demand;
     Tank.SavedSourceOutletTemp = 60.0;
-    rho = FluidProperties::GetDensityGlycol(*state, "Water", Tank.TankTemp, WaterIndex, "MixedTankAlternateSchedule");
+    rho = Fluid::GetWater(*state)->getDensity(*state, Tank.TankTemp, "MixedTankAlternateSchedule");
 
     // Set the available max flow rates for tank and node
     Tank.PlantSourceMassFlowRateMax = Tank.SourceDesignVolFlowRate * rho;
@@ -3303,6 +3751,7 @@ TEST_F(EnergyPlusFixture, MixedTank_WarnPotentialFreeze)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -3313,7 +3762,7 @@ TEST_F(EnergyPlusFixture, MixedTank_WarnPotentialFreeze)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1.0 / 60.0; // one-minute system time step
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     Tank.TankTemp = 2.0;
     Tank.AmbientTemp = -40;
     Tank.UseInletTemp = 3.0;
@@ -3334,7 +3783,13 @@ TEST_F(EnergyPlusFixture, MixedTank_WarnPotentialFreeze)
     // And the final tank temp too, which is the one triggering the warning
     EXPECT_LT(Tank.TankTemp, 2.0);
 
-    std::string const error_string = delimited_string({"   ** Warning ** CalcWaterThermalTankMixed: WaterHeater:Mixed = 'CHILLEDWATERTANK':  "
+    std::string const error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = WATER HEATER SETPOINT TEMPERATURE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** ProcessScheduleInput: Schedule:Constant = TANK AMBIENT TEMPERATURE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** CalcWaterThermalTankMixed: WaterHeater:Mixed = 'CHILLEDWATERTANK':  "
                                                        "Temperature of tank < 2C indicates of possibility of freeze. Tank Temperature = 1.95 C.",
                                                        "   **   ~~~   **  Environment=, at Simulation time= 00:-1 - 00:00"});
     EXPECT_TRUE(compare_err_stream(error_string, true));
@@ -3403,7 +3858,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarnPotentialFreeze)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state);
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
     int TankNum(1);
@@ -3413,7 +3868,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarnPotentialFreeze)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1.0 / 60.0; // one-minute system time step
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     Tank.TankTemp = 2.0;
     for (auto &node : Tank.Node) {
         node.Temp = 2.0;
@@ -3444,7 +3899,13 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarnPotentialFreeze)
     }
 
     std::string const error_string =
-        delimited_string({"   ** Warning ** CalcWaterThermalTankStratified: WaterHeater:Stratified = 'STRATIFIED CHILLEDWATERTANK':  Temperature of "
+        delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = WATER HEATER SETPOINT TEMPERATURE",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = TANK AMBIENT TEMPERATURE",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** CalcWaterThermalTankStratified: WaterHeater:Stratified = 'STRATIFIED CHILLEDWATERTANK':  Temperature of "
                           "tank < 2C indicates of possibility of freeze. Tank Temperature = 1.75 C.",
                           "   **   ~~~   **  Environment=, at Simulation time= 00:-1 - 00:00"});
     EXPECT_TRUE(compare_err_stream(error_string, true));
@@ -3689,10 +4150,9 @@ TEST_F(EnergyPlusFixture, MultipleDesuperheaterSingleSource)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
@@ -3703,14 +4163,14 @@ TEST_F(EnergyPlusFixture, MultipleDesuperheaterSingleSource)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     // Initiate tank conditions
     state->dataGlobal->HourOfDay = 0;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1;
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataHVACGlobal->SysTimeElapsed = 0.0;
 
     int DXNum = 1;
@@ -4213,7 +4673,7 @@ TEST_F(EnergyPlusFixture, HPWH_Both_Pumped_and_Wrapped_InputProcessing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state);
     EXPECT_TRUE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
     EXPECT_EQ(state->dataWaterThermalTanks->HPWaterHeater.size(), 2u);
@@ -4439,18 +4899,20 @@ TEST_F(EnergyPlusFixture, CrashCalcStandardRatings_HPWH_and_Standalone)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    state->dataEnvrn->StdRhoAir = 1.0;
 
     state->dataHVACGlobal->TimeStepSys = 1;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60 / state->dataGlobal->NumOfTimeStepInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60 / state->dataGlobal->TimeStepsInHour;
+    state->init_state(*state);
+
+    state->dataEnvrn->StdRhoAir = 1.0;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
     state->dataEnvrn->DayOfWeek = 1;
     state->dataEnvrn->DayOfYear_Schedule = 1;
     SetPredefinedTables(*state);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -4733,18 +5195,40 @@ TEST_F(EnergyPlusFixture, HPWH_Wrapped_Stratified_Simultaneous)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     // This returns true if ErrorsFound
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
     // Previous warning before fix
-    // std::string const error_string = delimited_string({
+    std::string const error_string =
+        delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYS ON DISCRETE",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED COMPRESSOR SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED INLET AIR HUM SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED INLET AIR TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED STRATIFIED TANK HEATER1 SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED STRATIFIED TANK HEATER2 SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHWRAPPED STRATIFIED TANK AMBIENT TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated."});
 
     //"   ** Severe  ** WaterHeater:HeatPump:WrappedCondenser = HPWHWRAPPED:",
     //"   **   ~~~   ** Heater Control Type for WaterHeater:Stratified = HPWHWRAPPED STRATIFIED TANK must be CYCLE.",
     //});
 
-    EXPECT_TRUE(compare_err_stream("", true));
+    EXPECT_TRUE(compare_err_stream(error_string, true));
 }
 
 // Test for #7902: If the HPWH is Pumped, and it has a Stratified Tank which  Priority Mode is Simultaneous,
@@ -5007,7 +5491,7 @@ TEST_F(EnergyPlusFixture, HPWH_Pumped_Stratified_Simultaneous)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state);
     // This returns true if ErrorsFound
     EXPECT_FALSE(WaterThermalTanks::GetWaterThermalTankInput(*state));
 
@@ -5017,7 +5501,30 @@ TEST_F(EnergyPlusFixture, HPWH_Pumped_Stratified_Simultaneous)
     //"   **   ~~~   ** Heater Control Type for WaterHeater:Stratified = HPWHPUMPED STRATIFIED TANK must be CYCLE.",
     //});
 
-    EXPECT_TRUE(compare_err_stream("", true));
+    std::string const error_string =
+        delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYS ON DISCRETE",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED COMPRESSOR SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED INLET AIR HUM SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED INLET AIR TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED STRATIFIED TANK HEATER1 SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED STRATIFIED TANK HEATER2 SETP TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated.",
+                          "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HPWHPUMPED STRATIFIED TANK AMBIENT TEMP SCH",
+                          "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                          "   **   ~~~   ** Schedule will not be validated."});
+
+    EXPECT_TRUE(compare_err_stream(error_string, true));
 }
 
 TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveBlanks)
@@ -5095,6 +5602,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveBlank
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -5115,7 +5623,17 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveBlank
         }
     }
 
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string const error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER SETPOINT TEMP SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** ProcessScheduleInput: Schedule:Constant = AMBIENT TEMP SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER DEMAND SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated."});
+
+    EXPECT_TRUE(compare_err_stream(error_string));
 }
 
 TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveZeroes)
@@ -5195,6 +5713,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveZeroe
                           "  IndirectHeatPrimarySetpoint;   !- Source Side Flow Control Mode"});
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -5215,7 +5734,17 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_FalsePositiveZeroe
         }
     }
 
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string const error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER SETPOINT TEMP SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** ProcessScheduleInput: Schedule:Constant = AMBIENT TEMP SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated.",
+                                                       "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER DEMAND SCHEDULE",
+                                                       "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                       "   **   ~~~   ** Schedule will not be validated."});
+
+    EXPECT_TRUE(compare_err_stream(error_string));
 }
 
 TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_ExpectedWarning)
@@ -5294,6 +5823,7 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_ExpectedWarning)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound); // read zone data
@@ -5315,6 +5845,15 @@ TEST_F(EnergyPlusFixture, StratifiedTank_WarningNumberOfNodes_ExpectedWarning)
     }
 
     std::string const error_string = delimited_string({
+        "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER SETPOINT TEMP SCHEDULE",
+        "   **   ~~~   ** Schedule Type Limits Name is empty.",
+        "   **   ~~~   ** Schedule will not be validated.",
+        "   ** Warning ** ProcessScheduleInput: Schedule:Constant = AMBIENT TEMP SCHEDULE",
+        "   **   ~~~   ** Schedule Type Limits Name is empty.",
+        "   **   ~~~   ** Schedule will not be validated.",
+        "   ** Warning ** ProcessScheduleInput: Schedule:Constant = HOT WATER DEMAND SCHEDULE",
+        "   **   ~~~   ** Schedule Type Limits Name is empty.",
+        "   **   ~~~   ** Schedule will not be validated.",
         "   ** Warning ** WaterHeater:Stratified = STRATIFIED TANK:  More Additional Loss Coefficients were entered than the number of nodes; extra "
         "coefficients will not be used",
     });
@@ -5341,7 +5880,7 @@ TEST_F(EnergyPlusFixture, PlantMassFlowRatesFuncTest)
     Real64 result;
     Real64 expected = 0.0;
     Real64 answerTolerance = 1.0e-35;
-    Tank.UseSideAvailSchedNum = -1;
+    Tank.useSideAvailSched = Sched::GetScheduleAlwaysOn(*state);
 
     result = Tank.PlantMassFlowRatesFunc(*state,
                                          inNodeNum,
@@ -5598,6 +6137,7 @@ TEST_F(EnergyPlusFixture, MixedTank_PVT_Per_VolumeSizing_PerSolarCollectorArea)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetHeatBalanceInput(*state); // Gets materials, constructions, zones, surfaces, etc.
@@ -5635,6 +6175,8 @@ TEST_F(EnergyPlusFixture, MixedTank_PVT_Per_VolumeSizing_PerSolarCollectorArea)
     state->dataPlnt->PlantLoop.allocate(1);
 
     auto &plantLoop = state->dataPlnt->PlantLoop(1);
+    plantLoop.FluidName = "WATER";
+    plantLoop.glycol = Fluid::GetWater(*state);
     auto &supplySide = plantLoop.LoopSide(DataPlant::LoopSideLocation::Supply);
     supplySide.TotalBranches = 1;
     supplySide.Branch.allocate(1);
@@ -5694,7 +6236,7 @@ TEST_F(EnergyPlusFixture, MixedTank_PVT_Per_VolumeSizing_PerSolarCollectorArea)
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->TimeStepZone = 1.0 / 60.0; // one-minute system time step
     state->dataHVACGlobal->TimeStepSys = state->dataGlobal->TimeStepZone;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     Tank.SavedTankTemp = 60.0;
     Tank.TankTemp = 60.0;
     Tank.AmbientTempZone = 20.0;

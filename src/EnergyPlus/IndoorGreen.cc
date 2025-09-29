@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -85,7 +85,7 @@ namespace IndoorGreen {
         // PURPOSE OF THIS SUBROUTINE:
         // This subroutine simulates the thermal performance of indoor living walls including the grow lights.
         // This subroutine interacts with inside surface heat balance, zone air heat balance and zone air moisture balance in EnergyPlus.
-        auto &lw = state.dataIndoorGreen;
+        auto const &lw = state.dataIndoorGreen;
         if (lw->getInputFlag) {
             bool ErrorsFound(false);
             const char *RoutineName("IndoorLivingWall: "); // include trailing blank space
@@ -108,46 +108,46 @@ namespace IndoorGreen {
         // PURPOSE OF THIS SUBROUTINE:
         // Get the input for the indoor living wall objects and store the input data in the indoorGreens array.
 
-        auto &lw = state.dataIndoorGreen;
-        auto &ip = state.dataInputProcessing->inputProcessor;
+        auto &s_lw = state.dataIndoorGreen;
+        auto &s_ip = state.dataInputProcessing->inputProcessor;
+        auto &s_ipsc = state.dataIPShortCut;
+
         static constexpr std::string_view RoutineName("GetIndoorLivingWallInput: ");
         std::string_view cCurrentModuleObject = "IndoorLivingWall"; // match the idd
         int NumNums;                                                // Number of real numbers returned by GetObjectItem
         int NumAlphas;                                              // Number of alphanumerics returned by GetObjectItem
         int IOStat;                                                 // Status flag from GetObjectItem
-        Real64 SchMin;
-        Real64 SchMax;
 
-        lw->NumIndoorGreen = ip->getNumObjectsFound(state, cCurrentModuleObject);
-        if (lw->NumIndoorGreen > 0) lw->indoorGreens.allocate(lw->NumIndoorGreen); // Allocate the IndoorGreen input data array
-        for (int IndoorGreenNum = 1; IndoorGreenNum <= lw->NumIndoorGreen; ++IndoorGreenNum) {
-            auto &ig = lw->indoorGreens(IndoorGreenNum);
-            ip->getObjectItem(state,
-                              cCurrentModuleObject,
-                              IndoorGreenNum,
-                              state.dataIPShortCut->cAlphaArgs,
-                              NumAlphas,
-                              state.dataIPShortCut->rNumericArgs,
-                              NumNums,
-                              IOStat,
-                              state.dataIPShortCut->lNumericFieldBlanks,
-                              state.dataIPShortCut->lAlphaFieldBlanks,
-                              state.dataIPShortCut->cAlphaFieldNames,
-                              state.dataIPShortCut->cNumericFieldNames);
-            ErrorObjectHeader eoh{RoutineName, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1)};
-            Util::IsNameEmpty(state, state.dataIPShortCut->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
-            ig.Name = state.dataIPShortCut->cAlphaArgs(1);
-            ig.SurfName = state.dataIPShortCut->cAlphaArgs(2);
-            ig.SurfPtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(2), state.dataSurface->Surface);
+        s_lw->NumIndoorGreen = s_ip->getNumObjectsFound(state, cCurrentModuleObject);
+        if (s_lw->NumIndoorGreen > 0) s_lw->indoorGreens.allocate(s_lw->NumIndoorGreen); // Allocate the IndoorGreen input data array
+        for (int IndoorGreenNum = 1; IndoorGreenNum <= s_lw->NumIndoorGreen; ++IndoorGreenNum) {
+            auto &ig = s_lw->indoorGreens(IndoorGreenNum);
+            s_ip->getObjectItem(state,
+                                cCurrentModuleObject,
+                                IndoorGreenNum,
+                                s_ipsc->cAlphaArgs,
+                                NumAlphas,
+                                s_ipsc->rNumericArgs,
+                                NumNums,
+                                IOStat,
+                                s_ipsc->lNumericFieldBlanks,
+                                s_ipsc->lAlphaFieldBlanks,
+                                s_ipsc->cAlphaFieldNames,
+                                s_ipsc->cNumericFieldNames);
+            ErrorObjectHeader eoh{RoutineName, cCurrentModuleObject, s_ipsc->cAlphaArgs(1)};
+            Util::IsNameEmpty(state, s_ipsc->cAlphaArgs(1), cCurrentModuleObject, ErrorsFound);
+            ig.Name = s_ipsc->cAlphaArgs(1);
+            ig.SurfName = s_ipsc->cAlphaArgs(2);
+            ig.SurfPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(2), state.dataSurface->Surface);
             if (ig.SurfPtr <= 0) {
-                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(2), state.dataIPShortCut->cAlphaArgs(2));
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaArgs(2));
                 ErrorsFound = true;
             } else {
-                if (state.dataSurface->Surface(ig.SurfPtr).InsideHeatSourceTermSchedule > 0) {
+                if (state.dataSurface->Surface(ig.SurfPtr).insideHeatSourceTermSched != nullptr) {
                     ShowSevereError(state,
                                     format("The indoor green surface {} has an Inside Face Heat Source Term Schedule defined. This surface cannot "
                                            "also be used for indoor green.",
-                                           state.dataIPShortCut->cAlphaArgs(2)));
+                                           s_ipsc->cAlphaArgs(2)));
                     ErrorsFound = true;
                 }
                 ig.ZonePtr = state.dataSurface->Surface(ig.SurfPtr).Zone;
@@ -157,194 +157,123 @@ namespace IndoorGreen {
                     ShowSevereError(state,
                                     format("{}=\"{}\", invalid {} entered={}, {} is not assoicated with a thermal zone or space",
                                            RoutineName,
-                                           state.dataIPShortCut->cAlphaArgs(1),
-                                           state.dataIPShortCut->cAlphaFieldNames(2),
-                                           state.dataIPShortCut->cAlphaArgs(2),
-                                           state.dataIPShortCut->cAlphaArgs(2)));
+                                           s_ipsc->cAlphaArgs(1),
+                                           s_ipsc->cAlphaFieldNames(2),
+                                           s_ipsc->cAlphaArgs(2),
+                                           s_ipsc->cAlphaArgs(2)));
                     ErrorsFound = true;
                 } else if (state.dataSurface->Surface(ig.SurfPtr).ExtBoundCond < 0 ||
                            state.dataSurface->Surface(ig.SurfPtr).HeatTransferAlgorithm != DataSurfaces::HeatTransferModel::CTF) {
                     ShowSevereError(state,
                                     format("{}=\"{}\", invalid {} entered={}, not a valid surface for indoor green module",
                                            RoutineName,
-                                           state.dataIPShortCut->cAlphaArgs(1),
-                                           state.dataIPShortCut->cAlphaFieldNames(2),
-                                           state.dataIPShortCut->cAlphaArgs(2)));
+                                           s_ipsc->cAlphaArgs(1),
+                                           s_ipsc->cAlphaFieldNames(2),
+                                           s_ipsc->cAlphaArgs(2)));
                     ErrorsFound = true;
-                }
-            }
-            ig.SchedPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(3));
-            if (ig.SchedPtr == 0) {
-                ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(3), state.dataIPShortCut->cAlphaArgs(3));
-                ErrorsFound = true;
-            } else { // check min/max on schedule
-                SchMin = ScheduleManager::GetScheduleMinValue(state, ig.SchedPtr);
-                SchMax = ScheduleManager::GetScheduleMaxValue(state, ig.SchedPtr);
-                if (SchMin < 0.0 || SchMax < 0.0) {
-                    if (SchMin < 0.0) {
-                        ShowSevereError(state,
-                                        format("{}=\"{}\", {}, minimum is < 0.0",
-                                               RoutineName,
-                                               state.dataIPShortCut->cAlphaArgs(1),
-                                               state.dataIPShortCut->cAlphaFieldNames(3)));
-                        ShowContinueError(
-                            state,
-                            format("Schedule=\"{}\". Minimum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(3), SchMin));
-                        ErrorsFound = true;
-                    }
-                    if (SchMax < 0.0) {
-                        ShowSevereError(state,
-                                        format("{}=\"{}\", {}, maximum is < 0.0",
-                                               RoutineName,
-                                               state.dataIPShortCut->cAlphaArgs(1),
-                                               state.dataIPShortCut->cAlphaFieldNames(3)));
-                        ShowContinueError(
-                            state,
-                            format("Schedule=\"{}\". Maximum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(3), SchMin));
-                        ErrorsFound = true;
-                    }
                 }
             }
 
+            if ((ig.sched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(3))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3));
+                ErrorsFound = true;
+            } else if (!ig.sched->checkMinVal(state, Clusive::In, 0.0)) {
+                Sched::ShowSevereBadMin(state, eoh, s_ipsc->cAlphaFieldNames(3), s_ipsc->cAlphaArgs(3), Clusive::In, 0.0);
+                ErrorsFound = true;
+            }
+
             ig.etCalculationMethod = ETCalculationMethod::PenmanMonteith; // default
-            ig.etCalculationMethod = static_cast<ETCalculationMethod>(getEnumValue(etCalculationMethodsUC, state.dataIPShortCut->cAlphaArgs(4)));
+            ig.etCalculationMethod = static_cast<ETCalculationMethod>(getEnumValue(etCalculationMethodsUC, s_ipsc->cAlphaArgs(4)));
             ig.lightingMethod = LightingMethod::LED; // default
-            ig.lightingMethod = static_cast<LightingMethod>(getEnumValue(lightingMethodsUC, state.dataIPShortCut->cAlphaArgs(5)));
+            ig.lightingMethod = static_cast<LightingMethod>(getEnumValue(lightingMethodsUC, s_ipsc->cAlphaArgs(5)));
+
             switch (ig.lightingMethod) {
             case LightingMethod::LED: {
-                ig.SchedLEDPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(6));
-                if (ig.SchedLEDPtr == 0) {
-                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(6), state.dataIPShortCut->cAlphaArgs(6));
+                if ((ig.ledSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(6))) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6));
                     ErrorsFound = true;
-                } else { // check min/max on schedule
-                    SchMin = ScheduleManager::GetScheduleMinValue(state, ig.SchedLEDPtr);
-                    SchMax = ScheduleManager::GetScheduleMaxValue(state, ig.SchedLEDPtr);
-                    if (SchMin < 0.0 || SchMax < 0.0) {
-                        if (SchMin < 0.0) {
-                            ShowSevereError(state,
-                                            format("{}=\"{}\", {}, minimum is < 0.0",
-                                                   RoutineName,
-                                                   state.dataIPShortCut->cAlphaArgs(1),
-                                                   state.dataIPShortCut->cAlphaFieldNames(6)));
-                            ShowContinueError(
-                                state,
-                                format("Schedule=\"{}\". Minimum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(6), SchMin));
-                            ErrorsFound = true;
-                        }
-                        if (SchMax < 0.0) {
-                            ShowSevereError(state,
-                                            format("{}=\"{}\", {}, maximum is < 0.0",
-                                                   RoutineName,
-                                                   state.dataIPShortCut->cAlphaArgs(1),
-                                                   state.dataIPShortCut->cAlphaFieldNames(6)));
-                            ShowContinueError(
-                                state,
-                                format("Schedule=\"{}\". Maximum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(6), SchMin));
-                            ErrorsFound = true;
-                        }
-                    }
+                } else if (!ig.ledSched->checkMinVal(state, Clusive::In, 0.0)) {
+                    Sched::ShowSevereBadMin(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6), Clusive::In, 0.0);
+                    ErrorsFound = true;
                 }
             } break;
             case LightingMethod::Daylighting: {
-                ig.LightRefPtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(7),
+                ig.LightRefPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(7),
                                                       state.dataDayltg->DaylRefPt,
                                                       &EnergyPlus::Dayltg::RefPointData::Name); // Field: Daylighting Reference Point Name
-                ig.LightControlPtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(7),
+                ig.LightControlPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(7),
                                                           state.dataDayltg->daylightControl,
                                                           &EnergyPlus::Dayltg::DaylightingControl::Name); // Field: Daylighting Control Name
                 if (ig.LightControlPtr == 0) {
-                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(7), state.dataIPShortCut->cAlphaArgs(7));
+                    ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(7), s_ipsc->cAlphaArgs(7));
                     ErrorsFound = true;
                     continue;
                 }
             } break;
             case LightingMethod::LEDDaylighting: {
-                ig.LightRefPtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(7),
+                ig.LightRefPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(7),
                                                       state.dataDayltg->DaylRefPt,
                                                       &EnergyPlus::Dayltg::RefPointData::Name); // Field: Daylighting Reference Point Name
-                ig.LightControlPtr = Util::FindItemInList(state.dataIPShortCut->cAlphaArgs(7),
+                ig.LightControlPtr = Util::FindItemInList(s_ipsc->cAlphaArgs(7),
                                                           state.dataDayltg->daylightControl,
                                                           &EnergyPlus::Dayltg::DaylightingControl::Name); // Field: Daylighting Control Name
                 if (ig.LightControlPtr == 0) {
-                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(7), state.dataIPShortCut->cAlphaArgs(7));
+                    ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(7), s_ipsc->cAlphaArgs(7));
                     ErrorsFound = true;
                     continue;
                 }
-                ig.SchedLEDDaylightTargetPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(8));
-                if (ig.SchedLEDDaylightTargetPtr == 0) {
-                    ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(8), state.dataIPShortCut->cAlphaArgs(8));
+
+                if ((ig.ledDaylightTargetSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(8))) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(8), s_ipsc->cAlphaArgs(8));
                     ErrorsFound = true;
-                } else { // check min/max on schedule
-                    SchMin = ScheduleManager::GetScheduleMinValue(state, ig.SchedLEDDaylightTargetPtr);
-                    SchMax = ScheduleManager::GetScheduleMaxValue(state, ig.SchedLEDDaylightTargetPtr);
-                    if (SchMin < 0.0 || SchMax < 0.0) {
-                        if (SchMin < 0.0) {
-                            ShowSevereError(state,
-                                            format("{}=\"{}\", {}, minimum is < 0.0",
-                                                   RoutineName,
-                                                   state.dataIPShortCut->cAlphaArgs(1),
-                                                   state.dataIPShortCut->cAlphaFieldNames(8)));
-                            ShowContinueError(
-                                state,
-                                format("Schedule=\"{}\". Minimum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(8), SchMin));
-                            ErrorsFound = true;
-                        }
-                        if (SchMax < 0.0) {
-                            ShowSevereError(state,
-                                            format("{}=\"{}\", {}, maximum is < 0.0",
-                                                   RoutineName,
-                                                   state.dataIPShortCut->cAlphaArgs(1),
-                                                   state.dataIPShortCut->cAlphaFieldNames(8)));
-                            ShowContinueError(
-                                state,
-                                format("Schedule=\"{}\". Maximum is [{:.1R}]. Values must be >= 0.0.", state.dataIPShortCut->cAlphaArgs(8), SchMin));
-                            ErrorsFound = true;
-                        }
-                    }
+                } else if (!ig.ledDaylightTargetSched->checkMinVal(state, Clusive::In, 0.0)) {
+                    Sched::ShowSevereBadMin(state, eoh, s_ipsc->cAlphaFieldNames(8), s_ipsc->cAlphaArgs(8), Clusive::In, 0.0);
+                    ErrorsFound = true;
                 }
             } break;
+
             default:
                 break;
             }
 
-            ig.LeafArea = state.dataIPShortCut->rNumericArgs(1);
+            ig.LeafArea = s_ipsc->rNumericArgs(1);
             if (ig.LeafArea < 0) {
                 ShowSevereError(state,
                                 format("{}=\"{}\", invalid {} entered={}",
                                        RoutineName,
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cNumericFieldNames(1),
-                                       state.dataIPShortCut->rNumericArgs(1)));
+                                       s_ipsc->cAlphaArgs(1),
+                                       s_ipsc->cNumericFieldNames(1),
+                                       s_ipsc->rNumericArgs(1)));
                 ErrorsFound = true;
             }
-            ig.LEDNominalPPFD = state.dataIPShortCut->rNumericArgs(2);
+            ig.LEDNominalPPFD = s_ipsc->rNumericArgs(2);
             if (ig.LEDNominalPPFD < 0) {
                 ShowSevereError(state,
                                 format("{}=\"{}\", invalid {} entered={}",
                                        RoutineName,
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cNumericFieldNames(2),
-                                       state.dataIPShortCut->rNumericArgs(2)));
+                                       s_ipsc->cAlphaArgs(1),
+                                       s_ipsc->cNumericFieldNames(2),
+                                       s_ipsc->rNumericArgs(2)));
                 ErrorsFound = true;
             }
-            ig.LEDNominalEleP = state.dataIPShortCut->rNumericArgs(3);
+            ig.LEDNominalEleP = s_ipsc->rNumericArgs(3);
             if (ig.LEDNominalEleP < 0) {
                 ShowSevereError(state,
                                 format("{}=\"{}\", invalid {} entered={}",
                                        RoutineName,
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cNumericFieldNames(3),
-                                       state.dataIPShortCut->rNumericArgs(3)));
+                                       s_ipsc->cAlphaArgs(1),
+                                       s_ipsc->cNumericFieldNames(3),
+                                       s_ipsc->rNumericArgs(3)));
                 ErrorsFound = true;
             }
-            ig.LEDRadFraction = state.dataIPShortCut->rNumericArgs(4);
+            ig.LEDRadFraction = s_ipsc->rNumericArgs(4);
             if (ig.LEDRadFraction < 0 || ig.LEDRadFraction > 1.0) {
                 ShowSevereError(state,
                                 format("{}=\"{}\", invalid {} entered={}",
                                        RoutineName,
-                                       state.dataIPShortCut->cAlphaArgs(1),
-                                       state.dataIPShortCut->cNumericFieldNames(4),
-                                       state.dataIPShortCut->rNumericArgs(4)));
+                                       s_ipsc->cAlphaArgs(1),
+                                       s_ipsc->cNumericFieldNames(4),
+                                       s_ipsc->rNumericArgs(4)));
                 ErrorsFound = true;
             }
             if (state.dataGlobal->AnyEnergyManagementSystemInModel) {
@@ -459,7 +388,7 @@ namespace IndoorGreen {
         }
     }
 
-    void InitIndoorGreen(EnergyPlusData &state)
+    void InitIndoorGreen(EnergyPlusData const &state)
     {
         // Set the reporting variables to zero at each timestep.
         for (auto &ig : state.dataIndoorGreen->indoorGreens) {
@@ -518,10 +447,10 @@ namespace IndoorGreen {
             }
             switch (ig.lightingMethod) {
             case LightingMethod::LED: {
-                ig.ZPPFD = ScheduleManager::GetCurrentScheduleValue(state, ig.SchedLEDPtr) * ig.LEDNominalPPFD; // PPFD
-                ig.LEDActualPPFD = ig.LEDNominalPPFD;
-                ig.LEDActualEleP = ig.LEDNominalEleP;
-                ig.LEDActualEleCon = ig.LEDNominalEleP * Timestep;
+                ig.ZPPFD = ig.ledSched->getCurrentVal() * ig.LEDNominalPPFD; // PPFD
+                ig.LEDActualPPFD = ig.ZPPFD;
+                ig.LEDActualEleP = ig.ledSched->getCurrentVal() * ig.LEDNominalEleP;
+                ig.LEDActualEleCon = ig.LEDActualEleP * Timestep;
             } break;
             case LightingMethod::Daylighting: {
                 ig.ZPPFD = 0;
@@ -533,8 +462,9 @@ namespace IndoorGreen {
                                77; // To be updated currently only take one reference point; 77 conversion factor from Lux to PPFD
                 }
             } break;
+
             case LightingMethod::LEDDaylighting: {
-                Real64 a = ScheduleManager::GetCurrentScheduleValue(state, ig.SchedLEDDaylightTargetPtr);
+                Real64 a = ig.ledDaylightTargetSched->getCurrentVal();
                 Real64 b = 0;
                 if (!state.dataDayltg->CalcDayltghCoefficients_firstTime && state.dataEnvrn->SunIsUp) {
                     b = state.dataDayltg->daylightControl(ig.LightControlPtr).refPts(1).lums[DataSurfaces::iLum_Illum] /
@@ -564,16 +494,15 @@ namespace IndoorGreen {
                 ig.ETRate = ETBaseFunction(state, ZonePreTemp, ZonePreHum, ZonePPFD, ZoneVPD, LAI, SwitchF);
             }
             Real64 effectivearea = std::min(ig.LeafArea, LAI * state.dataSurface->Surface(ig.SurfPtr).Area);
-            ETTotal =
-                ig.ETRate * Timestep * effectivearea *
-                ScheduleManager::GetCurrentScheduleValue(state, ig.SchedPtr); // kg; this unit area should be surface area instead of total leaf area
+            ETTotal = ig.ETRate * Timestep * effectivearea *
+                      ig.sched->getCurrentVal(); // kg; this unit area should be surface area instead of total leaf area
             Real64 hfg = Psychrometrics::PsyHfgAirFnWTdb(ZonePreHum, ZonePreTemp) / std::pow(10, 6); // Latent heat of vaporization (MJ/kg)
             ig.LambdaET = ETTotal * hfg * std::pow(10, 6) / state.dataSurface->Surface(ig.SurfPtr).Area / Timestep; // (W/m2))
             rhoair = Psychrometrics::PsyRhoAirFnPbTdbW(state, state.dataEnvrn->OutBaroPress, ZonePreTemp, ZonePreHum);
             ZoneAirVol = state.dataHeatBal->Zone(ig.ZonePtr).Volume;
             ZoneNewHum = ZonePreHum + ETTotal / (rhoair * ZoneAirVol);
             Twb = Psychrometrics::PsyTwbFnTdbWPb(state, ZonePreTemp, ZonePreHum, state.dataEnvrn->OutBaroPress);
-            ZoneSatHum = Psychrometrics::PsyWFnTdpPb(state, ZonePreTemp, state.dataEnvrn->OutBaroPress); // saturated humidity ratio
+            ZoneSatHum = Psychrometrics::PsyWFnTdbRhPb(state, Twb, 1.0, state.dataEnvrn->OutBaroPress); // saturated humidity ratio
             HCons = Psychrometrics::PsyHFnTdbW(ZonePreTemp, ZonePreHum);
             if (ZoneNewHum <= ZoneSatHum) {
                 ZoneNewTemp = Psychrometrics::PsyTdbFnHW(HCons, ZoneNewHum);

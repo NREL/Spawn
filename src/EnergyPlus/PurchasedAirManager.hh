@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -144,15 +144,14 @@ namespace PurchasedAirManager {
     struct ZonePurchasedAir
     {
         // Members
-        std::string cObjectName;     // Name of the object from IDD
-        std::string Name;            // Name or identifier of this piece of equipment
-        std::string AvailSched;      // System availability schedule
-        int AvailSchedPtr;           // Index to system availability schedule
-        int ZoneSupplyAirNodeNum;    // Node number of zone supply air node for purchased air
-        int ZoneExhaustAirNodeNum;   // Node number of zone exhaust air node for purchased air
-        int PlenumExhaustAirNodeNum; // Node number of plenum exhaust air node
-        int ReturnPlenumIndex;       // Index of return plenum
-        int PurchAirArrayIndex;      // Index to sub-array that links ideal loads air system to index of sub-array
+        std::string cObjectName;               // Name of the object from IDD
+        std::string Name;                      // Name or identifier of this piece of equipment
+        Sched::Schedule *availSched = nullptr; // System availability schedule
+        int ZoneSupplyAirNodeNum;              // Node number of zone supply air node for purchased air
+        int ZoneExhaustAirNodeNum;             // Node number of zone exhaust air node for purchased air
+        int PlenumExhaustAirNodeNum;           // Node number of plenum exhaust air node
+        int ReturnPlenumIndex;                 // Index of return plenum
+        int PurchAirArrayIndex;                // Index to sub-array that links ideal loads air system to index of sub-array
         std::string ReturnPlenumName;
         int ZoneRecircAirNodeNum; // Node number of recirculation air node for purchased air
         //   same as exhaust node if specified, otherwise zone return node
@@ -166,13 +165,11 @@ namespace PurchasedAirManager {
         Real64 MaxHeatSensCap;     // Maximum heating sensible capacity [W]
         LimitType CoolingLimit;    // Cooling capacity limit type - NoLimit, LimitFlowRate, LimitCapacity,
         //       or LimitFlowRateAndCapacity
-        Real64 MaxCoolVolFlowRate;  // Maximum cooling supply air flow [m3/s]
-        Real64 MaxCoolTotCap;       // Maximum cooling total capacity [W]
-        std::string HeatSched;      // Heating availablity schedule
-        int HeatSchedPtr;           // Index to heating availability schedule
-        std::string CoolSched;      // Cooling availability schedule
-        int CoolSchedPtr;           // Index to the cooling availability schedule
-        HumControl DehumidCtrlType; // Dehumidification control type - ConstantSensibleHeatRatio,
+        Real64 MaxCoolVolFlowRate;                 // Maximum cooling supply air flow [m3/s]
+        Real64 MaxCoolTotCap;                      // Maximum cooling total capacity [W]
+        Sched::Schedule *heatAvailSched = nullptr; // Heating availability schedule
+        Sched::Schedule *coolAvailSched = nullptr; // Index to the cooling availability schedule
+        HumControl DehumidCtrlType;                // Dehumidification control type - ConstantSensibleHeatRatio,
         //      Humidistat, or ConstantSupplyHumidityRatio
         Real64 CoolSHR;           // Cooling sensible heat ratio
         HumControl HumidCtrlType; // Humidification control type - None,
@@ -182,27 +179,27 @@ namespace PurchasedAirManager {
         //      OccupancySchedule, or CO2SetPoint
         Econ EconomizerType; // Outdoor air economizer type - NoEconomizer,
         //      DifferentialDryBulb, or DifferentialEnthalpy
-        bool OutdoorAir;                    // Is there outdoor air?
-        int OutdoorAirNodeNum;              // Node number of the outdoor air inlet node
-        HeatRecovery HtRecType;             // Outdoor air heat recovery type - None, Sensible, Enthalpy
-        Real64 HtRecSenEff;                 // Sensible heat recovery effectiveness
-        Real64 HtRecLatEff;                 // Latent heat recovery effectiveness
-        int OAFlowFracSchPtr;               // Fraction schedule applied to total OA requirement
-        Real64 MaxHeatMassFlowRate;         // The maximum heating air mass flow rate [kg/s]
-        Real64 MaxCoolMassFlowRate;         // The maximum cooling air mass flow rate [kg/s]
-        bool EMSOverrideMdotOn;             // if true, then EMS is calling to override supply mass flow rate
-        Real64 EMSValueMassFlowRate;        // Value EMS is directing to use for supply mass flow rate [kg/s]
-        bool EMSOverrideOAMdotOn;           // if true, then EMS is calling to override OA mass flow rate
-        Real64 EMSValueOAMassFlowRate;      // Value EMS is directing to use for OA mass flow rate [kg/s]
-        bool EMSOverrideSupplyTempOn;       // if true, then EMS is calling to override supply temperature
-        Real64 EMSValueSupplyTemp;          // Value EMS is directing to use for supply temperature [C]
-        bool EMSOverrideSupplyHumRatOn;     // if true, then EMS is calling to override supply humidity ratio
-        Real64 EMSValueSupplyHumRat;        // Value EMS is directing to use for supply humidity ratio [kgWater/kgDryAir]
-        Real64 MinOAMassFlowRate;           // The minimum required outdoor air mass flow rate [kg/s]
-        Real64 OutdoorAirMassFlowRate;      // The outdoor air mass flow rate [kg/s]
-        Real64 OutdoorAirVolFlowRateStdRho; //  The outdoor air volume flow rate using standard density  [m3/s]
-        Real64 SupplyAirMassFlowRate;       // Supply air mass flow rate [kg/s]
-        Real64 SupplyAirVolFlowRateStdRho;  // supply air volume flow using standard density [m3/s]
+        bool OutdoorAir;                            // Is there outdoor air?
+        int OutdoorAirNodeNum;                      // Node number of the outdoor air inlet node
+        HeatRecovery HtRecType;                     // Outdoor air heat recovery type - None, Sensible, Enthalpy
+        Real64 HtRecSenEff;                         // Sensible heat recovery effectiveness
+        Real64 HtRecLatEff;                         // Latent heat recovery effectiveness
+        Sched::Schedule *oaFlowFracSched = nullptr; // Fraction schedule applied to total OA requirement
+        Real64 MaxHeatMassFlowRate;                 // The maximum heating air mass flow rate [kg/s]
+        Real64 MaxCoolMassFlowRate;                 // The maximum cooling air mass flow rate [kg/s]
+        bool EMSOverrideMdotOn;                     // if true, then EMS is calling to override supply mass flow rate
+        Real64 EMSValueMassFlowRate;                // Value EMS is directing to use for supply mass flow rate [kg/s]
+        bool EMSOverrideOAMdotOn;                   // if true, then EMS is calling to override OA mass flow rate
+        Real64 EMSValueOAMassFlowRate;              // Value EMS is directing to use for OA mass flow rate [kg/s]
+        bool EMSOverrideSupplyTempOn;               // if true, then EMS is calling to override supply temperature
+        Real64 EMSValueSupplyTemp;                  // Value EMS is directing to use for supply temperature [C]
+        bool EMSOverrideSupplyHumRatOn;             // if true, then EMS is calling to override supply humidity ratio
+        Real64 EMSValueSupplyHumRat;                // Value EMS is directing to use for supply humidity ratio [kgWater/kgDryAir]
+        Real64 MinOAMassFlowRate;                   // The minimum required outdoor air mass flow rate [kg/s]
+        Real64 OutdoorAirMassFlowRate;              // The outdoor air mass flow rate [kg/s]
+        Real64 OutdoorAirVolFlowRateStdRho;         //  The outdoor air volume flow rate using standard density  [m3/s]
+        Real64 SupplyAirMassFlowRate;               // Supply air mass flow rate [kg/s]
+        Real64 SupplyAirVolFlowRateStdRho;          // supply air volume flow using standard density [m3/s]
         // Intermediate results
         Real64 HtRecSenOutput;        // Sensible heating/cooling rate from heat recovery (<0 means cooling) [W]
         Real64 HtRecLatOutput;        // Latent heating/cooling rate from heat recovery (<0 means cooling or dehumidfying) [W]
@@ -281,20 +278,19 @@ namespace PurchasedAirManager {
 
         // Default Constructor
         ZonePurchasedAir()
-            : AvailSchedPtr(0), ZoneSupplyAirNodeNum(0), ZoneExhaustAirNodeNum(0), PlenumExhaustAirNodeNum(0), ReturnPlenumIndex(0),
-              PurchAirArrayIndex(0), ZoneRecircAirNodeNum(0), MaxHeatSuppAirTemp(0.0), MinCoolSuppAirTemp(0.0), MaxHeatSuppAirHumRat(0.0),
-              MinCoolSuppAirHumRat(0.0), HeatingLimit(LimitType::Invalid), MaxHeatVolFlowRate(0.0), MaxHeatSensCap(0.0),
-              CoolingLimit(LimitType::Invalid), MaxCoolVolFlowRate(0.0), MaxCoolTotCap(0.0), HeatSchedPtr(0), CoolSchedPtr(0),
-              DehumidCtrlType(HumControl::Invalid), CoolSHR(0.0), HumidCtrlType(HumControl::Invalid), OARequirementsPtr(0), DCVType(DCV::Invalid),
-              EconomizerType(Econ::Invalid), OutdoorAir(false), OutdoorAirNodeNum(0), HtRecType(HeatRecovery::Invalid), HtRecSenEff(0.0),
-              HtRecLatEff(0.0), OAFlowFracSchPtr(0), MaxHeatMassFlowRate(0.0), MaxCoolMassFlowRate(0.0), EMSOverrideMdotOn(false),
-              EMSValueMassFlowRate(0.0), EMSOverrideOAMdotOn(false), EMSValueOAMassFlowRate(0.0), EMSOverrideSupplyTempOn(false),
-              EMSValueSupplyTemp(0.0), EMSOverrideSupplyHumRatOn(false), EMSValueSupplyHumRat(0.0), MinOAMassFlowRate(0.0),
-              OutdoorAirMassFlowRate(0.0), OutdoorAirVolFlowRateStdRho(0.0), SupplyAirMassFlowRate(0.0), SupplyAirVolFlowRateStdRho(0.0),
-              HtRecSenOutput(0.0), HtRecLatOutput(0.0), OASenOutput(0.0), OALatOutput(0.0), SenOutputToZone(0.0), LatOutputToZone(0.0),
-              SenCoilLoad(0.0), LatCoilLoad(0.0), OAFlowMaxCoolOutputError(0), OAFlowMaxHeatOutputError(0), SaturationOutputError(0),
-              OAFlowMaxCoolOutputIndex(0), OAFlowMaxHeatOutputIndex(0), SaturationOutputIndex(0), CoolErrIndex(0), HeatErrIndex(0),
-              SenHeatEnergy(0.0), LatHeatEnergy(0.0), TotHeatEnergy(0.0), SenCoolEnergy(0.0), LatCoolEnergy(0.0), TotCoolEnergy(0.0),
+            : ZoneSupplyAirNodeNum(0), ZoneExhaustAirNodeNum(0), PlenumExhaustAirNodeNum(0), ReturnPlenumIndex(0), PurchAirArrayIndex(0),
+              ZoneRecircAirNodeNum(0), MaxHeatSuppAirTemp(0.0), MinCoolSuppAirTemp(0.0), MaxHeatSuppAirHumRat(0.0), MinCoolSuppAirHumRat(0.0),
+              HeatingLimit(LimitType::Invalid), MaxHeatVolFlowRate(0.0), MaxHeatSensCap(0.0), CoolingLimit(LimitType::Invalid),
+              MaxCoolVolFlowRate(0.0), MaxCoolTotCap(0.0), DehumidCtrlType(HumControl::Invalid), CoolSHR(0.0), HumidCtrlType(HumControl::Invalid),
+              OARequirementsPtr(0), DCVType(DCV::Invalid), EconomizerType(Econ::Invalid), OutdoorAir(false), OutdoorAirNodeNum(0),
+              HtRecType(HeatRecovery::Invalid), HtRecSenEff(0.0), HtRecLatEff(0.0), MaxHeatMassFlowRate(0.0), MaxCoolMassFlowRate(0.0),
+              EMSOverrideMdotOn(false), EMSValueMassFlowRate(0.0), EMSOverrideOAMdotOn(false), EMSValueOAMassFlowRate(0.0),
+              EMSOverrideSupplyTempOn(false), EMSValueSupplyTemp(0.0), EMSOverrideSupplyHumRatOn(false), EMSValueSupplyHumRat(0.0),
+              MinOAMassFlowRate(0.0), OutdoorAirMassFlowRate(0.0), OutdoorAirVolFlowRateStdRho(0.0), SupplyAirMassFlowRate(0.0),
+              SupplyAirVolFlowRateStdRho(0.0), HtRecSenOutput(0.0), HtRecLatOutput(0.0), OASenOutput(0.0), OALatOutput(0.0), SenOutputToZone(0.0),
+              LatOutputToZone(0.0), SenCoilLoad(0.0), LatCoilLoad(0.0), OAFlowMaxCoolOutputError(0), OAFlowMaxHeatOutputError(0),
+              SaturationOutputError(0), OAFlowMaxCoolOutputIndex(0), OAFlowMaxHeatOutputIndex(0), SaturationOutputIndex(0), CoolErrIndex(0),
+              HeatErrIndex(0), SenHeatEnergy(0.0), LatHeatEnergy(0.0), TotHeatEnergy(0.0), SenCoolEnergy(0.0), LatCoolEnergy(0.0), TotCoolEnergy(0.0),
               ZoneSenHeatEnergy(0.0), ZoneLatHeatEnergy(0.0), ZoneTotHeatEnergy(0.0), ZoneSenCoolEnergy(0.0), ZoneLatCoolEnergy(0.0),
               ZoneTotCoolEnergy(0.0), OASenHeatEnergy(0.0), OALatHeatEnergy(0.0), OATotHeatEnergy(0.0), OASenCoolEnergy(0.0), OALatCoolEnergy(0.0),
               OATotCoolEnergy(0.0), HtRecSenHeatEnergy(0.0), HtRecLatHeatEnergy(0.0), HtRecTotHeatEnergy(0.0), HtRecSenCoolEnergy(0.0),
@@ -407,6 +403,10 @@ struct PurchasedAirManagerData : BaseGlobalStruct
     Array1D_bool InitPurchasedAirOneTimeUnitInitsDone; // True if one-time inits for PurchAirNum are completed
     Array1D<PurchasedAirManager::PurchAirPlenumArrayData>
         TempPurchAirPlenumArrays; // Used to save the indices of scalable sizing object for zone HVAC
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

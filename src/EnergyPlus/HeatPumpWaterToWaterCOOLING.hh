@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -70,6 +70,8 @@ namespace HeatPumpWaterToWaterCOOLING {
         // Members
         std::string Name; // user identifier
         DataPlant::PlantEquipmentType WWHPPlantTypeOfNum;
+
+        Fluid::RefrigProps *refrig = nullptr;
         bool Available;                  // need an array of logicals--load identifiers of available equipment
         bool ON;                         // simulate the machine at it's operating part load ratio
         Real64 COP;                      // Coefficient of Performance of the machine
@@ -170,9 +172,12 @@ struct HeatPumpWaterToWaterCOOLINGData : BaseGlobalStruct
 {
 
     int NumGSHPs = 0;
-    int GSHPRefrigIndex = 0;
     bool GetWWHPCoolingInput = true;
     Array1D<HeatPumpWaterToWaterCOOLING::GshpPeCoolingSpecs> GSHP;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
@@ -181,7 +186,6 @@ struct HeatPumpWaterToWaterCOOLINGData : BaseGlobalStruct
     void clear_state() override
     {
         this->NumGSHPs = 0;
-        this->GSHPRefrigIndex = 0;
         this->GetWWHPCoolingInput = true;
         this->GSHP.deallocate();
     }

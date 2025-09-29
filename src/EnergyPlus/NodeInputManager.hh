@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,6 +56,7 @@
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/DataLoopNode.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 
 namespace EnergyPlus {
 
@@ -175,15 +176,19 @@ struct NodeInputManagerData : BaseGlobalStruct
 
     Real64 RhoAirStdInit;
     Real64 RhoWaterStdInit;
-    Array1D_int NodeWetBulbSchedPtr;
+    Array1D<Sched::Schedule *> NodeWetBulbScheds;
     Array1D_bool NodeRelHumidityRepReq;
-    Array1D_int NodeRelHumiditySchedPtr;
+    Array1D<Sched::Schedule *> NodeRelHumidityScheds;
     Array1D_bool NodeDewPointRepReq;
-    Array1D_int NodeDewPointSchedPtr;
+    Array1D<Sched::Schedule *> NodeDewPointScheds;
     Array1D_bool NodeSpecificHeatRepReq;
-    Array1D_int NodeSpecificHeatSchedPtr;
+    Array1D<Sched::Schedule *> NodeSpecificHeatScheds;
     std::vector<std::string> nodeReportingStrings;
-    std::vector<std::string> nodeFluidNames;
+    std::vector<Fluid::GlycolProps *> nodeFluids;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

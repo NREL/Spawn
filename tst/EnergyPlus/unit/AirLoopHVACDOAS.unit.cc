@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -90,7 +90,6 @@ using namespace EnergyPlus;
 using namespace DataSurfaces;
 using namespace DataHeatBalance;
 using namespace EnergyPlus::DataLoopNode;
-using namespace EnergyPlus::ScheduleManager;
 using namespace OutAirNodeManager;
 using namespace HeatingCoils;
 
@@ -4035,6 +4034,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOASTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->init_state(*state);
+
     state->dataIPShortCut->lNumericFieldBlanks.allocate(1000);
     state->dataIPShortCut->lAlphaFieldBlanks.allocate(1000);
     state->dataIPShortCut->cAlphaFieldNames.allocate(1000);
@@ -4048,10 +4049,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOASTest)
     state->dataIPShortCut->cAlphaArgs = " ";
     state->dataIPShortCut->rNumericArgs = 0.0;
 
-    bool ErrorsFound = false;
     // Read objects
-    HeatBalanceManager::GetProjectControlData(*state, ErrorsFound);
-    EXPECT_FALSE(ErrorsFound);
+    bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
     Material::GetWindowGlassSpectralData(*state, ErrorsFound);
@@ -4132,7 +4131,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOASTest)
 
     state->dataEnvrn->OutBaroPress = 101325.0;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0; // set availability and fan schedule to 1
+    auto *sched = Sched::GetSchedule(*state, "ALWAYS_ON");
+    sched->currentVal = 1.0; // set availability and fan schedule to 1
 
     thisAirLoopDOASObjec.SimAirLoopHVACDOAS(*state, true, index);
 
@@ -4374,6 +4374,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestOACompOutletNodeIndex)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+
+    state->init_state(*state);
 
     MixedAir::GetOutsideAirSysInputs(*state);
     state->dataMixedAir->GetOASysInputFlag = false;
@@ -8434,9 +8436,10 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_ReportVariableResetTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->init_state(*state);
+
     bool ErrorsFound = false;
     // Read objects
-    HeatBalanceManager::GetProjectControlData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     EXPECT_FALSE(ErrorsFound);
@@ -8519,7 +8522,9 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_ReportVariableResetTest)
 
     state->dataEnvrn->OutBaroPress = 101325.0;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0;
+    auto *sched = Sched::GetSchedule(*state, "ALWAYS_ON");
+    sched->currentVal = 1.0;
+
     // simulte the DOAS
     thisAirLoopDOASObjec.SimAirLoopHVACDOAS(*state, true, index);
     // verify doas air flow rate and heating rate
@@ -8842,6 +8847,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestOACompFanNoDrawAndBlow)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->init_state(*state);
+
     MixedAir::GetOutsideAirSysInputs(*state);
     state->dataMixedAir->GetOASysInputFlag = false;
     MixedAir::GetOAMixerInputs(*state);
@@ -8875,7 +8882,7 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestFanHeatAddeToCoolingCoilSize)
     // 9066
     std::string const idf_objects = delimited_string({
 
-        "  Version,24.2;",
+        "  Version,25.1;",
 
         "  SimulationControl,",
         "    YES,                     !- Do Zone Sizing Calculation",
@@ -10063,15 +10070,16 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestFanHeatAddeToCoolingCoilSize)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataGlobal->DDOnlySimulation = true;
 
     SimulationManager::ManageSimulation(*state); // run the design day over the warmup period (24 hrs, 25 days)
 
     // OA flow rate
-    EXPECT_NEAR(state->dataUnitarySystems->unitarySys[0].m_MaxCoolAirVolFlow, 0.55713, 0.001);
+    EXPECT_NEAR(state->dataUnitarySystems->unitarySys[0].m_MaxCoolAirVolFlow, 0.65598, 0.001);
     // Cooling capacity
-    EXPECT_NEAR(state->dataUnitarySystems->unitarySys[0].m_DesignCoolingCapacity, 21135.6226, 0.01);
+    EXPECT_NEAR(state->dataUnitarySystems->unitarySys[0].m_DesignCoolingCapacity, 24885.6323, 0.01);
 }
 
 TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestOACompConnectionError)
@@ -10394,6 +10402,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestOACompConnectionError)
     ASSERT_TRUE(process_idf(idf_objects));
     compare_err_stream_substring("", true);
 
+    state->init_state(*state);
+
     MixedAir::GetOutsideAirSysInputs(*state);
     state->dataMixedAir->GetOASysInputFlag = false;
     MixedAir::GetOAMixerInputs(*state);
@@ -10436,7 +10446,7 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestFanDrawThroughPlacement)
     // 9066
     std::string const idf_objects = delimited_string({
 
-        "  Version,24.2;",
+        "  Version,25.1;",
 
         "  SimulationControl,",
         "    YES,                     !- Do Zone Sizing Calculation",
@@ -11625,6 +11635,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestFanDrawThroughPlacement)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->init_state(*state);
+
     state->dataGlobal->DDOnlySimulation = true;
 
     SimulationManager::ManageSimulation(*state); // run the design day over the warmup period (24 hrs, 25 days)
@@ -11663,7 +11675,8 @@ TEST_F(EnergyPlusFixture, AirLoopHVACDOAS_TestFanDrawThroughPlacement)
 
     state->dataEnvrn->OutBaroPress = 101325.0;
 
-    state->dataScheduleMgr->Schedule(1).CurrentValue = 1.0; // set availability and fan schedule to 1
+    auto *sched = Sched::GetSchedule(*state, "ALWAYS_ON");
+    sched->currentVal = 1.0; // set availability and fan schedule to 1
 
     thisAirLoopDOASObjec.SimAirLoopHVACDOAS(*state, true, index);
 

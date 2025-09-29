@@ -102,6 +102,22 @@ This number is the ``C'' parameter in the above infiltration equation. It is par
 
 This number is the ``D'' parameter in the above infiltration equation. It is part of the user specified modifying parameters that are a function of environmental factors. This parameter is modified by square of the speed of wind being experienced outside the building. The units for this parameter are s\(^{2}\)/m\(^{2}\).
 
+\paragraph{Field: Density Basis}\label{field-density-basis}
+
+This field specifies which density to use when converting the volume flow rate to mass flow rate. The choices are:
+
+\begin{description}
+
+\item[Outdoor] Use the current outdoor air density for the applicable zone or space. This is the default.
+
+\item[Standard] Use the altitude-adjusted standard density of dry air at 20 °C drybulb. This is the same density that is used to convert HVAC system volume flow rates to mass flow.
+
+\item[Indoor] Use the current indoor air density for the applicable zone or space.
+
+\end{description}
+
+
+
 An IDF example:
 
 \begin{lstlisting}
@@ -118,7 +134,8 @@ ZoneInfiltration:DesignFlowRate,
     0.6060000    ,  !- Constant Term Coefficient
     3.6359996E-02,  !- Temperature Term Coefficient
     0.1177165    ,  !- Velocity Term Coefficient
-    0.0000000E+00;  !- Velocity Squared Term Coefficient
+    0.0000000E+00,  !- Velocity Squared Term Coefficient
+    Outdoor;        !- Density Basis
 \end{lstlisting}
 
 Global Infiltration example:
@@ -407,6 +424,8 @@ Object level outputs include:
 \item
   HVAC,Average,Infiltration Standard Density Volume Flow Rate {[}m3/s{]}
 \item
+  HVAC,Average,Infiltration Outdoor Density Volume Flow Rate {[}m3/s{]}
+\item
   HVAC,Sum,Infiltration Current Density Volume {[}m3{]}
 \item
   HVAC,Sum,Infiltration Standard Density Volume {[}m3{]}
@@ -415,7 +434,11 @@ Object level outputs include:
 \item
   HVAC,Average,Infiltration Mass Flow Rate {[}kg/s{]}
 \item
-  HVAC,Average,Infiltration Air Change Rate {[}ACH{]}
+  HVAC,Average,Infiltration Current Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Infiltration Standard Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Infiltration Outdoor Density Air Change Rate {[}ACH{]}
 \end{itemize}
 
 Zone level outputs include:
@@ -438,6 +461,8 @@ Zone level outputs include:
 \item
   HVAC,Average,Zone Infiltration Standard Density Volume Flow Rate {[}m3/s{]}
 \item
+  HVAC,Average,Zone Infiltration Outdoor Density Volume Flow Rate {[}m3/s{]}
+\item
   HVAC,Sum,Zone Infiltration Current Density Volume {[}m3{]}
 \item
   HVAC,Sum,Zone Infiltration Standard Density Volume {[}m3{]}
@@ -446,7 +471,11 @@ Zone level outputs include:
 \item
   HVAC,Average,Zone Infiltration Mass Flow Rate {[}kg/s{]}
 \item
-  HVAC,Average,Zone Infiltration Air Change Rate {[}ACH{]}
+  HVAC,Average,Zone Infiltration Current Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Zone Infiltration Standard Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Zone Infiltration Outdoor Density Air Change Rate {[}ACH{]}
 \end{itemize}
 
 Note: If ZoneInfiltration:* objects and ZoneAirBalance:OutdoorAir (with Air Balance Method = Quadrature) objects reference the same Zone Name, the above infiltration output variables will not be reported for that zone. Instead, output variables for zone outdoor air flow will be reported by the corresponding ZoneAirBalance:OutdoorAir object.
@@ -487,6 +516,10 @@ These outputs are the total volume and volume flow rate of infiltration air base
 
 These outputs are the total volume and volume flow rate of infiltration air based on the standard density of air. Standard density in EnergyPlus corresponds to 20$^\circ$C drybulb, dry air, and nominally adjusted for elevation.
 
+\paragraph{Zone Infiltration Outdoor Density Volume Flow Rate {[}m3/s{]}}\label{zone-infiltration-outdoor-density-volume-flow-rate-m3s}
+
+This output is the volume flow rate of infiltration air based on the current density of outdoor air.
+
 \paragraph{Zone Infiltration Mass {[}kg{]}}\label{zone-infiltration-mass-kg}
 
 The mass flow of the Infiltration air.
@@ -495,9 +528,11 @@ The mass flow of the Infiltration air.
 
 The mass flow rate of the Infiltration air.
 
-\paragraph{Zone Infiltration Air Change Rate {[}ach{]}}\label{zone-infiltration-air-change-rate-ach}
+\paragraph{Zone Infiltration Current Density Air Change Rate {[}ach{]}}\label{zone-infiltration-air-change-rate-ach}
+\paragraph{Zone Infiltration Standard Density Air Change Rate {[}ach{]}}\label{zone-infiltration-standard-air-change-rate-ach}
+\paragraph{Zone Infiltration Outdoor Density Air Change Rate {[}ach{]}}\label{zone-infiltration-outdoor-air-change-rate-ach}
 
-The rate of infiltration in air changes per hour.
+These outputs are the rate of infiltration in air changes per hour, converted from mass flow rate to volume flow rate using the current zone air density, standard density, or the current outdoor density, respectively. Standard density in EnergyPlus corresponds to 20$^\circ$C drybulb, dry air, and nominally adjusted for elevation.
 
 \subsection{ZoneVentilation:DesignFlowRate}\label{zoneventilationdesignflowrate}
 
@@ -655,6 +690,20 @@ This alpha field contains the name of a schedule (ref. Schedule objects) which c
 
 This is the wind speed (m/s) above which ventilation is shut off. This can help simulate conditions where one would normally close windows to avoid chaos in a space (papers blowing around, etc.).
 
+\paragraph{Field: Density Basis}\label{field-density-basis-3}
+
+This field specifies which density to use when converting the volume flow rate to mass flow rate. The choices are:
+
+\begin{description}
+
+\item[Outdoor] Use the current outdoor air density for the applicable zone or space. This is the default.
+
+\item[Standard] Use the altitude-adjusted standard density of dry air at 20 °C drybulb. This is the same density that is used to convert HVAC system volume flow rates to mass flow.
+
+\item[Indoor] Use the current indoor air density for the applicable zone or space.
+
+\end{description}
+
 Two IDF examples are provided below:
 
 \begin{lstlisting}
@@ -679,7 +728,8 @@ ZoneVentilation:DesignFlowRate,
     ,               !- Minimum Indoor Temperature Schedule Name
     ,               !- Maximum Indoor Temperature {C}
     ,               !- Maximum Indoor Temperature Schedule Name
-    1.0;            !- Delta temperature {C}
+    1.0,            !- Delta temperature {C}
+    Outdoor;        !- Density Basis
 
   ZoneVentilation:DesignFlowRate,
       SPACE1-1 Ventl 1,        !-Name
@@ -936,6 +986,8 @@ Current ventilation output variables:
 \item
   HVAC,Average,Zone Ventilation Standard Density Volume Flow Rate {[}m3/s{]}
 \item
+  HVAC,Average,Zone Ventilation Outdoor Density Volume Flow Rate {[}m3/s{]}
+\item
   HVAC,Sum,Zone Ventilation Current Density Volume {[}m3{]}
 \item
   HVAC,Sum,Zone Ventilation Standard Density Volume {[}m3{]}
@@ -944,7 +996,11 @@ Current ventilation output variables:
 \item
   HVAC,Average,Zone Ventilation Mass Flow Rate {[}kg/s{]}
 \item
-  HVAC,Average,Zone Ventilation Air Change Rate {[}ACH{]}
+  HVAC,Average,Zone Ventilation Current Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Zone Ventilation Standard Density Air Change Rate {[}ACH{]}
+\item
+  HVAC,Average,Zone Ventilation Outdoor Density Air Change Rate {[}ACH{]}
 \item
   HVAC,Sum,Zone Ventilation Fan Electricity Energy {[}J{]}
 \item
@@ -989,6 +1045,10 @@ These outputs are the total volume and volume flow rate of ventilation air based
 
 These outputs are the total volume and volume flow rate of ventilation air based on the standard density of air.~ Standard density in EnergyPlus corresponds to 20$^\circ$C drybulb, dry air, and nominally adjusted for elevation.
 
+\paragraph{Zone Ventilation Outdoor Density Volume Flow Rate {[}m3/s{]}}\label{zone-ventilation-outdoor-density-volume-flow-rate-m3s}
+
+This output is the volume flow rate of ventilation air based on the current density of outdoor air.
+
 \paragraph{Zone Ventilation Mass {[}kg{]}}\label{zone-ventilation-mass-kg}
 
 This output is the total mass flow into a particular zone from outdoors.
@@ -997,9 +1057,11 @@ This output is the total mass flow into a particular zone from outdoors.
 
 This output is the total mass flow rate into a particular zone from outdoors.
 
-\paragraph{Zone Ventilation Air Change Rate {[}ach{]}}\label{zone-ventilation-air-change-rate-ach}
+\paragraph{Zone Ventilation Current Density Air Change Rate {[}ach{]}}\label{zone-ventilation-air-change-rate-ach}
+\paragraph{Zone Ventilation Standard Density Air Change Rate {[}ach{]}}\label{zone-ventilation-standard-air-change-rate-ach}
+\paragraph{Zone Ventilation Outdoor Density Air Change Rate {[}ach{]}}\label{zone-ventilation-outdoor-air-change-rate-ach}
 
-The volume flow rate of the ventilation air in air changes per hour.
+These outputs are the rate of ventilation in air changes per hour, converted from mass flow rate to volume flow rate using the current zone air density, standard density, or the current outdoor density, respectively. Standard density in EnergyPlus corresponds to 20$^\circ$C drybulb, dry air, and nominally adjusted for elevation.
 
 \paragraph{Zone Ventilation Fan Electricity Energy {[}J{]}}\label{zone-ventilation-fan-electric-energy-j}
 
@@ -1927,7 +1989,7 @@ This is the rate of heat transfer from the earth tube to the outdoor air {[}W{]}
 
 This is the wet bulb temperature of the air entering the zone after passing through the earth tube {[}C{]}.
 
-\paragraph{Earth Tube Zone Inlet Humidity Ratio {[}kgWater/krDryAir{]}}\label{earth-tube-zone-inlet-humidity-ratio-kgWater/kgDryAir}
+\paragraph{Earth Tube Zone Inlet Humidity Ratio {[}kgWater/krDryAir{]}}\label{earth-tube-zone-inlet-humidity-ratio-kgWater-kgDryAir}
 
 This is the humidity ratio of the air entering the zone after passing through the earth tube {[}kgWater/kgDryAir{]}.
 

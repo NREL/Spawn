@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -86,8 +86,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_Sizing)
     thisHum.ThermalEffRated = 1.0;
     thisHum.FanPower = 0.0;
     thisHum.StandbyPower = 0.0;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
+    thisHum.availSched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataSize->FinalSysSizing.allocate(state->dataSize->CurSysNum);
     state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixTempAtCoolPeak = 30.0;
@@ -122,8 +121,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_AutoSizing)
     thisHum.ThermalEffRated = 0.80;
     thisHum.FanPower = 0.0;
     thisHum.StandbyPower = 0.0;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
+    thisHum.availSched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataSize->FinalSysSizing.allocate(state->dataSize->CurSysNum);
     state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixTempAtCoolPeak = 30.0;
@@ -152,7 +150,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_EnergyUse)
     HumidifierData thisHum;
 
     state->dataHVACGlobal->TimeStepSys = 0.25;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     state->dataSize->SysSizingRunDone = true;
     state->dataSize->CurSysNum = 1;
@@ -167,8 +165,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_EnergyUse)
     thisHum.ThermalEffRated = 1.0;
     thisHum.FanPower = 0.0;
     thisHum.StandbyPower = 0.0;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
+    thisHum.availSched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataSize->FinalSysSizing.allocate(state->dataSize->CurSysNum);
     state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixTempAtCoolPeak = 20.0;
@@ -231,6 +228,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_GetHumidifierInput)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetHumidifierInput(*state);
     ASSERT_EQ(1, state->dataHumidifiers->NumHumidifiers);
@@ -240,11 +238,11 @@ TEST_F(EnergyPlusFixture, Humidifiers_GetHumidifierInput)
 TEST_F(EnergyPlusFixture, Humidifiers_ThermalEfficiency)
 {
     // tests thermal efficiency modifier curve use
-
+    state->init_state(*state);
     HumidifierData thisHum;
 
     state->dataHVACGlobal->TimeStepSys = 0.25;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataSize->SysSizingRunDone = true;
     state->dataSize->CurSysNum = 1;
 
@@ -259,8 +257,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_ThermalEfficiency)
     thisHum.ThermalEffRated = 0.80;
     thisHum.FanPower = 0.0;
     thisHum.StandbyPower = 0.0;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-    thisHum.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
+    thisHum.availSched = Sched::GetScheduleAlwaysOn(*state);
 
     state->dataSize->FinalSysSizing.allocate(state->dataSize->CurSysNum);
     state->dataSize->FinalSysSizing(state->dataSize->CurSysNum).MixTempAtCoolPeak = 20.0;
@@ -289,6 +286,7 @@ TEST_F(EnergyPlusFixture, Humidifiers_ThermalEfficiency)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     thisHum.EfficiencyCurvePtr = Curve::GetCurveIndex(*state, "THERMALEFFICIENCYFPLR");
 

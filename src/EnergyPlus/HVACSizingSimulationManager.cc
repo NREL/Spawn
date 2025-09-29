@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -97,16 +97,8 @@ void HVACSizingSimulationManager::CreateNewCoincidentPlantAnalysisObject(EnergyP
     for (int i = 1; i <= state.dataPlnt->TotNumLoops; ++i) {
         if (PlantLoopName == state.dataPlnt->PlantLoop(i).Name) { // found it
 
-            density = FluidProperties::GetDensityGlycol(state,
-                                                        state.dataPlnt->PlantLoop(i).FluidName,
-                                                        Constant::CWInitConvTemp,
-                                                        state.dataPlnt->PlantLoop(i).FluidIndex,
-                                                        "createNewCoincidentPlantAnalysisObject");
-            cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(i).FluidName,
-                                                        Constant::CWInitConvTemp,
-                                                        state.dataPlnt->PlantLoop(i).FluidIndex,
-                                                        "createNewCoincidentPlantAnalysisObject");
+            density = state.dataPlnt->PlantLoop(i).glycol->getDensity(state, Constant::CWInitConvTemp, "createNewCoincidentPlantAnalysisObject");
+            cp = state.dataPlnt->PlantLoop(i).glycol->getSpecificHeat(state, Constant::CWInitConvTemp, "createNewCoincidentPlantAnalysisObject");
 
             plantCoincAnalyObjs.emplace_back(PlantLoopName,
                                              i,
@@ -299,7 +291,7 @@ void ManageHVACSizingSimulation(EnergyPlusData &state, bool &ErrorsFound)
                     state.dataGlobal->BeginHourFlag = true;
                     state.dataGlobal->EndHourFlag = false;
 
-                    for (state.dataGlobal->TimeStep = 1; state.dataGlobal->TimeStep <= state.dataGlobal->NumOfTimeStepInHour;
+                    for (state.dataGlobal->TimeStep = 1; state.dataGlobal->TimeStep <= state.dataGlobal->TimeStepsInHour;
                          ++state.dataGlobal->TimeStep) {
                         if (state.dataGlobal->AnySlabsInModel || state.dataGlobal->AnyBasementsInModel) {
                             PlantPipingSystemsManager::SimulateGroundDomains(state, false);
@@ -314,7 +306,7 @@ void ManageHVACSizingSimulation(EnergyPlusData &state, bool &ErrorsFound)
                         // Note also that BeginTimeStepFlag, EndTimeStepFlag, and the
                         // SubTimeStepFlags can/will be set/reset in the HVAC Manager.
 
-                        if (state.dataGlobal->TimeStep == state.dataGlobal->NumOfTimeStepInHour) {
+                        if (state.dataGlobal->TimeStep == state.dataGlobal->TimeStepsInHour) {
                             state.dataGlobal->EndHourFlag = true;
                             if (state.dataGlobal->HourOfDay == 24) {
                                 state.dataGlobal->EndDayFlag = true;

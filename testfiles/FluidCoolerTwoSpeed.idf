@@ -100,7 +100,7 @@
 ! Utility Tariffs:                None
 !
 
-  Version,24.2;
+  Version,25.1;
 
   Timestep,6;
 
@@ -1690,7 +1690,7 @@
 
   CondenserEquipmentList,
     All FluidCoolers,        !- Name
-    Fluidcooler:TwoSpeed,    !- Equipment 1 Object Type
+    FluidCooler:TwoSpeed,    !- Equipment 1 Object Type
     Big FluidCooler;         !- Equipment 1 Name
 
   FluidCooler:TwoSpeed,

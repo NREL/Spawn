@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -860,8 +860,6 @@ void PullCompInterconnectTrigger(EnergyPlusData &state,
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Edwin Lee
     //       DATE WRITTEN   September 2010
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // Provides a generic means for components to trigger interconnected loop sides sim flags
@@ -881,13 +879,6 @@ void PullCompInterconnectTrigger(EnergyPlusData &state,
     //  associated component.  Therefore whenever we come in with a non-zero index, we will just
     //  verify that the stored loop/side/branch/comp matches
 
-    // Using/Aliasing
-    using DataPlant::CriteriaDelta_HeatTransferRate;
-    using DataPlant::CriteriaDelta_MassFlowRate;
-    using DataPlant::CriteriaDelta_Temperature;
-
-    CriteriaData CurCriteria; // for convenience
-
     if (UniqueCriteriaCheckIndex <= 0) { // If we don't yet have an index, we need to initialize
 
         // We need to start by allocating, or REallocating the array
@@ -897,9 +888,10 @@ void PullCompInterconnectTrigger(EnergyPlusData &state,
         // Store the unique name and location
         state.dataPlantUtilities->CriteriaChecks(CurrentNumChecksStored).CallingCompLoopNum = plantLoc.loopNum;
         state.dataPlantUtilities->CriteriaChecks(CurrentNumChecksStored).CallingCompLoopSideNum = plantLoc.loopSideNum;
-        state.dataPlantUtilities->CriteriaChecks(CurrentNumChecksStored).CallingCompBranchNum = plantLoc.branchNum;
-        state.dataPlantUtilities->CriteriaChecks(CurrentNumChecksStored).CallingCompCompNum = plantLoc.compNum;
 
+        if (plantLoc.loopNum == 0 || plantLoc.loopSideNum == DataPlant::LoopSideLocation::Invalid) {
+            assert(false); // check that component has been set up correctly
+        }
         // Since this was the first pass, it is safe to assume something has changed!
         // Therefore we'll set the sim flag to true
         state.dataPlnt->PlantLoop(ConnectedPlantLoc.loopNum).LoopSide(ConnectedPlantLoc.loopSideNum).SimLoopSideNeeded = true;
@@ -913,33 +905,27 @@ void PullCompInterconnectTrigger(EnergyPlusData &state,
         //  sim flag status based on the criteria type
 
         // First store the current check in a single variable instead of array for readability
-        CurCriteria = state.dataPlantUtilities->CriteriaChecks(UniqueCriteriaCheckIndex);
-
-        // Check to make sure we didn't reuse the index in multiple components
-        if (CurCriteria.CallingCompLoopNum != plantLoc.loopNum || CurCriteria.CallingCompLoopSideNum != plantLoc.loopSideNum ||
-            CurCriteria.CallingCompBranchNum != plantLoc.branchNum || CurCriteria.CallingCompCompNum != plantLoc.compNum) {
-            // Diagnostic fatal: component does not properly utilize unique indexing
-        }
+        CriteriaData CurCriteria = state.dataPlantUtilities->CriteriaChecks(UniqueCriteriaCheckIndex);
 
         // Initialize, then check if we are out of range
         switch (CriteriaType) {
         case DataPlant::CriteriaType::MassFlowRate: {
-            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > CriteriaDelta_MassFlowRate) {
+            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > DataPlant::CriteriaDelta_MassFlowRate) {
                 state.dataPlnt->PlantLoop(ConnectedPlantLoc.loopNum).LoopSide(ConnectedPlantLoc.loopSideNum).SimLoopSideNeeded = true;
             }
         } break;
         case DataPlant::CriteriaType::Temperature: {
-            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > CriteriaDelta_Temperature) {
+            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > DataPlant::CriteriaDelta_Temperature) {
                 state.dataPlnt->PlantLoop(ConnectedPlantLoc.loopNum).LoopSide(ConnectedPlantLoc.loopSideNum).SimLoopSideNeeded = true;
             }
         } break;
         case DataPlant::CriteriaType::HeatTransferRate: {
-            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > CriteriaDelta_HeatTransferRate) {
+            if (std::abs(CurCriteria.ThisCriteriaCheckValue - CriteriaValue) > DataPlant::CriteriaDelta_HeatTransferRate) {
                 state.dataPlnt->PlantLoop(ConnectedPlantLoc.loopNum).LoopSide(ConnectedPlantLoc.loopSideNum).SimLoopSideNeeded = true;
             }
         } break;
         default:
-            // Diagnostic fatal: improper criteria type
+            assert(false);
             break;
         }
 
@@ -976,9 +962,6 @@ void UpdateChillerComponentCondenserSide(EnergyPlusData &state,
     // check if anything changed or doesn't agree and set simulation flags.
     // update outlet conditions if needed or possible
 
-    // Using/Aliasing
-    using FluidProperties::GetSpecificHeatGlycol;
-
     // SUBROUTINE PARAMETER DEFINITIONS:
     static constexpr std::string_view RoutineName("UpdateChillerComponentCondenserSide");
 
@@ -1009,8 +992,7 @@ void UpdateChillerComponentCondenserSide(EnergyPlusData &state,
         // use current mass flow rate and inlet temp from Node and recalculate outlet temp
         if (state.dataLoopNodes->Node(InletNodeNum).MassFlowRate > DataBranchAirLoopPlant::MassFlowTolerance) {
             // update node outlet conditions
-            Cp = GetSpecificHeatGlycol(
-                state, state.dataPlnt->PlantLoop(LoopNum).FluidName, ModelInletTemp, state.dataPlnt->PlantLoop(LoopNum).FluidIndex, RoutineName);
+            Cp = state.dataPlnt->PlantLoop(LoopNum).glycol->getSpecificHeat(state, ModelInletTemp, RoutineName);
             state.dataLoopNodes->Node(OutletNodeNum).Temp =
                 state.dataLoopNodes->Node(InletNodeNum).Temp + ModelCondenserHeatRate / (state.dataLoopNodes->Node(InletNodeNum).MassFlowRate * Cp);
         }
@@ -1068,9 +1050,6 @@ void UpdateComponentHeatRecoverySide(EnergyPlusData &state,
     // check if anything changed or doesn't agree and set simulation flags.
     // update outlet conditions if needed or possible
 
-    // Using/Aliasing
-    using FluidProperties::GetSpecificHeatGlycol;
-
     // SUBROUTINE PARAMETER DEFINITIONS:
     static constexpr std::string_view RoutineName("UpdateComponentHeatRecoverySide");
 
@@ -1100,8 +1079,7 @@ void UpdateComponentHeatRecoverySide(EnergyPlusData &state,
         // use current mass flow rate and inlet temp from Node and recalculate outlet temp
         if (state.dataLoopNodes->Node(InletNodeNum).MassFlowRate > DataBranchAirLoopPlant::MassFlowTolerance) {
             // update node outlet conditions
-            Cp = GetSpecificHeatGlycol(
-                state, state.dataPlnt->PlantLoop(LoopNum).FluidName, ModelInletTemp, state.dataPlnt->PlantLoop(LoopNum).FluidIndex, RoutineName);
+            Cp = state.dataPlnt->PlantLoop(LoopNum).glycol->getSpecificHeat(state, ModelInletTemp, RoutineName);
             state.dataLoopNodes->Node(OutletNodeNum).Temp =
                 state.dataLoopNodes->Node(InletNodeNum).Temp + ModelRecoveryHeatRate / (state.dataLoopNodes->Node(InletNodeNum).MassFlowRate * Cp);
         }

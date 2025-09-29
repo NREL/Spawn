@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -169,11 +169,10 @@ TEST_F(EnergyPlusFixture, ParallelPIUTest1)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -183,7 +182,7 @@ TEST_F(EnergyPlusFixture, ParallelPIUTest1)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -194,9 +193,15 @@ TEST_F(EnergyPlusFixture, ParallelPIUTest1)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     // node number table
     //  1   SPACE2-1 Air Node
@@ -395,11 +400,10 @@ TEST_F(EnergyPlusFixture, SeriesPIUTest1)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -409,7 +413,7 @@ TEST_F(EnergyPlusFixture, SeriesPIUTest1)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -420,9 +424,16 @@ TEST_F(EnergyPlusFixture, SeriesPIUTest1)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     // node number table
     //  1   SPACE2-1 Air Node
@@ -670,11 +681,10 @@ TEST_F(EnergyPlusFixture, SeriesPIUZoneOAVolumeFlowRateTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -684,7 +694,7 @@ TEST_F(EnergyPlusFixture, SeriesPIUZoneOAVolumeFlowRateTest)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -697,7 +707,7 @@ TEST_F(EnergyPlusFixture, SeriesPIUZoneOAVolumeFlowRateTest)
     PoweredInductionUnits::GetPIUs(*state);
     EXPECT_TRUE(compare_err_stream(""));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback(1) = false;
@@ -1937,6 +1947,7 @@ TEST_F(EnergyPlusFixture, PIU_InducedAir_Plenums)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     // What we're testing for here is an initialization order issue, and this is why we rely on calling a high-level function such as ManageSizing
     // and not lower level ones
@@ -2071,12 +2082,10 @@ TEST_F(EnergyPlusFixture, VSParallelPIUStagedHeat)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    // Init
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -2086,7 +2095,7 @@ TEST_F(EnergyPlusFixture, VSParallelPIUStagedHeat)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -2096,9 +2105,15 @@ TEST_F(EnergyPlusFixture, VSParallelPIUStagedHeat)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
@@ -2270,12 +2285,10 @@ TEST_F(EnergyPlusFixture, VSParallelPIUModulatedHeat)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    // Init
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -2285,7 +2298,7 @@ TEST_F(EnergyPlusFixture, VSParallelPIUModulatedHeat)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -2295,9 +2308,15 @@ TEST_F(EnergyPlusFixture, VSParallelPIUModulatedHeat)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
@@ -2509,12 +2528,10 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUStagedHeat)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    // Init
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -2524,7 +2541,7 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUStagedHeat)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -2534,9 +2551,15 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUStagedHeat)
     state->dataFans->GetFanInputFlag = false;
     Fans::GetFanInput(*state);
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
@@ -2712,12 +2735,10 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUModulatedHeat)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    // Init
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -2727,7 +2748,7 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUModulatedHeat)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -2737,9 +2758,15 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUModulatedHeat)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
@@ -2949,12 +2976,10 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUCool)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
-    // Init
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -2964,7 +2989,7 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUCool)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
@@ -2974,9 +2999,15 @@ TEST_F(EnergyPlusFixture, VSSeriesPIUCool)
     Fans::GetFanInput(*state);
     state->dataFans->GetFanInputFlag = false;
     PoweredInductionUnits::GetPIUs(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand.allocate(1);
     state->dataZoneEnergyDemand->CurDeadBandOrSetback.allocate(1);
 
@@ -3044,11 +3075,8 @@ TEST_F(EnergyPlusFixture, PIU_reportTerminalUnit)
 
     SetPredefinedTables(*state);
 
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
-    auto &sch = state->dataScheduleMgr->Schedule;
-    sch.allocate(5);
-    sch(1).Name = "schA";
-    sch(2).Name = "schB";
+    Sched::AddScheduleConstant(*state, "SCHA");
+    Sched::AddScheduleConstant(*state, "SCHB");
 
     auto &adu = state->dataDefineEquipment->AirDistUnit;
     adu.allocate(2);

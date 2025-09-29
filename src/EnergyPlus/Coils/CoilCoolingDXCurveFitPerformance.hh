@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataLoopNode.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/StandardRatings.hh>
 
 namespace EnergyPlus {
@@ -84,36 +85,42 @@ struct CoilCoolingDXCurveFitPerformance
 {
     std::string object_name = "Coil:Cooling:DX:CurveFit:Performance";
     std::string parentName;
+
     void instantiateFromInputSpec(EnergyPlusData &state, const CoilCoolingDXCurveFitPerformanceInputSpecification &input_data);
+
     void simulate(EnergyPlusData &state,
                   const DataLoopNode::NodeData &inletNode,
                   DataLoopNode::NodeData &outletNode,
                   HVAC::CoilMode currentCoilMode,
-                  Real64 &PLR,
-                  int &speedNum,
-                  Real64 &speedRatio,
+                  int speedNum,
+                  Real64 speedRatio,
                   HVAC::FanOp const fanOp,
                   DataLoopNode::NodeData &condInletNode,
                   DataLoopNode::NodeData &condOutletNode,
-                  bool const singleMode,
+                  bool singleMode,
                   Real64 LoadSHR = 0.0);
 
     void calculate(EnergyPlusData &state,
                    CoilCoolingDXCurveFitOperatingMode &currentMode,
                    const DataLoopNode::NodeData &inletNode,
                    DataLoopNode::NodeData &outletNode,
-                   Real64 &PLR,
-                   int &speedNum,
-                   Real64 &speedRatio,
+                   int speedNum,
+                   Real64 speedRatio,
                    HVAC::FanOp const fanOp,
                    DataLoopNode::NodeData &condInletNode,
                    DataLoopNode::NodeData &condOutletNode,
-                   bool const singleMode);
+                   bool singleMode);
+
     void calcStandardRatings210240(EnergyPlusData &state);
+
     CoilCoolingDXCurveFitPerformanceInputSpecification original_input_specs;
+
     CoilCoolingDXCurveFitPerformance() = default;
+
     explicit CoilCoolingDXCurveFitPerformance(EnergyPlusData &state, const std::string &name);
+
     void size(EnergyPlusData &state);
+
     void setOperMode(EnergyPlusData &state, CoilCoolingDXCurveFitOperatingMode &currentMode, int const mode);
 
     std::string name;
@@ -138,7 +145,7 @@ struct CoilCoolingDXCurveFitPerformance
 
     Real64 evapCondBasinHeatCap = 0.0;
     Real64 evapCondBasinHeatSetpoint = 0.0;
-    int evapCondBasinHeatSchedulIndex = 0;
+    Sched::Schedule *evapCondBasinHeatSched = nullptr;
     Real64 basinHeaterElectricityConsumption = 0.0;
     Real64 basinHeaterPower = 0.0;
     Real64 powerUse = 0.0;

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -48,6 +48,7 @@
 #ifndef PlantTopologyLoop_hh_INCLUDED
 #define PlantTopologyLoop_hh_INCLUDED
 
+#include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 #include <EnergyPlus/Plant/LoopSide.hh>
 
@@ -89,10 +90,14 @@ namespace DataPlant {
         std::string Name;                      // Name of the component list
         std::string FluidName;                 // Name of the fluid specified for this loop
         DataLoopNode::NodeFluidType FluidType; // Type of fluid in the loop
-        int FluidIndex;                        // Index for Fluid in FluidProperties
-        int MFErrIndex;                        // for recurring mass flow errors
-        int MFErrIndex1;                       // for recurring mass flow errors
-        int MFErrIndex2;                       // for recurring mass flow errors
+        int FluidIndex = 0;
+
+        Fluid::GlycolProps *glycol = nullptr;
+        Fluid::RefrigProps *steam = nullptr;
+
+        int MFErrIndex;  // for recurring mass flow errors
+        int MFErrIndex1; // for recurring mass flow errors
+        int MFErrIndex2; // for recurring mass flow errors
         // (see CheckPlantMixerSplitterConsistency)
         // Loop Operating Setpoints and Limits
         int TempSetPointNodeNum;         // Node Number for Loop Temp SP associated with SP manager
@@ -149,12 +154,11 @@ namespace DataPlant {
 
         // Default Constructor
         PlantLoopData()
-            : FluidType(DataLoopNode::NodeFluidType::Blank), FluidIndex(1), // default to water
-              MFErrIndex(0), MFErrIndex1(0), MFErrIndex2(0), TempSetPointNodeNum(0), MaxBranch(0), MinTemp(0.0), MaxTemp(0.0), MinTempErrIndex(0),
-              MaxTempErrIndex(0), MinVolFlowRate(0.0), MaxVolFlowRate(0.0), MaxVolFlowRateWasAutoSized(false), MinMassFlowRate(0.0),
-              MaxMassFlowRate(0.0), Volume(0.0), VolumeWasAutoSized(false), CirculationTime(2.0), Mass(0.0), EMSCtrl(false), EMSValue(0.0),
-              NumOpSchemes(0), LoadDistribution(DataPlant::LoadingScheme::Invalid), PlantSizNum(0),
-              LoopDemandCalcScheme(DataPlant::LoopDemandCalcScheme::Invalid), CommonPipeType(DataPlant::CommonPipeType::No),
+            : FluidType(DataLoopNode::NodeFluidType::Blank), MFErrIndex(0), MFErrIndex1(0), MFErrIndex2(0), TempSetPointNodeNum(0), MaxBranch(0),
+              MinTemp(0.0), MaxTemp(0.0), MinTempErrIndex(0), MaxTempErrIndex(0), MinVolFlowRate(0.0), MaxVolFlowRate(0.0),
+              MaxVolFlowRateWasAutoSized(false), MinMassFlowRate(0.0), MaxMassFlowRate(0.0), Volume(0.0), VolumeWasAutoSized(false),
+              CirculationTime(2.0), Mass(0.0), EMSCtrl(false), EMSValue(0.0), NumOpSchemes(0), LoadDistribution(DataPlant::LoadingScheme::Invalid),
+              PlantSizNum(0), LoopDemandCalcScheme(DataPlant::LoopDemandCalcScheme::Invalid), CommonPipeType(DataPlant::CommonPipeType::No),
               EconPlantSideSensedNodeNum(0), EconCondSideSensedNodeNum(0), EconPlacement(0), EconBranch(0), EconComp(0), EconControlTempDiff(0.0),
               LoopHasConnectionComp(false), TypeOfLoop(LoopType::Invalid), PressureSimType(DataPlant::PressSimType::NoPressure),
               HasPressureComponents(false), PressureDrop(0.0), UsePressureForPumpCalcs(false), PressureEffectiveK(0.0), CoolingDemand(0.0),

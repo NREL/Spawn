@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -71,7 +71,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_GetInput)
         "Output:Table:Annual,",
         "Space Gains Annual Report, !- Name",
         "Filter1, !- Filter",
-        "Schedule2, !- Schedule Name",
+        "Constant-1.0, !- Schedule Name",
         "Zone People Total Heating Energy, !- Variable or Meter 1 Name",
         "SumOrAverage, !- Aggregation Type for Variable or Meter 1",
         "4, !- field Digits After Decimal 1",
@@ -82,6 +82,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_GetInput)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataGlobal->DoWeathSim = true;
 
@@ -97,7 +98,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_GetInput)
 
     EXPECT_EQ(tableParams[0], "SPACE GAINS ANNUAL REPORT"); // m_name
     EXPECT_EQ(tableParams[1], "FILTER1");                   //  m_filter
-    EXPECT_EQ(tableParams[2], "SCHEDULE2");                 //  m_scheduleName
+    EXPECT_EQ(tableParams[2], "Constant-1.0");              //  m_scheduleName
 
     std::vector<std::string> fieldSetParams = firstTable->inspectTableFieldSets(0);
     EXPECT_EQ(fieldSetParams[0], "ZONE PEOPLE TOTAL HEATING ENERGY");
@@ -129,6 +130,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_SetupGathering)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 extLitPow;
     Real64 extLitUse;
@@ -221,6 +223,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_GatherResults)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 extLitPow;
     Real64 extLitUse;
@@ -303,7 +306,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_GatherResults_MinMaxHrsShown
     using namespace OutputProcessor;
     state->dataGlobal->TimeStepZone = 1.0;
     state->dataHVACGlobal->TimeStepSys = 1.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     Meter *meter1 = new Meter("HEATING:MYTH:VARIABLE");
     meter1->units = Constant::Units::None;
@@ -377,6 +380,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_columnHeadersToTitleCase)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 facilUse;
     SetupOutputVariable(*state,
@@ -441,6 +445,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_invalidAggregationOrder)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 facilUse;
     SetupOutputVariable(*state,
@@ -538,6 +543,7 @@ TEST_F(SQLiteFixture, OutputReportTabularAnnual_CurlyBraces)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Meter *meter1 = new Meter("ELECTRICITY:FACILITY");
     meter1->units = Constant::Units::None;
@@ -581,7 +587,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_WarnBlankVariable)
         "Output:Table:Annual,",
         "Space Gains Annual Report, !- Name",
         "Filter1, !- Filter",
-        "Schedule2, !- Schedule Name",
+        "Constant-1.0, !- Schedule Name",
         "Zone People Total Heating Energy, !- Variable or Meter 1 Name",
         "SumOrAverage, !- Aggregation Type for Variable or Meter 1",
         "4, !- field Digits After Decimal 1",
@@ -592,6 +598,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularAnnual_WarnBlankVariable)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataGlobal->DoWeathSim = true;
 

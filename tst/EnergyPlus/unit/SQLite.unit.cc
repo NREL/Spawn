@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -628,7 +628,9 @@ TEST_F(SQLiteFixture, SQLiteProcedures_DaylightMaping)
 
 TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 {
-    auto const &zoneData0 = std::make_unique<DataHeatBalance::ZoneData>();
+    state->init_state(*state);
+
+    auto const &zoneData0 = std::make_unique<DataHeatBalance::ZoneData>(); // Why make_unique here? And why is this a reference?
     zoneData0->Name = "test zone 1";
     zoneData0->CeilingHeight = 1;
     zoneData0->Volume = 1;
@@ -738,10 +740,12 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const lightingData0 = std::make_unique<DataHeatBalance::LightsData>();
     lightingData0->Name = "test lighting 1";
+    lightingData0->sched = Sched::GetScheduleAlwaysOff(*state);
+
     auto const lightingData1 = std::make_unique<DataHeatBalance::LightsData>();
     lightingData1->Name = "test lighting 2";
     lightingData1->ZonePtr = 1;
-    lightingData1->SchedPtr = 1;
+    lightingData1->sched = Sched::AddScheduleConstant(*state, "SCHED-1");
     lightingData1->DesignLevel = 2;
     lightingData1->FractionReturnAir = 2;
     lightingData1->FractionRadiant = 2;
@@ -752,17 +756,23 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const peopleData0 = std::make_unique<DataHeatBalance::PeopleData>();
     peopleData0->Name = "test people 1";
+    peopleData0->sched = Sched::GetScheduleAlwaysOff(*state);
+    peopleData0->activityLevelSched = Sched::GetScheduleAlwaysOff(*state);
+    peopleData0->workEffSched = Sched::GetScheduleAlwaysOff(*state);
+    peopleData0->clothingSched = Sched::GetScheduleAlwaysOff(*state);
+    peopleData0->airVelocitySched = Sched::GetScheduleAlwaysOff(*state);
+
     auto const peopleData1 = std::make_unique<DataHeatBalance::PeopleData>();
     peopleData1->Name = "test people 2";
     peopleData1->ZonePtr = 1;
     peopleData1->NumberOfPeople = 2;
-    peopleData1->NumberOfPeoplePtr = 1;
-    peopleData1->ActivityLevelPtr = 1;
+    peopleData1->sched = Sched::GetSchedule(*state, "SCHED-1");
+    peopleData1->activityLevelSched = Sched::GetSchedule(*state, "SCHED-1");
     peopleData1->FractionRadiant = 2;
     peopleData1->FractionConvected = 2;
-    peopleData1->WorkEffPtr = 1;
-    peopleData1->ClothingPtr = 1;
-    peopleData1->AirVelocityPtr = 1;
+    peopleData1->workEffSched = Sched::GetSchedule(*state, "SCHED-1");
+    peopleData1->clothingSched = Sched::GetSchedule(*state, "SCHED-1");
+    peopleData1->airVelocitySched = Sched::GetSchedule(*state, "SCHED-1");
     peopleData1->Fanger = true;
     peopleData1->Pierce = true;
     peopleData1->KSU = true;
@@ -775,10 +785,12 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const elecEquipData0 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     elecEquipData0->Name = "test elecEquip 1";
+    elecEquipData0->sched = Sched::GetScheduleAlwaysOff(*state);
+
     auto const elecEquipData1 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     elecEquipData1->Name = "test elecEquip 2";
     elecEquipData1->ZonePtr = 1;
-    elecEquipData1->SchedPtr = 1;
+    elecEquipData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     elecEquipData1->DesignLevel = 2;
     elecEquipData1->FractionLatent = 2;
     elecEquipData1->FractionRadiant = 2;
@@ -788,10 +800,11 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const gasEquipData0 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     gasEquipData0->Name = "test gasEquip 1";
+    gasEquipData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const gasEquipData1 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     gasEquipData1->Name = "test gasEquip 2";
     gasEquipData1->ZonePtr = 1;
-    gasEquipData1->SchedPtr = 1;
+    gasEquipData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     gasEquipData1->DesignLevel = 2;
     gasEquipData1->FractionLatent = 2;
     gasEquipData1->FractionRadiant = 2;
@@ -801,10 +814,11 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const steamEquipData0 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     steamEquipData0->Name = "test steamEquip 1";
+    steamEquipData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const steamEquipData1 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     steamEquipData1->Name = "test steamEquip 2";
     steamEquipData1->ZonePtr = 1;
-    steamEquipData1->SchedPtr = 1;
+    steamEquipData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     steamEquipData1->DesignLevel = 2;
     steamEquipData1->FractionLatent = 2;
     steamEquipData1->FractionRadiant = 2;
@@ -814,10 +828,11 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const hwEquipData0 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     hwEquipData0->Name = "test hwEquip 1";
+    hwEquipData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const hwEquipData1 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     hwEquipData1->Name = "test hwEquip 2";
     hwEquipData1->ZonePtr = 1;
-    hwEquipData1->SchedPtr = 1;
+    hwEquipData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     hwEquipData1->DesignLevel = 2;
     hwEquipData1->FractionLatent = 2;
     hwEquipData1->FractionRadiant = 2;
@@ -827,10 +842,11 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const otherEquipData0 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     otherEquipData0->Name = "test otherEquip 1";
+    otherEquipData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const otherEquipData1 = std::make_unique<DataHeatBalance::ZoneEquipData>();
     otherEquipData1->Name = "test otherEquip 2";
     otherEquipData1->ZonePtr = 1;
-    otherEquipData1->SchedPtr = 1;
+    otherEquipData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     otherEquipData1->DesignLevel = 2;
     otherEquipData1->FractionLatent = 2;
     otherEquipData1->FractionRadiant = 2;
@@ -840,10 +856,11 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const baseboardData0 = std::make_unique<DataHeatBalance::BBHeatData>();
     baseboardData0->Name = "test baseboard 1";
+    baseboardData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const baseboardData1 = std::make_unique<DataHeatBalance::BBHeatData>();
     baseboardData1->Name = "test baseboard 2";
     baseboardData1->ZonePtr = 1;
-    baseboardData1->SchedPtr = 1;
+    baseboardData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     baseboardData1->CapatLowTemperature = 2;
     baseboardData1->LowTemperature = 2;
     baseboardData1->CapatHighTemperature = 2;
@@ -854,18 +871,20 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     auto const infiltrationData0 = std::make_unique<DataHeatBalance::InfiltrationData>();
     infiltrationData0->Name = "test infiltration 1";
+    infiltrationData0->sched = Sched::GetScheduleAlwaysOff(*state);
     auto const infiltrationData1 = std::make_unique<DataHeatBalance::InfiltrationData>();
     infiltrationData1->Name = "test infiltration 2";
     infiltrationData1->ZonePtr = 1;
-    infiltrationData1->SchedPtr = 1;
+    infiltrationData1->sched = Sched::GetSchedule(*state, "SCHED-1");
     infiltrationData1->DesignLevel = 2;
 
     auto const ventilationData0 = std::make_unique<DataHeatBalance::VentilationData>();
     ventilationData0->Name = "test ventilation 1";
+    ventilationData0->availSched = Sched::GetScheduleAlwaysOff(*state);
     auto const ventilationData1 = std::make_unique<DataHeatBalance::VentilationData>();
     ventilationData1->Name = "test ventilation 2";
     ventilationData1->ZonePtr = 1;
-    ventilationData1->SchedPtr = 1;
+    ventilationData1->availSched = Sched::GetSchedule(*state, "SCHED-1");
     ventilationData1->DesignLevel = 2;
 
     auto const roomAirModelData0 = std::make_unique<RoomAir::AirModelData>();
@@ -1009,62 +1028,62 @@ TEST_F(SQLiteFixture, SQLiteProcedures_createZoneExtendedOutput)
 
     ASSERT_EQ(2ul, lightings.size());
     std::vector<std::string> lighting0{"1", "test lighting 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> lighting1{"2", "test lighting 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> lighting1{"2", "test lighting 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(lighting0, lightings[0]);
     EXPECT_EQ(lighting1, lightings[1]);
 
     ASSERT_EQ(2ul, peoples.size());
     std::vector<std::string> people0{"1", "test people 1", "", "0", "", "", "0.0", "0.0", "", "", "", "0", "0", "0", "-1", "", "", "-1", "0.0", "0"};
-    std::vector<std::string> people1{"2", "test people 2", "1", "2",   "1", "1", "2.0", "2.0", "1", "1", "1", "1", "1", "1", "1",
+    std::vector<std::string> people1{"2", "test people 2", "1", "2",   "2", "2", "2.0", "2.0", "2", "2", "2", "1", "1", "1", "1",
                                      "1", "test",          "1", "2.0", "1"};
     EXPECT_EQ(people0, peoples[0]);
     EXPECT_EQ(people1, peoples[1]);
 
     ASSERT_EQ(2ul, elecEquips.size());
     std::vector<std::string> elecEquip0{"1", "test elecEquip 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> elecEquip1{"2", "test elecEquip 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> elecEquip1{"2", "test elecEquip 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(elecEquip0, elecEquips[0]);
     EXPECT_EQ(elecEquip1, elecEquips[1]);
 
     ASSERT_EQ(2ul, gasEquips.size());
     std::vector<std::string> gasEquip0{"1", "test gasEquip 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> gasEquip1{"2", "test gasEquip 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> gasEquip1{"2", "test gasEquip 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(gasEquip0, gasEquips[0]);
     EXPECT_EQ(gasEquip1, gasEquips[1]);
 
     ASSERT_EQ(2ul, steamEquips.size());
     std::vector<std::string> steamEquip0{"1", "test steamEquip 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> steamEquip1{"2", "test steamEquip 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> steamEquip1{"2", "test steamEquip 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(steamEquip0, steamEquips[0]);
     EXPECT_EQ(steamEquip1, steamEquips[1]);
 
     ASSERT_EQ(2ul, hwEquips.size());
     std::vector<std::string> hwEquip0{"1", "test hwEquip 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> hwEquip1{"2", "test hwEquip 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> hwEquip1{"2", "test hwEquip 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(hwEquip0, hwEquips[0]);
     EXPECT_EQ(hwEquip1, hwEquips[1]);
 
     ASSERT_EQ(2ul, otherEquips.size());
     std::vector<std::string> otherEquip0{"1", "test otherEquip 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> otherEquip1{"2", "test otherEquip 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> otherEquip1{"2", "test otherEquip 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(otherEquip0, otherEquips[0]);
     EXPECT_EQ(otherEquip1, otherEquips[1]);
 
     ASSERT_EQ(2ul, baseboards.size());
     std::vector<std::string> baseboard0{"1", "test baseboard 1", "", "", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", ""};
-    std::vector<std::string> baseboard1{"2", "test baseboard 2", "1", "1", "2.0", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
+    std::vector<std::string> baseboard1{"2", "test baseboard 2", "1", "2", "2.0", "2.0", "2.0", "2.0", "2.0", "2.0", "test"};
     EXPECT_EQ(baseboard0, baseboards[0]);
     EXPECT_EQ(baseboard1, baseboards[1]);
 
     ASSERT_EQ(2ul, infiltrations.size());
     std::vector<std::string> infiltration0{"1", "test infiltration 1", "", "", "0.0"};
-    std::vector<std::string> infiltration1{"2", "test infiltration 2", "1", "1", "2.0"};
+    std::vector<std::string> infiltration1{"2", "test infiltration 2", "1", "2", "2.0"};
     EXPECT_EQ(infiltration0, infiltrations[0]);
     EXPECT_EQ(infiltration1, infiltrations[1]);
 
     ASSERT_EQ(2ul, ventilations.size());
     std::vector<std::string> ventilation0{"1", "test ventilation 1", "", "", "0.0"};
-    std::vector<std::string> ventilation1{"2", "test ventilation 2", "1", "1", "2.0"};
+    std::vector<std::string> ventilation1{"2", "test ventilation 2", "1", "2", "2.0"};
     EXPECT_EQ(ventilation0, ventilations[0]);
     EXPECT_EQ(ventilation1, ventilations[1]);
 

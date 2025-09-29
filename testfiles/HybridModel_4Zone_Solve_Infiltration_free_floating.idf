@@ -81,7 +81,7 @@
 ! Environmental Emissions:        None
 ! Utility Tariffs:                None
 
-  Version,24.2;
+  Version,25.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -1788,7 +1788,7 @@
 
   Output:Variable,*,Zone Mean Air Humidity Ratio,Timestep;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,Timestep;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,Timestep;
 
   Output:Variable,ZONE 1,Zone Infiltration Hybrid Model Air Change Rate,Timestep;
 

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -69,7 +69,6 @@ using namespace EnergyPlus;
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
 {
-
     std::string const idf_objects = delimited_string({
         "ElectricLoadCenter:Distribution,",
         "    PV Array Load Center,    !- Name",
@@ -98,7 +97,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
 
         "  ElectricLoadCenter:Storage:Battery,",
         "    Kibam,                   !- Name",
-        "    ALWAYS_ON,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    ,                        !- Zone Name",
         "    0,                       !- Radiative Fraction",
         "    10,                      !- Number of Battery Modules in Parallel",
@@ -145,7 +144,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
 
         "  ElectricLoadCenter:Inverter:LookUpTable,",
         "    PV Inverter,             !- Name",
-        "    ALWAYS_ON,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    ,                        !- Zone Name",
         "    0.25,                    !- Radiative Fraction",
         "    14000,                   !- Rated Maximum Continuous Output Power {W}",
@@ -163,7 +162,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
         "    PV:ZN_1_FLR_1_SEC_1_Ceiling,  !- Generator 1 Name",
         "    Generator:Photovoltaic,  !- Generator 1 Object Type",
         "    9000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ;                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
 
         "  Generator:Photovoltaic,",
@@ -181,16 +180,10 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
         "    Fixed,                   !- Conversion Efficiency Input Mode",
         "    0.20,                    !- Value for Cell Efficiency if Fixed",
         "    ;                        !- Efficiency Schedule Name",
-
-        "  Schedule:Compact,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -223,7 +216,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_BatteryDischargeTest)
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case1)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -242,23 +234,17 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case1)
         "    Test Gen 1,  !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,  !- Generator 2 Name",
         "    Generator:WindTurbine,  !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
-
-        "  Schedule:Compact,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -286,7 +272,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case1)
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case2)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -302,7 +287,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case2)
 
         "  ElectricLoadCenter:Storage:Simple,",
         "    Test Storage Bank,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 , !- Nominal Energetic Efficiency for Charging",
@@ -317,23 +302,17 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case2)
         "    Test Gen 1,              !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,              !- Generator 2 Name",
         "    Generator:WindTurbine,   !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
-
-        "  Schedule:Compact,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -368,7 +347,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case2)
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case3)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -396,7 +374,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case3)
 
         "  ElectricLoadCenter:Inverter:Simple,",
         "    Test Inverter,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 ; !- Inverter efficiency",
@@ -406,27 +384,22 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case3)
         "    Test Gen 1,              !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,              !- Generator 2 Name",
         "    Generator:WindTurbine,   !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
-
-        "  Schedule:Constant,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
 
     // get availability schedule to work
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -435,7 +408,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case3)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -462,7 +435,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case3)
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case4)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -490,14 +462,14 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case4)
 
         "  ElectricLoadCenter:Inverter:Simple,",
         "    Test Inverter,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 ; !- Inverter efficiency",
 
         "  ElectricLoadCenter:Storage:Simple,",
         "    Test Storage Bank,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 , !- Nominal Energetic Efficiency for Charging",
@@ -512,34 +484,23 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case4)
         "    Test Gen 1,              !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,              !- Generator 2 Name",
         "    Generator:WindTurbine,   !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
-
-        "  Schedule:Compact,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
 
-    // get availability schedule to work
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -548,7 +509,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case4)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     // Case 4 DCBussInverterDCStorage    Inverter = 5000,
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs[0]->bussType =
@@ -574,7 +535,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case4)
 
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case5)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -590,14 +550,14 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case5)
 
         "  ElectricLoadCenter:Inverter:Simple,",
         "    Test Inverter,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 ; !- Inverter efficiency",
 
         "  ElectricLoadCenter:Storage:Simple,",
         "    Test Storage Bank,",
-        "    ALWAYS_ON, !- availability schedule",
+        "    CONSTANT-1.0, !- availability schedule",
         "    , !- zone name",
         "    , !- radiative fraction",
         "    1.0 , !- Nominal Energetic Efficiency for Charging",
@@ -612,29 +572,22 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case5)
         "    Test Gen 1,              !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,              !- Generator 2 Name",
         "    Generator:WindTurbine,   !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    ALWAYS_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
-
-        "  Schedule:Compact,",
-        "    ALWAYS_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
 
     // get availability schedule to work
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -643,7 +596,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case5)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -678,7 +631,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_UpdateLoadCenterRecords_Case5)
 }
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_CheckOutputReporting)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  LoadProfile:Plant,",
@@ -695,6 +647,7 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_CheckOutputReporting)
     state->dataHVACGlobal->TimeStepSys = 1.0;
     state->dataHVACGlobal->TimeStepSysSec = 3600.0;
     state->dataGlobal->TimeStepZoneSec = 3600.0;
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     bool SimElecCircuitsFlag = false;
@@ -706,7 +659,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_CheckOutputReporting)
 }
 TEST_F(EnergyPlusFixture, ManageElectricPowerTest_TransformerLossTest)
 {
-
     std::string const idf_objects = delimited_string({
 
         "  ElectricLoadCenter:Distribution,",
@@ -723,14 +675,14 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_TransformerLossTest)
 
         "  ElectricLoadCenter:Inverter:Simple,",
         "    Test Inverter,",
-        "    Always_ON,               !- availability schedule",
+        "    CONSTANT-1.0,               !- availability schedule",
         "    ,                        !- zone name",
         "    ,                        !- radiative fraction",
         "    1.0;                     !- Inverter efficiency",
 
         "  ElectricLoadCenter:Storage:Simple,",
         "    Test Storage Bank,",
-        "    Always_ON,               !- availability schedule",
+        "    CONSTANT-1.0,               !- availability schedule",
         "    ,                        !- zone name",
         "    ,                        !- radiative fraction",
         "    1.0,                     !- Nominal Energetic Efficiency for Charging",
@@ -745,17 +697,17 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_TransformerLossTest)
         "    Test Gen 1,              !- Generator 1 Name",
         "    Generator:InternalCombustionEngine,  !- Generator 1 Object Type",
         "    1000.0,                  !- Generator 1 Rated Electric Power Output {W}",
-        "    Always_ON,               !- Generator 1 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 1 Availability Schedule Name",
         "    ,                        !- Generator 1 Rated Thermal to Electrical Power Ratio",
         "    Test Gen 2,              !- Generator 2 Name",
         "    Generator:WindTurbine,   !- Generator 2 Object Type",
         "    2000.0,                  !- Generator 2 Rated Electric Power Output {W}",
-        "    Always_ON,               !- Generator 2 Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Generator 2 Availability Schedule Name",
         "    ;                        !- Generator 2 Rated Thermal to Electrical Power Ratio",
 
         "  ElectricLoadCenter:Transformer,",
         "    Transformer,             !- Name",
-        "    Always_ON,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    PowerOutToGrid,          !- Transformer Usage",
         "    ,                        !- Zone Name",
         "    ,                        !- Radiative Fraction",
@@ -772,33 +724,26 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_TransformerLossTest)
         "    ,                        !- Reference Temperature for Nameplate Efficiency {C}",
         "    ,                        !- Per Unit Load for Maximum Efficiency",
         "    ;                        !- Consider Transformer Loss for Utility Cost",
-
-        "  Schedule:Compact,",
-        "    Always_ON,               !- Name",
-        "    On/Off,                  !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1;          !- Field 3",
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
 
     // get availability schedule to work
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
+    state->init_state(*state);
+
     state->dataGlobal->HourOfDay = 1;
     state->dataGlobal->TimeStep = 1;
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataHVACGlobal->TimeStepSys = 1.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     state->dataEnvrn->DSTIndicator = 0;
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
@@ -814,7 +759,6 @@ TEST_F(EnergyPlusFixture, ManageElectricPowerTest_TransformerLossTest)
 // unused. Any other performance type shouldn't warn
 TEST_F(EnergyPlusFixture, ElectricLoadCenter_WarnAvailabilitySchedule_Photovoltaic_Simple)
 {
-
     std::string const idf_objects = delimited_string({
         "ElectricLoadCenter:Distribution,",
         "  PV Electric Load Center, !- Name",
@@ -936,14 +880,15 @@ TEST_F(EnergyPlusFixture, ElectricLoadCenter_WarnAvailabilitySchedule_Photovolta
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
 
     // Should warn only for SimplePV because SimplePV2 doesn't have a schedule, and the other one is a Perf One-Diode and not "Simple"
     std::string const error_string = delimited_string({
-        "   ** Warning ** GeneratorController constructor ElectricLoadCenter:Generators, Availability Schedule for Generator:Photovoltaics "
-        "'SIMPLEPV' of Type PhotovoltaicPerformance:Simple will be be ignored (runs all the time).",
+        "   ** Warning ** GeneratorController constructor : GENERATOR:PHOTOVOLTAIC = SIMPLEPV",
+        "   **   ~~~   ** Availability Schedule will be ignored (runs all the time).",
         "   **   ~~~   ** To limit this Generator:Photovoltaic's output, please use the Inverter's availability schedule instead.",
     });
     EXPECT_TRUE(compare_err_stream(error_string, true));
@@ -952,7 +897,6 @@ TEST_F(EnergyPlusFixture, ElectricLoadCenter_WarnAvailabilitySchedule_Photovolta
 // #7151: If an ElectricLoadCenter:Generators lists a Generator:PVWatts with an availability schedule, warn that it will be unused
 TEST_F(EnergyPlusFixture, ElectricLoadCenter_WarnAvailabilitySchedule_PVWatts)
 {
-
     std::string const idf_objects = delimited_string({
         "ElectricLoadCenter:Distribution,",
         "  PVWatts Electric Load Center,  !- Name",
@@ -1024,15 +968,14 @@ TEST_F(EnergyPlusFixture, ElectricLoadCenter_WarnAvailabilitySchedule_PVWatts)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     createFacilityElectricPowerServiceObject(*state);
     state->dataElectPwrSvcMgr->facilityElectricServiceObj->elecLoadCenterObjs.emplace_back(new ElectPowerLoadCenter(*state, 1));
 
     // Should warn only for PVWatts1 because PVWatts2 doesn't have a schedule
-    std::string const error_string = delimited_string({
-        "   ** Warning ** GeneratorController constructor ElectricLoadCenter:Generators, Availability Schedule for Generator:PVWatts 'PVWATTS1' will "
-        "be be ignored (runs all the time).",
-    });
+    std::string const error_string = delimited_string({"   ** Warning ** GeneratorController constructor : GENERATOR:PVWATTS = PVWATTS1",
+                                                       "   **   ~~~   ** Availability Schedule will be ignored (runs all the time)."});
     EXPECT_TRUE(compare_err_stream(error_string, true));
 }
 
@@ -1078,6 +1021,7 @@ TEST_F(EnergyPlusFixture, Battery_LiIonNmc_Constructor)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     ElectricStorage battery1{*state, "Battery1"};
     ASSERT_TRUE(Util::SameString(battery1.name(), "Battery1"));
 
@@ -1121,10 +1065,12 @@ TEST_F(EnergyPlusFixture, Battery_LiIonNmc_Simulate)
     });
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->dataHVACGlobal->TimeStepSys = 0.25;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+    state->init_state(*state);
+
     ElectricStorage battery{*state, "Battery1"};
 
-    state->dataHVACGlobal->TimeStepSys = 0.25;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
     state->dataEnvrn->OutDryBulbTemp = 23.0;
     Real64 socMin = 0.1;
     Real64 socMax = 0.95;
@@ -1191,15 +1137,17 @@ TEST_F(EnergyPlusFixture, Battery_checkUserEfficiencyInputTest)
     // Fix for Defect #8867: EnergyPlus was allowing zero efficiency which led to a divide by zero in ElectricPowerServiceManager.cc.
     // Input is now tested to make sure that a zero value is not allowed.
 
+    state->init_state(*state);
     // Test 1: charging, charging efficiency zero-->gets reset to minimum (0.001)
     userInputEfficiencyCharge = 0.0;
     expectedResult = 0.001;
     errorsFound = false;
     functionResult = checkUserEfficiencyInput(*state, userInputEfficiencyCharge, "CHARGING", "Tatooine", errorsFound);
     EXPECT_NEAR(functionResult, expectedResult, 0.00001);
-    std::string const error_string1 =
-        delimited_string({"   ** Severe  ** ElectricStorage charge efficiency was too low.  This occurred for electric storage unit named Tatooine",
-                          "   **   ~~~   ** Please check your input value  for this electric storage unit and fix the charge efficiency."});
+    std::string const error_string1 = delimited_string(
+        {format("   ** Warning ** Version: missing in IDF, processing for EnergyPlus version=\"{}\"", DataStringGlobals::MatchVersion),
+         "   ** Severe  ** ElectricStorage charge efficiency was too low.  This occurred for electric storage unit named Tatooine",
+         "   **   ~~~   ** Please check your input value  for this electric storage unit and fix the charge efficiency."});
     EXPECT_TRUE(compare_err_stream(error_string1, true));
     EXPECT_TRUE(errorsFound);
 
@@ -1290,6 +1238,7 @@ TEST_F(EnergyPlusFixture, Battery_checkChargeDischargeVoltageCurves)
 
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Curve::GetCurveInput(*state);
     state->dataCurveManager->GetCurvesInputFlag = false;

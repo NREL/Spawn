@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -94,7 +94,6 @@ namespace HVACDXHeatPumpSystem {
     // Use statements for data only modules
     // Using/Aliasing
     using namespace DataLoopNode;
-    using namespace ScheduleManager;
 
     void SimDXHeatPumpSystem(EnergyPlusData &state,
                              std::string_view DXHeatPumpSystemName,            // Name of DXSystem:Airloop object
@@ -246,8 +245,6 @@ namespace HVACDXHeatPumpSystem {
         // METHODOLOGY EMPLOYED:
         // Uses "Get" routines to read in data.
 
-        // REFERENCES:
-
         // Using/Aliasing
         using BranchNodeConnections::SetUpCompSets;
         using BranchNodeConnections::TestCompSet;
@@ -262,7 +259,8 @@ namespace HVACDXHeatPumpSystem {
         int NumNums;
         int IOStat;
         static constexpr std::string_view RoutineName("GetDXHeatPumpSystemInput: "); // include trailing blank space
-        bool IsNotOK;                                                                // Flag to verify name
+        static constexpr std::string_view routineName = "GetDXHeatPumpSystemInput";
+        bool IsNotOK; // Flag to verify name
         int DXHeatSysNum;
         std::string CurrentModuleObject; // for ease in getting objects
         Array1D_string Alphas;           // Alpha input items for object
@@ -307,23 +305,16 @@ namespace HVACDXHeatPumpSystem {
                                                                      lAlphaBlanks,
                                                                      cAlphaFields,
                                                                      cNumericFields);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
             DXHeatPumpSystem(DXHeatSysNum).DXHeatPumpSystemType = CurrentModuleObject; // push Object Name into data array
             DXHeatPumpSystem(DXHeatSysNum).Name = Alphas(1);
+
             if (lAlphaBlanks(2)) {
-                DXHeatPumpSystem(DXHeatSysNum).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                DXHeatPumpSystem(DXHeatSysNum).SchedPtr = GetScheduleIndex(state, Alphas(2));
-                if (DXHeatPumpSystem(DXHeatSysNum).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}: invalid {} entered ={} for {}={}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           cAlphaFields(2),
-                                           Alphas(2),
-                                           cAlphaFields(1),
-                                           Alphas(1)));
-                    state.dataHVACDXHeatPumpSys->ErrorsFound = true;
-                }
+                DXHeatPumpSystem(DXHeatSysNum).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((DXHeatPumpSystem(DXHeatSysNum).availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+                state.dataHVACDXHeatPumpSys->ErrorsFound = true;
             }
 
             if (Util::SameString(Alphas(3), "Coil:Heating:DX:SingleSpeed")) {
@@ -549,7 +540,6 @@ namespace HVACDXHeatPumpSystem {
         //  Data is moved from the System data structure to the System outlet nodes.
 
         // Using/Aliasing
-        using namespace ScheduleManager;
         using DXCoils::SimDXCoil;
         using HVAC::TempControlTol;
 
@@ -626,8 +616,7 @@ namespace HVACDXHeatPumpSystem {
         }
 
         // If DXHeatingSystem is scheduled on and there is flow
-        if ((GetCurrentScheduleValue(state, DXHeatPumpSystem.SchedPtr) > 0.0) &&
-            (state.dataLoopNodes->Node(InletNode).MassFlowRate > MinAirMassFlow)) {
+        if ((DXHeatPumpSystem.availSched->getCurrentVal() > 0.0) && (state.dataLoopNodes->Node(InletNode).MassFlowRate > MinAirMassFlow)) {
 
             // Determine if there is a sensible load on this system
             if ((state.dataLoopNodes->Node(InletNode).Temp < state.dataLoopNodes->Node(ControlNode).TempSetPoint) &&

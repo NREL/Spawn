@@ -1,19 +1,5 @@
 include(CMakeParseArguments)
-
-# Add google tests macro
-macro(ADD_GOOGLE_TESTS executable)
-  foreach(source ${ARGN})
-    string(REGEX MATCH .*cpp|.*cc source "${source}")
-    if(source)
-      file(READ "${source}" contents)
-      string(REGEX MATCHALL "TEST_?F?\\(([A-Za-z_0-9 ,]+)\\)" found_tests ${contents})
-      foreach(hit ${found_tests})
-        string(REGEX REPLACE ".*\\(( )*([A-Za-z_0-9]+)( )*,( )*([A-Za-z_0-9]+)( )*\\).*" "\\2.\\5" test_name ${hit})
-        add_test(NAME ${test_name} COMMAND "${executable}" "--gtest_filter=${test_name}")
-      endforeach(hit)
-    endif()
-  endforeach()
-endmacro()
+include(GoogleTest)
 
 # Create source groups automatically based on file path
 macro(CREATE_SRC_GROUPS SRC)
@@ -62,7 +48,11 @@ macro(CREATE_TEST_TARGETS BASE_NAME SRC DEPENDENCIES USE_PCH)
 
     target_link_libraries(${BASE_NAME}_tests PRIVATE ${ALL_DEPENDENCIES} gtest)
 
-    add_google_tests(${BASE_NAME}_tests ${SRC})
+    gtest_discover_tests(${BASE_NAME}_tests
+            DISCOVERY_TIMEOUT 30
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+
   endif()
 endmacro()
 

@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -251,7 +251,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_ErrorCheckSetupPoolSurfaceTest)
     state->dataConstruction->Construct.allocate(1);
     state->dataSurface->SurfIsPool.allocate(1);
     state->dataSurface->SurfIsRadSurfOrVentSlabOrPool.allocate(1);
-    state->dataSurface->SurfMaterialMovInsulInt.allocate(1);
+    state->dataSurface->intMovInsuls.allocate(1);
     // testing variables
     static constexpr std::string_view Alpha1("FirstString");
     static constexpr std::string_view Alpha2("SecondString");
@@ -304,7 +304,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_ErrorCheckSetupPoolSurfaceTest)
     state->dataSurface->SurfIsRadSurfOrVentSlabOrPool(poolReference.SurfacePtr) = false;
     state->dataSurface->Surface(poolReference.SurfacePtr).HeatTransferAlgorithm = DataSurfaces::HeatTransferModel::CTF;
     state->dataSurface->Surface(poolReference.SurfacePtr).Class = DataSurfaces::SurfaceClass::Floor;
-    state->dataSurface->SurfMaterialMovInsulInt(poolReference.SurfacePtr) = 1;
+    state->dataSurface->intMovInsuls(poolReference.SurfacePtr).matNum = 1;
 
     poolReference.ErrorCheckSetupPoolSurface(*state, Alpha1, Alpha2, AlphaField2, ErrFnd);
 
@@ -316,7 +316,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_ErrorCheckSetupPoolSurfaceTest)
     state->dataSurface->SurfIsRadSurfOrVentSlabOrPool(poolReference.SurfacePtr) = false;
     state->dataSurface->Surface(poolReference.SurfacePtr).HeatTransferAlgorithm = DataSurfaces::HeatTransferModel::CTF;
     state->dataSurface->Surface(poolReference.SurfacePtr).Class = DataSurfaces::SurfaceClass::Floor;
-    state->dataSurface->SurfMaterialMovInsulInt(poolReference.SurfacePtr) = 1;
+    state->dataSurface->intMovInsuls(poolReference.SurfacePtr).matNum = 1;
     state->dataSurface->Surface(poolReference.SurfacePtr).Construction = 1;
     state->dataConstruction->Construct(state->dataSurface->Surface(poolReference.SurfacePtr).Construction).SourceSinkPresent = true;
 
@@ -330,7 +330,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_ErrorCheckSetupPoolSurfaceTest)
     state->dataSurface->SurfIsRadSurfOrVentSlabOrPool(poolReference.SurfacePtr) = false;
     state->dataSurface->Surface(poolReference.SurfacePtr).HeatTransferAlgorithm = DataSurfaces::HeatTransferModel::CTF;
     state->dataSurface->Surface(poolReference.SurfacePtr).Class = DataSurfaces::SurfaceClass::Wall;
-    state->dataSurface->SurfMaterialMovInsulInt(poolReference.SurfacePtr) = 1;
+    state->dataSurface->intMovInsuls(poolReference.SurfacePtr).matNum = 1;
     state->dataConstruction->Construct(state->dataSurface->Surface(poolReference.SurfacePtr).Construction).SourceSinkPresent = false;
 
     poolReference.ErrorCheckSetupPoolSurface(*state, Alpha1, Alpha2, AlphaField2, ErrFnd);
@@ -343,7 +343,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_ErrorCheckSetupPoolSurfaceTest)
     state->dataSurface->SurfIsRadSurfOrVentSlabOrPool(poolReference.SurfacePtr) = false;
     state->dataSurface->Surface(poolReference.SurfacePtr).HeatTransferAlgorithm = DataSurfaces::HeatTransferModel::CTF;
     state->dataSurface->Surface(poolReference.SurfacePtr).Class = DataSurfaces::SurfaceClass::Floor;
-    state->dataSurface->SurfMaterialMovInsulInt(poolReference.SurfacePtr) = 0;
+    state->dataSurface->intMovInsuls(poolReference.SurfacePtr).matNum = 0;
     state->dataConstruction->Construct(state->dataSurface->Surface(poolReference.SurfacePtr).Construction).SourceSinkPresent = false;
     state->dataSurface->Surface(poolReference.SurfacePtr).Zone = 7;
     state->dataSurface->SurfIsPool(poolReference.SurfacePtr) = false;
@@ -504,6 +504,7 @@ TEST_F(EnergyPlusFixture, SwimmingPool_reportTest)
     state->init_state(*state);
     // Test Data
     myPool.Name = "This Pool";
+    myPool.glycol = Fluid::GetWater(*state);
     myPool.SurfacePtr = 1;
     state->dataHeatBalSurf->SurfInsideTempHist.allocate(1);
     state->dataHeatBalSurf->SurfInsideTempHist(1).dimension(1, 0);

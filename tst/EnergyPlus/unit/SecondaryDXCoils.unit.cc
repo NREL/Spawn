@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -67,7 +67,6 @@
 
 using namespace EnergyPlus;
 using namespace DXCoils;
-using Psychrometrics::InitializePsychRoutines;
 using Psychrometrics::PsyHFnTdbW;
 using Psychrometrics::PsyRhoAirFnPbTdbW;
 using Psychrometrics::PsyTwbFnTdbWPb;
@@ -143,6 +142,7 @@ TEST_F(EnergyPlusFixture, SecondaryDXCoolingCoilMultiSpeed_Test3)
 TEST_F(EnergyPlusFixture, SecondaryDXHeatingCoilSingleSpeed_Test4)
 {
     // tests secondary DX coil calculation of single speed heat pump
+    state->init_state(*state);
     int DXCoilNum;
 
     state->dataDXCoils->NumDXCoils = 1;
@@ -169,7 +169,6 @@ TEST_F(EnergyPlusFixture, SecondaryDXHeatingCoilSingleSpeed_Test4)
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataDXCoils->DXCoil(DXCoilNum).AirInNode = 2;
     state->dataLoopNodes->Node(state->dataDXCoils->DXCoil(DXCoilNum).AirInNode).Temp = 20.0;
-    InitializePsychRoutines(*state);
 
     CalcSecondaryDXCoils(*state, DXCoilNum);
     EXPECT_DOUBLE_EQ(-5000.0, state->dataDXCoils->DXCoil(DXCoilNum).SecCoilTotalHeatRemovalRate);
@@ -214,10 +213,12 @@ TEST_F(EnergyPlusFixture, SecondaryDXHeatingCoilSingleSpeed_Test4)
     state->dataDXCoils->DXCoil.deallocate();
     state->dataLoopNodes->Node.deallocate();
 }
+
 TEST_F(EnergyPlusFixture, SecondaryDXHeatingCoilMultiSpeed_Test5)
 {
-
     // tests secondary DX coil calculation of multi speed heat pump
+    state->init_state(*state);
+
     int DXCoilNum;
 
     state->dataDXCoils->NumDXCoils = 1;
@@ -260,7 +261,6 @@ TEST_F(EnergyPlusFixture, SecondaryDXHeatingCoilMultiSpeed_Test5)
     state->dataEnvrn->OutBaroPress = 101325.0;
     state->dataDXCoils->DXCoil(DXCoilNum).AirInNode = 2;
     state->dataLoopNodes->Node(state->dataDXCoils->DXCoil(DXCoilNum).AirInNode).Temp = 20.0;
-    InitializePsychRoutines(*state);
 
     CalcSecondaryDXCoils(*state, DXCoilNum);
     EXPECT_DOUBLE_EQ(-5000.0, state->dataDXCoils->DXCoil(DXCoilNum).SecCoilTotalHeatRemovalRate);

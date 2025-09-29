@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -84,7 +84,7 @@ namespace ElectricBaseboardRadiator {
 
     // PURPOSE OF THIS MODULE:
     // This module is to calculate the actual convective heat addition that an electrical baseboard heater
-    // deliveres to a space.
+    // delivers to a space.
 
     // METHODOLOGY EMPLOYED:
     // Based on the convective-only electric baseboard module (Object: ZoneHVAC:Baseboard:Convective:Electric)
@@ -170,8 +170,10 @@ namespace ElectricBaseboardRadiator {
 
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("GetElectricBaseboardInput: "); // include trailing blank space
-        Real64 constexpr MaxFraction(1.0);                                            // Maximum limit of fractional values
-        Real64 constexpr MinFraction(0.0);                                            // Minimum limit of fractional values
+        static constexpr std::string_view routineName = "GetElectricBaseboardInput";  // include trailing blank space
+
+        Real64 constexpr MaxFraction(1.0); // Maximum limit of fractional values
+        Real64 constexpr MinFraction(0.0); // Minimum limit of fractional values
         //    INTEGER,PARAMETER :: MaxDistribSurfaces   = 20      ! Maximum number of surfaces that a baseboard heater can radiate to
         int constexpr MinDistribSurfaces(1);                  // Minimum number of surfaces that a baseboard heater can radiate to
         int constexpr iHeatCAPMAlphaNum(3);                   // get input index to HW baseboard heating capacity sizing method
@@ -185,13 +187,14 @@ namespace ElectricBaseboardRadiator {
         int NumNumbers;
         int IOStat;
         bool ErrorsFound(false); // If errors detected in input
-        auto &cCurrentModuleObject = state.dataIPShortCut->cCurrentModuleObject;
 
-        cCurrentModuleObject = state.dataElectBaseboardRad->cCMO_BBRadiator_Electric;
+        auto &s_ipsc = state.dataIPShortCut;
+
+        s_ipsc->cCurrentModuleObject = state.dataElectBaseboardRad->cCMO_BBRadiator_Electric;
 
         // Update Num in state and make local convenience copy
         int NumElecBaseboards = state.dataElectBaseboardRad->NumElecBaseboards =
-            state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
+            state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
         // object is extensible, no max args needed as IPShortCuts being used
         auto &ElecBaseboardNumericFields = state.dataElectBaseboardRad->ElecBaseboardNumericFields;
@@ -203,138 +206,123 @@ namespace ElectricBaseboardRadiator {
             auto &elecBaseboard = state.dataElectBaseboardRad->ElecBaseboard(BaseboardNum);
 
             state.dataInputProcessing->inputProcessor->getObjectItem(state,
-                                                                     cCurrentModuleObject,
+                                                                     s_ipsc->cCurrentModuleObject,
                                                                      BaseboardNum,
-                                                                     state.dataIPShortCut->cAlphaArgs,
+                                                                     s_ipsc->cAlphaArgs,
                                                                      NumAlphas,
-                                                                     state.dataIPShortCut->rNumericArgs,
+                                                                     s_ipsc->rNumericArgs,
                                                                      NumNumbers,
                                                                      IOStat,
-                                                                     state.dataIPShortCut->lNumericFieldBlanks,
-                                                                     state.dataIPShortCut->lAlphaFieldBlanks,
-                                                                     state.dataIPShortCut->cAlphaFieldNames,
-                                                                     state.dataIPShortCut->cNumericFieldNames);
+                                                                     s_ipsc->lNumericFieldBlanks,
+                                                                     s_ipsc->lAlphaFieldBlanks,
+                                                                     s_ipsc->cAlphaFieldNames,
+                                                                     s_ipsc->cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)};
 
             ElecBaseboardNumericFields(BaseboardNum).FieldNames.allocate(NumNumbers);
             ElecBaseboardNumericFields(BaseboardNum).FieldNames = "";
-            ElecBaseboardNumericFields(BaseboardNum).FieldNames = state.dataIPShortCut->cNumericFieldNames;
+            ElecBaseboardNumericFields(BaseboardNum).FieldNames = s_ipsc->cNumericFieldNames;
 
             // ErrorsFound will be set to True if problem was found, left untouched otherwise
             GlobalNames::VerifyUniqueBaseboardName(
-                state, cCurrentModuleObject, state.dataIPShortCut->cAlphaArgs(1), ErrorsFound, cCurrentModuleObject + " Name");
+                state, s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1), ErrorsFound, s_ipsc->cCurrentModuleObject + " Name");
 
-            elecBaseboard.EquipName = state.dataIPShortCut->cAlphaArgs(1); // name of this baseboard
-            elecBaseboard.Schedule = state.dataIPShortCut->cAlphaArgs(2);
-            if (state.dataIPShortCut->lAlphaFieldBlanks(2)) {
-                elecBaseboard.SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                elecBaseboard.SchedPtr = ScheduleManager::GetScheduleIndex(state, state.dataIPShortCut->cAlphaArgs(2));
-                if (elecBaseboard.SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    std::string{RoutineName} + cCurrentModuleObject + ": invalid " + state.dataIPShortCut->cAlphaFieldNames(2) +
-                                        " entered =" + state.dataIPShortCut->cAlphaArgs(2) + " for " + state.dataIPShortCut->cAlphaFieldNames(1) +
-                                        '=' + state.dataIPShortCut->cAlphaArgs(1));
-                    ErrorsFound = true;
-                }
-            }
-
-            // Determine HW radiant baseboard heating design capacity sizing method
-            if (Util::SameString(state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum), "HeatingDesignCapacity")) {
-                elecBaseboard.HeatingCapMethod = DataSizing::HeatingDesignCapacity;
-
-                if (!state.dataIPShortCut->lNumericFieldBlanks(iHeatDesignCapacityNumericNum)) {
-                    elecBaseboard.ScaledHeatingCapacity = state.dataIPShortCut->rNumericArgs(iHeatDesignCapacityNumericNum);
-                    if (elecBaseboard.ScaledHeatingCapacity < 0.0 && elecBaseboard.ScaledHeatingCapacity != DataSizing::AutoSize) {
-                        ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                        ShowContinueError(state,
-                                          format("Illegal {} = {:.7T}",
-                                                 state.dataIPShortCut->cNumericFieldNames(iHeatDesignCapacityNumericNum),
-                                                 state.dataIPShortCut->rNumericArgs(iHeatDesignCapacityNumericNum)));
-                        ErrorsFound = true;
-                    }
-                } else {
-                    ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                    ShowContinueError(state,
-                                      "Input for " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                          state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
-                    ShowContinueError(state,
-                                      "Blank field not allowed for " + state.dataIPShortCut->cNumericFieldNames(iHeatDesignCapacityNumericNum));
-                    ErrorsFound = true;
-                }
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum), "CapacityPerFloorArea")) {
-                elecBaseboard.HeatingCapMethod = DataSizing::CapacityPerFloorArea;
-                if (!state.dataIPShortCut->lNumericFieldBlanks(iHeatCapacityPerFloorAreaNumericNum)) {
-                    elecBaseboard.ScaledHeatingCapacity = state.dataIPShortCut->rNumericArgs(iHeatCapacityPerFloorAreaNumericNum);
-                    if (elecBaseboard.ScaledHeatingCapacity <= 0.0) {
-                        ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                        ShowContinueError(state,
-                                          "Input for " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                              state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
-                        ShowContinueError(state,
-                                          format("Illegal {} = {:.7T}",
-                                                 state.dataIPShortCut->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum),
-                                                 state.dataIPShortCut->rNumericArgs(iHeatCapacityPerFloorAreaNumericNum)));
-                        ErrorsFound = true;
-                    } else if (elecBaseboard.ScaledHeatingCapacity == DataSizing::AutoSize) {
-                        ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                        ShowContinueError(state,
-                                          "Input for " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                              state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
-                        ShowContinueError(state,
-                                          "Illegal " + state.dataIPShortCut->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum) + " = Autosize");
-                        ErrorsFound = true;
-                    }
-                } else {
-                    ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                    ShowContinueError(state,
-                                      "Input for " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                          state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
-                    ShowContinueError(state,
-                                      "Blank field not allowed for " + state.dataIPShortCut->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum));
-                    ErrorsFound = true;
-                }
-            } else if (Util::SameString(state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum), "FractionOfAutosizedHeatingCapacity")) {
-                elecBaseboard.HeatingCapMethod = DataSizing::FractionOfAutosizedHeatingCapacity;
-                if (!state.dataIPShortCut->lNumericFieldBlanks(iHeatFracOfAutosizedCapacityNumericNum)) {
-                    elecBaseboard.ScaledHeatingCapacity = state.dataIPShortCut->rNumericArgs(iHeatFracOfAutosizedCapacityNumericNum);
-                    if (elecBaseboard.ScaledHeatingCapacity < 0.0) {
-                        ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                        ShowContinueError(state,
-                                          format("Illegal {} = {:.7T}",
-                                                 state.dataIPShortCut->cNumericFieldNames(iHeatFracOfAutosizedCapacityNumericNum),
-                                                 state.dataIPShortCut->rNumericArgs(iHeatFracOfAutosizedCapacityNumericNum)));
-                        ErrorsFound = true;
-                    }
-                } else {
-                    ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                    ShowContinueError(state,
-                                      "Input for " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                          state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
-                    ShowContinueError(
-                        state, "Blank field not allowed for " + state.dataIPShortCut->cNumericFieldNames(iHeatFracOfAutosizedCapacityNumericNum));
-                    ErrorsFound = true;
-                }
-            } else {
-                ShowSevereError(state, cCurrentModuleObject + " = " + elecBaseboard.EquipName);
-                ShowContinueError(state,
-                                  "Illegal " + state.dataIPShortCut->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " +
-                                      state.dataIPShortCut->cAlphaArgs(iHeatCAPMAlphaNum));
+            elecBaseboard.EquipName = s_ipsc->cAlphaArgs(1); // name of this baseboard
+            elecBaseboard.Schedule = s_ipsc->cAlphaArgs(2);
+            if (s_ipsc->lAlphaFieldBlanks(2)) {
+                elecBaseboard.availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((elecBaseboard.availSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(2), s_ipsc->cAlphaArgs(2));
                 ErrorsFound = true;
             }
 
-            elecBaseboard.BaseboardEfficiency = state.dataIPShortCut->rNumericArgs(4);
-            elecBaseboard.FracRadiant = state.dataIPShortCut->rNumericArgs(5);
+            // Determine HW radiant baseboard heating design capacity sizing method
+            if (Util::SameString(s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum), "HeatingDesignCapacity")) {
+                elecBaseboard.HeatingCapMethod = DataSizing::HeatingDesignCapacity;
+
+                if (!s_ipsc->lNumericFieldBlanks(iHeatDesignCapacityNumericNum)) {
+                    elecBaseboard.ScaledHeatingCapacity = s_ipsc->rNumericArgs(iHeatDesignCapacityNumericNum);
+                    if (elecBaseboard.ScaledHeatingCapacity < 0.0 && elecBaseboard.ScaledHeatingCapacity != DataSizing::AutoSize) {
+                        ShowSevereError(state, format("{} = {}", s_ipsc->cCurrentModuleObject, elecBaseboard.EquipName));
+                        ShowContinueError(state,
+                                          format("Illegal {} = {:.7T}",
+                                                 s_ipsc->cNumericFieldNames(iHeatDesignCapacityNumericNum),
+                                                 s_ipsc->rNumericArgs(iHeatDesignCapacityNumericNum)));
+                        ErrorsFound = true;
+                    }
+                } else {
+                    ShowSevereError(state, format("{} = {}", s_ipsc->cCurrentModuleObject, elecBaseboard.EquipName));
+                    ShowContinueError(state,
+                                      "Input for " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                    ShowContinueError(state, "Blank field not allowed for " + s_ipsc->cNumericFieldNames(iHeatDesignCapacityNumericNum));
+                    ErrorsFound = true;
+                }
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum), "CapacityPerFloorArea")) {
+                elecBaseboard.HeatingCapMethod = DataSizing::CapacityPerFloorArea;
+                if (!s_ipsc->lNumericFieldBlanks(iHeatCapacityPerFloorAreaNumericNum)) {
+                    elecBaseboard.ScaledHeatingCapacity = s_ipsc->rNumericArgs(iHeatCapacityPerFloorAreaNumericNum);
+                    if (elecBaseboard.ScaledHeatingCapacity <= 0.0) {
+                        ShowSevereError(state, format("{} = {}", s_ipsc->cCurrentModuleObject, elecBaseboard.EquipName));
+                        ShowContinueError(state,
+                                          "Input for " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                        ShowContinueError(state,
+                                          format("Illegal {} = {:.7T}",
+                                                 s_ipsc->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum),
+                                                 s_ipsc->rNumericArgs(iHeatCapacityPerFloorAreaNumericNum)));
+                        ErrorsFound = true;
+                    } else if (elecBaseboard.ScaledHeatingCapacity == DataSizing::AutoSize) {
+                        ShowSevereError(state, format("{} = {}", s_ipsc->cCurrentModuleObject, elecBaseboard.EquipName));
+                        ShowContinueError(state,
+                                          "Input for " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                        ShowContinueError(state, "Illegal " + s_ipsc->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum) + " = Autosize");
+                        ErrorsFound = true;
+                    }
+                } else {
+                    ShowSevereError(state, format(s_ipsc->cCurrentModuleObject, elecBaseboard.EquipName));
+                    ShowContinueError(state,
+                                      "Input for " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                    ShowContinueError(state, "Blank field not allowed for " + s_ipsc->cNumericFieldNames(iHeatCapacityPerFloorAreaNumericNum));
+                    ErrorsFound = true;
+                }
+            } else if (Util::SameString(s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum), "FractionOfAutosizedHeatingCapacity")) {
+                elecBaseboard.HeatingCapMethod = DataSizing::FractionOfAutosizedHeatingCapacity;
+                if (!s_ipsc->lNumericFieldBlanks(iHeatFracOfAutosizedCapacityNumericNum)) {
+                    elecBaseboard.ScaledHeatingCapacity = s_ipsc->rNumericArgs(iHeatFracOfAutosizedCapacityNumericNum);
+                    if (elecBaseboard.ScaledHeatingCapacity < 0.0) {
+                        ShowSevereError(state, s_ipsc->cCurrentModuleObject + " = " + elecBaseboard.EquipName);
+                        ShowContinueError(state,
+                                          format("Illegal {} = {:.7T}",
+                                                 s_ipsc->cNumericFieldNames(iHeatFracOfAutosizedCapacityNumericNum),
+                                                 s_ipsc->rNumericArgs(iHeatFracOfAutosizedCapacityNumericNum)));
+                        ErrorsFound = true;
+                    }
+                } else {
+                    ShowSevereError(state, s_ipsc->cCurrentModuleObject + " = " + elecBaseboard.EquipName);
+                    ShowContinueError(state,
+                                      "Input for " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                    ShowContinueError(state, "Blank field not allowed for " + s_ipsc->cNumericFieldNames(iHeatFracOfAutosizedCapacityNumericNum));
+                    ErrorsFound = true;
+                }
+            } else {
+                ShowSevereError(state, s_ipsc->cCurrentModuleObject + " = " + elecBaseboard.EquipName);
+                ShowContinueError(state, "Illegal " + s_ipsc->cAlphaFieldNames(iHeatCAPMAlphaNum) + " = " + s_ipsc->cAlphaArgs(iHeatCAPMAlphaNum));
+                ErrorsFound = true;
+            }
+
+            elecBaseboard.BaseboardEfficiency = s_ipsc->rNumericArgs(4);
+            elecBaseboard.FracRadiant = s_ipsc->rNumericArgs(5);
             if (elecBaseboard.FracRadiant < MinFraction) {
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                     state.dataIPShortCut->cNumericFieldNames(5) + " was lower than the allowable minimum.");
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                     s_ipsc->cNumericFieldNames(5) + " was lower than the allowable minimum.");
                 ShowContinueError(state, format("...reset to minimum value=[{:.2R}].", MinFraction));
                 elecBaseboard.FracRadiant = MinFraction;
             }
             if (elecBaseboard.FracRadiant > MaxFraction) {
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                     state.dataIPShortCut->cNumericFieldNames(5) + " was higher than the allowable maximum.");
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                     s_ipsc->cNumericFieldNames(5) + " was higher than the allowable maximum.");
                 ShowContinueError(state, format("...reset to maximum value=[{:.2R}].", MaxFraction));
                 elecBaseboard.FracRadiant = MaxFraction;
             }
@@ -342,7 +330,7 @@ namespace ElectricBaseboardRadiator {
             // Remaining fraction is added to the zone as convective heat transfer
             if (elecBaseboard.FracRadiant > MaxFraction) {
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) +
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) +
                                      "\", Fraction Radiant was higher than the allowable maximum.");
                 elecBaseboard.FracRadiant = MaxFraction;
                 elecBaseboard.FracConvect = 0.0;
@@ -350,18 +338,18 @@ namespace ElectricBaseboardRadiator {
                 elecBaseboard.FracConvect = 1.0 - elecBaseboard.FracRadiant;
             }
 
-            elecBaseboard.FracDistribPerson = state.dataIPShortCut->rNumericArgs(6);
+            elecBaseboard.FracDistribPerson = s_ipsc->rNumericArgs(6);
             if (elecBaseboard.FracDistribPerson < MinFraction) {
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                     state.dataIPShortCut->cNumericFieldNames(6) + " was lower than the allowable minimum.");
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                     s_ipsc->cNumericFieldNames(6) + " was lower than the allowable minimum.");
                 ShowContinueError(state, format("...reset to minimum value=[{:.2R}].", MinFraction));
                 elecBaseboard.FracDistribPerson = MinFraction;
             }
             if (elecBaseboard.FracDistribPerson > MaxFraction) {
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                     state.dataIPShortCut->cNumericFieldNames(6) + " was higher than the allowable maximum.");
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                     s_ipsc->cNumericFieldNames(6) + " was higher than the allowable maximum.");
                 ShowContinueError(state, format("...reset to maximum value=[{:.2R}].", MaxFraction));
                 elecBaseboard.FracDistribPerson = MaxFraction;
             }
@@ -370,7 +358,7 @@ namespace ElectricBaseboardRadiator {
 
             if ((elecBaseboard.TotSurfToDistrib < MinDistribSurfaces) && (elecBaseboard.FracRadiant > MinFraction)) {
                 ShowSevereError(state,
-                                std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) +
+                                std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) +
                                     "\", the number of surface/radiant fraction groups entered was less than the allowable minimum.");
                 ShowContinueError(state, format("...the minimum that must be entered=[{}].", MinDistribSurfaces));
                 ErrorsFound = true;
@@ -389,21 +377,25 @@ namespace ElectricBaseboardRadiator {
 
             Real64 AllFracsSummed = elecBaseboard.FracDistribPerson;
             for (int SurfNum = 1; SurfNum <= elecBaseboard.TotSurfToDistrib; ++SurfNum) {
-                elecBaseboard.SurfaceName(SurfNum) = state.dataIPShortCut->cAlphaArgs(SurfNum + 3);
-                elecBaseboard.SurfacePtr(SurfNum) = HeatBalanceIntRadExchange::GetRadiantSystemSurface(
-                    state, cCurrentModuleObject, elecBaseboard.EquipName, elecBaseboard.ZonePtr, elecBaseboard.SurfaceName(SurfNum), ErrorsFound);
-                elecBaseboard.FracDistribToSurf(SurfNum) = state.dataIPShortCut->rNumericArgs(SurfNum + 6);
+                elecBaseboard.SurfaceName(SurfNum) = s_ipsc->cAlphaArgs(SurfNum + 3);
+                elecBaseboard.SurfacePtr(SurfNum) = HeatBalanceIntRadExchange::GetRadiantSystemSurface(state,
+                                                                                                       s_ipsc->cCurrentModuleObject,
+                                                                                                       elecBaseboard.EquipName,
+                                                                                                       elecBaseboard.ZonePtr,
+                                                                                                       elecBaseboard.SurfaceName(SurfNum),
+                                                                                                       ErrorsFound);
+                elecBaseboard.FracDistribToSurf(SurfNum) = s_ipsc->rNumericArgs(SurfNum + 6);
                 if (elecBaseboard.FracDistribToSurf(SurfNum) > MaxFraction) {
                     ShowWarningError(state,
-                                     std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                         state.dataIPShortCut->cNumericFieldNames(SurfNum + 6) + "was greater than the allowable maximum.");
+                                     std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                         s_ipsc->cNumericFieldNames(SurfNum + 6) + "was greater than the allowable maximum.");
                     ShowContinueError(state, format("...reset to maximum value=[{:.2R}].", MaxFraction));
                     elecBaseboard.TotSurfToDistrib = MaxFraction;
                 }
                 if (elecBaseboard.FracDistribToSurf(SurfNum) < MinFraction) {
                     ShowWarningError(state,
-                                     std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) + "\", " +
-                                         state.dataIPShortCut->cNumericFieldNames(SurfNum + 6) + "was less than the allowable minimum.");
+                                     std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) + "\", " +
+                                         s_ipsc->cNumericFieldNames(SurfNum + 6) + "was less than the allowable minimum.");
                     ShowContinueError(state, format("...reset to maximum value=[{:.2R}].", MinFraction));
                     elecBaseboard.TotSurfToDistrib = MinFraction;
                 }
@@ -417,21 +409,21 @@ namespace ElectricBaseboardRadiator {
 
             if (AllFracsSummed > (MaxFraction + 0.01)) {
                 ShowSevereError(state,
-                                std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) +
+                                std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) +
                                     "\", Summed radiant fractions for people + surface groups > 1.0");
                 ErrorsFound = true;
             }
             if ((AllFracsSummed < (MaxFraction - 0.01)) &&
                 (elecBaseboard.FracRadiant > MinFraction)) { // User didn't distribute all of the | radiation warn that some will be lost
                 ShowWarningError(state,
-                                 std::string{RoutineName} + cCurrentModuleObject + "=\"" + state.dataIPShortCut->cAlphaArgs(1) +
+                                 std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "=\"" + s_ipsc->cAlphaArgs(1) +
                                      "\", Summed radiant fractions for people + surface groups < 1.0");
                 ShowContinueError(state, "The rest of the radiant energy delivered by the baseboard heater will be lost");
             }
         }
 
         if (ErrorsFound) {
-            ShowFatalError(state, std::string{RoutineName} + cCurrentModuleObject + "Errors found getting input. Program terminates.");
+            ShowFatalError(state, std::string{RoutineName} + s_ipsc->cCurrentModuleObject + "Errors found getting input. Program terminates.");
         }
 
         for (auto &elecBaseboard : state.dataElectBaseboardRad->ElecBaseboard) {
@@ -691,7 +683,7 @@ namespace ElectricBaseboardRadiator {
         Real64 Effic = elecBaseboard.BaseboardEfficiency;
 
         if (QZnReq > HVAC::SmallLoad && !state.dataZoneEnergyDemand->CurDeadBandOrSetback(ZoneNum) &&
-            ScheduleManager::GetCurrentScheduleValue(state, elecBaseboard.SchedPtr) > 0.0) {
+            elecBaseboard.availSched->getCurrentVal() > 0.0) {
 
             // If the load exceeds the capacity than the capacity is set to the BB limit.
             if (QZnReq > elecBaseboard.NominalCapacity) {
@@ -888,7 +880,7 @@ namespace ElectricBaseboardRadiator {
         //                      April 2010 Brent Griffith, max limit to protect surface temperature calcs
 
         // PURPOSE OF THIS SUBROUTINE:
-        // To distribute the gains from the electric basebaord heater
+        // To distribute the gains from the electric baseboard heater
         // as specified in the user input file.  This includes distribution
         // of long wavelength radiant gains to surfaces and "people."
 

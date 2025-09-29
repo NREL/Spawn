@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -52,12 +52,11 @@
 #include <ObjexxFCL/Array1A.hh>
 #include <ObjexxFCL/Array1D.hh>
 #include <ObjexxFCL/Array2A.hh>
-#include <ObjexxFCL/Array3D.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
-#include <EnergyPlus/DataHeatBalance.hh>
+#include <EnergyPlus/DataSurfaces.hh>
 #include <EnergyPlus/EnergyPlus.hh>
 #include <EnergyPlus/WindowEquivalentLayer.hh>
 #include <EnergyPlus/WindowManagerExteriorData.hh>
@@ -75,8 +74,24 @@ namespace Window {
 
     int constexpr maxGlassLayers = 5;
     int constexpr maxGapLayers = 5;
-    int constexpr maxIncidentAngles = 20;
     int constexpr maxSpectralDataElements = 800; // Maximum number in Spectral Data arrays.
+
+    int constexpr numPhis = 10;
+    Real64 constexpr dPhiDeg = 10.0;
+    Real64 constexpr dPhiRad = dPhiDeg * Constant::DegToRad;
+
+    constexpr std::array<Real64, numPhis> cosPhis = {1.0,
+                                                     0.98480775301220802,
+                                                     0.93969262078590842,
+                                                     0.86602540378443871,
+                                                     0.76604444311897812,
+                                                     0.64278760968653936,
+                                                     0.50000000000000011,
+                                                     0.34202014332566882,
+                                                     0.17364817766693041,
+                                                     0.0}; // 6.123233995736766E-17
+
+    constexpr int maxPolyCoef = 6;
 
     class CWindowModel;
     class CWindowOpticalModel;
@@ -115,9 +130,9 @@ namespace Window {
                                         Array1A<Real64> aft // System absorptance of each glass layer
     );
 
-    Real64 solarSpectrumAverage(EnergyPlusData &state, gsl::span<Real64 const> p);
+    Real64 solarSpectrumAverage(EnergyPlusData const &state, gsl::span<Real64 const> p);
 
-    Real64 visibleSpectrumAverage(EnergyPlusData &state, gsl::span<Real64 const> p);
+    Real64 visibleSpectrumAverage(EnergyPlusData const &state, gsl::span<Real64 const> p);
 
     Real64 Interpolate(gsl::span<Real64 const> x, // Array of data points for independent variable
                        gsl::span<Real64 const> y, // Array of data points for dependent variable
@@ -138,10 +153,6 @@ namespace Window {
                                                Real64 &SurfInsideTemp, // Inside window surface temperature
                                                Real64 &SurfOutsideTemp // Outside surface temperature (C)
     );
-
-#ifdef GET_OUT
-    void WindowHeatBalanceEquations(EnergyPlusData &state, int SurfNum); // Surface number
-#endif                                                                   // GET_OUT
 
     void GetHeatBalanceEqCoefMatrixSimple(EnergyPlusData &state,
                                           int nglasslayer,           // Number of glass layers
@@ -229,6 +240,26 @@ namespace Window {
                     Array1D<Real64> &b       // Matrix and vector in a.x = b;
     );
 
+    constexpr Real64 POLYF(Real64 const X,                // Cosine of angle of incidence
+                           std::array<Real64, 6> const &A // Polynomial coefficients
+    )
+    {
+        return (X < 0.0 || X > 1.0) ? 0.0 : (X * (A[0] + X * (A[1] + X * (A[2] + X * (A[3] + X * (A[4] + X * A[5]))))));
+    }
+
+#ifdef GET_OUT
+    constexpr Real64 POLYF(Real64 const X,          // Cosine of angle of incidence
+                           Array1D<Real64> const &A // Polynomial coefficients
+    )
+    {
+        if (X < 0.0 || X > 1.0) {
+            return 0.0;
+        } else {
+            return X * (A(1) + X * (A(2) + X * (A(3) + X * (A(4) + X * (A(5) + X * A(6))))));
+        }
+    }
+#endif // GET_OUT
+
     void WindowGasConductance(EnergyPlusData &state,
                               Real64 tleft,  // Temperature of gap surface closest to outside (K)
                               Real64 tright, // Temperature of gap surface closest to zone (K)
@@ -238,7 +269,7 @@ namespace Window {
                               Real64 &gr     // Gap gas Grashof number
     );
 
-    void WindowGasPropertiesAtTemp(EnergyPlusData &state,
+    void WindowGasPropertiesAtTemp(EnergyPlusData const &state,
                                    Real64 tmean, // Temperature of gas in gap (K)
                                    int IGap,     // Gap number
                                    Real64 &dens, // Gap gas density at tmean (kg/m3)
@@ -277,27 +308,12 @@ namespace Window {
     Real64 InterpolateBetweenFourValues(
         Real64 X, Real64 Y, Real64 X1, Real64 X2, Real64 Y1, Real64 Y2, Real64 Fx1y1, Real64 Fx1y2, Real64 Fx2y1, Real64 Fx2y2);
 
-    void W5LsqFit(Array1S<Real64> IndepVar, // Independent variables
-                  Array1S<Real64> DepVar,   // Dependent variables
-                  int N,                    // Order of polynomial
-                  int N1,                   // First and last data points used
-                  int N2,
-                  Array1S<Real64> CoeffsCurve // Polynomial coeffients from fit
+    void W5LsqFit(std::array<Real64, numPhis> const &ivars,       // Independent variables
+                  std::array<Real64, numPhis> const &dvars,       // Dependent variables
+                  std::array<Real64, Window::maxPolyCoef> &coeffs // Polynomial coeffients from fit
     );
 
-    void W5LsqFit2(Array1A<Real64> IndepVar, // Independent variables
-                   Array1A<Real64> DepVar,   // Dependent variables
-                   int N,                    // Order of polynomial
-                   int N1,                   // First and last data points used
-                   int N2,
-                   Array1A<Real64> CoeffsCurve // Polynomial coeffients from fit
-    );
-
-    Real64 DiffuseAverage(Array1S<Real64> PropertyValue); // Property value at angles of incidence
-
-    Real64 DiffuseAverageProfAngGnd(Array1S<Real64> Property); // Property value vs. profile angle
-
-    Real64 DiffuseAverageProfAngSky(Array1S<Real64> Property); // Property value vs. profile angle
+    Real64 DiffuseAverage(std::array<Real64, numPhis> const &props); // Property value at angles of incidence
 
     void CalcWinFrameAndDividerTemps(EnergyPlusData &state,
                                      int SurfNum,     // Surface number
@@ -480,9 +496,6 @@ struct WindowManagerData : BaseGlobalStruct
         0.0};                                                         // Solar radiation and IR radiation from internal gains absorbed by glass face
     std::array<Real64, 2 *Window::maxGlassLayers> thetas = {0.0};     // Glass surface temperatures (K)
     std::array<Real64, 2 *Window::maxGlassLayers> thetasPrev = {0.0}; // Previous-iteration glass surface temperatures (K)
-#ifdef GET_OUT
-    std::array<Real64, 2 *Window::maxGlassLayers> fvec = {0.0}; // Glass face heat balance function
-#endif                                                          // GET_OUT
 
     std::array<Real64, Window::maxGlassLayers> hrgap = {0.0}; // Radiative gap conductance
 
@@ -525,6 +538,10 @@ struct WindowManagerData : BaseGlobalStruct
 
     std::array<int, Window::maxGlassLayers> LayerNum = {0}; // Glass layer number
 
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
     }
@@ -553,9 +570,6 @@ struct WindowManagerData : BaseGlobalStruct
         this->AbsRadGlassFace = {0.0};
         this->thetas = {0.0};
         this->thetasPrev = {0.0};
-#ifdef GET_OUT
-        this->fvec = {0.0};
-#endif // GET_OUT
         this->hrgap = {0.0};
         this->A23P = 0.0;
         this->A32P = 0.0;

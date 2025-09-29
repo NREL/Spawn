@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -514,6 +514,8 @@ Real64 SurfaceData::get_average_height(EnergyPlusData &state) const
 
 void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
 {
+    auto &s_surf = state.dataSurface;
+
     calcHashKey = SurfaceCalcHashKey();
     calcHashKey.Construction = Construction;
     calcHashKey.Azimuth = round(Azimuth * 10.0) / 10.0;
@@ -521,12 +523,12 @@ void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
     calcHashKey.Height = round(Height * 10.0) / 10.0;
     calcHashKey.Zone = Zone;
     calcHashKey.EnclIndex = SolarEnclIndex;
-    calcHashKey.TAirRef = state.dataSurface->SurfTAirRef(SurfNum);
+    calcHashKey.TAirRef = s_surf->SurfTAirRef(SurfNum);
 
-    int extBoundCond = state.dataSurface->Surface(SurfNum).ExtBoundCond;
+    int extBoundCond = s_surf->Surface(SurfNum).ExtBoundCond;
     if (extBoundCond > 0) {
-        calcHashKey.ExtZone = state.dataSurface->Surface(extBoundCond).Zone;
-        calcHashKey.ExtEnclIndex = state.dataSurface->Surface(extBoundCond).SolarEnclIndex;
+        calcHashKey.ExtZone = s_surf->Surface(extBoundCond).Zone;
+        calcHashKey.ExtEnclIndex = s_surf->Surface(extBoundCond).SolarEnclIndex;
         calcHashKey.ExtCond = 1;
     } else {
         calcHashKey.ExtZone = 0;
@@ -540,26 +542,28 @@ void SurfaceData::make_hash_key(EnergyPlusData &state, const int SurfNum)
     calcHashKey.ViewFactorSky = round(ViewFactorSky * 10.0) / 10.0;
 
     calcHashKey.HeatTransferAlgorithm = HeatTransferAlgorithm;
-    calcHashKey.intConvModel = state.dataSurface->surfIntConv(SurfNum).model;
-    calcHashKey.extConvModel = state.dataSurface->surfExtConv(SurfNum).model;
-    calcHashKey.intConvUserModelNum = state.dataSurface->surfIntConv(SurfNum).userModelNum;
-    calcHashKey.extConvUserModelNum = state.dataSurface->surfExtConv(SurfNum).userModelNum;
+    calcHashKey.intConvModel = s_surf->surfIntConv(SurfNum).model;
+    calcHashKey.extConvModel = s_surf->surfExtConv(SurfNum).model;
+    calcHashKey.intConvUserModelNum = s_surf->surfIntConv(SurfNum).userModelNum;
+    calcHashKey.extConvUserModelNum = s_surf->surfExtConv(SurfNum).userModelNum;
     calcHashKey.OSCPtr = OSCPtr;
     calcHashKey.OSCMPtr = OSCMPtr;
 
     calcHashKey.FrameDivider = FrameDivider;
-    calcHashKey.SurfWinStormWinConstr = state.dataSurface->SurfWinStormWinConstr(SurfNum);
+    calcHashKey.SurfWinStormWinConstr = s_surf->SurfWinStormWinConstr(SurfNum);
 
-    calcHashKey.MaterialMovInsulExt = state.dataSurface->SurfMaterialMovInsulExt(SurfNum);
-    calcHashKey.MaterialMovInsulInt = state.dataSurface->SurfMaterialMovInsulInt(SurfNum);
-    calcHashKey.SchedMovInsulExt = state.dataSurface->SurfSchedMovInsulExt(SurfNum);
-    calcHashKey.SchedMovInsulInt = state.dataSurface->SurfSchedMovInsulInt(SurfNum);
-    calcHashKey.ExternalShadingSchInd = state.dataSurface->Surface(SurfNum).SurfExternalShadingSchInd;
-    calcHashKey.SurroundingSurfacesNum = state.dataSurface->Surface(SurfNum).SurfSurroundingSurfacesNum;
-    calcHashKey.LinkedOutAirNode = state.dataSurface->Surface(SurfNum).SurfLinkedOutAirNode;
-    calcHashKey.OutsideHeatSourceTermSchedule = OutsideHeatSourceTermSchedule;
-    calcHashKey.InsideHeatSourceTermSchedule = InsideHeatSourceTermSchedule;
-    calcHashKey.ViewFactorSrdSurfs = state.dataSurface->Surface(SurfNum).ViewFactorSrdSurfs;
+    calcHashKey.MaterialMovInsulExt = s_surf->extMovInsuls(SurfNum).matNum;
+    calcHashKey.MaterialMovInsulInt = s_surf->intMovInsuls(SurfNum).matNum;
+    calcHashKey.movInsulExtSchedNum = (s_surf->extMovInsuls(SurfNum).sched == nullptr) ? -1 : s_surf->extMovInsuls(SurfNum).sched->Num;
+    calcHashKey.movInsulIntSchedNum = (s_surf->intMovInsuls(SurfNum).sched == nullptr) ? -1 : s_surf->intMovInsuls(SurfNum).sched->Num;
+
+    calcHashKey.externalShadingSchedNum =
+        (s_surf->Surface(SurfNum).surfExternalShadingSched != nullptr) ? s_surf->Surface(SurfNum).surfExternalShadingSched->Num : -1;
+    calcHashKey.SurroundingSurfacesNum = s_surf->Surface(SurfNum).SurfSurroundingSurfacesNum;
+    calcHashKey.LinkedOutAirNode = s_surf->Surface(SurfNum).SurfLinkedOutAirNode;
+    calcHashKey.outsideHeatSourceTermSchedNum = (outsideHeatSourceTermSched != nullptr) ? outsideHeatSourceTermSched->Num : -1;
+    calcHashKey.insideHeatSourceTermSchedNum = (insideHeatSourceTermSched != nullptr) ? insideHeatSourceTermSched->Num : -1;
+    calcHashKey.ViewFactorSrdSurfs = s_surf->Surface(SurfNum).ViewFactorSrdSurfs;
 }
 
 void SurfaceData::set_representative_surface(EnergyPlusData &state, const int SurfNum)

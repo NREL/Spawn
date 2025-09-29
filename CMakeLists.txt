@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.19)
 
 # Use ccache if available, has to be before "project()"
 find_program(CCACHE_PROGRAM NAMES ccache sccache)
@@ -35,6 +35,7 @@ cmake_policy(SET CMP0012 NEW) # if() recognizes boolean constants
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -184,6 +185,7 @@ endif()
 # If LINK_WITH_PYTHON, also request the Development (libs) at the same time, to ensure consistent version between interpreter and Development
 # and ask for at least 3.8 (for the PyConfig stuff).
 if(LINK_WITH_PYTHON)
+  option(PYTHON_CLI "Build the Auxiliary CLI to Call Python Utilities" OFF)
   # find_package(Python) has the problem that on github actions in particular it'll pick up the most recent python (eg 3.9) from the tool cache
   # even if you have used the setup-python action and set it to 3.8, so we make the exact version required
   set(Python_REQUIRED_VERSION "" CACHE STRING "The specific Python version you want to link to (Optional)")
@@ -227,6 +229,21 @@ if(BUILD_TESTING)
   endif()
   set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)  # This avoids all the CTest Nightly, Continuous, etc. tests.
   enable_testing()
+
+  execute_process(COMMAND ${Python_EXECUTABLE} -m pytest --version
+    RESULT_VARIABLE _Pytest_STATUS
+        OUTPUT_VARIABLE Pytest_Version
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(_Pytest_STATUS AND NOT _Pytest_STATUS EQUAL 0)
+    message(AUTHOR_WARNING "Pytest isn't installed on your system python, so some tests won't be run. Run `${Python_EXECUTABLE} -m pip install pytest`")
+    set(Pytest_AVAILABLE OFF)
+  else()
+    message(VERBOSE "Found Pytest: ${Pytest_Version}")
+    set(Pytest_AVAILABLE ON)
+  endif()
+
 endif()
 
 if(ENABLE_REGRESSION_TESTING)

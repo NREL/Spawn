@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -851,11 +851,7 @@ void FluidCoolerspecs::oneTimeInit_new(EnergyPlusData &state)
 void FluidCoolerspecs::initEachEnvironment(EnergyPlusData &state)
 {
     static constexpr std::string_view RoutineName("FluidCoolerspecs::initEachEnvironment");
-    Real64 const rho = FluidProperties::GetDensityGlycol(state,
-                                                         state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                         Constant::InitConvTemp,
-                                                         state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                         RoutineName);
+    Real64 const rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
     this->DesWaterMassFlowRate = this->DesignWaterFlowRate * rho;
     PlantUtilities::InitComponentNodes(state, 0.0, this->DesWaterMassFlowRate, this->WaterInletNodeNum, this->WaterOutletNodeNum);
 }
@@ -954,8 +950,31 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
     // Find the appropriate Plant Sizing object
     int PltSizCondNum = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).PlantSizNum;
 
+    // This is to trap when the user specified Condenser/Fluid Cooler water design setpoint temperature is less than design inlet air dry bulb
+    // temperature
+    auto ensureSizingPlantExitTempIsNotLessThanDesignEnteringAirTemp = [this, &state, PltSizCondNum]() {
+        if (state.dataSize->PlantSizData(PltSizCondNum).ExitTemp <= this->DesignEnteringAirTemp && state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+            ShowSevereError(state, format("Error when autosizing the UA value for fluid cooler = {}.", this->Name));
+            ShowContinueError(state,
+                              format("Design Loop Exit Temperature ({:.2R} C) must be greater than design entering air dry-bulb temperature "
+                                     "({:.2R} C) when autosizing the fluid cooler UA.",
+                                     state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
+                                     this->DesignEnteringAirTemp));
+            ShowContinueError(state,
+                              "It is recommended that the Design Loop Exit Temperature = design inlet air dry-bulb temp plus the Fluid Cooler "
+                              "design approach temperature (e.g., 4 C).");
+            ShowContinueError(state,
+                              "If using HVACTemplate:Plant:ChilledWaterLoop, then check that input field Condenser Water Design Setpoint must be "
+                              "> design inlet air dry-bulb temp if autosizing the Fluid Cooler.");
+            ShowFatalError(state, "Review and revise design input values as appropriate.");
+        }
+    };
+
     if (this->DesignWaterFlowRateWasAutoSized) {
         if (PltSizCondNum > 0) {
+
+            ensureSizingPlantExitTempIsNotLessThanDesignEnteringAirTemp();
+
             if (state.dataSize->PlantSizData(PltSizCondNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
                 tmpDesignWaterFlowRate = state.dataSize->PlantSizData(PltSizCondNum).DesVolFlowRate;
                 if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->DesignWaterFlowRate = tmpDesignWaterFlowRate;
@@ -986,39 +1005,15 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
                 ShowFatalError(state, "Autosizing of fluid cooler condenser flow rate requires a loop Sizing:Plant object.");
             }
         }
-        // This conditional statement is to trap when the user specified Condenser/Fluid Cooler water design setpoint
-        // temperature is less than design inlet air dry bulb temperature
-        if (state.dataSize->PlantSizData(PltSizCondNum).ExitTemp <= this->DesignEnteringAirTemp && state.dataPlnt->PlantFirstSizesOkayToFinalize) {
-            ShowSevereError(state, format("Error when autosizing the UA value for fluid cooler = {}.", this->Name));
-            ShowContinueError(state,
-                              format("Design Loop Exit Temperature ({:.2R} C) must be greater than design entering air dry-bulb temperature "
-                                     "({:.2R} C) when autosizing the fluid cooler UA.",
-                                     state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                     this->DesignEnteringAirTemp));
-            ShowContinueError(state,
-                              "It is recommended that the Design Loop Exit Temperature = design inlet air dry-bulb temp plus the Fluid Cooler "
-                              "design approach temperature (e.g., 4 C).");
-            ShowContinueError(state,
-                              "If using HVACTemplate:Plant:ChilledWaterLoop, then check that input field Condenser Water Design Setpoint must be "
-                              "> design inlet air dry-bulb temp if autosizing the Fluid Cooler.");
-            ShowFatalError(state, "Review and revise design input values as appropriate.");
-        }
     }
 
     PlantUtilities::RegisterPlantCompDesignFlow(state, this->WaterInletNodeNum, tmpDesignWaterFlowRate);
 
     if (this->PerformanceInputMethod_Num == PerfInputMethod::U_FACTOR && this->HighSpeedFluidCoolerUAWasAutoSized) {
         if (PltSizCondNum > 0) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                    Constant::InitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                    CalledFrom);
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                        state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                        CalledFrom);
+            rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+            Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                     .glycol->getSpecificHeat(state, state.dataSize->PlantSizData(PltSizCondNum).ExitTemp, CalledFrom);
             DesFluidCoolerLoad = rho * Cp * tmpDesignWaterFlowRate * state.dataSize->PlantSizData(PltSizCondNum).DeltaT;
             if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->FluidCoolerNominalCapacity = DesFluidCoolerLoad;
         } else {
@@ -1037,34 +1032,13 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
                 if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->HighSpeedFanPower = tmpHighSpeedFanPower;
             } else if (PltSizCondNum > 0) {
                 if (state.dataSize->PlantSizData(PltSizCondNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
-                    // This conditional statement is to trap when the user specified Condenser/Fluid Cooler water design setpoint
-                    // temperature is less than design inlet air dry bulb temperature
-                    if (state.dataSize->PlantSizData(PltSizCondNum).ExitTemp <= this->DesignEnteringAirTemp &&
-                        state.dataPlnt->PlantFirstSizesOkayToFinalize) {
-                        ShowSevereError(state, format("Error when autosizing the UA value for fluid cooler = {}.", this->Name));
-                        ShowContinueError(state,
-                                          format("Design Loop Exit Temperature ({:.2R} C) must be greater than design entering air dry-bulb "
-                                                 "temperature ({:.2R} C) when autosizing the fluid cooler UA.",
-                                                 state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                 this->DesignEnteringAirTemp));
-                        ShowContinueError(state,
-                                          "It is recommended that the Design Loop Exit Temperature = design inlet air dry-bulb temp plus the "
-                                          "Fluid Cooler design approach temperature (e.g., 4 C).");
-                        ShowContinueError(state,
-                                          "If using HVACTemplate:Plant:ChilledWaterLoop, then check that input field Condenser Water Design "
-                                          "Setpoint must be > design inlet air dry-bulb temp if autosizing the Fluid Cooler.");
-                        ShowFatalError(state, "Review and revise design input values as appropriate.");
-                    }
-                    rho = FluidProperties::GetDensityGlycol(state,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                            Constant::InitConvTemp,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                            CalledFrom);
-                    Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                                state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                                state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                                state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                                CalledFrom);
+
+                    ensureSizingPlantExitTempIsNotLessThanDesignEnteringAirTemp();
+
+                    rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+                    Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                             .glycol->getSpecificHeat(state, state.dataSize->PlantSizData(PltSizCondNum).ExitTemp, CalledFrom);
+
                     DesFluidCoolerLoad = rho * Cp * tmpDesignWaterFlowRate * state.dataSize->PlantSizData(PltSizCondNum).DeltaT;
                     tmpHighSpeedFanPower = 0.0105 * DesFluidCoolerLoad;
                     if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->HighSpeedFanPower = tmpHighSpeedFanPower;
@@ -1126,34 +1100,13 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
                 if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->HighSpeedAirFlowRate = tmpHighSpeedAirFlowRate;
             } else if (PltSizCondNum > 0) {
                 if (state.dataSize->PlantSizData(PltSizCondNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
-                    // This conditional statement is to trap when the user specified Condenser/Fluid Cooler water design setpoint
-                    // temperature is less than design inlet air dry bulb temperature
-                    if (state.dataSize->PlantSizData(PltSizCondNum).ExitTemp <= this->DesignEnteringAirTemp &&
-                        state.dataPlnt->PlantFirstSizesOkayToFinalize) {
-                        ShowSevereError(state, format("Error when autosizing the UA value for fluid cooler = {}.", this->Name));
-                        ShowContinueError(state,
-                                          format("Design Loop Exit Temperature ({:.2R} C) must be greater than design entering air dry-bulb "
-                                                 "temperature ({:.2R} C) when autosizing the fluid cooler UA.",
-                                                 state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                 this->DesignEnteringAirTemp));
-                        ShowContinueError(state,
-                                          "It is recommended that the Design Loop Exit Temperature = design inlet air dry-bulb temp plus the "
-                                          "Fluid Cooler design approach temperature (e.g., 4 C).");
-                        ShowContinueError(state,
-                                          "If using HVACTemplate:Plant:ChilledWaterLoop, then check that input field Condenser Water Design "
-                                          "Setpoint must be > design inlet air dry-bulb temp if autosizing the Fluid Cooler.");
-                        ShowFatalError(state, "Review and revise design input values as appropriate.");
-                    }
-                    rho = FluidProperties::GetDensityGlycol(state,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                            Constant::InitConvTemp,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                            CalledFrom);
-                    Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                                state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                                state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                                state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                                CalledFrom);
+
+                    ensureSizingPlantExitTempIsNotLessThanDesignEnteringAirTemp();
+
+                    rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+                    Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                             .glycol->getSpecificHeat(state, state.dataSize->PlantSizData(PltSizCondNum).ExitTemp, CalledFrom);
+
                     DesFluidCoolerLoad = rho * Cp * tmpDesignWaterFlowRate * state.dataSize->PlantSizData(PltSizCondNum).DeltaT;
                     tmpHighSpeedAirFlowRate = DesFluidCoolerLoad / (this->DesignEnteringWaterTemp - this->DesignEnteringAirTemp) * 4.0;
                     if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->HighSpeedAirFlowRate = tmpHighSpeedAirFlowRate;
@@ -1208,34 +1161,13 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
     if (this->HighSpeedFluidCoolerUAWasAutoSized && state.dataPlnt->PlantFirstSizesOkayToFinalize) {
         if (PltSizCondNum > 0) {
             if (state.dataSize->PlantSizData(PltSizCondNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
-                // This conditional statement is to trap when the user specified Condenser/Fluid Cooler water design setpoint
-                // temperature is less than design inlet air dry bulb temperature
-                if (state.dataSize->PlantSizData(PltSizCondNum).ExitTemp <= this->DesignEnteringAirTemp &&
-                    state.dataPlnt->PlantFirstSizesOkayToFinalize) {
-                    ShowSevereError(state, format("Error when autosizing the UA value for fluid cooler = {}.", this->Name));
-                    ShowContinueError(state,
-                                      format("Design Loop Exit Temperature ({:.2R} C) must be greater than design entering air dry-bulb "
-                                             "temperature ({:.2R} C) when autosizing the fluid cooler UA.",
-                                             state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                             this->DesignEnteringAirTemp));
-                    ShowContinueError(state,
-                                      "It is recommended that the Design Loop Exit Temperature = design inlet air dry-bulb temp plus the Fluid "
-                                      "Cooler design approach temperature (e.g., 4 C).");
-                    ShowContinueError(state,
-                                      "If using HVACTemplate:Plant:ChilledWaterLoop, then check that input field Condenser Water Design Setpoint "
-                                      "must be > design inlet air dry-bulb temp if autosizing the Fluid Cooler.");
-                    ShowFatalError(state, "Review and revise design input values as appropriate.");
-                }
-                rho = FluidProperties::GetDensityGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                        Constant::InitConvTemp,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                        CalledFrom);
-                Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                            state.dataSize->PlantSizData(PltSizCondNum).ExitTemp,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                            CalledFrom);
+
+                ensureSizingPlantExitTempIsNotLessThanDesignEnteringAirTemp();
+
+                rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+                Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                         .glycol->getSpecificHeat(state, state.dataSize->PlantSizData(PltSizCondNum).ExitTemp, CalledFrom);
+
                 DesFluidCoolerLoad = rho * Cp * tmpDesignWaterFlowRate * state.dataSize->PlantSizData(PltSizCondNum).DeltaT;
                 UA0 = 0.0001 * DesFluidCoolerLoad; // Assume deltaT = 10000K (limit)
                 UA1 = DesFluidCoolerLoad;          // Assume deltaT = 1K
@@ -1340,16 +1272,8 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
 
     if (this->PerformanceInputMethod_Num == PerfInputMethod::NOMINAL_CAPACITY) {
         if (this->DesignWaterFlowRate >= HVAC::SmallWaterVolFlow) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                    Constant::InitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                    CalledFrom);
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                        this->DesignEnteringWaterTemp,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                        CalledFrom);
+            rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+            Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, this->DesignEnteringWaterTemp, CalledFrom);
             DesFluidCoolerLoad = this->FluidCoolerNominalCapacity;
             Real64 par2_WaterFlow = rho * tmpDesignWaterFlowRate;
             UA0 = 0.0001 * DesFluidCoolerLoad;                     // Assume deltaT = 10000K (limit)
@@ -1524,16 +1448,8 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
         }
 
         if (this->DesignWaterFlowRate >= HVAC::SmallWaterVolFlow && this->FluidCoolerLowSpeedNomCap > 0.0) {
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                    Constant::InitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                    CalledFrom);
-            Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                        this->DesignEnteringWaterTemp,
-                                                        state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                        CalledFrom);
+            rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+            Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, this->DesignEnteringWaterTemp, CalledFrom);
             DesFluidCoolerLoad = this->FluidCoolerLowSpeedNomCap;
             UA0 = 0.0001 * DesFluidCoolerLoad;                     // Assume deltaT = 10000K (limit)
             UA1 = DesFluidCoolerLoad;                              // Assume deltaT = 1K
@@ -1611,6 +1527,20 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
     ErrorsFound = false;
 
     if (state.dataPlnt->PlantFinalSizesOkayToReport) {
+
+        if (this->DesignLeavingWaterTemp <= HVAC::SmallTempDiff) {
+            this->WaterTemp = this->DesignEnteringWaterTemp;       // design inlet water temperature
+            this->AirTemp = this->DesignEnteringAirTemp;           // design inlet air dry-bulb temp
+            this->AirWetBulb = this->DesignEnteringAirWetBulbTemp; // design inlet air wet-bulb temp
+            this->AirPress = state.dataEnvrn->StdBaroPress;
+            this->AirHumRat = Psychrometrics::PsyWFnTdbTwbPb(state, this->AirTemp, this->AirWetBulb, this->AirPress);
+            Real64 OutletTemp = 0;
+            rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::InitConvTemp, CalledFrom);
+            CalcFluidCoolerOutlet(
+                state, this->indexInArray, rho * this->DesignWaterFlowRate, this->HighSpeedAirFlowRate, this->HighSpeedFluidCoolerUA, OutletTemp);
+            this->DesignLeavingWaterTemp = OutletTemp;
+        }
+
         // create predefined report
         OutputReportPredefined::PreDefTableEntry(
             state, state.dataOutRptPredefined->pdchMechType, this->Name, DataPlant::PlantEquipTypeNames[static_cast<int>(this->FluidCoolerType)]);
@@ -1639,10 +1569,11 @@ void FluidCoolerspecs::size(EnergyPlusData &state)
         OutputReportPredefined::PreDefTableEntry(
             state, state.dataOutRptPredefined->pdchCTFCApproach, this->Name, this->DesignLeavingWaterTemp - this->DesignEnteringAirWetBulbTemp);
         OutputReportPredefined::PreDefTableEntry(
-            state, state.dataOutRptPredefined->pdchCTFCDesFanPwr, this->Name, this->HighSpeedFanPower); // eqival to Design Fan Power?
+            state, state.dataOutRptPredefined->pdchCTFCDesFanPwr, this->Name, this->HighSpeedFanPower); // equivalent to Design Fan Power?
         OutputReportPredefined::PreDefTableEntry(
             state, state.dataOutRptPredefined->pdchCTFCDesInletAirWBT, this->Name, this->DesignEnteringAirWetBulbTemp);
-        OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchCTFCDesWaterFlowRate, this->Name, this->DesignWaterFlowRate);
+        OutputReportPredefined::PreDefTableEntry(
+            state, state.dataOutRptPredefined->pdchCTFCDesWaterFlowRate, this->Name, this->DesignWaterFlowRate, 6);
         OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchCTFCLevWaterSPTemp, this->Name, this->DesignLeavingWaterTemp);
     }
 
@@ -1760,11 +1691,8 @@ void FluidCoolerspecs::calcSingleSpeed(EnergyPlusData &state)
         //    Setpoint was not met, fluid cooler ran at full capacity
         this->FanPower = FanPowerOn;
     }
-    Real64 CpWater = FluidProperties::GetSpecificHeatGlycol(state,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                            state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                            RoutineName);
+    Real64 CpWater = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                         .glycol->getSpecificHeat(state, state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp, RoutineName);
     this->Qactual = this->WaterMassFlowRate * CpWater * (state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp - this->OutletWaterTemp);
 }
 
@@ -1886,11 +1814,8 @@ void FluidCoolerspecs::calcTwoSpeed(EnergyPlusData &state)
             this->FanPower = FanPowerHigh;
         }
     }
-    Real64 CpWater = FluidProperties::GetSpecificHeatGlycol(state,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidName,
-                                                            state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp,
-                                                            state.dataPlnt->PlantLoop(this->plantLoc.loopNum).FluidIndex,
-                                                            RoutineName);
+    Real64 CpWater = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
+                         .glycol->getSpecificHeat(state, state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp, RoutineName);
     this->Qactual = this->WaterMassFlowRate * CpWater * (state.dataLoopNodes->Node(this->WaterInletNodeNum).Temp - this->OutletWaterTemp);
 }
 
@@ -1917,24 +1842,17 @@ void CalcFluidCoolerOutlet(
 
     if (UAdesign == 0.0) return;
 
+    auto &fluidCooler = state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum);
     // set local fluid cooler inlet and outlet temperature variables
-    Real64 _InletWaterTemp = state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).WaterTemp;
+    Real64 _InletWaterTemp = fluidCooler.WaterTemp;
     _OutletWaterTemp = _InletWaterTemp;
-    Real64 InletAirTemp = state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).AirTemp;
+    Real64 InletAirTemp = fluidCooler.AirTemp;
 
     // set water and air properties
-    Real64 AirDensity = Psychrometrics::PsyRhoAirFnPbTdbW(state,
-                                                          state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).AirPress,
-                                                          InletAirTemp,
-                                                          state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).AirHumRat);
+    Real64 AirDensity = Psychrometrics::PsyRhoAirFnPbTdbW(state, fluidCooler.AirPress, InletAirTemp, fluidCooler.AirHumRat);
     Real64 AirMassFlowRate = AirFlowRate * AirDensity;
-    Real64 CpAir = Psychrometrics::PsyCpAirFnW(state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).AirHumRat);
-    Real64 CpWater = FluidProperties::GetSpecificHeatGlycol(
-        state,
-        state.dataPlnt->PlantLoop(state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).plantLoc.loopNum).FluidName,
-        _InletWaterTemp,
-        state.dataPlnt->PlantLoop(state.dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).plantLoc.loopNum).FluidIndex,
-        RoutineName);
+    Real64 CpAir = Psychrometrics::PsyCpAirFnW(fluidCooler.AirHumRat);
+    Real64 CpWater = state.dataPlnt->PlantLoop(fluidCooler.plantLoc.loopNum).glycol->getSpecificHeat(state, _InletWaterTemp, RoutineName);
 
     // Calculate mass flow rates
     Real64 MdotCpWater = _WaterMassFlowRate * CpWater;
@@ -1949,7 +1867,7 @@ void CalcFluidCoolerOutlet(
     Real64 NumTransferUnits = UAdesign / CapacityRatioMin;
     Real64 ETA = std::pow(NumTransferUnits, 0.22);
     Real64 A = CapacityRatio * NumTransferUnits / ETA;
-    Real64 effectiveness = 1.0 - std::exp((std::exp(-A) - 1.0) / (CapacityRatio / ETA));
+    Real64 effectiveness = 1.0 - std::exp(std::expm1(-A) / (CapacityRatio / ETA));
 
     // calculate water to air heat transfer
     _Qactual = effectiveness * CapacityRatioMin * (_InletWaterTemp - InletAirTemp);
@@ -1978,7 +1896,7 @@ void FluidCoolerspecs::update(EnergyPlusData &state)
         state.dataGlobal->WarmupFlag)
         return;
 
-    // Check flow rate through fluid cooler and compare to design flow rate, show warning if greater than Design * Mulitplier
+    // Check flow rate through fluid cooler and compare to design flow rate, show warning if greater than Design * Multiplier
     if (state.dataLoopNodes->Node(waterOutletNode).MassFlowRate > this->DesWaterMassFlowRate * this->FluidCoolerMassFlowRateMultiplier) {
         ++this->HighMassFlowErrorCount;
         if (this->HighMassFlowErrorCount < 2) {
@@ -2006,10 +1924,11 @@ void FluidCoolerspecs::update(EnergyPlusData &state)
 
         if (this->OutletWaterTempErrorCount < 2) {
             ShowWarningError(state, format("{} \"{}\"", DataPlant::PlantEquipTypeNames[static_cast<int>(this->FluidCoolerType)], this->Name));
-            ShowContinueError(state,
-                              format(" Fluid cooler water outlet temperature ({.2F} C) is below the specified minimum condenser loop temp of {.2F} C",
-                                     this->OutletWaterTemp,
-                                     LoopMinTemp));
+            ShowContinueError(
+                state,
+                format(" Fluid cooler water outlet temperature ({:.2F} C) is below the specified minimum condenser loop temp of {:.2F} C",
+                       this->OutletWaterTemp,
+                       LoopMinTemp));
             ShowContinueErrorTimeStamp(state, "");
         } else {
             ShowRecurringWarningErrorAtEnd(

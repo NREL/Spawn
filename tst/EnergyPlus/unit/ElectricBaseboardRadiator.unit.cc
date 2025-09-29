@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -130,7 +130,7 @@ TEST_F(EnergyPlusFixture, RadConvElecBaseboard_Test1)
 
         " ZoneHVAC:Baseboard:RadiantConvective:Electric,",
         "    SPACE2-1 Baseboard,      !- Name",
-        "    always_on,    !- Availability Schedule Name",
+        "    CONSTANT-1.0,    !- Availability Schedule Name",
         "    HeatingDesignCapacity,   !- Heating Design Capacity Method",
         "    1000.0,                !- Heating Design Capacity {W}",
         "    ,                        !- Heating Design Capacity Per Floor Area {W/m2}",
@@ -160,7 +160,7 @@ TEST_F(EnergyPlusFixture, RadConvElecBaseboard_Test1)
 
         "  ZoneHVAC:Baseboard:RadiantConvective:Electric,",
         "    SPACE4-1 Baseboard,      !- Name",
-        "    always_on,    !- Availability Schedule Name",
+        "    CONSTANT-1.0,    !- Availability Schedule Name",
         "    HeatingDesignCapacity,   !- Heating Design Capacity Method",
         "    1000.0,                !- Heating Design Capacity {W}",
         "    ,                        !- Heating Design Capacity Per Floor Area {W/m2}",
@@ -187,19 +187,6 @@ TEST_F(EnergyPlusFixture, RadConvElecBaseboard_Test1)
         "    0.0,15.2,0.0,  !- X,Y,Z ==> Vertex 2 {m}",
         "    0.0,0.0,0.0,  !- X,Y,Z ==> Vertex 3 {m}",
         "    0.0,0.0,2.4;  !- X,Y,Z ==> Vertex 4 {m}",
-
-        "  ScheduleTypeLimits,",
-        "    Fraction,                !- Name",
-        "    0.0,                     !- Lower Limit Value",
-        "    1.0,                     !- Upper Limit Value",
-        "    CONTINUOUS;              !- Numeric Type",
-
-        "  Schedule:Compact,",
-        "    always_on,    !- Name",
-        "    Fraction,                !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1.0;        !- Field 3"
 
         "SurfaceConvectionAlgorithm:Inside,TARP;",
 
@@ -265,9 +252,9 @@ TEST_F(EnergyPlusFixture, RadConvElecBaseboard_Test1)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool errorsFound(false);
     HeatBalanceManager::GetProjectControlData(*state, errorsFound); // read project control data
@@ -286,10 +273,10 @@ TEST_F(EnergyPlusFixture, RadConvElecBaseboard_Test1)
 
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(2);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(2);
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
 
@@ -402,7 +389,7 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
 
         " ZoneHVAC:Baseboard:RadiantConvective:Electric,",
         "    SPACE2-1 Baseboard,      !- Name",
-        "    always_on,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    HeatingDesignCapacity,   !- Heating Design Capacity Method",
         "    1000.0,                  !- Heating Design Capacity {W}",
         "    ,                        !- Heating Design Capacity Per Floor Area {W/m2}",
@@ -432,7 +419,7 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
 
         "  ZoneHVAC:Baseboard:RadiantConvective:Electric,",
         "    SPACE3-1 Baseboard,      !- Name",
-        "    always_on,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    CapacityPerFloorArea,    !- Heating Design Capacity Method",
         "    ,                        !- Heating Design Capacity {W}",
         "    30.0,                    !- Heating Design Capacity Per Floor Area {W/m2}",
@@ -462,7 +449,7 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
 
         "  ZoneHVAC:Baseboard:RadiantConvective:Electric,",
         "    SPACE4-1 Baseboard,      !- Name",
-        "    always_on,               !- Availability Schedule Name",
+        "    CONSTANT-1.0,               !- Availability Schedule Name",
         "    FractionOfAutosizedHeatingCapacity,   !- Heating Design Capacity Method",
         "    ,                        !- Heating Design Capacity {W}",
         "    ,                        !- Heating Design Capacity Per Floor Area {W/m2}",
@@ -489,19 +476,6 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
         "    0.0,15.2,0.0,  !- X,Y,Z ==> Vertex 2 {m}",
         "    0.0,0.0,0.0,   !- X,Y,Z ==> Vertex 3 {m}",
         "    0.0,0.0,2.4;   !- X,Y,Z ==> Vertex 4 {m}",
-
-        "  ScheduleTypeLimits,",
-        "    Fraction,                !- Name",
-        "    0.0,                     !- Lower Limit Value",
-        "    1.0,                     !- Upper Limit Value",
-        "    CONTINUOUS;              !- Numeric Type",
-
-        "  Schedule:Compact,",
-        "    always_on,               !- Name",
-        "    Fraction,                !- Schedule Type Limits Name",
-        "    Through: 12/31,          !- Field 1",
-        "    For: AllDays,            !- Field 2",
-        "    Until: 24:00,1.0;        !- Field 3"
 
         "SurfaceConvectionAlgorithm:Inside,TARP;",
 
@@ -567,9 +541,9 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool errorsFound(false);
     HeatBalanceManager::GetProjectControlData(*state, errorsFound); // read project control data
@@ -588,12 +562,12 @@ TEST_F(EnergyPlusFixture, ElectricBaseboardRadConv_SizingTest)
 
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(3);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(3);
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(3) = std::cos(-state->dataHeatBal->Zone(3).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(3) = std::sin(-state->dataHeatBal->Zone(3).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(3) = std::cos(-state->dataHeatBal->Zone(3).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(3) = std::sin(-state->dataHeatBal->Zone(3).RelNorth * Constant::DegToRad);
 
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;

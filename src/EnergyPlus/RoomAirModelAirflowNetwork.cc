@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -48,7 +48,7 @@
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array1D.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <AirflowNetwork/Solver.hpp>
@@ -124,7 +124,7 @@ namespace RoomAir {
         // METHODOLOGY EMPLOYED:
         // calls subroutines (LOL)
 
-        auto &afnZoneInfo = state.dataRoomAir->AFNZoneInfo(zoneNum);
+        auto const &afnZoneInfo = state.dataRoomAir->AFNZoneInfo(zoneNum);
 
         // model control volume for each roomAir:node in the zone.
         for (int roomAirNodeNum = 1; roomAirNodeNum <= afnZoneInfo.NumOfAirNodes; ++roomAirNodeNum) {
@@ -174,7 +174,6 @@ namespace RoomAir {
 
         Array1D_bool NodeFound; // True if a node is found.
         Array1D_bool EquipFound;
-        bool ErrorsFound = false;
         Array1D<Real64> SupplyFrac;
         Array1D<Real64> ReturnFrac;
 
@@ -184,9 +183,9 @@ namespace RoomAir {
             for (int iZone = 1; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
                 auto &afnZoneInfo = state.dataRoomAir->AFNZoneInfo(iZone);
                 if (!afnZoneInfo.IsUsed) continue;
-                int NumSurfs = 0;
+                int NumSurfs = 0; // NumSurfs isn't used anywhere?
                 for (int spaceNum : state.dataHeatBal->Zone(iZone).spaceIndexes) {
-                    auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                    auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                     NumSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
                 }
 
@@ -231,7 +230,7 @@ namespace RoomAir {
             if (allocated(state.dataZoneEquip->ZoneEquipConfig) && allocated(state.dataZoneEquip->ZoneEquipList)) {
                 int MaxNodeNum = 0;
                 int MaxEquipNum = 0;
-                ErrorsFound = false;
+                bool ErrorsFound = false;
                 for (int iZone = 1; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
                     if (!state.dataHeatBal->Zone(iZone).IsControlled) continue;
                     MaxEquipNum = max(MaxEquipNum, state.dataZoneEquip->ZoneEquipList(iZone).NumOfEquipTypes);
@@ -614,7 +613,7 @@ namespace RoomAir {
 
         // PURPOSE OF THIS SUBROUTINE:
         // update variables
-        auto &afnZoneInfo = state.dataRoomAir->AFNZoneInfo(zoneNum);
+        auto const &afnZoneInfo = state.dataRoomAir->AFNZoneInfo(zoneNum);
 
         if (!afnZoneInfo.IsUsed) return;
 
@@ -788,7 +787,7 @@ namespace RoomAir {
 
         int surfCount = 0;
         for (int spaceNum : state.dataHeatBal->Zone(zoneNum).spaceIndexes) {
-            auto &thisSpace = state.dataHeatBal->space(spaceNum);
+            auto const &thisSpace = state.dataHeatBal->space(spaceNum);
             for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
                 ++surfCount;
                 if (afnZoneInfo.ControlAirNodeID == roomAirNodeNum) {
@@ -831,14 +830,14 @@ namespace RoomAir {
                             if (state.dataSurface->SurfWinHeatGain(SurfNum) >= 0.0) {
                                 state.dataSurface->SurfWinHeatGainRep(SurfNum) = state.dataSurface->SurfWinHeatGain(SurfNum);
                                 state.dataSurface->SurfWinHeatGainRepEnergy(SurfNum) =
-                                    state.dataSurface->SurfWinHeatGainRep(SurfNum) * state.dataGlobal->TimeStepZone * Constant::SecInHour;
+                                    state.dataSurface->SurfWinHeatGainRep(SurfNum) * state.dataGlobal->TimeStepZone * Constant::rSecsInHour;
                             } else {
                                 state.dataSurface->SurfWinHeatLossRep(SurfNum) = -state.dataSurface->SurfWinHeatGain(SurfNum);
                                 state.dataSurface->SurfWinHeatLossRepEnergy(SurfNum) =
-                                    state.dataSurface->SurfWinHeatLossRep(SurfNum) * state.dataGlobal->TimeStepZone * Constant::SecInHour;
+                                    state.dataSurface->SurfWinHeatLossRep(SurfNum) * state.dataGlobal->TimeStepZone * Constant::rSecsInHour;
                             }
                             state.dataSurface->SurfWinHeatTransferRepEnergy(SurfNum) =
-                                state.dataSurface->SurfWinHeatGain(SurfNum) * state.dataGlobal->TimeStepZone * Constant::SecInHour;
+                                state.dataSurface->SurfWinHeatGain(SurfNum) * state.dataGlobal->TimeStepZone * Constant::rSecsInHour;
                         }
                     }
 
@@ -936,7 +935,7 @@ namespace RoomAir {
 
         int surfCount = 1;
         for (int spaceNum : state.dataHeatBal->Zone(zoneNum).spaceIndexes) {
-            auto &thisSpace = state.dataHeatBal->space(spaceNum);
+            auto const &thisSpace = state.dataHeatBal->space(spaceNum);
             for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum, ++surfCount) {
                 auto const &surf = state.dataSurface->Surface(SurfNum);
                 if (surf.Class == SurfaceClass::Window) continue;
@@ -952,13 +951,13 @@ namespace RoomAir {
                     if (!afnZoneInfo.Node(roomAirNodeNum).SurfMask(surfCount)) continue;
                 }
 
-                auto &HMassConvInFD = state.dataMstBal->HMassConvInFD;
-                auto &RhoVaporSurfIn = state.dataMstBal->RhoVaporSurfIn;
-                auto &RhoVaporAirIn = state.dataMstBal->RhoVaporAirIn;
+                auto const &HMassConvInFD = state.dataMstBal->HMassConvInFD(SurfNum);
+                auto &RhoVaporSurfIn = state.dataMstBal->RhoVaporSurfIn(SurfNum);
+                auto &RhoVaporAirIn = state.dataMstBal->RhoVaporAirIn(SurfNum);
                 if (surf.HeatTransferAlgorithm == DataSurfaces::HeatTransferModel::HAMT) {
                     UpdateHeatBalHAMT(state, SurfNum);
 
-                    SumHmAW += HMassConvInFD(SurfNum) * surf.Area * (RhoVaporSurfIn(SurfNum) - RhoVaporAirIn(SurfNum));
+                    SumHmAW += HMassConvInFD * surf.Area * (RhoVaporSurfIn - RhoVaporAirIn);
 
                     Real64 RhoAirZone = PsyRhoAirFnPbTdbW(
                         state,
@@ -966,35 +965,34 @@ namespace RoomAir {
                         state.dataZoneTempPredictorCorrector->zoneHeatBalance(surf.Zone).MAT,
                         PsyRhFnTdbRhov(state,
                                        state.dataZoneTempPredictorCorrector->zoneHeatBalance(state.dataSurface->Surface(SurfNum).Zone).MAT,
-                                       RhoVaporAirIn(SurfNum),
+                                       RhoVaporAirIn,
                                        "RhoAirZone"));
 
-                    Real64 Wsurf =
-                        PsyWFnTdbRhPb(state,
-                                      state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
-                                      PsyRhFnTdbRhov(state, state.dataHeatBalSurf->SurfTempInTmp(SurfNum), RhoVaporSurfIn(SurfNum), "Wsurf"),
-                                      state.dataEnvrn->OutBaroPress);
+                    Real64 Wsurf = PsyWFnTdbRhPb(state,
+                                                 state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
+                                                 PsyRhFnTdbRhov(state, state.dataHeatBalSurf->SurfTempInTmp(SurfNum), RhoVaporSurfIn, "Wsurf"),
+                                                 state.dataEnvrn->OutBaroPress);
 
-                    SumHmARa += HMassConvInFD(SurfNum) * surf.Area * RhoAirZone;
-                    SumHmARaW += HMassConvInFD(SurfNum) * surf.Area * RhoAirZone * Wsurf;
+                    SumHmARa += HMassConvInFD * surf.Area * RhoAirZone;
+                    SumHmARaW += HMassConvInFD * surf.Area * RhoAirZone * Wsurf;
                 }
 
                 else if (surf.HeatTransferAlgorithm == DataSurfaces::HeatTransferModel::EMPD) {
 
                     UpdateMoistureBalanceEMPD(state, SurfNum);
-                    RhoVaporSurfIn(SurfNum) = state.dataMstBalEMPD->RVSurface(SurfNum);
+                    RhoVaporSurfIn = state.dataMstBalEMPD->RVSurface(SurfNum);
 
-                    SumHmAW += HMassConvInFD(SurfNum) * surf.Area * (RhoVaporSurfIn(SurfNum) - RhoVaporAirIn(SurfNum));
-                    SumHmARa += HMassConvInFD(SurfNum) * surf.Area *
-                                PsyRhoAirFnPbTdbW(
-                                    state,
-                                    state.dataEnvrn->OutBaroPress,
-                                    state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
-                                    PsyWFnTdbRhPb(state,
-                                                  state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
-                                                  PsyRhFnTdbRhovLBnd0C(state, state.dataHeatBalSurf->SurfTempInTmp(SurfNum), RhoVaporAirIn(SurfNum)),
-                                                  state.dataEnvrn->OutBaroPress));
-                    SumHmARaW += HMassConvInFD(SurfNum) * surf.Area * RhoVaporSurfIn(SurfNum);
+                    SumHmAW += HMassConvInFD * surf.Area * (RhoVaporSurfIn - RhoVaporAirIn);
+                    SumHmARa +=
+                        HMassConvInFD * surf.Area *
+                        PsyRhoAirFnPbTdbW(state,
+                                          state.dataEnvrn->OutBaroPress,
+                                          state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
+                                          PsyWFnTdbRhPb(state,
+                                                        state.dataHeatBalSurf->SurfTempInTmp(SurfNum),
+                                                        PsyRhFnTdbRhovLBnd0C(state, state.dataHeatBalSurf->SurfTempInTmp(SurfNum), RhoVaporAirIn),
+                                                        state.dataEnvrn->OutBaroPress));
+                    SumHmARaW += HMassConvInFD * surf.Area * RhoVaporSurfIn;
                 }
             } // for (SurfNum)
         }     // for (spaceNum)

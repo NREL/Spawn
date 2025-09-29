@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -508,7 +508,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_AllocateLoadComponentArraysTes
     state->dataGlobal->NumOfZones = 4;
     state->dataViewFactor->NumOfRadiantEnclosures = 4;
     state->dataSurface->TotSurfaces = 7;
-    state->dataGlobal->NumOfTimeStepInHour = 4;
+    state->dataGlobal->TimeStepsInHour = 4;
 
     AllocateLoadComponentArrays(*state);
 
@@ -518,128 +518,23 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_AllocateLoadComponentArraysTes
     // radiantPulseReceived.allocate( { 0, TotDesDays + TotRunDesPersDays }, TotSurfaces );
     EXPECT_EQ(state->dataOutRptTab->radiantPulseReceived.size(), 42u);
 
-    // loadConvectedNormal.allocate( TotDesDays + TotRunDesPersDays, { 0, NumOfTimeStepInHour * 24 }, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->loadConvectedNormal.size(), 3395u);
-
-    // loadConvectedWithPulse.allocate( TotDesDays + TotRunDesPersDays, { 0, NumOfTimeStepInHour * 24 }, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->loadConvectedWithPulse.size(), 3395u);
-
-    // netSurfRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->netSurfRadSeq.size(), 3360u);
-
-    // decayCurveCool.allocate( NumOfTimeStepInHour * 24, TotSurfaces );
+    // decayCurveCool.allocate( TimeStepsInHour * 24, TotSurfaces );
     EXPECT_EQ(state->dataOutRptTab->decayCurveCool.size(), 672u);
 
-    // decayCurveHeat.allocate( NumOfTimeStepInHour * 24, TotSurfaces );
+    // decayCurveHeat.allocate( TimeStepsInHour * 24, TotSurfaces );
     EXPECT_EQ(state->dataOutRptTab->decayCurveHeat.size(), 672u);
 
-    // ITABSFseq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->ITABSFseq.size(), 3360u);
+    EXPECT_EQ(state->dataOutRptTab->surfCompLoads.size(), 5u);
+    EXPECT_EQ(state->dataOutRptTab->surfCompLoads[0].ts.size(), 96u);
+    EXPECT_EQ(state->dataOutRptTab->surfCompLoads[0].ts[0].surf.size(), 7u);
+    EXPECT_EQ(state->dataOutRptTab->surfCompLoads[4].ts.size(), 96u);
+    EXPECT_EQ(state->dataOutRptTab->surfCompLoads[4].ts[95].surf.size(), 7u);
 
-    // TMULTseq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->TMULTseq.size(), 1920u);
-
-    // peopleInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->peopleInstantSeq.size(), 1920u);
-
-    // peopleLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->peopleLatentSeq.size(), 1920u);
-
-    // peopleRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->peopleRadSeq.size(), 1920u);
-
-    // peopleDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( peopleDelaySeq.size(), 1920u );
-
-    // lightInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->lightInstantSeq.size(), 1920u);
-
-    // lightRetAirSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->lightRetAirSeq.size(), 1920u);
-
-    // lightLWRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->lightLWRadSeq.size(), 1920u);
-
-    // lightSWRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->lightSWRadSeq.size(), 3360u);
-
-    // lightDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( lightDelaySeq.size(), 1920u );
-
-    // equipInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->equipInstantSeq.size(), 1920u);
-
-    // equipLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->equipLatentSeq.size(), 1920u);
-
-    // equipRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->equipRadSeq.size(), 1920u);
-
-    // equipDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( equipDelaySeq.size(), 1920u );
-
-    // refrigInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->refrigInstantSeq.size(), 1920u);
-
-    // refrigRetAirSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->refrigRetAirSeq.size(), 1920u);
-
-    // refrigLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->refrigLatentSeq.size(), 1920u);
-
-    // waterUseInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->waterUseInstantSeq.size(), 1920u);
-
-    // waterUseLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->waterUseLatentSeq.size(), 1920u);
-
-    // hvacLossInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->hvacLossInstantSeq.size(), 1920u);
-
-    // hvacLossRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->hvacLossRadSeq.size(), 1920u);
-
-    // hvacLossDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( hvacLossDelaySeq.size(), 1920u );
-
-    // powerGenInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->powerGenInstantSeq.size(), 1920u);
-
-    // powerGenRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->powerGenRadSeq.size(), 1920u);
-
-    // powerGenDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( powerGenDelaySeq.size(), 1920u );
-
-    // infilInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->infilInstantSeq.size(), 1920u);
-
-    // infilLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->infilLatentSeq.size(), 1920u);
-
-    // zoneVentInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->zoneVentInstantSeq.size(), 1920u);
-
-    // zoneVentLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->zoneVentLatentSeq.size(), 1920u);
-
-    // interZoneMixInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->interZoneMixInstantSeq.size(), 1920u);
-
-    // interZoneMixLatentSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->interZoneMixLatentSeq.size(), 1920u);
-
-    // feneCondInstantSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    EXPECT_EQ(state->dataOutRptTab->feneCondInstantSeq.size(), 1920u);
-
-    // feneSolarRadSeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, TotSurfaces );
-    EXPECT_EQ(state->dataOutRptTab->feneSolarRadSeq.size(), 3360u);
-
-    // feneSolarDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, NumOfZones );
-    // EXPECT_EQ( feneSolarDelaySeq.size(), 1920u );
-
-    // surfDelaySeq.allocate( TotDesDays + TotRunDesPersDays, NumOfTimeStepInHour * 24, TotSurfaces );
-    // EXPECT_EQ( surfDelaySeq.size(), 3360u );
+    EXPECT_EQ(state->dataOutRptTab->znCompLoads.size(), 5u);
+    EXPECT_EQ(state->dataOutRptTab->znCompLoads[0].ts.size(), 96u);
+    EXPECT_EQ(state->dataOutRptTab->znCompLoads[0].ts[0].spacezone.size(), 4u);
+    EXPECT_EQ(state->dataOutRptTab->znCompLoads[4].ts.size(), 96u);
+    EXPECT_EQ(state->dataOutRptTab->znCompLoads[4].ts[95].spacezone.size(), 4u);
 }
 
 TEST_F(EnergyPlusFixture, OutputReportTabularTest_ConfirmConvertToEscaped)
@@ -3641,7 +3536,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabular_ConfirmResetBEPSGathering)
     state->dataGlobal->DoWeathSim = true;
     state->dataGlobal->TimeStepZone = 1.0;
     state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 3600.0;
-    state->dataGlobal->MinutesPerTimeStep = state->dataGlobal->TimeStepZone * 60.0;
+    state->dataGlobal->MinutesInTimeStep = state->dataGlobal->TimeStepZone * 60.0;
     state->dataOutRptTab->displayTabularBEPS = true;
     // OutputProcessor::TimeValue.allocate(2);
 
@@ -3811,7 +3706,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabular_GatherHeatEmissionReport)
     state->dataOutRptTab->displayHeatEmissionsSummary = true;
     state->dataGlobal->DoWeathSim = true;
     state->dataHVACGlobal->TimeStepSys = 10.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     state->dataEnvrn->OutHumRat = 0.005;
     state->dataEnvrn->OutDryBulbTemp = 25.0;
@@ -3893,8 +3788,9 @@ TEST_F(EnergyPlusFixture, OutputTableTimeBins_GetInput)
                                                       "0.00, !- Interval Start",
                                                       "0.20, !- Interval Size",
                                                       "5,                       !- Interval Count",
-                                                      "Always1; !- Schedule Name"});
+                                                      "Constant-1.0; !- Schedule Name"});
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     state->dataGlobal->DoWeathSim = true;
 
@@ -3906,7 +3802,7 @@ TEST_F(EnergyPlusFixture, OutputTableTimeBins_GetInput)
     EXPECT_EQ(state->dataOutRptTab->OutputTableBinned(1).intervalStart, 0.0);
     EXPECT_EQ(state->dataOutRptTab->OutputTableBinned(1).intervalSize, 0.20);
     EXPECT_EQ(state->dataOutRptTab->OutputTableBinned(1).intervalCount, 5);
-    EXPECT_EQ(state->dataOutRptTab->OutputTableBinned(1).ScheduleName, "ALWAYS1");
+    EXPECT_EQ(state->dataOutRptTab->OutputTableBinned(1).sched->Name, "Constant-1.0");
 }
 
 // TEST_F( EnergyPlusFixture, FinAndOverhangCount )
@@ -6581,6 +6477,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularMonthly_invalidAggregationOrder)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 extLitUse;
 
@@ -6631,7 +6528,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularMonthly_invalidAggregationOrder)
 
 TEST_F(EnergyPlusFixture, OutputReportTabularTest_CollectPeakZoneConditions_test)
 {
-    Psychrometrics::InitializePsychRoutines(*state);
+    state->init_state(*state);
     createCoilSelectionReportObj(*state);
 
     CompLoadTablesType compLoad;
@@ -6648,8 +6545,8 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_CollectPeakZoneConditions_test
     state->dataWeather->DesDayInput(1).Month = 5;
     state->dataWeather->DesDayInput(1).DayOfMonth = 21;
 
-    state->dataGlobal->NumOfTimeStepInHour = 4;
-    state->dataGlobal->MinutesPerTimeStep = 15;
+    state->dataGlobal->TimeStepsInHour = 4;
+    state->dataGlobal->MinutesInTimeStep = 15;
 
     state->dataSize->CalcFinalZoneSizing.allocate(1);
     state->dataSize->CalcFinalZoneSizing(1).CoolOutTempSeq.allocate(96);
@@ -6716,6 +6613,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_ComputeEngineeringChecks_test)
 TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetZoneComponentAreas_test)
 {
     Array1D<ZompComponentAreasType> areas;
+    Array1D<ZompComponentAreasType> spaceAreas;
     areas.allocate(1);
 
     state->dataHeatBal->Zone.allocate(1);
@@ -6802,7 +6700,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetZoneComponentAreas_test)
     state->dataSurface->Surface(13).Zone = 1;
     state->dataSurface->Surface(13).HeatTransSurf = true;
 
-    GetZoneComponentAreas(*state, areas);
+    GetZoneComponentAreas(*state, areas, spaceAreas);
 
     EXPECT_EQ(12., areas(1).floor);
     EXPECT_EQ(8., areas(1).roof);
@@ -6982,7 +6880,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesTwice_test)
     int iZone = 1;
     state->dataEnvrn->TotDesDays = 2;
     state->dataEnvrn->TotRunDesPersDays = 3;
-    state->dataGlobal->NumOfTimeStepInHour = 4;
+    state->dataGlobal->TimeStepsInHour = 4;
 
     state->dataGlobal->NumOfZones = 4;
     state->dataHeatBal->Zone.allocate(state->dataGlobal->NumOfZones);
@@ -7002,48 +6900,43 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesTwice_test)
     state->dataSurface->Surface(1).RadEnclIndex = 1;
 
     Array1D<Real64> peopleDelaySeq;
-    peopleDelaySeq.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    peopleDelaySeq.allocate(state->dataGlobal->TimeStepsInHour * 24);
     peopleDelaySeq = 0.;
 
     Array1D<Real64> peopleDelaySeqCool;
-    peopleDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    peopleDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     peopleDelaySeqCool = 0.;
 
     Array1D<Real64> equipDelaySeqCool;
-    equipDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    equipDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     equipDelaySeqCool = 0.;
 
     Array1D<Real64> hvacLossDelaySeqCool;
-    hvacLossDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    hvacLossDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     hvacLossDelaySeqCool = 0.;
 
     Array1D<Real64> powerGenDelaySeqCool;
-    powerGenDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    powerGenDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     powerGenDelaySeqCool = 0.;
 
     Array1D<Real64> lightDelaySeqCool;
-    lightDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    lightDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     lightDelaySeqCool = 0.;
 
     Array1D<Real64> feneSolarDelaySeqCool;
-    feneSolarDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    feneSolarDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     feneSolarDelaySeqCool = 0.;
 
-    Array3D<Real64> feneCondInstantSeq;
-    feneCondInstantSeq.allocate(state->dataEnvrn->TotDesDays + state->dataEnvrn->TotRunDesPersDays,
-                                state->dataGlobal->NumOfTimeStepInHour * 24,
-                                state->dataViewFactor->NumOfRadiantEnclosures);
-    feneCondInstantSeq = 0.0;
-
     Array2D<Real64> surfDelaySeqCool;
-    surfDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24, state->dataSurface->TotSurfaces);
+    surfDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24, state->dataSurface->TotSurfaces);
     surfDelaySeqCool = 0.0;
 
     AllocateLoadComponentArrays(*state);
 
-    feneCondInstantSeq(coolDesSelected, 1, 1) = 0.88;
+    auto &znCL = state->dataOutRptTab->znCompLoads;
+    znCL[coolDesSelected - 1].ts[0].spacezone[iZone - 1].feneCondInstantSeq = 0.88;
 
-    state->dataOutRptTab->netSurfRadSeq(coolDesSelected, 1, 1) = 0.05;
+    state->dataOutRptTab->surfCompLoads[coolDesSelected - 1].ts[0].surf[0].netSurfRadSeq = 0.05;
 
     GetDelaySequences(*state,
                       coolDesSelected,
@@ -7055,10 +6948,12 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesTwice_test)
                       powerGenDelaySeqCool,
                       lightDelaySeqCool,
                       feneSolarDelaySeqCool,
-                      feneCondInstantSeq,
+                      znCL,
                       surfDelaySeqCool);
 
-    EXPECT_EQ(0.83, feneCondInstantSeq(coolDesSelected, 1, 1)); // the first time the subtraction operation should have occurred
+    EXPECT_EQ(
+        0.83,
+        znCL[coolDesSelected - 1].ts[0].spacezone[iZone - 1].feneCondInstantSeq); // the first time the subtraction operation should have occurred
 
     GetDelaySequences(*state,
                       coolDesSelected,
@@ -7070,14 +6965,13 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesTwice_test)
                       powerGenDelaySeqCool,
                       lightDelaySeqCool,
                       feneSolarDelaySeqCool,
-                      feneCondInstantSeq,
+                      znCL,
                       surfDelaySeqCool);
 
     EXPECT_EQ(0.83,
-              feneCondInstantSeq(
-                  coolDesSelected,
-                  1,
-                  1)); // the second time the subtraction should not have happened since it is only adjusted once so the value should be the same.
+              znCL[coolDesSelected - 1].ts[0].spacezone[iZone - 1].feneCondInstantSeq); // the second time the subtraction should not have happened
+                                                                                        // since it is
+    // only adjusted once so the value should be the same.
 }
 
 TEST_F(SQLiteFixture, OutputReportTabular_WriteLoadComponentSummaryTables_AirLoop_ZeroDesignDay)
@@ -7113,6 +7007,8 @@ TEST_F(SQLiteFixture, OutputReportTabular_WriteLoadComponentSummaryTables_AirLoo
 // We ensure that if the Airloop peak matches the zone peak, we don't do the IP conversion twice
 TEST_F(SQLiteFixture, OutputReportTabular_WriteLoadComponentSummaryTables_AirLoop_IPConversion)
 {
+    state->init_state(*state);
+
     state->dataSQLiteProcedures->sqlite->createSQLiteSimulationsRecord(1, "EnergyPlus Version", "Current Time");
 
     OutputReportTabular::SetupUnitConversions(*state);
@@ -7126,7 +7022,6 @@ TEST_F(SQLiteFixture, OutputReportTabular_WriteLoadComponentSummaryTables_AirLoo
     state->dataOutRptTab->displayFacilityComponentLoadSummary = true;
     state->dataGlobal->CompLoadReportIsReq = true;
 
-    Psychrometrics::InitializePsychRoutines(*state);
     createCoilSelectionReportObj(*state);
 
     // Two design days
@@ -7139,8 +7034,8 @@ TEST_F(SQLiteFixture, OutputReportTabular_WriteLoadComponentSummaryTables_AirLoo
     state->dataWeather->DesDayInput(2).Month = 1;
     state->dataWeather->DesDayInput(2).DayOfMonth = 21;
 
-    state->dataGlobal->NumOfTimeStepInHour = 4;
-    state->dataGlobal->MinutesPerTimeStep = 15;
+    state->dataGlobal->TimeStepsInHour = 4;
+    state->dataGlobal->MinutesInTimeStep = 15;
     int numTimeStepInDay = 96;
 
     // One Zone
@@ -7415,6 +7310,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularMonthlyPredefined_FindNeededOutputV
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     EXPECT_EQ(1, state->dataInputProcessing->inputProcessor->getNumObjectsFound(*state, "Output:Table:SummaryReports"));
     EXPECT_EQ(0, state->dataInputProcessing->inputProcessor->getNumObjectsFound(*state, "Output:Variable"));
@@ -7631,6 +7527,7 @@ TEST_F(EnergyPlusFixture, AzimuthToCardinal)
     int nTests = expectedAzimuthToCards.size();
 
     // Allocate some needed arrays
+    state->dataHeatBal->space.allocate(1);
     state->dataHeatBal->Zone.allocate(1);
     state->dataHeatBal->Zone(1).ListMultiplier = 1;
     state->dataConstruction->Construct.allocate(1);
@@ -7657,6 +7554,7 @@ TEST_F(EnergyPlusFixture, AzimuthToCardinal)
         state->dataSurface->Surface(i).GrossArea = 200.;
         state->dataSurface->Surface(i).Tilt = 90.;
         state->dataSurface->Surface(i).Zone = 1;
+        state->dataSurface->Surface(i).spaceNum = 1;
         state->dataSurface->Surface(i).Construction = 1;
         state->dataSurface->AllSurfaceListReportOrder.push_back(i);
 
@@ -7745,6 +7643,7 @@ TEST_F(EnergyPlusFixture, AzimuthToCardinal)
 TEST_F(EnergyPlusFixture, InteriorSurfaceEnvelopeSummaryReport)
 {
     // Allocate some needed arrays
+    state->dataHeatBal->space.allocate(2);
     state->dataHeatBal->Zone.allocate(2);
     state->dataHeatBal->Zone(1).ListMultiplier = 1;
     state->dataHeatBal->Zone(2).ListMultiplier = 1;
@@ -7782,10 +7681,12 @@ TEST_F(EnergyPlusFixture, InteriorSurfaceEnvelopeSummaryReport)
         }
         if ((i + 1) / 2 == 1) {
             // first pair of wall and door
+            state->dataSurface->Surface(i).spaceNum = 1;
             state->dataSurface->Surface(i).Zone = 1;
             state->dataSurface->Surface(i).ExtBoundCond = i + 2;
         } else {
             // second pair of wall and door
+            state->dataSurface->Surface(i).spaceNum = 2;
             state->dataSurface->Surface(i).Zone = 2;
             state->dataSurface->Surface(i).ExtBoundCond = i - 2;
         }
@@ -8138,7 +8039,7 @@ TEST_F(SQLiteFixture, OutputReportTabular_EndUseBySubcategorySQL)
                         "General");
     state->dataGlobal->DoWeathSim = true;
     state->dataGlobal->TimeStepZone = 1.0;
-    state->dataGlobal->MinutesPerTimeStep = state->dataGlobal->TimeStepZone * 60;
+    state->dataGlobal->MinutesInTimeStep = state->dataGlobal->TimeStepZone * 60;
     state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 3600.0;
     state->dataOutRptTab->displayTabularBEPS = true;
     // OutputProcessor::TimeValue.allocate(2);
@@ -8364,7 +8265,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
     int iZone = 1;
     state->dataEnvrn->TotDesDays = 2;
     state->dataEnvrn->TotRunDesPersDays = 3;
-    state->dataGlobal->NumOfTimeStepInHour = 4;
+    state->dataGlobal->TimeStepsInHour = 4;
 
     state->dataGlobal->NumOfZones = 1;
     state->dataHeatBal->Zone.allocate(state->dataGlobal->NumOfZones);
@@ -8382,41 +8283,35 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
     state->dataSurface->Surface.allocate(state->dataSurface->TotSurfaces);
 
     Array1D<Real64> peopleDelaySeq;
-    peopleDelaySeq.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    peopleDelaySeq.allocate(state->dataGlobal->TimeStepsInHour * 24);
     peopleDelaySeq = 0.;
 
     Array1D<Real64> peopleDelaySeqCool;
-    peopleDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    peopleDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     peopleDelaySeqCool = 0.;
 
     Array1D<Real64> equipDelaySeqCool;
-    equipDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    equipDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     equipDelaySeqCool = 0.;
 
     Array1D<Real64> hvacLossDelaySeqCool;
-    hvacLossDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    hvacLossDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     hvacLossDelaySeqCool = 0.;
 
     Array1D<Real64> powerGenDelaySeqCool;
-    powerGenDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    powerGenDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     powerGenDelaySeqCool = 0.;
 
     Array1D<Real64> lightDelaySeqCool;
-    lightDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    lightDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     lightDelaySeqCool = 0.;
 
     Array1D<Real64> feneSolarDelaySeqCool;
-    feneSolarDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24);
+    feneSolarDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24);
     feneSolarDelaySeqCool = 0.;
 
-    Array3D<Real64> feneCondInstantSeq;
-    feneCondInstantSeq.allocate(state->dataEnvrn->TotDesDays + state->dataEnvrn->TotRunDesPersDays,
-                                state->dataGlobal->NumOfTimeStepInHour * 24,
-                                state->dataViewFactor->NumOfRadiantEnclosures);
-    feneCondInstantSeq = 0.0;
-
     Array2D<Real64> surfDelaySeqCool;
-    surfDelaySeqCool.allocate(state->dataGlobal->NumOfTimeStepInHour * 24, state->dataSurface->TotSurfaces);
+    surfDelaySeqCool.allocate(state->dataGlobal->TimeStepsInHour * 24, state->dataSurface->TotSurfaces);
     surfDelaySeqCool = 0.0;
 
     AllocateLoadComponentArrays(*state);
@@ -8435,22 +8330,30 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
     state->dataSurface->Surface(2).Class = SurfaceClass::Wall;
     state->dataSurface->Surface(3).Class = SurfaceClass::Floor;
     state->dataSurface->Surface(4).Class = SurfaceClass::Shading;
-    state->dataSurface->Surface(1).RadEnclIndex = 1;
-    state->dataSurface->Surface(2).RadEnclIndex = 1;
-    state->dataSurface->Surface(3).RadEnclIndex = 1;
-    state->dataSurface->Surface(4).RadEnclIndex = 1;
+    state->dataSurface->Surface(1).RadEnclIndex = radEnclosureNum;
+    state->dataSurface->Surface(2).RadEnclIndex = radEnclosureNum;
+    state->dataSurface->Surface(3).RadEnclIndex = radEnclosureNum;
+    state->dataSurface->Surface(4).RadEnclIndex = radEnclosureNum;
 
+    auto &znCL = state->dataOutRptTab->znCompLoads;
+    auto &znCLDay = znCL[coolDesSelected - 1];
     for (int jSurf = 1; jSurf <= 4; ++jSurf) {
         for (int step = 1; step <= 10; ++step) {
-            state->dataOutRptTab->TMULTseq(coolDesSelected, step, radEnclosureNum) = 0.1 * step;
-            state->dataOutRptTab->ITABSFseq(coolDesSelected, step, jSurf) = 0.2 * step * surfBaseValue[jSurf - 1];
+            auto &znCLDayTS = znCLDay.ts[step - 1].spacezone[iZone - 1];
+            auto &surfCLDayTS = state->dataOutRptTab->surfCompLoads[coolDesSelected - 1].ts[step - 1].surf[jSurf - 1];
+            surfCLDayTS.TMULTseq = 0.1 * step;
+            surfCLDayTS.ITABSFseq = 0.2 * step * surfBaseValue[jSurf - 1];
             state->dataOutRptTab->decayCurveCool(step, jSurf) = 0.3 * step * surfBaseValue[jSurf - 1];
-            state->dataOutRptTab->peopleRadSeq(coolDesSelected, step, iZone) = 0.4 * step;
-            state->dataOutRptTab->equipRadSeq(coolDesSelected, step, iZone) = 0.5 * step;
-            state->dataOutRptTab->hvacLossRadSeq(coolDesSelected, step, iZone) = 0.6 * step;
-            state->dataOutRptTab->powerGenRadSeq(coolDesSelected, step, iZone) = 0.7 * step;
-            state->dataOutRptTab->lightLWRadSeq(coolDesSelected, step, iZone) = 0.8 * step;
         }
+    }
+
+    for (int step = 1; step <= 10; ++step) {
+        auto &enclCLDayTS = state->dataOutRptTab->enclCompLoads[coolDesSelected - 1].ts[step - 1].encl[radEnclosureNum - 1];
+        enclCLDayTS.peopleRadSeq = 0.4 * step;
+        enclCLDayTS.equipRadSeq = 0.5 * step;
+        enclCLDayTS.hvacLossRadSeq = 0.6 * step;
+        enclCLDayTS.powerGenRadSeq = 0.7 * step;
+        enclCLDayTS.lightLWRadSeq = 0.8 * step;
     }
 
     GetDelaySequences(*state,
@@ -8463,7 +8366,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
                       powerGenDelaySeqCool,
                       lightDelaySeqCool,
                       feneSolarDelaySeqCool,
-                      feneCondInstantSeq,
+                      znCL,
                       surfDelaySeqCool);
 
     // Save some results from first pass
@@ -8495,15 +8398,21 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
 
     for (int jSurf = 1; jSurf <= 4; ++jSurf) {
         for (int step = 1; step <= 10; ++step) {
-            state->dataOutRptTab->TMULTseq(coolDesSelected, step, radEnclosureNum) = 0.1 * step;
-            state->dataOutRptTab->ITABSFseq(coolDesSelected, step, jSurf) = 0.2 * step * surfBaseValue[jSurf - 1];
+            auto &znCLDayTS = znCLDay.ts[step - 1].spacezone[iZone - 1];
+            auto &surfCLDayTS = state->dataOutRptTab->surfCompLoads[coolDesSelected - 1].ts[step - 1].surf[jSurf - 1];
+            surfCLDayTS.TMULTseq = 0.1 * step;
+            surfCLDayTS.ITABSFseq = 0.2 * step * surfBaseValue[jSurf - 1];
             state->dataOutRptTab->decayCurveCool(step, jSurf) = 0.3 * step * surfBaseValue[jSurf - 1];
-            state->dataOutRptTab->peopleRadSeq(coolDesSelected, step, iZone) = 0.4 * step;
-            state->dataOutRptTab->equipRadSeq(coolDesSelected, step, iZone) = 0.5 * step;
-            state->dataOutRptTab->hvacLossRadSeq(coolDesSelected, step, iZone) = 0.6 * step;
-            state->dataOutRptTab->powerGenRadSeq(coolDesSelected, step, iZone) = 0.7 * step;
-            state->dataOutRptTab->lightLWRadSeq(coolDesSelected, step, iZone) = 0.8 * step;
         }
+    }
+
+    for (int step = 1; step <= 10; ++step) {
+        auto &enclCLDayTS = state->dataOutRptTab->enclCompLoads[coolDesSelected - 1].ts[step - 1].encl[radEnclosureNum - 1];
+        enclCLDayTS.peopleRadSeq = 0.4 * step;
+        enclCLDayTS.equipRadSeq = 0.5 * step;
+        enclCLDayTS.hvacLossRadSeq = 0.6 * step;
+        enclCLDayTS.powerGenRadSeq = 0.7 * step;
+        enclCLDayTS.lightLWRadSeq = 0.8 * step;
     }
 
     GetDelaySequences(*state,
@@ -8516,7 +8425,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_GetDelaySequencesSurfaceOrder_
                       powerGenDelaySeqCool,
                       lightDelaySeqCool,
                       feneSolarDelaySeqCool,
-                      feneCondInstantSeq,
+                      znCL,
                       surfDelaySeqCool);
 
     // Save some results from second pass
@@ -8541,9 +8450,9 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_ConfirmConversionFactors)
     Real64 curSourceFactor;
     bool fuelFactorUsed;
     bool fFScheduleUsed;
-    int ffScheduleIndex;
+    Sched::Schedule *ffSched;
 
-    Pollution::GetFuelFactorInfo(*state, Constant::eFuel::DistrictHeatingSteam, fuelFactorUsed, curSourceFactor, fFScheduleUsed, ffScheduleIndex);
+    Pollution::GetFuelFactorInfo(*state, Constant::eFuel::DistrictHeatingSteam, fuelFactorUsed, curSourceFactor, fFScheduleUsed, &ffSched);
     EXPECT_EQ(curSourceFactor, 1.2);
 }
 
@@ -8556,7 +8465,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabular_GatherHeatGainReport)
     state->dataOutRptPredefined->reportName(state->dataOutRptPredefined->pdrSensibleGain).show = true;
 
     state->dataHVACGlobal->TimeStepSys = 10.0;
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
 
     state->dataGlobal->TimeStepZone = 20.0;
 
@@ -8625,6 +8534,7 @@ TEST_F(EnergyPlusFixture, OutputReportTabularMonthly_8317_ValidateOutputTableMon
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     Real64 extLitUse;
 
@@ -9672,7 +9582,7 @@ TEST_F(SQLiteFixture, ORT_EndUseBySubcategorySQL_DualUnits)
     state->dataGlobal->DoWeathSim = true;
     state->dataGlobal->TimeStepZone = 1.0;
     state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 3600.0;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->MinutesInTimeStep = 60;
     state->dataOutRptTab->displayTabularBEPS = true;
     // OutputProcessor::TimeValue.allocate(2);
 
@@ -10257,14 +10167,14 @@ TEST_F(EnergyPlusFixture, OutputReportTabularTest_WarningMultiplePeopleObj)
 
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
     ASSERT_FALSE(ErrorsFound);
 
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
     state->dataGlobal->NumOfZones = 1;
     state->dataHeatBal->Resilience.allocate(state->dataGlobal->NumOfZones);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
@@ -11675,6 +11585,7 @@ TEST_F(SQLiteFixture, DOASDirectToZone_ZoneMultiplierRemoved)
 
     std::string const idf_objects = idf_objects_1 + idf_objects_2 + idf_objects_3;
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     ManageSimulation(*state); // run the design days
     auto &finalSysSizing = state->dataSize->FinalSysSizing(1);
@@ -12621,6 +12532,7 @@ TEST_F(SQLiteFixture, UpdateSizing_EndSysSizingCalc)
 
     std::string const idf_objects = idf_objects_1 + idf_objects_2 + idf_objects_3;
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     ManageSimulation(*state); // run the design days
     auto &finalSysSizing = state->dataSize->FinalSysSizing(1);
@@ -13032,7 +12944,7 @@ TEST_F(SQLiteFixture, OutputReportTabular_DistrictHeating)
 
     state->dataGlobal->DoWeathSim = true;
     state->dataGlobal->TimeStepZone = 1.0;
-    state->dataGlobal->MinutesPerTimeStep = state->dataGlobal->TimeStepZone * 60;
+    state->dataGlobal->MinutesInTimeStep = state->dataGlobal->TimeStepZone * 60;
     state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 3600.0;
     state->dataOutRptTab->displayTabularBEPS = true;
     // OutputProcessor::TimeValue.allocate(2);
@@ -13480,7 +13392,7 @@ TEST_F(SQLiteFixture, ORT_EndUseBySubcategorySQL_IPUnitExceptElec)
     state->dataGlobal->DoWeathSim = true;
     state->dataGlobal->TimeStepZone = 1.0;
     state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 3600.0;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->MinutesInTimeStep = 60;
     state->dataOutRptTab->displayTabularBEPS = true;
     // OutputProcessor::TimeValue.allocate(2);
 
@@ -13674,5 +13586,174 @@ TEST_F(SQLiteFixture, ORT_EndUseBySubcategorySQL_IPUnitExceptElec)
         auto result = queryResult(query, "TabularDataWithStrings");
 
         ASSERT_EQ(14u, result.size()) << "Failed for query: " << query;
+    }
+}
+
+TEST_F(EnergyPlusFixture, OutputReportTabularMonthly_HandleMultipleDuringHoursShown)
+{
+    // Test for #10899
+    std::string const idf_objects = delimited_string({
+        "Output:Table:Monthly,",
+        "  Test,                               !- Name",
+        "  3,                                  !- Digits After Decimal",
+        "  ConditionA,                         !- Variable or Meter 1 Name",
+        "  HoursNonZero,                       !- Aggregation Type for Variable or Meter 1",
+        "  VariableToBeSummedDuringHoursShown, !- Variable or Meter 2 Name",
+        "  SumOrAverageDuringHoursShown,       !- Aggregation Type for Variable or Meter 2",
+        "  ConditionA_Inverse,                 !- Variable or Meter 3 Name",
+        "  HoursNonZero,                       !- Aggregation Type for Variable or Meter 3",
+        "  VariableToBeSummedDuringHoursShown, !- Variable or Meter 4 Name",
+        "  SumOrAverageDuringHoursShown,       !- Aggregation Type for Variable or Meter 4",
+        "  VariableToBeSummedDuringHoursShown, !- Variable or Meter 5 Name",
+        "  SumOrAverage;                       !- Aggregation Type for Variable or Meter 5",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    // Can't be const since it's taken as a non-const reference in SetupOutputVariable, but I will NOT modify it
+    Real64 VariableToBeSummedDuringHourShown = 1.0;
+
+    Real64 ConditionA = 0.0;
+    Real64 ConditionNotA = 0.0;
+
+    Real64 expectedTotalConditionA = 0.0;
+    Real64 expectedTotalConditionNotA = 0.0;
+
+    auto setConditionAB = [&ConditionA, &ConditionNotA, &expectedTotalConditionA, &expectedTotalConditionNotA](bool isConditionA) {
+        if (isConditionA) {
+            ConditionA = 1.0;
+            ConditionNotA = 0.0;
+        } else {
+            ConditionA = 0.0;
+            ConditionNotA = 1.0;
+        }
+        expectedTotalConditionA += ConditionA;
+        expectedTotalConditionNotA += ConditionNotA;
+    };
+
+    SetupOutputVariable(*state,
+                        "ConditionA",
+                        Constant::Units::J,
+                        ConditionA,
+                        OutputProcessor::TimeStepType::Zone,
+                        OutputProcessor::StoreType::Sum,
+                        "SomethingNamed",
+                        Constant::eResource::Electricity,
+                        OutputProcessor::Group::Invalid,
+                        OutputProcessor::EndUseCat::ExteriorLights,
+                        "General");
+    SetupOutputVariable(*state,
+                        "ConditionA_Inverse",
+                        Constant::Units::J,
+                        ConditionNotA,
+                        OutputProcessor::TimeStepType::Zone,
+                        OutputProcessor::StoreType::Sum,
+                        "SomethingNamed",
+                        Constant::eResource::Electricity,
+                        OutputProcessor::Group::Invalid,
+                        OutputProcessor::EndUseCat::ExteriorLights,
+                        "General");
+    SetupOutputVariable(*state,
+                        "VariableToBeSummedDuringHoursShown",
+                        Constant::Units::J,
+                        VariableToBeSummedDuringHourShown,
+                        OutputProcessor::TimeStepType::Zone,
+                        OutputProcessor::StoreType::Sum,
+                        "SomethingNamed",
+                        Constant::eResource::Electricity,
+                        OutputProcessor::Group::Invalid,
+                        OutputProcessor::EndUseCat::ExteriorLights,
+                        "General");
+
+    state->dataGlobal->DoWeathSim = true;
+    state->dataGlobal->TimeStepZone = 1.0;
+    state->dataGlobal->TimeStepZoneSec = state->dataGlobal->TimeStepZone * 60.0;
+    state->dataHVACGlobal->TimeStepSys = 0.25;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
+
+    auto &ort = state->dataOutRptTab;
+    OutputReportTabular::GetInputTabularMonthly(*state);
+    EXPECT_EQ(ort->MonthlyInputCount, 1);
+    OutputReportTabular::InitializeTabularMonthly(*state);
+
+    compare_err_stream("");
+
+    // I made all 3 variables use the same ObjectName for simplicity (if I use 3 object names, there are actually 3 * 5 = 15 MonthlyColumns...)
+    EXPECT_EQ(5, ort->MonthlyColumns.size());
+
+    constexpr int colConditionA = 1;
+    constexpr int colValueWhenConditionA = 2;
+    constexpr int colConditionNotA = 3;
+    constexpr int colValueWhenConditionNotA = 4;
+    constexpr int colValue = 5;
+    EXPECT_EQ("CONDITIONA", ort->MonthlyColumns(colConditionA).varName);
+    EXPECT_EQ("VARIABLETOBESUMMEDDURINGHOURSSHOWN", ort->MonthlyColumns(colValueWhenConditionA).varName);
+    EXPECT_EQ("CONDITIONA_INVERSE", ort->MonthlyColumns(colConditionNotA).varName);
+    EXPECT_EQ("VARIABLETOBESUMMEDDURINGHOURSSHOWN", ort->MonthlyColumns(colValueWhenConditionNotA).varName);
+    EXPECT_EQ("VARIABLETOBESUMMEDDURINGHOURSSHOWN", ort->MonthlyColumns(colValue).varName);
+
+    state->dataEnvrn->Month = 12;
+
+    {
+        setConditionAB(true);
+        GatherMonthlyResultsForTimestep(*state, OutputProcessor::TimeStepType::Zone);
+        compare_err_stream("");
+        EXPECT_EQ(1.0, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(1.0, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(0.0, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(0.0, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(1.0, ort->MonthlyColumns(colValue).reslt(12));
+
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA + expectedTotalConditionNotA, ort->MonthlyColumns(colValue).reslt(12));
+    }
+
+    {
+        setConditionAB(true);
+        GatherMonthlyResultsForTimestep(*state, OutputProcessor::TimeStepType::Zone);
+        EXPECT_EQ(2.0, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(2.0, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(0.0, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(0.0, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(2.0, ort->MonthlyColumns(colValue).reslt(12));
+
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA + expectedTotalConditionNotA, ort->MonthlyColumns(colValue).reslt(12));
+    }
+
+    {
+        setConditionAB(false);
+        GatherMonthlyResultsForTimestep(*state, OutputProcessor::TimeStepType::Zone);
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA + expectedTotalConditionNotA, ort->MonthlyColumns(colValue).reslt(12));
+    }
+
+    {
+        setConditionAB(false);
+        GatherMonthlyResultsForTimestep(*state, OutputProcessor::TimeStepType::Zone);
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA + expectedTotalConditionNotA, ort->MonthlyColumns(colValue).reslt(12));
+    }
+
+    {
+        setConditionAB(true);
+        GatherMonthlyResultsForTimestep(*state, OutputProcessor::TimeStepType::Zone);
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA, ort->MonthlyColumns(colValueWhenConditionA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionNotA, ort->MonthlyColumns(colValueWhenConditionNotA).reslt(12));
+        EXPECT_EQ(expectedTotalConditionA + expectedTotalConditionNotA, ort->MonthlyColumns(colValue).reslt(12));
     }
 }

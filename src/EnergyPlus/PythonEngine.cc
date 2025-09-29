@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -51,19 +51,19 @@
 #include <EnergyPlus/UtilityRoutines.hh>
 
 #if LINK_WITH_PYTHON
-#ifdef _DEBUG
+#    ifdef _DEBUG
 // We don't want to try to import a debug build of Python here
 // so if we are building a Debug build of the C++ code, we need
 // to undefine _DEBUG during the #include command for Python.h.
 // Otherwise it will fail
-#undef _DEBUG
-#include <Python.h>
-#define _DEBUG
-#else
-#include <Python.h>
-#endif
+#        undef _DEBUG
+#        include <Python.h>
+#        define _DEBUG
+#    else
+#        include <Python.h>
+#    endif
 
-#include <fmt/format.h>
+#    include <fmt/format.h>
 namespace fmt {
 template <> struct formatter<PyStatus>
 {
@@ -359,6 +359,42 @@ namespace Python {
                 }
             }
         }
+    }
+
+    std::string PythonEngine::getTclPreppedPreamble(std::vector<std::string> const &python_fwd_args)
+    {
+        std::string cmd = R"python(import sys
+sys.argv.clear()
+sys.argv.append("energyplus")
+)python";
+        for (const auto &arg : python_fwd_args) {
+            cmd += fmt::format("sys.argv.append(\"{}\")\n", arg);
+        }
+        fs::path programDir = FileSystem::getParentDirectoryPath(FileSystem::getAbsolutePath(FileSystem::getProgramPath()));
+        fs::path const pathToPythonPackages = programDir / "python_lib";
+        std::string sPathToPythonPackages = std::string(pathToPythonPackages.string());
+        std::replace(sPathToPythonPackages.begin(), sPathToPythonPackages.end(), '\\', '/');
+        cmd += fmt::format("sys.path.insert(0, \"{}\")\n", sPathToPythonPackages);
+        std::string tclConfigDir;
+        std::string tkConfigDir;
+        for (auto &p : std::filesystem::directory_iterator(pathToPythonPackages)) {
+            if (p.is_directory()) {
+                std::string dirName = p.path().filename().string();
+                if (dirName.find("tcl", 0) == 0 && dirName.find('.', 0) > 0) {
+                    tclConfigDir = dirName;
+                }
+                if (dirName.find("tk", 0) == 0 && dirName.find('.', 0) > 0) {
+                    tkConfigDir = dirName;
+                }
+                if (!tclConfigDir.empty() && !tkConfigDir.empty()) {
+                    break;
+                }
+            }
+        }
+        cmd += "from os import environ\n";
+        cmd += fmt::format("environ[\'TCL_LIBRARY\'] = \"{}/{}\"\n", sPathToPythonPackages, tclConfigDir);
+        cmd += fmt::format("environ[\'TK_LIBRARY\'] = \"{}/{}\"\n", sPathToPythonPackages, tkConfigDir);
+        return cmd;
     }
 
 #else // NOT LINK_WITH_PYTHON

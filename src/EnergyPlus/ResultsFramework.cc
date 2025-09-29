@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -715,8 +715,6 @@ namespace ResultsFramework {
         if (data.empty()) return;
         updateReportFreq(reportingFrequency);
         std::vector<int> indices;
-        std::unordered_set<std::string> seen;
-        std::string search_string;
 
         std::string reportFrequency = data.at("ReportFrequency").get<std::string>();
         if (reportFrequency == "Detailed-HVAC" || reportFrequency == "Detailed-Zone") {
@@ -724,7 +722,7 @@ namespace ResultsFramework {
         }
         auto const &columns = data.at("Cols");
         for (auto const &column : columns) {
-            search_string =
+            std::string search_string =
                 fmt::format("{0} [{1}]({2})", column.at("Variable").get<std::string>(), column.at("Units").get<std::string>(), reportFrequency);
             auto found = std::find(outputVariables.begin(), outputVariables.end(), search_string);
             if (found == outputVariables.end()) {

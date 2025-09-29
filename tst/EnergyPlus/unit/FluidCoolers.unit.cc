@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -66,6 +66,7 @@ using namespace EnergyPlus::DataSizing;
 
 TEST_F(EnergyPlusFixture, TwoSpeedFluidCoolerInput_Test1)
 {
+    state->init_state(*state);
 
     using DataSizing::AutoSize;
     int StringArraySize = 20;
@@ -136,6 +137,7 @@ TEST_F(EnergyPlusFixture, TwoSpeedFluidCoolerInput_Test1)
 
 TEST_F(EnergyPlusFixture, TwoSpeedFluidCoolerInput_Test2)
 {
+    state->init_state(*state);
 
     using DataSizing::AutoSize;
     int StringArraySize = 20;
@@ -195,6 +197,8 @@ TEST_F(EnergyPlusFixture, TwoSpeedFluidCoolerInput_Test2)
 
 TEST_F(EnergyPlusFixture, SingleSpeedFluidCoolerInput_Test3)
 {
+    state->init_state(*state);
+
     using DataSizing::AutoSize;
     int StringArraySize = 20;
     Array1D_string cNumericFieldNames;
@@ -275,6 +279,7 @@ TEST_F(EnergyPlusFixture, SingleSpeedFluidCoolerInput_Test4)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetFluidCoolerInput(*state);
     auto &thisFluidCooler = state->dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum);
@@ -285,6 +290,7 @@ TEST_F(EnergyPlusFixture, SingleSpeedFluidCoolerInput_Test4)
 
 TEST_F(EnergyPlusFixture, SingleSpeedFluidCoolerInput_Test5)
 {
+    state->init_state(*state);
     using DataSizing::AutoSize;
     int StringArraySize = 20;
     Array1D_string cNumericFieldNames;
@@ -329,7 +335,7 @@ TEST_F(EnergyPlusFixture, SingleSpeedFluidCoolerInput_Test5)
     EXPECT_EQ(thisFluidCooler.HighSpeedFluidCoolerUA, 0.0);
 }
 
-TEST_F(EnergyPlusFixture, SizeFunctionTestWhenPlantSizingIndexIsZero)
+TEST_F(EnergyPlusFixture, FluidCooler_SizeWhenPlantSizingIndexIsZero)
 {
     int FluidCoolerNum(1);
 
@@ -350,16 +356,20 @@ TEST_F(EnergyPlusFixture, SizeFunctionTestWhenPlantSizingIndexIsZero)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     GetFluidCoolerInput(*state);
 
     auto &thisFluidCooler = state->dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum);
 
     state->dataPlnt->PlantLoop.allocate(FluidCoolerNum);
-    state->dataFluidCoolers->SimpleFluidCooler.allocate(FluidCoolerNum);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    // state->dataFluidCoolers->SimpleFluidCooler.allocate(FluidCoolerNum);
     state->dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum).plantLoc.loopNum = 1;
-    state->dataPlnt->PlantLoop(FluidCoolerNum).PlantSizNum = 0;
+    state->dataPlnt->PlantLoop(1).PlantSizNum = 0;
 
+    EXPECT_EQ("DRY COOLER", thisFluidCooler.Name);
     EXPECT_FALSE(thisFluidCooler.HighSpeedFanPowerWasAutoSized);
     EXPECT_FALSE(thisFluidCooler.HighSpeedAirFlowRateWasAutoSized);
     EXPECT_FALSE(thisFluidCooler.HighSpeedFluidCoolerUAWasAutoSized);
@@ -386,13 +396,16 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedFluidCooler)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     FluidCoolerspecs *ptr = FluidCoolerspecs::factory(*state, DataPlant::PlantEquipmentType::FluidCooler_SingleSpd, "DRY COOLER");
 
-    PlantLocation pl{1, EnergyPlus::DataPlant::LoopSideLocation::Demand, 1, 1};
+    PlantLocation pl{1, EnergyPlus::DataPlant::LoopSideLocation::Supply, 1, 1};
     state->dataPlnt->PlantLoop.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp.allocate(1);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
 
     Real64 max, opt, min = 0.0;
     ptr->getDesignCapacities(*state, pl, max, min, opt);
@@ -401,9 +414,9 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedFluidCooler)
     EXPECT_NEAR(opt, 58601.0, 1.0);
 
     state->dataPlnt->PlantLoop(1).LoopDemandCalcScheme = DataPlant::LoopDemandCalcScheme::SingleSetPoint;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).TempSetPoint = 2.0;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).MyLoad = 1000;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).ON = true;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).TempSetPoint = 2.0;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).MyLoad = 1000;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).ON = true;
     state->dataPlnt->PlantLoop(1).MaxVolFlowRate = 3;
     state->dataPlnt->PlantLoop(1).MaxMassFlowRate = 3;
 
@@ -422,7 +435,7 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedFluidCooler)
     bool firstHVAC = true;
     Real64 curLoad = 0.0;
     ptr->plantLoc.loopNum = 1;
-    ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Demand;
+    ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Supply;
     ptr->plantLoc.branchNum = 1;
     ptr->plantLoc.compNum = 1;
     ptr->DesWaterMassFlowRate = 3.141;
@@ -457,13 +470,16 @@ TEST_F(EnergyPlusFixture, ExerciseTwoSpeedFluidCooler)
                                                       ";                        !- Low Fan Speed Fan Power Sizing Factor"});
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     FluidCoolerspecs *ptr = FluidCoolerspecs::factory(*state, DataPlant::PlantEquipmentType::FluidCooler_TwoSpd, "BIG FLUIDCOOLER");
 
-    PlantLocation pl{1, EnergyPlus::DataPlant::LoopSideLocation::Demand, 1, 1};
+    PlantLocation pl{1, EnergyPlus::DataPlant::LoopSideLocation::Supply, 1, 1};
     state->dataPlnt->PlantLoop.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp.allocate(1);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
 
     Real64 max, opt, min = 0.0;
     ptr->getDesignCapacities(*state, pl, max, min, opt);
@@ -472,9 +488,9 @@ TEST_F(EnergyPlusFixture, ExerciseTwoSpeedFluidCooler)
     EXPECT_NEAR(opt, 58601.0, 1.0);
 
     state->dataPlnt->PlantLoop(1).LoopDemandCalcScheme = DataPlant::LoopDemandCalcScheme::SingleSetPoint;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).TempSetPoint = 2.0;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).MyLoad = 1000;
-    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).ON = true;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).TempSetPoint = 2.0;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).MyLoad = 1000;
+    state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).ON = true;
     state->dataPlnt->PlantLoop(1).MaxVolFlowRate = 3;
     state->dataPlnt->PlantLoop(1).MaxMassFlowRate = 3;
 
@@ -493,7 +509,7 @@ TEST_F(EnergyPlusFixture, ExerciseTwoSpeedFluidCooler)
     bool firstHVAC = true;
     Real64 curLoad = 0.0;
     ptr->plantLoc.loopNum = 1;
-    ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Demand;
+    ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Supply;
     ptr->plantLoc.branchNum = 1;
     ptr->plantLoc.compNum = 1;
     ptr->DesWaterMassFlowRate = 3.141;
@@ -507,4 +523,45 @@ TEST_F(EnergyPlusFixture, ExerciseTwoSpeedFluidCooler)
     ptr->simulate(*state, pl, firstHVAC, curLoad, true);
     state->dataPlnt->PlantLoop(pl.loopNum).LoopSide(pl.loopSideNum).FlowLock = DataPlant::FlowLock::Locked;
     ptr->simulate(*state, pl, firstHVAC, curLoad, true);
+}
+
+TEST_F(EnergyPlusFixture, FluidCooler_SizeWhenPlantSizingIndexIsZeroAndAutosized)
+{
+    // Test for #10817
+    std::string const idf_objects = delimited_string({
+        "   FluidCooler:SingleSpeed,",
+        "     Dry Cooler,              !- Name",
+        "     Dry Cooler Inlet Node,   !- Water Inlet Node Name",
+        "     Dry Cooler Outlet Node,  !- Water Outlet Node Name",
+        "     NominalCapacity,         !- Performance Input Method",
+        "     Autosize,                !- Design Air Flow Rate U-factor Times Area Value {W/K}",
+        "     58601,                   !- Nominal Capacity {W}",
+        "     50,                      !- Design Entering Water Temperature {C}",
+        "     35,                      !- Design Entering Air Temperature {C}",
+        "     25,                      !- Design Entering Air Wetbulb Temperature {C}",
+        "     Autosize,                !- Design Water Flow Rate {m3/s}",
+        "     Autosize,                !- Design Air Flow Rate {m3/s}",
+        "     Autosize;                !- Design Air Flow Rate Fan Power {W}",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    GetFluidCoolerInput(*state);
+    int FluidCoolerNum(1);
+
+    state->dataPlnt->PlantLoop.allocate(FluidCoolerNum);
+    state->dataPlnt->PlantLoop(FluidCoolerNum).PlantSizNum = 0;
+
+    auto &thisFluidCooler = state->dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum);
+    thisFluidCooler.plantLoc.loopNum = 1;
+
+    // Necessary to trigger the crash from #
+    state->dataPlnt->PlantFirstSizesOkayToFinalize = false;
+
+    EXPECT_TRUE(thisFluidCooler.DesignWaterFlowRateWasAutoSized);
+    EXPECT_TRUE(thisFluidCooler.HighSpeedFanPowerWasAutoSized);
+    EXPECT_TRUE(thisFluidCooler.HighSpeedAirFlowRateWasAutoSized);
+    EXPECT_TRUE(thisFluidCooler.HighSpeedFluidCoolerUAWasAutoSized);
+
+    thisFluidCooler.size(*state);
 }
