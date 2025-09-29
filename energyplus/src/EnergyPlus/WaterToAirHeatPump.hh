@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 
 namespace EnergyPlus {
 
@@ -79,6 +80,7 @@ namespace WaterToAirHeatPump {
         std::string WatertoAirHPType;           // Type of WatertoAirHP ie. Heating or Cooling
         DataPlant::PlantEquipmentType WAHPType; // type of component in plant
         std::string Refrigerant;                // Refrigerant name
+        Fluid::RefrigProps *refrig = nullptr;
         bool SimFlag;
         Real64 InletAirMassFlowRate;       // Inlet Air Mass Flow through the Water to Air Heat Pump being Simulated [kg/s]
         Real64 OutletAirMassFlowRate;      // Outlet Air Mass Flow through the Water to Air Heat Pump being Simulated [kg/s]
@@ -219,9 +221,8 @@ namespace WaterToAirHeatPump {
     );
 
     Real64 DegradF(EnergyPlusData &state,
-                   std::string &FluidName, // Name of glycol used in source side
-                   Real64 &Temp,           // Temperature of the fluid
-                   int &FluidIndex         // Index number for the fluid
+                   Fluid::GlycolProps *glycol,
+                   Real64 &Temp // Temperature of the fluid
     );
 
     int GetCoilIndex(EnergyPlusData &state,
@@ -256,8 +257,6 @@ struct WaterToAirHeatPumpData : BaseGlobalStruct
     int NumWatertoAirHPs; // The Number of Water to Air Heat Pumps found in the Input
     Array1D_bool CheckEquipName;
 
-    int RefrigIndex;        // Refrigerant index
-    int WaterIndex;         // Water index
     bool GetCoilsInputFlag; // Flag set to make sure you get input once
     bool MyOneTimeFlag;
     bool firstTime;
@@ -279,6 +278,10 @@ struct WaterToAirHeatPumpData : BaseGlobalStruct
     Real64 LoadSideInletHumRat_Init = 0.0;  // rated conditions
     Real64 LoadSideAirInletEnth_Init = 0.0; // rated conditions
 
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
     }
@@ -287,8 +290,6 @@ struct WaterToAirHeatPumpData : BaseGlobalStruct
     {
         this->NumWatertoAirHPs = 0;
         this->CheckEquipName.clear();
-        this->RefrigIndex = 0;
-        this->WaterIndex = 0;
         this->GetCoilsInputFlag = true;
         this->MyOneTimeFlag = true;
         this->firstTime = true;
@@ -306,7 +307,7 @@ struct WaterToAirHeatPumpData : BaseGlobalStruct
     }
 
     // Default Constructor
-    WaterToAirHeatPumpData() : NumWatertoAirHPs(0), RefrigIndex(0), WaterIndex(0), GetCoilsInputFlag(true), MyOneTimeFlag(true), firstTime(true)
+    WaterToAirHeatPumpData() : NumWatertoAirHPs(0), GetCoilsInputFlag(true), MyOneTimeFlag(true), firstTime(true)
     {
     }
 };

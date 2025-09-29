@@ -30,7 +30,7 @@
 !    dhw_type =
 !    TEMPLATE_PATH = template/v9.5
 
-  Version,24.2;
+  Version,25.1;
 
 ! added VRF system
 
@@ -4606,104 +4606,6 @@
     0.1,                     !- SLABDEPTH: Thickness of slab on grade {m}
     15,                      !- CLEARANCE: Distance from edge of slab to domain edge {m}
     15;                      !- ZCLEARANCE: Distance from bottom of slab to domain bottom {m}
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:SIMPARAMETERS ===========
-
-  GroundHeatTransfer:Basement:SimParameters,
-    0.1,                     !- F: Multiplier for the ADI solution
-    15;                      !- IYRS: Maximum number of yearly iterations:
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:MATLPROPS ===========
-
-  GroundHeatTransfer:Basement:MatlProps,
-    6,                       !- NMAT: Number of materials in this domain
-    2243,                    !- Density for Foundation Wall {kg/m3}
-    2243,                    !- density for Floor Slab {kg/m3}
-    311,                     !- density for Ceiling {kg/m3}
-    1500,                    !- density for Soil {kg/m3}
-    2000,                    !- density for Gravel {kg/m3}
-    449,                     !- density for Wood {kg/m3}
-    880,                     !- Specific heat for foundation wall {J/kg-K}
-    880,                     !- Specific heat for floor slab {J/kg-K}
-    1530,                    !- Specific heat for ceiling {J/kg-K}
-    840,                     !- Specific heat for soil {J/kg-K}
-    720,                     !- Specific heat for gravel {J/kg-K}
-    1530,                    !- Specific heat for wood {J/kg-K}
-    1.4,                     !- Thermal conductivity for foundation wall {W/m-K}
-    1.4,                     !- Thermal conductivity for floor slab {W/m-K}
-    0.09,                    !- Thermal conductivity for ceiling {W/m-K}
-    1.1,                     !- thermal conductivity for soil {W/m-K}
-    1.9,                     !- thermal conductivity for gravel {W/m-K}
-    0.12;                    !- thermal conductivity for wood {W/m-K}
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:INSULATION ===========
-!- $r_bsmtwall_SI = $r_bsmtwall/5.6786;
-!- 0.0001;
-
-  GroundHeatTransfer:Basement:Insulation,
-    1.76099742894375e-05,    !- REXT: R Value of any exterior insulation {m2-K/W}
-    True;                    !- INSFULL: Flag: Is the wall fully insulated?
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:SURFACEPROPS ===========
-
-  GroundHeatTransfer:Basement:SurfaceProps,
-    0.16,                    !- ALBEDO: Surface albedo for No snow conditions
-    0.4,                     !- ALBEDO: Surface albedo for snow conditions
-    0.94,                    !- EPSLN: Surface emissivity No Snow
-    0.86,                    !- EPSLN: Surface emissivity with Snow
-    6,                       !- VEGHT: Surface roughness No snow conditions {cm}
-    0.25,                    !- VEGHT: Surface roughness Snow conditions {cm}
-    False;                   !- PET: Flag, Potential evapotranspiration on?
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:BLDGDATA ===========
-
-  GroundHeatTransfer:Basement:BldgData,
-    0.200000006162114,       !- DWALL: Wall thickness {m}
-    0.243828108701145,       !- DSLAB: Floor slab thickness {m}
-    0.3,                     !- DGRAVXY: Width of gravel pit beside basement wall {m}
-    0.2,                     !- DGRAVZN: Gravel depth extending above the floor slab {m}
-    0.1;                     !- DGRAVZP: Gravel depth below the floor slab {m}
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:INTERIOR ===========
-
-  GroundHeatTransfer:Basement:Interior,
-    True,                    !- COND: Flag: Is the basement conditioned?
-    0.92,                    !- HIN: Downward convection only heat transfer coefficient {W/m2-K}
-    4.04,                    !- HIN: Upward convection only heat transfer coefficient {W/m2-K}
-    3.08,                    !- HIN: Horizontal convection only heat transfer coefficient {W/m2-K}
-    6.13,                    !- HIN: Downward combined (convection and radiation) heat transfer coefficient {W/m2-K}
-    9.26,                    !- HIN: Upward combined (convection and radiation) heat transfer coefficient {W/m2-K}
-    8.29;                    !- HIN: Horizontal combined (convection and radiation) heat transfer coefficient {W/m2-K}
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:COMBLDG ===========
-
-  GroundHeatTransfer:Basement:ComBldg,
-    21,                      !- January average temperature {C}
-    21,                      !- February average temperature {C}
-    21,                      !- March average temperature {C}
-    21,                      !- April average temperature {C}
-    24,                      !- May average temperature {C}
-    24,                      !- June average temperature {C}
-    24,                      !- July average temperature {C}
-    24,                      !- August average temperature {C}
-    24,                      !- September average temperature {C}
-    24,                      !- October average temperature {C}
-    21,                      !- November average temperature {C}
-    21,                      !- December average temperature {C}
-    21;                      !- Daily variation sine wave amplitude {deltaC}
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:EQUIVSLAB ===========
-
-  GroundHeatTransfer:Basement:EquivSlab,
-    2.59994805991784,        !- APRatio: The area to perimeter ratio for this slab {m}
-    True;                    !- EquivSizing: Flag
-
-!-   ===========  ALL OBJECTS IN CLASS: GROUNDHEATTRANSFER:BASEMENT:EQUIVAUTOGRID ===========
-
-  GroundHeatTransfer:Basement:EquivAutoGrid,
-    15,                      !- CLEARANCE: Distance from outside of wall to edge of 3-D ground domain {m}
-    0.1,                     !- SlabDepth: Thickness of the floor slab {m}
-    1.21914054350572;        !- BaseDepth: Depth of the basement wall below grade {m}
 
 !- Process internal gains from the appliances.template..
 

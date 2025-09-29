@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University
+# EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University
 # of Illinois, The Regents of the University of California, through Lawrence
 # Berkeley National Laboratory (subject to receipt of any required approvals
 # from the U.S. Dept. of Energy), Oak Ridge National Laboratory, managed by UT-
@@ -60,8 +60,10 @@ from shutil import copy
 from pathlib import Path
 import sys
 from shutil import rmtree
+from traceback import print_exc
 from zoneinfo import ZoneInfo
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.runtests import SuiteRunner
 from energyplus_regressions.structures import TextDifferences, TestEntry, EndErrSummary
 
@@ -87,13 +89,12 @@ class RegressionManager:
         this_file_diffs = []
 
         entry = TestEntry(idf, "")
+        b1 = BuildTree()
+        b1.build_dir = baseline
+        b2 = BuildTree()
+        b2.build_dir = modified
         entry, message = SuiteRunner.process_diffs_for_one_case(
-            entry,
-            {'build_dir': str(baseline)},
-            {'build_dir': str(modified)},
-            "",
-            self.threshold_file,
-            ci_mode=True
+            entry, b1, b2,"", self.threshold_file, ci_mode=True
         )  # returns an updated entry
         self.summary_results[idf] = entry.summary_result
 
@@ -462,6 +463,7 @@ class RegressionManager:
         any_diffs = False
         bundle_root.mkdir(exist_ok=True)
         entries = sorted(base_testfiles.iterdir())
+        backtrace_shown = False
         for entry_num, baseline in enumerate(entries):
             if not baseline.is_dir():
                 continue
@@ -505,6 +507,10 @@ class RegressionManager:
             except Exception as e:
                 any_diffs = True
                 print(f"Regression run *failed* trying to process file: {baseline.name}; reason: {e}")
+                if not backtrace_shown:
+                    print("Traceback shown once:")
+                    print_exc()
+                    backtrace_shown = True
                 self.root_index_files_failed.append(baseline.name)
         meta_data = [
             f"Regression time stamp in UTC: {datetime.now(UTC)}",

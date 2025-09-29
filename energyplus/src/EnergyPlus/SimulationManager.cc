@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,7 +57,6 @@ extern "C" {
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array1D.hh>
-#include <ObjexxFCL/Fmath.hh>
 #include <ObjexxFCL/environment.hh>
 #include <ObjexxFCL/string.functions.hh>
 
@@ -178,7 +177,6 @@ namespace SimulationManager {
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         bool ErrorsFound(false);
-        bool TerminalError(false);
         bool oneTimeUnderwaterBoundaryCheck = true;
         bool AnyUnderwaterBoundaries = false;
 
@@ -209,6 +207,7 @@ namespace SimulationManager {
              state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "RunPeriod:CustomRange") > 0 || state.dataSysVars->FullAnnualRun);
         state.dataErrTracking->AskForConnectionsReport = false; // set to false until sizing is finished
 
+        state.init_constant_state(state);
         state.init_state(state);
 
         CheckForMisMatchedEnvironmentSpecifications(state);
@@ -280,9 +279,10 @@ namespace SimulationManager {
         state.dataReportFlag->DoWeatherInitReporting = true;
 
         //  Note:  All the inputs have been 'gotten' by the time we get here.
-        bool ErrFound = false;
         if (state.dataGlobal->DoOutputReporting) {
             DisplayString(state, "Reporting Surfaces");
+            bool ErrFound = false;
+            bool TerminalError = false;
 
             ReportSurfaces(state);
 
@@ -332,7 +332,7 @@ namespace SimulationManager {
 
         if (state.dataSQLiteProcedures->sqlite) {
             state.dataSQLiteProcedures->sqlite->sqliteBegin();
-            state.dataSQLiteProcedures->sqlite->updateSQLiteSimulationRecord(1, state.dataGlobal->NumOfTimeStepInHour);
+            state.dataSQLiteProcedures->sqlite->updateSQLiteSimulationRecord(1, state.dataGlobal->TimeStepsInHour);
             state.dataSQLiteProcedures->sqlite->sqliteCommit();
         }
 
@@ -453,7 +453,7 @@ namespace SimulationManager {
                     state.dataGlobal->BeginHourFlag = true;
                     state.dataGlobal->EndHourFlag = false;
 
-                    for (state.dataGlobal->TimeStep = 1; state.dataGlobal->TimeStep <= state.dataGlobal->NumOfTimeStepInHour;
+                    for (state.dataGlobal->TimeStep = 1; state.dataGlobal->TimeStep <= state.dataGlobal->TimeStepsInHour;
                          ++state.dataGlobal->TimeStep) {
                         if (state.dataGlobal->stopSimulation) break;
 
@@ -465,8 +465,8 @@ namespace SimulationManager {
                             Weather::UpdateUnderwaterBoundaries(state);
                         }
 
-                        if (state.dataEnvrn->varyingLocationSchedIndexLat > 0 || state.dataEnvrn->varyingLocationSchedIndexLong > 0 ||
-                            state.dataEnvrn->varyingOrientationSchedIndex > 0) {
+                        if (state.dataEnvrn->varyingLocationLatSched != nullptr || state.dataEnvrn->varyingLocationLongSched != nullptr ||
+                            state.dataEnvrn->varyingOrientationSched != nullptr) {
                             Weather::UpdateLocationAndOrientation(state);
                         }
 
@@ -480,7 +480,7 @@ namespace SimulationManager {
                         // Note also that BeginTimeStepFlag, EndTimeStepFlag, and the
                         // SubTimeStepFlags can/will be set/reset in the HVAC Manager.
 
-                        if (state.dataGlobal->TimeStep == state.dataGlobal->NumOfTimeStepInHour) {
+                        if (state.dataGlobal->TimeStep == state.dataGlobal->TimeStepsInHour) {
                             state.dataGlobal->EndHourFlag = true;
                             if (state.dataGlobal->HourOfDay == 24) {
                                 state.dataGlobal->EndDayFlag = true;
@@ -764,63 +764,63 @@ namespace SimulationManager {
                                                                      state.dataIPShortCut->lAlphaFieldBlanks,
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
-            state.dataGlobal->NumOfTimeStepInHour = Number(1);
+            state.dataGlobal->TimeStepsInHour = Number(1);
             if (state.dataSysVars->ciForceTimeStep) {
-                state.dataGlobal->NumOfTimeStepInHour = 2; // Force 30 minute time steps on CI
+                state.dataGlobal->TimeStepsInHour = 2; // Force 30 minute time steps on CI
             }
-            if (state.dataGlobal->NumOfTimeStepInHour <= 0 || state.dataGlobal->NumOfTimeStepInHour > 60) {
-                Alphas(1) = fmt::to_string(state.dataGlobal->NumOfTimeStepInHour);
+            if (state.dataGlobal->TimeStepsInHour <= 0 || state.dataGlobal->TimeStepsInHour > 60) {
+                Alphas(1) = fmt::to_string(state.dataGlobal->TimeStepsInHour);
                 ShowWarningError(state, format("{}: Requested number ({}) invalid, Defaulted to 4", CurrentModuleObject, Alphas(1)));
-                state.dataGlobal->NumOfTimeStepInHour = 4;
-            } else if (mod(60, state.dataGlobal->NumOfTimeStepInHour) != 0) {
+                state.dataGlobal->TimeStepsInHour = 4;
+            } else if (mod(60, state.dataGlobal->TimeStepsInHour) != 0) {
                 MinInt = 9999;
                 for (Num = 1; Num <= 12; ++Num) {
-                    if (std::abs(state.dataGlobal->NumOfTimeStepInHour - Div60[Num - 1]) > MinInt) continue;
-                    MinInt = state.dataGlobal->NumOfTimeStepInHour - Div60[Num - 1];
+                    if (std::abs(state.dataGlobal->TimeStepsInHour - Div60[Num - 1]) > MinInt) continue;
+                    MinInt = state.dataGlobal->TimeStepsInHour - Div60[Num - 1];
                     Which = Num;
                 }
                 ShowWarningError(state,
                                  format("{}: Requested number ({}) not evenly divisible into 60, defaulted to nearest ({}).",
                                         CurrentModuleObject,
-                                        state.dataGlobal->NumOfTimeStepInHour,
+                                        state.dataGlobal->TimeStepsInHour,
                                         Div60[Which - 1]));
-                state.dataGlobal->NumOfTimeStepInHour = Div60[Which - 1];
+                state.dataGlobal->TimeStepsInHour = Div60[Which - 1];
             }
-            if (CondFDAlgo && state.dataGlobal->NumOfTimeStepInHour < 20) {
+            if (CondFDAlgo && state.dataGlobal->TimeStepsInHour < 20) {
                 ShowWarningError(state,
                                  format("{}: Requested number ({}) cannot be used when Conduction Finite Difference algorithm is selected.",
                                         CurrentModuleObject,
-                                        state.dataGlobal->NumOfTimeStepInHour));
+                                        state.dataGlobal->TimeStepsInHour));
                 ShowContinueError(state, format("...{} is set to 20.", CurrentModuleObject));
-                state.dataGlobal->NumOfTimeStepInHour = 20;
+                state.dataGlobal->TimeStepsInHour = 20;
             }
-            if (state.dataGlobal->NumOfTimeStepInHour < 4 && state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Zone") > 0) {
+            if (state.dataGlobal->TimeStepsInHour < 4 && state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Zone") > 0) {
                 ShowWarningError(state,
                                  format("{}: Requested number ({}) is less than the suggested minimum of 4.",
                                         CurrentModuleObject,
-                                        state.dataGlobal->NumOfTimeStepInHour));
+                                        state.dataGlobal->TimeStepsInHour));
                 ShowContinueError(state,
                                   format("Please see entry for {} in Input/Output Reference for discussion of considerations.", CurrentModuleObject));
             }
         } else if (Num == 0 && state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Zone") > 0 && !CondFDAlgo) {
             ShowWarningError(state, format("No {} object found.  Number of TimeSteps in Hour defaulted to 4.", CurrentModuleObject));
-            state.dataGlobal->NumOfTimeStepInHour = 4;
+            state.dataGlobal->TimeStepsInHour = 4;
         } else if (Num == 0 && !CondFDAlgo) {
-            state.dataGlobal->NumOfTimeStepInHour = 4;
+            state.dataGlobal->TimeStepsInHour = 4;
         } else if (Num == 0 && state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Zone") > 0 && CondFDAlgo) {
             ShowWarningError(state, format("No {} object found.  Number of TimeSteps in Hour defaulted to 20.", CurrentModuleObject));
             ShowContinueError(state, "...Due to presence of Conduction Finite Difference Algorithm selection.");
-            state.dataGlobal->NumOfTimeStepInHour = 20;
+            state.dataGlobal->TimeStepsInHour = 20;
         } else if (Num == 0 && CondFDAlgo) {
-            state.dataGlobal->NumOfTimeStepInHour = 20;
+            state.dataGlobal->TimeStepsInHour = 20;
         } else {
             ShowSevereError(state, format("Too many {} Objects found.", CurrentModuleObject));
             ErrorsFound = true;
         }
 
-        state.dataGlobal->TimeStepZone = 1.0 / double(state.dataGlobal->NumOfTimeStepInHour);
-        state.dataGlobal->MinutesPerTimeStep = state.dataGlobal->TimeStepZone * 60;
-        state.dataGlobal->TimeStepZoneSec = state.dataGlobal->TimeStepZone * Constant::SecInHour;
+        state.dataGlobal->TimeStepZone = 1.0 / double(state.dataGlobal->TimeStepsInHour);
+        state.dataGlobal->MinutesInTimeStep = state.dataGlobal->TimeStepZone * 60;
+        state.dataGlobal->TimeStepZoneSec = state.dataGlobal->TimeStepZone * Constant::rSecsInHour;
 
         CurrentModuleObject = "ConvergenceLimits";
         Num = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
@@ -838,8 +838,8 @@ namespace SimulationManager {
                                                                      state.dataIPShortCut->cAlphaFieldNames,
                                                                      state.dataIPShortCut->cNumericFieldNames);
             MinInt = int(Number(1));
-            if (MinInt > state.dataGlobal->MinutesPerTimeStep) {
-                MinInt = state.dataGlobal->MinutesPerTimeStep;
+            if (MinInt > state.dataGlobal->MinutesInTimeStep) {
+                MinInt = state.dataGlobal->MinutesInTimeStep;
             }
             if (MinInt < 0 || MinInt > 60) {
                 ShowWarningError(
@@ -1013,6 +1013,27 @@ namespace SimulationManager {
             }
         }
 
+        state.dataHeatBalMgr->CurrentModuleObject = "OutputControl:ResilienceSummaries";
+        Num = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, state.dataHeatBalMgr->CurrentModuleObject);
+        if (Num > 0) {
+            state.dataInputProcessing->inputProcessor->getObjectItem(state,
+                                                                     state.dataHeatBalMgr->CurrentModuleObject,
+                                                                     1,
+                                                                     Alphas,
+                                                                     NumAlpha,
+                                                                     Number,
+                                                                     NumNumber,
+                                                                     IOStat,
+                                                                     state.dataIPShortCut->lNumericFieldBlanks,
+                                                                     state.dataIPShortCut->lAlphaFieldBlanks,
+                                                                     state.dataIPShortCut->cAlphaFieldNames,
+                                                                     state.dataIPShortCut->cNumericFieldNames);
+            if (NumAlpha > 0) {
+                state.dataHeatBal->heatIndexMethod =
+                    static_cast<DataHeatBalance::HeatIndexMethod>(getEnumValue(DataHeatBalance::HeatIndexMethodUC, Util::makeUPPER(Alphas(1))));
+            }
+        }
+
         state.dataGlobal->DoZoneSizing = false;
         state.dataGlobal->DoSystemSizing = false;
         state.dataGlobal->DoPlantSizing = false;
@@ -1182,10 +1203,10 @@ namespace SimulationManager {
 
                     if (overrideTimestep) {
                         ShowWarningError(state, "Due to PerformancePrecisionTradeoffs Override Mode, the Number of TimeSteps has been changed to 1.");
-                        state.dataGlobal->NumOfTimeStepInHour = 1;
-                        state.dataGlobal->TimeStepZone = 1.0 / double(state.dataGlobal->NumOfTimeStepInHour);
-                        state.dataGlobal->MinutesPerTimeStep = state.dataGlobal->TimeStepZone * 60;
-                        state.dataGlobal->TimeStepZoneSec = state.dataGlobal->TimeStepZone * Constant::SecInHour;
+                        state.dataGlobal->TimeStepsInHour = 1;
+                        state.dataGlobal->TimeStepZone = 1.0 / double(state.dataGlobal->TimeStepsInHour);
+                        state.dataGlobal->MinutesInTimeStep = state.dataGlobal->TimeStepZone * Constant::rMinutesInHour;
+                        state.dataGlobal->TimeStepZoneSec = state.dataGlobal->TimeStepZone * Constant::rSecsInHour;
                         state.dataGlobal->OverrideTimestep = true;
                     }
                     if (overrideZoneAirHeatBalAlg) {
@@ -1209,8 +1230,8 @@ namespace SimulationManager {
                         ShowWarningError(
                             state, "Due to PerformancePrecisionTradeoffs Override Mode, the minimum System TimeSteps has been changed to 1 hr.");
                         int MinTimeStepSysOverrideValue = 60.0;
-                        if (MinTimeStepSysOverrideValue > state.dataGlobal->MinutesPerTimeStep) {
-                            MinTimeStepSysOverrideValue = state.dataGlobal->MinutesPerTimeStep;
+                        if (MinTimeStepSysOverrideValue > state.dataGlobal->MinutesInTimeStep) {
+                            MinTimeStepSysOverrideValue = state.dataGlobal->MinutesInTimeStep;
                         }
                         state.dataConvergeParams->MinTimeStepSys = MinTimeStepSysOverrideValue / 60.0;
                         state.dataHVACGlobal->LimitNumSysSteps = int(state.dataGlobal->TimeStepZone / state.dataConvergeParams->MinTimeStepSys);
@@ -1248,7 +1269,7 @@ namespace SimulationManager {
 
         print(state.files.eio, "{}\n", "! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}");
         static constexpr std::string_view Format_731(" Timesteps per Hour, {:2}, {:2}\n");
-        print(state.files.eio, Format_731, state.dataGlobal->NumOfTimeStepInHour, state.dataGlobal->MinutesPerTimeStep);
+        print(state.files.eio, Format_731, state.dataGlobal->TimeStepsInHour, state.dataGlobal->MinutesInTimeStep);
 
         print(state.files.eio,
               "{}\n",
@@ -1321,7 +1342,7 @@ namespace SimulationManager {
             Alphas(2) = "ScriptF";
         }
         Alphas(3) = overrideModeValue;
-        Alphas(4) = fmt::to_string(state.dataGlobal->NumOfTimeStepInHour);
+        Alphas(4) = fmt::to_string(state.dataGlobal->TimeStepsInHour);
         if (state.dataHeatBal->OverrideZoneAirSolutionAlgo) {
             Alphas(5) = "Yes";
         } else {
@@ -1372,11 +1393,11 @@ namespace SimulationManager {
         // unused0909743 Format(' Display Extra Warnings',2(', ',A))
         //  ENDIF
         if (state.dataGlobal->createPerfLog) {
-            writeIntialPerfLogValues(state, overrideModeValue);
+            writeInitialPerfLogValues(state, overrideModeValue);
         }
     }
 
-    void writeIntialPerfLogValues(EnergyPlusData &state, std::string const &currentOverrideModeValue)
+    void writeInitialPerfLogValues(EnergyPlusData &state, std::string const &currentOverrideModeValue)
     // write the input related portions of the .perflog
     // J.Glazer February 2020
     {
@@ -1390,7 +1411,7 @@ namespace SimulationManager {
             Util::appendPerfLog(state, "Zone Radiant Exchange Algorithm", "ScriptF");
         }
         Util::appendPerfLog(state, "Override Mode", currentOverrideModeValue);
-        Util::appendPerfLog(state, "Number of Timesteps per Hour", fmt::to_string(state.dataGlobal->NumOfTimeStepInHour));
+        Util::appendPerfLog(state, "Number of Timesteps per Hour", fmt::to_string(state.dataGlobal->TimeStepsInHour));
         Util::appendPerfLog(state, "Minimum Number of Warmup Days", fmt::to_string(state.dataHeatBal->MinNumberOfWarmupDays));
         Util::appendPerfLog(state, "SuppressAllBeginEnvironmentResets", bool_to_string(state.dataEnvrn->forceBeginEnvResetSuppress));
         Util::appendPerfLog(state, "Minimum System Timestep", format("{:.1R}", state.dataConvergeParams->MinTimeStepSys * 60.0));
@@ -1539,8 +1560,6 @@ namespace SimulationManager {
         // SUBROUTINE INFORMATION:
         //       AUTHOR         Linda Lawrie
         //       DATE WRITTEN   January 2009
-        //       MODIFIED       na
-        //       RE-ENGINEERED  na
 
         // PURPOSE OF THIS SUBROUTINE:
         // EnergyPlus does not automatically produce any results files.  Because of this, users may not request
@@ -1548,26 +1567,22 @@ namespace SimulationManager {
         // results should be produced (either sizing periods or weather files are run) but no reports are
         // requested.
 
-        // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        bool SimPeriods;
-        bool ReportingRequested;
-
-        ReportingRequested = false;
-        SimPeriods = (state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:DesignDay") > 0 ||
-                      state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:WeatherFileDays") > 0 ||
-                      state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:WeatherFileConditionType") > 0 ||
-                      state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "RunPeriod") > 0);
+        bool SimPeriods = (state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:DesignDay") > 0 ||
+                           state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:WeatherFileDays") > 0 ||
+                           state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "SizingPeriod:WeatherFileConditionType") > 0 ||
+                           state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "RunPeriod") > 0);
 
         if ((state.dataGlobal->DoDesDaySim || state.dataGlobal->DoWeathSim || state.dataGlobal->DoPureLoadCalc) && SimPeriods) {
-            ReportingRequested = (state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:SummaryReports") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:TimeBins") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:Monthly") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:Annual") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Variable") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:MeterFileOnly") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:Cumulative") > 0 ||
-                                  state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:Cumulative:MeterFileOnly") > 0);
+            bool ReportingRequested =
+                (state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:SummaryReports") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:TimeBins") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:Monthly") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Table:Annual") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Variable") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:MeterFileOnly") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:Cumulative") > 0 ||
+                 state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, "Output:Meter:Cumulative:MeterFileOnly") > 0);
             // Not testing for : Output:SQLite or Output:EnvironmentalImpactFactors
             if (!ReportingRequested) {
                 ShowWarningError(state, "No reporting elements have been requested. No simulation results produced.");
@@ -1905,7 +1920,7 @@ namespace SimulationManager {
             //         do an end of day, end of environment time step
 
             state.dataGlobal->HourOfDay = 24;
-            state.dataGlobal->TimeStep = state.dataGlobal->NumOfTimeStepInHour;
+            state.dataGlobal->TimeStep = state.dataGlobal->TimeStepsInHour;
             state.dataGlobal->EndEnvrnFlag = true;
 
             if (state.dataSysVars->DeveloperFlag)
@@ -2650,9 +2665,9 @@ namespace SimulationManager {
 // EXTERNAL SUBROUTINES:
 
 void Resimulate(EnergyPlusData &state,
-                bool &ResimExt, // Flag to resimulate the exterior energy use simulation
-                bool &ResimHB,  // Flag to resimulate the heat balance simulation (including HVAC)
-                bool &ResimHVAC // Flag to resimulate the HVAC simulation
+                bool const ResimExt, // Flag to resimulate the exterior energy use simulation
+                bool const ResimHB,  // Flag to resimulate the heat balance simulation (including HVAC)
+                bool &ResimHVAC      // Flag to resimulate the HVAC simulation
 )
 {
 

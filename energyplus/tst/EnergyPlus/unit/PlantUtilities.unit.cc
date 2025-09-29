@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -91,13 +91,17 @@ TEST_F(EnergyPlusFixture, PlantUtilities_RegisterPlantCompDesignFlowTest1)
 TEST_F(EnergyPlusFixture, TestRegulateCondenserCompFlowReqOp)
 {
     // test consecutive call to fluid properties getInput
-    FluidProperties::GetFluidPropertiesData(*state);
-    EXPECT_EQ(1, state->dataFluidProps->refrigs.isize());
-    EXPECT_EQ(1, state->dataFluidProps->glycols.isize());
+    Fluid::GetFluidPropertiesData(*state);
+    EXPECT_EQ(1, state->dataFluid->refrigs.isize());
+    EXPECT_EQ(1, state->dataFluid->glycols.isize());
 
-    FluidProperties::GetFluidPropertiesData(*state); // should never happen but if it does it's safe
-    EXPECT_EQ(1, state->dataFluidProps->refrigs.isize());
-    EXPECT_EQ(1, state->dataFluidProps->glycols.isize());
+    // should never happen but if it does it's safe
+
+    // This is the second unit test that does this, when really we
+    // should just ensure that it never happens.
+    Fluid::GetFluidPropertiesData(*state);
+    EXPECT_EQ(1, state->dataFluid->refrigs.isize());
+    EXPECT_EQ(1, state->dataFluid->glycols.isize());
 
     // This test captures all code paths through the RegulateCondenserCompFlowReqOp function
     // We only need a single component to check here

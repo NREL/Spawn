@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -54,7 +54,7 @@
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array1D.hh>
 #include <ObjexxFCL/Array2D.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <AirflowNetwork/Solver.hpp>
@@ -257,8 +257,6 @@ namespace RoomAir {
         // Using/Aliasing
         using DataZoneEquipment::EquipConfiguration;
 
-        using ScheduleManager::GetScheduleIndex;
-
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view routineName = "GetUserDefinedPatternData: ";
 
@@ -323,20 +321,15 @@ namespace RoomAir {
             airPatternZoneInfo.Name = ipsc->cAlphaArgs(1);     // Name of this Control Object
             airPatternZoneInfo.ZoneName = ipsc->cAlphaArgs(2); // Zone Name
 
-            airPatternZoneInfo.AvailSched = ipsc->cAlphaArgs(3);
             if (ipsc->lAlphaFieldBlanks(3)) {
-                airPatternZoneInfo.AvailSchedID = ScheduleManager::ScheduleAlwaysOn;
-            } else {
-                airPatternZoneInfo.AvailSchedID = GetScheduleIndex(state, ipsc->cAlphaArgs(3));
-                if (airPatternZoneInfo.AvailSchedID == 0) {
-                    ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(3), ipsc->cAlphaArgs(3));
-                    ErrorsFound = true;
-                }
+                airPatternZoneInfo.availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((airPatternZoneInfo.availSched = Sched::GetSchedule(state, ipsc->cAlphaArgs(3))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(3), ipsc->cAlphaArgs(3));
+                ErrorsFound = true;
             }
 
-            airPatternZoneInfo.PatternCntrlSched = ipsc->cAlphaArgs(4); // Schedule Name for Leading Pattern Control for this Zone
-            airPatternZoneInfo.PatternSchedID = GetScheduleIndex(state, ipsc->cAlphaArgs(4));
-            if (airPatternZoneInfo.PatternSchedID == 0) {
+            if (ipsc->lAlphaFieldBlanks(4)) {
+            } else if ((airPatternZoneInfo.patternSched = Sched::GetSchedule(state, ipsc->cAlphaArgs(4))) == nullptr) {
                 ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(4), ipsc->cAlphaArgs(4));
                 ErrorsFound = true;
             }
@@ -346,7 +339,7 @@ namespace RoomAir {
             //   figure number of surfaces for this zone
             airPatternZoneInfo.totNumSurfs = 0;
             for (int spaceNum : state.dataHeatBal->Zone(ZoneNum).spaceIndexes) {
-                auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 airPatternZoneInfo.totNumSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
             }
             //   allocate nested derived type for surface info
@@ -355,7 +348,7 @@ namespace RoomAir {
             //   Fill in what we know for nested structure for surfaces
             int thisSurfinZone = 0;
             for (int spaceNum : state.dataHeatBal->Zone(ZoneNum).spaceIndexes) {
-                auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 for (int thisHBsurfID = thisSpace.HTSurfaceFirst; thisHBsurfID <= thisSpace.HTSurfaceLast; ++thisHBsurfID) {
                     ++thisSurfinZone;
                     if (state.dataSurface->Surface(thisHBsurfID).Class == DataSurfaces::SurfaceClass::IntMass) {
@@ -696,7 +689,7 @@ namespace RoomAir {
             } else {
                 int NumOfSurfs = 0;
                 for (int spaceNum : state.dataHeatBal->Zone(airNode.ZonePtr).spaceIndexes) {
-                    auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                    auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                     NumOfSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
                 }
                 airNode.SurfMask.allocate(NumOfSurfs);
@@ -744,7 +737,7 @@ namespace RoomAir {
             auto const &zone = state.dataHeatBal->Zone(airNode.ZonePtr);
             int NumOfSurfs = 0;
             for (int spaceNum : zone.spaceIndexes) {
-                auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 NumOfSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
             }
 
@@ -763,7 +756,7 @@ namespace RoomAir {
             for (int ListSurfNum = 4; ListSurfNum <= NumAlphas; ++ListSurfNum) {
                 int thisSurfinZone = 0;
                 for (int spaceNum : zone.spaceIndexes) {
-                    auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                    auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                     for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
                         ++thisSurfinZone;
                         if (ipsc->cAlphaArgs(ListSurfNum) == state.dataSurface->Surface(SurfNum).Name) {
@@ -891,9 +884,6 @@ namespace RoomAir {
         // METHODOLOGY EMPLOYED:
         // Use input processor to get input from idf file
 
-        // Using/Aliasing
-        using namespace ScheduleManager;
-
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         constexpr std::string_view routineName = "GetDisplacementVentData";
         int IOStat;
@@ -941,7 +931,7 @@ namespace RoomAir {
             if (ipsc->lAlphaFieldBlanks(2)) {
                 ShowSevereEmptyField(state, eoh, ipsc->cAlphaFieldNames(2));
                 ErrorsFound = true;
-            } else if ((zoneDV3N.SchedGainsPtr = GetScheduleIndex(state, ipsc->cAlphaArgs(2))) == 0) {
+            } else if ((zoneDV3N.gainsSched = Sched::GetSchedule(state, ipsc->cAlphaArgs(2))) == nullptr) {
                 ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(2), ipsc->cAlphaArgs(2));
                 ErrorsFound = true;
             }
@@ -965,9 +955,6 @@ namespace RoomAir {
 
         // METHODOLOGY EMPLOYED:
         // Use input processor to get input from idf file
-
-        // Using/Aliasing
-        using namespace ScheduleManager;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         constexpr std::string_view routineName = "GetCrossVentData";
@@ -1015,7 +1002,7 @@ namespace RoomAir {
             if (ipsc->lAlphaFieldBlanks(2)) {
                 ShowSevereEmptyField(state, eoh, ipsc->cAlphaFieldNames(2));
                 ErrorsFound = true;
-            } else if ((zoneCV.SchedGainsPtr = GetScheduleIndex(state, ipsc->cAlphaArgs(2))) == 0) {
+            } else if ((zoneCV.gainsSched = Sched::GetSchedule(state, ipsc->cAlphaArgs(2))) == nullptr) {
                 ShowSevereItemNotFound(state, eoh, ipsc->cAlphaFieldNames(2), ipsc->cAlphaArgs(2));
                 ErrorsFound = true;
             }
@@ -1085,9 +1072,6 @@ namespace RoomAir {
 
         // METHODOLOGY EMPLOYED:
         // Use input processor to get input from idf file
-
-        // Using/Aliasing
-        using namespace ScheduleManager;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         constexpr std::string_view routineName = "GetUFADZoneData";
@@ -1252,7 +1236,6 @@ namespace RoomAir {
 
         // Using/Aliasing
         using InternalHeatGains::GetInternalGainDeviceIndex;
-        using ScheduleManager::GetScheduleIndex;
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         constexpr std::string_view routineName = "GetRoomAirflowNetworkData";
@@ -1339,7 +1322,7 @@ namespace RoomAir {
 
             roomAFNZoneInfo.totNumSurfs = 0;
             for (int spaceNum : state.dataHeatBal->Zone(ZoneNum).spaceIndexes) {
-                auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 roomAFNZoneInfo.totNumSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
             }
         } // for (Loop)
@@ -1429,7 +1412,7 @@ namespace RoomAir {
                 int NumSurfsThisNode = NumAlphas - 1;
                 int NumOfSurfs = 0; // What is this used for?
                 for (int spaceNum : state.dataHeatBal->Zone(iZone).spaceIndexes) {
-                    auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                    auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                     NumOfSurfs += thisSpace.HTSurfaceLast - thisSpace.HTSurfaceFirst + 1;
                 }
 
@@ -1451,7 +1434,7 @@ namespace RoomAir {
                 int thisSurfinZone = 0;
                 for (int ListSurfNum = 2; ListSurfNum <= NumAlphas; ++ListSurfNum) {
                     for (int spaceNum : state.dataHeatBal->Zone(iZone).spaceIndexes) {
-                        auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                        auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                         for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
                             ++thisSurfinZone;
                             if (ipsc->cAlphaArgs(ListSurfNum) == state.dataSurface->Surface(SurfNum).Name) {
@@ -1648,13 +1631,11 @@ namespace RoomAir {
                     roomAFNNodeHVAC.SupplyFraction = ipsc->rNumericArgs(iEquipArg);
                     roomAFNNodeHVAC.ReturnFraction = ipsc->rNumericArgs(iEquipArg);
 
-                    // get equipment index
-                    int EquipIndex = 0;
+                    // get equipment type
                     for (int thisZoneEquipNum = 1; thisZoneEquipNum <= state.dataZoneEquip->ZoneEquipList(iZone).NumOfEquipTypes;
                          ++thisZoneEquipNum) {
                         if (Util::SameString(state.dataZoneEquip->ZoneEquipList(iZone).EquipName(thisZoneEquipNum), roomAFNNodeHVAC.Name) &&
                             roomAFNNodeHVAC.zoneEquipType == state.dataZoneEquip->ZoneEquipList(iZone).EquipType(thisZoneEquipNum)) {
-                            EquipIndex = state.dataZoneEquip->ZoneEquipList(iZone).EquipIndex(thisZoneEquipNum);
                             break;
                         }
                     }
@@ -1701,7 +1682,7 @@ namespace RoomAir {
                 for (int iGain = 1; iGain <= roomAFNNode.NumIntGains; ++iGain) {
                     auto &intGain = roomAFNNode.IntGain(iGain);
                     if (intGain.FractionCheck) continue;
-                    Real64 SumFraction = roomAFNNode.IntGainsFractions(iGain);
+                    SumFraction = roomAFNNode.IntGainsFractions(iGain);
                     intGain.FractionCheck = true;
 
                     for (int iRoomAFNNode2 = 1; iRoomAFNNode2 <= roomAFNZoneInfo.NumOfAirNodes; ++iRoomAFNNode2) {
@@ -1783,11 +1764,8 @@ namespace RoomAir {
         Real64 constexpr BaseDischargeCoef(0.62);
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        bool SetZoneAux;
         Array1D_int AuxSurf;
-        int MaxSurf;
         Array2D_int AuxAirflowNetworkSurf;
-        int ZoneEquipConfigNum; // counter
 
         // Do the one time initializations
         if (state.dataRoomAir->MyOneTimeFlag) {
@@ -1841,26 +1819,23 @@ namespace RoomAir {
             state.dataRoomAir->HDoor = 0.0;
 
             int contWall = 0, contFloor = 0, contCeiling = 0, contWindow = 0, contInternal = 0, contDoor = 0;
-            int contWallBeg = 0, contFloorBeg = 0, contCeilingBeg = 0, contWindowBeg = 0, contInternalBeg = 0, contDoorBeg = 0;
-            int contWallLast = 0, contFloorLast = 0, contCeilingLast = 0, contWindowLast = 0, contInternalLast = 0, contDoorLast = 0;
 
             // Put the surface and zone information in Apos and PosZ arrays
             for (int ZNum = 1; ZNum <= state.dataGlobal->NumOfZones; ++ZNum) {
                 // advance ONE position in the arrays PosZ because this is a new zone
-                contWallBeg = contWall + 1;
-                contFloorBeg = contFloor + 1;
-                contCeilingBeg = contCeiling + 1;
-                contWindowBeg = contWindow + 1;
-                contInternalBeg = contInternal + 1;
-                contDoorBeg = contDoor + 1;
-                SetZoneAux = true;
+                int contWallBeg = contWall + 1;
+                int contFloorBeg = contFloor + 1;
+                int contCeilingBeg = contCeiling + 1;
+                int contWindowBeg = contWindow + 1;
+                int contInternalBeg = contInternal + 1;
+                int contDoorBeg = contDoor + 1;
 
                 Real64 Z1ofZone = std::numeric_limits<Real64>::max();
                 Real64 Z2ofZone = std::numeric_limits<Real64>::lowest();
 
                 // cycle in this zone for all the surfaces
                 for (int spaceNum : state.dataHeatBal->Zone(ZNum).spaceIndexes) {
-                    auto &thisSpace = state.dataHeatBal->space(spaceNum);
+                    auto const &thisSpace = state.dataHeatBal->space(spaceNum);
 
                     for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
                         auto const &surf = state.dataSurface->Surface(SurfNum);
@@ -1900,12 +1875,12 @@ namespace RoomAir {
                     }
                 } // for (SurfNum)
 
-                contWallLast = contWall;
-                contFloorLast = contFloor;
-                contCeilingLast = contCeiling;
-                contWindowLast = contWindow;
-                contDoorLast = contDoor;
-                contInternalLast = contInternal;
+                int contWallLast = contWall;
+                int contFloorLast = contFloor;
+                int contCeilingLast = contCeiling;
+                int contWindowLast = contWindow;
+                int contDoorLast = contDoor;
+                int contInternalLast = contInternal;
                 // PosZ_Wall (... + 1) has the Begin Wall reference in Apos_Wall for the ZNum
                 // PosZ_Wall (... + 2) has the End Wall reference in Apos_Wall for the ZNum
                 state.dataRoomAir->PosZ_Wall(ZNum).beg = contWallBeg;
@@ -1948,7 +1923,7 @@ namespace RoomAir {
                 }
             }
             // calculate maximum number of airflow network surfaces in a single zone
-            MaxSurf = AuxSurf(1);
+            int MaxSurf = AuxSurf(1);
             for (int iZone = 2; iZone <= state.dataGlobal->NumOfZones; ++iZone) {
                 if (AuxSurf(iZone) > MaxSurf) MaxSurf = AuxSurf(iZone);
             }
@@ -2456,7 +2431,7 @@ namespace RoomAir {
                     if (state.dataRoomAir->AirModel(iZone).AirModel != RoomAirModel::CrossVent)
                         continue; // don't set these up if they don't make sense
 
-                    ZoneEquipConfigNum = ZoneNum; // Where does this ZoneNum come from?
+                    int ZoneEquipConfigNum = ZoneNum; // Where does this ZoneNum come from?
 
                     auto const &zone = state.dataHeatBal->Zone(iZone);
                     // check whether this zone is a controlled zone or not

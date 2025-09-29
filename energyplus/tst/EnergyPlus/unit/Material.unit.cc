@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -104,10 +104,9 @@ TEST_F(EnergyPlusFixture, GetMaterialDataReadVarAbsorptance)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     auto &s_mat = state->dataMaterial;
 
@@ -144,8 +143,8 @@ TEST_F(EnergyPlusFixture, GetMaterialDataReadVarAbsorptance)
     EXPECT_ENUM_EQ(mat2->absorpVarCtrlSignal, Material::VariableAbsCtrlSignal::SurfaceReceivedSolarRadiation);
     EXPECT_EQ(mat2->absorpSolarVarFuncIdx, 2);
     EXPECT_ENUM_EQ(mat3->absorpVarCtrlSignal, Material::VariableAbsCtrlSignal::Scheduled);
-    EXPECT_EQ(mat3->absorpThermalVarSchedIdx, 1);
-    EXPECT_EQ(mat3->absorpSolarVarSchedIdx, 1);
+    EXPECT_NE(mat3->absorpThermalVarSched, nullptr);
+    EXPECT_NE(mat3->absorpSolarVarSched, nullptr);
 
     std::string idf_objects_bad_inputs = delimited_string({
         "MaterialProperty:VariableAbsorptance,",

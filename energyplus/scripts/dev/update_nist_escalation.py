@@ -1,4 +1,4 @@
-# EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University
+# EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University
 # of Illinois, The Regents of the University of California, through Lawrence
 # Berkeley National Laboratory (subject to receipt of any required approvals
 # from the U.S. Dept. of Energy), Oak Ridge National Laboratory, managed by UT-
@@ -68,7 +68,7 @@ https://www.energy.gov/eere/femp/building-life-cycle-cost-programs
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parent
 DATASETS_DIR = ROOT_DIR / "datasets"
 
 NUMBER_YEARS = 31
@@ -137,12 +137,12 @@ def parse_encost(fpath: Path) -> Tuple[List[dict], int]:
             continue
 
         if region is None:
-            region = line
+            region = line.expandtabs(1)
             # print(f"{region=}")
             continue
 
         if years is None:
-            years = [int(x) for x in line.split(" ")]
+            years = [int(x) for x in line.split()]
             if len(years) != NUMBER_YEARS:
                 print(
                     f"Warning: expected {NUMBER_YEARS} years, "
@@ -166,7 +166,7 @@ def parse_encost(fpath: Path) -> Tuple[List[dict], int]:
             continue
 
         if prices is None:
-            prices = [float(x) for x in line.split(" ")]
+            prices = [float(x) for x in line.split()]
             if len(prices) != NUMBER_YEARS:
                 print(
                     f"Warning: expected {NUMBER_YEARS} years, "
@@ -287,7 +287,7 @@ def produce_idf(results: List[dict], escalation_start_year: int):
 
 
 if __name__ == "__main__":
-    encosts = list(DATASETS_DIR.glob("encost*"))
+    encosts = list(DATASETS_DIR.glob("encost*.txt"))
     for fpath in encosts:
         results, escalation_start_year = parse_encost(fpath=fpath)
         # plot_escalations(results,

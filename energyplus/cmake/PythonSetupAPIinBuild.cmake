@@ -1,13 +1,13 @@
 # Sets up the pyenergyplus Python package, which is the EnergyPlus Python API wrapper, in the build tree, next to E+
 # set REPO_ROOT, EXECUTABLE_PATH (path to energyplus.exe), and E+ and API major/minor/etc version variables when calling
 
-message("Full executable path is: ${EXECUTABLE_PATH}")
+message("PYTHON: Path to built EnergyPlus binaries: ${EXECUTABLE_PATH}")
 
 # get the parent path of the current EXE and drop the pyenergyplus stuff in there
 get_filename_component(EPLUS_EXE_DIR ${EXECUTABLE_PATH} DIRECTORY)
 
 # informative messaging
-message("Setting up Python API, creating pyenergyplus package at ${EPLUS_EXE_DIR}/pyenergyplus")
+message("PYTHON: Setting up API, creating pyenergyplus package at ${EPLUS_EXE_DIR}/pyenergyplus")
 
 # now do it
 if(NOT EXISTS "${EPLUS_EXE_DIR}/pyenergyplus")

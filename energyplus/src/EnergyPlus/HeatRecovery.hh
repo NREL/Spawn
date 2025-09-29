@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -111,7 +111,7 @@ namespace HeatRecovery {
         std::string Name; // name of component
         HVAC::HXType type = HVAC::HXType::Invalid;
         std::string HeatExchPerfName;                       // Desiccant balanced heat exchanger performance data name
-        int SchedPtr = 0;                                   // index of schedule
+        Sched::Schedule *availSched = nullptr;              // schedule // availability ?
         HXConfiguration FlowArr = HXConfiguration::Invalid; // flow Arrangement:
         bool EconoLockOut = false;
         Real64 hARatio = 0.0;          // ratio of supply side h*A to secondary side h*A
@@ -501,6 +501,10 @@ struct HeatRecoveryData : BaseGlobalStruct
     std::unordered_map<std::string, std::string> HeatExchangerUniqueNames;
     Array1D<HeatRecovery::HeatExchCond> ExchCond;
     Array1D<HeatRecovery::BalancedDesDehumPerfData> BalDesDehumPerfData;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

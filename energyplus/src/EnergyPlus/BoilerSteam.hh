@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,6 +57,7 @@
 #include <EnergyPlus/DataGlobalConstants.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 #include <EnergyPlus/Plant/PlantLocation.hh>
 #include <EnergyPlus/PlantComponent.hh>
@@ -96,9 +97,9 @@ namespace BoilerSteam {
         std::array<Real64, 3> FullLoadCoef = {0.0};          // Coefficients of the fuel consumption/part load ratio curve
         int TypeNum = 0;                                     // Plant loop type identifier
         PlantLocation plantLoc;
-        int PressErrIndex = 0;         // index pointer for recurring errors
-        int FluidIndex = 0;            // Steam index
-        std::string EndUseSubcategory; // identifier use for the end use subcategory
+        int PressErrIndex = 0;               // index pointer for recurring errors
+        Fluid::RefrigProps *fluid = nullptr; // Steam fluid properties
+        std::string EndUseSubcategory;       // identifier use for the end use subcategory
         bool myFlag = true;
         bool myEnvrnFlag = true;
 
@@ -161,6 +162,10 @@ struct BoilerSteamData : BaseGlobalStruct
 {
     bool getSteamBoilerInput = true;
     Array1D<BoilerSteam::BoilerSpecs> Boiler;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

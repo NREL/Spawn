@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -233,8 +233,8 @@ namespace DElightManagerF {
               state.dataEnvrn->TimeZoneNumber);
 
         // Calc cos and sin of Building Relative North values for later use in transforming Reference Point coordinates
-        CosBldgRelNorth = std::cos(-state.dataHeatBal->BuildingAzimuth * Constant::DegToRadians);
-        SinBldgRelNorth = std::sin(-state.dataHeatBal->BuildingAzimuth * Constant::DegToRadians);
+        CosBldgRelNorth = std::cos(-state.dataHeatBal->BuildingAzimuth * Constant::DegToRad);
+        SinBldgRelNorth = std::sin(-state.dataHeatBal->BuildingAzimuth * Constant::DegToRad);
 
         // Loop through the Daylighting:Controls objects that use DElight checking for a host Zone
         for (auto &znDayl : state.dataDayltg->daylightControl) {
@@ -309,8 +309,8 @@ namespace DElightManagerF {
                           znDayl.DElightGriddingResolution * M22FT2);
 
                     // Calc cos and sin of Zone Relative North values for later use in transforming Reference Point coordinates
-                    CosZoneRelNorth = std::cos(-zn.RelNorth * Constant::DegToRadians);
-                    SinZoneRelNorth = std::sin(-zn.RelNorth * Constant::DegToRadians);
+                    CosZoneRelNorth = std::cos(-zn.RelNorth * Constant::DegToRad);
+                    SinZoneRelNorth = std::sin(-zn.RelNorth * Constant::DegToRad);
 
                     // Zone Lighting Schedule Data Section
                     // NOTE: Schedules are not required since hourly values are retrieved from EnergyPlus as needed
@@ -687,12 +687,12 @@ namespace DElightManagerF {
                   iWndoConstIndexes(iconst) + 10000,
                   state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransDiffVis,
                   state.dataConstruction->Construct(iWndoConstIndexes(iconst)).ReflectVisDiffBack,
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(1),
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(2),
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(3),
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(4),
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(5),
-                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef(6));
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[0],
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[1],
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[2],
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[3],
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[4],
+                  state.dataConstruction->Construct(iWndoConstIndexes(iconst)).TransVisBeamCoef[5]);
 
         } // Glass Type loop
 

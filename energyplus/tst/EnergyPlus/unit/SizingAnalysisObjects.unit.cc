@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -83,7 +83,7 @@ protected:
         midLogVal = 75.0;
         hiLogVal = 100.0;
 
-        state->dataGlobal->NumOfTimeStepInHour = 4; // in DataGlobals
+        state->dataGlobal->TimeStepsInHour = 4; // in DataGlobals
         state->dataGlobal->TimeStepZone = 0.25;
 
         // setup weather manager state needed
@@ -405,7 +405,7 @@ TEST_F(SizingAnalysisObjectsTest, PlantCoincidentAnalyObjTest)
     EXPECT_TRUE(TestAnalysisObj.anotherIterationDesired);
 }
 
-TEST_F(SizingAnalysisObjectsTest, DISABLED_LoggingSubStep4stepPerHour)
+TEST_F(SizingAnalysisObjectsTest, LoggingSubStep4stepPerHour)
 {
     ShowMessage(*state, "Begin Test: SizingAnalysisObjectsTest, LoggingSubStep4stepPerHour");
 
@@ -435,7 +435,7 @@ TEST_F(SizingAnalysisObjectsTest, DISABLED_LoggingSubStep4stepPerHour)
     state->dataGlobal->DayOfSim = 1;
     int HourofDay(0);
     state->dataHVACGlobal->TimeStepSys = 1.0 / (4.0 * 5.0); // fractional hours, duration
-    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::SecInHour;
+    state->dataHVACGlobal->TimeStepSysSec = state->dataHVACGlobal->TimeStepSys * Constant::rSecsInHour;
     Real64 zoneTimeStepDuration(0.25);
     int numTimeStepsInHour(4);
 

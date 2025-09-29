@@ -2116,7 +2116,7 @@ END FUNCTION DoesGroundHeatTransferExist
 
 !----------------------------------------------------------------------------------
 
-SUBROUTINE AddEffectCurveHelper(fieldIdx, Eff75, Eff100, prefix)
+SUBROUTINE AddEffectCurveHelper(fieldIdx, Eff75, Eff100, prefix, isSensible)
     ! SUBROUTINE INFORMATION:
     !    AUTHOR         Yujie Xu
     !    DATE WRITTEN   December 2023
@@ -2140,7 +2140,8 @@ SUBROUTINE AddEffectCurveHelper(fieldIdx, Eff75, Eff100, prefix)
     INTEGER,INTENT(IN)                       :: fieldIdx
     REAL,INTENT(IN)                          :: Eff75
     REAL,INTENT(IN)                          :: Eff100
-    CHARACTER(len=*),INTENT(IN)              :: prefix ! "Sen" (Sensible) or "Lat" (Latent)
+    CHARACTER(len=*),INTENT(IN)              :: prefix
+    LOGICAL,INTENT(IN)                       :: isSensible
 
     ! SUBROUTINE PARAMETER DEFINITIONS:
     !    na
@@ -2154,8 +2155,12 @@ SUBROUTINE AddEffectCurveHelper(fieldIdx, Eff75, Eff100, prefix)
     ! SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     !    na
     CALL CreateNewObj('Table:Lookup')
-    CALL AddToObjFld('Name', fieldIdx,' '//prefix//'EffectivenessTable')
-    CALL AddToObjFld('Independent Variable List Name', fieldIdx,' effIndVarList')
+    IF (isSensible) THEN
+        CALL AddToObjFld('Name', fieldIdx,''//prefix//' SenEffectivenessTable')
+    ELSE
+        CALL AddToObjFld('Name', fieldIdx,''//prefix//' LatEffectivenessTable')
+    END IF
+    CALL AddToObjFld('Independent Variable List Name', fieldIdx, ''//prefix//' effIndVarList')
     CALL AddToObjStr('Normalization Method', 'DivisorOnly')
     CALL AddToObjStr('Normalization Divisor', RealToStr(Eff100))
     CALL AddToObjStr('Minimum Output', '0.0')
@@ -2168,7 +2173,7 @@ SUBROUTINE AddEffectCurveHelper(fieldIdx, Eff75, Eff100, prefix)
     CALL AddToObjStr('Value 2', RealToStr(Eff100),.TRUE.)
 END SUBROUTINE
 
-SUBROUTINE AddEffectCurveIndVar(fieldIdx)
+SUBROUTINE AddEffectCurveIndVar(fieldIdx, prefix)
     ! SUBROUTINE INFORMATION:
     !    AUTHOR         Yujie Xu
     !    DATE WRITTEN   December 2023
@@ -2190,6 +2195,7 @@ SUBROUTINE AddEffectCurveIndVar(fieldIdx)
     ! SUBROUTINE ARGUMENT DEFINITIONS:
     ! the index of the name of the object, so that the generated table etc. can have unique names
     INTEGER,INTENT(IN)                       :: fieldIdx
+    CHARACTER(len=*),INTENT(IN)              :: prefix
 
     ! SUBROUTINE PARAMETER DEFINITIONS:
     !    na
@@ -2204,7 +2210,7 @@ SUBROUTINE AddEffectCurveIndVar(fieldIdx)
     !    na
 
     CALL CreateNewObj('Table:IndependentVariable')
-    CALL AddToObjFld('Name', fieldIdx,' airFlowRatio')
+    CALL AddToObjFld('Name', fieldIdx,''//prefix//' airFlowRatio')
     CALL AddToObjStr('Interpolation Method', 'Linear')
     CALL AddToObjStr('Extrapolation Method', 'Linear')
     CALL AddToObjStr('Minimum Value', '0.0')
@@ -2217,11 +2223,11 @@ SUBROUTINE AddEffectCurveIndVar(fieldIdx)
     CALL AddToObjStr('Value 1', '0.75')
     CALL AddToObjStr('Value 2', '1.0',.TRUE.)
     CALL CreateNewObj('Table:IndependentVariableList')
-    CALL AddToObjFld('Name', fieldIdx,' effIndVarList')
-    CALL AddToObjFld('Independent Variable 1 Name', fieldIdx,' airFlowRatio',.TRUE.)
+    CALL AddToObjFld('Name', fieldIdx,''//prefix//' effIndVarList')
+    CALL AddToObjFld('Independent Variable 1 Name', fieldIdx,''//prefix//' airFlowRatio',.TRUE.)
 END SUBROUTINE
 
-SUBROUTINE AddSenEffectCurve(fieldIdx, htRecSens75, htRecSens100)
+SUBROUTINE AddSenEffectCurve(fieldIdx, htRecSens75, htRecSens100, suffix)
     ! SUBROUTINE INFORMATION:
     !    AUTHOR         Yujie Xu
     !    DATE WRITTEN   December 2023
@@ -2245,6 +2251,7 @@ SUBROUTINE AddSenEffectCurve(fieldIdx, htRecSens75, htRecSens100)
     INTEGER,INTENT(IN)                       :: fieldIdx
     REAL,INTENT(IN)                          :: htRecSens75
     REAL,INTENT(IN)                          :: htRecSens100
+    CHARACTER(len=*), INTENT(IN)             :: suffix
 
     ! SUBROUTINE PARAMETER DEFINITIONS:
     !    na
@@ -2258,17 +2265,17 @@ SUBROUTINE AddSenEffectCurve(fieldIdx, htRecSens75, htRecSens100)
     ! SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     !    na
 
-    CALL AddToObjFld('Sensible Effectiveness of Heating Air Flow Curve Name', fieldIdx,' SenEffectivenessTable')
+    CALL AddToObjFld('Sensible Effectiveness of Heating Air Flow Curve Name', fieldIdx,''//suffix//' SenEffectivenessTable')
     CALL AddToObjStr('Latent Effectiveness of Heating Air Flow Curve Name', '')
-    CALL AddToObjFld('Sensible Effectiveness of Cooling Air Flow Curve Name', fieldIdx,' SenEffectivenessTable')
+    CALL AddToObjFld('Sensible Effectiveness of Cooling Air Flow Curve Name', fieldIdx,''//suffix//' SenEffectivenessTable')
     CALL AddToObjStr('Latent Effectiveness of Cooling Air Flow Curve Name', '',.TRUE.)
     ! create curve objects for the heat exchanger start
-    CALL AddEffectCurveIndVar(fieldIdx)
-    CALL AddEffectCurveHelper(fieldIdx, htRecSens75, htRecSens100, 'Sen')
+    CALL AddEffectCurveIndVar(fieldIdx, suffix)
+    CALL AddEffectCurveHelper(fieldIdx, htRecSens75, htRecSens100, suffix, .TRUE.)
     ! create curve objects for the heat exchanger end
 END SUBROUTINE
 
-SUBROUTINE AddSenLatEffectCurve(fieldIdx, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+SUBROUTINE AddSenLatEffectCurve(fieldIdx, htRecSens75, htRecSens100, htRecLat75, htRecLat100, suffix)
     ! SUBROUTINE INFORMATION:
     !    AUTHOR         Yujie Xu
     !    DATE WRITTEN   December 2023
@@ -2294,6 +2301,7 @@ SUBROUTINE AddSenLatEffectCurve(fieldIdx, htRecSens75, htRecSens100, htRecLat75,
     REAL,INTENT(IN)                          :: htRecSens100
     REAL,INTENT(IN)                          :: htRecLat75
     REAL,INTENT(IN)                          :: htRecLat100
+    CHARACTER(len=*), INTENT(IN)             :: suffix
 
     ! SUBROUTINE PARAMETER DEFINITIONS:
     !    na
@@ -2307,15 +2315,14 @@ SUBROUTINE AddSenLatEffectCurve(fieldIdx, htRecSens75, htRecSens100, htRecLat75,
     ! SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     !    na
 
-    CALL AddToObjFld('Sensible Effectiveness of Heating Air Flow Curve Name', fieldIdx,' SenEffectivenessTable')
-    CALL AddToObjFld('Latent Effectiveness of Heating Air Flow Curve Name', fieldIdx,' LatEffectivenessTable')
-    CALL AddToObjFld('Sensible Effectiveness of Cooling Air Flow Curve Name', fieldIdx,' SenEffectivenessTable')
-    CALL AddToObjFld('Latent Effectiveness of Cooling Air Flow Curve Name', fieldIdx,' LatEffectivenessTable',.TRUE.)
+    CALL AddToObjFld('Sensible Effectiveness of Heating Air Flow Curve Name', fieldIdx,''//suffix//' SenEffectivenessTable')
+    CALL AddToObjFld('Latent Effectiveness of Heating Air Flow Curve Name', fieldIdx,''//suffix//' LatEffectivenessTable')
+    CALL AddToObjFld('Sensible Effectiveness of Cooling Air Flow Curve Name', fieldIdx,''//suffix//' SenEffectivenessTable')
+    CALL AddToObjFld('Latent Effectiveness of Cooling Air Flow Curve Name', fieldIdx,''//suffix//' LatEffectivenessTable',.TRUE.)
     ! create curve objects for the heat exchanger start
-    CALL AddEffectCurveIndVar(fieldIdx)
-    CALL AddEffectCurveHelper(fieldIdx, htRecSens75, htRecSens100, 'Sen')
-    CALL AddEffectCurveHelper(fieldIdx, htRecLat75, htRecLat100, 'Lat')
-    ! create curve objects for the heat exchanger end
+    CALL AddEffectCurveIndVar(fieldIdx, suffix)
+    CALL AddEffectCurveHelper(fieldIdx, htRecSens75, htRecSens100, suffix, .TRUE.)
+    CALL AddEffectCurveHelper(fieldIdx, htRecLat75, htRecLat100, suffix, .FALSE.)   ! create curve objects for the heat exchanger end
 END SUBROUTINE
 
 !----------------------------------------------------------------------------------
@@ -11599,7 +11606,7 @@ DO iSys = 1, numCompactSysVAV
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + vsAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + vsAirHandlerNameOff, htRecSens75, htRecSens100, ' Heat Recovery')
   ELSEIF (heatRecovery .EQ. htrecEnth) THEN
     !HEAT EXCHANGER:AIR TO AIR:GENERIC ~ line 708
     htRecSens75 = StringToReal(FldVal(base + vsHeatRecSenEffOff)) + 0.05
@@ -11631,7 +11638,7 @@ DO iSys = 1, numCompactSysVAV
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + vsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + vsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   !SET POINT MANAGER:SCHEDULED ~ line 734
   IF (heatRecovery .NE. htrecNone) THEN
@@ -13142,7 +13149,7 @@ DO iSys = 1, numCompactSysPVAV
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + pvavsAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + pvavsAirHandlerNameOff, htRecSens75, htRecSens100, ' Heat Recovery')
   ELSEIF (heatRecovery .EQ. htrecEnth) THEN
     htRecSens75 = StringToReal(FldVal(base + pvavsHeatRecSenEffOff)) + 0.05
     htRecSens100 = StringToReal(FldVal(base + pvavsHeatRecSenEffOff))
@@ -13173,7 +13180,7 @@ DO iSys = 1, numCompactSysPVAV
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + pvavsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + pvavsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (heatRecovery .NE. htrecNone) THEN
     IF (isEconoLowLimitBlank) THEN
@@ -14696,7 +14703,7 @@ DO iSys = 1, numCompactSysUnit
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + usAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + usAirHandlerNameOff, htRecSens75, htRecSens100, ' Heat Recovery')
   END IF
   IF (isHeatRecEnthalpy) THEN
     htRecSens75 = StringToReal(FldVal(base + usHeatRecSenEffOff)) + 0.05
@@ -14727,7 +14734,7 @@ DO iSys = 1, numCompactSysUnit
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + usAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + usAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (.NOT. isHeatRecNone) THEN
     IF (isEconoLowLimitBlank) THEN
@@ -15631,7 +15638,7 @@ DO iSys = 1, numCompactSysUnitHP
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + uhpsAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + uhpsAirHandlerNameOff, htRecSens75, htRecSens100, ' Heat Recovery')
   END IF
   IF (isHeatRecEnthalpy) THEN
     htRecSens75 = StringToReal(FldVal(base + uhpsHeatRecSenEffOff)) + 0.05
@@ -15663,7 +15670,7 @@ DO iSys = 1, numCompactSysUnitHP
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + uhpsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + uhpsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (.NOT. isHeatRecNone) THEN
     IF (isEconoLowLimitBlank) THEN
@@ -16937,7 +16944,7 @@ DO iSys = 1, numCompactSysUnitarySystem
       CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
       ! MJW ???? - Not sure
       CALL AddToObjStr('Economizer Lockout','No')
-      CALL AddSenEffectCurve(base + ussAirHandlerNameOff, 0.75, 0.7)
+      CALL AddSenEffectCurve(base + ussAirHandlerNameOff, 0.75, 0.7, ' Cooling Coil Heat Exchanger')
       !***Coil:Cooling:Water
       CALL CreateNewObj('Coil:Cooling:Water')
       CALL AddToObjFld('Name', base + ussAirHandlerNameOff,' Cooling Coil')
@@ -16985,7 +16992,7 @@ DO iSys = 1, numCompactSysUnitarySystem
       CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
       ! MJW ???? - Not sure
       CALL AddToObjStr('Economizer Lockout','No')
-      CALL AddSenEffectCurve(base + ussAirHandlerNameOff, 0.75, 0.7)
+      CALL AddSenEffectCurve(base + ussAirHandlerNameOff, 0.75, 0.7, ' Cooling Coil Heat Exchanger')
       !***Coil:Cooling:DX:SingleSpeed
       CALL CreateNewObj('Coil:Cooling:DX:SingleSpeed')
       CALL AddToObjFld('Name', base + ussAirHandlerNameOff,' Cooling Coil')
@@ -18201,7 +18208,7 @@ DO iSys = 1, numCompactSysUnitarySystem
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + ussAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + ussAirHandlerNameOff, htRecSens75, htRecSens100,' Heat Recovery')
   END IF
   IF (isHeatRecEnthalpy) THEN
     htRecSens75 = StringToReal(FldVal(base + ussHeatRecSenEffOff)) + 0.05
@@ -18233,7 +18240,7 @@ DO iSys = 1, numCompactSysUnitarySystem
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + ussAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + ussAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (.NOT. isHeatRecNone) THEN
     IF (isEconoLowLimitBlank) THEN
@@ -19906,7 +19913,7 @@ DO iSys = 1, numCompactSysConstVol
       CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
       ! MJW ???? - Not sure
       CALL AddToObjStr('Economizer Lockout','No')
-      CALL AddSenEffectCurve(base + cvsAirHandlerNameOff, 0.75, 0.7)
+      CALL AddSenEffectCurve(base + cvsAirHandlerNameOff, 0.75, 0.7,' Cooling Coil Heat Exchanger')
       !***Coil:Cooling:Water
       CALL CreateNewObj('Coil:Cooling:Water')
       CALL AddToObjFld('Name', base + cvsAirHandlerNameOff,' Cooling Coil')
@@ -20471,7 +20478,7 @@ DO iSys = 1, numCompactSysConstVol
     CALL AddToObjStr('Initial Defrost Time Fraction','0.083')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.012')
     CALL AddToObjStr('Economizer Lockout','Yes')
-    CALL AddSenEffectCurve(base + cvsAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + cvsAirHandlerNameOff, htRecSens75, htRecSens100,' Heat Recovery')
   ELSEIF (heatRecovery .EQ. htrecEnth) THEN
     htRecSens75 = StringToReal(FldVal(base + cvsHeatRecSenEffOff)) + 0.05
     htRecSens100 = StringToReal(FldVal(base + cvsHeatRecSenEffOff))
@@ -20502,7 +20509,7 @@ DO iSys = 1, numCompactSysConstVol
     CALL AddToObjStr('Initial Defrost Time Fraction','0.083')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.012')
     CALL AddToObjStr('Economizer Lockout','Yes')
-    CALL AddSenLatEffectCurve(base + cvsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + cvsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (heatRecovery .NE. htrecNone) THEN
     IF (isEconoLowLimitBlank) THEN
@@ -22677,7 +22684,7 @@ DO iSys = 1, numCompactSysDualDuct
     CALL AddToObjStr('Initial Defrost Time Fraction','0.167')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.024')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenEffectCurve(base + ddsAirHandlerNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + ddsAirHandlerNameOff, htRecSens75, htRecSens100,' Heat Recovery')
   ELSEIF (heatRecovery .EQ. htrecEnth) THEN
     !HEAT EXCHANGER:AIR TO AIR:GENERIC ~ line 708
     htRecSens75 = StringToReal(FldVal(base + ddsHeatRecSenEffOff)) + 0.05
@@ -22708,7 +22715,7 @@ DO iSys = 1, numCompactSysDualDuct
     CALL AddToObjStr('Initial Defrost Time Fraction','')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','')
     CALL AddToObjStr('Economizer Lockout','')
-    CALL AddSenLatEffectCurve(base + ddsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + ddsAirHandlerNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   !SET POINT MANAGER:SCHEDULED ~ line 734
   IF (heatRecovery .NE. htrecNone) THEN
@@ -24254,7 +24261,7 @@ IF (.NOT. isBaseboardNone) THEN
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
     ! MJW ???? - Not sure
     CALL AddToObjStr('Economizer Lockout','No')
-    CALL AddSenEffectCurve(base + fczNameOff, 0.75, 0.7)
+    CALL AddSenEffectCurve(base + fczNameOff, 0.75, 0.7,' Cooling Coil Heat Exchanger')
     CALL CreateNewObj('Coil:Cooling:Water')
     CALL AddToObjFld('Name', base + fczNameOff,' Cooling Coil')
     CALL AddToObjFld('Availability Schedule Name', base + fczCoolAvailSchedNameOff,'')
@@ -26459,7 +26466,7 @@ DO iBoiler = 1, numCompactBoiler
     END IF
   ELSE
     !PURCHASED:HOT WATER ~ line 33
-    CALL CreateNewObj('DistrictHeating')
+    CALL CreateNewObj('DistrictHeating:Water')
     CALL AddToObjFld('Name', base + blrNameOff,'')
     CALL AddToObjFld('Plant_Loop_Inlet_Node', base + blrNameOff,' HW Inlet')
     CALL AddToObjFld('Plant_Loop_Outlet_Node', base + blrNameOff,' HW Outlet')
@@ -26479,7 +26486,7 @@ DO iBoiler = 1, numCompactBoiler
     ENDIF
     CALL AddToObjStr('Pressure Drop Curve Name','')
     IF (.NOT. isPumpBranch) THEN
-      CALL AddToObjStr('Component Object Type','DistrictHeating')
+      CALL AddToObjStr('Component Object Type','DistrictHeating:Water')
       CALL AddToObjFld('Component Name', base + blrNameOff,'')
       CALL AddToObjFld('Component Inlet Node Name', base + blrNameOff,' HW Inlet')
       CALL AddToObjFld('Component Outlet Node Name', base + blrNameOff,' HW Outlet',.TRUE.)
@@ -26492,7 +26499,7 @@ DO iBoiler = 1, numCompactBoiler
       CALL AddToObjFld('Component Name', base + blrNameOff,' Branch Pump')
       CALL AddToObjFld('Component Inlet Node Name', base + blrNameOff,' HW Pump Inlet')
       CALL AddToObjFld('Component Outlet Node Name', base + blrNameOff,' HW Inlet')
-      CALL AddToObjStr('Component Object Type','DistrictHeating')
+      CALL AddToObjStr('Component Object Type','DistrictHeating:Water')
       CALL AddToObjFld('Component Name', base + blrNameOff,'')
       CALL AddToObjFld('Component Inlet Node Name', base + blrNameOff,' HW Inlet')
       CALL AddToObjFld('Component Outlet Node Name', base + blrNameOff,' HW Outlet',.TRUE.)
@@ -26906,7 +26913,7 @@ IF (isHwpHWOperTypeDefault) THEN
       !If blrTypeOff="Hot Water Boiler" then this field is "BOILER:SIMPLE"
       !If blrTypeOff="Purchased Hot Water" then this field is "PURCHASED:HOT WATER"
       IF (SameString(FldVal(boilerBase + blrTypeOff),'DistrictHotWater')) THEN
-        CALL AddToObjStr('Equipment Object Type', 'DistrictHeating')
+        CALL AddToObjStr('Equipment Object Type', 'DistrictHeating:Water')
       ELSE
         CALL AddToObjStr('Equipment Object Type', 'Boiler:HotWater')
       END IF
@@ -30896,7 +30903,7 @@ IF (isMwpOperTypeDefault) THEN
         !If blrTypeOff="Hot Water Boiler" then this field is "BOILER:SIMPLE"
         !If blrTypeOff="Purchased Hot Water" then this field is "PURCHASED:HOT WATER"
         IF (SameString(FldVal(boilerBase + blrTypeOff),'DistrictHotWater')) THEN
-          CALL AddToObjStr('Equipment Object Type', 'DistrictHeating')
+          CALL AddToObjStr('Equipment Object Type', 'DistrictHeating:Water')
         ELSE
           CALL AddToObjStr('Equipment Object Type', 'Boiler:HotWater')
         END IF
@@ -32448,7 +32455,7 @@ DO iSys = 1, numCompactDedOutAir
       CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
       ! MJW ???? - Not sure
       CALL AddToObjStr('Economizer Lockout','No')
-      CALL AddSenEffectCurve(base + doasNameOff, 0.75, 0.7)
+      CALL AddSenEffectCurve(base + doasNameOff, 0.75, 0.7,' Cooling Coil Heat Exchanger')
       !***Coil:Cooling:Water
       CALL CreateNewObj('Coil:Cooling:Water')
       CALL AddToObjFld('Name', base + doasNameOff,' Cooling Coil')
@@ -32535,7 +32542,7 @@ DO iSys = 1, numCompactDedOutAir
       CALL AddToObjStr('Rate of Defrost Time Fraction Increase {1/K}','')
       ! MJW ???? - Not sure
       CALL AddToObjStr('Economizer Lockout','No')
-      CALL AddSenEffectCurve(base + doasNameOff, 0.75, 0.7)
+      CALL AddSenEffectCurve(base + doasNameOff, 0.75, 0.7,' Cooling Coil Heat Exchanger')
       !***Coil:Cooling:DX:SingleSpeed
       CALL CreateNewObj('Coil:Cooling:DX:SingleSpeed')
       CALL AddToObjFld('Name', base + doasNameOff,' Cooling Coil')
@@ -32969,7 +32976,7 @@ DO iSys = 1, numCompactDedOutAir
     CALL AddToObjStr('Initial Defrost Time Fraction','0.083')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.012')
     CALL AddToObjStr('Economizer Lockout','Yes')
-    CALL AddSenEffectCurve(base + doasNameOff, htRecSens75, htRecSens100)
+    CALL AddSenEffectCurve(base + doasNameOff, htRecSens75, htRecSens100, ' Heat Recovery')
   ELSEIF (heatRecovery .EQ. htrecEnth) THEN
     htRecSens75 = StringToReal(FldVal(base + doasHeatRecSenEffOff)) + 0.05
     htRecSens100 = StringToReal(FldVal(base + doasHeatRecSenEffOff))
@@ -33000,7 +33007,7 @@ DO iSys = 1, numCompactDedOutAir
     CALL AddToObjStr('Initial Defrost Time Fraction','0.083')
     CALL AddToObjStr('Rate of Defrost Time Fraction Increase','0.012')
     CALL AddToObjStr('Economizer Lockout','Yes')
-    CALL AddSenLatEffectCurve(base + doasNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100)
+    CALL AddSenLatEffectCurve(base + doasNameOff, htRecSens75, htRecSens100, htRecLat75, htRecLat100, ' Heat Recovery')
   END IF
   IF (heatRecovery .NE. htrecNone) THEN
     !***SetpointManager:MixedAir for Heat Recovery Outlet - Reference heating coil setpoint

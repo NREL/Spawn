@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -203,7 +204,7 @@ namespace DataGenerators {
         DataGenerators::FuelMode FuelTypeMode = DataGenerators::FuelMode::Invalid;                       // type of fuel, gasous or liquid
         std::string NodeName;                                                                            // node name for temperature at input
         int NodeNum = 0;                                                                                 // node number for temperature at input
-        int SchedNum = 0;                                                                                // fuel temperature at input
+        Sched::Schedule *sched = nullptr;                                                                // fuel temperature at input
         int CompPowerCurveID = 0;                                                                        // "pointer" to compressor power cubic curve
         Real64 CompPowerLossFactor = 0.0;
         int NumConstituents = 0; // number of constituents in fue supply
@@ -292,7 +293,7 @@ namespace DataGenerators {
         Real64 kp = 0.0;                  // coefficient k_p for warmup power
         bool MandatoryFullCoolDown = false;
         bool WarmRestartOkay = true;
-        int AvailabilitySchedID = 0;
+        Sched::Schedule *availSched = nullptr;
         // Calculated values and input from elsewhere
         DataGenerators::OperatingMode CurrentOpMode = DataGenerators::OperatingMode::Off; // current operating mode, uses params like OpModeNormal
         DataGenerators::OperatingMode LastOpMode = DataGenerators::OperatingMode::Off;
@@ -326,6 +327,10 @@ struct GeneratorsData : BaseGlobalStruct
     Real64 TcwIn = 0.0;          // inlet cooling water temperature (C)
     Real64 TrialMdotcw = 0.0;    // test or estimate of what the plant flows are going to be (kg/s)
     Real64 LimitMinMdotcw = 0.0; // lower limit for cooling water flow for generatior operation (kg/s)
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

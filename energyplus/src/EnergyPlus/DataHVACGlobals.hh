@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -109,18 +109,21 @@ namespace HVAC {
     int constexpr AutoCalculateSizing(25);                // identifies an autocalulate input
 
     // The following parameters describe the setpoint types in TempControlType(ActualZoneNum)
-    enum class ThermostatType
+    enum class SetptType
     {
         Invalid = -1,
         Uncontrolled,
-        SingleHeating,
-        SingleCooling,
+        SingleHeat,
+        SingleCool,
         SingleHeatCool,
-        DualSetPointWithDeadBand,
+        DualHeatCool,
         Num
     };
 
-    static constexpr std::array<std::string_view, static_cast<int>(ThermostatType::Num)> thermostatTypeNames = {
+    static constexpr std::array<SetptType, (int)SetptType::Num> setptTypes = {
+        SetptType::SingleHeat, SetptType::SingleCool, SetptType::SingleHeatCool, SetptType::DualHeatCool};
+
+    static constexpr std::array<std::string_view, (int)SetptType::Num> setptTypeNames = {
         "Uncontrolled", "SingleHeating", "SingleCooling", "SingleHeatCool", "DualSetPointWithDeadBand"};
 
     enum class AirDuctType
@@ -533,6 +536,10 @@ struct HVACGlobalsData : BaseGlobalStruct
     bool StandardRatingsMyCoolOneTimeFlag3 = true;
     bool StandardRatingsMyHeatOneTimeFlag = true;
     bool StandardRatingsMyHeatOneTimeFlag2 = true;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

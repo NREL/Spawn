@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,6 +57,7 @@
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EPVector.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -372,12 +373,9 @@ namespace EconomicTariff {
         EconConv convChoice;                                         // enumerated choice index of the conversion factor
         Real64 energyConv;                                           // energy conversion factor
         Real64 demandConv;                                           // demand conversion factor
-        std::string periodSchedule;                                  // name of the period schedule (time of day)
-        int periodSchIndex;                                          // index to the period schedule
-        std::string seasonSchedule;                                  // name of the season schedule (winter/summer)
-        int seasonSchIndex;                                          // index to the season schedule
-        std::string monthSchedule;                                   // name of month schedule (when months end)
-        int monthSchIndex;                                           // index to the month schedule
+        Sched::Schedule *periodSched = nullptr;                      // period schedule
+        Sched::Schedule *seasonSched = nullptr;                      // season schedule
+        Sched::Schedule *monthSched = nullptr;                       // month schedule
         DemandWindow demandWindow;                                   // enumerated list of the kind of demand window
         Real64 demWinTime;                                           // length of time for the demand window
         Real64 monthChgVal;                                          // monthly charge value
@@ -386,13 +384,11 @@ namespace EconomicTariff {
         Real64 minMonthChgVal; // minimum monthly charge value
         int minMonthChgPt;     // pointer to a variable that contains the minimum monthly charge
         // if 0 then use minMonthChgVal
-        std::string chargeSchedule;  // name of the charge schedule (for real time pricing)
-        int chargeSchIndex;          // index to the charge schedule
-        std::string baseUseSchedule; // name of the baseline use schedule (for real time pricing)
-        int baseUseSchIndex;         // index to the baseline use schedule
-        std::string groupName;       // name of the group
-        std::string monetaryUnit;    // text string representing monetary unit, usually $
-        int buyOrSell;               // enumerated choice index of the buy or sell options
+        Sched::Schedule *chargeSched = nullptr;  // index to the charge schedule
+        Sched::Schedule *baseUseSched = nullptr; // index to the baseline use schedule
+        std::string groupName;                   // name of the group
+        std::string monetaryUnit;                // text string representing monetary unit, usually $
+        int buyOrSell;                           // enumerated choice index of the buy or sell options
         // index to the first and last category variables
         int firstCategory; // first category referenced
         int lastCategory;  // last category referenced
@@ -472,22 +468,21 @@ namespace EconomicTariff {
         // Default Constructor
         TariffType()
             : reportMeterIndx(0), kindElectricMtr(0), kindWaterMtr(0), kindGasMtr(0), convChoice(EconConv::USERDEF), energyConv(0.0), demandConv(0.0),
-              periodSchIndex(0), seasonSchIndex(0), monthSchIndex(0), demandWindow(DemandWindow::Invalid), demWinTime(0.0), monthChgVal(0.0),
-              monthChgPt(0), minMonthChgVal(0.0), minMonthChgPt(0), chargeSchIndex(0), baseUseSchIndex(0), buyOrSell(0), firstCategory(0),
-              lastCategory(0), ptEnergyCharges(0), ptDemandCharges(0), ptServiceCharges(0), ptBasis(0), ptAdjustment(0), ptSurcharge(0),
-              ptSubtotal(0), ptTaxes(0), ptTotal(0), ptNotIncluded(0), firstNative(0), lastNative(0), nativeTotalEnergy(0), nativeTotalDemand(0),
-              nativePeakEnergy(0), nativePeakDemand(0), nativeShoulderEnergy(0), nativeShoulderDemand(0), nativeOffPeakEnergy(0),
-              nativeOffPeakDemand(0), nativeMidPeakEnergy(0), nativeMidPeakDemand(0), nativePeakExceedsOffPeak(0), nativeOffPeakExceedsPeak(0),
-              nativePeakExceedsMidPeak(0), nativeMidPeakExceedsPeak(0), nativePeakExceedsShoulder(0), nativeShoulderExceedsPeak(0), nativeIsWinter(0),
-              nativeIsNotWinter(0), nativeIsSpring(0), nativeIsNotSpring(0), nativeIsSummer(0), nativeIsNotSummer(0), nativeIsAutumn(0),
-              nativeIsNotAutumn(0), nativePeakAndShoulderEnergy(0), nativePeakAndShoulderDemand(0), nativePeakAndMidPeakEnergy(0),
-              nativePeakAndMidPeakDemand(0), nativeShoulderAndOffPeakEnergy(0), nativeShoulderAndOffPeakDemand(0), nativePeakAndOffPeakEnergy(0),
-              nativePeakAndOffPeakDemand(0), nativeRealTimePriceCosts(0), nativeAboveCustomerBaseCosts(0), nativeBelowCustomerBaseCosts(0),
-              nativeAboveCustomerBaseEnergy(0), nativeBelowCustomerBaseEnergy(0), gatherEnergy(MaxNumMonths, countPeriod, 0.0),
-              gatherDemand(MaxNumMonths, countPeriod, 0.0), collectTime(0.0), collectEnergy(0.0), RTPcost(MaxNumMonths, 0.0),
-              RTPaboveBaseCost(MaxNumMonths, 0.0), RTPbelowBaseCost(MaxNumMonths, 0.0), RTPaboveBaseEnergy(MaxNumMonths, 0.0),
-              RTPbelowBaseEnergy(MaxNumMonths, 0.0), seasonForMonth(MaxNumMonths, 0), isQualified(false), ptDisqualifier(0), isSelected(false),
-              totalAnnualCost(0.0), totalAnnualEnergy(0.0)
+              demandWindow(DemandWindow::Invalid), demWinTime(0.0), monthChgVal(0.0), monthChgPt(0), minMonthChgVal(0.0), minMonthChgPt(0),
+              buyOrSell(0), firstCategory(0), lastCategory(0), ptEnergyCharges(0), ptDemandCharges(0), ptServiceCharges(0), ptBasis(0),
+              ptAdjustment(0), ptSurcharge(0), ptSubtotal(0), ptTaxes(0), ptTotal(0), ptNotIncluded(0), firstNative(0), lastNative(0),
+              nativeTotalEnergy(0), nativeTotalDemand(0), nativePeakEnergy(0), nativePeakDemand(0), nativeShoulderEnergy(0), nativeShoulderDemand(0),
+              nativeOffPeakEnergy(0), nativeOffPeakDemand(0), nativeMidPeakEnergy(0), nativeMidPeakDemand(0), nativePeakExceedsOffPeak(0),
+              nativeOffPeakExceedsPeak(0), nativePeakExceedsMidPeak(0), nativeMidPeakExceedsPeak(0), nativePeakExceedsShoulder(0),
+              nativeShoulderExceedsPeak(0), nativeIsWinter(0), nativeIsNotWinter(0), nativeIsSpring(0), nativeIsNotSpring(0), nativeIsSummer(0),
+              nativeIsNotSummer(0), nativeIsAutumn(0), nativeIsNotAutumn(0), nativePeakAndShoulderEnergy(0), nativePeakAndShoulderDemand(0),
+              nativePeakAndMidPeakEnergy(0), nativePeakAndMidPeakDemand(0), nativeShoulderAndOffPeakEnergy(0), nativeShoulderAndOffPeakDemand(0),
+              nativePeakAndOffPeakEnergy(0), nativePeakAndOffPeakDemand(0), nativeRealTimePriceCosts(0), nativeAboveCustomerBaseCosts(0),
+              nativeBelowCustomerBaseCosts(0), nativeAboveCustomerBaseEnergy(0), nativeBelowCustomerBaseEnergy(0),
+              gatherEnergy(MaxNumMonths, countPeriod, 0.0), gatherDemand(MaxNumMonths, countPeriod, 0.0), collectTime(0.0), collectEnergy(0.0),
+              RTPcost(MaxNumMonths, 0.0), RTPaboveBaseCost(MaxNumMonths, 0.0), RTPbelowBaseCost(MaxNumMonths, 0.0),
+              RTPaboveBaseEnergy(MaxNumMonths, 0.0), RTPbelowBaseEnergy(MaxNumMonths, 0.0), seasonForMonth(MaxNumMonths, 0), isQualified(false),
+              ptDisqualifier(0), isSelected(false), totalAnnualCost(0.0), totalAnnualEnergy(0.0)
         {
         }
     };
@@ -777,6 +772,10 @@ struct EconomicTariffData : BaseGlobalStruct
     EPVector<EconomicTariff::RatchetType> ratchet;
     EPVector<EconomicTariff::ComputationType> computation;
     Array1D<EconomicTariff::StackType> stack;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

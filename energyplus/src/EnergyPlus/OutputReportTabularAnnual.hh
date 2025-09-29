@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,7 +57,6 @@
 #include <ObjexxFCL/Array1D.hh>
 #include <ObjexxFCL/Array2D.hh>
 #include <ObjexxFCL/Array2S.hh>
-#include <ObjexxFCL/Array3D.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/Data/BaseData.hh>
@@ -92,18 +91,17 @@ namespace OutputReportTabularAnnual {
     {
     public:
         // Default Constructor
-        AnnualTable() : m_name(""), m_filter(""), m_scheduleName(""), m_scheduleNum(0){};
+        AnnualTable() : m_name(""), m_filter(""){};
 
         // Member Constructor
-        AnnualTable(EnergyPlusData &state, std::string name, std::string filter, std::string scheduleName)
+        AnnualTable(EnergyPlusData &state, std::string name, std::string filter, std::string schedName)
         {
             m_name = name;
             m_filter = filter;
-            m_scheduleName = scheduleName;
-            if (!m_scheduleName.empty()) {
-                m_scheduleNum = ScheduleManager::GetScheduleIndex(state, m_scheduleName); // index to the period schedule
+            if (!schedName.empty()) {
+                m_sched = Sched::GetSchedule(state, schedName); // index to the period schedule
             } else {
-                m_scheduleNum = 0;
+                m_sched = nullptr;
             }
         };
 
@@ -137,8 +135,7 @@ namespace OutputReportTabularAnnual {
 
         std::string m_name; // identifier
         std::string m_filter;
-        std::string m_scheduleName;
-        int m_scheduleNum;
+        Sched::Schedule *m_sched = nullptr;
         std::vector<std::string> m_objectNames;     // for each row of annual table
         std::vector<AnnualFieldSet> m_annualFields; // for each column
 
@@ -180,6 +177,10 @@ struct OutputReportTabularAnnualData : BaseGlobalStruct
 {
 
     std::vector<OutputReportTabularAnnual::AnnualTable> annualTables;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

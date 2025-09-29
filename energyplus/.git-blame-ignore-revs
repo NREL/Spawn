@@ -232,6 +232,10 @@ a9778bafea2ee3e92c6671144fa08d1394f11099
 64b07699758bdf5f8bcd1211338e0428c80684c3
 #    1005 files changed, 1006 insertions(+), 1006 deletions(-)
 
+# Update the license scripts a bit [Jason W. DeGraw, 2023-01-04]
+b2d55beb46c49fbb7bf84364d3a45f86e554a826
+#   2 files changed, 36 insertions(+), 17 deletions(-)
+
 # Merge pull request #9781 from NREL/update-license-year [Michael J. Witte, 2023-01-04]
 0ff3e33ff6d1d60abcaeb02f021f459840a2faa2
 
@@ -245,6 +249,13 @@ a9778bafea2ee3e92c6671144fa08d1394f11099
 
 # Merge pull request #10352 from NREL/update-license-year-2024 [Edwin Lee, 2024-01-02]
 6fafbb763fe676012f5db10da7b3e8449f578094
+
+# Update the license year to 2025 [Jason W. DeGraw, 2025-01-01]
+5b2874d37a39aa528c7fba0d87b675d2d30cc146
+#   1053 files changed, 1059 insertions(+), 1056 deletions(-)
+
+# Merge pull request #10886 from NREL/update-license-year-2025 [Edwin Lee, 2025-01-08]
+b46ced64a420a7df09af0f301499d0548ac89966
 
 #######################################################################
 #                         S T Y L E    B O T                          #
@@ -494,10 +505,6 @@ deb313430ea9b1cc2c0bb679c376689db32eeb17
 c8f9fbba47a5425fbb4220285f70d0017f6f65b4
 #    2 files changed, 2 insertions(+)
 
-# Apply clang-format to src/EnergyPlus and tst/EnergyPlus/unit [Edwin Lee, 2021-03-30]
-33b71ed598f37c10e9bfb6492e2a2103ba24e3dd
-# 762 files changed, 397748 insertions(+), 351788 deletions(-)
-
 # `python change_version.py ../../ 9.3 9.4` [chore] [Julien Marrec, 2020-04-10]
 07ff20c0f9d89bde22c8f0b7a9dbbfe716339afd
 #    761 files changed, 795 insertions(+), 795 deletions(-)
@@ -505,3 +512,19 @@ c8f9fbba47a5425fbb4220285f70d0017f6f65b4
 # [chore] clang-format the FMI and FMUParser directories, hard to read. [Julien Marrec, 2020-11-24]
 98dbfac765fbcf327681ecb13fb79a368363be9e
 #    26 files changed, 4230 insertions(+), 3938 deletions(-)
+
+# Apply clang-format to src/EnergyPlus and tst/EnergyPlus/unit [Edwin Lee, 2021-03-30]
+33b71ed598f37c10e9bfb6492e2a2103ba24e3dd
+# 762 files changed, 397748 insertions(+), 351788 deletions(-)
+
+# Add copyright header to EPVector.hh [Jason Turner, 2021-04-09]
+fec99239575da7f77999cf82f4140f38a8026b80
+#   1 file changed, 51 insertions(+), 4 deletions(-)
+
+# clang-format [chore] [Julien Marrec, 2021-06-21]
+7d40fa29de91752d5d449fe9be45a008c236fefb
+#   2 files changed, 17 insertions(+), 17 deletions(-)
+
+# [chore] Typo cooing -> cooling [Julien Marrec, 2025-01-23]
+ab5c96312d0cddec395e9616f23a8bd5f433ac6e
+# 25 files changed, 132 insertions(+), 131 deletions(-)

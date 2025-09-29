@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -49,9 +49,6 @@
 #include <cassert>
 #include <cmath>
 
-// ObjexxFCL Headers
-#include <ObjexxFCL/Fmath.hh>
-
 // EnergyPlus Headers
 #include <EnergyPlus/Construction.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -90,7 +87,6 @@ namespace SolarReflectionManager {
     // Using/Aliasing
     using namespace DataHeatBalance;
     using namespace DataSurfaces;
-    using namespace ScheduleManager;
     using namespace DataEnvironment;
 
     using namespace DataVectorTypes;
@@ -891,9 +887,6 @@ namespace SolarReflectionManager {
         // REFERENCES:
         // na
 
-        // Using/Aliasing
-        using General::POLYF;
-
         // Locals
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Array1D<Real64> ReflBmToDiffSolObs(state.dataSurface->MaxRecPts); // Irradiance at a receiving point for
@@ -1034,7 +1027,7 @@ namespace SolarReflectionManager {
                                 state.dataSolarReflectionManager->SpecReflectance = 0.0;
                                 if (state.dataSurface->Surface(ReflSurfNum).Class == SurfaceClass::Window) {
                                     state.dataSolarReflectionManager->ConstrNumRefl = state.dataSurface->Surface(ReflSurfNum).Construction;
-                                    state.dataSolarReflectionManager->SpecReflectance = POLYF(
+                                    state.dataSolarReflectionManager->SpecReflectance = Window::POLYF(
                                         std::abs(state.dataSolarReflectionManager->CosIncAngRefl),
                                         state.dataConstruction->Construct(state.dataSolarReflectionManager->ConstrNumRefl).ReflSolBeamFrontCoef);
                                 }
@@ -1043,7 +1036,7 @@ namespace SolarReflectionManager {
                                     state.dataSolarReflectionManager->ConstrNumRefl = state.dataSurface->SurfShadowGlazingConstruct(ReflSurfNum);
                                     state.dataSolarReflectionManager->SpecReflectance =
                                         state.dataSurface->SurfShadowGlazingFrac(ReflSurfNum) *
-                                        POLYF(
+                                        Window::POLYF(
                                             std::abs(state.dataSolarReflectionManager->CosIncAngRefl),
                                             state.dataConstruction->Construct(state.dataSolarReflectionManager->ConstrNumRefl).ReflSolBeamFrontCoef);
                                 }

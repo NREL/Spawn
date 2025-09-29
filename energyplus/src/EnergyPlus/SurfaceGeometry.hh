@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -260,7 +260,7 @@ namespace SurfaceGeometry {
         Real64 Xmin = 0;
     };
 
-    void GetGeoSummaryRoof(EnergyPlusData &state, GeoSummary &geoSumRoof);
+    void GetGeoSummaryRoof(EnergyPlusData const &state, GeoSummary &geoSumRoof);
 
     class ExposedFoundationPerimeter
     {
@@ -292,7 +292,7 @@ namespace SurfaceGeometry {
 
     void GetWindowShadingControlData(EnergyPlusData &state, bool &ErrorsFound); // If errors found in input
 
-    void InitialAssociateWindowShadingControlFenestration(EnergyPlusData &state, bool &ErrorsFound, int &SurfNum);
+    void InitialAssociateWindowShadingControlFenestration(EnergyPlusData &state, bool &ErrorsFound, int SurfNum);
 
     void FinalAssociateWindowShadingControlFenestration(EnergyPlusData &state, bool &ErrorsFound);
 
@@ -333,7 +333,7 @@ namespace SurfaceGeometry {
 
     bool isEnclosedVolume(DataVectorTypes::Polyhedron const &zonePoly, std::vector<EdgeOfSurf> &edgeNot2);
 
-    std::vector<EdgeOfSurf> edgesInBoth(std::vector<EdgeOfSurf> edges1, std::vector<EdgeOfSurf> edges2);
+    std::vector<EdgeOfSurf> edgesInBoth(std::vector<EdgeOfSurf> const &edges1, std::vector<EdgeOfSurf> const &edges2);
 
     bool edgesEqualOnSameSurface(EdgeOfSurf a, EdgeOfSurf b);
 
@@ -365,7 +365,7 @@ namespace SurfaceGeometry {
 
     bool isAlmostEqual2dPt(DataVectorTypes::Vector_2d v1, DataVectorTypes::Vector_2d v2);
 
-    int findIndexOfVertex(DataVectorTypes::Vector vertexToFind, std::vector<DataVectorTypes::Vector> listOfVertices);
+    int findIndexOfVertex(DataVectorTypes::Vector vertexToFind, std::vector<DataVectorTypes::Vector> const &listOfVertices);
 
     Real64 distance(DataVectorTypes::Vector v1, DataVectorTypes::Vector v2);
 
@@ -497,6 +497,10 @@ struct SurfaceGeometryData : BaseGlobalStruct
     Array1D<Real64> A; // containers for convexity test
     Array1D<Real64> B;
     int VertSize = 0; // size of X,Y,Z,A,B arrays
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

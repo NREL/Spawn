@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -57,6 +57,7 @@
 #include <EnergyPlus/EnergyPlus.hh>
 #include <EnergyPlus/Plant/Enums.hh>
 #include <EnergyPlus/Plant/PlantLocation.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -98,15 +99,15 @@ namespace CoolingPanelSimple {
         Array1D_string SurfaceName;
         Array1D_int SurfacePtr;
         int ZonePtr = 0;
-        int SchedPtr = 0;
+        Sched::Schedule *availSched = nullptr;
         int WaterInletNode = 0;
         int WaterOutletNode = 0;
         int TotSurfToDistrib = 0;
         int ControlCompTypeNum = 0;
         int CompErrIndex = 0;
         ClgPanelCtrlType controlType = ClgPanelCtrlType::Invalid;
-        std::string ColdSetptSched;
-        int ColdSetptSchedPtr = 0;
+        std::string ColdSetptSchedName;
+        Sched::Schedule *coldSetptSched = nullptr;
         CondCtrl CondCtrlType = CondCtrl::NONE;
         Real64 CondDewPtDeltaT = 0.0;
         int CondErrIndex = 0;
@@ -187,6 +188,10 @@ struct ChilledCeilingPanelSimpleData : BaseGlobalStruct
 {
     bool GetInputFlag = true;
     Array1D<CoolingPanelSimple::CoolingPanelParams> CoolingPanel;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

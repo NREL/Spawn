@@ -783,6 +783,9 @@ Begin VB.Form IDFEdit
       Begin VB.Menu mnuHelpAuxProgs 
          Caption         =   "EnergyPlus Auxiliary Programs"
       End
+      Begin VB.Menu mnuHelpTips 
+         Caption         =   "EnergyPlus Tips and Tricks"
+      End
       Begin VB.Menu mnuHelpAcknowledge 
          Caption         =   "EnergyPlus Acknowledgments"
       End
@@ -2232,29 +2235,37 @@ Private Sub mnuHelpOutDetails_Click()
 Call startAcrobat("OutputDetailsAndExamples.pdf")
 End Sub
 Private Sub mnuHelpAuxProgs_Click()
-Call startAcrobat("AuxiliaryPrograms.pdf")
+'Call startAcrobat("AuxiliaryPrograms.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/auxiliary-programs/auxiliary-programs.html")
 End Sub
 Private Sub mnuHelpAcknowledge_Click()
-Call startAcrobat("Acknowledgments.pdf")
+'Call startAcrobat("Acknowledgments.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/acknowledgments/acknowledgments.html")
 End Sub
 Private Sub mnuHelpCompliance_Click()
 Call startAcrobat("UsingEnergyPlusForCompliance.pdf")
 End Sub
 Private Sub mnuHelpEMSguide_Click()
-Call startAcrobat("EMSApplicationGuide.pdf")
+'Call startAcrobat("EMSApplicationGuide.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/ems-application-guide/ems-application-guide.html")
 End Sub
 Private Sub mnuHelpExtInterface_Click()
 Call startAcrobat("ExternalInterfacesApplicationGuide.pdf")
 End Sub
 Private Sub mnuHelpQuickStart_Click()
-Call viewWebPage("https://energyplus.net/quick-start")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/quick_start/quick_start.html")
 End Sub
 Private Sub mnuHelpEssentials_Click()
-Call startAcrobat("EnergyPlusEssentials.pdf")
+'Call startAcrobat("EnergyPlusEssentials.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/essentials/essentials.html")
 End Sub
 Private Sub mnuHelpPlant_Click()
 Call startAcrobat("PlantApplicationGuide.pdf")
 End Sub
+Private Sub mnuHelpTips_Click()
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/tips_and_tricks/tips_and_tricks.html")
+End Sub
+
 
 
 

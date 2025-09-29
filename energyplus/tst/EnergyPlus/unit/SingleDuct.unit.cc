@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -124,10 +124,10 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -137,7 +137,7 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -145,9 +145,15 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     DataZoneEquipment::GetZoneEquipmentData(*state);
     ZoneAirLoopEquipmentManager::GetZoneAirLoopEquipment(*state);
     SingleDuct::GetSysInput(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
+    EXPECT_TRUE(compare_err_stream(error_string));
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     // node number table
     //  1   Zone 1 Air Node
@@ -170,7 +176,7 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = 2000.0; // Heating load - expect min flow rate
 
     // First test - AlwaysOff Schedule - expecting no flow
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 1;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSOFF");
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
     state->dataGlobal->BeginEnvrnFlag = true; // Must be true for initial pass thru SingleDuct::InitSys for this terminal unit
@@ -188,7 +194,7 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     // Reset flows and switch to AlwaysOn Schedule
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 2;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSON");
     FirstHVACIteration = true;
     state->dataSingleDuct->sd_airterminal(SysNum).InitSys(*state, FirstHVACIteration); // Run thru init once with FirstHVACIteration set to true
     FirstHVACIteration = false;
@@ -202,7 +208,7 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -2000.0; // Cooling load - expect max flow rate
 
     // First test - AlwaysOff Schedule - expecting no flow
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 1;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSOFF");
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
     state->dataGlobal->BeginEnvrnFlag = true; // Must be true for initial pass thru SingleDuct::InitSys for this terminal unit
@@ -220,7 +226,7 @@ TEST_F(EnergyPlusFixture, VAVNoReheatTerminalUnitSchedule)
     // Reset flows and switch to AlwaysOn Schedule
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 2;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSON");
     FirstHVACIteration = true;
     state->dataSingleDuct->sd_airterminal(SysNum).InitSys(*state, FirstHVACIteration); // Run thru init once with FirstHVACIteration set to true
     FirstHVACIteration = false;
@@ -299,10 +305,10 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;    // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60;    // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state); // read schedules
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
+
     state->dataEnvrn->Month = 1;
     state->dataEnvrn->DayOfMonth = 21;
     state->dataGlobal->HourOfDay = 1;
@@ -312,7 +318,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
     state->dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(*state, 101325.0, 20.0, 0.0);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -320,9 +326,14 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     DataZoneEquipment::GetZoneEquipmentData(*state);
     ZoneAirLoopEquipmentManager::GetZoneAirLoopEquipment(*state);
     SingleDuct::GetSysInput(*state);
-    EXPECT_TRUE(compare_err_stream(""));
+    std::string error_string = delimited_string({"   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSOFF",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated.",
+                                                 "   ** Warning ** ProcessScheduleInput: Schedule:Constant = ALWAYSON",
+                                                 "   **   ~~~   ** Schedule Type Limits Name is empty.",
+                                                 "   **   ~~~   ** Schedule will not be validated."});
     state->dataHeatBalFanSys->TempControlType.allocate(1);
-    state->dataHeatBalFanSys->TempControlType(1) = HVAC::ThermostatType::DualSetPointWithDeadBand;
+    state->dataHeatBalFanSys->TempControlType(1) = HVAC::SetptType::DualHeatCool;
 
     // node number table
     //  1   Zone 1 Air Node
@@ -346,7 +357,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = 2000.0; // Heating load - expect min flow rate
 
     // First test - AlwaysOff Schedule - expecting no flow
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 1;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSOFF");
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
     state->dataGlobal->BeginEnvrnFlag = true; // Must be true for initial pass thru SingleDuct::InitSys for this terminal unit
@@ -364,7 +375,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     // Reset flows and switch to AlwaysOn Schedule
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 2;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSON");
     FirstHVACIteration = true;
     state->dataSingleDuct->sd_airterminal(SysNum).InitSys(*state, FirstHVACIteration); // Run thru init once with FirstHVACIteration set to true
     FirstHVACIteration = false;
@@ -378,7 +389,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     state->dataZoneEnergyDemand->ZoneSysEnergyDemand(1).RemainingOutputRequired = -2000.0; // Cooling load - expect max flow rate
 
     // First test - AlwaysOff Schedule - expecting no flow
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 1;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSOFF");
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
     state->dataGlobal->BeginEnvrnFlag = true; // Must be true for initial pass thru SingleDuct::InitSys for this terminal unit
@@ -396,7 +407,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminalUnitSchedule)
     // Reset flows and switch to AlwaysOn Schedule
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRate = SysMinMassFlow;
     state->dataLoopNodes->Node(InletNodeNum).MassFlowRateMaxAvail = SysMaxMassFlow;
-    state->dataSingleDuct->sd_airterminal(SysNum).SchedPtr = 2;
+    state->dataSingleDuct->sd_airterminal(SysNum).availSched = Sched::GetSchedule(*state, "ALWAYSON");
     FirstHVACIteration = true;
     state->dataSingleDuct->sd_airterminal(SysNum).InitSys(*state, FirstHVACIteration); // Run thru init once with FirstHVACIteration set to true
     FirstHVACIteration = false;
@@ -1272,6 +1283,7 @@ TEST_F(EnergyPlusFixture, SingleDuct_ZeroFloorAreaTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     // OutputProcessor::TimeValue.allocate(2);
 
@@ -1282,7 +1294,7 @@ TEST_F(EnergyPlusFixture, SingleDuct_ZeroFloorAreaTest)
     // zone floor area of zone 1 = 0, zone 2 > 0. Expect TU MaxAirVolFlowRateDuringReheat = 0 only for zone 1.
     // this test isn't relevant anymore since defaulting is done differently
     Real64 MaxAirVolFlowRateDuringReheatDes =
-        min(state->dataSize->FinalZoneSizing(1).DesHeatVolFlowMax, state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate);
+        min(state->dataSize->FinalZoneSizing(1).DesHeatVolFlow, state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate);
     // Real64 MaxAirVolFlowRateDuringReheatDes = min( 0.002032 * state->dataSingleDuct->sd_airterminal( 1 ).ZoneFloorArea,
     // state->dataSingleDuct->sd_airterminal( 1 ).MaxAirVolFlowRate ); apply limit based on min stop
     MaxAirVolFlowRateDuringReheatDes =
@@ -1291,7 +1303,7 @@ TEST_F(EnergyPlusFixture, SingleDuct_ZeroFloorAreaTest)
 
     // This isn't relevant any more since the default is calculated differently
     Real64 MaxAirVolFractionDuringReheatDes =
-        min(1.0, (state->dataSize->FinalZoneSizing(1).DesHeatVolFlowMax / state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate));
+        min(1.0, (state->dataSize->FinalZoneSizing(1).DesHeatVolFlow / state->dataSingleDuct->sd_airterminal(1).MaxAirVolFlowRate));
     // Real64 MaxAirVolFractionDuringReheatDes = min( 1.0, ( 0.002032 * state->dataSingleDuct->sd_airterminal( 1 ).ZoneFloorArea /
     // state->dataSingleDuct->sd_airterminal( 1 ).MaxAirVolFlowRate )
     // ); apply limit based on min stop
@@ -1306,12 +1318,12 @@ TEST_F(EnergyPlusFixture, SingleDuct_ZeroFloorAreaTest)
     EXPECT_NEAR(MaxAirVolFractionDuringReheatDes, state->dataSingleDuct->sd_airterminal(1).MaxAirVolFractionDuringReheat, 0.0000000000001);
 
     MaxAirVolFlowRateDuringReheatDes =
-        min(state->dataSize->FinalZoneSizing(2).DesHeatVolFlowMax, state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate);
+        min(state->dataSize->FinalZoneSizing(2).DesHeatVolFlow, state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate);
     MaxAirVolFlowRateDuringReheatDes =
         max(MaxAirVolFlowRateDuringReheatDes,
             (state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate * state->dataSingleDuct->sd_airterminal(2).ZoneMinAirFrac));
     MaxAirVolFractionDuringReheatDes =
-        min(1.0, (state->dataSize->FinalZoneSizing(2).DesHeatVolFlowMax / state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate));
+        min(1.0, (state->dataSize->FinalZoneSizing(2).DesHeatVolFlow / state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate));
     MaxAirVolFractionDuringReheatDes = max(MaxAirVolFractionDuringReheatDes, state->dataSingleDuct->sd_airterminal(2).ZoneMinAirFrac);
     MaxAirVolFlowRateDuringReheatDes =
         min(max(MaxAirVolFlowRateDuringReheatDes, MaxAirVolFractionDuringReheatDes * state->dataSingleDuct->sd_airterminal(2).MaxAirVolFlowRate),
@@ -2490,7 +2502,7 @@ TEST_F(EnergyPlusFixture, SingleDuct_VAVWaterCoilSizing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state);
     // OutputProcessor::TimeValue.allocate(2);
 
     ManageSimulation(*state); // run the design days
@@ -2724,6 +2736,7 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminal_SizeMinFrac)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -2737,23 +2750,69 @@ TEST_F(EnergyPlusFixture, VAVReheatTerminal_SizeMinFrac)
     EXPECT_TRUE(compare_err_stream(""));
 
     int SysNum = 1;
+    auto &thisSys = state->dataSingleDuct->sd_airterminal(SysNum);
 
     // First test -  design min flow < max flow
     state->dataSize->ZoneSizingRunDone = true;
     state->dataSize->CurZoneEqNum = 1;
     state->dataSize->CurTermUnitSizingNum = 1;
     state->dataSize->TermUnitFinalZoneSizing(1).DesCoolVolFlowMin = 0.5;
-    state->dataSingleDuct->sd_airterminal(SysNum).SizeSys(*state);
-    EXPECT_EQ(0.5, state->dataSingleDuct->sd_airterminal(SysNum).ZoneMinAirFracDes);
+    thisSys.SizeSys(*state);
+    EXPECT_EQ(0.5, thisSys.ZoneMinAirFracDes);
 
     // Second test -  design min flow > max flow
     state->dataSize->ZoneSizingRunDone = true;
     state->dataSize->CurZoneEqNum = 1;
     state->dataSize->CurTermUnitSizingNum = 1;
-    state->dataSingleDuct->sd_airterminal(SysNum).ZoneMinAirFracDes = AutoSize; // need to reset this so it sizes again
+    thisSys.ZoneMinAirFracDes = AutoSize; // need to reset this so it sizes again
     state->dataSize->TermUnitFinalZoneSizing(1).DesCoolVolFlowMin = 1.5;
-    state->dataSingleDuct->sd_airterminal(SysNum).SizeSys(*state);
-    EXPECT_EQ(1.0, state->dataSingleDuct->sd_airterminal(SysNum).ZoneMinAirFracDes);
+    thisSys.SizeSys(*state);
+    EXPECT_EQ(1.0, thisSys.ZoneMinAirFracDes);
+
+    // test Maximum Flow Fraction During Reheat for heating dominated
+    thisSys.MaxAirVolFlowRate = DataSizing::AutoSize;
+    thisSys.ZoneMinAirFracDes = DataSizing::AutoSize;
+    thisSys.MaxAirVolFlowRateDuringReheat = DataSizing::AutoSize;
+    thisSys.MaxAirVolFractionDuringReheat = DataSizing::AutoSize;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlow = 1.7;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlowMax = 1.6;
+    thisSys.SizeSys(*state);
+    Real64 expectedZoneMinAirFracDes = std::min(1.0, state->dataSize->TermUnitFinalZoneSizing(1).DesCoolVolFlowMin / thisSys.MaxAirVolFlowRate);
+    // DesHeatVolFlowMax is limiting flow rate
+    Real64 expectedMaxAirVolFractionDuringReheat = state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlowMax / thisSys.MaxAirVolFlowRate;
+    EXPECT_EQ(expectedZoneMinAirFracDes, thisSys.ZoneMinAirFracDes);
+    EXPECT_EQ(1.0, thisSys.MaxAirVolFractionDuringReheat);
+    EXPECT_EQ(expectedMaxAirVolFractionDuringReheat, thisSys.MaxAirVolFractionDuringReheat);
+
+    // switch magnitude of DesHeatVolFlow and DesHeatVolFlowMax, still heating dominated
+    thisSys.MaxAirVolFlowRate = DataSizing::AutoSize;
+    thisSys.ZoneMinAirFracDes = DataSizing::AutoSize;
+    thisSys.MaxAirVolFlowRateDuringReheat = DataSizing::AutoSize;
+    thisSys.MaxAirVolFractionDuringReheat = DataSizing::AutoSize;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlow = 1.6;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlowMax = 1.7;
+    thisSys.SizeSys(*state);
+    expectedZoneMinAirFracDes = std::min(1.0, state->dataSize->TermUnitFinalZoneSizing(1).DesCoolVolFlowMin / thisSys.MaxAirVolFlowRate);
+    // DesHeatVolFlowMax is NOT limiting flow rate
+    expectedMaxAirVolFractionDuringReheat = state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlow / thisSys.MaxAirVolFlowRate;
+    EXPECT_EQ(expectedZoneMinAirFracDes, thisSys.ZoneMinAirFracDes);
+    EXPECT_EQ(1.0, thisSys.MaxAirVolFractionDuringReheat);
+    EXPECT_EQ(expectedMaxAirVolFractionDuringReheat, thisSys.MaxAirVolFractionDuringReheat);
+
+    // test Maximum Flow Fraction During Reheat for cooling dominated
+    thisSys.MaxAirVolFlowRate = DataSizing::AutoSize;
+    thisSys.ZoneMinAirFracDes = DataSizing::AutoSize;
+    thisSys.MaxAirVolFlowRateDuringReheat = DataSizing::AutoSize;
+    thisSys.MaxAirVolFractionDuringReheat = DataSizing::AutoSize;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlow = 1.4;
+    state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlowMax = 1.3;
+    thisSys.SizeSys(*state);
+    expectedZoneMinAirFracDes = std::min(1.0, state->dataSize->TermUnitFinalZoneSizing(1).DesCoolVolFlowMin / thisSys.MaxAirVolFlowRate);
+    // DesHeatVolFlowMax is limiting flow rate
+    expectedMaxAirVolFractionDuringReheat = state->dataSize->TermUnitFinalZoneSizing(1).DesHeatVolFlowMax / thisSys.MaxAirVolFlowRate;
+    EXPECT_EQ(expectedZoneMinAirFracDes, thisSys.ZoneMinAirFracDes);
+    EXPECT_EQ(1.0, thisSys.MaxAirVolFractionDuringReheat);
+    EXPECT_EQ(expectedMaxAirVolFractionDuringReheat, thisSys.MaxAirVolFractionDuringReheat);
 }
 
 TEST_F(EnergyPlusFixture, setATMixerSizingProperties_Test)
@@ -2872,6 +2931,7 @@ TEST_F(EnergyPlusFixture, VAVConstantVolTU_NoReheat_Sizing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -2960,6 +3020,7 @@ TEST_F(EnergyPlusFixture, VAVConstantVolTU_Reheat_Sizing)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     bool ErrorsFound = false;
     HeatBalanceManager::GetZoneData(*state, ErrorsFound);
@@ -3024,11 +3085,8 @@ TEST_F(EnergyPlusFixture, SingleDuctAirTerminal_reportTerminalUnit)
 
     SetPredefinedTables(*state);
 
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
-    auto &sch = state->dataScheduleMgr->Schedule;
-    sch.allocate(5);
-    sch(1).Name = "schA";
-    sch(2).Name = "schB";
+    auto *schA = Sched::AddScheduleConstant(*state, "schA");
+    auto *schB = Sched::AddScheduleConstant(*state, "schB");
 
     auto &adu = state->dataDefineEquipment->AirDistUnit;
     adu.allocate(2);
@@ -3049,7 +3107,7 @@ TEST_F(EnergyPlusFixture, SingleDuctAirTerminal_reportTerminalUnit)
     sdat(1).ADUNum = 1;
     sdat(1).sysType = "AirTerminal:SingleDuct:ConstantVolume:NoReheat";
     sdat(1).MaxAirVolFlowRate = 0.30;
-    sdat(1).ZoneMinAirFracSchPtr = 1;
+    sdat(1).zoneMinAirFracSched = schA;
     sdat(1).MaxAirVolFlowRateDuringReheat = 0.25;
     sdat(1).OARequirementsPtr = 0;
     sdat(1).ReheatComp = "watercoil";
@@ -3088,7 +3146,7 @@ TEST_F(EnergyPlusFixture, SingleDuctAirTerminal_reportTerminalUnit)
     sdat(2).ADUNum = 2;
     sdat(2).sysType = "AirTerminal:SingleDuct:ConstantVolume:Reheat";
     sdat(2).MaxAirVolFlowRate = 0.31;
-    sdat(2).ZoneMinAirFracSchPtr = 0;
+    sdat(2).zoneMinAirFracSched = nullptr;
     sdat(2).MaxAirVolFlowRateDuringReheat = 0.26;
     sdat(2).OARequirementsPtr = 1;
     sdat(2).ReheatComp = "furncoil";
@@ -3097,7 +3155,7 @@ TEST_F(EnergyPlusFixture, SingleDuctAirTerminal_reportTerminalUnit)
 
     auto &oa = state->dataSize->OARequirements;
     oa.allocate(1);
-    oa(1).OAFlowFracSchPtr = 2;
+    oa(1).oaFlowFracSched = Sched::GetScheduleAlwaysOn(*state);
 
     sdat(2).reportTerminalUnit(*state);
 
@@ -3112,7 +3170,7 @@ TEST_F(EnergyPlusFixture, SingleDuctAirTerminal_reportTerminalUnit)
     EXPECT_EQ("n/a", RetrievePreDefTableEntry(*state, orp.pdchAirTermSecdFlow, "ADU b"));
     EXPECT_EQ("n/a", RetrievePreDefTableEntry(*state, orp.pdchAirTermMinFlowSch, "ADU b"));
     EXPECT_EQ("0.26", RetrievePreDefTableEntry(*state, orp.pdchAirTermMaxFlowReh, "ADU b"));
-    EXPECT_EQ("schB", RetrievePreDefTableEntry(*state, orp.pdchAirTermMinOAflowSch, "ADU b"));
+    EXPECT_EQ("Constant-1.0", RetrievePreDefTableEntry(*state, orp.pdchAirTermMinOAflowSch, "ADU b"));
     EXPECT_EQ("furncoil", RetrievePreDefTableEntry(*state, orp.pdchAirTermHeatCoilType, "ADU b"));
     EXPECT_EQ("n/a", RetrievePreDefTableEntry(*state, orp.pdchAirTermCoolCoilType, "ADU b"));
     EXPECT_EQ("Fan:OnOff", RetrievePreDefTableEntry(*state, orp.pdchAirTermFanType, "ADU b"));

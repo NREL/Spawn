@@ -240,7 +240,7 @@
 !    CHW_deltaT = 8.33
 !    HOTW_PumpCurve_flag = pump_ride_on_curve
 
-  Version,24.2;
+  Version,25.1;
 
 !-   ===========  ALL OBJECTS IN CLASS: SIMULATIONCONTROL ===========
 
@@ -29019,7 +29019,7 @@
     SumOrAverageDuringHoursShown,  !- Aggregation Type for Variable or Meter 2
     Zone Mechanical Ventilation Air Changes per Hour,  !- Variable or Meter 3 Name
     SumOrAverageDuringHoursShown,  !- Aggregation Type for Variable or Meter 3
-    Zone Infiltration Air Change Rate,  !- Variable or Meter 4 Name
+    Zone Infiltration Current Density Air Change Rate,  !- Variable or Meter 4 Name
     SumOrAverageDuringHoursShown;  !- Aggregation Type for Variable or Meter 4
 
   Output:Table:Monthly,

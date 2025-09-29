@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/FluidProperties.hh>
 
 namespace EnergyPlus {
 
@@ -66,19 +67,18 @@ namespace SteamBaseboardRadiator {
     struct SteamBaseboardParams
     {
         // Members
-        std::string EquipID;
+        std::string Name;
         DataPlant::PlantEquipmentType EquipType;
         std::string designObjectName; // Design Object
         int DesignObjectPtr;
-        std::string Schedule;
         Array1D_string SurfaceName;
         Array1D_int SurfacePtr;
         int ZonePtr;
-        int SchedPtr;         // Pointer to the correct schedule
+        Sched::Schedule *availSched = nullptr;
         int SteamInletNode;   // Inlet steam baseboard node
         int SteamOutletNode;  // Outlet steam baseboard node
         int TotSurfToDistrib; // Total numbers of the surfaces that the radiant heat gets distributed
-        int FluidIndex;       // Fluid index for FluidProperties (Steam)
+        Fluid::RefrigProps *steam = nullptr;
         int ControlCompTypeNum;
         int CompErrIndex;
         Real64 DegOfSubcooling;      // Temperature differences due to subcooling of the condensate [C]
@@ -124,14 +124,14 @@ namespace SteamBaseboardRadiator {
 
         // Default Constructor
         SteamBaseboardParams()
-            : EquipType(DataPlant::PlantEquipmentType::Invalid), DesignObjectPtr(0), ZonePtr(0), SchedPtr(0), SteamInletNode(0), SteamOutletNode(0),
-              TotSurfToDistrib(0), FluidIndex(0), ControlCompTypeNum(0), CompErrIndex(0), DegOfSubcooling(0.0), SteamMassFlowRate(0.0),
-              SteamMassFlowRateMax(0.0), SteamVolFlowRateMax(0.0), SteamOutletTemp(0.0), SteamInletTemp(0.0), SteamInletEnthalpy(0.0),
-              SteamOutletEnthalpy(0.0), SteamInletPress(0.0), SteamOutletPress(0.0), SteamInletQuality(0.0), SteamOutletQuality(0.0),
-              FracRadiant(0.0), FracConvect(0.0), FracDistribPerson(0.0), TotPower(0.0), Power(0.0), ConvPower(0.0), RadPower(0.0), TotEnergy(0.0),
-              Energy(0.0), ConvEnergy(0.0), RadEnergy(0.0), plantLoc{}, BBLoadReSimIndex(0), BBMassFlowReSimIndex(0), BBInletTempFlowReSimIndex(0),
-              QBBSteamRadSource(0.0), QBBSteamRadSrcAvg(0.0), ZeroBBSteamSourceSumHATsurf(0.0), LastQBBSteamRadSrc(0.0), LastSysTimeElapsed(0.0),
-              LastTimeStepSys(0.0), ScaledHeatingCapacity(0.0)
+            : EquipType(DataPlant::PlantEquipmentType::Invalid), DesignObjectPtr(0), ZonePtr(0), SteamInletNode(0), SteamOutletNode(0),
+              TotSurfToDistrib(0), ControlCompTypeNum(0), CompErrIndex(0), DegOfSubcooling(0.0), SteamMassFlowRate(0.0), SteamMassFlowRateMax(0.0),
+              SteamVolFlowRateMax(0.0), SteamOutletTemp(0.0), SteamInletTemp(0.0), SteamInletEnthalpy(0.0), SteamOutletEnthalpy(0.0),
+              SteamInletPress(0.0), SteamOutletPress(0.0), SteamInletQuality(0.0), SteamOutletQuality(0.0), FracRadiant(0.0), FracConvect(0.0),
+              FracDistribPerson(0.0), TotPower(0.0), Power(0.0), ConvPower(0.0), RadPower(0.0), TotEnergy(0.0), Energy(0.0), ConvEnergy(0.0),
+              RadEnergy(0.0), plantLoc{}, BBLoadReSimIndex(0), BBMassFlowReSimIndex(0), BBInletTempFlowReSimIndex(0), QBBSteamRadSource(0.0),
+              QBBSteamRadSrcAvg(0.0), ZeroBBSteamSourceSumHATsurf(0.0), LastQBBSteamRadSrc(0.0), LastSysTimeElapsed(0.0), LastTimeStepSys(0.0),
+              ScaledHeatingCapacity(0.0)
         {
         }
     };
@@ -206,7 +206,7 @@ namespace SteamBaseboardRadiator {
                                              const DataPlant::LoopSideLocation LoopSide,  // Plant loop side index for where called from
                                              int &CompIndex,                              // Chiller number pointer
                                              bool const FirstHVACIteration,
-                                             bool &InitLoopEquip // If not zero, calculate the max load for operating conditions
+                                             bool const InitLoopEquip // If not zero, calculate the max load for operating conditions
     );
 
 } // namespace SteamBaseboardRadiator
@@ -218,7 +218,6 @@ struct SteamBaseboardRadiatorData : BaseGlobalStruct
     std::string const cCMO_BBRadiator_Steam_Design = "ZoneHVAC:Baseboard:RadiantConvective:Steam:Design";
     int NumSteamBaseboards = 0;
     int NumSteamBaseboardsDesign = 0;
-    int SteamIndex = 0;
 
     Array1D_bool MySizeFlag;
     Array1D_bool CheckEquipName;
@@ -236,6 +235,10 @@ struct SteamBaseboardRadiatorData : BaseGlobalStruct
     Array1D<SteamBaseboardRadiator::SteamBaseboardDesignNumericFieldData> SteamBaseboardDesignNumericFields;
     Array1D_string SteamBaseboardDesignNames; // Array that contains the names of Design objects
 
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
     }
@@ -243,7 +246,6 @@ struct SteamBaseboardRadiatorData : BaseGlobalStruct
     void clear_state() override
     {
         NumSteamBaseboards = 0;
-        SteamIndex = 0;
         MySizeFlag.clear();
         MyEnvrnFlag.clear();
         CheckEquipName.clear();

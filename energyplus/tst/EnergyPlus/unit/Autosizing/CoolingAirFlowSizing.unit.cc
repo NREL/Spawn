@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -123,8 +123,8 @@ TEST_F(AutoSizingFixture, CoolingAirFlowSizingGauntlet)
     state->dataSize->FinalZoneSizing(1).HeatDDNum = 2;
     state->dataSize->FinalZoneSizing(1).TimeStepNumAtCoolMax = 12;
     state->dataSize->FinalZoneSizing(1).TimeStepNumAtHeatMax = 6;
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    state->dataGlobal->MinutesPerTimeStep = 60;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->dataGlobal->MinutesInTimeStep = 60;
     state->dataEnvrn->TotDesDays = 2;
     state->dataWeather->DesDayInput.allocate(2);
     state->dataWeather->DesDayInput(1).Month = 7;

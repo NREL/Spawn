@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -83,9 +83,6 @@ namespace HybridModel {
 
     void GetHybridModelZone(EnergyPlusData &state)
     {
-
-        using ScheduleManager::GetScheduleIndex;
-
         Array1D_bool lAlphaFieldBlanks(16, false);
         Array1D_bool lNumericFieldBlanks(4, false);
         std::string CurrentModuleObject; // to assist in getting input
@@ -99,7 +96,7 @@ namespace HybridModel {
         state.dataHybridModel->NumOfHybridModelZones = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);
 
         if (state.dataHybridModel->NumOfHybridModelZones > 0) {
-            state.dataHybridModel->HybridModelZone.allocate(state.dataGlobal->NumOfZones);
+            state.dataHybridModel->hybridModelZones.allocate(state.dataGlobal->NumOfZones);
             bool ErrorsFound = false; // If errors detected in input
             int NumAlphas = 0;        // Number of Alphas for each GetobjectItem call
             int NumNumbers = 0;       // Number of Numbers for each GetobjectItem call
@@ -122,42 +119,43 @@ namespace HybridModel {
 
                 ZonePtr = Util::FindItemInList(cAlphaArgs(2), state.dataHeatBal->Zone); // "Zone" is a 1D array, cAlphaArgs(2) is the zone name
                 if (ZonePtr > 0) {
-                    state.dataHybridModel->HybridModelZone(ZonePtr).Name = cAlphaArgs(1);               // Zone HybridModel name
+                    auto &hmZone = state.dataHybridModel->hybridModelZones(ZonePtr);
+                    hmZone.Name = cAlphaArgs(1);                                                        // Zone HybridModel name
                     state.dataHybridModel->FlagHybridModel_TM = Util::SameString(cAlphaArgs(3), "Yes"); // Calculate thermal mass option
                     state.dataHybridModel->FlagHybridModel_AI = Util::SameString(cAlphaArgs(4), "Yes"); // Calculate infiltration rate option
                     state.dataHybridModel->FlagHybridModel_PC = Util::SameString(cAlphaArgs(5), "Yes"); // Calculate people count option
 
                     // Pointers used to help decide which unknown parameter to solve
                     // Zone Air Infiltration Rate and Zone Internal Thermal Mass calculations cannot be performed simultaneously
-                    int TemperatureSchPtr = GetScheduleIndex(state, cAlphaArgs(6));
-                    int HumidityRatioSchPtr = GetScheduleIndex(state, cAlphaArgs(7));
-                    int CO2ConcentrationSchPtr = GetScheduleIndex(state, cAlphaArgs(8));
+                    Sched::Schedule *temperatureSched = Sched::GetSchedule(state, cAlphaArgs(6));
+                    Sched::Schedule *humidityRatioSched = Sched::GetSchedule(state, cAlphaArgs(7));
+                    Sched::Schedule *CO2ConcentrationSched = Sched::GetSchedule(state, cAlphaArgs(8));
 
                     // Not used for now
-                    int PeopleActivityLevelSchPtr = GetScheduleIndex(state, cAlphaArgs(9));
-                    int PeopleSensibleFractionSchPtr = GetScheduleIndex(state, cAlphaArgs(10));
-                    int PeopleRadiantFractionSchPtr = GetScheduleIndex(state, cAlphaArgs(11));
-                    int PeopleCO2GenRateSchPtr = GetScheduleIndex(state, cAlphaArgs(12));
+                    Sched::Schedule *peopleActivityLevelSched = Sched::GetSchedule(state, cAlphaArgs(9));
+                    Sched::Schedule *peopleSensibleFractionSched = Sched::GetSchedule(state, cAlphaArgs(10));
+                    Sched::Schedule *peopleRadiantFractionSched = Sched::GetSchedule(state, cAlphaArgs(11));
+                    Sched::Schedule *peopleCO2GenRateSched = Sched::GetSchedule(state, cAlphaArgs(12));
 
                     // Pointers used to help decide wheather to include system supply terms in the inverse algorithms
-                    int SupplyAirTemperatureSchPtr = GetScheduleIndex(state, cAlphaArgs(13));
-                    int SupplyAirMassFlowRateSchPtr = GetScheduleIndex(state, cAlphaArgs(14));
-                    int SupplyAirHumidityRatioSchPtr = GetScheduleIndex(state, cAlphaArgs(15));
-                    int SupplyAirCO2ConcentrationSchPtr = GetScheduleIndex(state, cAlphaArgs(16));
+                    Sched::Schedule *supplyAirTemperatureSched = Sched::GetSchedule(state, cAlphaArgs(13));
+                    Sched::Schedule *supplyAirMassFlowRateSched = Sched::GetSchedule(state, cAlphaArgs(14));
+                    Sched::Schedule *supplyAirHumidityRatioSched = Sched::GetSchedule(state, cAlphaArgs(15));
+                    Sched::Schedule *supplyAirCO2ConcentrationSched = Sched::GetSchedule(state, cAlphaArgs(16));
 
                     //  Note: Internal thermal mass can be calculated only with measured temperature.
-                    //                  Air infiltration rate can be calculated with either measured temperature, humifity ratio, or CO2
-                    //                  concentration. People count can be calculated with either measured temperature, humifity ratio, or CO2
+                    //                  Air infiltration rate can be calculated with either measured temperature, humidity ratio, or CO2
+                    //                  concentration. People count can be calculated with either measured temperature, humidity ratio, or CO2
                     //                  concentration.
 
                     // Initially set all flags to be false
-                    state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H = false;
-                    state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C = false;
+                    hmZone.InternalThermalMassCalc_T = false;
+                    hmZone.InfiltrationCalc_T = false;
+                    hmZone.InfiltrationCalc_H = false;
+                    hmZone.InfiltrationCalc_C = false;
+                    hmZone.PeopleCountCalc_T = false;
+                    hmZone.PeopleCountCalc_H = false;
+                    hmZone.PeopleCountCalc_C = false;
 
                     // Scenario 1: Only one unknown parameter to solve
                     // Scenario 1-1: To solve thermal mass
@@ -174,11 +172,11 @@ namespace HybridModel {
                             ErrorsFound = true;
                         }
 
-                        if (TemperatureSchPtr == 0) {
+                        if (temperatureSched == nullptr) {
                             ShowSevereError(state, format("Measured Zone Air Tempearture Schedule is not defined for: {}", CurrentModuleObject));
                             ErrorsFound = true;
                         } else {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T = true;
+                            hmZone.InternalThermalMassCalc_T = true;
                         }
                     }
 
@@ -189,9 +187,9 @@ namespace HybridModel {
                                             format("Field \"{}\" and \"{}\" cannot be both set to YES.", cAlphaFieldNames(4), cAlphaFieldNames(5)));
                             ErrorsFound = true;
                         }
-                        if (TemperatureSchPtr == 0 && HumidityRatioSchPtr == 0 && CO2ConcentrationSchPtr == 0) {
+                        if (temperatureSched == nullptr && humidityRatioSched == nullptr && CO2ConcentrationSched == nullptr) {
                             // Show fatal error if no measurement schedule is provided
-                            ShowSevereError(state, format("No measured envrionmental parameter is provided for: {}", CurrentModuleObject));
+                            ShowSevereError(state, format("No measured environmental parameter is provided for: {}", CurrentModuleObject));
                             ShowContinueError(state,
                                               format("One of the field \"{}\", \"{}\", or {}\" must be provided for the HybridModel:Zone.",
                                                      cAlphaFieldNames(6),
@@ -199,38 +197,38 @@ namespace HybridModel {
                                                      cAlphaFieldNames(8)));
                             ErrorsFound = true;
                         } else {
-                            if (TemperatureSchPtr > 0 && !state.dataHybridModel->FlagHybridModel_TM) {
+                            if (temperatureSched != nullptr && !state.dataHybridModel->FlagHybridModel_TM) {
                                 // Temperature schedule is provided, igonore humidity ratio and CO2 concentration schedules.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T = true;
-                                if (HumidityRatioSchPtr > 0) {
+                                hmZone.InfiltrationCalc_T = true;
+                                if (humidityRatioSched != nullptr) {
                                     ShowWarningError(state, format("Field \"{}\" is provided.", cAlphaFieldNames(6)));
                                     ShowContinueError(state, format("Field \"{}\" will not be used.", cAlphaFieldNames(7)));
                                 }
-                                if (CO2ConcentrationSchPtr > 0) {
+                                if (CO2ConcentrationSched != nullptr) {
                                     ShowWarningError(state, format("Field \"{}\" is provided.", cAlphaFieldNames(6)));
                                     ShowContinueError(state, format("Field \"{}\" will not be used.", cAlphaFieldNames(8)));
                                 }
                             }
-                            if (HumidityRatioSchPtr > 0 && TemperatureSchPtr == 0) {
+                            if (humidityRatioSched != nullptr && temperatureSched == nullptr) {
                                 // Humidity ratio schedule is provided, ignore CO2 concentration schedule.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H = true;
-                                if (CO2ConcentrationSchPtr > 0) {
+                                hmZone.InfiltrationCalc_H = true;
+                                if (CO2ConcentrationSched != nullptr) {
                                     ShowWarningError(state, format("Field \"{}\" is provided.", cAlphaFieldNames(7)));
                                     ShowContinueError(state, format("Field \"{}\" will not be used.", cAlphaFieldNames(8)));
                                 }
                             }
-                            if (CO2ConcentrationSchPtr > 0 && TemperatureSchPtr == 0 && HumidityRatioSchPtr == 0) {
+                            if (CO2ConcentrationSched != nullptr && temperatureSched == nullptr && humidityRatioSched == nullptr) {
                                 // Only CO2 concentration schedule is provided.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C = true;
+                                hmZone.InfiltrationCalc_C = true;
                             }
                         }
                     }
 
                     // Scenario 1-3: To solve people count
                     if (state.dataHybridModel->FlagHybridModel_PC) {
-                        if (TemperatureSchPtr == 0 && HumidityRatioSchPtr == 0 && CO2ConcentrationSchPtr == 0) {
+                        if (temperatureSched == nullptr && humidityRatioSched == nullptr && CO2ConcentrationSched == nullptr) {
                             // Show fatal error if no measurement schedule is provided
-                            ShowSevereError(state, format("No measured envrionmental parameter is provided for: {}", CurrentModuleObject));
+                            ShowSevereError(state, format("No measured environmental parameter is provided for: {}", CurrentModuleObject));
                             ShowContinueError(state,
                                               format("One of the field \"{}\", \"{}\", or {}\" must be provided for the HybridModel:Zone.",
                                                      cAlphaFieldNames(6),
@@ -238,143 +236,123 @@ namespace HybridModel {
                                                      cAlphaFieldNames(8)));
                             ErrorsFound = true;
                         } else {
-                            if (TemperatureSchPtr > 0 && !state.dataHybridModel->FlagHybridModel_TM) {
+                            if (temperatureSched != nullptr && !state.dataHybridModel->FlagHybridModel_TM) {
                                 // Temperature schedule is provided, igonore humidity ratio and CO2 concentration schedules.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T = true;
-                                if (HumidityRatioSchPtr > 0) {
+                                hmZone.PeopleCountCalc_T = true;
+                                if (humidityRatioSched != nullptr) {
                                     ShowWarningError(
                                         state,
-                                        "The meausured air humidity ratio schedule will not be used since measured air temperature is provided.");
+                                        "The measured air humidity ratio schedule will not be used since measured air temperature is provided.");
                                 }
-                                if (CO2ConcentrationSchPtr > 0) {
+                                if (CO2ConcentrationSched != nullptr) {
                                     ShowWarningError(
                                         state,
-                                        "The meausured air CO2 concentration schedule will not be used since measured air temperature is provided.");
+                                        "The measured air CO2 concentration schedule will not be used since measured air temperature is provided.");
                                 }
                             }
-                            if (HumidityRatioSchPtr > 0 && TemperatureSchPtr == 0) {
+                            if (humidityRatioSched != nullptr && temperatureSched == nullptr) {
                                 // Humidity ratio schedule is provided, ignore CO2 concentration schedule.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H = true;
-                                if (CO2ConcentrationSchPtr > 0) {
+                                hmZone.PeopleCountCalc_H = true;
+                                if (CO2ConcentrationSched != nullptr) {
                                     ShowWarningError(state,
-                                                     "The meausured air CO2 concentration schedule will not be used since measured air humidity "
+                                                     "The measured air CO2 concentration schedule will not be used since measured air humidity "
                                                      "ratio is provided.");
                                 }
                             }
-                            if (CO2ConcentrationSchPtr > 0 && TemperatureSchPtr == 0 && HumidityRatioSchPtr == 0) {
+                            if (CO2ConcentrationSched != nullptr && temperatureSched == nullptr && humidityRatioSched == nullptr) {
                                 // Only CO2 concentration schedule is provided.
-                                state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C = true;
+                                hmZone.PeopleCountCalc_C = true;
                             }
                         }
                     }
 
                     // Decide if system supply terms are valid to be included in the inverse solution
-                    if (SupplyAirTemperatureSchPtr > 0 && SupplyAirMassFlowRateSchPtr > 0 && SupplyAirHumidityRatioSchPtr) {
-                        if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T ||
-                            state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).IncludeSystemSupplyParameters = true;
+                    if (supplyAirTemperatureSched != nullptr && supplyAirMassFlowRateSched != nullptr && supplyAirHumidityRatioSched != nullptr) {
+                        if (hmZone.InfiltrationCalc_T || hmZone.PeopleCountCalc_T) {
+                            hmZone.IncludeSystemSupplyParameters = true;
                         } else {
                             ShowWarningError(state,
-                                             format("Field \"{}\", {}, and \"{}\" will not be used in the inverse balance euqation.",
+                                             format("Field \"{}\", {}, and \"{}\" will not be used in the inverse balance equation.",
                                                     cAlphaFieldNames(13),
                                                     cAlphaFieldNames(14),
                                                     cAlphaFieldNames(15)));
                         }
                     }
 
-                    if (SupplyAirHumidityRatioSchPtr && SupplyAirMassFlowRateSchPtr > 0) {
-                        if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H ||
-                            state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).IncludeSystemSupplyParameters = true;
+                    if (supplyAirHumidityRatioSched != nullptr && supplyAirMassFlowRateSched != nullptr) {
+                        if (hmZone.InfiltrationCalc_H || hmZone.PeopleCountCalc_H) {
+                            hmZone.IncludeSystemSupplyParameters = true;
                         } else {
                             ShowWarningError(state,
-                                             format("Field \"{}\" and \"{}\" will not be used in the inverse balance euqation.",
+                                             format("Field \"{}\" and \"{}\" will not be used in the inverse balance equation.",
                                                     cAlphaFieldNames(15),
                                                     cAlphaFieldNames(14)));
                         }
                     }
 
-                    if (SupplyAirCO2ConcentrationSchPtr > 0 && SupplyAirMassFlowRateSchPtr > 0) {
-                        if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C ||
-                            state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).IncludeSystemSupplyParameters = true;
+                    if (supplyAirCO2ConcentrationSched != nullptr && supplyAirMassFlowRateSched != nullptr) {
+                        if (hmZone.InfiltrationCalc_C || hmZone.PeopleCountCalc_C) {
+                            hmZone.IncludeSystemSupplyParameters = true;
                         } else {
                             ShowWarningError(state,
-                                             format("Field \"{}\" and \"{}\" will not be used in the inverse balance euqation.",
+                                             format("Field \"{}\" and \"{}\" will not be used in the inverse balance equation.",
                                                     cAlphaFieldNames(16),
                                                     cAlphaFieldNames(14)));
                         }
                     }
 
                     // Flags showing Hybrid Modeling settings
-                    state.dataHybridModel->FlagHybridModel = state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H ||
-                                                             state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C;
+                    state.dataHybridModel->FlagHybridModel = hmZone.InternalThermalMassCalc_T || hmZone.InfiltrationCalc_T ||
+                                                             hmZone.InfiltrationCalc_H || hmZone.InfiltrationCalc_C || hmZone.PeopleCountCalc_T ||
+                                                             hmZone.PeopleCountCalc_H || hmZone.PeopleCountCalc_C;
 
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T) {
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureSchedulePtr = GetScheduleIndex(state, cAlphaArgs(6));
+                    if (hmZone.InternalThermalMassCalc_T || hmZone.InfiltrationCalc_T || hmZone.PeopleCountCalc_T) {
+                        hmZone.measuredTempSched = temperatureSched;
                     }
 
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H) {
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredHumidityRatioSchedulePtr = GetScheduleIndex(state, cAlphaArgs(7));
+                    if (hmZone.InfiltrationCalc_H || hmZone.PeopleCountCalc_H) {
+                        hmZone.measuredHumRatSched = humidityRatioSched;
                     }
 
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C) {
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredCO2ConcentrationSchedulePtr =
-                            GetScheduleIndex(state, cAlphaArgs(8));
+                    if (hmZone.InfiltrationCalc_C || hmZone.PeopleCountCalc_C) {
+                        hmZone.measuredCO2ConcSched = CO2ConcentrationSched;
                     }
 
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).IncludeSystemSupplyParameters) {
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneSupplyAirTemperatureSchedulePtr = GetScheduleIndex(state, cAlphaArgs(13));
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneSupplyAirMassFlowRateSchedulePtr =
-                            GetScheduleIndex(state, cAlphaArgs(14));
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneSupplyAirHumidityRatioSchedulePtr =
-                            GetScheduleIndex(state, cAlphaArgs(15));
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneSupplyAirCO2ConcentrationSchedulePtr =
-                            GetScheduleIndex(state, cAlphaArgs(16));
+                    if (hmZone.IncludeSystemSupplyParameters) {
+                        hmZone.supplyAirTempSched = supplyAirTemperatureSched;
+                        hmZone.supplyAirMassFlowRateSched = supplyAirMassFlowRateSched;
+                        hmZone.supplyAirHumRatSched = supplyAirHumidityRatioSched;
+                        hmZone.supplyAirCO2ConcSched = supplyAirCO2ConcentrationSched;
                     }
 
                     // Get optional people related schedules
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C) {
-                        if (PeopleActivityLevelSchPtr > 0) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).ZonePeopleActivityLevelSchedulePtr =
-                                GetScheduleIndex(state, cAlphaArgs(9));
+                    if (hmZone.PeopleCountCalc_T || hmZone.PeopleCountCalc_H || hmZone.PeopleCountCalc_C) {
+                        if (peopleActivityLevelSched != nullptr) {
+                            hmZone.peopleActivityLevelSched = peopleActivityLevelSched;
                         } else {
                             ShowWarningError(
                                 state,
                                 format("Field \"{}\": default people activity level is not provided, default value of 130W/person will be used.",
                                        cAlphaFieldNames(9)));
                         }
-                        if (PeopleSensibleFractionSchPtr > 0) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).ZonePeopleSensibleFractionSchedulePtr =
-                                GetScheduleIndex(state, cAlphaArgs(10));
+                        if (peopleSensibleFractionSched != nullptr) {
+                            hmZone.peopleSensibleFracSched = peopleSensibleFractionSched;
                         } else {
                             ShowWarningError(
                                 state,
                                 format("Field \"{}\": default people sensible heat rate is not provided, default value of 0.6 will be used.",
                                        cAlphaFieldNames(10)));
                         }
-                        if (PeopleRadiantFractionSchPtr > 0) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).ZonePeopleRadiationFractionSchedulePtr =
-                                GetScheduleIndex(state, cAlphaArgs(11));
+                        if (peopleRadiantFractionSched != nullptr) {
+                            hmZone.peopleRadiantFracSched = peopleRadiantFractionSched;
                         } else {
                             ShowWarningError(state,
                                              format("Field \"{}\": default people radiant heat portion (of sensible heat) is not provided, default "
                                                     "value of 0.7 will be used.",
                                                     cAlphaFieldNames(11)));
                         }
-                        if (PeopleCO2GenRateSchPtr > 0) {
-                            state.dataHybridModel->HybridModelZone(ZonePtr).ZonePeopleCO2GenRateSchedulePtr = GetScheduleIndex(state, cAlphaArgs(12));
+                        if (peopleCO2GenRateSched != nullptr) {
+                            hmZone.peopleCO2GenRateSched = peopleCO2GenRateSched;
                         } else {
                             ShowWarningError(state,
                                              format("Field \"{}\": default people CO2 generation rate is not provided, default value of 0.0000000382 "
@@ -385,17 +363,17 @@ namespace HybridModel {
 
                     if (state.dataHybridModel->FlagHybridModel) {
                         // prepare start and end date for Hybrid Modeling
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureStartMonth = rNumericArgs(1);
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureStartDate = rNumericArgs(2);
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureEndMonth = rNumericArgs(3);
-                        state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureEndDate = rNumericArgs(4);
+                        hmZone.measuredTempStartMonth = rNumericArgs(1);
+                        hmZone.measuredTempStartDate = rNumericArgs(2);
+                        hmZone.measuredTempEndMonth = rNumericArgs(3);
+                        hmZone.measuredTempEndDate = rNumericArgs(4);
                         {
                             int const HMDayArr[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
 
-                            int HybridModelStartMonth = state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureStartMonth;
-                            int HybridModelStartDate = state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureStartDate;
-                            int HybridModelEndMonth = state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureEndMonth;
-                            int HybridModelEndDate = state.dataHybridModel->HybridModelZone(ZonePtr).ZoneMeasuredTemperatureEndDate;
+                            int HybridModelStartMonth = hmZone.measuredTempStartMonth;
+                            int HybridModelStartDate = hmZone.measuredTempStartDate;
+                            int HybridModelEndMonth = hmZone.measuredTempEndMonth;
+                            int HybridModelEndDate = hmZone.measuredTempEndDate;
 
                             int HMStartDay = 0;
                             int HMEndDay = 0;
@@ -407,15 +385,13 @@ namespace HybridModel {
                                 HMEndDay = HMDayArr[HybridModelEndMonth - 1];
                             }
 
-                            state.dataHybridModel->HybridModelZone(ZonePtr).HybridStartDayOfYear = HMStartDay + HybridModelStartDate;
-                            state.dataHybridModel->HybridModelZone(ZonePtr).HybridEndDayOfYear = HMEndDay + HybridModelEndDate;
+                            hmZone.HybridStartDayOfYear = HMStartDay + HybridModelStartDate;
+                            hmZone.HybridEndDayOfYear = HMEndDay + HybridModelEndDate;
                         }
                     }
 
                     // Output variable
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_H ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_C) {
+                    if (hmZone.InfiltrationCalc_T || hmZone.InfiltrationCalc_H || hmZone.InfiltrationCalc_C) {
                         SetupOutputVariable(state,
                                             "Zone Infiltration Hybrid Model Air Change Rate",
                                             Constant::Units::ach,
@@ -431,9 +407,7 @@ namespace HybridModel {
                                             OutputProcessor::StoreType::Average,
                                             state.dataHeatBal->Zone(ZonePtr).Name);
                     }
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_T ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_H ||
-                        state.dataHybridModel->HybridModelZone(ZonePtr).PeopleCountCalc_C) {
+                    if (hmZone.PeopleCountCalc_T || hmZone.PeopleCountCalc_H || hmZone.PeopleCountCalc_C) {
                         SetupOutputVariable(state,
                                             "Zone Hybrid Model People Count",
                                             Constant::Units::None,
@@ -442,7 +416,7 @@ namespace HybridModel {
                                             OutputProcessor::StoreType::Average,
                                             state.dataHeatBal->Zone(ZonePtr).Name);
                     }
-                    if (state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T) {
+                    if (hmZone.InternalThermalMassCalc_T) {
                         SetupOutputVariable(state,
                                             "Zone Hybrid Model Thermal Mass Multiplier",
                                             Constant::Units::None,
@@ -450,6 +424,12 @@ namespace HybridModel {
                                             OutputProcessor::TimeStepType::Zone,
                                             OutputProcessor::StoreType::Average,
                                             state.dataHeatBal->Zone(ZonePtr).Name);
+                    }
+
+                    // ZoneAirMassFlowConservation should not be activated during the Hybrid Modeling infiltration calculations
+                    if (hmZone.InfiltrationCalc_T && state.dataHeatBal->ZoneAirMassFlow.EnforceZoneMassBalance) {
+                        state.dataHeatBal->ZoneAirMassFlow.EnforceZoneMassBalance = false;
+                        ShowWarningError(state, "ZoneAirMassFlowConservation is deactivated when Hybrid Modeling is performed.");
                     }
                 } else {
                     ShowSevereError(
@@ -459,17 +439,11 @@ namespace HybridModel {
                 }
             }
 
-            // ZoneAirMassFlowConservation should not be activated during the Hybrid Modeling infiltration calculations
-            if (state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T && state.dataHeatBal->ZoneAirMassFlow.EnforceZoneMassBalance) {
-                state.dataHeatBal->ZoneAirMassFlow.EnforceZoneMassBalance = false;
-                ShowWarningError(state, "ZoneAirMassFlowConservation is deactivated when Hybrid Modeling is performed.");
-            }
-
             // RoomAirModelType should be Mixing if Hybrid Modeling is performed for the zone
             if (state.dataHybridModel->FlagHybridModel) {
-                for (ZonePtr = 1; ZonePtr <= state.dataGlobal->NumOfZones; ZonePtr++) {
-                    if ((state.dataHybridModel->HybridModelZone(ZonePtr).InternalThermalMassCalc_T ||
-                         state.dataHybridModel->HybridModelZone(ZonePtr).InfiltrationCalc_T) &&
+                for (int ZonePtr = 1; ZonePtr <= state.dataGlobal->NumOfZones; ZonePtr++) {
+                    auto &hmZone = state.dataHybridModel->hybridModelZones(ZonePtr);
+                    if ((hmZone.InternalThermalMassCalc_T || hmZone.InfiltrationCalc_T) &&
                         (state.dataRoomAir->AirModel(ZonePtr).AirModel != RoomAir::RoomAirModel::Mixing)) {
                         state.dataRoomAir->AirModel(ZonePtr).AirModel = RoomAir::RoomAirModel::Mixing;
                         ShowWarningError(state, "Room Air Model Type should be Mixing if Hybrid Modeling is performed for the zone.");

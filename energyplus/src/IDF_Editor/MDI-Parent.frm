@@ -5,8 +5,8 @@ Begin VB.MDIForm parentMDI
    BackColor       =   &H8000000C&
    Caption         =   "IDF Editor"
    ClientHeight    =   8460
-   ClientLeft      =   165
-   ClientTop       =   810
+   ClientLeft      =   225
+   ClientTop       =   870
    ClientWidth     =   13065
    Icon            =   "MDI-Parent.frx":0000
    LinkTopic       =   "MDIForm1"
@@ -138,6 +138,12 @@ Begin VB.MDIForm parentMDI
       End
       Begin VB.Menu mnuHelpDiv2 
          Caption         =   "-"
+      End
+      Begin VB.Menu mnuHelpQuickStart 
+         Caption         =   "EnergyPlus QuickStart"
+      End
+      Begin VB.Menu mnuHelpEssentials 
+         Caption         =   "EnergyPlus Essentials"
       End
       Begin VB.Menu mnuHelpGettingStarted 
          Caption         =   "EnergyPlus Getting Started"
@@ -547,10 +553,12 @@ End Sub
 
 ' References to EnergyPlus Documentation
 Private Sub mnuHelpAcknowledge_Click()
-Call startAcrobat("Acknowledgments.pdf")
+' Call startAcrobat("Acknowledgments.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/acknowledgments/acknowledgments.html")
 End Sub
 Private Sub mnuHelpAuxProgs_Click()
-Call startAcrobat("AuxiliaryPrograms.pdf")
+'Call startAcrobat("AuxiliaryPrograms.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/auxiliary-programs/auxiliary-programs.html")
 End Sub
 Private Sub mnuHelpEngRef_Click()
 Call startAcrobat("EngineeringReference.pdf")
@@ -559,6 +567,8 @@ Private Sub mnuHelpEPDocs_Click()
 'Call startAcrobat("EPlusMainMenu.pdf")
 Call viewWebPage(documentationPath + "index.html")
 End Sub
+
+
 Private Sub mnuHelpGettingStarted_Click()
 Call startAcrobat("GettingStarted.pdf")
 End Sub
@@ -572,13 +582,22 @@ Private Sub mnuHelpCompliance_Click()
 Call startAcrobat("Using_EnergyPlus_for_Compliance.pdf")
 End Sub
 Private Sub mnuHelpEMSguide_Click()
-Call startAcrobat("EMS_Application_Guide.pdf")
+'Call startAcrobat("EMS_Application_Guide.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/ems-application-guide/ems-application-guide.html")
 End Sub
 Private Sub mnuHelpExtInterface_Click()
 Call startAcrobat("ExternalInterfaces_Application_Guide.pdf")
 End Sub
+Private Sub mnuHelpQuickStart_Click()
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/quick_start/quick_start.html")
+End Sub
+Private Sub mnuHelpEssentials_Click()
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/essentials/essentials.html")
+End Sub
+
 Private Sub mnuHelpTips_Click()
-Call startAcrobat("Tips_and_Tricks_Using_EnergyPlus.pdf")
+'Call startAcrobat("Tips_and_Tricks_Using_EnergyPlus.pdf")
+Call viewWebPage("https://energyplus.readthedocs.io/en/latest/tips_and_tricks/tips_and_tricks.html")
 End Sub
 Private Sub mnuHelpWhatsNew_Click()
 frmWhatsNew.Show

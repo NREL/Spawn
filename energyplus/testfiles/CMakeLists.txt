@@ -891,6 +891,15 @@ if (BUILD_FORTRAN)
             2)
     add_simulation_test(
             IDF_FILE
+            HVACTemplate-5ZonePTAC-DOAS-TwoHX.idf
+            EPW_FILE
+            USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw
+            ENERGYPLUS_FLAGS
+            -x
+            COST
+            2)
+    add_simulation_test(
+            IDF_FILE
             HVACTemplate-5ZonePTAC.idf
             EPW_FILE
             USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw

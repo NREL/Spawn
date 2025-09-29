@@ -10,7 +10,7 @@
 ! Plant:    None.
 ! Modified:
 
-  Version,24.2;
+  Version,25.1;
 
   Site:Location,
     UNKNOWN,                 !- Name
@@ -1396,7 +1396,7 @@
 
   Output:Variable,*,Other Equipment Convective Heating Energy,timestep;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,timestep;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,timestep;
 
   Output:Variable,*,Surface Outside Face Incident Solar Radiation Rate per Area,timestep;
 

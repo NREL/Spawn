@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -396,16 +396,13 @@ TEST_F(EnergyPlusFixture, HeatBalanceIntRadExchange_UpdateMovableInsulationFlagT
     auto *mat = new Material::MaterialBase;
     state->dataMaterial->materials.push_back(mat);
     state->dataSurface->Surface.allocate(1);
-    state->dataSurface->SurfMaterialMovInsulInt.allocate(1);
-    state->dataHeatBalSurf->SurfMovInsulIntPresent.allocate(1);
-    state->dataHeatBalSurf->SurfMovInsulIntPresentPrevTS.allocate(1);
-    state->dataHeatBalSurf->SurfMovInsulIndexList.push_back(1);
+    state->dataSurface->intMovInsuls.allocate(1);
 
     SurfNum = 1;
-    state->dataHeatBalSurf->SurfMovInsulIntPresent(1) = false;
-    state->dataHeatBalSurf->SurfMovInsulIntPresentPrevTS(1) = false;
+    state->dataSurface->intMovInsuls(1).present = false;
+    state->dataSurface->intMovInsuls(1).presentPrevTS = false;
     state->dataSurface->Surface(1).Construction = 1;
-    state->dataSurface->SurfMaterialMovInsulInt(1) = 1;
+    state->dataSurface->intMovInsuls(1).matNum = 1;
 
     state->dataConstruction->Construct(1).InsideAbsorpThermal = 0.9;
     mat->AbsorpThermal = 0.5;
@@ -415,19 +412,19 @@ TEST_F(EnergyPlusFixture, HeatBalanceIntRadExchange_UpdateMovableInsulationFlagT
     // Test 1: Movable insulation present but wasn't in previous time step, also movable insulation emissivity different than base construction
     //         This should result in a true value from the algorithm which will cause interior radiant exchange matrices to be recalculated
     HeatBalanceIntRadExchange::UpdateMovableInsulationFlag(*state, DidMIChange, SurfNum);
-    EXPECT_TRUE(!DidMIChange);
+    EXPECT_FALSE(DidMIChange);
 
     // Test 2: Movable insulation present and was also present in previous time step.  This should result in a false value since nothing has changed.
-    state->dataHeatBalSurf->SurfMovInsulIntPresentPrevTS(1) = true;
+    state->dataSurface->intMovInsuls(1).presentPrevTS = true;
     HeatBalanceIntRadExchange::UpdateMovableInsulationFlag(*state, DidMIChange, SurfNum);
     EXPECT_TRUE(DidMIChange);
 
     // Test 2: Movable insulation present but wasn't in previous time step.  However, the emissivity of the movable insulation and that of the
     // 		   construction are the same so nothing has actually changed.  This should result in a false value.
-    state->dataHeatBalSurf->SurfMovInsulIntPresentPrevTS(1) = true;
+    state->dataSurface->intMovInsuls(1).presentPrevTS = true;
     mat->AbsorpThermal = state->dataConstruction->Construct(1).InsideAbsorpThermal;
     HeatBalanceIntRadExchange::UpdateMovableInsulationFlag(*state, DidMIChange, SurfNum);
-    EXPECT_TRUE(!DidMIChange);
+    EXPECT_FALSE(DidMIChange);
 }
 
 TEST_F(EnergyPlusFixture, HeatBalanceIntRadExchange_AlignInputViewFactorsTest)

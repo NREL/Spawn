@@ -1,4 +1,4 @@
-# EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University
+# EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University
 # of Illinois, The Regents of the University of California, through Lawrence
 # Berkeley National Laboratory (subject to receipt of any required approvals
 # from the U.S. Dept. of Energy), Oak Ridge National Laboratory, managed by UT-
@@ -83,7 +83,7 @@ def get_cmake_install_prefix_for_generator(build_dir: Path, generator: Generator
         return None
     cmake_install_root = next(x for x in cpack_dir.glob("*") if x.is_dir() and x.suffix != ".app")
 
-    cmake_install_prefix = next(cmake_install_root.glob("**/energyplus-24.2.0")).parent
+    cmake_install_prefix = next(cmake_install_root.glob("**/energyplus")).parent
     return cmake_install_prefix
 
 

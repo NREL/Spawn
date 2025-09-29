@@ -70,7 +70,7 @@
 ! Utility Tariffs:                None
 !
 
-  Version,24.2;
+  Version,25.1;
 
   AirLoopHVAC:UnitaryHeatCool,
     FURNACE_PACU_CAV:1_Unitary_Package,  !- Name
@@ -5812,5 +5812,5 @@
 
   Output:Variable,FURNACE_PACU_CAV:1_OADirect Evap Cooler-FURNACE_PACU_CAV:1_OAMixing BoxNode,System Node Setpoint Temperature,hourly;
 
-  Output:Variable,*,Zone Infiltration Air Change Rate,hourly;
+  Output:Variable,*,Zone Infiltration Current Density Air Change Rate,hourly;
 

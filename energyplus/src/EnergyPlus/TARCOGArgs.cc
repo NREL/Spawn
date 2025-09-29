@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -421,7 +421,7 @@ int ArgCheck(EnergyPlusData &state,
     for (int i = 1; i <= nlayer; ++i) {
         if (scon(i) <= 0.0) {
             ArgCheck = 26;
-            ErrorMessage = format("Layer {:3} has conductivity whcih is less or equal to zero.", i);
+            ErrorMessage = format("Layer {:3} has conductivity which is less or equal to zero.", i);
             return ArgCheck;
         }
 
@@ -491,7 +491,7 @@ int ArgCheck(EnergyPlusData &state,
         if (presure(i) < 0.0) {
             ArgCheck = 27;
             if ((i == 1) || (i == (nlayer + 1))) {
-                ErrorMessage = "One of enviroments (inside or outside) has pressure which is less than zero.";
+                ErrorMessage = "One of environments (inside or outside) has pressure which is less than zero.";
             } else {
                 ErrorMessage = format("One of gaps has pressure which is less than zero. Gap #{:3}", i);
             }

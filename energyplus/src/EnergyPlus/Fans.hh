@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -130,7 +130,7 @@ namespace Fans {
 
         std::string endUseSubcategoryName;
 
-        int availSchedNum = 0; // Pointer to the availability schedule
+        Sched::Schedule *availSched = nullptr; // Pointer to the availability schedule
         int inletNodeNum = 0;
         int outletNodeNum = 0;
         int airLoopNum = 0;
@@ -293,10 +293,10 @@ namespace Fans {
         Real64 vfdEff = 0.0;                         // VFD efficiency (electrical)
         Real64 vfdInputPower = 0.0;                  // VFD input power for fan being Simulated [W]
         // zone exhaust fan
-        int flowFracSchedNum = 0;                                      // schedule index flow rate modifier schedule
+        Sched::Schedule *flowFracSched = nullptr;                      // schedule index flow rate modifier schedule
         AvailManagerMode availManagerMode = AvailManagerMode::Invalid; // mode for how exhaust fan should react to availability managers
-        int minTempLimitSchedNum = 0;                                  // schedule index minimum temperature limit
-        int balancedFractSchedNum = 0;                                 // schedule index portion recirculated
+        Sched::Schedule *minTempLimitSched = nullptr;                  // schedule index minimum temperature limit
+        Sched::Schedule *balancedFractSched = nullptr;                 // schedule index portion recirculated
         Real64 unbalancedOutletMassFlowRate = 0.0;
         Real64 balancedOutletMassFlowRate = 0.0;
         Real64 designPointFEI = 0.0; // Fan Energy Index for the fan at the design operating point
@@ -454,6 +454,10 @@ struct FansData : BaseGlobalStruct
 
     Array1D<Fans::FanBase *> fans;
     std::map<std::string, int> fanMap;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

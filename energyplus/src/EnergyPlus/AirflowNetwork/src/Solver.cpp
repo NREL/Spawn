@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -56,7 +56,7 @@
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array2D.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <AirflowNetwork/Elements.hpp>
@@ -144,8 +144,6 @@ namespace AirflowNetwork {
     using Psychrometrics::PsyCpAirFnW;
     using Psychrometrics::PsyHFnTdbW;
     using Psychrometrics::PsyRhoAirFnPbTdbW;
-    using ScheduleManager::GetCurrentScheduleValue;
-    using ScheduleManager::GetScheduleIndex;
 
     Solver::Solver(EnergyPlusData &state) : m_state(state), properties(state)
     {
@@ -1879,8 +1877,8 @@ namespace AirflowNetwork {
                 }
                 if (!lAlphaBlanks(5)) {
                     OccupantVentilationControl(i).OpeningProbSchName = Alphas(5); // a schedule name for opening probability
-                    OccupantVentilationControl(i).OpeningProbSchNum = GetScheduleIndex(m_state, OccupantVentilationControl(i).OpeningProbSchName);
-                    if (OccupantVentilationControl(i).OpeningProbSchNum == 0) {
+                    OccupantVentilationControl(i).openingProbSched = Sched::GetSchedule(m_state, OccupantVentilationControl(i).OpeningProbSchName);
+                    if (OccupantVentilationControl(i).openingProbSched == nullptr) {
                         ShowSevereError(m_state,
                                         format(RoutineName) + CurrentModuleObject + " object, " + cAlphaFields(5) +
                                             " not found = " + OccupantVentilationControl(i).OpeningProbSchName);
@@ -1890,8 +1888,8 @@ namespace AirflowNetwork {
                 }
                 if (!lAlphaBlanks(6)) {
                     OccupantVentilationControl(i).ClosingProbSchName = Alphas(6); // a schedule name for closing probability
-                    OccupantVentilationControl(i).ClosingProbSchNum = GetScheduleIndex(m_state, OccupantVentilationControl(i).ClosingProbSchName);
-                    if (OccupantVentilationControl(i).OpeningProbSchNum == 0) {
+                    OccupantVentilationControl(i).closingProbSched = Sched::GetSchedule(m_state, OccupantVentilationControl(i).ClosingProbSchName);
+                    if (OccupantVentilationControl(i).closingProbSched == nullptr) {
                         ShowSevereError(m_state,
                                         format(RoutineName) + CurrentModuleObject + " object, " + cAlphaFields(6) +
                                             " not found = " + OccupantVentilationControl(i).ClosingProbSchName);
@@ -2301,12 +2299,15 @@ namespace AirflowNetwork {
                                                                            lAlphaBlanks,
                                                                            cAlphaFields,
                                                                            cNumericFields);
+
+                ErrorObjectHeader eoh{RoutineName, CurrentModuleObject, Alphas(1)};
+
                 MultizoneZoneData(i).ZoneName = Alphas(1);                          // Name of Associated EnergyPlus Thermal Zone
                 if (!lAlphaBlanks(2)) MultizoneZoneData(i).VentControl = Alphas(2); // Ventilation Control Mode: "Temperature", "Enthalpy",
                 // "ASHRAE55ADAPTIVE", "CEN15251AdaptiveComfort,
                 // "Constant", or "NoVent"
-                MultizoneZoneData(i).VentSchName = Alphas(3); // Name of ventilation temperature control schedule
-                MultizoneZoneData(i).OpenFactor = Numbers(1); // Limit Value on Multiplier for Modulating Venting Open Factor,
+                MultizoneZoneData(i).VentTempControlSchName = Alphas(3); // Name of ventilation temperature control schedule
+                MultizoneZoneData(i).OpenFactor = Numbers(1);            // Limit Value on Multiplier for Modulating Venting Open Factor,
                 // Not applicable if Vent Control Mode = CONSTANT or NOVENT
                 MultizoneZoneData(i).LowValueTemp = Numbers(2); // Lower Value on Inside/Outside Temperature Difference
                 // for Modulating the Venting Open Factor with temp control
@@ -2342,19 +2343,15 @@ namespace AirflowNetwork {
 
                 if (MultizoneZoneData(i).VentCtrNum < NumOfVentCtrTypes) {
                     if (NumAlphas >= 4 && (!lAlphaBlanks(4))) {
-                        MultizoneZoneData(i).VentingSchName = Alphas(4);
-                        MultizoneZoneData(i).VentingSchNum = GetScheduleIndex(m_state, MultizoneZoneData(i).VentingSchName);
-                        if (MultizoneZoneData(i).VentingSchNum == 0) {
-                            ShowSevereError(m_state,
-                                            format(RoutineName) + CurrentModuleObject + " object, " + cAlphaFields(4) +
-                                                " not found = " + MultizoneZoneData(i).VentingSchName);
-                            ShowContinueError(m_state, "..for specified " + cAlphaFields(1) + " = " + Alphas(1));
+                        MultizoneZoneData(i).VentAvailSchName = Alphas(4);
+                        if ((MultizoneZoneData(i).ventAvailSched = Sched::GetSchedule(m_state, MultizoneZoneData(i).VentAvailSchName)) == nullptr) {
+                            ShowSevereItemNotFound(m_state, eoh, cAlphaFields(4), Alphas(4));
                             ErrorsFound = true;
                         }
                     }
                 } else {
-                    MultizoneZoneData(i).VentingSchName = std::string();
-                    MultizoneZoneData(i).VentingSchNum = 0;
+                    MultizoneZoneData(i).VentAvailSchName = std::string();
+                    MultizoneZoneData(i).ventAvailSched = Sched::GetScheduleAlwaysOn(m_state);
                 }
             }
         } else {
@@ -2368,10 +2365,11 @@ namespace AirflowNetwork {
         // ==> Zone data validation
         for (int i = 1; i <= AirflowNetworkNumOfZones; ++i) {
             // Zone name validation
+            ErrorObjectHeader eoh{RoutineName, CurrentModuleObject, MultizoneZoneData(i).ZoneName};
+
             MultizoneZoneData(i).ZoneNum = Util::FindItemInList(MultizoneZoneData(i).ZoneName, Zone);
             if (MultizoneZoneData(i).ZoneNum == 0) {
-                ShowSevereError(m_state, format(RoutineName) + CurrentModuleObject + " object, invalid " + cAlphaFields(1) + " given.");
-                ShowContinueError(m_state, "..invalid " + cAlphaFields(1) + " = \"" + MultizoneZoneData(i).ZoneName + "\"");
+                ShowSevereItemNotFound(m_state, eoh, "Zone Name", MultizoneZoneData(i).ZoneName);
                 ErrorsFound = true;
             } else {
                 AirflowNetworkZoneFlag(MultizoneZoneData(i).ZoneNum) = true;
@@ -2385,41 +2383,25 @@ namespace AirflowNetwork {
                 ShowContinueError(m_state, ".. in " + cAlphaFields(1) + " = \"" + MultizoneZoneData(i).ZoneName + "\"");
                 ErrorsFound = true;
             }
-            if (Util::SameString(MultizoneZoneData(i).VentControl, "Temperature") || Util::SameString(MultizoneZoneData(i).VentControl, "Enthalpy")) {
+
+            if (Util::SameString(MultizoneZoneData(i).VentControl, "Temperature") ||
+                Util::SameString(MultizoneZoneData(i).VentControl, "Enthalpy")) { // Already converted this to an enum, why compare strings?
                 // .or. &
                 // Util::SameString(MultizoneZoneData(i)%VentControl,'ASHRAE55Adaptive') .or. &
                 // Util::SameString(MultizoneZoneData(i)%VentControl,'CEN15251Adaptive')) then
-                MultizoneZoneData(i).VentSchNum = GetScheduleIndex(m_state, MultizoneZoneData(i).VentSchName);
-                if (MultizoneZoneData(i).VentSchName == std::string()) {
-                    ShowSevereError(m_state,
-                                    format(RoutineName) + CurrentModuleObject + " object, No " + cAlphaFields(3) +
-                                        " was found, but is required when " + cAlphaFields(2) + " is Temperature or Enthalpy.");
-                    ShowContinueError(m_state,
-                                      "..for " + cAlphaFields(1) + " = \"" + MultizoneZoneData(i).ZoneName + "\", with " + cAlphaFields(2) + " = \"" +
-                                          MultizoneZoneData(i).VentControl + "\"");
+                if (MultizoneZoneData(i).VentTempControlSchName.empty()) {
+                    ShowSevereEmptyField(m_state, eoh, cAlphaFields(3), cAlphaFields(2), Alphas(2));
                     ErrorsFound = true;
-                } else if (MultizoneZoneData(i).VentSchNum == 0) {
-                    ShowSevereError(m_state,
-                                    format(RoutineName) + CurrentModuleObject + " object, invalid " + cAlphaFields(3) + ", required when " +
-                                        cAlphaFields(2) + " is Temperature or Enthalpy.");
-                    ShowContinueError(m_state, ".." + cAlphaFields(3) + " in error = " + MultizoneZoneData(i).VentSchName);
-                    ShowContinueError(m_state,
-                                      "..for " + cAlphaFields(1) + " = \"" + MultizoneZoneData(i).ZoneName + "\", with " + cAlphaFields(2) + " = \"" +
-                                          MultizoneZoneData(i).VentControl + "\"");
+                } else if ((MultizoneZoneData(i).ventTempControlSched = Sched::GetSchedule(m_state, MultizoneZoneData(i).VentTempControlSchName)) ==
+                           nullptr) {
+                    ShowSevereItemNotFound(m_state, eoh, cAlphaFields(3), Alphas(3));
                     ErrorsFound = true;
                 }
             } else {
-                MultizoneZoneData(i).VentSchNum = GetScheduleIndex(m_state, MultizoneZoneData(i).VentSchName);
-                if (MultizoneZoneData(i).VentSchNum > 0) {
-                    ShowWarningError(m_state,
-                                     format(RoutineName) + CurrentModuleObject + " object, " + cAlphaFields(3) + " not required, when " +
-                                         cAlphaFields(2) + " is neither Temperature nor Enthalpy.");
-                    ShowContinueError(m_state, ".." + cAlphaFields(3) + " specified = " + MultizoneZoneData(i).VentSchName);
-                    ShowContinueError(m_state,
-                                      "..for " + cAlphaFields(1) + " = \"" + MultizoneZoneData(i).ZoneName + "\", with " + cAlphaFields(2) + " = \"" +
-                                          MultizoneZoneData(i).VentControl + "\"");
-                    MultizoneZoneData(i).VentSchNum = 0;
-                    MultizoneZoneData(i).VentSchName = std::string();
+                MultizoneZoneData(i).ventTempControlSched = nullptr;
+                if (!MultizoneZoneData(i).VentTempControlSchName.empty()) {
+                    ShowWarningNonEmptyField(m_state, eoh, cAlphaFields(3), cAlphaFields(2), Alphas(2));
+                    MultizoneZoneData(i).VentTempControlSchName = std::string();
                 }
             }
             if (MultizoneZoneData(i).OpenFactor > 1.0 || MultizoneZoneData(i).OpenFactor < 0.0) {
@@ -2696,7 +2678,7 @@ namespace AirflowNetwork {
                     //   or "ADJACENTENTHALPY"
                     if (!lAlphaBlanks(4)) MultizoneSurfaceData(i).VentControl = Alphas(4);
                     // Name of ventilation temperature control schedule
-                    if (!lAlphaBlanks(5)) MultizoneSurfaceData(i).VentSchName = Alphas(5);
+                    if (!lAlphaBlanks(5)) MultizoneSurfaceData(i).VentTempControlSchName = Alphas(5);
                     {
                         // This SELECT_CASE_var will go on input refactor, no need to fix
                         auto const SELECT_CASE_var(Util::makeUPPER(MultizoneSurfaceData(i).VentControl));
@@ -2747,7 +2729,7 @@ namespace AirflowNetwork {
                 if (MultizoneSurfaceData(i).VentSurfCtrNum < 4 || MultizoneSurfaceData(i).VentSurfCtrNum == VentControlType::AdjTemp ||
                     MultizoneSurfaceData(i).VentSurfCtrNum == VentControlType::AdjEnth) {
                     if (!lAlphaBlanks(6)) {
-                        MultizoneSurfaceData(i).VentingSchName = Alphas(6); // Name of ventilation availability schedule
+                        MultizoneSurfaceData(i).VentAvailSchName = Alphas(6); // Name of ventilation availability schedule
                     }
                 }
                 if (!lAlphaBlanks(7)) {
@@ -3190,7 +3172,10 @@ namespace AirflowNetwork {
         CurrentModuleObject = "AirflowNetwork:MultiZone:Surface";
         for (int i = 1; i <= AirflowNetworkNumOfSurfaces; ++i) {
             if (MultizoneSurfaceData(i).SurfNum == 0) continue;
-            bool has_Opening{false};
+            bool has_Opening{false}; // Why use array constructor?
+
+            ErrorObjectHeader eoh{RoutineName, CurrentModuleObject, MultizoneSurfaceData(i).SurfName};
+
             // This is terrible, should not do it this way
             auto afe = elements.find(MultizoneSurfaceData(i).OpeningName);
             if (afe != elements.end()) {
@@ -3215,42 +3200,29 @@ namespace AirflowNetwork {
                     MultizoneSurfaceData(i).VentSurfCtrNum = VentControlType::Const;
                     MultizoneSurfaceData(i).IndVentControl = true;
                 }
-                if (!MultizoneSurfaceData(i).VentingSchName.empty()) {
-                    MultizoneSurfaceData(i).VentingSchNum = GetScheduleIndex(m_state, MultizoneSurfaceData(i).VentingSchName);
-                    if (MultizoneSurfaceData(i).VentingSchNum == 0) {
-                        ShowSevereError(
-                            m_state, format(RoutineName) + CurrentModuleObject + "=\"" + MultizoneSurfaceData(i).SurfName + "\", invalid schedule.");
-                        ShowContinueError(m_state, "Venting Schedule not found=\"" + MultizoneSurfaceData(i).VentingSchName + "\".");
-                        ErrorsFound = true;
-                    } else if (m_state.dataSurface->Surface(MultizoneSurfaceData(i).SurfNum).IsAirBoundarySurf) {
-                        ShowWarningError(m_state,
-                                         format(RoutineName) + CurrentModuleObject + "=\"" + MultizoneSurfaceData(i).SurfName +
-                                             "\" is an air boundary surface.");
-                        ShowContinueError(m_state, "Venting Availability Schedule will be ignored, venting is always available.");
-                        MultizoneSurfaceData(i).VentingSchName = "";
-                        MultizoneSurfaceData(i).VentingSchNum = 0;
-                    }
-                } else {
-                    MultizoneSurfaceData(i).VentingSchName = "";
-                    MultizoneSurfaceData(i).VentingSchNum = 0;
+
+                if (MultizoneSurfaceData(i).VentAvailSchName.empty()) {
+                    MultizoneSurfaceData(i).ventAvailSched = Sched::GetScheduleAlwaysOn(m_state);
+                } else if ((MultizoneSurfaceData(i).ventAvailSched = Sched::GetSchedule(m_state, MultizoneSurfaceData(i).VentAvailSchName)) ==
+                           nullptr) {
+                    ShowSevereItemNotFound(m_state, eoh, "Venting Schedule", MultizoneSurfaceData(i).VentAvailSchName);
+                    ErrorsFound = true;
+                } else if (m_state.dataSurface->Surface(MultizoneSurfaceData(i).SurfNum).IsAirBoundarySurf) {
+                    ShowWarningNonEmptyField(m_state, eoh, "Venting Availbility Schedule");
+                    ShowContinueError(m_state, "Venting is always available for air-boundary surfaces.");
+                    MultizoneSurfaceData(i).ventAvailSched = Sched::GetScheduleAlwaysOn(m_state);
+                    MultizoneSurfaceData(i).VentAvailSchName = "";
                 }
+
                 switch (MultizoneSurfaceData(i).VentSurfCtrNum) {
                 case VentControlType::Temp:
                 case VentControlType::AdjTemp: {
-                    MultizoneSurfaceData(i).VentSchNum = GetScheduleIndex(m_state, MultizoneSurfaceData(i).VentSchName);
-                    if (MultizoneSurfaceData(i).VentSchName == std::string()) {
-                        ShowSevereError(m_state,
-                                        format(RoutineName) + CurrentModuleObject +
-                                            " object, No Ventilation Schedule was found, but is required when ventilation control is "
-                                            "Temperature.");
-                        ShowContinueError(m_state, "..for Surface = \"" + MultizoneSurfaceData(i).SurfName + "\"");
+                    if (MultizoneSurfaceData(i).VentTempControlSchName.empty()) {
+                        ShowSevereEmptyField(m_state, eoh, "Ventilation Schedule", "Ventinlation Control", "Temperature");
                         ErrorsFound = true;
-                    } else if (MultizoneSurfaceData(i).VentSchNum == 0) {
-                        ShowSevereError(m_state,
-                                        format(RoutineName) + CurrentModuleObject +
-                                            " object, Invalid Ventilation Schedule, required when ventilation control is Temperature.");
-                        ShowContinueError(m_state, "..Schedule name in error = " + MultizoneSurfaceData(i).VentSchName);
-                        ShowContinueError(m_state, "..for Surface = \"" + MultizoneSurfaceData(i).SurfName + "\"");
+                    } else if ((MultizoneSurfaceData(i).ventTempControlSched =
+                                    Sched::GetSchedule(m_state, MultizoneSurfaceData(i).VentTempControlSchName)) == nullptr) {
+                        ShowSevereItemNotFound(m_state, eoh, "Ventilation Schedule", MultizoneSurfaceData(i).VentTempControlSchName);
                         ErrorsFound = true;
                     }
                     if (MultizoneSurfaceData(i).LowValueTemp < 0.0) {
@@ -3276,21 +3248,15 @@ namespace AirflowNetwork {
                     }
 
                 } break;
+
                 case VentControlType::Enth:
                 case VentControlType::AdjEnth: {
-                    MultizoneSurfaceData(i).VentSchNum = GetScheduleIndex(m_state, MultizoneSurfaceData(i).VentSchName);
-                    if (MultizoneSurfaceData(i).VentSchName == std::string()) {
-                        ShowSevereError(m_state,
-                                        format(RoutineName) + CurrentModuleObject +
-                                            " object, No Ventilation Schedule was found, but is required when ventilation control is Enthalpy.");
-                        ShowContinueError(m_state, "..for Surface = \"" + MultizoneSurfaceData(i).SurfName + "\"");
+                    if (MultizoneSurfaceData(i).VentTempControlSchName.empty()) {
+                        ShowSevereEmptyField(m_state, eoh, "Ventilation Schedule", "Ventilation Control", "Enthalpy");
                         ErrorsFound = true;
-                    } else if (MultizoneSurfaceData(i).VentSchNum == 0) {
-                        ShowSevereError(m_state,
-                                        format(RoutineName) + CurrentModuleObject +
-                                            " object, Invalid Ventilation Schedule, required when ventilation control is Enthalpy.");
-                        ShowContinueError(m_state, "..Schedule name in error = " + MultizoneSurfaceData(i).VentSchName);
-                        ShowContinueError(m_state, "..for Surface = \"" + MultizoneSurfaceData(i).SurfName + "\"");
+                    } else if ((MultizoneSurfaceData(i).ventTempControlSched =
+                                    Sched::GetSchedule(m_state, MultizoneSurfaceData(i).VentTempControlSchName)) == nullptr) {
+                        ShowSevereItemNotFound(m_state, eoh, "Ventilation Schedule", MultizoneSurfaceData(i).VentTempControlSchName);
                         ErrorsFound = true;
                     }
                     if (MultizoneSurfaceData(i).LowValueEnth < 0.0) {
@@ -3322,8 +3288,8 @@ namespace AirflowNetwork {
                 case VentControlType::CEN15251:
                 case VentControlType::NoVent:
                 case VentControlType::ZoneLevel: {
-                    MultizoneSurfaceData(i).VentSchNum = 0;
-                    MultizoneSurfaceData(i).VentSchName = "";
+                    MultizoneSurfaceData(i).ventTempControlSched = nullptr;
+                    MultizoneSurfaceData(i).VentTempControlSchName = "";
                 } break;
                 default:
                     break;
@@ -4076,6 +4042,9 @@ namespace AirflowNetwork {
                                                                            lAlphaBlanks,
                                                                            cAlphaFields,
                                                                            cNumericFields);
+
+                ErrorObjectHeader eoh{RoutineName, CurrentModuleObject, Alphas(1)};
+
                 PressureControllerData(i).Name = Alphas(1);     // Object Name
                 PressureControllerData(i).ZoneName = Alphas(2); // Zone name
                 PressureControllerData(i).ZoneNum = Util::FindItemInList(Alphas(2), Zone);
@@ -4138,21 +4107,14 @@ namespace AirflowNetwork {
                 }
 
                 if (lAlphaBlanks(5)) {
-                    PressureControllerData(i).AvailSchedPtr = ScheduleManager::ScheduleAlwaysOn;
-                } else {
-                    PressureControllerData(i).AvailSchedPtr = GetScheduleIndex(m_state, Alphas(5));
-                    if (PressureControllerData(i).AvailSchedPtr == 0) {
-                        ShowSevereError(m_state,
-                                        CurrentModuleObject + ", \"" + PressureControllerData(i).Name + "\" " + cAlphaFields(5) +
-                                            " not found: " + Alphas(5));
-                        ErrorsFound = true;
-                    }
+                    PressureControllerData(i).availSched = Sched::GetScheduleAlwaysOn(m_state);
+                } else if ((PressureControllerData(i).availSched = Sched::GetSchedule(m_state, Alphas(5))) == nullptr) {
+                    ShowSevereItemNotFound(m_state, eoh, cAlphaFields(5), Alphas(5));
+                    ErrorsFound = true;
                 }
-                PressureControllerData(i).PresSetpointSchedPtr = GetScheduleIndex(m_state, Alphas(6));
-                if (PressureControllerData(i).PresSetpointSchedPtr == 0) {
-                    ShowSevereError(m_state,
-                                    CurrentModuleObject + ", \"" + PressureControllerData(i).Name + "\" " + cAlphaFields(6) +
-                                        " not found: " + Alphas(6));
+
+                if ((PressureControllerData(i).presSetpointSched = Sched::GetSchedule(m_state, Alphas(6))) == nullptr) {
+                    ShowSevereItemNotFound(m_state, eoh, cAlphaFields(6), Alphas(6));
                     ErrorsFound = true;
                 }
             }
@@ -6501,15 +6463,13 @@ namespace AirflowNetwork {
         PressureSetFlag = 0;
 
         if (NumOfPressureControllers == 1) {
-            if (PressureControllerData(1).AvailSchedPtr == ScheduleManager::ScheduleAlwaysOn) {
+            if (PressureControllerData(1).availSched == nullptr) {
                 PressureSetFlag = PressureControllerData(1).ControlTypeSet;
-            } else {
-                if (GetCurrentScheduleValue(m_state, PressureControllerData(1).AvailSchedPtr) > 0.0) {
-                    PressureSetFlag = PressureControllerData(1).ControlTypeSet;
-                }
+            } else if (PressureControllerData(1).availSched->getCurrentVal() > 0.0) {
+                PressureSetFlag = PressureControllerData(1).ControlTypeSet;
             }
             if (PressureSetFlag > 0) {
-                PressureSet = GetCurrentScheduleValue(m_state, PressureControllerData(1).PresSetpointSchedPtr);
+                PressureSet = PressureControllerData(1).presSetpointSched->getCurrentVal();
             }
         }
 
@@ -6939,7 +6899,7 @@ namespace AirflowNetwork {
                     // Wind-pressure coefficients for vertical facades, low-rise building
 
                     if (Util::SameString(simulation_control.BldgType, "LowRise") && FacadeNum <= 4) {
-                        IncRad = IncAng * Constant::DegToRadians;
+                        IncRad = IncAng * Constant::DegToRad;
                         Real64 const cos_IncRad_over_2(std::cos(IncRad / 2.0));
                         vals[windDirNum - 1] = 0.6 * std::log(1.248 - 0.703 * std::sin(IncRad / 2.0) - 1.175 * pow_2(std::sin(IncRad)) +
                                                               0.131 * pow_3(std::sin(2.0 * IncRad * SideRatioFac)) + 0.769 * cos_IncRad_over_2 +
@@ -7015,7 +6975,7 @@ namespace AirflowNetwork {
                     DelAng = mod(IncAng, 10.0);
                     WtAng = 1.0 - DelAng / 10.0;
                     // Wind-pressure coefficients for vertical facades, low-rise building
-                    IncRad = IncAng * Constant::DegToRadians;
+                    IncRad = IncAng * Constant::DegToRad;
                     valsByFacade[FacadeNum - 1][windDirNum - 1] =
                         0.6 * std::log(1.248 - 0.703 * std::sin(IncRad / 2.0) - 1.175 * pow_2(std::sin(IncRad)) +
                                        0.131 * pow_3(std::sin(2.0 * IncRad * SideRatioFac)) + 0.769 * std::cos(IncRad / 2.0) +
@@ -7212,7 +7172,7 @@ namespace AirflowNetwork {
             Real64 Pr = properties.prandtl_number(Pamb, (Ts + Tamb) / 2, Wamb);
             Real64 KinVisc = properties.kinematic_viscosity(Pamb, (Ts + Tamb) / 2, Wamb);
             Real64 Beta = 2.0 / ((Tamb + Constant::Kelvin) + (Ts + Constant::Kelvin));
-            Real64 Gr = Constant::GravityConstant * Beta * std::abs(Ts - Tamb) * pow_3(Dh) / pow_2(KinVisc);
+            Real64 Gr = Constant::Gravity * Beta * std::abs(Ts - Tamb) * pow_3(Dh) / pow_2(KinVisc);
             Real64 Ra = Gr * Pr;
             Real64 Nu_free(0);
 
@@ -7505,7 +7465,7 @@ namespace AirflowNetwork {
                         int SurfNum = VFObj.LinkageSurfaceData(j).SurfaceNum;
                         Real64 ZoneSurfaceArea = m_state.dataSurface->Surface(SurfNum).Area;
                         m_state.dataHeatBalFanSys->QRadSurfAFNDuct(SurfNum) += VFObj.LinkageSurfaceData(j).SurfaceRadLoad * TimeStepSys *
-                                                                               Constant::SecInHour /
+                                                                               Constant::rSecsInHour /
                                                                                ZoneSurfaceArea; // Energy to each surface per unit area [J/m2]
                         VFObj.QRad += VFObj.LinkageSurfaceData(j).SurfaceRadLoad; // Total radiant load from all surfaces for this system timestep [W]
                     }
@@ -8574,7 +8534,7 @@ namespace AirflowNetwork {
             onceSurfFlag.dimension(AirflowNetworkNumOfLinks, false);
             onetime = true;
         }
-        ReportingConstant = TimeStepSys * Constant::SecInHour;
+        ReportingConstant = TimeStepSys * Constant::rSecsInHour;
 
         m_state.dataHeatBal->ZoneTotalExfiltrationHeatLoss = 0.0;
 
@@ -9876,9 +9836,6 @@ namespace AirflowNetwork {
         // Determines the venting opening factor for an exterior or interior window or door
         // as determined by the venting control method.
 
-        // Using/Aliasing
-        using ScheduleManager::GetCurrentScheduleValue;
-
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         Real64 VentTemp;                // Venting temperature (C)
         Real64 ZoneAirEnthalpy;         // Enthalpy of zone air (J/kg)
@@ -9927,10 +9884,10 @@ namespace AirflowNetwork {
         // Note in the following that individual venting control for a window/door takes
         // precedence over zone-level control
         if (MultizoneSurfaceData(i).IndVentControl) {
-            VentTemp = GetCurrentScheduleValue(m_state, MultizoneSurfaceData(i).VentSchNum);
+            VentTemp = MultizoneSurfaceData(i).ventTempControlSched ? MultizoneSurfaceData(i).ventTempControlSched->getCurrentVal() : 0.0;
             VentCtrlNum = MultizoneSurfaceData(i).VentSurfCtrNum;
-            if (MultizoneSurfaceData(i).VentingSchNum > 0) {
-                VentingSchVal = GetCurrentScheduleValue(m_state, MultizoneSurfaceData(i).VentingSchNum);
+            if (MultizoneSurfaceData(i).ventAvailSched != nullptr) {
+                VentingSchVal = MultizoneSurfaceData(i).ventAvailSched->getCurrentVal();
                 if (VentingSchVal <= 0.0) {
                     VentingAllowed = false;
                     m_state.dataSurface->SurfWinVentingAvailabilityRep(SurfNum) = 0.0;
@@ -9938,10 +9895,10 @@ namespace AirflowNetwork {
             }
         } else {
             // Zone level only by Gu on Nov. 8, 2005
-            VentTemp = GetCurrentScheduleValue(m_state, MultizoneZoneData(IZ).VentSchNum);
+            VentTemp = MultizoneZoneData(IZ).ventTempControlSched ? MultizoneZoneData(IZ).ventTempControlSched->getCurrentVal() : 0.0;
             VentCtrlNum = MultizoneZoneData(IZ).VentCtrNum;
-            if (MultizoneZoneData(IZ).VentingSchNum > 0) {
-                VentingSchVal = GetCurrentScheduleValue(m_state, MultizoneZoneData(IZ).VentingSchNum);
+            if (MultizoneZoneData(IZ).ventAvailSched != nullptr) {
+                VentingSchVal = MultizoneZoneData(IZ).ventAvailSched->getCurrentVal();
                 if (VentingSchVal <= 0.0) {
                     VentingAllowed = false;
                     m_state.dataSurface->SurfWinVentingAvailabilityRep(SurfNum) = 0.0;
@@ -10521,17 +10478,15 @@ namespace AirflowNetwork {
                     } else {
                         // Replace the convenience function with in-place code
                         std::string mycoil = DisSysCompCoilData(i).name;
-                        auto it = std::find_if(m_state.dataCoilCooingDX->coilCoolingDXs.begin(),
-                                               m_state.dataCoilCooingDX->coilCoolingDXs.end(),
+                        auto it = std::find_if(m_state.dataCoilCoolingDX->coilCoolingDXs.begin(),
+                                               m_state.dataCoilCoolingDX->coilCoolingDXs.end(),
                                                [&mycoil](const CoilCoolingDX &coil) { return coil.name == mycoil; });
-                        if (it != m_state.dataCoilCooingDX->coilCoolingDXs.end()) {
+                        if (it != m_state.dataCoilCoolingDX->coilCoolingDXs.end()) {
                             // Set the airloop number on the CoilCoolingDX object, which is used to collect the runtime fraction
                             it->airLoopNum = DisSysCompCoilData(i).AirLoopNum;
                         } else {
                             ShowSevereError(m_state, "SetDXCoilAirLoopNumber: Could not find Coil \"Name=\"" + DisSysCompCoilData(i).name + "\"");
                         }
-                        // SetDXCoilAirLoopNumber(DisSysCompCoilData(i).name,
-                        // DisSysCompCoilData(i).AirLoopNum);
                     }
                 } else if (SELECT_CASE_var == "COIL:COOLING:DX:SINGLESPEED") {
                     ValidateComponent(
@@ -10620,6 +10575,64 @@ namespace AirflowNetwork {
                         ErrorsFound = true;
                     } else {
                         SetDXCoilAirLoopNumber(m_state, DisSysCompCoilData(i).name, DisSysCompCoilData(i).AirLoopNum);
+                    }
+
+                } else if (SELECT_CASE_var == "COIL:COOLING:DX:VARIABLESPEED") {
+                    ValidateComponent(
+                        m_state, "Coil:Cooling:DX:VariableSpeed", DisSysCompCoilData(i).name, IsNotOK, format(RoutineName) + CurrentModuleObject);
+                    ++MultiSpeedHPIndicator;
+                    if (IsNotOK) {
+                        ErrorsFound = true;
+                    } else {
+                        SetDXCoilAirLoopNumber(m_state, DisSysCompCoilData(i).name, DisSysCompCoilData(i).AirLoopNum);
+                    }
+
+                } else if (SELECT_CASE_var == "COIL:HEATING:DX:VARIABLESPEED") {
+                    ValidateComponent(
+                        m_state, "Coil:Heating:DX:VariableSpeed", DisSysCompCoilData(i).name, IsNotOK, format(RoutineName) + CurrentModuleObject);
+                    ++MultiSpeedHPIndicator;
+                    if (IsNotOK) {
+                        ErrorsFound = true;
+                    } else {
+                        SetDXCoilAirLoopNumber(m_state, DisSysCompCoilData(i).name, DisSysCompCoilData(i).AirLoopNum);
+                    }
+                } else if (SELECT_CASE_var == "COIL:COOLING:WATERTOAIRHEATPUMP:EQUATIONFIT") {
+                    ValidateComponent(m_state,
+                                      "Coil:Cooling:WaterToAirHeatPump:EquationFit",
+                                      DisSysCompCoilData(i).name,
+                                      IsNotOK,
+                                      format(RoutineName) + CurrentModuleObject);
+                    if (IsNotOK) {
+                        ErrorsFound = true;
+                    }
+
+                } else if (SELECT_CASE_var == "COIL:HEATING:WATERTOAIRHEATPUMP:EQUATIONFIT") {
+                    ValidateComponent(m_state,
+                                      "Coil:Heating:WaterToAirHeatPump:EquationFit",
+                                      DisSysCompCoilData(i).name,
+                                      IsNotOK,
+                                      format(RoutineName) + CurrentModuleObject);
+                    if (IsNotOK) {
+                        ErrorsFound = true;
+                    }
+                } else if (SELECT_CASE_var == "COIL:COOLING:WATERTOAIRHEATPUMP:VARIABLESPEEDEQUATIONFIT") {
+                    ValidateComponent(m_state,
+                                      "Coil:Cooling:WaterToAirHeatPump:VariableSpeedEquationFit",
+                                      DisSysCompCoilData(i).name,
+                                      IsNotOK,
+                                      format(RoutineName) + CurrentModuleObject);
+                    if (IsNotOK) {
+                        ErrorsFound = true;
+                    }
+
+                } else if (SELECT_CASE_var == "COIL:HEATING:WATERTOAIRHEATPUMP:VARIABLESPEEDEQUATIONFIT") {
+                    ValidateComponent(m_state,
+                                      "Coil:Heating:WaterToAirHeatPump:VariableSpeedEquationFit",
+                                      DisSysCompCoilData(i).name,
+                                      IsNotOK,
+                                      format(RoutineName) + CurrentModuleObject);
+                    if (IsNotOK) {
+                        ErrorsFound = true;
                     }
 
                 } else if (SELECT_CASE_var == "COIL:HEATING:DESUPERHEATER") {
@@ -11284,8 +11297,8 @@ namespace AirflowNetwork {
             auto &hybridVentMgr = m_state.dataAvail->HybridVentData(SysAvailNum);
             int AirLoopNum = hybridVentMgr.AirLoopNum;
             ventCtrlStatus = hybridVentMgr.ctrlStatus;
-            if (hybridVentMgr.ANCtrlStatus > 0) {
-                ControlType = static_cast<int>(GetCurrentScheduleValue(m_state, hybridVentMgr.ANCtrlStatus));
+            if (hybridVentMgr.afnControlTypeSched != nullptr) {
+                ControlType = static_cast<int>(hybridVentMgr.afnControlTypeSched->getCurrentVal());
             }
             bool Found = false; // Logical to indicate whether a master surface is found or not
             int ActualZoneNum = 0;
@@ -11723,7 +11736,7 @@ namespace AirflowNetwork {
 
         Real64 CpAir = PsyCpAirFnW(thisZoneHB.airHumRat);
         Real64 RhoAir = PsyRhoAirFnPbTdbW(m_state, m_state.dataEnvrn->OutBaroPress, thisZoneHB.MAT, thisZoneHB.airHumRat);
-        Real64 InfilVolume = ((exchangeData(ZoneNum).SumMCp + exchangeData(ZoneNum).SumMVCp) / CpAir / RhoAir) * TimeStepSys * Constant::SecInHour;
+        Real64 InfilVolume = ((exchangeData(ZoneNum).SumMCp + exchangeData(ZoneNum).SumMVCp) / CpAir / RhoAir) * TimeStepSys * Constant::rSecsInHour;
         Real64 ACH = InfilVolume / (TimeStepSys * m_state.dataHeatBal->Zone(ZoneNum).Volume);
 
         return ACH;
@@ -12851,6 +12864,7 @@ namespace AirflowNetwork {
         Real64 SchValue;
         Real64 RandomValue;
         auto &thisZoneHB = state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum);
+        auto &zoneTstatSetpt = state.dataHeatBalFanSys->zoneTstatSetpts(ZoneNum);
 
         if (TimeCloseDuration < MinClosingTime) {
             return false;
@@ -12862,32 +12876,35 @@ namespace AirflowNetwork {
         }
 
         switch (state.dataHeatBalFanSys->TempControlType(ZoneNum)) {
-        case HVAC::ThermostatType::SingleHeating:
-            if (thisZoneHB.MAT <= state.dataHeatBalFanSys->ZoneThermostatSetPointLo(ZoneNum)) {
+        case HVAC::SetptType::SingleHeat: {
+            if (thisZoneHB.MAT <= zoneTstatSetpt.setptLo) {
                 return false;
             }
-            break;
-        case HVAC::ThermostatType::SingleCooling:
-            if (thisZoneHB.MAT >= state.dataHeatBalFanSys->ZoneThermostatSetPointHi(ZoneNum)) {
-                return false;
-            }
-            break;
-        case HVAC::ThermostatType::SingleHeatCool:
-            return false;
-        case HVAC::ThermostatType::DualSetPointWithDeadBand:
-            if (thisZoneHB.MAT < state.dataHeatBalFanSys->ZoneThermostatSetPointLo(ZoneNum) ||
-                thisZoneHB.MAT > state.dataHeatBalFanSys->ZoneThermostatSetPointHi(ZoneNum)) {
-                return false;
-            }
-            break;
-        default:
-            break;
-        }
+        } break;
 
-        if (OpeningProbSchNum == 0) {
+        case HVAC::SetptType::SingleCool: {
+            if (thisZoneHB.MAT >= zoneTstatSetpt.setptHi) {
+                return false;
+            }
+        } break;
+        case HVAC::SetptType::SingleHeatCool: {
+            return false;
+        } break;
+
+        case HVAC::SetptType::DualHeatCool: {
+            if (thisZoneHB.MAT < zoneTstatSetpt.setptLo || thisZoneHB.MAT > zoneTstatSetpt.setptHi) {
+                return false;
+            }
+        } break;
+
+        default: {
+        } break;
+        } // switch
+
+        if (openingProbSched == nullptr) {
             return true;
         } else {
-            SchValue = GetCurrentScheduleValue(state, OpeningProbSchNum);
+            SchValue = openingProbSched->getCurrentVal();
             RandomValue = Real64(rand()) / RAND_MAX;
             if (SchValue > RandomValue) {
                 return true;
@@ -12906,10 +12923,10 @@ namespace AirflowNetwork {
         if (TimeOpenDuration < MinOpeningTime) {
             return false;
         }
-        if (ClosingProbSchNum == 0) {
+        if (closingProbSched == nullptr) {
             return true;
         } else {
-            SchValue = GetCurrentScheduleValue(state, ClosingProbSchNum);
+            SchValue = closingProbSched->getCurrentVal();
             RandomValue = Real64(rand()) / RAND_MAX;
             if (SchValue > RandomValue) {
                 return true;
@@ -13401,7 +13418,7 @@ namespace AirflowNetwork {
         // na
 
         auto &NetworkNumOfNodes = ActualNumOfNodes;
-        auto &NetworkNumOfLinks = ActualNumOfLinks;
+        // auto &NetworkNumOfLinks = ActualNumOfLinks;
 
         // Argument array dimensioning (these used to be arguments, need to also test newAU and newIK)
         EP_SIZE_CHECK(IK, NetworkNumOfNodes + 1);

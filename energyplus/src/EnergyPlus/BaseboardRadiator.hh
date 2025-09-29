@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -69,7 +69,7 @@ namespace BaseboardRadiator {
         // Members
         std::string EquipID;
         std::string Schedule;
-        int SchedPtr = 0;
+        Sched::Schedule *availSched = nullptr;
         DataPlant::PlantEquipmentType EquipType = DataPlant::PlantEquipmentType::Invalid;
         int ZonePtr = 0;
         int WaterInletNode = 0;
@@ -127,6 +127,10 @@ struct BaseboardRadiatorData : BaseGlobalStruct
 
     bool getInputFlag = true;
     EPVector<BaseboardRadiator::BaseboardParams> baseboards;
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

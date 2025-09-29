@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/BaseData.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
 #include <EnergyPlus/EnergyPlus.hh>
+#include <EnergyPlus/ScheduleManager.hh>
 
 namespace EnergyPlus {
 
@@ -86,11 +87,10 @@ struct CoilCoolingDX
     void oneTimeInit(EnergyPlusData &state);
     void simulate(EnergyPlusData &state,
                   HVAC::CoilMode coilMode,
-                  Real64 PLR,
                   int speedNum,
                   Real64 speedRatio,
                   HVAC::FanOp const fanOp,
-                  bool const singleMode,
+                  bool singleMode,
                   Real64 LoadSHR = -1.0);
     void setData(int fanIndex, HVAC::FanType fanType, std::string const &fanName, int airLoopNum);
     void getFixedData(int &evapInletNodeIndex,
@@ -115,7 +115,7 @@ struct CoilCoolingDX
     bool myOneTimeInitFlag = true;
     int evapInletNodeIndex = 0;
     int evapOutletNodeIndex = 0;
-    int availScheduleIndex = 0;
+    Sched::Schedule *availSched = nullptr;
     int condInletNodeIndex = 0;
     int condOutletNodeIndex = 0;
     CoilCoolingDXCurveFitPerformance performance;
@@ -181,6 +181,11 @@ struct CoilCoolingDXData : BaseGlobalStruct
     bool coilCoolingDXGetInputFlag = true;
     std::string const coilCoolingDXObjectName = "Coil:Cooling:DX";
     bool stillNeedToReportStandardRatings = true; // standard ratings flag for all coils to report at the same time
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
+
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {
     }

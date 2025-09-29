@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -90,6 +90,7 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpSizingPowerTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 162.5, 0.0001);
@@ -125,6 +126,7 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpSizingPower22W_per_gpm)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 348.7011, 0.0001);
@@ -159,6 +161,7 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpSizingPowerDefault)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 255.4872, 0.0001);
@@ -189,6 +192,7 @@ TEST_F(EnergyPlusFixture, HeaderedConstantSpeedPumpSizingPowerTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 162.5, 0.0001);
@@ -219,6 +223,7 @@ TEST_F(EnergyPlusFixture, HeaderedConstantSpeedPumpSizingPower19W_per_gpm)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 301.1561, 0.0001);
@@ -248,6 +253,7 @@ TEST_F(EnergyPlusFixture, HeaderedConstantSpeedPumpSizingPowerDefault)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 255.4872, 0.0001);
@@ -291,6 +297,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPumpSizingMinVolFlowRate)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).MinVolFlowRate, DataSizing::AutoSize, 0.000001);
     Pumps::SizePump(*state, 1);
@@ -335,6 +342,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPumpSizingPowerPerPressureTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 162.5, 0.0001);
@@ -376,6 +384,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPumpSizingPowerDefault)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 255.4872, 0.0001);
@@ -416,6 +425,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPumpSizingPower22W_per_GPM)
         "0.0;                     !- Design Minimum Flow Rate Sizing Factor",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 348.7011, 0.0001);
@@ -447,6 +457,7 @@ TEST_F(EnergyPlusFixture, ConstantSpeedPumpSizingPower19W_per_gpm)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 301.1561, 0.0001);
@@ -479,6 +490,7 @@ TEST_F(EnergyPlusFixture, ConstantSpeedPumpSizingPowerPerPressureTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 162.5, 0.0001);
@@ -510,6 +522,7 @@ TEST_F(EnergyPlusFixture, ConstantSpeedPumpSizingPowerDefaults)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 255.4872, 0.0001);
@@ -542,6 +555,7 @@ TEST_F(EnergyPlusFixture, CondensatePumpSizingPowerDefaults)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 153.3, 0.1);
@@ -574,6 +588,7 @@ TEST_F(EnergyPlusFixture, CondensatePumpSizingPower19W_per_gpm)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 180.7, 0.1);
@@ -605,6 +620,7 @@ TEST_F(EnergyPlusFixture, CondensatePumpSizingPowerTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     EXPECT_NEAR(state->dataPumps->PumpEquip(1).NomPowerUse, 97.5, 0.1);
@@ -647,6 +663,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPump_MinFlowGreaterThanMax)
         "  ;                        !- Design Minimum Flow Rate Fraction",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
 
     std::string const error_string = delimited_string({
@@ -698,6 +715,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPump_MinFlowEqualToMax)
         "  ;                        !- Design Minimum Flow Rate Fraction",
     });
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
 
     std::string const error_string = delimited_string({
@@ -746,6 +764,7 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpEMSPressureTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     Real64 massflowrate = 1.0;
@@ -760,6 +779,8 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpEMSPressureTest)
     DataPlant::LoopSideLocation thisLoopSideNum = DataPlant::LoopSideLocation::Supply;
     PlantLocation plantLoc{thisLoopNum, thisLoopSideNum, thisBranchNum, thisCompNum};
     state->dataPlnt->PlantLoop.allocate(1);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch.allocate(1);
     state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch(thisBranchNum).Comp.allocate(1);
     state->dataLoopNodes->Node(1).MassFlowRate = massflowrate;

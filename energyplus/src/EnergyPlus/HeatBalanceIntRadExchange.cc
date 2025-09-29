@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -412,7 +412,7 @@ namespace HeatBalanceIntRadExchange {
         }
     }
 
-    void UpdateMovableInsulationFlag(EnergyPlusData &state, bool &MovableInsulationChange, int const SurfNum)
+    void UpdateMovableInsulationFlag(EnergyPlusData &state, bool &change, int const SurfNum)
     {
 
         // SUBROUTINE INFORMATION:
@@ -424,16 +424,14 @@ namespace HeatBalanceIntRadExchange {
         // If there have been changes due to a schedule change AND a change in properties,
         // then the matrices which are used to calculate interior radiation must be recalculated.
 
-        MovableInsulationChange = false;
+        auto &s_surf = state.dataSurface;
 
-        if (state.dataHeatBalSurf->SurfMovInsulIntPresent(SurfNum) != state.dataHeatBalSurf->SurfMovInsulIntPresentPrevTS(SurfNum)) {
-            auto const &thissurf = state.dataSurface->Surface(SurfNum);
-            Real64 AbsorpDiff = std::abs(state.dataConstruction->Construct(thissurf.Construction).InsideAbsorpThermal -
-                                         state.dataMaterial->materials(state.dataSurface->SurfMaterialMovInsulInt(SurfNum))->AbsorpThermal);
-            if (AbsorpDiff > 0.01) {
-                MovableInsulationChange = true;
-            }
-        }
+        change = false;
+
+        auto &movInsul = s_surf->intMovInsuls(SurfNum);
+        if (movInsul.present != movInsul.presentPrevTS)
+            change = (std::abs(state.dataConstruction->Construct(s_surf->Surface(SurfNum).Construction).InsideAbsorpThermal -
+                               state.dataMaterial->materials(movInsul.matNum)->AbsorpThermal) > 0.01);
     }
 
     void InitInteriorRadExchange(EnergyPlusData &state)

@@ -66,7 +66,7 @@ Table ~\ref{table:heat-index-chart} and color coded in Figure
 \end{tabular}
 \end{table}
 
-The computation of the heat index is a refinement of a result obtained by
+Before version 25.1, the computation of the heat index is a refinement of a result obtained by
 multiple regression analysis carried out by Lans P. Rothfusz and described in a
 1990 National Weather Service (NWS) Technical Attachment (SR 90-23) [4-5]. The
 calculation is based on degree Fahrenheit.
@@ -129,6 +129,17 @@ humidity. If this heat index value is \IP{80}{\fahrenheit} or higher, the full r
 equation along with any adjustment as described above is applied. The Rothfusz
 regression is not valid for extreme temperature and relative humidity conditions
 beyond the range of data considered by Steadman.
+
+Starting from version 25.1, the heat index calculation allows the use of the extended heat
+index method developed by Lu \& Romps [17]. By selecting ``Extended'' in the ``Algorithm''
+field of HeatIndexAlgorithm, this extended heat index will be used. If the field is
+``Simplified'' or left empty, the Rothfusz-Steadman method described above will be used.
+The heat index calculated with Rothfusz-Steadman method can give
+unrealistic results for very hot and humid or very cold and dry conditions. The
+extended index extends the domain of the heat index calculation to all
+combinations of temperature and relative humidity and gives a more realistic heat
+index for the extreme conditions. The implementation in EnergyPlus is based on
+the released Python code by Lu and Romps [18].
 
 The Heat Index Hours (accumulated hours for a space) and Heat Index
 OccupantHours (accumulated hours for the sum of all occupants in a space) of
@@ -516,3 +527,11 @@ SoftwareX, vol. 12, p. 100563, Jul. 2020, doi: 10.1016/j.softx.2020.100563.
 
 {[}16{]} ACGIH, Threshold Limit Values (TLVs) and Biological Exposure Indices
 (BEIs), 2012. doi:10.1073/pnas.0703993104.
+
+{[}17{]} Lu, Yi-Chuan, and David M. Romps. ``Extending the heat index''. Journal
+of Applied Meteorology and Climatology 61, no. 10 (2022): 1367-1383.
+doi:10.1073/pnas.0703993104.
+
+{[}18{]} Lu, Yi-Chuan, and David M. Romps. ``Lu and Romps, Extending the heat index, JAMC, 2022'',
+Physics of Climate, February 23, 2023.
+https://romps.berkeley.edu/papers/pubs-2020-heatindex.html.

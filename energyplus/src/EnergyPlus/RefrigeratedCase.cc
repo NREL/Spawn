@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -52,7 +52,7 @@
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
 #include <ObjexxFCL/Array2D.hh>
-#include <ObjexxFCL/Fmath.hh>
+// #include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <EnergyPlus/BranchNodeConnections.hh>
@@ -114,7 +114,7 @@ namespace EnergyPlus::RefrigeratedCase {
 // sensible case credit). The case (evaporator) fans are assumed to be disabled during hot-gas or
 // electric defrost modes. A stocking schedule (W/m) is available for added load if desired.
 // Walk-In coolers are simulated based on the specified sum of the conductance*area of each wall and door facing
-// up to three (extendible) zones.  Two types of doors are specified, stock doors and glass doors.  For each category
+// up to three (extensible) zones.  Two types of doors are specified, stock doors and glass doors.  For each category
 // of doors, schedules for door openings are used with ASHRAE models for infiltration
 // which are a function of the height of the door.  That
 // infiltration is used to calculate the latent load on the cooler and the latent case credits for each zone.
@@ -305,10 +305,9 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
     static constexpr std::string_view TrackMessage("from refrigerated case");
     static constexpr std::string_view RoutineName("GetRefrigerationInput: ");
+    static constexpr std::string_view routineName = "GetRefrigerationInput";
     static constexpr std::string_view TrackMessageAlt("GetInput in RefrigeratedCase");
-    static constexpr std::string_view RoutineNameNoColon("GetRefrigerationInput");
 
-    int constexpr AlwaysOn(-1); // -1 pointer sent to schedule manager returns a value of 1.0
     //     input in both watts and flow rate
     int constexpr NumWIAlphaFieldsBeforeZoneInput(9);   // Used to cycle through zones on input for walk in coolers
     int constexpr NumWIAlphaFieldsPerZone(4);           // Used to cycle through zones on input for walk in coolers
@@ -319,17 +318,15 @@ void GetRefrigerationInput(EnergyPlusData &state)
     Real64 constexpr CondARI490DelT(15.0);              // Rated sat cond temp - wet bulb air T for evap-cooled Cond w R22, ARI490
     Real64 constexpr CondARI490Tcond(40.6);             // Rated sat cond temp for evap-cooled cond with R22, ARI 490
     Real64 constexpr DelEvapTDefault(5.0);              // default difference between case T and evap T (C)
-    Real64 constexpr HoursPerDay(24.0);
-    Real64 constexpr SecondsPerHour(3600.0);
-    Real64 constexpr DefaultCascadeCondApproach(3.0); // Cascade condenser approach temperature difference (deltaC)
-    Real64 constexpr DefaultCircRate(2.5);            // Phase change liquid overfeed circulating rate (ASHRAE definition)
-    Real64 constexpr DefaultWISurfaceUValue(0.3154);  // equiv R18 in Archaic American units (W/m2-delta T)
-    Real64 constexpr DefaultWIUValueGlassDr(1.136);   // equiv R5 in Archaic American units (W/m2-delta T)
-    Real64 constexpr DefaultWIUValueStockDr(0.3785);  // equiv R15 in Archaic American units (W/m2-delta T)
-    Real64 constexpr DefaultWIHeightGlassDr(1.5);     // glass door height in walk-in cooler (m)
-    Real64 constexpr DefaultWIHeightStockDr(3.0);     // stock door height in walk-in cooler (m)
-    Real64 constexpr PumpImpellerEfficiency(0.78);    // same as used in pump auto-sizing, dimensionless
-    Real64 constexpr PumpMotorEfficiency(0.85);       // suggested as average value in ITT/Gould pump references,
+    Real64 constexpr DefaultCascadeCondApproach(3.0);   // Cascade condenser approach temperature difference (deltaC)
+    Real64 constexpr DefaultCircRate(2.5);              // Phase change liquid overfeed circulating rate (ASHRAE definition)
+    Real64 constexpr DefaultWISurfaceUValue(0.3154);    // equiv R18 in Archaic American units (W/m2-delta T)
+    Real64 constexpr DefaultWIUValueGlassDr(1.136);     // equiv R5 in Archaic American units (W/m2-delta T)
+    Real64 constexpr DefaultWIUValueStockDr(0.3785);    // equiv R15 in Archaic American units (W/m2-delta T)
+    Real64 constexpr DefaultWIHeightGlassDr(1.5);       // glass door height in walk-in cooler (m)
+    Real64 constexpr DefaultWIHeightStockDr(3.0);       // stock door height in walk-in cooler (m)
+    Real64 constexpr PumpImpellerEfficiency(0.78);      // same as used in pump auto-sizing, dimensionless
+    Real64 constexpr PumpMotorEfficiency(0.85);         // suggested as average value in ITT/Gould pump references,
 
     Array1D_string Alphas;             // Alpha items for object
     Array1D_string cAlphaFieldNames;   // Alpha field names (from input processor)
@@ -503,7 +500,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
     if (NumCompressorLists > 0) CompressorLists.allocate(NumCompressorLists);
     if (state.dataRefrigCase->NumSimulationTransferLoadLists > 0) TransferLoadList.allocate(state.dataRefrigCase->NumSimulationTransferLoadLists);
 
-    DayValues.allocate(state.dataGlobal->NumOfTimeStepInHour, 24);
+    DayValues.allocate(state.dataGlobal->TimeStepsInHour, Constant::iHoursInDay);
     state.dataRefrigCase->RefrigPresentInZone.dimension(state.dataGlobal->NumOfZones, false);
 
     state.dataInputProcessing->inputProcessor->getObjectDefMaxArgs(state, "Refrigeration:Case", MaxNumArgs, MaxNumAlphasCase, MaxNumNumbersCase);
@@ -589,6 +586,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
 
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             ++NumDisplayCases;
 
             AlphaNum = 1;
@@ -596,30 +595,14 @@ void GetRefrigerationInput(EnergyPlusData &state)
             RefrigCase(CaseNum).Name = Alphas(AlphaNum);
 
             AlphaNum = 2;
-            if (!lAlphaBlanks(AlphaNum)) {
-                RefrigCase(CaseNum).SchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert schedule name to pointer
-                if (RefrigCase(CaseNum).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigCase(CaseNum).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                RefrigCase(CaseNum).SchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check availability schedule for values between 0 and 1
-            if (RefrigCase(CaseNum).SchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigCase(CaseNum).SchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, RefrigCase(CaseNum).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(AlphaNum)) {
+                RefrigCase(CaseNum).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((RefrigCase(CaseNum).availSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!RefrigCase(CaseNum).availSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             // Get the Zone node number from the zone name entered by the user
@@ -823,30 +806,14 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 RefrigCase(CaseNum).LightingPower = RefrigCase(CaseNum).RatedLightingPower;
             } // blank input
 
-            if (!lAlphaBlanks(6)) {
-                RefrigCase(CaseNum).LightingSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(6)); // convert schedule name to pointer
-                if (RefrigCase(CaseNum).LightingSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigCase(CaseNum).Name,
-                                           cAlphaFieldNames(6),
-                                           Alphas(6)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                RefrigCase(CaseNum).LightingSchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check lighting schedule for values between 0 and 1
-            if (RefrigCase(CaseNum).LightingSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigCase(CaseNum).LightingSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, RefrigCase(CaseNum).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(6), Alphas(6)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(6)) {
+                RefrigCase(CaseNum).lightingSched = Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+            } else if ((RefrigCase(CaseNum).lightingSched = Sched::GetSchedule(state, Alphas(6))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(6), Alphas(6));
+                ErrorsFound = true;
+            } else if (!RefrigCase(CaseNum).lightingSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(6), Alphas(6), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             NumNum = 12;
@@ -1071,84 +1038,56 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 ErrorsFound = true;
             }
 
-            RefrigCase(CaseNum).DefrostSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(9)); // convert schedule name to pointer
-            if (RefrigCase(CaseNum).DefrostSchedPtr == 0 && RefrigCase(CaseNum).defrostType != RefCaseDefrostType::None) {
-                ShowSevereError(state,
-                                format("{}{}=\"{}\", invalid  {} not found: {}",
-                                       RoutineName,
-                                       CurrentModuleObject,
-                                       RefrigCase(CaseNum).Name,
-                                       cAlphaFieldNames(9),
-                                       Alphas(9)));
-                ShowContinueError(state, format("required when {}=\"{}\".", cAlphaFieldNames(8), Alphas(8)));
+            if (RefrigCase(CaseNum).defrostType == RefCaseDefrostType::None) {
+            } else if (lAlphaBlanks(9)) {
+                ShowSevereEmptyField(state, eoh, cAlphaFieldNames(9));
+                ErrorsFound = true;
+            } else if ((RefrigCase(CaseNum).defrostSched = Sched::GetSchedule(state, Alphas(9))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(9), Alphas(9));
+                ErrorsFound = true;
+            } else if (!RefrigCase(CaseNum).defrostSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(9), Alphas(9), Clusive::In, 0.0, Clusive::In, 1.0);
                 ErrorsFound = true;
             }
 
-            //   check defrost schedule for values between 0 and 1
-            if (RefrigCase(CaseNum).DefrostSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigCase(CaseNum).DefrostSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, RefrigCase(CaseNum).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(9), Alphas(9)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
-            }
             //   Note that next section counting number cycles and setting maxkgfrost not used now, but may be in the future.
             //   count the number of defrost cycles
 
             // Flag for counting defrost cycles
-            bool StartCycle = false;
             int NumDefCycles = 0;
-            DayValues = 0.0;
-            ScheduleManager::GetScheduleValuesForDay(state, RefrigCase(CaseNum).DefrostSchedPtr, DayValues, 1);
-            for (int HRNum = 1; HRNum <= 24; ++HRNum) {
-                for (int TSNum = 1; TSNum <= state.dataGlobal->NumOfTimeStepInHour; ++TSNum) {
-                    if (DayValues(TSNum, HRNum) > 0.0) {
-                        if (!StartCycle) {
-                            ++NumDefCycles;
-                            StartCycle = true;
-                        }
-                    } else {
+
+            if (RefrigCase(CaseNum).defrostSched != nullptr) {
+                bool StartCycle = false;
+                std::vector<Real64> const &dayVals = RefrigCase(CaseNum).defrostSched->getDayVals(state, 1);
+                for (int i = 0; i < Constant::iHoursInDay * state.dataGlobal->TimeStepsInHour; ++i) {
+                    if (dayVals[i] == 0.0) {
                         StartCycle = false;
+                    } else if (!StartCycle) {
+                        ++NumDefCycles;
+                        StartCycle = true;
                     }
                 }
             }
 
             if (NumDefCycles > 0) {
                 //     calculate maximum frost formation based on defrost schedule, heat of vaporization+fusion for water = 2833.0 kJ/kg
-                RefrigCase(CaseNum).MaxKgFrost = (RefrigCase(CaseNum).RateTotCapPerLength * RefrigCase(CaseNum).RatedLHR *
-                                                  RefrigCase(CaseNum).RatedRTF * SecondsPerHour * HoursPerDay / 1000.0 / 2833.0) /
-                                                 (NumDefCycles);
+                RefrigCase(CaseNum).MaxKgFrost =
+                    (RefrigCase(CaseNum).RateTotCapPerLength * RefrigCase(CaseNum).RatedLHR * RefrigCase(CaseNum).RatedRTF * Constant::rSecsInHour *
+                     Constant::rHoursInDay / 1000.0 / 2833.0) / // Parenthesize!!!
+                    (NumDefCycles);
             } else {
                 RefrigCase(CaseNum).MaxKgFrost = 9999999.9;
             }
 
             //   some defrost types do not use drip-down schedules, use same defrost schedule pointer in that case
-            if (!lAlphaBlanks(10)) {
-                RefrigCase(CaseNum).DefrostDripDownSchedPtr =
-                    ScheduleManager::GetScheduleIndex(state, Alphas(10)); // convert schedule name to pointer
-                if (RefrigCase(CaseNum).DefrostDripDownSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigCase(CaseNum).Name,
-                                           cAlphaFieldNames(10),
-                                           Alphas(10)));
-                    ErrorsFound = true;
-                }
-            } else {
-                RefrigCase(CaseNum).DefrostDripDownSchedPtr = RefrigCase(CaseNum).DefrostSchedPtr;
-            }
-
-            //   check defrost drip-down schedule for values between 0 and 1
-            if (RefrigCase(CaseNum).DefrostDripDownSchedPtr > 0 && (!lAlphaBlanks(10))) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigCase(CaseNum).DefrostDripDownSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, RefrigCase(CaseNum).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(10), Alphas(10)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(10)) {
+                RefrigCase(CaseNum).defrostDripDownSched = RefrigCase(CaseNum).defrostSched;
+            } else if ((RefrigCase(CaseNum).defrostDripDownSched = Sched::GetSchedule(state, Alphas(10))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(10), Alphas(10));
+                ErrorsFound = true;
+            } else if (!RefrigCase(CaseNum).defrostDripDownSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(10), Alphas(10), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             if (Util::SameString(Alphas(11), "CaseTemperatureMethod")) {
@@ -1280,20 +1219,10 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 CaseRAFraction(RefrigCase(CaseNum).ActualZoneNum).ZoneName = RefrigCase(CaseNum).ZoneName;
             }
 
-            RefrigCase(CaseNum).StockingSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(13)); // convert schedule name to pointer
-            if (!lAlphaBlanks(13)) {
-                if (RefrigCase(CaseNum).StockingSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigCase(CaseNum).Name,
-                                           cAlphaFieldNames(13),
-                                           Alphas(13)));
-                    ErrorsFound = true;
-                }
-            } else {
-                RefrigCase(CaseNum).StockingSchedPtr = 0;
+            if (lAlphaBlanks(13)) {
+            } else if ((RefrigCase(CaseNum).stockingSched = Sched::GetSchedule(state, Alphas(13))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(13), Alphas(13));
+                ErrorsFound = true;
             }
 
             //   calculate sensible case load at design conditions
@@ -1321,30 +1250,13 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 ErrorsFound = true;
             }
 
-            RefrigCase(CaseNum).CaseCreditFracSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(14)); // convert schedule name to pointer
-            if (!lAlphaBlanks(14)) {
-                if (RefrigCase(CaseNum).CaseCreditFracSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigCase(CaseNum).Name,
-                                           cAlphaFieldNames(14),
-                                           Alphas(14)));
-                    ErrorsFound = true;
-                }
-            } else {
-                RefrigCase(CaseNum).CaseCreditFracSchedPtr = 0;
-            }
-
-            //   check case credit fraction schedule for values between 0 and 1
-            if (RefrigCase(CaseNum).CaseCreditFracSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigCase(CaseNum).CaseCreditFracSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\".", RoutineName, CurrentModuleObject, RefrigCase(CaseNum).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(14), Alphas(14)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(14)) {
+            } else if ((RefrigCase(CaseNum).caseCreditFracSched = Sched::GetSchedule(state, Alphas(14))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(14), Alphas(14));
+                ErrorsFound = true;
+            } else if (!RefrigCase(CaseNum).caseCreditFracSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(14), Alphas(14), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             RefrigCase(CaseNum).DesignRatedCap = RefrigCase(CaseNum).RateTotCapPerLength * RefrigCase(CaseNum).Length;
@@ -1410,34 +1322,21 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             WalkIn(WalkInID).Name = Alphas(1);
 
-            if (!lAlphaBlanks(2)) {
-                WalkIn(WalkInID).SchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(2)); // convert schedule name to pointer
-                if (WalkIn(WalkInID).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WalkIn(WalkInID).Name,
-                                           cAlphaFieldNames(2),
-                                           Alphas(2)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                WalkIn(WalkInID).SchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check availability schedule for values between 0 and 1
-            if (WalkIn(WalkInID).SchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WalkIn(WalkInID).SchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WalkIn(WalkInID).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(2), Alphas(2)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(2)) {
+                WalkIn(WalkInID).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((WalkIn(WalkInID).availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(2), Alphas(2));
+                ErrorsFound = true;
+            } else if (!WalkIn(WalkInID).availSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(2), Alphas(2), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             WalkIn(WalkInID).DesignRatedCap = Numbers(1);
@@ -1474,31 +1373,14 @@ void GetRefrigerationInput(EnergyPlusData &state)
             }
 
             AlphaNum = 3;
-            if (!lAlphaBlanks(AlphaNum)) {
-                WalkIn(WalkInID).HeaterSchedPtr =
-                    ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert heater schedule name to pointer
-                if (WalkIn(WalkInID).HeaterSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WalkIn(WalkInID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                WalkIn(WalkInID).HeaterSchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check heater schedule for values between 0 and 1
-            if (WalkIn(WalkInID).HeaterSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WalkIn(WalkInID).HeaterSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WalkIn(WalkInID).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(AlphaNum)) {
+                WalkIn(WalkInID).heaterSched = Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+            } else if ((WalkIn(WalkInID).heaterSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WalkIn(WalkInID).heaterSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             if (!lNumericBlanks(5) && Numbers(5) > 0.0) {
@@ -1537,30 +1419,14 @@ void GetRefrigerationInput(EnergyPlusData &state)
             }
 
             AlphaNum = 4;
-            if (!lAlphaBlanks(AlphaNum)) {
-                WalkIn(WalkInID).LightingSchedPtr =
-                    ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert lighting schedule name to pointer
-                if (WalkIn(WalkInID).LightingSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WalkIn(WalkInID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                WalkIn(WalkInID).LightingSchedPtr = AlwaysOn;
-            } // schedule name not blank
-            //   check Lighting schedule for values between 0 and 1
-            if (WalkIn(WalkInID).LightingSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WalkIn(WalkInID).LightingSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WalkIn(WalkInID).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(AlphaNum)) {
+                WalkIn(WalkInID).lightingSched = Sched::GetScheduleAlwaysOn(state); // Not an availability schedule, but defaults to constant-1.0
+            } else if ((WalkIn(WalkInID).lightingSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WalkIn(WalkInID).lightingSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             // Input walk-in cooler defrost information
@@ -1602,53 +1468,29 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
             // convert defrost schedule name to pointer
             AlphaNum = 7;
-            WalkIn(WalkInID).DefrostSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum));
-            if (WalkIn(WalkInID).DefrostSchedPtr == 0) {
-                ShowSevereError(state,
-                                format("{}{}=\"{}\", invalid  {} not found: {}",
-                                       RoutineName,
-                                       CurrentModuleObject,
-                                       WalkIn(WalkInID).Name,
-                                       cAlphaFieldNames(AlphaNum),
-                                       Alphas(AlphaNum)));
+
+            if (lAlphaBlanks(AlphaNum)) {
+                ShowSevereEmptyField(state, eoh, cAlphaFieldNames(AlphaNum));
                 ErrorsFound = true;
-            }
-            //   check defrost schedule for values between 0 and 1
-            if (WalkIn(WalkInID).DefrostSchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WalkIn(WalkInID).DefrostSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{} = \"{}\"", RoutineName, CurrentModuleObject, WalkIn(WalkInID).Name));
-                    ShowContinueError(state, format("Error found in {}={}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            } else if ((WalkIn(WalkInID).defrostSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WalkIn(WalkInID).defrostSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             // convert defrost drip-down schedule name to pointer
             // some defrost types do not use drip-down schedules, use same defrost schedule pointer in that case
             AlphaNum = 8;
-            if (!lAlphaBlanks(AlphaNum)) {
-                WalkIn(WalkInID).DefrostDripDownSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum));
-                if (WalkIn(WalkInID).DefrostDripDownSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WalkIn(WalkInID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }
-                // check schedule for values between 0 and 1
-                if (WalkIn(WalkInID).DefrostDripDownSchedPtr > 0) {
-                    if (!ScheduleManager::CheckScheduleValueMinMax(state, WalkIn(WalkInID).DefrostDripDownSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                        ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WalkIn(WalkInID).Name));
-                        ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                        ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                        ErrorsFound = true;
-                    }
-                }
-            } else { // blank input so use drip down schedule for defrost
-                WalkIn(WalkInID).DefrostDripDownSchedPtr = WalkIn(WalkInID).DefrostSchedPtr;
+            if (lAlphaBlanks(AlphaNum)) { // blank input so use drip down schedule for defrost
+                WalkIn(WalkInID).defrostDripDownSched = WalkIn(WalkInID).defrostSched;
+            } else if ((WalkIn(WalkInID).defrostDripDownSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WalkIn(WalkInID).defrostDripDownSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             if (WalkIn(WalkInID).defrostType == WalkinClrDefrostType::OffCycle || WalkIn(WalkInID).defrostType == WalkinClrDefrostType::None) {
@@ -1690,20 +1532,10 @@ void GetRefrigerationInput(EnergyPlusData &state)
             // convert restocking schedule name to pointer, default of 0.1 is assigned inside walkin subroutine if blank
             AlphaNum = 9;
             if (lAlphaBlanks(AlphaNum)) {
-                WalkIn(WalkInID).StockingSchedPtr = 0;
-            } else {
-                WalkIn(WalkInID).StockingSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum));
-                if (WalkIn(WalkInID).StockingSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WalkIn(WalkInID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }
-            } // blank
+            } else if ((WalkIn(WalkInID).stockingSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            }
 
             WalkIn(WalkInID).DesignRefrigInventory = 0.0;
             if (!lNumericBlanks(10)) WalkIn(WalkInID).DesignRefrigInventory = Numbers(10);
@@ -1748,11 +1580,11 @@ void GetRefrigerationInput(EnergyPlusData &state)
             if (!allocated(WalkIn(WalkInID).SurfaceArea)) WalkIn(WalkInID).SurfaceArea.allocate(NumZones) = 0.0;
             if (!allocated(WalkIn(WalkInID).UValue)) WalkIn(WalkInID).UValue.allocate(NumZones) = 0.0;
             if (!allocated(WalkIn(WalkInID).UValueGlassDr)) WalkIn(WalkInID).UValueGlassDr.allocate(NumZones) = 0.0;
-            if (!allocated(WalkIn(WalkInID).GlassDoorOpenSchedPtr)) WalkIn(WalkInID).GlassDoorOpenSchedPtr.allocate(NumZones) = 0;
+            if (!allocated(WalkIn(WalkInID).glassDoorOpenScheds)) WalkIn(WalkInID).glassDoorOpenScheds.allocate(NumZones) = nullptr; // What is this?
             if (!allocated(WalkIn(WalkInID).AreaGlassDr)) WalkIn(WalkInID).AreaGlassDr.allocate(NumZones) = 0.0;
             if (!allocated(WalkIn(WalkInID).HeightGlassDr)) WalkIn(WalkInID).HeightGlassDr.allocate(NumZones) = 0.0;
             if (!allocated(WalkIn(WalkInID).UValueStockDr)) WalkIn(WalkInID).UValueStockDr.allocate(NumZones) = 0.0;
-            if (!allocated(WalkIn(WalkInID).StockDoorOpenSchedPtr)) WalkIn(WalkInID).StockDoorOpenSchedPtr.allocate(NumZones) = 0;
+            if (!allocated(WalkIn(WalkInID).stockDoorOpenScheds)) WalkIn(WalkInID).stockDoorOpenScheds.allocate(NumZones) = nullptr; // What is this?
             if (!allocated(WalkIn(WalkInID).StockDoorProtectType)) WalkIn(WalkInID).StockDoorProtectType.allocate(NumZones) = WIStockDoor::Invalid;
             if (!allocated(WalkIn(WalkInID).AreaStockDr)) WalkIn(WalkInID).AreaStockDr.allocate(NumZones) = 0.0;
             if (!allocated(WalkIn(WalkInID).HeightStockDr)) WalkIn(WalkInID).HeightStockDr.allocate(NumZones) = 0.0;
@@ -1843,36 +1675,14 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
                     // convert door opening schedule name to pointer, default of 0.1 is assigned inside walkin subroutine if blank
                     if (lAlphaBlanks(AStart + 1)) {
-                        WalkIn(WalkInID).GlassDoorOpenSchedPtr(ZoneID) = 0;
-                    } else {
-                        WalkIn(WalkInID).GlassDoorOpenSchedPtr(ZoneID) = ScheduleManager::GetScheduleIndex(state, Alphas(AStart + 1));
-                        if (WalkIn(WalkInID).GlassDoorOpenSchedPtr(ZoneID) == 0) {
-                            ShowSevereError(state,
-                                            format(R"({}{}="{}", Zone="{}", invalid  {} not found: {})",
-                                                   RoutineName,
-                                                   CurrentModuleObject,
-                                                   WalkIn(WalkInID).Name,
-                                                   WalkIn(WalkInID).ZoneName(ZoneID),
-                                                   cAlphaFieldNames(AStart + 1),
-                                                   Alphas(AStart + 1)));
-                            ErrorsFound = true;
-                        } else {
-                            //       check schedule for values between 0 and 1
-                            if (!ScheduleManager::CheckScheduleValueMinMax(
-                                    state, WalkIn(WalkInID).GlassDoorOpenSchedPtr(ZoneID), ">=", 0.0, "<=", 1.0)) {
-                                ShowSevereError(state,
-                                                format(R"({}{}="{}", Zone="{}")",
-                                                       RoutineName,
-                                                       CurrentModuleObject,
-                                                       WalkIn(WalkInID).Name,
-                                                       WalkIn(WalkInID).ZoneName(ZoneID)));
-                                ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AStart + 1), Alphas(AStart + 1)));
-                                ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                                ErrorsFound = true;
-                            } // schedule values outside range
-                        }     // have schedule pointer
-                    }         // blank on door opening schedule (AStart + 1)
-                }             // have glassdoor area facing zone (blank on lNumericBlanks(NStart+2))
+                    } else if ((WalkIn(WalkInID).glassDoorOpenScheds(ZoneID) = Sched::GetSchedule(state, Alphas(AStart + 1))) == nullptr) {
+                        ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AStart + 1), Alphas(AStart + 1));
+                        ErrorsFound = true;
+                    } else if (!WalkIn(WalkInID).glassDoorOpenScheds(ZoneID)->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                        Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AStart + 1), Alphas(AStart + 1), Clusive::In, 0.0, Clusive::In, 1.0);
+                        ErrorsFound = true;
+                    } // blank on door opening schedule (AStart + 1)
+                }     // have glassdoor area facing zone (blank on lNumericBlanks(NStart+2))
 
                 // start IF set for stock doors in this zone
                 WalkIn(WalkInID).AreaStockDr(ZoneID) = 0.0;
@@ -1889,35 +1699,13 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
                     // convert door opening schedule name to pointer, default of 0.1 is assigned inside walkin subroutine if blank
                     if (lAlphaBlanks(AStart + 2)) {
-                        WalkIn(WalkInID).StockDoorOpenSchedPtr(ZoneID) = 0;
-                    } else {
-                        WalkIn(WalkInID).StockDoorOpenSchedPtr(ZoneID) = ScheduleManager::GetScheduleIndex(state, Alphas(AStart + 2));
-                        if (WalkIn(WalkInID).StockDoorOpenSchedPtr(ZoneID) == 0) {
-                            ShowSevereError(state,
-                                            format(R"({}{}="{}", Zone="{}", invalid  {} not found: {})",
-                                                   RoutineName,
-                                                   CurrentModuleObject,
-                                                   WalkIn(WalkInID).Name,
-                                                   WalkIn(WalkInID).ZoneName(ZoneID),
-                                                   cAlphaFieldNames(AStart + 2),
-                                                   Alphas(AStart + 2)));
-                            ErrorsFound = true;
-                        } else {
-                            //       check schedule for values between 0 and 1
-                            if (!ScheduleManager::CheckScheduleValueMinMax(
-                                    state, WalkIn(WalkInID).StockDoorOpenSchedPtr(ZoneID), ">=", 0.0, "<=", 1.0)) {
-                                ShowSevereError(state,
-                                                format(R"({}{}="{}", Zone="{}")",
-                                                       RoutineName,
-                                                       CurrentModuleObject,
-                                                       WalkIn(WalkInID).Name,
-                                                       WalkIn(WalkInID).ZoneName(ZoneID)));
-                                ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AStart + 2), Alphas(AStart + 2)));
-                                ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                                ErrorsFound = true;
-                            } // schedule values outside range
-                        }     // have schedule pointer
-                    }         // blank on door opening schedule (AStart + 2)
+                    } else if ((WalkIn(WalkInID).stockDoorOpenScheds(ZoneID) = Sched::GetSchedule(state, Alphas(AStart + 2))) == nullptr) {
+                        ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AStart + 2), Alphas(AStart + 2));
+                        ErrorsFound = true;
+                    } else if (!WalkIn(WalkInID).stockDoorOpenScheds(ZoneID)->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                        Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AStart + 2), Alphas(AStart + 2), Clusive::In, 0.0, Clusive::In, 1.0);
+                        ErrorsFound = true;
+                    } // blank on door opening schedule (AStart + 2)
 
                     if (lAlphaBlanks(AStart + 3) || Util::SameString(Alphas(AStart + 3), "AirCurtain")) {
                         // default air curtain
@@ -1963,36 +1751,23 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             WarehouseCoil(CoilID).Name = Alphas(AlphaNum);
 
             // A2
             ++AlphaNum;
-            if (!lAlphaBlanks(AlphaNum)) {
-                WarehouseCoil(CoilID).SchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert schedule name to pointer
-                if (WarehouseCoil(CoilID).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WarehouseCoil(CoilID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                WarehouseCoil(CoilID).SchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check availability schedule for values between 0 and 1
-            if (WarehouseCoil(CoilID).SchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WarehouseCoil(CoilID).SchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WarehouseCoil(CoilID).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(AlphaNum)) {
+                WarehouseCoil(CoilID).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((WarehouseCoil(CoilID).availSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WarehouseCoil(CoilID).availSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             // Input capacity rating type
@@ -2463,36 +2238,20 @@ void GetRefrigerationInput(EnergyPlusData &state)
             if (!lNumericBlanks(NumNum)) {
                 WarehouseCoil(CoilID).HeaterPower = Numbers(NumNum);
             } else {
-                ShowSevereError(state,
-                                std::string{RoutineName} + CurrentModuleObject + "=\"" + WarehouseCoil(CoilID).Name + "\", " +
-                                    cNumericFieldNames(NumNum) + " must be input ");
+                ShowSevereEmptyField(state, eoh, cNumericFieldNames(NumNum));
                 ErrorsFound = true;
             }
 
             ++AlphaNum; // A6
-            if (!lAlphaBlanks(AlphaNum)) {
-                WarehouseCoil(CoilID).HeaterSchedPtr =
-                    ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert heater schedule name to pointer
-                if (WarehouseCoil(CoilID).HeaterSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WarehouseCoil(CoilID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                } else { //   check heater schedule for values between 0 and 1
-                    if (!ScheduleManager::CheckScheduleValueMinMax(state, WarehouseCoil(CoilID).HeaterSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                        ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WarehouseCoil(CoilID).Name));
-                        ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                        ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                        ErrorsFound = true;
-                    } // heater schedule ptr == 0
-                }     // htr sched == 0
-            } else {  // lalphaBlanks, no schedule specified
-                WarehouseCoil(CoilID).HeaterSchedPtr = AlwaysOn;
-            } // not blank
+            if (lAlphaBlanks(AlphaNum)) {
+                WarehouseCoil(CoilID).heaterAvailSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((WarehouseCoil(CoilID).heaterAvailSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WarehouseCoil(CoilID).heaterAvailSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
+            }
 
             // Input fan control type
             ++AlphaNum; // A7
@@ -2583,50 +2342,29 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
             // convert defrost schedule name to pointer
             ++AlphaNum; // A10
-            WarehouseCoil(CoilID).DefrostSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum));
-            if (WarehouseCoil(CoilID).DefrostSchedPtr == 0) {
-                ShowSevereError(state,
-                                format("{}{}=\"{}\", invalid  {} not found: {}",
-                                       RoutineName,
-                                       CurrentModuleObject,
-                                       WarehouseCoil(CoilID).Name,
-                                       cAlphaFieldNames(AlphaNum),
-                                       Alphas(AlphaNum)));
+            if (lAlphaBlanks(AlphaNum)) {
+                ShowSevereEmptyField(state, eoh, cAlphaFieldNames(AlphaNum));
                 ErrorsFound = true;
-            } else { //   check defrost schedule for values between 0 and 1
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, WarehouseCoil(CoilID).DefrostSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{} = \"{}\"", RoutineName, CurrentModuleObject, WarehouseCoil(CoilID).Name));
-                    ShowContinueError(state, format("Error found in {}={}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                } // checkschedulevalueMinMax
-            }     // check for valid schedule name
+            } else if ((WarehouseCoil(CoilID).defrostSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WarehouseCoil(CoilID).defrostSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
+            } // check for valid schedule name
 
             // convert defrost drip-down schedule name to pointer
             // some defrost types do not use drip-down schedules, use same defrost schedule pointer in that case
             ++AlphaNum; // A11
-            if (!lAlphaBlanks(AlphaNum)) {
-                WarehouseCoil(CoilID).DefrostDripDownSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum));
-                if (WarehouseCoil(CoilID).DefrostDripDownSchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           WarehouseCoil(CoilID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                } else { // check schedule for values between 0 and 1
-                    if (!ScheduleManager::CheckScheduleValueMinMax(state, WarehouseCoil(CoilID).DefrostDripDownSchedPtr, ">=", 0.0, "<=", 1.0)) {
-                        ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, WarehouseCoil(CoilID).Name));
-                        ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                        ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                        ErrorsFound = true;
-                    } // Check schedule value between 0 and 1
-                }     // Check if drip down schedule name is valid
-            } else {  // .not. lAlphaBlanks  so use drip down schedule for defrost
-                WarehouseCoil(CoilID).DefrostDripDownSchedPtr = WarehouseCoil(CoilID).DefrostSchedPtr;
-            } // .not. lAlphaBlanks
+            if (lAlphaBlanks(AlphaNum)) {
+                WarehouseCoil(CoilID).defrostDripDownSched = WarehouseCoil(CoilID).defrostSched;
+            } else if ((WarehouseCoil(CoilID).defrostDripDownSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!WarehouseCoil(CoilID).defrostDripDownSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
+            } // check for valid schedule name
 
             ++NumNum; // N14
             if (WarehouseCoil(CoilID).defrostType == DefrostType::OffCycle || WarehouseCoil(CoilID).defrostType == DefrostType::None) {
@@ -2712,36 +2450,23 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             AlphaNum = 1;
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             AirChillerSet(SetID).Name = Alphas(AlphaNum);
 
             AlphaNum = 2;
-            if (!lAlphaBlanks(AlphaNum)) {
-                AirChillerSet(SetID).SchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(AlphaNum)); // convert schedule name to pointer
-                if (AirChillerSet(SetID).SchedPtr == 0) {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} not found: {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           AirChillerSet(SetID).Name,
-                                           cAlphaFieldNames(AlphaNum),
-                                           Alphas(AlphaNum)));
-                    ErrorsFound = true;
-                }    // ptr == 0
-            } else { // no schedule specified
-                AirChillerSet(SetID).SchedPtr = AlwaysOn;
-            } // not blank
-
-            //   check availability schedule for values between 0 and 1
-            if (AirChillerSet(SetID).SchedPtr > 0) {
-                if (!ScheduleManager::CheckScheduleValueMinMax(state, AirChillerSet(SetID).SchedPtr, ">=", 0.0, "<=", 1.0)) {
-                    ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, AirChillerSet(SetID).Name));
-                    ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(AlphaNum), Alphas(AlphaNum)));
-                    ShowContinueError(state, "schedule values must be (>=0., <=1.)");
-                    ErrorsFound = true;
-                }
+            if (lAlphaBlanks(AlphaNum)) {
+                AirChillerSet(SetID).availSched = Sched::GetScheduleAlwaysOn(state);
+            } else if ((AirChillerSet(SetID).availSched = Sched::GetSchedule(state, Alphas(AlphaNum))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if (!AirChillerSet(SetID).availSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+                Sched::ShowSevereBadMinMax(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum), Clusive::In, 0.0, Clusive::In, 1.0);
+                ErrorsFound = true;
             }
 
             ++AlphaNum;
@@ -2937,6 +2662,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             RefrigRack(RackNum).Name = Alphas(1);
@@ -3094,23 +2821,12 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 // Get outlet temperature schedule for variable flow case
                 if (RefrigRack(RackNum).FlowType == CndsrFlowType::VariableFlow) {
                     if (lAlphaBlanks(9)) {
-                        RefrigRack(RackNum).OutletTempSchedPtr = 0;
-                    } else {
-                        RefrigRack(RackNum).OutletTempSchedPtr =
-                            ScheduleManager::GetScheduleIndex(state, Alphas(9)); // convert schedule name to pointer
-                    }
-                    if (RefrigRack(RackNum).OutletTempSchedPtr == 0) {
-                        ShowSevereError(state,
-                                        format("{}{}=\"{}\", invalid  {} : {}",
-                                               RoutineName,
-                                               CurrentModuleObject,
-                                               RefrigRack(RackNum).Name,
-                                               cAlphaFieldNames(9),
-                                               Alphas(9)));
-                        ShowContinueError(state, "A schedule with this name is not defined in this input data file.");
+                    } else if ((RefrigRack(RackNum).outletTempSched = Sched::GetSchedule(state, Alphas(9))) == nullptr) {
+                        ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(9), Alphas(9));
                         ErrorsFound = true;
                     }
                 }
+
                 // Get volumetric flow rate if applicable
                 if (RefrigRack(RackNum).FlowType == CndsrFlowType::ConstantFlow) {
                     RefrigRack(RackNum).DesVolFlowRate = Numbers(3);
@@ -3140,28 +2856,12 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
             // Get evaporative cooled condenser input
             if (lAlphaBlanks(10)) {
-                RefrigRack(RackNum).EvapSchedPtr = 0;
-            } else {
-                RefrigRack(RackNum).EvapSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(10)); // convert schedule name to pointer
-                //   check availability schedule for values >= 0
-                if (RefrigRack(RackNum).EvapSchedPtr > 0) {
-                    if (!ScheduleManager::CheckScheduleValueMinMax(state, RefrigRack(RackNum).EvapSchedPtr, true, 0.0)) {
-                        ShowSevereError(state, format("{}{}=\"{}\" .", RoutineName, CurrentModuleObject, RefrigRack(RackNum).Name));
-                        ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(10), Alphas(10)));
-                        ShowContinueError(state, "schedule values must be (>=0.).");
-                        ErrorsFound = true;
-                    }
-                } else {
-                    ShowSevereError(state,
-                                    format("{}{}=\"{}\", invalid  {} = {}",
-                                           RoutineName,
-                                           CurrentModuleObject,
-                                           RefrigRack(RackNum).Name,
-                                           cAlphaFieldNames(10),
-                                           Alphas(10)));
-                    ShowContinueError(state, "A schedule with this name is not defined in this input data file.");
-                    ErrorsFound = true;
-                }
+            } else if ((RefrigRack(RackNum).evapAvailSched = Sched::GetSchedule(state, Alphas(10))) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(10), Alphas(10));
+                ErrorsFound = true;
+            } else if (!RefrigRack(RackNum).evapAvailSched->checkMinVal(state, Clusive::In, 0.0)) {
+                Sched::ShowSevereBadMin(state, eoh, cAlphaFieldNames(10), Alphas(10), Clusive::In, 0.0);
+                ErrorsFound = true;
             }
 
             RefrigRack(RackNum).EvapEffect = Numbers(7);
@@ -3449,7 +3149,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
         if (state.dataRefrigCase->NumRefrigSystems > 0 && state.dataRefrigCase->NumRefrigCondensers == 0) {
             ShowSevereError(state,
-                            "Refrigeration:System objects were found during input processing, however no Rrefrigeration condenser objects (which "
+                            "Refrigeration:System objects were found during input processing, however no Refrigeration condenser objects (which "
                             "may be either: ");
             ShowContinueError(state,
                               " Refrigeration:Condenser:AirCooled, Refrigeration:Condenser:WaterCooled, "
@@ -3631,6 +3331,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                          lAlphaBlanks,
                                                                          cAlphaFieldNames,
                                                                          cNumericFieldNames);
+
+                ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
 
                 GlobalNames::VerifyUniqueInterObjectName(
                     state, state.dataRefrigCase->UniqueCondenserNames, Alphas(1), CurrentModuleObject, cAlphaFieldNames(1), ErrorsFound);
@@ -3847,29 +3549,13 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 }
 
                 if (lAlphaBlanks(5)) {
-                    Condenser(CondNum).EvapSchedPtr = 0;
-                } else {
-                    Condenser(CondNum).EvapSchedPtr = ScheduleManager::GetScheduleIndex(state, Alphas(5)); // convert schedule name to pointer
-                    //   check availability schedule for values >= 0
-                    if (Condenser(CondNum).EvapSchedPtr > 0) {
-                        if (!ScheduleManager::CheckScheduleValueMinMax(state, Condenser(CondNum).EvapSchedPtr, true, 0.0)) {
-                            ShowSevereError(state, format("{}{}=\"{}\" .", RoutineName, CurrentModuleObject, Condenser(CondNum).Name));
-                            ShowContinueError(state, format("Error found in {} = {}", cAlphaFieldNames(5), Alphas(5)));
-                            ShowContinueError(state, "schedule values must be (>=0.).");
-                            ErrorsFound = true;
-                        }
-                    } else {
-                        ShowSevereError(state,
-                                        format("{}{}=\"{}\", invalid  {} = {}",
-                                               RoutineName,
-                                               CurrentModuleObject,
-                                               Condenser(CondNum).Name,
-                                               cAlphaFieldNames(5),
-                                               Alphas(5)));
-                        ShowContinueError(state, "A schedule with this name is not defined in this input data file.");
-                        ErrorsFound = true;
-                    }
-                } // Set Evap Schedule Pointer
+                } else if ((Condenser(CondNum).evapAvailSched = Sched::GetSchedule(state, Alphas(5))) == nullptr) {
+                    ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(5), Alphas(5));
+                    ErrorsFound = true;
+                } else if (!Condenser(CondNum).evapAvailSched->checkMinVal(state, Clusive::In, 0.0)) {
+                    Sched::ShowSevereBadMin(state, eoh, cAlphaFieldNames(5), Alphas(5), Clusive::In, 0.0);
+                    ErrorsFound = true;
+                }
 
                 Condenser(CondNum).EndUseSubcategory = "";
                 if (!lAlphaBlanks(6)) Condenser(CondNum).EndUseSubcategory = Alphas(6);
@@ -3902,6 +3588,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                          lAlphaBlanks,
                                                                          cAlphaFieldNames,
                                                                          cNumericFieldNames);
+
+                ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
 
                 GlobalNames::VerifyUniqueInterObjectName(
                     state, state.dataRefrigCase->UniqueCondenserNames, Alphas(1), CurrentModuleObject, cAlphaFieldNames(1), ErrorsFound);
@@ -4010,20 +3698,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                 // Get outlet temperature schedule for variable flow case
                 if (Condenser(CondNum).FlowType == CndsrFlowType::VariableFlow) {
                     if (lAlphaBlanks(5)) {
-                        Condenser(CondNum).OutletTempSchedPtr = 0;
-                    } else {
-                        Condenser(CondNum).OutletTempSchedPtr =
-                            ScheduleManager::GetScheduleIndex(state, Alphas(5)); // convert schedule name to pointer
-                    }
-                    if (Condenser(CondNum).OutletTempSchedPtr == 0) {
-                        ShowSevereError(state,
-                                        format("{}{}=\"{}\", invalid  {} = {}",
-                                               RoutineName,
-                                               CurrentModuleObject,
-                                               Condenser(CondNum).Name,
-                                               cAlphaFieldNames(5),
-                                               Alphas(5)));
-                        ShowContinueError(state, "A schedule with this name is not defined in this input data file.");
+                    } else if ((Condenser(CondNum).outletTempSched = Sched::GetSchedule(state, Alphas(5))) == nullptr) {
+                        ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(5), Alphas(5));
                         ErrorsFound = true;
                     }
                 } // Outlet temperature schedule
@@ -4421,6 +4097,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                          lAlphaBlanks,
                                                                          cAlphaFieldNames,
                                                                          cNumericFieldNames);
+
+                ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
                 Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
                 Secondary(SecondaryNum).Name = Alphas(1);
@@ -4594,6 +4272,16 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
                 AlphaNum = 4;
                 Secondary(SecondaryNum).FluidName = Alphas(AlphaNum);
+                if (Secondary(SecondaryNum).FluidName.empty()) {
+                    ShowSevereEmptyField(state, eoh, cAlphaFieldNames(AlphaNum));
+                    ErrorsFound = true;
+                } else if ((Secondary(SecondaryNum).glycol = Fluid::GetGlycol(state, Secondary(SecondaryNum).FluidName)) != nullptr) {
+                } else if ((Secondary(SecondaryNum).refrig = Fluid::GetRefrig(state, Secondary(SecondaryNum).FluidName)) != nullptr) {
+                } else {
+                    ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                    ErrorsFound = true;
+                }
+
                 // Error messages for refrigerants and glycols already found in fluidproperties
 
                 // Note remainder of inputs for secondary don't follow IDD input order because of different interpretations
@@ -4658,11 +4346,9 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     TBrineInRated = TBrineOutRated + Secondary(SecondaryNum).TRangeDifRated;
                     Real64 TBrineAverage = (TBrineOutRated + TBrineInRated) / 2.0;
                     Secondary(SecondaryNum).TBrineAverage = TBrineAverage;
-                    DensityBrineRated = FluidProperties::GetDensityGlycol(
-                        state, Secondary(SecondaryNum).FluidName, TBrineAverage, Secondary(SecondaryNum).FluidID, TrackMessage);
+                    DensityBrineRated = Secondary(SecondaryNum).glycol->getDensity(state, TBrineAverage, TrackMessage);
                     Secondary(SecondaryNum).DensityBrineRated = DensityBrineRated;
-                    CpBrineRated = FluidProperties::GetSpecificHeatGlycol(
-                        state, Secondary(SecondaryNum).FluidName, TBrineAverage, Secondary(SecondaryNum).FluidID, TrackMessage);
+                    CpBrineRated = Secondary(SecondaryNum).glycol->getSpecificHeat(state, TBrineAverage, TrackMessage);
                     Secondary(SecondaryNum).CpBrineRated = CpBrineRated;
 
                     // Users can input either design brine flow (m3/s), or capacity in W, or both.  Now have
@@ -4742,24 +4428,11 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     Secondary(SecondaryNum).CircRate = DefaultCircRate;
                     if (!lNumericBlanks(10)) Secondary(SecondaryNum).CircRate = Numbers(10);
 
-                    DensityPhaseChange = FluidProperties::GetSatDensityRefrig(state,
-                                                                              Secondary(SecondaryNum).FluidName,
-                                                                              Secondary(SecondaryNum).TCondense,
-                                                                              0.0,
-                                                                              Secondary(SecondaryNum).FluidID,
-                                                                              TrackMessageAlt);
-                    DeltaHPhaseChange = FluidProperties::GetSatEnthalpyRefrig(state,
-                                                                              Secondary(SecondaryNum).FluidName,
-                                                                              Secondary(SecondaryNum).TCondense,
-                                                                              1.0,
-                                                                              Secondary(SecondaryNum).FluidID,
-                                                                              TrackMessageAlt) -
-                                        FluidProperties::GetSatEnthalpyRefrig(state,
-                                                                              Secondary(SecondaryNum).FluidName,
-                                                                              Secondary(SecondaryNum).TCondense,
-                                                                              0.0,
-                                                                              Secondary(SecondaryNum).FluidID,
-                                                                              TrackMessageAlt);
+                    DensityPhaseChange =
+                        Secondary(SecondaryNum).refrig->getSatDensity(state, Secondary(SecondaryNum).TCondense, 0.0, TrackMessageAlt);
+                    DeltaHPhaseChange =
+                        Secondary(SecondaryNum).refrig->getSatEnthalpy(state, Secondary(SecondaryNum).TCondense, 1.0, TrackMessageAlt) -
+                        Secondary(SecondaryNum).refrig->getSatEnthalpy(state, Secondary(SecondaryNum).TCondense, 0.0, TrackMessageAlt);
 
                     // TotRatedFlowVol= capacity*circrate/deltahphasechange/density
                     Real64 CalcTotFlowVol =
@@ -4952,7 +4625,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     ShowWarningError(
                         state,
                         format("{}{}=\"{}\", {} not found even though {} is greater than zero. Distribution piping heat gain will not be "
-                               "calculated unless a Zone is defined to deterimine the environmental temperature surrounding the piping.",
+                               "calculated unless a Zone is defined to determine the environmental temperature surrounding the piping.",
                                RoutineName,
                                CurrentModuleObject,
                                Secondary(SecondaryNum).Name,
@@ -5013,7 +4686,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     ShowWarningError(
                         state,
                         format("{}{}=\"{}\", {} not found even though {} is greater than zero. Receiver heat gain will not be calculated unless "
-                               "a Zone is defined to deterimine the environmental temperature surrounding the Receiver.",
+                               "a Zone is defined to determine the environmental temperature surrounding the Receiver.",
                                RoutineName,
                                CurrentModuleObject,
                                Secondary(SecondaryNum).Name,
@@ -5506,6 +5179,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             System(RefrigSysNum).Name = Alphas(1);
@@ -5978,6 +5653,13 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
             AlphaNum = 6;
             System(RefrigSysNum).RefrigerantName = Alphas(AlphaNum);
+            if (System(RefrigSysNum).RefrigerantName.empty()) {
+                ShowSevereEmptyField(state, eoh, Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if ((System(RefrigSysNum).refrig = Fluid::GetRefrig(state, System(RefrigSysNum).RefrigerantName)) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            }
             // error messages for refrigerants already found in fluidproperties
 
             AlphaNum = 7;
@@ -6072,7 +5754,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     ShowSevereError(
                         state,
                         format("{}{}=\"{}\", System Node Number not found for {} = {} even though {} is greater than zero. Suction piping heat gain "
-                               "cannot be calculated unless a Zone is defined to deterimine the environmental temperature surrounding the piping.",
+                               "cannot be calculated unless a Zone is defined to determine the environmental temperature surrounding the piping.",
                                RoutineName,
                                CurrentModuleObject,
                                System(RefrigSysNum).Name,
@@ -6230,16 +5912,12 @@ void GetRefrigerationInput(EnergyPlusData &state)
 
             // Determine intercooler pressure and temperature at design conditions
             if (System(RefrigSysNum).NumStages == 2) {
-                Real64 PCond = FluidProperties::GetSatPressureRefrig(state,
-                                                                     System(RefrigSysNum).RefrigerantName,
-                                                                     Condenser(System(RefrigSysNum).CondenserNum(1)).RatedTCondense,
-                                                                     System(RefrigSysNum).RefIndex,
-                                                                     RoutineName);
-                Real64 PEvap = FluidProperties::GetSatPressureRefrig(
-                    state, System(RefrigSysNum).RefrigerantName, System(RefrigSysNum).TEvapDesign, System(RefrigSysNum).RefIndex, RoutineName);
+                Real64 PCond =
+                    System(RefrigSysNum).refrig->getSatPressure(state, Condenser(System(RefrigSysNum).CondenserNum(1)).RatedTCondense, RoutineName);
+                Real64 PEvap = System(RefrigSysNum).refrig->getSatPressure(state, System(RefrigSysNum).TEvapDesign, RoutineName);
                 System(RefrigSysNum).PIntercooler = std::sqrt(PCond * PEvap);
-                System(RefrigSysNum).TIntercooler = FluidProperties::GetSatTemperatureRefrig(
-                    state, System(RefrigSysNum).RefrigerantName, System(RefrigSysNum).PIntercooler, System(RefrigSysNum).RefIndex, RoutineName);
+                System(RefrigSysNum).TIntercooler =
+                    System(RefrigSysNum).refrig->getSatTemperature(state, System(RefrigSysNum).PIntercooler, RoutineName);
             } // NumStages
 
             // Sum capacity of single-stage compressors or low-stage compressors if two-stage system
@@ -6260,7 +5938,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                         NominalTotalCompCap += Compressor(CompNum).NomCap;
                         ++Compressor(CompNum).NumSysAttach;
                     }    // NumStages
-                } else { //  Transcritical compressor attached to subcritical refigeration cycle
+                } else { //  Transcritical compressor attached to subcritical refrigeration cycle
                     ShowSevereError(state,
                                     format("{}{}. A transcritical compressor is attached to a subcritical refrigeration system.",
                                            RoutineName,
@@ -6285,7 +5963,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                        Condenser(System(RefrigSysNum).CondenserNum(1)).RatedTCondense);
                         NominalTotalHiStageCompCap += Compressor(CompNum).NomCap;
                         ++Compressor(CompNum).NumSysAttach;
-                    } else { //  Transcritical compressor attached to subcritical refigeration cycle
+                    } else { //  Transcritical compressor attached to subcritical refrigeration cycle
                         ShowSevereError(state,
                                         format("{}{}. A transcritical compressor is attached to a subcritical refrigeration system.",
                                                RoutineName,
@@ -6462,6 +6140,9 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                                                      lAlphaBlanks,
                                                                      cAlphaFieldNames,
                                                                      cNumericFieldNames);
+
+            ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
             Util::IsNameEmpty(state, Alphas(1), CurrentModuleObject, ErrorsFound);
 
             TransSystem(TransRefrigSysNum).Name = Alphas(1);
@@ -6469,6 +6150,13 @@ void GetRefrigerationInput(EnergyPlusData &state)
             // Read refrigerant for this system
             AlphaNum = 8;
             TransSystem(TransRefrigSysNum).RefrigerantName = Alphas(AlphaNum);
+            if (TransSystem(TransRefrigSysNum).RefrigerantName.empty()) {
+                ShowSevereEmptyField(state, eoh, Alphas(AlphaNum));
+                ErrorsFound = true;
+            } else if ((TransSystem(TransRefrigSysNum).refrig = Fluid::GetRefrig(state, TransSystem(TransRefrigSysNum).RefrigerantName)) == nullptr) {
+                ShowSevereItemNotFound(state, eoh, cAlphaFieldNames(AlphaNum), Alphas(AlphaNum));
+                ErrorsFound = true;
+            }
             // error messages for refrigerants already found in fluidproperties
 
             // Read Transcritical System Type:  SingleStage or TwoStage
@@ -6845,13 +6533,11 @@ void GetRefrigerationInput(EnergyPlusData &state)
                     CompNum = TransSystem(TransRefrigSysNum).CompressorNumHP(CompIndex);
 
                     if (Compressor(CompNum).TransFlag) { //  Calculate nominal capacity of transcritical Compressor
-                        Real64 GCOutletH =
-                            FluidProperties::GetSupHeatEnthalpyRefrig(state,
-                                                                      TransSystem(TransRefrigSysNum).RefrigerantName,
-                                                                      GasCooler(TransSystem(TransRefrigSysNum).GasCoolerNum(1)).RatedOutletT,
-                                                                      GasCooler(TransSystem(TransRefrigSysNum).GasCoolerNum(1)).RatedOutletP,
-                                                                      RefrigIndex,
-                                                                      RoutineNameNoColon);
+                        Real64 GCOutletH = TransSystem(TransRefrigSysNum)
+                                               .refrig->getSupHeatEnthalpy(state,
+                                                                           GasCooler(TransSystem(TransRefrigSysNum).GasCoolerNum(1)).RatedOutletT,
+                                                                           GasCooler(TransSystem(TransRefrigSysNum).GasCoolerNum(1)).RatedOutletP,
+                                                                           routineName);
                         Compressor(CompNum).NomCap = Curve::CurveValue(
                             state, Compressor(CompNum).TransCapacityCurvePtr, TransSystem(TransRefrigSysNum).TEvapDesignMT, GCOutletH);
                         NominalTotalCompCapHP += Compressor(CompNum).NomCap;
@@ -6948,8 +6634,8 @@ void GetRefrigerationInput(EnergyPlusData &state)
             }
 
             // Check receiver temperature against minimum condensing temperature (from gas cooler input) and design evaporator temperatures
-            TransSystem(TransRefrigSysNum).TReceiver = FluidProperties::GetSatTemperatureRefrig(
-                state, TransSystem(TransRefrigSysNum).RefrigerantName, TransSystem(TransRefrigSysNum).PReceiver, RefrigIndex, RoutineNameNoColon);
+            TransSystem(TransRefrigSysNum).TReceiver =
+                TransSystem(TransRefrigSysNum).refrig->getSatTemperature(state, TransSystem(TransRefrigSysNum).PReceiver, routineName);
             if (TransSystem(TransRefrigSysNum).TReceiver > GasCooler(TransSystem(TransRefrigSysNum).GasCoolerNum(NumGasCoolers)).MinCondTemp) {
                 ShowWarningError(state,
                                  format("{}{}=\"{}: The receiver temperature ({:.2R}C) is greater than the minimum condensing temperature "
@@ -7008,7 +6694,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
             // Check subcooler effectiveness value, must be value between 0 and 1
             if ((TransSystem(TransRefrigSysNum).SCEffectiveness < 0) || (TransSystem(TransRefrigSysNum).SCEffectiveness > 1)) {
                 ShowSevereError(state,
-                                format("{}{}=\"{}: The value for subcooler effectivness is invalid.  The subcooler effectivenss must be a value "
+                                format("{}{}=\"{}: The value for subcooler effectiveness is invalid.  The subcooler effectiveness must be a value "
                                        "greater than or equal to zero and less than or equal to one.",
                                        RoutineName,
                                        CurrentModuleObject,
@@ -7040,7 +6726,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                            cNumericFieldNames(3)));
                     ShowContinueError(state,
                                       "  The medium temperature suction piping heat gain cannot be calculated unless a Zone is defined to "
-                                      "deterimine the environmental temperature surrounding the piping.");
+                                      "determine the environmental temperature surrounding the piping.");
                     ErrorsFound = true;
                 } else {
                     state.dataRefrigCase->RefrigPresentInZone(TransSystem(TransRefrigSysNum).SuctionPipeActualZoneNumMT) = true;
@@ -7084,7 +6770,7 @@ void GetRefrigerationInput(EnergyPlusData &state)
                                            cNumericFieldNames(4)));
                     ShowContinueError(state,
                                       "  The low temperature suction piping heat gain cannot be calculated unless a Zone is defined to "
-                                      "deterimine the environmental temperature surrounding the piping.");
+                                      "determine the environmental temperature surrounding the piping.");
                     ErrorsFound = true;
                 } else {
                     state.dataRefrigCase->RefrigPresentInZone(TransSystem(TransRefrigSysNum).SuctionPipeActualZoneNumLT) = true;
@@ -7848,7 +7534,7 @@ void SetupReportInput(EnergyPlusData &state)
 
                 // Report walkin variables that are specified for each zone exposed to the walkin
                 // For "IDOut" variable in SetupOutputVariable, need to create a single name that includes
-                //    both the walk-in name and the zone name - see "Walkin_and_zone_name" concatination
+                //    both the walk-in name and the zone name - see "Walkin_and_zone_name" concatenation
                 //    This new variable name is important if using an rvi file!
                 for (int zoneId = 1; zoneId <= walkin.NumZones; ++zoneId) {
 
@@ -7980,7 +7666,7 @@ void SetupReportInput(EnergyPlusData &state)
                                     coil.TotalElecConsumption,
                                     OutputProcessor::TimeStepType::System,
                                     OutputProcessor::StoreType::Sum,
-                                    coil.Name); // components are metered seperately
+                                    coil.Name); // components are metered separately
                 SetupOutputVariable(state,
                                     "Refrigeration Zone Air Chiller Fan Electricity Rate",
                                     Constant::Units::W,
@@ -10390,7 +10076,7 @@ void InitRefrigeration(EnergyPlusData &state)
         }
     }
 
-    // Accumulative and carry-over variables are not zeroed at start of each time step, only at begining of environment
+    // Accumulative and carry-over variables are not zeroed at start of each time step, only at beginning of environment
     if (state.dataGlobal->BeginEnvrnFlag && state.dataRefrigCase->InitRefrigerationMyBeginEnvrnFlag) {
         if (state.dataRefrigCase->NumSimulationCases > 0) {
             for (int i = RefrigCase.l(), e = RefrigCase.u(); i <= e; ++i) {
@@ -10450,7 +10136,7 @@ void InitRefrigeration(EnergyPlusData &state)
             System(systemId).LSHXTransEnergy = 0.0;
         }
 
-        if (state.dataGlobal->NumOfTimeStepInHour > 0.0) state.dataRefrigCase->TimeStepFraction = 1.0 / double(state.dataGlobal->NumOfTimeStepInHour);
+        if (state.dataGlobal->TimeStepsInHour > 0.0) state.dataRefrigCase->TimeStepFraction = 1.0 / double(state.dataGlobal->TimeStepsInHour);
         state.dataRefrigCase->InitRefrigerationMyBeginEnvrnFlag = false;
 
     } // ( DataGlobals::BeginEnvrnFlag && MyBeginEnvrnFlag )
@@ -10651,11 +10337,7 @@ void InitRefrigerationPlantConnections(EnergyPlusData &state)
                 ShowFatalError(state, "InitRefrigerationPlantConnections: Program terminated due to previous condition(s).");
             }
 
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).FluidName,
-                                                           20.0,
-                                                           state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).glycol->getDensity(state, 20.0, RoutineName);
 
             if (Condenser(RefCondLoop).FlowType == CndsrFlowType::ConstantFlow) {
                 Condenser(RefCondLoop).MassFlowRateMax = Condenser(RefCondLoop).DesVolFlowRate * rho;
@@ -10682,11 +10364,7 @@ void InitRefrigerationPlantConnections(EnergyPlusData &state)
                 ShowFatalError(state, "InitRefrigerationPlantConnections: Program terminated due to previous condition(s).");
             }
 
-            Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                           state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).FluidName,
-                                                           20.0,
-                                                           state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).FluidIndex,
-                                                           RoutineName);
+            Real64 rho = state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).glycol->getDensity(state, 20.0, RoutineName);
 
             if (RefrigRack(RefCompRackLoop).FlowType == CndsrFlowType::ConstantFlow) {
                 RefrigRack(RefCompRackLoop).MassFlowRateMax = RefrigRack(RefCompRackLoop).DesVolFlowRate * rho;
@@ -10707,11 +10385,7 @@ void InitRefrigerationPlantConnections(EnergyPlusData &state)
             for (int RefCondLoop = 1; RefCondLoop <= state.dataRefrigCase->NumRefrigCondensers; ++RefCondLoop) {
                 if (Condenser(RefCondLoop).CondenserType != DataHeatBalance::RefrigCondenserType::Water) continue;
 
-                Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                               state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).FluidName,
-                                                               20.0,
-                                                               state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+                Real64 rho = state.dataPlnt->PlantLoop(Condenser(RefCondLoop).plantLoc.loopNum).glycol->getDensity(state, 20.0, RoutineName);
 
                 if (Condenser(RefCondLoop).FlowType == CndsrFlowType::ConstantFlow) {
                     Condenser(RefCondLoop).MassFlowRateMax = Condenser(RefCondLoop).DesVolFlowRate * rho;
@@ -10725,11 +10399,7 @@ void InitRefrigerationPlantConnections(EnergyPlusData &state)
             for (int RefCompRackLoop = 1; RefCompRackLoop <= state.dataRefrigCase->NumRefrigeratedRacks; ++RefCompRackLoop) {
                 if (RefrigRack(RefCompRackLoop).CondenserType != DataHeatBalance::RefrigCondenserType::Water) continue;
 
-                Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                               state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).FluidName,
-                                                               20.0,
-                                                               state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).FluidIndex,
-                                                               RoutineName);
+                Real64 rho = state.dataPlnt->PlantLoop(RefrigRack(RefCompRackLoop).plantLoc.loopNum).glycol->getDensity(state, 20.0, RoutineName);
 
                 if (RefrigRack(RefCompRackLoop).FlowType == CndsrFlowType::ConstantFlow) {
                     RefrigRack(RefCompRackLoop).MassFlowRateMax = RefrigRack(RefCompRackLoop).DesVolFlowRate * rho;
@@ -10811,7 +10481,7 @@ void RefrigRackData::CalcRackSystem(EnergyPlusData &state)
     // In that subroutine, dispatch coils within each set in order specified for each zone
     //  Below will assign loads to refrigeration system or secondary loop
     // Note that this routine will go through all refrigeration systems, but loads for multiple systems
-    // with interactions will not be known for the intital calls with first HVAC time step. They will,
+    // with interactions will not be known for the initial calls with first HVAC time step. They will,
     // however, be repeated when the last chiller set is called from ZoneEquipmentManager
     // that's why important where init goes, don't want to zero out data should keep
     if (state.dataRefrigCase->UseSysTimeStep) {
@@ -10886,7 +10556,7 @@ void RefrigRackData::CalcRackSystem(EnergyPlusData &state)
 
         // IF schedule exists, evap condenser can be scheduled OFF
         // Check schedule to determine evap condenser availability
-        if (this->EvapSchedPtr > 0 && ScheduleManager::GetCurrentScheduleValue(state, this->EvapSchedPtr) == 0) EvapAvail = false;
+        if (this->evapAvailSched != nullptr && this->evapAvailSched->getCurrentVal() == 0) EvapAvail = false;
 
         // Evaporative condensers will have their water flow shut off in cold months to avoid
         //  'spectacular' icing problems.  Ideally, the user will use the evaporative schedule input
@@ -11030,28 +10700,28 @@ void RefrigRackData::ReportRackSystem(EnergyPlusData &state, int const RackNum)
     // PURPOSE OF THIS SUBROUTINE:
     // To report compressor rack variables
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     this->RackCompressorPower = state.dataRefrigCase->TotalCompressorPower;
-    this->RackElecConsumption = state.dataRefrigCase->TotalCompressorPower * LocalTimeStep * Constant::SecInHour;
+    this->RackElecConsumption = state.dataRefrigCase->TotalCompressorPower * localTimeStepSec;
     this->ActualCondenserFanPower = state.dataRefrigCase->TotalCondenserFanPower;
-    this->CondenserFanConsumption = state.dataRefrigCase->TotalCondenserFanPower * LocalTimeStep * Constant::SecInHour;
+    this->CondenserFanConsumption = state.dataRefrigCase->TotalCondenserFanPower * localTimeStepSec;
     this->RackCapacity = state.dataRefrigCase->TotalRackDeliveredCapacity;
-    this->RackCoolingEnergy = state.dataRefrigCase->TotalRackDeliveredCapacity * LocalTimeStep * Constant::SecInHour;
+    this->RackCoolingEnergy = state.dataRefrigCase->TotalRackDeliveredCapacity * localTimeStepSec;
     this->RackCompressorCOP = state.dataRefrigCase->CompressorCOPactual;
     this->SensHVACCreditHeatRate = state.dataRefrigCase->RackSenCreditToHVAC;
-    this->SensHVACCreditHeat = state.dataRefrigCase->RackSenCreditToHVAC * LocalTimeStep * Constant::SecInHour;
+    this->SensHVACCreditHeat = state.dataRefrigCase->RackSenCreditToHVAC * localTimeStepSec;
     this->SensZoneCreditHeatRate = state.dataRefrigCase->RackSenCreditToZone;
-    this->SensZoneCreditHeat = state.dataRefrigCase->RackSenCreditToZone * LocalTimeStep * Constant::SecInHour;
+    this->SensZoneCreditHeat = state.dataRefrigCase->RackSenCreditToZone * localTimeStepSec;
     this->EvapWaterConsumpRate = state.dataRefrigCase->TotalEvapWaterUseRate;
-    this->EvapWaterConsumption = state.dataRefrigCase->TotalEvapWaterUseRate * LocalTimeStep * Constant::SecInHour;
+    this->EvapWaterConsumption = state.dataRefrigCase->TotalEvapWaterUseRate * localTimeStepSec;
     this->ActualEvapPumpPower = state.dataRefrigCase->TotalCondenserPumpPower;
-    this->EvapPumpConsumption = state.dataRefrigCase->TotalCondenserPumpPower * LocalTimeStep * Constant::SecInHour;
+    this->EvapPumpConsumption = state.dataRefrigCase->TotalCondenserPumpPower * localTimeStepSec;
     this->BasinHeaterPower = state.dataRefrigCase->TotalBasinHeatPower;
-    this->BasinHeaterConsumption = state.dataRefrigCase->TotalBasinHeatPower * LocalTimeStep * Constant::SecInHour;
+    this->BasinHeaterConsumption = state.dataRefrigCase->TotalBasinHeatPower * localTimeStepSec;
     this->CondLoad = state.dataRefrigCase->TotalCondenserHeat;
-    this->CondEnergy = state.dataRefrigCase->TotalCondenserHeat * LocalTimeStep * Constant::SecInHour;
+    this->CondEnergy = state.dataRefrigCase->TotalCondenserHeat * localTimeStepSec;
     // Set total rack heat rejection used for heat reclaim. Do not allow heat reclaim on stand alone (indoor) display cases.
     if (this->HeatRejectionLocation == HeatRejLocation::Zone) {
         state.dataHeatBal->HeatReclaimRefrigeratedRack(RackNum).AvailCapacity = 0.0;
@@ -11152,12 +10822,12 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
     // case schedule should be coincident with the zone time step otherwise the simulation proceeds
 
     // Current value of case operating (availability) schedule
-    Real64 CaseSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->SchedPtr);
+    Real64 CaseSchedule = this->availSched->getCurrentVal();
     if (CaseSchedule <= 0) return;
     // get defrost schedule
     if (this->defrostType > RefCaseDefrostType::None) {
-        DefrostSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->DefrostSchedPtr);
-        DefrostDripDownSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->DefrostDripDownSchedPtr);
+        DefrostSchedule = this->defrostSched->getCurrentVal();
+        DefrostDripDownSchedule = this->defrostDripDownSched->getCurrentVal();
         // next statement In case user doesn't understand concept of drip down schedule
         DefrostDripDownSchedule = max(DefrostDripDownSchedule, DefrostSchedule);
     } else {
@@ -11165,24 +10835,15 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
         DefrostDripDownSchedule = 0.0;
     }
 
-    Real64 StockingSchedule(0.0); // Current value of product stocking schedule (W/m)
-
     // get product stocking schedule and load due to product stocking, if no schedule exists load is 0
-    if (this->StockingSchedPtr > 0) {
-        StockingSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->StockingSchedPtr);
-    } else {
-        StockingSchedule = 0.0;
-    }
+    Real64 StockingSchedule = (this->stockingSched != nullptr) ? this->stockingSched->getCurrentVal() : 0.0;
+
     // get lighting schedule and total load due to lighting
-    Real64 LightingSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->LightingSchedPtr);
+    Real64 LightingSchedule = this->lightingSched->getCurrentVal();
 
     // if case credit reduction fraction schedule exists, modify both sensible and latent case credits
     // according to schedule - used to account for variable case envelope, such as night covers.
-    if (this->CaseCreditFracSchedPtr != 0) {
-        CaseCreditFraction = ScheduleManager::GetCurrentScheduleValue(state, this->CaseCreditFracSchedPtr);
-    } else {
-        CaseCreditFraction = 1.0;
-    }
+    CaseCreditFraction = (this->caseCreditFracSched != nullptr) ? this->caseCreditFracSched->getCurrentVal() : 1.0;
 
     // CALCULATE AUX LOADS DUE TO LIGHTS, FAN AND STOCKING
     TotalLightingLoad = this->DesignLighting * LightingSchedule;
@@ -11342,7 +11003,7 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
             // Reduce defrost heat load on case by amount of ice melted during time step
             // However, don't reduce the defrost capacity applied
 
-            DefrostLoad_Actual = DefrostCap_Actual - FrostMeltedKg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::SecInHour;
+            DefrostLoad_Actual = DefrostCap_Actual - FrostMeltedKg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour;
 
             if (!state.dataGlobal->WarmupFlag) { // avoid reverse dd test problems
                 // keep running total of defrost energy above that needed to melt frost for use in evaluating
@@ -11372,7 +11033,7 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
     Real64 TotalLoad_Actual = SensibleLoadTotal + LatentLoad + DefrostLoad_Actual;
 
     // Rate needed to serve all stored energy during single time step (W)
-    Real64 StoredEnergyRate = this->StoredEnergy / state.dataGlobal->TimeStepZone / Constant::SecInHour;
+    Real64 StoredEnergyRate = this->StoredEnergy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour;
     Real64 LoadRequested = TotalLoad_Actual + StoredEnergyRate;
 
     // prorate available cooling capacity for portion of time off due to drip down.
@@ -11505,7 +11166,7 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
                     ShowContinueError(state, " Total Cooling Capacity.");
                 } else {
                     ShowContinueError(state,
-                                      " This case has insufficient capacity to meet excess energy associated with a zone enviroment temperature "
+                                      " This case has insufficient capacity to meet excess energy associated with a zone environment temperature "
                                       "greater than the design ambient for the case.");
                     ShowContinueError(state, " Refer to documentation for further explanation of ");
                     ShowContinueError(state, " Total Cooling Capacity.");
@@ -11517,7 +11178,7 @@ void RefrigCaseData::CalculateCase(EnergyPlusData &state) // Absolute pointer to
                     ShowContinueError(state, " recommendations regarding Total Cooling Capacity, Sensible Heat Ratio, and Defrost Capacity.");
                 } else {
                     ShowContinueError(state,
-                                      " This case has insufficient capacity to meet excess energy associated with a zone enviroment temperature "
+                                      " This case has insufficient capacity to meet excess energy associated with a zone environment temperature "
                                       "greater than the design ambient for the case.");
                     ShowContinueError(state, " Refer to documentation for further explanation of ");
                     ShowContinueError(state, " Total Cooling Capacity.");
@@ -11612,20 +11273,12 @@ void RefrigCondenserData::simulate(EnergyPlusData &state,
     // Make demand request on first HVAC iteration
 
     // get cooling fluid properties
-    Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                   state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidName,
-                                                   this->InletTemp,
-                                                   state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidIndex,
-                                                   RoutineName);
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidName,
-                                                       this->InletTemp,
-                                                       state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+    Real64 rho = state.dataPlnt->PlantLoop(PlantLoc.loopNum).glycol->getDensity(state, this->InletTemp, RoutineName);
+    Real64 Cp = state.dataPlnt->PlantLoop(PlantLoc.loopNum).glycol->getSpecificHeat(state, this->InletTemp, RoutineName);
 
     if (this->FlowType == CndsrFlowType::VariableFlow && state.dataRefrigCase->TotalCondenserHeat > 0.0) {
 
-        this->OutletTemp = ScheduleManager::GetCurrentScheduleValue(state, this->OutletTempSchedPtr);
+        this->OutletTemp = this->outletTempSched->getCurrentVal();
 
         if (this->OutletTemp == this->InletTemp) {
 
@@ -11772,19 +11425,11 @@ void RefrigRackData::simulate(EnergyPlusData &state,
     // Make demand request on first HVAC iteration
 
     // get cooling fluid properties
-    Real64 rho = FluidProperties::GetDensityGlycol(state,
-                                                   state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidName,
-                                                   this->InletTemp,
-                                                   state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidIndex,
-                                                   RoutineName);
-    Real64 Cp = FluidProperties::GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidName,
-                                                       this->InletTemp,
-                                                       state.dataPlnt->PlantLoop(PlantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+    Real64 rho = state.dataPlnt->PlantLoop(PlantLoc.loopNum).glycol->getDensity(state, this->InletTemp, RoutineName);
+    Real64 Cp = state.dataPlnt->PlantLoop(PlantLoc.loopNum).glycol->getSpecificHeat(state, this->InletTemp, RoutineName);
 
     if (this->FlowType == CndsrFlowType::VariableFlow && state.dataRefrigCase->TotalCondenserHeat > 0.0) {
-        this->OutletTemp = ScheduleManager::GetCurrentScheduleValue(state, this->OutletTempSchedPtr);
+        this->OutletTemp = this->outletTempSched->getCurrentVal();
 
         if (this->OutletTemp == this->InletTemp) {
 
@@ -11942,8 +11587,8 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
     auto &AirChillerSet = state.dataRefrigCase->AirChillerSet;
     auto &CoilSysCredit = state.dataRefrigCase->CoilSysCredit;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     // Cascade condenser assumes a constant approach delta T (Tcond - Tevap), not f(load)
 
@@ -11954,7 +11599,7 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
     // In that subroutine, dispatch coils within each set in order specified for each zone
     //  Below will assign loads to refrigeration system or secondary loop
     // Note that this routine will go through all refrigeration systems, but loads for multiple systems
-    // with interactions will not be known for the intital calls with first HVAC time step. They will,
+    // with interactions will not be known for the initial calls with first HVAC time step. They will,
     // however, be repeated when the last chiller set is called from ZoneEquipmentManager
     // that's why important where init goes, don't want to zero out data should keep
     if (state.dataRefrigCase->UseSysTimeStep) {
@@ -12159,11 +11804,9 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                 // only calc detailed system if have load (could be zero first time through if only load is cascade condenser)
                 thisSys.TotalSystemLoad = thisSys.TotalCoolingLoad + thisSys.SumSecondaryLoopLoad + thisSys.SumMechSCLoad + thisSys.SumCascadeLoad;
                 if (thisSys.TotalSystemLoad > 0.0) {
-                    thisSys.CpSatVapEvap = FluidProperties::GetSatSpecificHeatRefrig(
-                        state, thisSys.RefrigerantName, thisSys.TEvapNeeded, 1.0, thisSys.RefIndex, RoutineName);
-                    thisSys.HCaseOut = FluidProperties::GetSatEnthalpyRefrig(
-                                           state, thisSys.RefrigerantName, thisSys.TEvapNeeded, 1.0, thisSys.RefIndex, RoutineName) +
-                                       thisSys.CpSatVapEvap * CaseSuperheat;
+                    thisSys.CpSatVapEvap = thisSys.refrig->getSatSpecificHeat(state, thisSys.TEvapNeeded, 1.0, RoutineName);
+                    thisSys.HCaseOut =
+                        thisSys.refrig->getSatEnthalpy(state, thisSys.TEvapNeeded, 1.0, RoutineName) + thisSys.CpSatVapEvap * CaseSuperheat;
                     // Establish estimates to start solution loop
                     switch (Condenser(thisSys.CondenserNum(1)).CondenserType) {
                     case DataHeatBalance::RefrigCondenserType::Air: {
@@ -12186,10 +11829,8 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                     }
 
                     // Produce first time step estimates, assume no subcoolers
-                    thisSys.HSatLiqCond =
-                        FluidProperties::GetSatEnthalpyRefrig(state, thisSys.RefrigerantName, thisSys.TCondense, 0.0, thisSys.RefIndex, RoutineName);
-                    thisSys.CpSatLiqCond = FluidProperties::GetSatSpecificHeatRefrig(
-                        state, thisSys.RefrigerantName, thisSys.TCondense, 0.0, thisSys.RefIndex, RoutineName);
+                    thisSys.HSatLiqCond = thisSys.refrig->getSatEnthalpy(state, thisSys.TCondense, 0.0, RoutineName);
+                    thisSys.CpSatLiqCond = thisSys.refrig->getSatSpecificHeat(state, thisSys.TCondense, 0.0, RoutineName);
                     thisSys.HCaseIn = thisSys.HSatLiqCond - thisSys.CpSatLiqCond * Condenser(thisSys.CondenserNum(1)).RatedSubcool;
                     thisSys.RefMassFlowtoLoads = thisSys.TotalSystemLoad / (thisSys.HCaseOut - thisSys.HCaseIn);
                     thisSys.RefMassFlowComps = thisSys.RefMassFlowtoLoads;
@@ -12233,7 +11874,7 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                                                                "of the refrigeration loads, ",
                                                            thisSys.HiStageWarnIndex1);
                             ShowRecurringContinueErrorAtEnd(
-                                state, " subcooler loads (if any), and low-stage compressor loads for this sytem.", thisSys.HiStageWarnIndex2);
+                                state, " subcooler loads (if any), and low-stage compressor loads for this system.", thisSys.HiStageWarnIndex2);
                         } // Hi-stage capacity<(load+LSHX load + lo-stage compressor load)
                     }     // CoilFlag (Numcoils > 0) and load > capacity
 
@@ -12273,7 +11914,7 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                     if (state.dataRefrigCase->ShowUnmetEnergyWarning(SysNum)) {
                         ShowWarningError(state, format("Refrigeration:System: {}", thisSys.Name));
                         ShowContinueError(state, " The specified compressors for this system are unable to meet ");
-                        ShowContinueError(state, " the sum of the refrigerated case loads and subcooler loads (if any) for this sytem.");
+                        ShowContinueError(state, " the sum of the refrigerated case loads and subcooler loads (if any) for this system.");
                         state.dataRefrigCase->ShowUnmetEnergyWarning(SysNum) = false;
                     } // show warning
                 }     // > mylarge number
@@ -12283,7 +11924,7 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                         ShowWarningError(state, format("Refrigeration:System: {}", thisSys.Name));
                         ShowContinueError(state, " The specified high-stage compressors for this system are unable to meet ");
                         ShowContinueError(state, " the sum of the refrigerated case loads, subcooler loads (if any) and ");
-                        ShowContinueError(state, " low-stage compressor loads for this sytem.");
+                        ShowContinueError(state, " low-stage compressor loads for this system.");
                         state.dataRefrigCase->ShowHiStageUnmetEnergyWarning(SysNum) = false;
                     } // show warning
                 }     // > mylarge number
@@ -12306,9 +11947,9 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
 
             // Report variables
             thisSys.TotTransferLoad = thisSys.SumMechSCLoad - thisSys.SumMechSCBenefit + thisSys.SumSecondaryLoopLoad + thisSys.SumCascadeLoad;
-            thisSys.TotTransferEnergy = thisSys.TotTransferLoad * LocalTimeStep * Constant::SecInHour;
-            thisSys.PipeHeatEnergy = thisSys.PipeHeatLoad * LocalTimeStep * Constant::SecInHour;
-            thisSys.TotalCoolingEnergy = thisSys.TotalCoolingLoad * LocalTimeStep * Constant::SecInHour;
+            thisSys.TotTransferEnergy = thisSys.TotTransferLoad * localTimeStepSec;
+            thisSys.PipeHeatEnergy = thisSys.PipeHeatLoad * localTimeStepSec;
+            thisSys.TotalCoolingEnergy = thisSys.TotalCoolingLoad * localTimeStepSec;
         } //(((.NOT. UseSysTimeStep).AND.(.NOT. System(SysNum)%CoilFlag)).OR.((UseSysTimeStep).AND.(System(SysNum)%CoilFlag))).and.not
           // WarmupFlag
     }     // SysNum = 1,NumRefrigSystems
@@ -12325,7 +11966,7 @@ void SimulateDetailedRefrigerationSystems(EnergyPlusData &state)
                 auto &coil = WarehouseCoil(CoilID);
                 if (coil.ZoneNum != ZoneNum) continue;
                 zoneCredit.SenCreditToZoneRate -= coil.SensCreditRate;
-                zoneCredit.SenCreditToZoneEnergy = zoneCredit.SenCreditToZoneRate * LocalTimeStep * Constant::SecInHour;
+                zoneCredit.SenCreditToZoneEnergy = zoneCredit.SenCreditToZoneRate * localTimeStepSec;
                 zoneCredit.LatKgPerS_ToZoneRate -= coil.LatKgPerS_ToZone;
                 zoneCredit.LatCreditToZoneRate -= coil.LatCreditRate;
                 zoneCredit.LatCreditToZoneEnergy -= coil.LatCreditEnergy;
@@ -12360,8 +12001,8 @@ void SimulateDetailedTransRefrigSystems(EnergyPlusData &state)
     auto &GasCooler = state.dataRefrigCase->GasCooler;
     auto &WalkIn = state.dataRefrigCase->WalkIn;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     //  Do transcritical CO2 refrigeration system loop outside of iterative solution to initialize time step and
     //  calculate case and and walk-ins (that won't change during balance of refrigeration system iterations)
@@ -12474,25 +12115,17 @@ void SimulateDetailedTransRefrigSystems(EnergyPlusData &state)
             sys.TotalSystemLoad = sys.TotalSystemLoadLT + sys.TotalSystemLoadMT;
             if (sys.TotalSystemLoad > 0.0) {
                 if (sys.TransSysType == 2) {
-                    sys.CpSatVapEvapLT =
-                        FluidProperties::GetSatSpecificHeatRefrig(state, sys.RefrigerantName, sys.TEvapNeededLT, 1.0, sys.RefIndex, RoutineName);
-                    sys.HCaseOutLT =
-                        FluidProperties::GetSatEnthalpyRefrig(state, sys.RefrigerantName, sys.TEvapNeededLT, 1.0, sys.RefIndex, RoutineName) +
-                        sys.CpSatVapEvapLT * TransCaseSuperheat;
+                    sys.CpSatVapEvapLT = sys.refrig->getSatSpecificHeat(state, sys.TEvapNeededLT, 1.0, RoutineName);
+                    sys.HCaseOutLT = sys.refrig->getSatEnthalpy(state, sys.TEvapNeededLT, 1.0, RoutineName) + sys.CpSatVapEvapLT * TransCaseSuperheat;
                 }
-                sys.CpSatVapEvapMT =
-                    FluidProperties::GetSatSpecificHeatRefrig(state, sys.RefrigerantName, sys.TEvapNeededMT, 1.0, sys.RefIndex, RoutineName);
-                sys.HCaseOutMT =
-                    FluidProperties::GetSatEnthalpyRefrig(state, sys.RefrigerantName, sys.TEvapNeededMT, 1.0, sys.RefIndex, RoutineName) +
-                    sys.CpSatVapEvapMT * TransCaseSuperheat;
+                sys.CpSatVapEvapMT = sys.refrig->getSatSpecificHeat(state, sys.TEvapNeededMT, 1.0, RoutineName);
+                sys.HCaseOutMT = sys.refrig->getSatEnthalpy(state, sys.TEvapNeededMT, 1.0, RoutineName) + sys.CpSatVapEvapMT * TransCaseSuperheat;
 
                 // Produce first time step estimates.
                 // Assume no subcoolers and neglect flow through bypass.
-                sys.TReceiver = FluidProperties::GetSatTemperatureRefrig(state, sys.RefrigerantName, sys.PReceiver, sys.RefIndex, RoutineName);
-                sys.HSatLiqReceiver =
-                    FluidProperties::GetSatEnthalpyRefrig(state, sys.RefrigerantName, sys.TReceiver, 0.0, sys.RefIndex, RoutineName);
-                sys.CpSatLiqReceiver =
-                    FluidProperties::GetSatSpecificHeatRefrig(state, sys.RefrigerantName, sys.TReceiver, 0.0, sys.RefIndex, RoutineName);
+                sys.TReceiver = sys.refrig->getSatTemperature(state, sys.PReceiver, RoutineName);
+                sys.HSatLiqReceiver = sys.refrig->getSatEnthalpy(state, sys.TReceiver, 0.0, RoutineName);
+                sys.CpSatLiqReceiver = sys.refrig->getSatSpecificHeat(state, sys.TReceiver, 0.0, RoutineName);
                 sys.HCaseInMT = sys.HSatLiqReceiver;
                 sys.HCaseInLT = sys.HSatLiqReceiver;
                 sys.RefMassFlowtoLTLoads = 0.0;
@@ -12530,7 +12163,7 @@ void SimulateDetailedTransRefrigSystems(EnergyPlusData &state)
                 if (state.dataRefrigCase->ShowUnmetEnergyWarningTrans(SysNum)) {
                     ShowWarningError(state, format("Refrigeration:TranscriticalSystem: {}", sys.Name));
                     ShowContinueError(state, " The specified compressors for this system are unable to meet ");
-                    ShowContinueError(state, " the sum of the refrigerated case loads and subcooler loads (if any) for this sytem.");
+                    ShowContinueError(state, " the sum of the refrigerated case loads and subcooler loads (if any) for this system.");
                     state.dataRefrigCase->ShowUnmetEnergyWarningTrans(SysNum) = false;
                 } // show warning
             }     // > mylarge number
@@ -12546,8 +12179,8 @@ void SimulateDetailedTransRefrigSystems(EnergyPlusData &state)
             }                                                                                                              // Reject heat to zone
 
             // Report variables
-            sys.PipeHeatEnergy = (sys.PipeHeatLoadMT + sys.PipeHeatLoadLT) * LocalTimeStep * Constant::SecInHour;
-            sys.TotalCoolingEnergy = (sys.TotalCoolingLoadMT + sys.TotalCoolingLoadMT) * LocalTimeStep * Constant::SecInHour;
+            sys.PipeHeatEnergy = (sys.PipeHeatLoadMT + sys.PipeHeatLoadLT) * localTimeStepSec;
+            sys.TotalCoolingEnergy = (sys.TotalCoolingLoadMT + sys.TotalCoolingLoadMT) * localTimeStepSec;
         } //(.NOT. UseSysTimeStep).AND. (.not. WarmupFlag)
     }     // SysNum = 1,NumTransRefrigSystems
 
@@ -12765,8 +12398,8 @@ void RefrigSystemData::CalculateCondensers(EnergyPlusData &state, int const SysN
     Real64 TotalLoadFromThisSystem(0.0); // total heat rejection load from the detailed system id'd in subroutine call [W]
     Real64 TotalLoadFromSystems;         // total heat rejection load from all systems served by this condenser [W]
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     // Initialize this condenser for this time step
     state.dataRefrigCase->TotalCondenserPumpPower = 0.0;
@@ -12895,15 +12528,15 @@ void RefrigSystemData::CalculateCondensers(EnergyPlusData &state, int const SysN
         //  'spectacular' icing problems.  Ideally, the user will use the evaporative schedule input
         //  to set such a schedule.  However, sometimes, users will use a single input deck to model
         //  one building in multiple climates, and may not think to put in such a schedule in the colder
-        //  climates.  To accomodate such applications, the variable EvapCutOutTdb is used as an extra
+        //  climates.  To accommodate such applications, the variable EvapCutOutTdb is used as an extra
         //  check.
 
         if (OutDbTemp < EvapCutOutTdb) EvapAvail = false;
 
         // Check schedule to determine evap condenser availability
         // IF schedule exists, evap condenser can be scheduled OFF
-        if ((condenser.CondenserType == DataHeatBalance::RefrigCondenserType::Evap) && (condenser.EvapSchedPtr > 0) &&
-            (ScheduleManager::GetCurrentScheduleValue(state, condenser.EvapSchedPtr) == 0))
+        if ((condenser.CondenserType == DataHeatBalance::RefrigCondenserType::Evap) && (condenser.evapAvailSched != nullptr) &&
+            (condenser.evapAvailSched->getCurrentVal() == 0))
             EvapAvail = false;
 
         // Calculate condensing temperatures for air-cooled and evap-cooled
@@ -12989,7 +12622,7 @@ void RefrigSystemData::CalculateCondensers(EnergyPlusData &state, int const SysN
             } break;
             case FanSpeedCtrlType::TwoSpeed: {
                 // low speed setting of 1/2 fan speed can give up to 60% of capacity.
-                // 1/2 speed corresonds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
+                // 1/2 speed corresponds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
                 // dampers are used to control flow within those two ranges as in FanConstantSpeed
                 Real64 const air_vol_fan_power_fac(std::exp(1.0 - AirVolRatio) * RatedFanPower);
                 ActualFanPower = AirVolRatio * air_vol_fan_power_fac;
@@ -13068,15 +12701,15 @@ void RefrigSystemData::CalculateCondensers(EnergyPlusData &state, int const SysN
     }         // Condenser type = water, (evap or air), or cascade
 
     condenser.ActualFanPower = ActualFanPower;
-    condenser.FanElecEnergy = ActualFanPower * LocalTimeStep * Constant::SecInHour;
+    condenser.FanElecEnergy = ActualFanPower * localTimeStepSec;
     condenser.EvapWaterConsumpRate = state.dataRefrigCase->TotalEvapWaterUseRate;
-    condenser.EvapWaterConsumption = state.dataRefrigCase->TotalEvapWaterUseRate * LocalTimeStep * Constant::SecInHour;
+    condenser.EvapWaterConsumption = state.dataRefrigCase->TotalEvapWaterUseRate * localTimeStepSec;
     condenser.ActualEvapPumpPower = state.dataRefrigCase->TotalCondenserPumpPower;
-    condenser.EvapPumpConsumption = state.dataRefrigCase->TotalCondenserPumpPower * LocalTimeStep * Constant::SecInHour;
+    condenser.EvapPumpConsumption = state.dataRefrigCase->TotalCondenserPumpPower * localTimeStepSec;
     condenser.BasinHeaterPower = state.dataRefrigCase->TotalBasinHeatPower;
-    condenser.BasinHeaterConsumption = state.dataRefrigCase->TotalBasinHeatPower * LocalTimeStep * Constant::SecInHour;
+    condenser.BasinHeaterConsumption = state.dataRefrigCase->TotalBasinHeatPower * localTimeStepSec;
     condenser.CondLoad = state.dataRefrigCase->TotalCondenserHeat;
-    condenser.CondEnergy = state.dataRefrigCase->TotalCondenserHeat * LocalTimeStep * Constant::SecInHour;
+    condenser.CondEnergy = state.dataRefrigCase->TotalCondenserHeat * localTimeStepSec;
     condenser.CondCreditWarnIndex1 = CondCreditWarnIndex1;
     condenser.CondCreditWarnIndex2 = CondCreditWarnIndex2;
     condenser.CondCreditWarnIndex3 = CondCreditWarnIndex3;
@@ -13084,11 +12717,11 @@ void RefrigSystemData::CalculateCondensers(EnergyPlusData &state, int const SysN
     condenser.CondCreditWarnIndex5 = CondCreditWarnIndex5;
     condenser.CondCreditWarnIndex6 = CondCreditWarnIndex6;
     condenser.CondCreditWarnIndex7 = CondCreditWarnIndex7;
-    condenser.ExternalEnergyRecovered = condenser.ExternalHeatRecoveredLoad * LocalTimeStep * Constant::SecInHour;
-    condenser.InternalEnergyRecovered = condenser.InternalHeatRecoveredLoad * LocalTimeStep * Constant::SecInHour;
-    condenser.TotalHeatRecoveredEnergy = condenser.TotalHeatRecoveredLoad * LocalTimeStep * Constant::SecInHour;
+    condenser.ExternalEnergyRecovered = condenser.ExternalHeatRecoveredLoad * localTimeStepSec;
+    condenser.InternalEnergyRecovered = condenser.InternalHeatRecoveredLoad * localTimeStepSec;
+    condenser.TotalHeatRecoveredEnergy = condenser.TotalHeatRecoveredLoad * localTimeStepSec;
     this->NetHeatRejectLoad = state.dataRefrigCase->TotalCondenserHeat * TotalLoadFromThisSystem / TotalLoadFromSystems;
-    this->NetHeatRejectEnergy = this->NetHeatRejectLoad * LocalTimeStep * Constant::SecInHour;
+    this->NetHeatRejectEnergy = this->NetHeatRejectLoad * localTimeStepSec;
 
     // set water system demand request (if needed)
     if (condenser.EvapWaterSupplyMode == WaterSupply::FromTank) {
@@ -13151,8 +12784,8 @@ void TransRefrigSystemData::CalcGasCooler(EnergyPlusData &state, int const SysNu
     Real64 TotalLoadFromSystems;         // Total heat rejection load from all systems served by this condenser [W]
     Real64 TotalLoadFromThisSystem(0.0); // Total heat rejection load from the detailed system identified in subroutine call [W]
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     // Initialize this gas cooler for this time step
     ActualFanPower = 0.0;
@@ -13211,31 +12844,25 @@ void TransRefrigSystemData::CalcGasCooler(EnergyPlusData &state, int const SysNu
         if (cooler.PGasCoolerOut < 7.5e6) { // Ensure gas cooler pressure is at least 7.5 MPa for transcritical operation
             cooler.PGasCoolerOut = 7.5e6;
         }
-        cooler.HGasCoolerOut = FluidProperties::GetSupHeatEnthalpyRefrig(
-            state, this->RefrigerantName, cooler.TGasCoolerOut, cooler.PGasCoolerOut, this->RefIndex, RoutineName);
+        cooler.HGasCoolerOut = this->refrig->getSupHeatEnthalpy(state, cooler.TGasCoolerOut, cooler.PGasCoolerOut, RoutineName);
         cooler.TransOpFlag = true;
     } else { // Gas cooler in subcritical operation
         cooler.TGasCoolerOut = OutDbTemp + cooler.SubcriticalTempDiff;
         if (cooler.TGasCoolerOut > 30.978) { //  Gas temperature should be less than critical temperature
             cooler.PGasCoolerOut = 7.2e6;    //  Fix the pressure to be subcritical
-            cooler.TGasCoolerOut =
-                FluidProperties::GetSatTemperatureRefrig(state, this->RefrigerantName, cooler.PGasCoolerOut, this->RefIndex, RoutineName);
+            cooler.TGasCoolerOut = this->refrig->getSatTemperature(state, cooler.PGasCoolerOut, RoutineName);
         } else if (cooler.TGasCoolerOut > cooler.MinCondTemp) { //  Allow condensing temperature to float above the minimum
-            cooler.PGasCoolerOut =
-                FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, cooler.TGasCoolerOut, this->RefIndex, RoutineName);
+            cooler.PGasCoolerOut = this->refrig->getSatPressure(state, cooler.TGasCoolerOut, RoutineName);
         } else { //  Don't allow condensing temperature to drop below minimum
             cooler.TGasCoolerOut = cooler.MinCondTemp;
-            cooler.PGasCoolerOut =
-                FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, cooler.TGasCoolerOut, this->RefIndex, RoutineName);
+            cooler.PGasCoolerOut = this->refrig->getSatPressure(state, cooler.TGasCoolerOut, RoutineName);
         }
-        cooler.HGasCoolerOut =
-            FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, cooler.TGasCoolerOut, 0.0, this->RefIndex, RoutineName);
+        cooler.HGasCoolerOut = this->refrig->getSatEnthalpy(state, cooler.TGasCoolerOut, 0.0, RoutineName);
         cooler.TransOpFlag = false;
     } // (OutDbTemp > TransitionTemperature)
 
     if (cooler.TGasCoolerOut < 30.978) {
-        cooler.CpGasCoolerOut =
-            FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, cooler.TGasCoolerOut, 0.0, this->RefIndex, RoutineName);
+        cooler.CpGasCoolerOut = this->refrig->getSatSpecificHeat(state, cooler.TGasCoolerOut, 0.0, RoutineName);
     } else {
         cooler.CpGasCoolerOut = 0.0;
     }
@@ -13256,7 +12883,7 @@ void TransRefrigSystemData::CalcGasCooler(EnergyPlusData &state, int const SysNu
     } break;
     case FanSpeedCtrlType::TwoSpeed: {
         // low speed setting of 1/2 fan speed can give up to 60% of capacity.
-        // 1/2 speed corresonds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
+        // 1/2 speed corresponds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
         // dampers are used to control flow within those two ranges as in FanConstantSpeed
         ActualFanPower = AirVolRatio * std::exp(1.0 - AirVolRatio) * RatedFanPower;
         if (CapFac < CapFac60Percent) ActualFanPower = ((AirVolRatio + 0.4) * (FanHalfSpeedRatio)) * std::exp(1.0 - AirVolRatio) * RatedFanPower;
@@ -13266,14 +12893,14 @@ void TransRefrigSystemData::CalcGasCooler(EnergyPlusData &state, int const SysNu
     } // fan speed control type
 
     cooler.ActualFanPower = ActualFanPower;
-    cooler.FanElecEnergy = ActualFanPower * LocalTimeStep * Constant::SecInHour;
+    cooler.FanElecEnergy = ActualFanPower * localTimeStepSec;
     cooler.GasCoolerLoad = TotalGasCoolerHeat;
-    cooler.GasCoolerEnergy = TotalGasCoolerHeat * LocalTimeStep * Constant::SecInHour;
+    cooler.GasCoolerEnergy = TotalGasCoolerHeat * localTimeStepSec;
     cooler.GasCoolerCreditWarnIndex = GasCoolerCreditWarnIndex;
-    cooler.InternalEnergyRecovered = cooler.InternalHeatRecoveredLoad * LocalTimeStep * Constant::SecInHour;
-    cooler.TotalHeatRecoveredEnergy = cooler.TotalHeatRecoveredLoad * LocalTimeStep * Constant::SecInHour;
+    cooler.InternalEnergyRecovered = cooler.InternalHeatRecoveredLoad * localTimeStepSec;
+    cooler.TotalHeatRecoveredEnergy = cooler.TotalHeatRecoveredLoad * localTimeStepSec;
     this->NetHeatRejectLoad = TotalGasCoolerHeat * TotalLoadFromThisSystem / TotalLoadFromSystems;
-    this->NetHeatRejectEnergy = this->NetHeatRejectLoad * LocalTimeStep * Constant::SecInHour;
+    this->NetHeatRejectEnergy = this->NetHeatRejectLoad * localTimeStepSec;
 }
 
 void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
@@ -13335,13 +12962,12 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
     auto &Condenser = state.dataRefrigCase->Condenser;
     auto &Compressor = state.dataRefrigCase->Compressor;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
-    Real64 const LocalTimeStepSec(LocalTimeStep * Constant::SecInHour);
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     int CondID = this->CondenserNum(1);
     auto const &Condenser1 = Condenser(CondID);
-    Real64 const AccumLoad = max(0.0, (this->UnmetEnergy / LocalTimeStepSec)); // Load due to previously unmet compressor loads
+    Real64 const AccumLoad = max(0.0, (this->UnmetEnergy / localTimeStepSec)); // Load due to previously unmet compressor loads
     Real64 const NeededCapacity_base(this->TotalSystemLoad + AccumLoad + this->PipeHeatLoad + this->LSHXTrans);
 
     // Before dispatching compressors, zero sum of compressor outputs and zero each compressor
@@ -13384,12 +13010,9 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                 NeededCapacity = NeededCapacity_base;             // because compressor capacity rated from txv to comp inlet
                 TsatforPdisch = this->TCondense + DelTDischPipes; // need (Psat of (Tcond + delT corresponding to delP disch Pipes))
                 TsatforPsuct = this->TEvapNeeded - DelTSuctPipes; // need (Psat of (Tevap - delT corresponding to del P suct Pipes))
-                HsatVaporforTevapneeded =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TEvapNeeded, 1.0, this->RefIndex, RoutineName);
-                this->HSatLiqCond =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-                this->CpSatLiqCond =
-                    FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
+                HsatVaporforTevapneeded = this->refrig->getSatEnthalpy(state, this->TEvapNeeded, 1.0, RoutineName);
+                this->HSatLiqCond = this->refrig->getSatEnthalpy(state, this->TCondense, 0.0, RoutineName);
+                this->CpSatLiqCond = this->refrig->getSatSpecificHeat(state, this->TCondense, 0.0, RoutineName);
                 // HCaseIn is a function of the condenser rated subcooling, not the compressor rated subcooling
                 // TCompIn needs to include case superheat as well as Temp change from lshx subcoolers
                 // Calculate both here unless set previously by subcooler subroutine
@@ -13403,31 +13026,26 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                 } else { // subcooler subroutine has been called to calc TCompIn and HCaseIn
                     this->HCompIn = this->HCaseOut + this->CpSatVapEvap * (this->TCompIn - (this->TEvapNeeded + CaseSuperheat));
                 } // whether or not subcooler routine used
-                PSuction = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, TsatforPsuct, this->RefIndex, RoutineName);
+                PSuction = this->refrig->getSatPressure(state, TsatforPsuct, RoutineName);
                 NumComps = this->NumCompressors;
             } else { // Low-stage side of two-stage system
-                PCond = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, this->TCondense, this->RefIndex, RoutineName);
-                PEvap = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, this->TEvapNeeded, this->RefIndex, RoutineName);
+                PCond = this->refrig->getSatPressure(state, this->TCondense, RoutineName);
+                PEvap = this->refrig->getSatPressure(state, this->TEvapNeeded, RoutineName);
                 this->PIntercooler = std::sqrt(PCond * PEvap);
-                this->TIntercooler =
-                    FluidProperties::GetSatTemperatureRefrig(state, this->RefrigerantName, this->PIntercooler, this->RefIndex, RoutineName);
+                this->TIntercooler = this->refrig->getSatTemperature(state, this->PIntercooler, RoutineName);
                 NeededCapacity = NeededCapacity_base;                // because compressor capacity rated from txv to comp inlet
                 TsatforPdisch = this->TIntercooler + DelTDischPipes; // need (Psat of (Tinter + delT corresponding to delP disch Pipes))
                 TsatforPsuct = this->TEvapNeeded - DelTSuctPipes;    // need (Psat of (Tevap - delT corresponding to del P suct Pipes))
-                HsatVaporforTevapneeded =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TEvapNeeded, 1.0, this->RefIndex, RoutineName);
-                this->HSatLiqCond =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-                this->CpSatLiqCond =
-                    FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
+                HsatVaporforTevapneeded = this->refrig->getSatEnthalpy(state, this->TEvapNeeded, 1.0, RoutineName);
+                this->HSatLiqCond = this->refrig->getSatEnthalpy(state, this->TCondense, 0.0, RoutineName);
+                this->CpSatLiqCond = this->refrig->getSatSpecificHeat(state, this->TCondense, 0.0, RoutineName);
                 // HCaseIn is a function of the condenser rated subcooling, not the compressor rated subcooling
                 // TCompIn needs to include case superheat as well as Temp change from lshx subcoolers
                 // Calculate both here unless set previously by subcooler subroutine
                 // HCaseOut corresponds to (tevapneeded + case superheat)
                 if (this->NumSubcoolers == 0) {       // No subcooler on this system
                     if (this->IntercoolerType == 1) { // Flash Intercooler
-                        this->HCaseIn =
-                            FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 0.0, this->RefIndex, RoutineName);
+                        this->HCaseIn = this->refrig->getSatEnthalpy(state, this->TIntercooler, 0.0, RoutineName);
                         this->TLiqInActual = this->TIntercooler;
                     } else if (this->IntercoolerType == 2) { // Shell-and-Coil Intercooler
                         this->TLiqInActual = this->TCondense - Condenser1.RatedSubcool -
@@ -13439,45 +13057,37 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                 } else { // subcooler subroutine has been called to calc TCompIn and HCaseIn
                     this->HCompIn = this->HCaseOut + this->CpSatVapEvap * (this->TCompIn - (this->TEvapNeeded + CaseSuperheat));
                 } // whether or not subcooler routine used
-                PSuction = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, TsatforPsuct, this->RefIndex, RoutineName);
+                PSuction = this->refrig->getSatPressure(state, TsatforPsuct, RoutineName);
                 NumComps = this->NumCompressors;
             }    // NumStages
         } else { // Two-stage system, high-stage side
             NeededCapacity = NeededCapacity_base + this->TotCompPower;
             TsatforPdisch = this->TCondense + DelTDischPipes;
             TsatforPsuct = this->TIntercooler;
-            HsatVaporforTevapneeded =
-                FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 1.0, this->RefIndex, RoutineName);
-            //                HSatLiqCond = FluidProperties::GetSatEnthalpyRefrig(state, RefrigerantName, TCondense, 0.0, RefIndex,
+            HsatVaporforTevapneeded = this->refrig->getSatEnthalpy(state, this->TIntercooler, 1.0, RoutineName);
+            //                HSatLiqCond = Fluid::GetSatEnthalpyRefrig(state, RefrigerantName, TCondense, 0.0, RefIndex,
             // RoutineName
             //);
             ////Autodesk:Tuned These don't change for 2nd stage
-            //                CpSatLiqCond = FluidProperties::GetSatSpecificHeatRefrig(RefrigerantName, TCondense, 0.0, RefIndex,
+            //                CpSatLiqCond = Fluid::GetSatSpecificHeatRefrig(RefrigerantName, TCondense, 0.0, RefIndex,
             // RoutineName );
             ////Autodesk:Tuned These don't change for 2nd stage
             this->HCaseIn = this->HSatLiqCond - this->CpSatLiqCond * Condenser1.RatedSubcool;
             this->TCompIn = this->TIntercooler;
             //      System(SysNum)%TLiqInActual = System(SysNum)%TCondense-Condenser(System(SysNum)%CondenserNum(1))%RatedSubcool
             this->HCompIn = HsatVaporforTevapneeded;
-            PSuction = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, TsatforPsuct, this->RefIndex, RoutineName);
+            PSuction = this->refrig->getSatPressure(state, TsatforPsuct, RoutineName);
             NumComps = this->NumHiStageCompressors;
         } // StageIndex
 
         // dispatch compressors to meet load, note they were listed in compressor list in dispatch order
-        DensityActual = FluidProperties::GetSupHeatDensityRefrig(state,
-                                                                 this->RefrigerantName,
-                                                                 this->TCompIn,
-                                                                 PSuction,
-                                                                 this->RefIndex,
-                                                                 RoutineName); // Autodesk:Tuned Hoisted out of CompIndex loop
-        TotalEnthalpyChangeActual = this->HCompIn - this->HCaseIn;             // Autodesk:Tuned Hoisted out of CompIndex loop
-        if (this->NumStages == 2) {                                            // Autodesk:Tuned Hoisted out of CompIndex loop
+        DensityActual = this->refrig->getSupHeatDensity(state, this->TCompIn, PSuction, RoutineName); // Autodesk:Tuned Hoisted out of CompIndex loop
+        TotalEnthalpyChangeActual = this->HCompIn - this->HCaseIn;                                    // Autodesk:Tuned Hoisted out of CompIndex loop
+        if (this->NumStages == 2) {                                                                   // Autodesk:Tuned Hoisted out of CompIndex loop
             if (StageIndex == 1) {
-                HCaseInRated_base =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 0.0, this->RefIndex, RoutineName);
+                HCaseInRated_base = this->refrig->getSatEnthalpy(state, this->TIntercooler, 0.0, RoutineName);
             } else if (StageIndex == 2) {
-                HCompInRated_base =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 1.0, this->RefIndex, RoutineName);
+                HCompInRated_base = this->refrig->getSatEnthalpy(state, this->TIntercooler, 1.0, RoutineName);
             }
         }
         for (int CompIndex = 1; CompIndex <= NumComps; ++CompIndex) {
@@ -13542,7 +13152,7 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
             } // Compressor SuperheatRatingType
 
             CaseEnthalpyChangeRated = HCompInRated - HCaseInRated;
-            DensityRated = FluidProperties::GetSupHeatDensityRefrig(state, this->RefrigerantName, TempInRated, PSuction, this->RefIndex, RoutineName);
+            DensityRated = this->refrig->getSupHeatDensity(state, TempInRated, PSuction, RoutineName);
             //  Adjust capacity and mass flow to reflect the specific volume change due to superheating and
             //  the increase in capacity due to extra subcooling
             MassCorrection = DensityActual / DensityRated;
@@ -13551,7 +13161,7 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
             compressor.Capacity = CapacityCorrection * Curve::CurveValue(state, compressor.CapacityCurvePtr, TsatforPsuct, TsatforPdisch);
             compressor.MassFlow = compressor.Capacity / TotalEnthalpyChangeActual;
 
-            // calculate load factor for last compressor addded
+            // calculate load factor for last compressor added
             // assumes either cycling or part load eff = full load eff for last compressor
             if (StageIndex == 1) { // Single-stage or low-stage compressors
                 if ((this->TotCompCapacity + compressor.Capacity) >= NeededCapacity) {
@@ -13562,8 +13172,8 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                     this->TotCompCapacity += compressor.Capacity;
                     this->RefMassFlowComps += compressor.MassFlow;
                     this->TotCompPower += compressor.Power;
-                    compressor.ElecConsumption = compressor.Power * LocalTimeStepSec;
-                    compressor.CoolingEnergy = compressor.Capacity * LocalTimeStepSec;
+                    compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+                    compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
                     compressor.LoadFactor = LFLastComp;
                     break; // numcomps do
                 } else {   //>= needed capacity
@@ -13581,8 +13191,8 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                     this->RefMassFlowHiStageComps += compressor.MassFlow;
                     this->TotHiStageCompPower += compressor.Power;
                     this->FlowRatioIntercooler = this->RefMassFlowComps / this->RefMassFlowHiStageComps;
-                    compressor.ElecConsumption = compressor.Power * LocalTimeStepSec;
-                    compressor.CoolingEnergy = compressor.Capacity * LocalTimeStepSec;
+                    compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+                    compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
                     compressor.LoadFactor = LFLastComp;
                     break; // numcomps do
                 } else {   //>= needed capacity
@@ -13591,8 +13201,8 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
                     this->TotHiStageCompPower += compressor.Power;
                 } //>= needed capacity
             }     // StageIndex
-            compressor.ElecConsumption = compressor.Power * LocalTimeStepSec;
-            compressor.CoolingEnergy = compressor.Capacity * LocalTimeStepSec;
+            compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+            compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
             compressor.LoadFactor = 1.0;
         } // NumComps
     }
@@ -13602,13 +13212,13 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
         this->HCompOut = this->HCompIn + this->TotCompPower / this->RefMassFlowComps;
         // error found 9/19/2011, was System(SysNum)%TotCompPower*LocalTimeStep*DataGlobals::SecInHour/System(SysNum)%RefMassFlowComps
     } else { // High-stage compressors (only for two-stage systems)
-        HHiStageCompIn = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 1.0, this->RefIndex, RoutineName);
+        HHiStageCompIn = this->refrig->getSatEnthalpy(state, this->TIntercooler, 1.0, RoutineName);
         this->HCompOut = HHiStageCompIn + this->TotHiStageCompPower / this->RefMassFlowHiStageComps;
     }
 
     // Calculate superheat energy available for desuperheaters
-    HSatVapCondense = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 1.0, this->RefIndex, RoutineName);
-    CpSatVapCondense = FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 1.0, this->RefIndex, RoutineName);
+    HSatVapCondense = this->refrig->getSatEnthalpy(state, this->TCondense, 1.0, RoutineName);
+    CpSatVapCondense = this->refrig->getSatSpecificHeat(state, this->TCondense, 1.0, RoutineName);
     if (this->NumStages == 1) { // Single-stage systems
         state.dataHeatBal->HeatReclaimRefrigCondenser(CondID).AvailCapacity = this->RefMassFlowComps * (this->HCompOut - HSatVapCondense);
     } else { // Two-stage systems
@@ -13621,13 +13231,13 @@ void RefrigSystemData::CalculateCompressors(EnergyPlusData &state)
 
     state.dataHeatBal->HeatReclaimRefrigCondenser(CondID).AvailTemperature = (TsatforPdisch + TCompOutEstimate) / 2.0;
     this->AverageCompressorCOP = this->TotCompCapacity / (this->TotCompPower + this->TotHiStageCompPower);
-    this->TotCompElecConsump = this->TotCompPower * LocalTimeStepSec;
+    this->TotCompElecConsump = this->TotCompPower * localTimeStepSec;
     if (this->NumStages == 2) {
-        this->TotHiStageCompElecConsump = this->TotHiStageCompPower * LocalTimeStepSec;
+        this->TotHiStageCompElecConsump = this->TotHiStageCompPower * localTimeStepSec;
         this->TotCompElecConsumpTwoStage = this->TotCompElecConsump + this->TotHiStageCompElecConsump;
     }
-    this->TotCompCoolingEnergy = this->TotCompCapacity * LocalTimeStepSec;
-    this->TotHiStageCompCoolingEnergy = this->TotHiStageCompCapacity * LocalTimeStepSec;
+    this->TotCompCoolingEnergy = this->TotCompCapacity * localTimeStepSec;
+    this->TotHiStageCompCoolingEnergy = this->TotHiStageCompCapacity * localTimeStepSec;
 }
 
 void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
@@ -13650,7 +13260,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
 
     // REFERENCES:
     // ANSI/AHRI. 2004. Standard 540, Standard for Performance Rating of Positive Displacement Refrigerant
-    //     Comprssors and Compressor Units. Arlington, VA: Air-Conditioning, Heating, and Refrigeration
+    //     Compressors and Compressor Units. Arlington, VA: Air-Conditioning, Heating, and Refrigeration
     //     Institute.
     // Ge, Y.T., and S.A. Tassou. 2011. Performance evaluation and optimal design of supermarket refrigeration
     //     systems with supermarket model "SuperSim", Part I: Model description and validation. International
@@ -13689,8 +13299,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     Real64 HGCOutlet;                   // Enthalpy at gas cooler outlet, J/kg
     Real64 HIdeal;                      // Ideal enthalpy at subcooler (for 100% effectiveness)
     Real64 HsatLiqforTevapNeededMT;     // Enthalpy of saturated liquid at MT evaporator, J/kg
-    Real64 HsatVaporforTevapneededMT;   // Enthlapy of saturated vapor at MT evaporator (transcritical cycle), J/kg
-    Real64 HsatVaporforTevapneededLT;   // Enthlapy of saturated vapor at LT evaporator (transcritical cycle), J/kg
+    Real64 HsatVaporforTevapneededMT;   // Enthalpy of saturated vapor at MT evaporator (transcritical cycle), J/kg
+    Real64 HsatVaporforTevapneededLT;   // Enthalpy of saturated vapor at LT evaporator (transcritical cycle), J/kg
     Real64 LFLastComp;                  // Load factor for last compressor dispatched
     Real64 MassCorrectionLT;            // Mass flow at existing subcool/superheat over cap at rated conditions for LT loads
     Real64 MassCorrectionMT;            // Mass flow at existing subcool/superheat over cap at rated conditions for MT loads
@@ -13718,28 +13328,27 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     auto &Compressor = state.dataRefrigCase->Compressor;
     auto &GasCooler = state.dataRefrigCase->GasCooler;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     // Determine refrigerating capacity needed
     // Load due to previously unmet low temperature compressor loads (transcritical system)
     Real64 AccumLoadLT;
     NeededCapacityLT = 0.0;
     if (this->TransSysType == 2) {
-        AccumLoadLT = max(0.0, (this->UnmetEnergyLT / LocalTimeStep / Constant::SecInHour));
+        AccumLoadLT = max(0.0, (this->UnmetEnergyLT / localTimeStep / Constant::rSecsInHour)); // localTimeStep / rSecsInHour?
         NeededCapacityLT = this->TotalSystemLoadLT + AccumLoadLT + this->PipeHeatLoadLT;
     } // (TransSystem(SysNum)%TransSysType == 2)
 
     // Load due to previously unmet medium temperature compressor loads (transcritical system)
-    Real64 AccumLoadMT = max(0.0, (this->UnmetEnergyMT / LocalTimeStep / Constant::SecInHour));
+    Real64 AccumLoadMT = max(0.0, (this->UnmetEnergyMT / localTimeStep / Constant::rSecsInHour));
     NeededCapacityMT = this->TotalSystemLoadMT + AccumLoadMT + this->PipeHeatLoadMT;
 
     // Determine refrigerant properties at receiver
-    this->CpSatLiqReceiver =
-        FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TReceiver, 0.0, this->RefIndex, RoutineName);
+    this->CpSatLiqReceiver = this->refrig->getSatSpecificHeat(state, this->TReceiver, 0.0, RoutineName);
 
     // Enthalpy at the receiver bypass, J/kg
-    Real64 HReceiverBypass = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TReceiver, 1.0, this->RefIndex, RoutineName);
+    Real64 HReceiverBypass = this->refrig->getSatEnthalpy(state, this->TReceiver, 1.0, RoutineName);
 
     // Determine refrigerant properties at low temperature (LT) loads (if present)
     // Dispatch low pressure (LP) compressors as necessary
@@ -13750,13 +13359,10 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
         this->HCompInLP = this->HCaseOutLT + this->PipeHeatLoadLT / this->RefMassFlowtoLTLoads;
         TsatforPsucLT = this->TEvapNeededLT;
         TsatforPdisLT = this->TEvapNeededMT;
-        HsatVaporforTevapneededLT =
-            FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TEvapNeededLT, 1.0, this->RefIndex, RoutineName);
-        HsatLiqforTevapNeededMT =
-            FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TEvapNeededMT, 0.0, this->RefIndex, RoutineName);
-        PSuctionLT = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, TsatforPsucLT, this->RefIndex, RoutineName);
-        DensityActualLT =
-            FluidProperties::GetSupHeatDensityRefrig(state, this->RefrigerantName, this->TCompInLP, PSuctionLT, this->RefIndex, RoutineName);
+        HsatVaporforTevapneededLT = this->refrig->getSatEnthalpy(state, this->TEvapNeededLT, 1.0, RoutineName);
+        HsatLiqforTevapNeededMT = this->refrig->getSatEnthalpy(state, this->TEvapNeededMT, 0.0, RoutineName);
+        PSuctionLT = this->refrig->getSatPressure(state, TsatforPsucLT, RoutineName);
+        DensityActualLT = this->refrig->getSupHeatDensity(state, this->TCompInLP, PSuctionLT, RoutineName);
         TotalEnthalpyChangeActualLT = this->HCompInLP - this->HCaseInLT;
 
         // Dispatch low pressure (LP) compressors
@@ -13784,8 +13390,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
                 HCaseInRatedLT = HsatLiqforTevapNeededMT - this->CpSatLiqReceiver * compressor.RatedSubcool;
             } break;
             case CompRatingType::LiquidTemperature: { // have rated liquid temperature stored in "RatedSubcool"
-                HCaseInRatedLT =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, compressor.RatedSubcool, 0.0, this->RefIndex, RoutineName);
+                HCaseInRatedLT = this->refrig->getSatEnthalpy(state, compressor.RatedSubcool, 0.0, RoutineName);
             } break;
             default:
                 break;
@@ -13798,16 +13403,14 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
             case CompRatingType::ReturnGasTemperature: { // have rated compressor inlet temperature stored in
                                                          // "CompRatingType::Superheat"
                 TempInRatedLP = compressor.RatedSuperheat;
-                HCompInRatedLP = FluidProperties::GetSupHeatEnthalpyRefrig(
-                    state, this->RefrigerantName, compressor.RatedSuperheat, PSuctionLT, this->RefIndex, RoutineName);
+                HCompInRatedLP = this->refrig->getSupHeatEnthalpy(state, compressor.RatedSuperheat, PSuctionLT, RoutineName);
             } break;
             default:
                 break;
             }
 
             CaseEnthalpyChangeRatedLT = HCompInRatedLP - HCaseInRatedLT;
-            DensityRatedLP =
-                FluidProperties::GetSupHeatDensityRefrig(state, this->RefrigerantName, TempInRatedLP, PSuctionLT, this->RefIndex, RoutineName);
+            DensityRatedLP = this->refrig->getSupHeatDensity(state, TempInRatedLP, PSuctionLT, RoutineName);
 
             //  Adjust capacity and mass flow to reflect the specific volume change due to superheating and
             //  the increase in capacity due to extra subcooling
@@ -13817,8 +13420,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
             compressor.Power = Curve::CurveValue(state, compressor.ElecPowerCurvePtr, TsatforPsucLT, TsatforPdisLT);
             compressor.Capacity = CapacityCorrectionLT * Curve::CurveValue(state, compressor.CapacityCurvePtr, TsatforPsucLT, TsatforPdisLT);
             compressor.MassFlow = compressor.Capacity / TotalEnthalpyChangeActualLT;
-            compressor.ElecConsumption = compressor.Power * LocalTimeStep * Constant::SecInHour;
-            compressor.CoolingEnergy = compressor.Capacity * LocalTimeStep * Constant::SecInHour;
+            compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+            compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
             compressor.LoadFactor = 1.0;
             if ((this->TotCompCapacityLP + compressor.Capacity) >= NeededCapacityLT) {
                 LFLastComp = (NeededCapacityLT - this->TotCompCapacityLP) / compressor.Capacity;
@@ -13828,8 +13431,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
                 this->TotCompCapacityLP += compressor.Capacity;
                 this->RefMassFlowCompsLP += compressor.MassFlow;
                 this->TotCompPowerLP += compressor.Power;
-                compressor.ElecConsumption = compressor.Power * LocalTimeStep * Constant::SecInHour;
-                compressor.CoolingEnergy = compressor.Capacity * LocalTimeStep * Constant::SecInHour;
+                compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+                compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
                 compressor.LoadFactor = LFLastComp;
                 break;
             } else {
@@ -13849,10 +13452,9 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     } else { // Transcritical system is operating in subcritical region
         TsatforPdisMT = GasCooler(this->GasCoolerNum(1)).TGasCoolerOut;
     }
-    PSuctionMT = FluidProperties::GetSatPressureRefrig(state, this->RefrigerantName, TsatforPsucMT, this->RefIndex, RoutineName);
+    PSuctionMT = this->refrig->getSatPressure(state, TsatforPsucMT, RoutineName);
     PGCOutlet = GasCooler(this->GasCoolerNum(1)).PGasCoolerOut;
-    HsatVaporforTevapneededMT =
-        FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TEvapNeededMT, 1.0, this->RefIndex, RoutineName);
+    HsatVaporforTevapneededMT = this->refrig->getSatEnthalpy(state, this->TEvapNeededMT, 1.0, RoutineName);
     this->HCaseInMT = this->HSatLiqReceiver;
     // Enthalpy of refrigerant after leaving medium temperature loads and low pressure compressors
 
@@ -13868,8 +13470,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     if ((GasCooler(this->GasCoolerNum(1)).HGasCoolerOut + this->DelHSubcoolerDis) > this->HSatLiqReceiver) {
         for (Iter = 1; Iter <= 15; ++Iter) { // Maximum of 15 iterations to find receiver quality
             QualityReceiver = (Xu + Xl) / 2.0;
-            Real64 Hnew =
-                FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TReceiver, QualityReceiver, this->RefIndex, RoutineName);
+            Real64 Hnew = this->refrig->getSatEnthalpy(state, this->TReceiver, QualityReceiver, RoutineName);
 
             // estimated QualityReceiver is too high
             if (Hnew > (GasCooler(this->GasCoolerNum(1)).HGasCoolerOut + this->DelHSubcoolerDis)) {
@@ -13890,11 +13491,11 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
                       (this->RefMassFlowtoLTLoads + this->RefMassFlowtoMTLoads + this->RefMassFlowReceiverBypass);
 
     // Iterate to find the suction temperature entering subcooler
-    Xl = FluidProperties::GetSatTemperatureRefrig(state, this->RefrigerantName, PSuctionMT, this->RefIndex, RoutineName);
+    Xl = this->refrig->getSatTemperature(state, PSuctionMT, RoutineName);
     Xu = Xl + 50.0;
     for (Iter = 1; Iter <= 15; ++Iter) { // Maximum of 15 iterations
         Xnew = (Xu + Xl) / 2.0;
-        Real64 Hnew = FluidProperties::GetSupHeatEnthalpyRefrig(state, this->RefrigerantName, Xnew, PSuctionMT, this->RefIndex, RoutineName);
+        Real64 Hnew = this->refrig->getSupHeatEnthalpy(state, Xnew, PSuctionMT, RoutineName);
         if (Hnew > this->HCompInHP) { // xnew is too high
             Xu = Xnew;
         } else { // xnew is too low
@@ -13905,8 +13506,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     TSubcoolerColdIn = Xnew;
 
     // Modify receiver inlet enthalpy and HP compressor inlet enthalpy to account for subcooler
-    HIdeal = FluidProperties::GetSupHeatEnthalpyRefrig(
-        state, this->RefrigerantName, GasCooler(this->GasCoolerNum(1)).TGasCoolerOut, PSuctionMT, this->RefIndex, RoutineName);
+    HIdeal = this->refrig->getSupHeatEnthalpy(state, GasCooler(this->GasCoolerNum(1)).TGasCoolerOut, PSuctionMT, RoutineName);
     // Only use subcooler if suction gas inlet temperature less than gas cooler outlet temperature
     if (TSubcoolerColdIn < GasCooler(this->GasCoolerNum(1)).TGasCoolerOut) {
         SubcoolEffect = this->SCEffectiveness;
@@ -13918,11 +13518,11 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     this->DelHSubcoolerDis = -this->DelHSubcoolerSuc;
 
     // Iterate to find the temperature at the inlet of the high pressure (HP) compressors
-    Xl = FluidProperties::GetSatTemperatureRefrig(state, this->RefrigerantName, PSuctionMT, this->RefIndex, RoutineName);
+    Xl = this->refrig->getSatTemperature(state, PSuctionMT, RoutineName);
     Xu = Xl + 50.0;
     for (Iter = 1; Iter <= 15; ++Iter) { // Maximum of 15 iterations
         Xnew = (Xu + Xl) / 2.0;
-        Real64 Hnew = FluidProperties::GetSupHeatEnthalpyRefrig(state, this->RefrigerantName, Xnew, PSuctionMT, this->RefIndex, RoutineName);
+        Real64 Hnew = this->refrig->getSupHeatEnthalpy(state, Xnew, PSuctionMT, RoutineName);
         if (Hnew > this->HCompInHP) { // xnew is too high
             Xu = Xnew;
         } else { // xnew is too low
@@ -13935,8 +13535,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     //  For capacity correction of HP compressors, consider subcooler, receiver, MT loads, LT loads and LP compressors
     //  to constitute the "load".  The actual and rated conditions at the exit of the gas cooler and the inlet of the
     //  HP compressors are used for capacity correction calculations.
-    DensityActualMT =
-        FluidProperties::GetSupHeatDensityRefrig(state, this->RefrigerantName, this->TCompInHP, PSuctionMT, this->RefIndex, RoutineName);
+    DensityActualMT = this->refrig->getSupHeatDensity(state, this->TCompInHP, PSuctionMT, RoutineName);
     TotalEnthalpyChangeActualMT = this->HCompInHP - GasCooler(this->GasCoolerNum(1)).HGasCoolerOut;
 
     // Dispatch HP compressors
@@ -13974,8 +13573,7 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
         } break;
         case CompRatingType::LiquidTemperature: {                // have rated liquid temperature stored in "RatedSubcool"
             if (!GasCooler(this->GasCoolerNum(1)).TransOpFlag) { // Subcritical operation
-                HCaseInRatedMT =
-                    FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, compressor.RatedSubcool, 0.0, this->RefIndex, RoutineName);
+                HCaseInRatedMT = this->refrig->getSatEnthalpy(state, compressor.RatedSubcool, 0.0, RoutineName);
             } else { // Transcritical operation
                 HCaseInRatedMT = GasCooler(this->GasCoolerNum(1)).HGasCoolerOut;
             } // (.NOT.GasCooler(SysNum)%TransOpFlag)
@@ -13990,16 +13588,14 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
         } break;
         case CompRatingType::ReturnGasTemperature: { // have rated compressor inlet temperature stored in "RatedSuperheat"
             TempInRatedHP = compressor.RatedSuperheat;
-            HCompInRatedHP = FluidProperties::GetSupHeatEnthalpyRefrig(
-                state, this->RefrigerantName, compressor.RatedSuperheat, PSuctionMT, this->RefIndex, RoutineName);
+            HCompInRatedHP = this->refrig->getSupHeatEnthalpy(state, compressor.RatedSuperheat, PSuctionMT, RoutineName);
         } break;
         default:
             break;
         }
 
         CaseEnthalpyChangeRatedMT = HCompInRatedHP - HCaseInRatedMT;
-        DensityRatedHP =
-            FluidProperties::GetSupHeatDensityRefrig(state, this->RefrigerantName, TempInRatedHP, PSuctionMT, this->RefIndex, RoutineName);
+        DensityRatedHP = this->refrig->getSupHeatDensity(state, TempInRatedHP, PSuctionMT, RoutineName);
         //  Adjust capacity and mass flow to reflect the specific volume change due to superheating and
         //  the increase in capacity due to extra subcooling
         MassCorrectionMT = DensityActualMT / DensityRatedHP;
@@ -14014,8 +13610,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
         } // (GasCooler(SysNum)%TransOpFlag)
         //  Mass flow through HP compressors is HP compressor refrigerating capacity divided by MT load, LT load and LP compressor power
         compressor.MassFlow = TotalRefMassFlow * compressor.Capacity / (NeededCapacityMT + NeededCapacityLT + this->TotCompPowerLP);
-        compressor.ElecConsumption = compressor.Power * LocalTimeStep * Constant::SecInHour;
-        compressor.CoolingEnergy = compressor.Capacity * LocalTimeStep * Constant::SecInHour;
+        compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+        compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
         compressor.LoadFactor = 1.0;
         // calculate load factor for last compressor added
         // assumes either cycling or part load eff = full load eff for last compressor
@@ -14027,8 +13623,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
             this->TotCompCapacityHP += compressor.Capacity;
             this->RefMassFlowCompsHP += compressor.MassFlow;
             this->TotCompPowerHP += compressor.Power;
-            compressor.ElecConsumption = compressor.Power * LocalTimeStep * Constant::SecInHour;
-            compressor.CoolingEnergy = compressor.Capacity * LocalTimeStep * Constant::SecInHour;
+            compressor.ElecConsumption = compressor.Power * localTimeStepSec;
+            compressor.CoolingEnergy = compressor.Capacity * localTimeStepSec;
             compressor.LoadFactor = LFLastComp;
             break;
         } else {
@@ -14043,8 +13639,8 @@ void TransRefrigSystemData::CalculateTransCompressors(EnergyPlusData &state)
     this->RefMassFlowComps = this->RefMassFlowCompsLP + this->RefMassFlowCompsHP;
     this->TotCompCapacity = this->TotCompCapacityHP + this->TotCompCapacityLP;
     this->AverageCompressorCOP = (this->TotCompCapacityHP - this->TotCompPowerLP) / (this->TotCompPowerLP + this->TotCompPowerHP);
-    this->TotCompElecConsump = (this->TotCompPowerLP + this->TotCompPowerHP) * LocalTimeStep * Constant::SecInHour;
-    this->TotCompCoolingEnergy = (this->TotCompCapacityLP + this->TotCompCapacityHP) * LocalTimeStep * Constant::SecInHour;
+    this->TotCompElecConsump = (this->TotCompPowerLP + this->TotCompPowerHP) * localTimeStepSec;
+    this->TotCompCoolingEnergy = (this->TotCompCapacityLP + this->TotCompCapacityHP) * localTimeStepSec;
 }
 
 void RefrigSystemData::CalculateSubcoolers(EnergyPlusData &state)
@@ -14074,31 +13670,28 @@ void RefrigSystemData::CalculateSubcoolers(EnergyPlusData &state)
     auto &Condenser = state.dataRefrigCase->Condenser;
     auto &Subcooler = state.dataRefrigCase->Subcooler;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     // HCaseIn has to be recalculated as the starting point for the subcoolers here because
     //  of the multiple number of iterations through this subroutine and because Tcondense is evolving.
     if (this->NumStages == 1) { // Single-stage compression system
-        this->HSatLiqCond = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-        this->CpSatLiqCond =
-            FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
+        this->HSatLiqCond = this->refrig->getSatEnthalpy(state, this->TCondense, 0.0, RoutineName);
+        this->CpSatLiqCond = this->refrig->getSatSpecificHeat(state, this->TCondense, 0.0, RoutineName);
         this->HCaseIn = this->HSatLiqCond - this->CpSatLiqCond * Condenser(this->CondenserNum(1)).RatedSubcool;
 
         // Two-stage compression with flash intercooler
     } else if (this->NumStages == 2 && this->IntercoolerType == 1) {
-        this->HSatLiqCond = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-        this->CpSatLiqCond =
-            FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-        this->HCaseIn = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TIntercooler, 0.0, this->RefIndex, RoutineName);
+        this->HSatLiqCond = this->refrig->getSatEnthalpy(state, this->TCondense, 0.0, RoutineName);
+        this->CpSatLiqCond = this->refrig->getSatSpecificHeat(state, this->TCondense, 0.0, RoutineName);
+        this->HCaseIn = this->refrig->getSatEnthalpy(state, this->TIntercooler, 0.0, RoutineName);
 
         // Two-stage compression with shell-and-coil intercooler
     } else if (this->NumStages == 2 && this->IntercoolerType == 2) {
         TLiqInActualLocal = this->TCondense - Condenser(this->CondenserNum(1)).RatedSubcool -
                             this->IntercoolerEffectiveness * (this->TCondense - Condenser(this->CondenserNum(1)).RatedSubcool - this->TIntercooler);
-        this->HSatLiqCond = FluidProperties::GetSatEnthalpyRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
-        this->CpSatLiqCond =
-            FluidProperties::GetSatSpecificHeatRefrig(state, this->RefrigerantName, this->TCondense, 0.0, this->RefIndex, RoutineName);
+        this->HSatLiqCond = this->refrig->getSatEnthalpy(state, this->TCondense, 0.0, RoutineName);
+        this->CpSatLiqCond = this->refrig->getSatSpecificHeat(state, this->TCondense, 0.0, RoutineName);
         this->HCaseIn = this->HSatLiqCond - this->CpSatLiqCond * (this->TCondense - TLiqInActualLocal);
     } // NumStages and IntercoolerType
 
@@ -14137,7 +13730,7 @@ void RefrigSystemData::CalculateSubcoolers(EnergyPlusData &state)
             int SysProvideID = cooler.MechSourceSysID;
             System(SysProvideID).MechSCLoad(SubcoolerID) = mechSCLoad;
             cooler.MechSCTransLoad = mechSCLoad;
-            cooler.MechSCTransEnergy = mechSCLoad * LocalTimeStep * Constant::SecInHour;
+            cooler.MechSCTransEnergy = mechSCLoad * localTimeStepSec;
             // Reset inlet temperature for any LSHX that follows this mech subcooler
             TLiqInActualLocal = ControlTLiqOut;
             this->TCompIn = this->TEvapNeeded + CaseSuperheat;
@@ -14152,7 +13745,7 @@ void RefrigSystemData::CalculateSubcoolers(EnergyPlusData &state)
             this->TCompIn = TVapInActual + SubcoolerSupHeat;
             this->HCaseIn -= SubcoolLoad / this->RefMassFlowtoLoads;
             this->LSHXTrans = SubcoolLoad;
-            this->LSHXTransEnergy = SubcoolLoad * LocalTimeStep * Constant::SecInHour;
+            this->LSHXTransEnergy = SubcoolLoad * localTimeStepSec;
         } break;
         default:
             break;
@@ -14385,7 +13978,7 @@ void ReportRefrigerationComponents(EnergyPlusData &state)
     }                                               //((NumSimulationSubcoolers - NumSimulationMechSubcoolers) > 0)
 
     if (state.dataRefrigCase->NumTransRefrigSystems > 0) {
-        print(state.files.eio, "{}\n", Format_120); // Intro to detailed transcriticial refrigeration system
+        print(state.files.eio, "{}\n", Format_120); // Intro to detailed transcritical refrigeration system
         print(state.files.eio, "{}\n", Format_121); // Detailed system header
         if (state.dataRefrigCase->NumSimulationCases > 0) {
             print(state.files.eio, "{}\n", Format_105); //  Case header
@@ -15000,23 +14593,19 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
     Real64 DensitySqRtFactor(0.0);   // from ASHRAE 2010 eq 12 page 24.4 for door infiltration
 
     // Current value of WalkIn operating (availability) schedule
-    Real64 WalkInSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->SchedPtr);
+    Real64 WalkInSchedule = this->availSched->getCurrentVal();
     if (WalkInSchedule <= 0) return;
     // GET OTHER SCHEDULES
-    DefrostSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->DefrostSchedPtr);
-    Real64 DefrostDripDownSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->DefrostDripDownSchedPtr);
+    DefrostSchedule = this->defrostSched->getCurrentVal();
+    Real64 DefrostDripDownSchedule = this->defrostDripDownSched->getCurrentVal();
     // next statement In case user doesn't understand concept of drip down schedule
     DefrostDripDownSchedule = max(DefrostDripDownSchedule, DefrostSchedule);
 
     // next four values optional, so set to default before checking for schedule
-    Real64 StockingLoad(0.0); // Total load due to stocking WalkIn product (W)
-    Real64 LightingSchedule = 1.0;
-    Real64 HeaterSchedule = 1.0;
-    Real64 CircFanSchedule = 1.0;
-    if (this->StockingSchedPtr > 0) StockingLoad = ScheduleManager::GetCurrentScheduleValue(state, this->StockingSchedPtr);
-    if (this->LightingSchedPtr > 0) LightingSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->LightingSchedPtr);
-    if (this->HeaterSchedPtr > 0) HeaterSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->HeaterSchedPtr);
-    if (this->CircFanSchedPtr > 0) CircFanSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->CircFanSchedPtr);
+    Real64 StockingLoad = (this->stockingSched != nullptr) ? this->stockingSched->getCurrentVal() : 0.0;
+    Real64 LightingSchedule = (this->lightingSched != nullptr) ? this->lightingSched->getCurrentVal() : 1.0;
+    Real64 HeaterSchedule = (this->heaterSched != nullptr) ? this->heaterSched->getCurrentVal() : 1.0;
+    Real64 CircFanSchedule = (this->circFanAvailSched != nullptr) ? this->circFanAvailSched->getCurrentVal() : 1.0;
 
     // Set local subroutine variables for convenience
     Real64 TWalkIn = this->Temperature; // WalkIn operating temperature (C)
@@ -15110,8 +14699,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
                 DrArea = StockDoorArea;
                 // if exists, get Stock Door Zone schedule
                 Real64 DoorOpenFactor = DefaultWalkInDoorOpenFactor;
-                if (this->StockDoorOpenSchedPtr(ZoneID) > 0)
-                    DoorOpenFactor = ScheduleManager::GetCurrentScheduleValue(state, this->StockDoorOpenSchedPtr(ZoneID));
+                if (this->stockDoorOpenScheds(ZoneID) != nullptr) DoorOpenFactor = this->stockDoorOpenScheds(ZoneID)->getCurrentVal();
 
                 FullFlowInfLoad = 0.221 * DrArea * (EnthalpyZoneAir - EnthalpyAirWalkIn) * DensityAirWalkIn * DensitySqRtFactor *
                                   std::sqrt(Gravity * DrHeight) * DensityFactorFm;
@@ -15128,8 +14716,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
                 DrArea = GlassDoorArea;
                 // get Glass Door Zone schedule
                 Real64 DoorOpenFactor = DefaultWalkInDoorOpenFactor; // default value
-                if (this->GlassDoorOpenSchedPtr(ZoneID) > 0)
-                    DoorOpenFactor = ScheduleManager::GetCurrentScheduleValue(state, this->GlassDoorOpenSchedPtr(ZoneID));
+                if (this->glassDoorOpenScheds(ZoneID) != nullptr) DoorOpenFactor = this->glassDoorOpenScheds(ZoneID)->getCurrentVal();
 
                 FullFlowInfLoad = 0.221 * DrArea * (EnthalpyZoneAir - EnthalpyAirWalkIn) * DensityAirWalkIn * DensitySqRtFactor *
                                   std::sqrt(Gravity * DrHeight) * DensityFactorFm;
@@ -15146,7 +14733,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
                 MassDryAirRate * (HumRatioZoneAir - HumRatioAirWalkIn); // Walk in cooler removes water at this rate in this zone (kg/s)
             // Just as with cases,  we assume no latent credit (water removal = 0) to zone or load on cooler during dripdown
             // To be consistent with the treatment of refrigerated cases, latent load
-            //  and latent credit are bothbased on reducing the infiltrating vapor to ice.  (This is
+            //  and latent credit are both based on reducing the infiltrating vapor to ice.  (This is
             //  slightly greater than if the latent credit were based upon condensing out the water as liquid.)
             //  then it would be: ZoneLatentLoad = -WaterRemovRate * WaterToVaporEnthalpy * (1.0d0-DefrostDripDownSchedule)
             ZoneLatentLoad = -WaterRemovRate * IcetoVaporEnthalpy * (1.0 - DefrostDripDownSchedule);
@@ -15245,7 +14832,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
                 // Reduce defrost heat load on walkin by amount of ice melted during time step
                 Real64 FrostChangekg = min(AvailDefrostEnergy / IceMeltEnthalpy, StartFrostKg);
                 if (FrostChangekg < StartFrostKg) {
-                    DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::SecInHour;
+                    DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour;
                     if (!state.dataGlobal->WarmupFlag) this->KgFrost = StartFrostKg - FrostChangekg;
                     // DefrostSchedule not changed
                 } else { // all frost melted during time step, so need to terminate defrost
@@ -15270,7 +14857,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
         } else { // Not temperature control type
             Real64 FrostChangekg = min(DefrostEnergy / IceMeltEnthalpy, StartFrostKg);
             // Reduce defrost heat load on walkin by amount of ice melted during time step
-            DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::SecInHour;
+            DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour;
             if (!state.dataGlobal->WarmupFlag) this->KgFrost = StartFrostKg - FrostChangekg;
             // DefrostSchedule not changed
         } // Temperature termination control type
@@ -15308,7 +14895,7 @@ void WalkInData::CalculateWalkIn(EnergyPlusData &state) // Absolute pointer to  
     //  run full out until the temperature is brought back down.
 
     // Rate needed to serve all stored energy during single time step (W)
-    Real64 StoredEnergyRate = this->StoredEnergy / state.dataGlobal->TimeStepZone / Constant::SecInHour;
+    Real64 StoredEnergyRate = this->StoredEnergy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour;
     Real64 LoadRequested = LoadTotal + StoredEnergyRate; // Load necessary to meet current and all stored energy needs (W)
 
     Real64 LatentCapApplied;        // Walk In latent capacity at specific operating conditions
@@ -15437,8 +15024,8 @@ void SecondaryLoopData::CalculateSecondary(EnergyPlusData &state, int const Seco
     auto &WalkIn = state.dataRefrigCase->WalkIn;
     auto &WarehouseCoil = state.dataRefrigCase->WarehouseCoil;
 
-    Real64 LocalTimeStep = state.dataGlobal->TimeStepZone;
-    if (state.dataRefrigCase->UseSysTimeStep) LocalTimeStep = state.dataHVACGlobal->TimeStepSys;
+    Real64 localTimeStep = (state.dataRefrigCase->UseSysTimeStep) ? state.dataHVACGlobal->TimeStepSys : state.dataGlobal->TimeStepZone;
+    Real64 localTimeStepSec = localTimeStep * Constant::rSecsInHour;
 
     switch (this->FluidType) {
     case SecFluidType::AlwaysLiquid: {
@@ -15513,7 +15100,7 @@ void SecondaryLoopData::CalculateSecondary(EnergyPlusData &state, int const Seco
             int CoilID = this->CoilNum(CoilIndex);
             // already CALL CalculateCoil(CoilID) for each coil, dispatched in coilset order for each zone
             // increment TotalCoolingLoad for each system
-            //  here will find out if secondary can serve total load, if not will derate coil outout/case credits
+            //  here will find out if secondary can serve total load, if not will derate coil output/case credits
             RefrigerationLoad += WarehouseCoil(CoilID).TotalCoolingLoad;
             TotalHotDefrostCondCredit += WarehouseCoil(CoilID).HotDefrostCondCredit;
         } // NumCoils on secondary system
@@ -15606,7 +15193,7 @@ void SecondaryLoopData::CalculateSecondary(EnergyPlusData &state, int const Seco
     //  (e.g. as it may be following defrost cycles on cases or walk-ins served by secondary loop)
     //  save the unmet/stored load to be met in succeeding time steps.
     if (this->NumCoils == 0) {
-        StoredEnergyRate = max(0.0, (this->UnmetEnergy / state.dataGlobal->TimeStepZone / Constant::SecInHour));
+        StoredEnergyRate = max(0.0, (this->UnmetEnergy / state.dataGlobal->TimeStepZone / Constant::rSecsInHour));
         // Load necessary to meet current and all stored energy needs (W)
         Real64 LoadRequested = TotalLoad + StoredEnergyRate;
         if (this->MaxLoad > LoadRequested) {
@@ -15637,16 +15224,16 @@ void SecondaryLoopData::CalculateSecondary(EnergyPlusData &state, int const Seco
         // Bug TotalCoolingLoad not set but used below
     } // no air coils on secondary loop
     this->PumpPowerTotal = TotalPumpPower;
-    this->PumpElecEnergyTotal = TotalPumpPower * LocalTimeStep * Constant::SecInHour;
+    this->PumpElecEnergyTotal = TotalPumpPower * localTimeStepSec;
     this->TotalRefrigLoad = RefrigerationLoad;
-    this->TotalRefrigEnergy = RefrigerationLoad * LocalTimeStep * Constant::SecInHour;
-    this->TotalCoolingEnergy = TotalCoolingLoad * LocalTimeStep * Constant::SecInHour;
+    this->TotalRefrigEnergy = RefrigerationLoad * localTimeStepSec;
+    this->TotalCoolingEnergy = TotalCoolingLoad * localTimeStepSec;
     this->FlowVolActual = VolFlowRate;
     this->HotDefrostCondCredit = TotalHotDefrostCondCredit;
     this->DistPipeHeatGain = distPipeHeatGain;
-    this->DistPipeHeatGainEnergy = distPipeHeatGain * LocalTimeStep * Constant::SecInHour;
+    this->DistPipeHeatGainEnergy = distPipeHeatGain * localTimeStepSec;
     this->ReceiverHeatGain = receiverHeatGain;
-    this->ReceiverHeatGainEnergy = receiverHeatGain * LocalTimeStep * Constant::SecInHour;
+    this->ReceiverHeatGainEnergy = receiverHeatGain * localTimeStepSec;
 }
 
 void SumZoneImpacts(EnergyPlusData &state)
@@ -15824,7 +15411,7 @@ void SimAirChillerSet(EnergyPlusData &state,
     RemainingOutputToCoolingSP = state.dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputReqToCoolSP;
     // RemainingOutputToCoolingSP in Watts, < 0 for cooling demand
 
-    if (RemainingOutputToCoolingSP < 0.0 && state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::ThermostatType::SingleHeating) {
+    if (RemainingOutputToCoolingSP < 0.0 && state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::SetptType::SingleHeat) {
         AirChillerSet(AirChillerSetPtr).QZnReqSens = RemainingOutputToCoolingSP;
     } else {
         AirChillerSet(AirChillerSetPtr).QZnReqSens = 0.0;
@@ -15868,7 +15455,7 @@ void AirChillerSetData::CalculateAirChillerSets(EnergyPlusData &state)
     // Note, all coils in a coil set are in the same zone
     // the coils may be served by different detailed systems
     // The coils are dispatched to meet the load specified in the previous time step in order listed in coilset object
-    AirChillerSetSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->SchedPtr);
+    AirChillerSetSchedule = this->availSched->getCurrentVal();
 
     if (AirChillerSetSchedule <= 0.0) return;
     QZNReqSens = this->QZnReqSens;
@@ -16009,17 +15596,16 @@ void WarehouseCoilData::CalculateCoil(EnergyPlusData &state, Real64 const QZnReq
 
     static constexpr std::string_view TrackMessage("from RefrigeratedCase:CalculateCoil");
 
-    Real64 CoilSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->SchedPtr); // Current value of Coil operating (availability) schedule
+    Real64 CoilSchedule = this->availSched->getCurrentVal(); // Current value of Coil operating (availability) schedule
     if (CoilSchedule <= 0.0) return;
 
-    Real64 DefrostSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->DefrostSchedPtr); // Coil defrost schedule, between 0 and 1
-    Real64 DefrostDripDownSchedule = ScheduleManager::GetCurrentScheduleValue(
-        state, this->DefrostDripDownSchedPtr); // Coil drip-down schedule (allows coil to drain after defrost)
+    Real64 DefrostSchedule = this->defrostSched->getCurrentVal();                 // Coil defrost schedule, between 0 and 1
+    Real64 DefrostDripDownSchedule = this->defrostDripDownSched->getCurrentVal(); // Coil drip-down schedule (allows coil to drain after defrost)
     // next statement In case user doesn't understand concept of drip down schedule
     DefrostDripDownSchedule = max(DefrostDripDownSchedule, DefrostSchedule);
     // next value optional, so set to default before checking for schedule
     Real64 HeaterSchedule = 1.0; // zero to one
-    if (this->HeaterSchedPtr > 0) HeaterSchedule = ScheduleManager::GetCurrentScheduleValue(state, this->HeaterSchedPtr);
+    if (this->heaterAvailSched != nullptr) HeaterSchedule = this->heaterAvailSched->getCurrentVal();
 
     // Set local subroutine variables for convenience
     FanSpeedCtrlType FanSpeedControlType = this->FanType;
@@ -16234,7 +15820,7 @@ void WarehouseCoilData::CalculateCoil(EnergyPlusData &state, Real64 const QZnReq
             } break;
             case FanSpeedCtrlType::TwoSpeed: {
                 // low speed setting of 1/2 fan speed can give up to 60% of capacity.
-                // 1/2 speed corresonds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
+                // 1/2 speed corresponds to ~1/8 power consumption (FanHalfSpeedRatio = 1/(2**2.5) = 0.1768)
                 // dampers are used to control flow within those two ranges as in FanConstantSpeed
                 if (CapFac < CapFac60Percent) {
                     FanPowerActual = ((AirVolRatio + 0.4) * (FanHalfSpeedRatio)) * std::exp(1.0 - AirVolRatio) * FanPowerMax;
@@ -16311,7 +15897,7 @@ void WarehouseCoilData::CalculateCoil(EnergyPlusData &state, Real64 const QZnReq
                 // Reduce defrost heat load on walkin by amount of ice melted during time step
                 FrostChangekg = min(AvailDefrostEnergy / IceMeltEnthalpy, StartFrostKg);
                 if (FrostChangekg < StartFrostKg) {
-                    DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataHVACGlobal->TimeStepSys / Constant::SecInHour;
+                    DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataHVACGlobal->TimeStepSys / Constant::rSecsInHour;
                     if (!state.dataGlobal->WarmupFlag) this->KgFrost = StartFrostKg - FrostChangekg;
                     // DefrostSchedule not changed because ice not all melted, temp term not triggered
                 } else { // all frost melted during time step, so need to terminate defrost
@@ -16339,7 +15925,7 @@ void WarehouseCoilData::CalculateCoil(EnergyPlusData &state, Real64 const QZnReq
             // Reduce defrost heat load on the zone by amount of ice melted during time step
             // But DefrostSchedule not changed
             FrostChangekg = max(0.0, min((DefrostEnergy / IceMeltEnthalpy), StartFrostKg));
-            DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataHVACGlobal->TimeStepSys / Constant::SecInHour;
+            DefrostLoad -= FrostChangekg * IceMeltEnthalpy / state.dataHVACGlobal->TimeStepSys / Constant::rSecsInHour;
             if (!state.dataGlobal->WarmupFlag) this->KgFrost = StartFrostKg - FrostChangekg;
         } // Temperature termination vs. time-clock control type
 

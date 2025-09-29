@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -50,7 +50,6 @@
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array.functions.hh>
-#include <ObjexxFCL/Fmath.hh>
 
 // EnergyPlus Headers
 #include <AirflowNetwork/Solver.hpp>
@@ -98,8 +97,6 @@ namespace EnergyPlus::SingleDuct {
 // MODULE INFORMATION:
 //       AUTHOR         Richard J. Liesen
 //       DATE WRITTEN   January 2000
-//       MODIFIED       na
-//       RE-ENGINEERED  na
 
 // PURPOSE OF THIS MODULE:
 // To encapsulate the data and algorithms required to
@@ -115,11 +112,7 @@ using HVAC::SmallMassFlow;
 using namespace DataSizing;
 using Psychrometrics::PsyCpAirFnW;
 using Psychrometrics::PsyRhoAirFnPbTdbW;
-using namespace ScheduleManager;
 using namespace SteamCoils;
-
-static constexpr std::string_view fluidNameSteam("STEAM");
-static constexpr std::string_view fluidNameWater("WATER");
 
 void SimulateSingleDuct(
     EnergyPlusData &state, std::string_view CompName, bool const FirstHVACIteration, int const ZoneNum, int const ZoneNodeNum, int &CompIndex)
@@ -128,15 +121,11 @@ void SimulateSingleDuct(
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Richard Liesen
     //       DATE WRITTEN   January 2000
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine manages Sys system simulation.
     // It is called from the ManageZoneEquip
     // at the system time step.
-
-    // Using/Aliasing
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     int SysNum; // The Sys that you are currently loading input into
@@ -222,8 +211,6 @@ void GetSysInput(EnergyPlusData &state)
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Richard Liesen
     //       DATE WRITTEN   April 1998
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine is the main routine to call other input routines and Get routines
@@ -366,262 +353,195 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
         state.dataSingleDuct->SysNumGSI = state.dataSingleDuct->SysIndexGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctVAVReheat;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = Alphas(7);
-        if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Fuel")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Gas;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Electric")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Electric;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Water")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SimpleHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Steam")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SteamAirHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilSteamAirHeating;
-        } else if (!state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp.empty()) {
-            ShowSevereError(
-                state, format("Illegal {} = {}.", cAlphaFields(8), state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctVAVReheat;
+        airTerm.ReheatComp = Alphas(7);
+        if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Fuel")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Gas;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Electric")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Electric;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Water")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SimpleHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Steam")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SteamAirHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilSteamAirHeating;
+        } else if (!airTerm.ReheatComp.empty()) {
+            ShowSevereError(state, format("Illegal {} = {}.", cAlphaFields(8), airTerm.ReheatComp));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = Alphas(8);
-        ValidateComponent(state,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                          IsNotOK,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        airTerm.ReheatName = Alphas(8);
+        ValidateComponent(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
         // For node connections, this object is both a parent and a non-parent, because the
         // VAV damper is not called out as a separate component, its nodes must be connected
         // as ObjectIsNotParent.  But for the reheat coil, the nodes are connected as ObjectIsParent
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(4));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(3),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsNotParent,
+                                                  cAlphaFields(3));
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(4),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsNotParent,
+                                                 cAlphaFields(4));
+        airTerm.MaxAirVolFlowRate = Numbers(1);
 
         if (Util::SameString(Alphas(5), "Constant")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Constant;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Constant;
         } else if (Util::SameString(Alphas(5), "FixedFlowRate")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Fixed;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Fixed;
         } else if (Util::SameString(Alphas(5), "Scheduled")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Scheduled;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Scheduled;
         } else {
             ShowSevereError(state, format("{} = {} not found.", cAlphaFields(5), Alphas(5)));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(2);
+        airTerm.ZoneMinAirFracDes = Numbers(2);
         if (lNumericBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ConstantMinAirFracSetByUser = false;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignMinAirFrac = 0.0;
+            airTerm.ConstantMinAirFracSetByUser = false;
+            airTerm.DesignMinAirFrac = 0.0;
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ConstantMinAirFracSetByUser = true;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignMinAirFrac = Numbers(2);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Fixed) {
+            airTerm.ConstantMinAirFracSetByUser = true;
+            airTerm.DesignMinAirFrac = Numbers(2);
+            if (airTerm.ZoneMinAirFracMethod == MinFlowFraction::Fixed) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(5), Alphas(5), cNumericFields(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
+                airTerm.ZoneMinAirFracDes = 0.0;
             }
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFixedMinAir = Numbers(3);
+        airTerm.ZoneFixedMinAir = Numbers(3);
         if (lNumericBlanks(3)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).FixedMinAirSetByUser = false;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignMinAirFrac = 0.0;
+            airTerm.FixedMinAirSetByUser = false;
+            airTerm.DesignMinAirFrac = 0.0;
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).FixedMinAirSetByUser = true;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignMinAirFrac = Numbers(3);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Constant) {
+            airTerm.FixedMinAirSetByUser = true;
+            airTerm.DesignMinAirFrac = Numbers(3);
+            if (airTerm.ZoneMinAirFracMethod == MinFlowFraction::Constant) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(5), Alphas(5), cNumericFields(3)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFixedMinAir = 0.0;
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
+                airTerm.ZoneFixedMinAir = 0.0;
             }
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr = GetScheduleIndex(state, Alphas(6));
-        if ((state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr == 0) &&
-            (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Scheduled)) {
-            ShowSevereError(state, format("{} = {} not found.", cAlphaFields(6), Alphas(6)));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(state, "A valid schedule is required");
+        if (airTerm.ZoneMinAirFracMethod != MinFlowFraction::Scheduled) {
+        } else if (lAlphaBlanks(6)) {
+            ShowSevereEmptyField(state, eoh, cAlphaFields(6));
             ErrorsFound = true;
-        } else if ((state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr > 0) &&
-                   (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Scheduled)) {
-            // check range of values in schedule
-            if (!CheckScheduleValueMinMax(
-                    state, state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr, ">=", 0.0, "<=", 1.0)) {
-                ShowSevereError(state, format("Error found in {} = {}", cAlphaFields(6), Alphas(6)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ShowContinueError(state, "Schedule values must be (>=0., <=1.)");
-            }
+        } else if ((airTerm.zoneMinAirFracSched = Sched::GetSchedule(state, Alphas(6))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(6), Alphas(6));
+            ErrorsFound = true;
+        } else if (!airTerm.zoneMinAirFracSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+            Sched::ShowSevereBadMinMax(state, eoh, cAlphaFields(6), Alphas(6), Clusive::In, 0.0, Clusive::In, 1.0);
+            ErrorsFound = true;
         }
 
         // The reheat coil control node is necessary for hot water and steam reheat, but not necessary for
         // electric or gas reheat.
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num != HeatingCoilType::Gas &&
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num != HeatingCoilType::Electric) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+        if (airTerm.ReheatComp_Num != HeatingCoilType::Gas && airTerm.ReheatComp_Num != HeatingCoilType::Electric) {
+            if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilSteamInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilSteamInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             } else {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilWaterInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilWaterInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             }
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            GetOnlySingleNode(state,
-                              Alphas(9),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsParent,
-                              cAlphaFields(9));
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = Numbers(4);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = Numbers(5);
+        airTerm.ReheatAirOutletNode = GetOnlySingleNode(state,
+                                                        Alphas(9),
+                                                        ErrorsFound,
+                                                        DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVReheat,
+                                                        Alphas(1),
+                                                        DataLoopNode::NodeFluidType::Air,
+                                                        DataLoopNode::ConnectionType::Outlet,
+                                                        NodeInputManager::CompFluidStream::Primary,
+                                                        ObjectIsParent,
+                                                        cAlphaFields(9));
+        if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            airTerm.MaxReheatSteamVolFlow = Numbers(4);
+            airTerm.MinReheatSteamVolFlow = Numbers(5);
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = Numbers(4);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = Numbers(5);
+            airTerm.MaxReheatWaterVolFlow = Numbers(4);
+            airTerm.MinReheatWaterVolFlow = Numbers(5);
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = Numbers(6);
+        airTerm.ControllerOffset = Numbers(6);
         // Set default convergence tolerance
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset <= 0.0) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.001;
+        if (airTerm.ControllerOffset <= 0.0) {
+            airTerm.ControllerOffset = 0.001;
         }
         if (Util::SameString(Alphas(10), "Reverse")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::Reverse;
+            airTerm.DamperHeatingAction = Action::Reverse;
         } else if (Util::SameString(Alphas(10), "Normal")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::Normal;
+            airTerm.DamperHeatingAction = Action::Normal;
         } else if (Util::SameString(Alphas(10), "ReverseWithLimits")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::ReverseWithLimits;
+            airTerm.DamperHeatingAction = Action::ReverseWithLimits;
         } else {
             ShowSevereError(state, format("{} = {} not found.", cAlphaFields(10), Alphas(10)));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.ReheatAirOutletNode == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -629,140 +549,101 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.ReheatAirOutletNode == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
-                            ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                            ShowContinueError(
+                                state, format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.ReheatAirOutletNode;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
 
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
         if (Numbers(7) == Constant::AutoCalculate) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRateDuringReheat = Numbers(7);
+            airTerm.MaxAirVolFlowRateDuringReheat = Numbers(7);
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRateDuringReheat =
-                Numbers(7) * state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea;
+            airTerm.MaxAirVolFlowRateDuringReheat = Numbers(7) * airTerm.ZoneFloorArea;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFractionDuringReheat = Numbers(8);
+        airTerm.MaxAirVolFractionDuringReheat = Numbers(8);
 
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction != Action::ReverseWithLimits) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRateDuringReheat > 0.0) {
+        if (airTerm.DamperHeatingAction != Action::ReverseWithLimits) {
+            if (airTerm.MaxAirVolFlowRateDuringReheat > 0.0) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(10), Alphas(10), cNumericFields(7)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             }
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFractionDuringReheat > 0.0) {
+            if (airTerm.MaxAirVolFractionDuringReheat > 0.0) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(10), Alphas(10), cNumericFields(8)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             }
         }
 
         // Maximum reheat air temperature, i.e. the maximum supply air temperature leaving the reheat coil
         if (!lNumericBlanks(9)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTemp = Numbers(9);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = true;
+            airTerm.MaxReheatTemp = Numbers(9);
+            airTerm.MaxReheatTempSetByUser = true;
         } else {
             // user does not specify maximum supply air temperature
             // sd_airterminal(SysNum)%MaxReheatTemp = 35.0D0 !C
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = false;
+            airTerm.MaxReheatTempSetByUser = false;
         }
 
         if (!lAlphaBlanks(11)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr =
-                Util::FindItemInList(Alphas(11), state.dataSize->OARequirements);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr == 0) {
+            airTerm.OARequirementsPtr = Util::FindItemInList(Alphas(11), state.dataSize->OARequirements);
+            if (airTerm.OARequirementsPtr == 0) {
                 ShowSevereError(state, format("{} = {} not found.", cAlphaFields(11), Alphas(11)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                 ErrorsFound = true;
             } else {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).NoOAFlowInputFromUser = false;
+                airTerm.NoOAFlowInputFromUser = false;
             }
         }
 
         if (lAlphaBlanks(12)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFrac = 1.0;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = false;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr = GetScheduleIndex(state, Alphas(12));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(12), Alphas(12)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = true;
+            airTerm.ZoneTurndownMinAirFrac = 1.0;
+        } else if ((airTerm.zoneTurndownMinAirFracSched = Sched::GetSchedule(state, Alphas(12))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(12), Alphas(12));
+            ErrorsFound = true;
         }
 
-        ValidateComponent(state, Alphas(7), Alphas(8), IsNotOK, state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        ValidateComponent(state, Alphas(7), Alphas(8), IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
         // Add reheat coil to component sets array
-        SetUpCompSets(state,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                      Alphas(7),
-                      Alphas(8),
-                      Alphas(3),
-                      Alphas(9));
+        SetUpCompSets(state, airTerm.sysType, airTerm.SysName, Alphas(7), Alphas(8), Alphas(3), Alphas(9));
 
         // Setup the Average damper Position output variable
         SetupOutputVariable(state,
                             "Zone Air Terminal VAV Damper Position",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperPosition,
+                            airTerm.DamperPosition,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
         SetupOutputVariable(state,
                             "Zone Air Terminal Minimum Air Flow Fraction",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracReport,
+                            airTerm.ZoneMinAirFracReport,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
 
     } // end Number of Sys Loop
 
@@ -784,196 +665,147 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
         state.dataSingleDuct->SysNumGSI = state.dataSingleDuct->SysIndexGSI + state.dataSingleDuct->NumVAVSysGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctCBVAVReheat;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = Alphas(5);
-        if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Fuel")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Gas;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Electric")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Electric;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Water")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SimpleHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Steam")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SteamAirHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilSteamAirHeating;
-        } else if (!state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp.empty()) {
-            ShowSevereError(
-                state, format("Illegal {} = {}.", cAlphaFields(5), state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctCBVAVReheat;
+        airTerm.ReheatComp = Alphas(5);
+        if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Fuel")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Gas;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Electric")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Electric;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Water")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SimpleHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Steam")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SteamAirHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilSteamAirHeating;
+        } else if (!airTerm.ReheatComp.empty()) {
+            ShowSevereError(state, format("Illegal {} = {}.", cAlphaFields(5), airTerm.ReheatComp));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = Alphas(6);
-        ValidateComponent(state,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                          IsNotOK,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        airTerm.ReheatName = Alphas(6);
+        ValidateComponent(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
+
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
         // For node connections, this object is both a parent and a non-parent, because the
         // VAV damper is not called out as a separate component, its nodes must be connected
         // as ObjectIsNotParent.  But for the reheat coil, the nodes are connected as ObjectIsParent
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(4));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(2);
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes < 0.0) {
-            ShowWarningError(state,
-                             format("{} \"{}\"",
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(3),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsNotParent,
+                                                  cAlphaFields(3));
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(4),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsNotParent,
+                                                 cAlphaFields(4));
+        airTerm.MaxAirVolFlowRate = Numbers(1);
+        airTerm.ZoneMinAirFracDes = Numbers(2);
+        if (airTerm.ZoneMinAirFracDes < 0.0) {
+            ShowWarningError(state, format("{} \"{}\"", airTerm.sysType, airTerm.SysName));
             ShowContinueError(state,
                               format("{} must be greater than or equal to 0. Resetting to 0 and the simulation continues.", cNumericFields(2)));
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
+            airTerm.ZoneMinAirFracDes = 0.0;
         }
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes > 1.0) {
-            ShowWarningError(state,
-                             format("{} \"{}\"",
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+        if (airTerm.ZoneMinAirFracDes > 1.0) {
+            ShowWarningError(state, format("{} \"{}\"", airTerm.sysType, airTerm.SysName));
             ShowContinueError(state, format("{} must be less than or equal to 1. Resetting to 1 and the simulation continues.", cNumericFields(2)));
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 1.0;
+            airTerm.ZoneMinAirFracDes = 1.0;
         }
         // The reheat coil control node is necessary for hot water and steam reheat, but not necessary for
         // electric or gas reheat.
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Gas ||
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Electric) {
+        if (airTerm.ReheatComp_Num == HeatingCoilType::Gas || airTerm.ReheatComp_Num == HeatingCoilType::Electric) {
         } else {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilSteamInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilSteamInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             } else {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilWaterInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilWaterInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             }
             //  END IF
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            GetOnlySingleNode(state,
-                              Alphas(7),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsParent,
-                              cAlphaFields(7));
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = Numbers(3);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = Numbers(4);
+        airTerm.ReheatAirOutletNode = GetOnlySingleNode(state,
+                                                        Alphas(7),
+                                                        ErrorsFound,
+                                                        DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolReheat,
+                                                        Alphas(1),
+                                                        DataLoopNode::NodeFluidType::Air,
+                                                        DataLoopNode::ConnectionType::Outlet,
+                                                        NodeInputManager::CompFluidStream::Primary,
+                                                        ObjectIsParent,
+                                                        cAlphaFields(7));
+        if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            airTerm.MaxReheatSteamVolFlow = Numbers(3);
+            airTerm.MinReheatSteamVolFlow = Numbers(4);
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = Numbers(3);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = Numbers(4);
+            airTerm.MaxReheatWaterVolFlow = Numbers(3);
+            airTerm.MinReheatWaterVolFlow = Numbers(4);
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = Numbers(5);
+        airTerm.ControllerOffset = Numbers(5);
         // Set default convergence tolerance
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset <= 0.0) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.001;
+        if (airTerm.ControllerOffset <= 0.0) {
+            airTerm.ControllerOffset = 0.001;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::Reverse;
+        airTerm.DamperHeatingAction = Action::Reverse;
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.ReheatAirOutletNode == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -981,90 +813,62 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.ReheatAirOutletNode == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
-                            ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                            ShowContinueError(
+                                state, format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.ReheatAirOutletNode;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
         if (!lNumericBlanks(6)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTemp = Numbers(6);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = true;
+            airTerm.MaxReheatTemp = Numbers(6);
+            airTerm.MaxReheatTempSetByUser = true;
         } else {
             // user does not specify maximum supply air temperature
             // sd_airterminal(SysNum)%MaxReheatTemp = 35.0D0 !C
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = false;
+            airTerm.MaxReheatTempSetByUser = false;
         }
 
-        ValidateComponent(state, Alphas(5), Alphas(6), IsNotOK, state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        ValidateComponent(state, Alphas(5), Alphas(6), IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
         if (lAlphaBlanks(8)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFrac = 1.0;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = false;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr = GetScheduleIndex(state, Alphas(8));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(8), Alphas(8)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = true;
+            airTerm.ZoneTurndownMinAirFrac = 1.0;
+        } else if ((airTerm.zoneTurndownMinAirFracSched = Sched::GetSchedule(state, Alphas(8))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(8), Alphas(8));
+            ErrorsFound = true;
         }
 
         // Add reheat coil to component sets array
-        SetUpCompSets(state,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                      Alphas(5),
-                      Alphas(6),
-                      Alphas(3),
-                      Alphas(7));
+        SetUpCompSets(state, airTerm.sysType, airTerm.SysName, Alphas(5), Alphas(6), Alphas(3), Alphas(7));
 
         // Setup the Average damper Position output variable
         SetupOutputVariable(state,
                             "Zone Air Terminal VAV Damper Position",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperPosition,
+                            airTerm.DamperPosition,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
 
     } // end Number of VAVHeatandCool Sys Loop
 
@@ -1086,176 +890,135 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
         state.dataSingleDuct->SysNumGSI =
             state.dataSingleDuct->SysIndexGSI + state.dataSingleDuct->NumVAVSysGSI + state.dataSingleDuct->NumCBVAVSysGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctConstVolReheat;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = Alphas(5);
-        if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Fuel")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Gas;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Electric")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Electric;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Water")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SimpleHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Steam")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SteamAirHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilSteamAirHeating;
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctConstVolReheat;
+        airTerm.ReheatComp = Alphas(5);
+        if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Fuel")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Gas;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Electric")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Electric;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Water")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SimpleHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Steam")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SteamAirHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilSteamAirHeating;
         } else {
-            ShowSevereError(
-                state, format("Illegal {} = {}.", cAlphaFields(5), state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowSevereError(state, format("Illegal {} = {}.", cAlphaFields(5), airTerm.ReheatComp));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = Alphas(6);
-        ValidateComponent(state,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                          IsNotOK,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        airTerm.ReheatName = Alphas(6);
+        ValidateComponent(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
+
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsParent,
-                              cAlphaFields(4));
+
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(3),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsParent,
+                                                  cAlphaFields(3));
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(4),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsParent,
+                                                 cAlphaFields(4));
         // The reheat coil control node is necessary for hot water reheat, but not necessary for
         // electric or gas reheat.
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Gas ||
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Electric) {
+        if (airTerm.ReheatComp_Num == HeatingCoilType::Gas || airTerm.ReheatComp_Num == HeatingCoilType::Electric) {
         } else {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilSteamInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilSteamInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             } else {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilWaterInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilWaterInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 }
             }
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::MinFracNotUsed;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::HeatingNotUsed;
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = Numbers(2);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = Numbers(3);
+        airTerm.ReheatAirOutletNode = airTerm.OutletNodeNum;
+        airTerm.MaxAirVolFlowRate = Numbers(1);
+        airTerm.ZoneMinAirFracDes = 0.0;
+        airTerm.ZoneMinAirFracMethod = MinFlowFraction::MinFracNotUsed;
+        airTerm.DamperHeatingAction = Action::HeatingNotUsed;
+        if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            airTerm.MaxReheatSteamVolFlow = Numbers(2);
+            airTerm.MinReheatSteamVolFlow = Numbers(3);
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = Numbers(2);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = Numbers(3);
+            airTerm.MaxReheatWaterVolFlow = Numbers(2);
+            airTerm.MinReheatWaterVolFlow = Numbers(3);
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = Numbers(4);
+        airTerm.ControllerOffset = Numbers(4);
         // Set default convergence tolerance
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset <= 0.0) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.001;
+        if (airTerm.ControllerOffset <= 0.0) {
+            airTerm.ControllerOffset = 0.001;
         }
 
         // Maximum reheat air temperature, i.e. the maximum supply air temperature leaving the reheat coil
         if (!lNumericBlanks(5)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTemp = Numbers(5);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = true;
+            airTerm.MaxReheatTemp = Numbers(5);
+            airTerm.MaxReheatTempSetByUser = true;
         } else {
             // user does not specify maximum supply air temperature
             // sd_airterminal(SysNum)%MaxReheatTemp = 35.0D0 !C
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatTempSetByUser = false;
+            airTerm.MaxReheatTempSetByUser = false;
         }
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.OutletNodeNum),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.ReheatAirOutletNode == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -1263,57 +1026,38 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.OutletNodeNum == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
                             ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                                              format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.OutletNodeNum)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.OutletNodeNum;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
 
-        ValidateComponent(state, Alphas(5), Alphas(6), IsNotOK, state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        ValidateComponent(state, Alphas(5), Alphas(6), IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
         // Add reheat coil to component sets array
-        SetUpCompSets(state,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                      Alphas(5),
-                      Alphas(6),
-                      Alphas(4),
-                      Alphas(3));
+        SetUpCompSets(state, airTerm.sysType, airTerm.SysName, Alphas(5), Alphas(6), Alphas(4), Alphas(3));
 
         // Setup the Average damper Position output variable
         // BG removed 9-10-2009 during work on CR 7770, constant volume has no damper
@@ -1340,94 +1084,80 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
+
         state.dataSingleDuct->SysNumGSI = state.dataSingleDuct->SysIndexGSI + state.dataSingleDuct->NumVAVSysGSI +
                                           state.dataSingleDuct->NumCBVAVSysGSI + state.dataSingleDuct->NumConstVolSys;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctConstVolNoReheat;
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctConstVolNoReheat;
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(4));
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::MinFracNotUsed;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::HeatingNotUsed;
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(3),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeNoReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsNotParent,
+                                                 cAlphaFields(3));
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(4),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctConstantVolumeNoReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsNotParent,
+                                                  cAlphaFields(4));
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode = 0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.000001;
+        airTerm.MaxAirVolFlowRate = Numbers(1);
+        airTerm.ZoneMinAirFracDes = 0.0;
+        airTerm.ZoneMinAirFracMethod = MinFlowFraction::MinFracNotUsed;
+        airTerm.DamperHeatingAction = Action::HeatingNotUsed;
+
+        airTerm.ReheatControlNode = 0;
+        airTerm.ReheatAirOutletNode = airTerm.OutletNodeNum;
+        airTerm.MaxReheatWaterVolFlow = 0.0;
+        airTerm.MaxReheatSteamVolFlow = 0.0;
+        airTerm.MinReheatWaterVolFlow = 0.0;
+        airTerm.MinReheatSteamVolFlow = 0.0;
+        airTerm.ControllerOffset = 0.000001;
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.OutletNodeNum),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.OutletNodeNum == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.OutletNodeNum)));
             ErrorsFound = true;
         } else {
 
@@ -1435,67 +1165,52 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.OutletNodeNum == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
                             ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                                              format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.OutletNodeNum)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.OutletNodeNum;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
 
         if (lAlphaBlanks(5)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).NoOAFlowInputFromUser = true;
+            airTerm.NoOAFlowInputFromUser = true;
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr =
-                Util::FindItemInList(Alphas(5), state.dataSize->OARequirements);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr == 0) {
+            airTerm.OARequirementsPtr = Util::FindItemInList(Alphas(5), state.dataSize->OARequirements);
+            if (airTerm.OARequirementsPtr == 0) {
                 ShowSevereError(state, format("{}{}=\"{}\", invalid data.", RoutineName, CurrentModuleObject, Alphas(1)));
                 ShowContinueError(state, format("..invalid {}=\"{}\".", cAlphaFields(5), Alphas(5)));
                 ErrorsFound = true;
             } else {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).NoOAFlowInputFromUser = false;
+                airTerm.NoOAFlowInputFromUser = false;
             }
         }
 
         if (lAlphaBlanks(6)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OAPerPersonMode =
-                DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
+            airTerm.OAPerPersonMode = DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
         } else {
             if (Alphas(6) == "CURRENTOCCUPANCY") {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OAPerPersonMode =
-                    DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
+                airTerm.OAPerPersonMode = DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
             } else if (Alphas(6) == "DESIGNOCCUPANCY") {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OAPerPersonMode =
-                    DataZoneEquipment::PerPersonVentRateMode::ByDesignLevel;
+                airTerm.OAPerPersonMode = DataZoneEquipment::PerPersonVentRateMode::ByDesignLevel;
             } else {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OAPerPersonMode =
-                    DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
+                airTerm.OAPerPersonMode = DataZoneEquipment::PerPersonVentRateMode::DCVByCurrentLevel;
                 ShowWarningError(state, format("{}{}=\"{}\", invalid data.", RoutineName, CurrentModuleObject, Alphas(1)));
                 ShowContinueError(state,
                                   format("..invalid {}=\"{}\". The default input of CurrentOccupancy is assigned", cAlphaFields(6), Alphas(6)));
@@ -1506,17 +1221,17 @@ void GetSysInput(EnergyPlusData &state)
             // model results related actuators
             SetupEMSActuator(state,
                              "AirTerminal:SingleDuct:ConstantVolume:NoReheat",
-                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
+                             airTerm.SysName,
                              "Mass Flow Rate",
                              "[kg/s]",
-                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).EMSOverrideAirFlow,
-                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).EMSMassFlowRateValue);
+                             airTerm.EMSOverrideAirFlow,
+                             airTerm.EMSMassFlowRateValue);
             // model input related internal variables
             SetupEMSInternalVariable(state,
                                      "AirTerminal:SingleDuct:ConstantVolume:NoReheat Maximum Mass Flow Rate",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
+                                     airTerm.SysName,
                                      "[kg/s]",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).AirMassFlowRateMax);
+                                     airTerm.AirMassFlowRateMax);
         }
 
     } // End Number of Sys Loop
@@ -1539,165 +1254,131 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
         state.dataSingleDuct->SysNumGSI = state.dataSingleDuct->SysIndexGSI + state.dataSingleDuct->NumVAVSysGSI +
                                           state.dataSingleDuct->NumCBVAVSysGSI + state.dataSingleDuct->NumConstVolSys +
                                           state.dataSingleDuct->NumCVNoReheatSysGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctVAVNoReheat;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = "";
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = "";
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctVAVNoReheat;
+        airTerm.ReheatComp = "";
+        airTerm.ReheatName = "";
+
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(4));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
+
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(3),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVNoReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsNotParent,
+                                                  cAlphaFields(3));
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(4),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVNoReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsNotParent,
+                                                 cAlphaFields(4));
+        airTerm.MaxAirVolFlowRate = Numbers(1);
 
         if (Util::SameString(Alphas(5), "Constant")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Constant;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Constant;
         } else if (Util::SameString(Alphas(5), "FixedFlowRate")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Fixed;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Fixed;
         } else if (Util::SameString(Alphas(5), "Scheduled")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod = MinFlowFraction::Scheduled;
+            airTerm.ZoneMinAirFracMethod = MinFlowFraction::Scheduled;
         } else {
             ShowSevereError(state, format("{} = {} not found.", cAlphaFields(5), Alphas(5)));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(2);
+        airTerm.ZoneMinAirFracDes = Numbers(2);
         if (lNumericBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ConstantMinAirFracSetByUser = false;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
+            airTerm.ConstantMinAirFracSetByUser = false;
+            airTerm.ZoneMinAirFracDes = 0.0;
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ConstantMinAirFracSetByUser = true;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(2);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Fixed) {
+            airTerm.ConstantMinAirFracSetByUser = true;
+            airTerm.ZoneMinAirFracDes = Numbers(2);
+            if (airTerm.ZoneMinAirFracMethod == MinFlowFraction::Fixed) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(5), Alphas(5), cNumericFields(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
+                airTerm.ZoneMinAirFracDes = 0.0;
             }
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFixedMinAir = Numbers(3);
+        airTerm.ZoneFixedMinAir = Numbers(3);
         if (lNumericBlanks(3)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).FixedMinAirSetByUser = false;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignFixedMinAir = 0.0;
+            airTerm.FixedMinAirSetByUser = false;
+            airTerm.DesignFixedMinAir = 0.0;
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).FixedMinAirSetByUser = true;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DesignFixedMinAir = Numbers(3);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Constant) {
+            airTerm.FixedMinAirSetByUser = true;
+            airTerm.DesignFixedMinAir = Numbers(3);
+            if (airTerm.ZoneMinAirFracMethod == MinFlowFraction::Constant) {
                 ShowWarningError(state, format("Since {} = {}, input for {} will be ignored.", cAlphaFields(5), Alphas(5), cNumericFields(3)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFixedMinAir = 0.0;
-            }
-        }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr = GetScheduleIndex(state, Alphas(6));
-        if ((state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr == 0) &&
-            (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Scheduled)) {
-            ShowSevereError(state, format("{} = {} not found.", cAlphaFields(6), Alphas(6)));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(state, "A valid schedule is required");
-            ErrorsFound = true;
-        } else if ((state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr > 0) &&
-                   (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracMethod == MinFlowFraction::Scheduled)) {
-            // check range of values in schedule
-            if (!CheckScheduleValueMinMax(
-                    state, state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracSchPtr, ">=", 0.0, "<=", 1.0)) {
-                ShowSevereError(state, format("Error found in {} = {}", cAlphaFields(6), Alphas(6)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ShowContinueError(state, "Schedule values must be (>=0., <=1.)");
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
+                airTerm.ZoneFixedMinAir = 0.0;
             }
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode = 0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.000001;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::HeatingNotUsed;
+        if (airTerm.ZoneMinAirFracMethod != MinFlowFraction::Scheduled) {
+        } else if (lAlphaBlanks(6)) {
+            ShowSevereEmptyField(state, eoh, cAlphaFields(6));
+            ErrorsFound = true;
+        } else if ((airTerm.zoneMinAirFracSched = Sched::GetSchedule(state, Alphas(6))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(6), Alphas(6));
+            ErrorsFound = true;
+        } else if (!airTerm.zoneMinAirFracSched->checkMinMaxVals(state, Clusive::In, 0.0, Clusive::In, 1.0)) {
+            Sched::ShowSevereBadMinMax(state, eoh, cAlphaFields(6), Alphas(6), Clusive::In, 0.0, Clusive::In, 1.0);
+            ErrorsFound = true;
+        }
+
+        airTerm.ReheatControlNode = 0;
+        airTerm.ReheatAirOutletNode = airTerm.OutletNodeNum;
+        airTerm.MaxReheatWaterVolFlow = 0.0;
+        airTerm.MaxReheatSteamVolFlow = 0.0;
+        airTerm.MinReheatWaterVolFlow = 0.0;
+        airTerm.MinReheatSteamVolFlow = 0.0;
+        airTerm.ControllerOffset = 0.000001;
+        airTerm.DamperHeatingAction = Action::HeatingNotUsed;
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.OutletNodeNum),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.OutletNodeNum == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -1705,86 +1386,63 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.ReheatAirOutletNode == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
-                            ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                            ShowContinueError(
+                                state, format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.ReheatAirOutletNode;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
 
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
         if (!lAlphaBlanks(7)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr =
-                Util::FindItemInList(Alphas(7), state.dataSize->OARequirements);
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OARequirementsPtr == 0) {
+            airTerm.OARequirementsPtr = Util::FindItemInList(Alphas(7), state.dataSize->OARequirements);
+            if (airTerm.OARequirementsPtr == 0) {
                 ShowSevereError(state, format("{} = {} not found.", cAlphaFields(7), Alphas(7)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                 ErrorsFound = true;
             } else {
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).NoOAFlowInputFromUser = false;
+                airTerm.NoOAFlowInputFromUser = false;
             }
         }
 
         if (lAlphaBlanks(8)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFrac = 1.0;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = false;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr = GetScheduleIndex(state, Alphas(8));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(8), Alphas(8)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = true;
+            airTerm.ZoneTurndownMinAirFrac = 1.0;
+        } else if ((airTerm.zoneTurndownMinAirFracSched = Sched::GetSchedule(state, Alphas(8))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(8), Alphas(8));
+            ErrorsFound = true;
         }
 
         // Setup the Average damper Position output variable
         SetupOutputVariable(state,
                             "Zone Air Terminal VAV Damper Position",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperPosition,
+                            airTerm.DamperPosition,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
         SetupOutputVariable(state,
                             "Zone Air Terminal Minimum Air Flow Fraction",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracReport,
+                            airTerm.ZoneMinAirFracReport,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
 
     } // end Number of Sys Loop
 
@@ -1806,111 +1464,91 @@ void GetSysInput(EnergyPlusData &state)
                                                                  cAlphaFields,
                                                                  cNumericFields);
 
+        ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
         state.dataSingleDuct->SysNumGSI = state.dataSingleDuct->SysIndexGSI + state.dataSingleDuct->NumVAVSysGSI +
                                           state.dataSingleDuct->NumCBVAVSysGSI + state.dataSingleDuct->NumConstVolSys +
                                           state.dataSingleDuct->NumCVNoReheatSysGSI + state.dataSingleDuct->NumNoRHVAVSysGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctCBVAVNoReheat;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = "";
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = "";
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctCBVAVNoReheat;
+        airTerm.ReheatComp = "";
+        airTerm.ReheatName = "";
+
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-        }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(3),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Outlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(3));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum =
-            GetOnlySingleNode(state,
-                              Alphas(4),
-                              ErrorsFound,
-                              DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolNoReheat,
-                              Alphas(1),
-                              DataLoopNode::NodeFluidType::Air,
-                              DataLoopNode::ConnectionType::Inlet,
-                              NodeInputManager::CompFluidStream::Primary,
-                              ObjectIsNotParent,
-                              cAlphaFields(4));
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(2);
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes < 0.0) {
-            ShowWarningError(state,
-                             format("{} = \"{}",
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(state,
-                              format("{} must be greater than or equal to 0. Resetting to 0 and the simulation continues.", cNumericFields(2)));
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 0.0;
-        }
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes > 1.0) {
-            ShowWarningError(state,
-                             format("{} = \"{}",
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(state, format("{} must be less than or equal to 1. Resetting to 1 and the simulation continues.", cNumericFields(2)));
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = 1.0;
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode = 0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = 0.0;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.000001;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::HeatingNotUsed;
+        airTerm.OutletNodeNum = GetOnlySingleNode(state,
+                                                  Alphas(3),
+                                                  ErrorsFound,
+                                                  DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolNoReheat,
+                                                  Alphas(1),
+                                                  DataLoopNode::NodeFluidType::Air,
+                                                  DataLoopNode::ConnectionType::Outlet,
+                                                  NodeInputManager::CompFluidStream::Primary,
+                                                  ObjectIsNotParent,
+                                                  cAlphaFields(3));
+        airTerm.InletNodeNum = GetOnlySingleNode(state,
+                                                 Alphas(4),
+                                                 ErrorsFound,
+                                                 DataLoopNode::ConnectionObjectType::AirTerminalSingleDuctVAVHeatAndCoolNoReheat,
+                                                 Alphas(1),
+                                                 DataLoopNode::NodeFluidType::Air,
+                                                 DataLoopNode::ConnectionType::Inlet,
+                                                 NodeInputManager::CompFluidStream::Primary,
+                                                 ObjectIsNotParent,
+                                                 cAlphaFields(4));
+        airTerm.MaxAirVolFlowRate = Numbers(1);
+        airTerm.ZoneMinAirFracDes = Numbers(2);
+        if (airTerm.ZoneMinAirFracDes < 0.0) {
+            ShowWarningError(state, format("{} = \"{}", airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state,
+                              format("{} must be greater than or equal to 0. Resetting to 0 and the simulation continues.", cNumericFields(2)));
+            airTerm.ZoneMinAirFracDes = 0.0;
+        }
+        if (airTerm.ZoneMinAirFracDes > 1.0) {
+            ShowWarningError(state, format("{} = \"{}", airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("{} must be less than or equal to 1. Resetting to 1 and the simulation continues.", cNumericFields(2)));
+            airTerm.ZoneMinAirFracDes = 1.0;
+        }
+
+        airTerm.ReheatControlNode = 0;
+        airTerm.ReheatAirOutletNode = airTerm.OutletNodeNum;
+        airTerm.MaxReheatWaterVolFlow = 0.0;
+        airTerm.MaxReheatSteamVolFlow = 0.0;
+        airTerm.MinReheatWaterVolFlow = 0.0;
+        airTerm.MinReheatSteamVolFlow = 0.0;
+        airTerm.ControllerOffset = 0.000001;
+        airTerm.DamperHeatingAction = Action::HeatingNotUsed;
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.OutletNodeNum),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.OutletNodeNum == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -1918,64 +1556,45 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.ReheatAirOutletNode == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
-                            ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                            ShowContinueError(
+                                state, format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.ReheatAirOutletNode;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
 
         if (lAlphaBlanks(5)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFrac = 1.0;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = false;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr = GetScheduleIndex(state, Alphas(5));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(5), Alphas(5)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = true;
+            airTerm.ZoneTurndownMinAirFrac = 1.0;
+        } else if ((airTerm.zoneTurndownMinAirFracSched = Sched::GetSchedule(state, Alphas(5))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(5), Alphas(5));
+            ErrorsFound = true;
         }
 
         // Setup the Average damper Position output variable
         SetupOutputVariable(state,
                             "Zone Air Terminal VAV Damper Position",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperPosition,
+                            airTerm.DamperPosition,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
 
     } // end Number of VAVHeatandCool:NoReheat Sys Loop
 
@@ -2004,80 +1623,43 @@ void GetSysInput(EnergyPlusData &state)
                                           state.dataSingleDuct->NumCBVAVSysGSI + state.dataSingleDuct->NumConstVolSys +
                                           state.dataSingleDuct->NumCVNoReheatSysGSI + state.dataSingleDuct->NumNoRHVAVSysGSI +
                                           state.dataSingleDuct->NumNoRHCBVAVSysGSI;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysNum = state.dataSingleDuct->SysNumGSI;
+        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
+        airTerm.SysNum = state.dataSingleDuct->SysNumGSI;
         GlobalNames::VerifyUniqueInterObjectName(
             state, state.dataSingleDuct->SysUniqueNames, Alphas(1), CurrentModuleObject, cAlphaFields(1), ErrorsFound);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName = Alphas(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType = CurrentModuleObject;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysType_Num = SysType::SingleDuctVAVReheatVSFan;
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp = Alphas(7);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName = Alphas(8);
+        airTerm.SysName = Alphas(1);
+        airTerm.sysType = CurrentModuleObject;
+        airTerm.SysType_Num = SysType::SingleDuctVAVReheatVSFan;
+        airTerm.ReheatComp = Alphas(7);
+        airTerm.ReheatName = Alphas(8);
         IsNotOK = false;
-        if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Fuel")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Gas;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-                GetHeatingCoilOutletNode(state,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                         IsNotOK);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatCoilMaxCapacity =
-                GetHeatingCoilCapacity(state,
-                                       state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                       state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                       IsNotOK);
-            if (IsNotOK)
-                ShowContinueError(state,
-                                  format("Occurs for terminal unit {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Electric")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::Electric;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-                GetHeatingCoilOutletNode(state,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                         IsNotOK);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatCoilMaxCapacity =
-                GetHeatingCoilCapacity(state,
-                                       state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                       state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                       IsNotOK);
-            if (IsNotOK)
-                ShowContinueError(state,
-                                  format("Occurs for terminal unit {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Water")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SimpleHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
-        } else if (Util::SameString(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp, "Coil:Heating:Steam")) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num = HeatingCoilType::SteamAirHeating;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_PlantType =
-                DataPlant::PlantEquipmentType::CoilSteamAirHeating;
-        } else if (!state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp.empty()) {
-            ShowSevereError(
-                state, format("Illegal {} = {}.", cAlphaFields(7), state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp));
-            ShowContinueError(state,
-                              format("Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+        if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Fuel")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Gas;
+            airTerm.ReheatAirOutletNode = GetHeatingCoilOutletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
+            airTerm.ReheatCoilMaxCapacity = GetHeatingCoilCapacity(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
+            if (IsNotOK) ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Electric")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::Electric;
+            airTerm.ReheatAirOutletNode = GetHeatingCoilOutletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
+            airTerm.ReheatCoilMaxCapacity = GetHeatingCoilCapacity(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
+            if (IsNotOK) ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Water")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SimpleHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilWaterSimpleHeating;
+        } else if (Util::SameString(airTerm.ReheatComp, "Coil:Heating:Steam")) {
+            airTerm.ReheatComp_Num = HeatingCoilType::SteamAirHeating;
+            airTerm.ReheatComp_PlantType = DataPlant::PlantEquipmentType::CoilSteamAirHeating;
+        } else if (!airTerm.ReheatComp.empty()) {
+            ShowSevereError(state, format("Illegal {} = {}.", cAlphaFields(7), airTerm.ReheatComp));
+            ShowContinueError(state, format("Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
-        ValidateComponent(state,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                          IsNotOK,
-                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType);
+        ValidateComponent(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK, airTerm.sysType);
         if (IsNotOK) {
-            ShowContinueError(state,
-                              format("In {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("In {} = {}", airTerm.sysType, airTerm.SysName));
             ErrorsFound = true;
         }
 
-        auto &airTerm = state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI);
         airTerm.fanType = static_cast<HVAC::FanType>(getEnumValue(HVAC::fanTypeNamesUC, Alphas(5)));
 
         if (airTerm.fanType != HVAC::FanType::VAV && airTerm.fanType != HVAC::FanType::SystemModel) {
@@ -2100,40 +1682,28 @@ void GetSysInput(EnergyPlusData &state)
             dynamic_cast<Fans::FanSystem *>(state.dataFans->fans(airTerm.Fan_Index))->isSecondaryDriver = true;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).Schedule = Alphas(2);
         if (lAlphaBlanks(2)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = ScheduleManager::ScheduleAlwaysOn;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr = GetScheduleIndex(state, Alphas(2));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SchedPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(2), Alphas(2)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
+            airTerm.availSched = Sched::GetScheduleAlwaysOn(state);
+        } else if ((airTerm.availSched = Sched::GetSchedule(state, Alphas(2))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(2), Alphas(2));
+            ErrorsFound = true;
         }
 
-        AirTermSysInletNodeName = state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum);
+        AirTermSysInletNodeName = state.dataLoopNodes->NodeID(airTerm.InletNodeNum);
         if (!Util::SameString(Alphas(3), AirTermSysInletNodeName)) {
             ShowWarningError(state,
-                             format("{}Invalid air terminal object air inlet node name in {} = {}",
-                                    RoutineName,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                             format("{}Invalid air terminal object air inlet node name in {} = {}", RoutineName, airTerm.sysType, airTerm.SysName));
             ShowContinueError(state, format(" Specified air inlet node name is = {}.", Alphas(3)));
             ShowContinueError(state, format(" Expected air inlet node name is = {}.", AirTermSysInletNodeName));
             // ErrorsFound = true;
         }
 
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxAirVolFlowRate = Numbers(1);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxHeatAirVolFlowRate = Numbers(2);
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneMinAirFracDes = Numbers(3);
+        airTerm.MaxAirVolFlowRate = Numbers(1);
+        airTerm.MaxHeatAirVolFlowRate = Numbers(2);
+        airTerm.ZoneMinAirFracDes = Numbers(3);
         // The reheat coil control node is necessary for hot water reheat, but not necessary for
         // electric or gas reheat.
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Gas ||
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::Electric) {
+        if (airTerm.ReheatComp_Num == HeatingCoilType::Gas || airTerm.ReheatComp_Num == HeatingCoilType::Electric) {
             //          IF(.NOT. lAlphaBlanks(6)) THEN
             //            CALL ShowWarningError(state, 'In '//TRIM(sd_airterminal(SysNum)%SysType)//' = ' // TRIM(sd_airterminal(SysNum)%SysName) &
             //                                 // ' the '//TRIM(cAlphaFields(6))//' is not needed and will be ignored.')
@@ -2145,18 +1715,11 @@ void GetSysInput(EnergyPlusData &state)
             //                                 // ' the '//TRIM(cAlphaFields(6))//' is undefined')
             //            ErrorsFound=.TRUE.
             //          END IF
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilSteamInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilSteamInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 } else {
                     //  A4,     \field Unit supply air outlet node
@@ -2164,16 +1727,9 @@ void GetSysInput(EnergyPlusData &state)
                     //          \note same as zone inlet node
                     //          \type alpha
                     IsNotOK = false;
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-                        GetCoilAirOutletNode(state,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                             IsNotOK);
+                    airTerm.ReheatAirOutletNode = GetCoilAirOutletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                     if (IsNotOK) {
-                        ShowContinueError(state,
-                                          format("..Occurs in {} = {}",
-                                                 state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                 state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                        ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                         ErrorsFound = true;
                     }
                 }
@@ -2181,16 +1737,9 @@ void GetSysInput(EnergyPlusData &state)
                 //                                DataLoopNode::NodeFluidType::Steam,DataLoopNode::NodeConnectionType::Actuator,1,ObjectIsParent)
             } else {
                 IsNotOK = false;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatControlNode =
-                    GetCoilWaterInletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                airTerm.ReheatControlNode = GetCoilWaterInletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                 if (IsNotOK) {
-                    ShowContinueError(state,
-                                      format("..Occurs in {} = {}",
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                             state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                    ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                     ErrorsFound = true;
                 } else {
                     //  A4,     \field Unit supply air outlet node
@@ -2198,16 +1747,9 @@ void GetSysInput(EnergyPlusData &state)
                     //          \note same as zone inlet node
                     //          \type alpha
                     IsNotOK = false;
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode =
-                        GetCoilOutletNode(state,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp,
-                                          state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatName,
-                                          IsNotOK);
+                    airTerm.ReheatAirOutletNode = GetCoilOutletNode(state, airTerm.ReheatComp, airTerm.ReheatName, IsNotOK);
                     if (IsNotOK) {
-                        ShowContinueError(state,
-                                          format("..Occurs in {} = {}",
-                                                 state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                 state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                        ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
                         ErrorsFound = true;
                     }
                 }
@@ -2222,61 +1764,49 @@ void GetSysInput(EnergyPlusData &state)
         //        sd_airterminal(SysNum)%ReheatAirOutletNode  = &
         //               GetOnlySingleNode(state, Alphas(4),ErrorsFound,sd_airterminal(SysNum)%SysType,Alphas(1), &
         //                            DataLoopNode::NodeFluidType::Air,DataLoopNode::NodeConnectionType::Outlet,1,ObjectIsParent)
-        AirTermSysOutletNodeName =
-            state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode);
+        AirTermSysOutletNodeName = state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode);
         if (!Util::SameString(Alphas(4), AirTermSysOutletNodeName)) {
             ShowWarningError(state,
-                             format("{}Invalid air terminal object air outlet node name in {} = {}",
-                                    RoutineName,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                             format("{}Invalid air terminal object air outlet node name in {} = {}", RoutineName, airTerm.sysType, airTerm.SysName));
             ShowContinueError(state, format(" Specified air outlet node name is = {}.", Alphas(4)));
             ShowContinueError(state, format(" Expected air outlet node name is = {}.", AirTermSysOutletNodeName));
             // ErrorsFound = true;
         }
 
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatSteamVolFlow = Numbers(4);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatSteamVolFlow = Numbers(5);
+        if (airTerm.ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
+            airTerm.MaxReheatSteamVolFlow = Numbers(4);
+            airTerm.MinReheatSteamVolFlow = Numbers(5);
         } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MaxReheatWaterVolFlow = Numbers(4);
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).MinReheatWaterVolFlow = Numbers(5);
+            airTerm.MaxReheatWaterVolFlow = Numbers(4);
+            airTerm.MinReheatWaterVolFlow = Numbers(5);
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = Numbers(6);
+        airTerm.ControllerOffset = Numbers(6);
         // Set default convergence tolerance
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset <= 0.0) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ControllerOffset = 0.001;
+        if (airTerm.ControllerOffset <= 0.0) {
+            airTerm.ControllerOffset = 0.001;
         }
-        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperHeatingAction = Action::HeatingNotUsed;
+        airTerm.DamperHeatingAction = Action::HeatingNotUsed;
 
         // Register component set data
         TestCompSet(state,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                    state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode),
+                    airTerm.sysType,
+                    airTerm.SysName,
+                    state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                    state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode),
                     "Air Nodes");
 
         for (ADUNum = 1; ADUNum <= (int)state.dataDefineEquipment->AirDistUnit.size(); ++ADUNum) {
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
-                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum =
-                    state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum = ADUNum;
+            if (airTerm.ReheatAirOutletNode == state.dataDefineEquipment->AirDistUnit(ADUNum).OutletNodeNum) {
+                state.dataDefineEquipment->AirDistUnit(ADUNum).InletNodeNum = airTerm.InletNodeNum;
+                airTerm.ADUNum = ADUNum;
                 break;
             }
         }
         // one assumes if there isn't one assigned, it's an error?
-        if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum == 0) {
+        if (airTerm.ADUNum == 0) {
             ShowSevereError(state,
-                            format("{}No matching Air Distribution Unit, for System = [{},{}].",
-                                   RoutineName,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                   state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-            ShowContinueError(
-                state,
-                format("...should have outlet node = {}",
-                       state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
+                            format("{}No matching Air Distribution Unit, for System = [{},{}].", RoutineName, airTerm.sysType, airTerm.SysName));
+            ShowContinueError(state, format("...should have outlet node = {}", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
             ErrorsFound = true;
         } else {
 
@@ -2286,89 +1816,67 @@ void GetSysInput(EnergyPlusData &state)
             for (CtrlZone = 1; CtrlZone <= state.dataGlobal->NumOfZones; ++CtrlZone) {
                 if (!state.dataZoneEquip->ZoneEquipConfig(CtrlZone).IsControlled) continue;
                 for (SupAirIn = 1; SupAirIn <= state.dataZoneEquip->ZoneEquipConfig(CtrlZone).NumInletNodes; ++SupAirIn) {
-                    if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode ==
-                        state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
+                    if (airTerm.ReheatAirOutletNode == state.dataZoneEquip->ZoneEquipConfig(CtrlZone).InletNode(SupAirIn)) {
                         IsNotOK = false;
                         if (state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode > 0) {
                             ShowSevereError(state, "Error in connecting a terminal unit to a zone");
-                            ShowContinueError(state,
-                                              format("{} already connects to another zone",
-                                                     state.dataLoopNodes->NodeID(
-                                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode)));
-                            ShowContinueError(state,
-                                              format("Occurs for terminal unit {} = {}",
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+                            ShowContinueError(
+                                state, format("{} already connects to another zone", state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode)));
+                            ShowContinueError(state, format("Occurs for terminal unit {} = {}", airTerm.sysType, airTerm.SysName));
                             ShowContinueError(state, "Check terminal unit node names for errors");
                             ErrorsFound = true;
                         } else {
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum;
-                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode =
-                                state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .TermUnitSizingNum = state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
-                            state.dataDefineEquipment->AirDistUnit(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ADUNum)
-                                .ZoneEqNum = CtrlZone;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).InNode = airTerm.InletNodeNum;
+                            state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).OutNode = airTerm.ReheatAirOutletNode;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).TermUnitSizingNum =
+                                state.dataZoneEquip->ZoneEquipConfig(CtrlZone).AirDistUnitCool(SupAirIn).TermUnitSizingIndex;
+                            state.dataDefineEquipment->AirDistUnit(airTerm.ADUNum).ZoneEqNum = CtrlZone;
                         }
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneNum = CtrlZone;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).CtrlZoneInNodeIndex = SupAirIn;
-                        state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneFloorArea =
-                            state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
-                            state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
+                        airTerm.CtrlZoneNum = CtrlZone;
+                        airTerm.CtrlZoneInNodeIndex = SupAirIn;
+                        airTerm.ZoneFloorArea = state.dataHeatBal->Zone(CtrlZone).FloorArea * state.dataHeatBal->Zone(CtrlZone).Multiplier *
+                                                state.dataHeatBal->Zone(CtrlZone).ListMultiplier;
                     }
                 }
             }
         }
         if (IsNotOK) {
             ShowWarningError(state, "Did not Match Supply Air Outlet Node to any Zone Node");
-            ShowContinueError(state,
-                              format("..Occurs in {} = {}",
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                     state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
+            ShowContinueError(state, format("..Occurs in {} = {}", airTerm.sysType, airTerm.SysName));
         }
 
         if (lAlphaBlanks(9)) {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFrac = 1.0;
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = false;
-        } else {
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr = GetScheduleIndex(state, Alphas(9));
-            if (state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchPtr == 0) {
-                ShowSevereError(state, format("{} = {} not found.", cAlphaFields(9), Alphas(9)));
-                ShowContinueError(state,
-                                  format("Occurs in {} = {}",
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                                         state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName));
-                ErrorsFound = true;
-            }
-            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ZoneTurndownMinAirFracSchExist = true;
+            airTerm.ZoneTurndownMinAirFrac = 1.0;
+        } else if ((airTerm.zoneTurndownMinAirFracSched = Sched::GetSchedule(state, Alphas(9))) == nullptr) {
+            ShowSevereItemNotFound(state, eoh, cAlphaFields(9), Alphas(9));
+            ErrorsFound = true;
         }
 
         // Add reheat coil to component sets array
         SetUpCompSets(state,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
+                      airTerm.sysType,
+                      airTerm.SysName,
                       Alphas(7),
                       Alphas(8),
-                      state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum),
-                      state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).ReheatAirOutletNode));
+                      state.dataLoopNodes->NodeID(airTerm.OutletNodeNum),
+                      state.dataLoopNodes->NodeID(airTerm.ReheatAirOutletNode));
         // Add fan to component sets array
         SetUpCompSets(state,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).sysType,
-                      state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName,
+                      airTerm.sysType,
+                      airTerm.SysName,
                       Alphas(5),
                       Alphas(6),
-                      state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).InletNodeNum),
-                      state.dataLoopNodes->NodeID(state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).OutletNodeNum));
+                      state.dataLoopNodes->NodeID(airTerm.InletNodeNum),
+                      state.dataLoopNodes->NodeID(airTerm.OutletNodeNum));
 
         // Setup the Average damper Position output variable
         SetupOutputVariable(state,
                             "Zone Air Terminal VAV Damper Position",
                             Constant::Units::None,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).DamperPosition,
+                            airTerm.DamperPosition,
                             OutputProcessor::TimeStepType::System,
                             OutputProcessor::StoreType::Average,
-                            state.dataSingleDuct->sd_airterminal(state.dataSingleDuct->SysNumGSI).SysName);
+                            airTerm.SysName);
     }
 
     // common report variable for all single duct air terminals
@@ -2434,8 +1942,6 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Richard J. Liesen
     //       DATE WRITTEN   January 2000
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine is for  initializations of the Sys Components.
@@ -2457,10 +1963,6 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     int InletNode;
     int OutletNode;
-    int SysIndex;
-    // static Array1D_bool MyEnvrnFlag;
-    // static Array1D_bool MySizeFlag;
-    // static Array1D_bool GetGasElecHeatCoilCap; // Gets autosized value of coil capacity
     Real64 SteamTemp;
     Real64 SteamDensity;
     Real64 rho;
@@ -2469,19 +1971,6 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     // static Array1D_bool PlantLoopScanFlag;
 
     // Do the Begin Simulation initializations
-    if (state.dataSingleDuct->InitSysFlag) {
-
-        // MyEnvrnFlag.allocate(NumSDAirTerminal);
-        // MySizeFlag.allocate(NumSDAirTerminal);
-        // PlantLoopScanFlag.allocate(NumSDAirTerminal);
-        // GetGasElecHeatCoilCap.allocate(NumSDAirTerminal);
-        // MyEnvrnFlag = true;
-        // MySizeFlag = true;
-        // PlantLoopScanFlag = true;
-        // GetGasElecHeatCoilCap = true;
-        state.dataSingleDuct->InitSysFlag = false;
-    }
-
     if (this->PlantLoopScanFlag && allocated(state.dataPlnt->PlantLoop)) {
         if ((this->ReheatComp_PlantType == DataPlant::PlantEquipmentType::CoilWaterSimpleHeating) ||
             (this->ReheatComp_PlantType == DataPlant::PlantEquipmentType::CoilSteamAirHeating)) {
@@ -2507,7 +1996,7 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     if (!state.dataSingleDuct->ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
         state.dataSingleDuct->ZoneEquipmentListChecked = true;
         // Check to see if there is a Air Distribution Unit on the Zone Equipment List
-        for (SysIndex = 1; SysIndex <= state.dataSingleDuct->NumSDAirTerminal; ++SysIndex) {
+        for (int SysIndex = 1; SysIndex <= state.dataSingleDuct->NumSDAirTerminal; ++SysIndex) {
             if (state.dataSingleDuct->sd_airterminal(SysIndex).ADUNum == 0) continue;
             if (CheckZoneEquipmentList(state,
                                        "ZoneHVAC:AirDistributionUnit",
@@ -2524,8 +2013,8 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     }
 
     // get current time step air terminal box turndown minimum flow fraction
-    if (this->ZoneTurndownMinAirFracSchExist) {
-        this->ZoneTurndownMinAirFrac = ScheduleManager::GetCurrentScheduleValue(state, this->ZoneTurndownMinAirFracSchPtr);
+    if (this->zoneTurndownMinAirFracSched != nullptr) {
+        this->ZoneTurndownMinAirFrac = this->zoneTurndownMinAirFracSched->getCurrentVal();
     } else {
         this->ZoneTurndownMinAirFrac = 1.0;
     }
@@ -2565,11 +2054,7 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
         this->MassFlowDiff = 1.0e-10 * this->AirMassFlowRateMax;
 
         if (this->HWplantLoc.loopNum > 0 && this->ReheatComp_Num != HeatingCoilType::SteamAirHeating) { // protect early calls before plant is setup
-            rho = FluidProperties::GetDensityGlycol(state,
-                                                    state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidName,
-                                                    Constant::HWInitConvTemp,
-                                                    state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidIndex,
-                                                    RoutineName);
+            rho = state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
         } else {
             rho = 1000.0;
         }
@@ -2583,21 +2068,21 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
 
         if (this->ReheatComp_Num == HeatingCoilType::SteamAirHeating) {
             SteamTemp = 100.0;
-            SteamDensity = FluidProperties::GetSatDensityRefrig(state, fluidNameSteam, SteamTemp, 1.0, this->FluidIndex, RoutineNameFull);
+            SteamDensity = Fluid::GetSteam(state)->getSatDensity(state, SteamTemp, 1.0, RoutineNameFull);
             this->MaxReheatSteamFlow = SteamDensity * this->MaxReheatSteamVolFlow;
             this->MinReheatSteamFlow = SteamDensity * this->MinReheatSteamVolFlow;
         }
 
         // get current environment air terminal box turndown minimum flow fraction
         Real64 CurrentEnvZoneTurndownMinAirFrac = 1.0;
-        if (this->ZoneTurndownMinAirFracSchExist) {
-            CurrentEnvZoneTurndownMinAirFrac = ScheduleManager::GetScheduleMinValue(state, this->ZoneTurndownMinAirFracSchPtr);
+        if (this->zoneTurndownMinAirFracSched != nullptr) {
+            CurrentEnvZoneTurndownMinAirFrac = this->zoneTurndownMinAirFracSched->getCurrentVal();
         }
         if ((this->SysType_Num == SysType::SingleDuctVAVReheat || this->SysType_Num == SysType::SingleDuctCBVAVReheat) ||
             (this->SysType_Num == SysType::SingleDuctCBVAVNoReheat)) {
             // need the lowest schedule value
             if (this->ZoneMinAirFracMethod == MinFlowFraction::Scheduled) {
-                this->ZoneMinAirFracDes = GetScheduleMinValue(state, this->ZoneMinAirFracSchPtr);
+                this->ZoneMinAirFracDes = this->zoneMinAirFracSched->getCurrentVal();
             }
             state.dataLoopNodes->Node(OutletNode).MassFlowRateMin =
                 state.dataLoopNodes->Node(OutletNode).MassFlowRateMax * this->ZoneMinAirFracDes * CurrentEnvZoneTurndownMinAirFrac;
@@ -2656,21 +2141,21 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     }
 
     if (this->ZoneMinAirFracMethod == MinFlowFraction::Scheduled) {
-        this->ZoneMinAirFracDes = GetCurrentScheduleValue(state, this->ZoneMinAirFracSchPtr);
+        this->ZoneMinAirFracDes = this->zoneMinAirFracSched->getCurrentVal();
         // now reset inlet node min avail
         state.dataLoopNodes->Node(InletNode).MassFlowRateMinAvail = this->AirMassFlowRateMax * this->ZoneMinAirFracDes * this->ZoneTurndownMinAirFrac;
     }
 
     if (FirstHVACIteration) {
         // The first time through set the mass flow rate to the Max
-        if ((state.dataLoopNodes->Node(InletNode).MassFlowRate > 0.0) && (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+        if ((state.dataLoopNodes->Node(InletNode).MassFlowRate > 0.0) && (this->availSched->getCurrentVal() > 0.0)) {
             if (!(state.afn->distribution_simulated && state.afn->AirflowNetworkFanActivated)) {
                 state.dataLoopNodes->Node(InletNode).MassFlowRate = this->AirMassFlowRateMax;
             }
         } else {
             state.dataLoopNodes->Node(InletNode).MassFlowRate = 0.0;
         }
-        if ((state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail > 0.0) && (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+        if ((state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail > 0.0) && (this->availSched->getCurrentVal() > 0.0)) {
             if (!(state.afn->distribution_simulated && state.afn->AirflowNetworkFanActivated)) {
                 if (this->SysType_Num == SysType::SingleDuctConstVolNoReheat) {
                     if (this->NoOAFlowInputFromUser) {
@@ -2692,7 +2177,7 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
             state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail = 0.0;
         }
 
-        if ((state.dataLoopNodes->Node(InletNode).MassFlowRate > 0.0) && (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+        if ((state.dataLoopNodes->Node(InletNode).MassFlowRate > 0.0) && (this->availSched->getCurrentVal() > 0.0)) {
             if (!(state.afn->distribution_simulated && state.afn->AirflowNetworkFanActivated)) {
                 state.dataLoopNodes->Node(InletNode).MassFlowRateMinAvail =
                     this->AirMassFlowRateMax * this->ZoneMinAirFracDes * this->ZoneTurndownMinAirFrac;
@@ -2709,7 +2194,7 @@ void SingleDuctAirTerminal::InitSys(EnergyPlusData &state, bool const FirstHVACI
     } else {
         if (this->SysType_Num == SysType::SingleDuctConstVolNoReheat) {
             if (!this->EMSOverrideAirFlow) {
-                if ((state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail > 0.0) && (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+                if ((state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail > 0.0) && (this->availSched->getCurrentVal() > 0.0)) {
                     if (this->NoOAFlowInputFromUser) {
                         if (state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail < state.dataLoopNodes->Node(InletNode).MassFlowRateMax) {
                             state.dataLoopNodes->Node(InletNode).MassFlowRate = state.dataLoopNodes->Node(InletNode).MassFlowRateMaxAvail;
@@ -2785,8 +2270,6 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
     // Obtains flow rates from the zone or system sizing arrays.
 
     // Using/Aliasing
-    using FluidProperties::GetDensityGlycol;
-    using FluidProperties::GetSpecificHeatGlycol;
     using General::SafeDivide;
     using PlantUtilities::MyPlantSizingIndex;
     using SteamCoils::GetCoilSteamInletNode;
@@ -2801,63 +2284,38 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     int PltSizHeatNum; // index of plant sizing object for 1st heating loop
-    Real64 DesMassFlow;
     Real64 TempSteamIn;
     Real64 EnthSteamOutWet;
     Real64 EnthSteamInDry;
     Real64 LatentHeatSteam;
     Real64 SteamDensity;
 
-    bool ErrorsFound;
     bool PlantSizingErrorsFound;
     Real64 rho; // local fluid density
     Real64 Cp;  // local fluid specific heat
-    bool IsAutoSize;
-    bool IsMaxFlowAutoSize;                   // Indicate if the maximum terminal flow is autosize
-    int AirLoopNum;                           // Air loop number
-    int SysSizNum;                            // System sizing number
-    Real64 MinMinFlowRatio(0.0);              // the minimum minimum flow ratio
-    Real64 MaxAirVolFlowRateDes;              // Autosized maximum air flow rate for reporting
-    Real64 MaxAirVolFlowRateUser;             // Hardsized maximum air flow rate for reporting
-    Real64 MaxHeatAirVolFlowRateDes;          // Autosized maximum heating air flow rate for reporting
-    Real64 MaxHeatAirVolFlowRateUser;         // Hardsized maximum heating air flow rate for reporting
-    Real64 MinAirFlowFracDes;                 // Autosized minimum cooling air flow fraction for reporting
-    Real64 MinAirFlowFracUser;                // User input minimum cooling air flow fraction for reporting
-    Real64 FixedMinAirDes;                    // Autosized minimum cooling air flow rate for reporting [m3/s]
-    Real64 FixedMinAirUser;                   // User input minimum cooling air flow rate for reporting [m3/s]
-    Real64 MaxAirVolFlowRateDuringReheatDes;  // Autosized maximum air flow durign reheat for reporting
-    Real64 MaxAirVolFlowRateDuringReheatUser; // Hardsized maximum air flow durign reheat for reporting
-    Real64 MaxAirVolFractionDuringReheatDes;  // Autosized maximum air fraction durign reheat for reporting
-    Real64 MaxAirVolFractionDuringReheatUser; // Hardsized maximum air flow durign reheat for reporting
-    Real64 MaxReheatWaterVolFlowDes;          // Autosized reheat water flow or reporting
-    Real64 MaxReheatWaterVolFlowUser;         // Hardsized reheat water flow for reporting
-    Real64 MaxReheatSteamVolFlowDes;          // Autosized reheat steam flow for reporting
-    Real64 MaxReheatSteamVolFlowUser;         // Hardsized reheat steam flow for reporting
 
-    PltSizHeatNum = 0;
-    DesMassFlow = 0.0;
-    ErrorsFound = false;
-    IsAutoSize = false;
-    IsMaxFlowAutoSize = false;
-    MaxAirVolFlowRateDes = 0.0;
-    MaxAirVolFlowRateUser = 0.0;
-    MaxHeatAirVolFlowRateDes = 0.0;
-    MaxHeatAirVolFlowRateUser = 0.0;
-    MinAirFlowFracDes = 0.0;
-    MinAirFlowFracUser = 0.0;
-    FixedMinAirDes = 0.0;
-    FixedMinAirUser = 0.0;
-    MaxAirVolFlowRateDuringReheatDes = 0.0;
-    MaxAirVolFlowRateDuringReheatUser = 0.0;
-    MaxAirVolFractionDuringReheatDes = 0.0;
-    MaxAirVolFractionDuringReheatUser = 0.0;
-    MaxReheatWaterVolFlowDes = 0.0;
-    MaxReheatWaterVolFlowUser = 0.0;
-    MaxReheatSteamVolFlowDes = 0.0;
-    MaxReheatSteamVolFlowUser = 0.0;
-    MinMinFlowRatio = 0.0;
-    AirLoopNum = 0;
-    SysSizNum = 0;
+    Real64 DesMassFlow = 0.0;
+    bool ErrorsFound = false;
+    bool IsAutoSize = false;
+    bool IsMaxFlowAutoSize = false;
+    Real64 MaxAirVolFlowRateDes = 0.0;              // Autosized maximum air flow rate for reporting
+    Real64 MaxAirVolFlowRateUser = 0.0;             // Hardsized maximum air flow rate for reporting
+    Real64 MaxHeatAirVolFlowRateDes = 0.0;          // Autosized maximum heating air flow rate for reporting
+    Real64 MaxHeatAirVolFlowRateUser = 0.0;         // Hardsized maximum heating air flow rate for reporting
+    Real64 MinAirFlowFracDes = 0.0;                 // Autosized minimum cooling air flow fraction for reporting
+    Real64 MinAirFlowFracUser = 0.0;                // User input minimum cooling air flow fraction for reporting
+    Real64 FixedMinAirDes = 0.0;                    // Autosized minimum cooling air flow rate for reporting [m3/s]
+    Real64 FixedMinAirUser = 0.0;                   // User input minimum cooling air flow rate for reporting [m3/s]
+    Real64 MaxAirVolFlowRateDuringReheatDes = 0.0;  // Autosized maximum air flow durign reheat for reporting
+    Real64 MaxAirVolFlowRateDuringReheatUser = 0.0; // Hardsized maximum air flow durign reheat for reporting
+    Real64 MaxAirVolFractionDuringReheatDes = 0.0;  // Autosized maximum air fraction durign reheat for reporting
+    Real64 MaxAirVolFractionDuringReheatUser = 0.0; // Hardsized maximum air flow durign reheat for reporting
+    Real64 MaxReheatWaterVolFlowDes = 0.0;          // Autosized reheat water flow or reporting
+    Real64 MaxReheatWaterVolFlowUser = 0.0;         // Hardsized reheat water flow for reporting
+    Real64 MaxReheatSteamVolFlowDes = 0.0;          // Autosized reheat steam flow for reporting
+    Real64 MaxReheatSteamVolFlowUser = 0.0;         // Hardsized reheat steam flow for reporting
+    Real64 MinMinFlowRatio = 0.0;                   // the minimum minimum flow ratio
+    int SysSizNum = 0;                              // System sizing number
 
     int ZoneNum = this->CtrlZoneNum;
 
@@ -2877,8 +2335,15 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
 
             CheckZoneSizing(state, this->sysType, this->SysName);
 
-            MaxAirVolFlowRateDes = max(state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesCoolVolFlow,
-                                       state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow);
+            Real64 heatingMaxFlow;
+            if (this->DamperHeatingAction == Action::ReverseWithLimits &&
+                state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow >
+                    state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax) {
+                heatingMaxFlow = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax;
+            } else {
+                heatingMaxFlow = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow;
+            }
+            MaxAirVolFlowRateDes = max(state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesCoolVolFlow, heatingMaxFlow);
 
             if (MaxAirVolFlowRateDes < SmallAirVolFlow) {
                 MaxAirVolFlowRateDes = 0.0;
@@ -2927,7 +2392,13 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
             }
         } else {
             CheckZoneSizing(state, this->sysType, this->SysName);
-            MaxHeatAirVolFlowRateDes = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow;
+            if (this->DamperHeatingAction == Action::ReverseWithLimits &&
+                state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow >
+                    state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax) {
+                MaxHeatAirVolFlowRateDes = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax;
+            } else {
+                MaxHeatAirVolFlowRateDes = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow;
+            }
             if (MaxHeatAirVolFlowRateDes < SmallAirVolFlow) {
                 MaxHeatAirVolFlowRateDes = 0.0;
             }
@@ -2967,8 +2438,8 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
     }
 
     // get design day terminal unit turndown minimum flow fraction
-    if (this->ZoneTurndownMinAirFracSchExist) {
-        this->ZoneTurndownMinAirFrac = ScheduleManager::GetCurrentScheduleValue(state, this->ZoneTurndownMinAirFracSchPtr);
+    if (this->zoneTurndownMinAirFracSched != nullptr) {
+        this->ZoneTurndownMinAirFrac = this->zoneTurndownMinAirFracSched->getCurrentVal();
     } else {
         this->ZoneTurndownMinAirFrac = 1.0;
     }
@@ -2976,7 +2447,7 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
     // if a sizing run has been done, check if system sizing has been done for this system
     bool SizingDesRunThisAirSys = false;
     if (state.dataSize->SysSizingRunDone) {
-        AirLoopNum = state.dataZoneEquip->ZoneEquipConfig(this->CtrlZoneNum).InletNodeAirLoopNum(this->CtrlZoneInNodeIndex);
+        int AirLoopNum = state.dataZoneEquip->ZoneEquipConfig(this->CtrlZoneNum).InletNodeAirLoopNum(this->CtrlZoneInNodeIndex);
         if (AirLoopNum > 0) {
             CheckThisAirSystemForSizing(state, AirLoopNum, SizingDesRunThisAirSys);
         }
@@ -3201,8 +2672,7 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
             this->ZoneMinAirFracDes = min(1.0, SafeDivide(this->DesignFixedMinAir, this->MaxAirVolFlowRate));
         } else {
             // use an average of min and max in schedule
-            this->ZoneMinAirFracDes =
-                (GetScheduleMinValue(state, this->ZoneMinAirFracSchPtr) + GetScheduleMaxValue(state, this->ZoneMinAirFracSchPtr)) / 2.0;
+            this->ZoneMinAirFracDes = (this->zoneMinAirFracSched->getMinVal(state) + this->zoneMinAirFracSched->getMaxVal(state)) / 2.0;
         }
     }
 
@@ -3215,7 +2685,13 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
         if (state.dataSize->ZoneSizingRunDone) {
             if (state.dataSize->CurTermUnitSizingNum > 0) {
                 // if zone sizing run done, set the design max reheat air flow to the value from the design calcs
-                MaxAirVolFlowRateDuringReheatDes = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax;
+                if (state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow >
+                    state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax) {
+                    MaxAirVolFlowRateDuringReheatDes =
+                        state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlowMax;
+                } else {
+                    MaxAirVolFlowRateDuringReheatDes = state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).DesHeatVolFlow;
+                }
             }
         } else {
             // if no design calc use 0.002032 [m3/s-m2] times floor area. That's .40 cfm/ft2
@@ -3411,9 +2887,13 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
                     max(state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).NonAirSysDesHeatVolFlow,
                         this->MaxAirVolFlowRate * this->ZoneTurndownMinAirFrac);
             } else {
-                TermUnitSizing(state.dataSize->CurTermUnitSizingNum).AirVolFlow =
-                    max(state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).NonAirSysDesHeatVolFlow,
-                        this->MaxAirVolFlowRate * this->ZoneMinAirFracDes * this->ZoneTurndownMinAirFrac);
+                if (this->SysType_Num == SysType::SingleDuctVAVReheat && this->DamperHeatingAction == Action::ReverseWithLimits) {
+                    TermUnitSizing(state.dataSize->CurTermUnitSizingNum).AirVolFlow = this->MaxAirVolFlowRateDuringReheat;
+                } else {
+                    TermUnitSizing(state.dataSize->CurTermUnitSizingNum).AirVolFlow =
+                        max(state.dataSize->TermUnitFinalZoneSizing(state.dataSize->CurTermUnitSizingNum).NonAirSysDesHeatVolFlow,
+                            this->MaxAirVolFlowRate * this->ZoneMinAirFracDes * this->ZoneTurndownMinAirFrac);
+                }
             }
         } else {
             if (this->SysType_Num == SysType::SingleDuctVAVReheatVSFan) {
@@ -3519,17 +2999,11 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
                                                                           (state.dataSingleDuct->ZoneDesTempSS - state.dataSingleDuct->CoilInTempSS);
                         if (state.dataSingleDuct->DesCoilLoadSS >= SmallLoad) {
 
-                            rho = GetDensityGlycol(state,
-                                                   state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidName,
-                                                   Constant::HWInitConvTemp,
-                                                   state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidIndex,
-                                                   RoutineName);
+                            rho =
+                                state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
 
-                            Cp = GetSpecificHeatGlycol(state,
-                                                       state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidName,
-                                                       Constant::HWInitConvTemp,
-                                                       state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum).FluidIndex,
-                                                       RoutineName);
+                            Cp = state.dataPlnt->PlantLoop(this->HWplantLoc.loopNum)
+                                     .glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
 
                             MaxReheatWaterVolFlowDes =
                                 state.dataSingleDuct->DesCoilLoadSS / (state.dataSize->PlantSizData(PltSizHeatNum).DeltaT * Cp * rho);
@@ -3541,8 +3015,6 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
                         ShowContinueError(state, format("Occurs in AirTerminal Object={}", this->SysName));
                         ErrorsFound = true;
                     }
-                }
-                if (IsAutoSize) {
                     this->MaxReheatWaterVolFlow = MaxReheatWaterVolFlowDes;
                     BaseSizer::reportSizerOutput(
                         state, this->sysType, this->SysName, "Design Size Maximum Reheat Water Flow Rate [m3/s]", MaxReheatWaterVolFlowDes);
@@ -3638,19 +3110,13 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
                                                                           (state.dataSingleDuct->ZoneDesTempSS - state.dataSingleDuct->CoilInTempSS);
                         if (state.dataSingleDuct->DesCoilLoadSS >= SmallLoad) {
                             TempSteamIn = 100.00;
-                            EnthSteamInDry =
-                                FluidProperties::GetSatEnthalpyRefrig(state, fluidNameSteam, TempSteamIn, 1.0, this->FluidIndex, RoutineNameFull);
-                            EnthSteamOutWet =
-                                FluidProperties::GetSatEnthalpyRefrig(state, fluidNameSteam, TempSteamIn, 0.0, this->FluidIndex, RoutineNameFull);
+                            auto *steam = Fluid::GetSteam(state);
+                            EnthSteamInDry = steam->getSatEnthalpy(state, TempSteamIn, 1.0, RoutineNameFull);
+                            EnthSteamOutWet = steam->getSatEnthalpy(state, TempSteamIn, 0.0, RoutineNameFull);
                             LatentHeatSteam = EnthSteamInDry - EnthSteamOutWet;
-                            SteamDensity =
-                                FluidProperties::GetSatDensityRefrig(state, fluidNameSteam, TempSteamIn, 1.0, this->FluidIndex, RoutineNameFull);
+                            SteamDensity = steam->getSatDensity(state, TempSteamIn, 1.0, RoutineNameFull);
 
-                            Cp = GetSpecificHeatGlycol(state,
-                                                       fluidNameWater,
-                                                       state.dataSize->PlantSizData(PltSizHeatNum).ExitTemp,
-                                                       state.dataSingleDuct->DummyWaterIndexSS,
-                                                       RoutineName);
+                            Cp = Fluid::GetWater(state)->getSpecificHeat(state, state.dataSize->PlantSizData(PltSizHeatNum).ExitTemp, RoutineName);
                             MaxReheatSteamVolFlowDes = state.dataSingleDuct->DesCoilLoadSS /
                                                        (SteamDensity * (LatentHeatSteam + state.dataSize->PlantSizData(PltSizHeatNum).DeltaT * Cp));
                         } else {
@@ -3661,8 +3127,6 @@ void SingleDuctAirTerminal::SizeSys(EnergyPlusData &state)
                         ShowContinueError(state, format("Occurs in AirTerminal:SingleDuct:ConstantVolume:Reheat Object={}", this->SysName));
                         ErrorsFound = true;
                     }
-                }
-                if (IsAutoSize) {
                     this->MaxReheatSteamVolFlow = MaxReheatSteamVolFlowDes;
                     BaseSizer::reportSizerOutput(
                         state, this->sysType, this->SysName, "Design Size Maximum Reheat Steam Flow Rate [m3/s]", MaxReheatSteamVolFlowDes);
@@ -3761,16 +3225,12 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
     //                      TH 3/2012: added supply air flow adjustment based on zone maximum outdoor
     //                                 air fraction - a TRACE feature
     //                      Brent Griffith, 5/2012, general cleanup, fix negatives CR 8767, fix phantom coil flows CR 8854
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine simulates the simple single duct volume VAV.
 
     // METHODOLOGY EMPLOYED:
     // There is method to this madness.
-
-    // REFERENCES:
-    // na
 
     // Using/Aliasing
     using namespace DataZoneEnergyDemands;
@@ -3781,17 +3241,6 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
     using SteamCoils::SimulateSteamCoilComponents;
     using WaterCoils::SimulateWaterCoilComponents;
 
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
-
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     Real64 MassFlow;     // [kg/sec]   Total Mass Flow Rate from Hot & Cold Inlets
     Real64 QTotLoad;     // [Watts] Remaining load required for this zone
@@ -3801,7 +3250,6 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
     Real64 DeltaTemp;
     int SysOutletNode;        // The node number of the terminal unit outlet node
     int SysInletNode;         // the node number of the terminal unit inlet node
-    int WaterControlNode;     // This is the Actuated Reheat Control Node
     Real64 MaxFlowWater;      // This is the value passed to the Controller depending if FirstHVACIteration or not
     Real64 MinFlowWater;      // This is the value passed to the Controller depending if FirstHVACIteration or not
     Real64 QActualHeating;    // the heating load seen by the reheat coil
@@ -3837,8 +3285,7 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
     // if the massflow is below the minimum or greater than the Max it is set to either the Min
     // or the Max as specified for the VAV model.
     if ((QTotLoad < 0.0) && (this->sd_airterminalInlet.AirMassFlowRateMaxAvail > 0.0) &&
-        (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::ThermostatType::SingleHeating) &&
-        (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+        (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::SetptType::SingleHeat) && (this->availSched->getCurrentVal() > 0.0)) {
         // Calculate the flow required for cooling
 
         DeltaTemp = CpAirAvg * (this->sd_airterminalInlet.AirTemp - state.dataSingleDuct->ZoneTempSDAT);
@@ -3877,8 +3324,8 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
         }
 
     } else if ((this->sd_airterminalInlet.AirMassFlowRateMaxAvail > 0.0) &&
-               (QTotLoad >= 0.0 || state.dataHeatBalFanSys->TempControlType(ZoneNum) == HVAC::ThermostatType::SingleHeating) &&
-               (GetCurrentScheduleValue(state, this->SchedPtr) > 0.0)) {
+               (QTotLoad >= 0.0 || state.dataHeatBalFanSys->TempControlType(ZoneNum) == HVAC::SetptType::SingleHeat) &&
+               (this->availSched->getCurrentVal() > 0.0)) {
         //     IF (sd_airterminal(SysNum)%DamperHeatingAction .EQ. ReverseAction .AND. this->sd_airterminalInlet%AirMassFlowRateMinAvail <=
         //     SmallMassFlow) THEN
         // special case for heating: reverse action and damper allowed to close - set the minimum flow rate to a small but nonzero value
@@ -3965,8 +3412,7 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
     // do the reheat calculation if there's some air nass flow (or the damper action is "reverse action"), the flow is <= minimum ,
     // there's a heating requirement, and there's a thermostat with a heating setpoint
     // Reverse damper option is working only for water coils for now.
-    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) &&
-        (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::ThermostatType::SingleCooling)) {
+    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) && (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::SetptType::SingleCool)) {
         // At this point we know that there is a heating requirement: i.e., the heating coil needs to
         // be activated (there's a zone heating load or there's a reheat requirement). There are 3 possible
         // situations: 1) the coil load can be met by variable temperature air (below the max heat temp) at
@@ -4045,7 +3491,7 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
                 MaxFlowWater = this->MaxReheatWaterFlow;
                 MinFlowWater = this->MinReheatWaterFlow;
             } else {
-                WaterControlNode = this->ReheatControlNode;
+                int WaterControlNode = this->ReheatControlNode;
                 MaxFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMaxAvail;
                 MinFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMinAvail;
             }
@@ -4107,7 +3553,7 @@ void SingleDuctAirTerminal::SimVAV(EnergyPlusData &state, bool const FirstHVACIt
                                       this->ControlCompTypeNum,
                                       this->CompErrIndex,
                                       ZoneNodeNum,
-                                      SysOutletNode); // why not QZnReq  ?
+                                      SysOutletNode);
                     // air flow controller, not on plant, don't pass plant topology info
                     // reset terminal unit inlet air mass flow to new value.
                     state.dataLoopNodes->Node(this->OutletNodeNum).MassFlowRateMaxAvail = this->sd_airterminalInlet.AirMassFlowRateMaxAvail;
@@ -4245,7 +3691,6 @@ void SingleDuctAirTerminal::CalcOAMassFlow(EnergyPlusData &state,
     //       AUTHOR         R. Raustad (FSEC)
     //       DATE WRITTEN   Jan 2010
     //       MODIFIED       Mangesh Basarkar, 06/2011: Modifying outside air based on airloop DCV flag
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS FUNCTION:
     // Calculates the amount of outside air required based on optional user input.
@@ -4254,25 +3699,11 @@ void SingleDuctAirTerminal::CalcOAMassFlow(EnergyPlusData &state,
     // METHODOLOGY EMPLOYED:
     // User input defines method used to calculate OA.
 
-    // REFERENCES:
-
     // Using/Aliasing
     using Psychrometrics::PsyRhoAirFnPbTdbW;
 
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
     // FUNCTION PARAMETER DEFINITIONS:
     bool constexpr UseMinOASchFlag(true); // Always use min OA schedule in calculations.
-
-    // FUNCTION PARAMETER DEFINITIONS:
-    // na
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
 
     // FUNCTION LOCAL VARIABLE DECLARATIONS:
     Real64 OAVolumeFlowRate; // outside air volume flow rate (m3/s)
@@ -4307,17 +3738,10 @@ void SingleDuctAirTerminal::SimCBVAV(EnergyPlusData &state, bool const FirstHVAC
     //       AUTHOR         Richard Raustad
     //       DATE WRITTEN   August 2006
     //       MODIFIED       KHL/TH 10/2010: added maximum supply air temperature leaving reheat coil
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine simulates the VAV box with varying airflow in heating and cooling.
     // Modified version of SimVAV.
-
-    // METHODOLOGY EMPLOYED:
-    // na
-
-    // REFERENCES:
-    // na
 
     // Using/Aliasing
     using namespace DataZoneEnergyDemands;
@@ -4329,32 +3753,20 @@ void SingleDuctAirTerminal::SimCBVAV(EnergyPlusData &state, bool const FirstHVAC
     // unused   USE DataHeatBalFanSys,    ONLY: ZoneThermostatSetPointHi, ZoneThermostatSetPointLo
     using PlantUtilities::SetActuatedBranchFlowRate;
 
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
-
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    Real64 MassFlow;      // Total Mass Flow Rate from Hot & Cold Inlets [kg/sec]
-    Real64 QTotLoad;      // Total load based on thermostat setpoint temperature [Watts]
-    Real64 QZnReq;        // Total load to be met by terminal heater [Watts]
-    Real64 QToHeatSetPt;  // Remaining load to heating setpoint [W]
-    Real64 QSupplyAir;    // Zone load met by VAVHeatandCool system
-    Real64 CpAirZn;       // Specific heat of zone air [J/kg-C]
-    Real64 CpAirSysIn;    // Specific heat of VAVHeatandCool box entering air [J/kg-C]
-    Real64 DeltaTemp;     // Temperature difference multiplied by specific heat [J/kg]
-    Real64 MaxFlowWater;  // This is the value passed to the Controller depending if FirstHVACIteration or not
-    Real64 MinFlowWater;  // This is the value passed to the Controller depending if FirstHVACIteration or not
-    Real64 LeakLoadMult;  // Load multiplier to adjust for downstream leaks
-    int SysOutletNode;    // The node number of the terminal unit outlet node
-    int SysInletNode;     // The node number of the terminal unit inlet node
-    int WaterControlNode; // This is the Actuated Reheat Control Node
+    Real64 MassFlow;     // Total Mass Flow Rate from Hot & Cold Inlets [kg/sec]
+    Real64 QTotLoad;     // Total load based on thermostat setpoint temperature [Watts]
+    Real64 QZnReq;       // Total load to be met by terminal heater [Watts]
+    Real64 QToHeatSetPt; // Remaining load to heating setpoint [W]
+    Real64 QSupplyAir;   // Zone load met by VAVHeatandCool system
+    Real64 CpAirZn;      // Specific heat of zone air [J/kg-C]
+    Real64 CpAirSysIn;   // Specific heat of VAVHeatandCool box entering air [J/kg-C]
+    Real64 DeltaTemp;    // Temperature difference multiplied by specific heat [J/kg]
+    Real64 MaxFlowWater; // This is the value passed to the Controller depending if FirstHVACIteration or not
+    Real64 MinFlowWater; // This is the value passed to the Controller depending if FirstHVACIteration or not
+    Real64 LeakLoadMult; // Load multiplier to adjust for downstream leaks
+    int SysOutletNode;   // The node number of the terminal unit outlet node
+    int SysInletNode;    // The node number of the terminal unit inlet node
     Real64 DummyMdot;
     Real64 QActualHeating;
     Real64 MinFlowFrac; // minimum flow fraction (and minimum damper position)
@@ -4424,8 +3836,7 @@ void SingleDuctAirTerminal::SimCBVAV(EnergyPlusData &state, bool const FirstHVAC
 
     QActualHeating = QToHeatSetPt - MassFlow * CpAirZn * (this->sd_airterminalInlet.AirTemp - state.dataSingleDuct->ZoneTempSCBVAV);
 
-    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) &&
-        (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::ThermostatType::SingleCooling)) {
+    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) && (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::SetptType::SingleCool)) {
         //   VAVHeatandCool boxes operate at varying mass flow rates when reheating, VAV boxes operate at min flow
         //      (MassFlow <= this->sd_airterminalInlet%AirMassFlowRateMinAvail) .AND. &
         //   Per Fred Buhl, don't use DeadBandOrSetback to determine if heaters operate
@@ -4500,7 +3911,7 @@ void SingleDuctAirTerminal::SimCBVAV(EnergyPlusData &state, bool const FirstHVAC
                 MaxFlowWater = this->MaxReheatWaterFlow;
                 MinFlowWater = this->MinReheatWaterFlow;
             } else {
-                WaterControlNode = this->ReheatControlNode;
+                int WaterControlNode = this->ReheatControlNode;
                 MaxFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMaxAvail;
                 MinFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMinAvail;
             }
@@ -4669,8 +4080,6 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Fred Buhl
     //       DATE WRITTEN   July 2004
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine simulates a single duct VAV terminal unit with a variable-speed fan upstream
@@ -4713,7 +4122,6 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
     Real64 QNoHeatFanOff;   // min heating - fan off, hot water at min flow [W]
     HeatingCoilType HCType; // heating coil type
     HVAC::FanType fanType;  // fan type (as a number)
-    Real64 HCLoad;          // load passed to a gas or electric heating coil [W]
     int FanOp;              // 1 if fan is on; 0 if off.
     Real64 MaxCoolMassFlow; // air flow at max cooling [kg/s]
     Real64 MaxHeatMassFlow; // air flow at max heating [kg/s]
@@ -4724,7 +4132,6 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
     int SolFlag;
     Real64 ErrTolerance;
     Real64 MaxSteamCap; // steam coil capacity at full load
-    bool ErrorsFound;   // returned from mining function call
 
     // The calculated load from the Heat Balance
     QTotLoad = state.dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputRequired;
@@ -4748,7 +4155,6 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
 
     if (HCType == HeatingCoilType::SimpleHeating) {
         WaterControlNode = this->ReheatControlNode;
-        HCLoad = 0.0;
         if (FirstHVACIteration) {
             MaxFlowWater = this->MaxReheatWaterFlow;
             MinFlowWater = this->MinReheatWaterFlow;
@@ -4759,14 +4165,12 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
         }
     } else {
         WaterControlNode = 0;
-        HCLoad = BigLoad;
         MaxFlowWater = 0.0;
         MinFlowWater = 0.0;
     }
 
     if (HCType == HeatingCoilType::SteamAirHeating) {
         SteamControlNode = this->ReheatControlNode;
-        HCLoad = 0.0;
         if (FirstHVACIteration) {
             MaxFlowSteam = this->MaxReheatSteamFlow;
             MinFlowSteam = this->MinReheatSteamFlow;
@@ -4776,7 +4180,6 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
         }
     } else {
         SteamControlNode = 0;
-        HCLoad = BigLoad;
         MaxFlowSteam = 0.0;
         MinFlowSteam = 0.0;
     }
@@ -4785,6 +4188,7 @@ void SingleDuctAirTerminal::SimVAVVS(EnergyPlusData &state, bool const FirstHVAC
     // region 1: active cooling with fan on
     FanOp = 1;
     if (HCType == HeatingCoilType::SteamAirHeating) {
+        bool ErrorsFound; // returned from mining function call
         this->CalcVAVVS(state, FirstHVACIteration, ZoneNodeNum, MinFlowSteam, 0.0, fanType, MaxCoolMassFlow, FanOp, QCoolFanOnMax);
         this->CalcVAVVS(state, FirstHVACIteration, ZoneNodeNum, MinFlowSteam, 0.0, fanType, MinMassFlow, FanOp, QCoolFanOnMin);
         // region 2: active heating with fan on
@@ -5080,16 +4484,9 @@ void SingleDuctAirTerminal::SimConstVol(EnergyPlusData &state, bool const FirstH
     //       AUTHOR         Richard J. Liesen
     //       DATE WRITTEN   February 2000
     //       MODIFIED       FB/KHL/TH 2/2011: added maximum supply air temperature leaving reheat coil
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine simulates the simple single duct constant volume systems.
-
-    // METHODOLOGY EMPLOYED:
-    // There is method to this madness.
-
-    // REFERENCES:
-    // na
 
     // Using/Aliasing
     using namespace DataZoneEnergyDemands;
@@ -5099,33 +4496,17 @@ void SingleDuctAirTerminal::SimConstVol(EnergyPlusData &state, bool const FirstH
     using SteamCoils::SimulateSteamCoilComponents;
     using WaterCoils::SimulateWaterCoilComponents;
 
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
-
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    Real64 MassFlow;     // [kg/sec]   Total Mass Flow Rate from Hot & Cold Inlets
-    Real64 QZnReq;       // [Watts]
-    Real64 QToHeatSetPt; // [W]  remaining load to heating setpoint
-    Real64 CpAir;
-    int WaterControlNode;  // This is the Actuated Reheat Control Node
-    Real64 MaxFlowWater;   // This is the value passed to the Controller depending if FirstHVACIteration or not
-    Real64 MinFlowWater;   // This is the value passed to the Controller depending if FirstHVACIteration or not
-    Real64 QActualHeating; // the heating load seen by the reheat coil
-    Real64 DummyMdot;      // local fluid mass flow rate
+    Real64 MaxFlowWater; // This is the value passed to the Controller depending if FirstHVACIteration or not
+    Real64 MinFlowWater; // This is the value passed to the Controller depending if FirstHVACIteration or not
+    Real64 DummyMdot;    // local fluid mass flow rate
 
-    QToHeatSetPt = state.dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputReqToHeatSP; // The calculated load from the Heat Balance
-    MassFlow = this->sd_airterminalInlet.AirMassFlowRateMaxAvail;                                       // System massflow is set to the Available
+    Real64 QToHeatSetPt =
+        state.dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputReqToHeatSP; // The calculated load from the Heat Balance
+    Real64 MassFlow = this->sd_airterminalInlet.AirMassFlowRateMaxAvail;                     // System massflow is set to the Available
     state.dataSingleDuct->QMax2SCV = QToHeatSetPt;
     state.dataSingleDuct->ZoneTempSCV = state.dataLoopNodes->Node(ZoneNodeNum).Temp;
-    CpAir = PsyCpAirFnW(state.dataLoopNodes->Node(ZoneNodeNum).HumRat); // zone air specific heat
+    Real64 CpAir = PsyCpAirFnW(state.dataLoopNodes->Node(ZoneNodeNum).HumRat); // zone air specific heat
     if (this->MaxReheatTempSetByUser) {
         state.dataSingleDuct->TAirMaxSCV = this->MaxReheatTemp;
         state.dataSingleDuct->QMaxSCV = CpAir * MassFlow * (state.dataSingleDuct->TAirMaxSCV - state.dataSingleDuct->ZoneTempSCV);
@@ -5151,11 +4532,13 @@ void SingleDuctAirTerminal::SimConstVol(EnergyPlusData &state, bool const FirstH
     this->sd_airterminalOutlet.AirMassFlowRateMinAvail = this->sd_airterminalInlet.AirMassFlowRateMinAvail;
     this->UpdateSys(state);
 
-    QActualHeating = QToHeatSetPt - MassFlow * CpAir * (this->sd_airterminalInlet.AirTemp - state.dataSingleDuct->ZoneTempSCV); // reheat needed
+    Real64 QActualHeating =
+        QToHeatSetPt - MassFlow * CpAir * (this->sd_airterminalInlet.AirTemp - state.dataSingleDuct->ZoneTempSCV); // reheat needed
     // Now the massflow for reheating has been determined. If it is zero, or in SetBack, or the
     // system scheduled OFF then not operational and shut the system down.
-    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) &&
-        (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::ThermostatType::SingleCooling)) {
+    if ((MassFlow > SmallMassFlow) && (QActualHeating > 0.0) && (state.dataHeatBalFanSys->TempControlType(ZoneNum) != HVAC::SetptType::SingleCool)) {
+
+        Real64 QZnReq;
 
         switch (this->ReheatComp_Num) {
         case HeatingCoilType::SimpleHeating: { // COIL:WATER:SIMPLEHEATING
@@ -5175,7 +4558,7 @@ void SingleDuctAirTerminal::SimConstVol(EnergyPlusData &state, bool const FirstH
                 MaxFlowWater = this->MaxReheatWaterFlow;
                 MinFlowWater = this->MinReheatWaterFlow;
             } else {
-                WaterControlNode = this->ReheatControlNode;
+                int WaterControlNode = this->ReheatControlNode;
                 MaxFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMaxAvail;
                 MinFlowWater = state.dataLoopNodes->Node(WaterControlNode).MassFlowRateMinAvail;
             }
@@ -5289,8 +4672,6 @@ void SingleDuctAirTerminal::CalcVAVVS(EnergyPlusData &state,
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Fred Buhl
     //       DATE WRITTEN   July 2004
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // Simulate the components making up the VAV terminal unit with variable speed fan.
@@ -5298,26 +4679,11 @@ void SingleDuctAirTerminal::CalcVAVVS(EnergyPlusData &state,
     // METHODOLOGY EMPLOYED:
     // Simulates the unit components sequentially in the air flow direction.
 
-    // REFERENCES:
-    // na
-
     // Using/Aliasing
     using HeatingCoils::SimulateHeatingCoilComponents;
     using PlantUtilities::SetComponentFlowRate;
     using SteamCoils::SimulateSteamCoilComponents;
     using WaterCoils::SimulateWaterCoilComponents;
-
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-    // na
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
 
     // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
     int FanInNode;       // unit air inlet node (fan inlet)
@@ -5390,18 +4756,12 @@ void SingleDuctAirTerminal::UpdateSys(EnergyPlusData &state) const
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Richard J. Liesen
     //       DATE WRITTEN   january 2000
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine updates the Syss.
 
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int OutletNode;
-    int InletNode;
-
-    OutletNode = this->OutletNodeNum;
-    InletNode = this->InletNodeNum;
+    int OutletNode = this->OutletNodeNum;
+    int InletNode = this->InletNodeNum;
 
     if (this->SysType_Num == SysType::SingleDuctVAVReheat || this->SysType_Num == SysType::SingleDuctCBVAVReheat ||
         this->SysType_Num == SysType::SingleDuctCBVAVNoReheat || this->SysType_Num == SysType::SingleDuctVAVNoReheat ||
@@ -5441,40 +4801,6 @@ void SingleDuctAirTerminal::UpdateSys(EnergyPlusData &state) const
 void SingleDuctAirTerminal::ReportSys(EnergyPlusData &state) // unused1208
 {
 
-    // SUBROUTINE INFORMATION:
-    //       AUTHOR         Unknown
-    //       DATE WRITTEN   Unknown
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
-
-    // PURPOSE OF THIS SUBROUTINE:
-    // This subroutine updates the Sys report variables.
-
-    // METHODOLOGY EMPLOYED:
-    // There is method to this madness.
-
-    // REFERENCES:
-    // na
-
-    // USE STATEMENTS:
-    // na
-
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS:
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-    // na
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-
-    // Still needs to report the Sys power from this component
-
     // set zone OA volume flow rate
     this->CalcOutdoorAirVolumeFlowRate(state);
 }
@@ -5492,8 +4818,6 @@ void GetHVACSingleDuctSysIndex(EnergyPlusData &state,
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Lixing Gu
     //       DATE WRITTEN   February 2006
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine sets an index for a given single duct system -- issues error message if that system
@@ -5534,15 +4858,10 @@ void SimATMixer(EnergyPlusData &state, std::string const &SysName, bool const Fi
 {
 
     // SUBROUTINE INFORMATION:
-    //       AUTHOR
     //       DATE WRITTEN   March 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE
     // Simulate an Air Terminal Mixer component
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
     if (state.dataSingleDuct->GetATMixerFlag) {
         state.dataSingleDuct->GetATMixerFlag = false;
@@ -5569,10 +4888,7 @@ void GetATMixers(EnergyPlusData &state)
 {
 
     // SUBROUTINE INFORMATION:
-    //       AUTHOR
     //       DATE WRITTEN   March 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE
     // Get input for inlet side air terminal mixers and store it in the inlet side air terminal mixer array
@@ -6026,33 +5342,13 @@ void CalcATMixer(EnergyPlusData &state, int const SysNum)
 {
 
     // SUBROUTINE INFORMATION:
-    //       AUTHOR
     //       DATE WRITTEN   March 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE
     // Calculate the mixed air flow and conditions in the air terminal mixer
 
-    // METHODOLOGY EMPLOYED:
-
-    // REFERENCES:
-
     // Using/Aliasing
     using Psychrometrics::PsyTdbFnHW;
-
-    // Locals
-    // SUBROUTINE ARGUMENT DEFINITIONS
-
-    // SUBROUTINE PARAMETER DEFINITIONS:
-
-    // INTERFACE BLOCK SPECIFICATIONS
-    // na
-
-    // DERIVED TYPE DEFINITIONS
-    // na
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
 
     state.dataSingleDuct->PriEnthalpyCATM = state.dataLoopNodes->Node(state.dataSingleDuct->SysATMixer(SysNum).PriInNode).Enthalpy;
     state.dataSingleDuct->PriHumRatCATM = state.dataLoopNodes->Node(state.dataSingleDuct->SysATMixer(SysNum).PriInNode).HumRat;
@@ -6108,17 +5404,10 @@ void UpdateATMixer(EnergyPlusData &state, int const SysNum)
 {
 
     // SUBROUTINE INFORMATION:
-    //       AUTHOR
     //       DATE WRITTEN   March 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE
     // Move the results of CalcATMixer to the affected nodes
-
-    // METHODOLOGY EMPLOYED:
-
-    // REFERENCES:
 
     // Using/Aliasing
     using namespace DataLoopNode;
@@ -6179,8 +5468,6 @@ void GetATMixer(EnergyPlusData &state,
     // SUBROUTINE INFORMATION:
     //       AUTHOR         Fred Buhl
     //       DATE WRITTEN   April 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
     // This subroutine gets: 1) the index of the named AT Mixer in the SysATMixer data array
@@ -6228,48 +5515,12 @@ void GetATMixer(EnergyPlusData &state,
     }
 }
 
-void SetATMixerPriFlow(EnergyPlusData &state,
-                       int const ATMixerNum,                                // Air terminal mixer index
-                       ObjexxFCL::Optional<Real64 const> PriAirMassFlowRate // Air terminal mixer primary air mass flow rate [kg/s]
-)
-{
-
-    // SUBROUTINE INFORMATION:
-    //       AUTHOR         Fred Buhl
-    //       DATE WRITTEN   April 2012
-    //       MODIFIED       na
-    //       RE-ENGINEERED  na
-
-    // PURPOSE OF THIS SUBROUTINE:
-    // This Subroutine sets the primary air mass flow rate on the primary air inlet
-    // node of a terminal unit mixer component.
-
-    // METHODOLOGY EMPLOYED:
-    // The flow is set to either the input PriAirMassFlowRate if this optional input
-    // parameter is present, or to the maximum available mass flow rate of the primary
-    // air inlet node.
-
-    // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-    int PriAirNode; // air terminal mixer primary air inlet node number
-
-    if (ATMixerNum <= 0) return;
-    PriAirNode = state.dataSingleDuct->SysATMixer(ATMixerNum).PriInNode;
-    if (present(PriAirMassFlowRate)) {
-        state.dataLoopNodes->Node(PriAirNode).MassFlowRate = PriAirMassFlowRate;
-    } else {
-        state.dataLoopNodes->Node(PriAirNode).MassFlowRate = state.dataLoopNodes->Node(PriAirNode).MassFlowRateMaxAvail;
-    }
-}
-
 void setATMixerSizingProperties(EnergyPlusData &state,
                                 int const inletATMixerIndex, // index to ATMixer at inlet of zone equipment
                                 int const controlledZoneNum, // controlled zone number
                                 int const curZoneEqNum       // current zone equipment being simulated
 )
 {
-    auto &ZoneEqSizing(state.dataSize->ZoneEqSizing);
-    auto &FinalSysSizing(state.dataSize->FinalSysSizing);
-    auto &FinalZoneSizing(state.dataSize->FinalZoneSizing);
 
     if (inletATMixerIndex == 0) return; // protect this function from bad inputs
     if (controlledZoneNum == 0) return;
@@ -6279,28 +5530,29 @@ void setATMixerSizingProperties(EnergyPlusData &state,
     // ATMixer properties only affect coil sizing when the mixer is on the inlet side of zone equipment
     if (state.dataSingleDuct->SysATMixer(inletATMixerIndex).type == HVAC::MixerType::SupplySide) {
         // check if user has selected No to account for DOAS system
-        if (FinalZoneSizing.allocated() && state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning) {
-            if (!FinalZoneSizing(curZoneEqNum).AccountForDOAS && FinalZoneSizing(curZoneEqNum).DOASControlStrategy != DOASControl::NeutralSup) {
+        if (state.dataSize->FinalZoneSizing.allocated() && state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning) {
+            auto const &finalZoneSizing = state.dataSize->FinalZoneSizing(curZoneEqNum);
+            if (!finalZoneSizing.AccountForDOAS && finalZoneSizing.DOASControlStrategy != DOASControl::NeutralSup) {
                 ShowWarningError(state, format("AirTerminal:SingleDuct:Mixer: {}", state.dataSingleDuct->SysATMixer(inletATMixerIndex).Name));
                 ShowContinueError(
                     state,
                     " Supply side Air Terminal Mixer does not adjust zone equipment coil sizing and may result in inappropriately sized coils.");
-                ShowContinueError(state,
-                                  format(" Set Account for Dedicated Outdoor Air System = Yes in Sizing:Zone object for zone = {}",
-                                         FinalZoneSizing(curZoneEqNum).ZoneName));
+                ShowContinueError(
+                    state,
+                    format(" Set Account for Dedicated Outdoor Air System = Yes in Sizing:Zone object for zone = {}", finalZoneSizing.ZoneName));
             }
             state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning = false;
         }
         return; // do nothing else if this is a supply side ATMixer
     }
     // check if user has selected Yes to account for DOAS system
-    if (FinalZoneSizing.allocated() && state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning) {
-        if (FinalZoneSizing(curZoneEqNum).AccountForDOAS && FinalZoneSizing(curZoneEqNum).DOASControlStrategy != DOASControl::NeutralSup) {
+    if (state.dataSize->FinalZoneSizing.allocated() && state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning) {
+        auto const &finalZoneSizing = state.dataSize->FinalZoneSizing(curZoneEqNum);
+        if (finalZoneSizing.AccountForDOAS && finalZoneSizing.DOASControlStrategy != DOASControl::NeutralSup) {
             ShowWarningError(state, format("AirTerminal:SingleDuct:Mixer: {}", state.dataSingleDuct->SysATMixer(inletATMixerIndex).Name));
             ShowContinueError(state, " Inlet side Air Terminal Mixer automatically adjusts zone equipment coil sizing.");
-            ShowContinueError(state,
-                              format(" Set Account for Dedicated Outdoor Air System = No in Sizing:Zone object for zone = {}",
-                                     FinalZoneSizing(curZoneEqNum).ZoneName));
+            ShowContinueError(
+                state, format(" Set Account for Dedicated Outdoor Air System = No in Sizing:Zone object for zone = {}", finalZoneSizing.ZoneName));
             state.dataSingleDuct->SysATMixer(inletATMixerIndex).printWarning = false;
         }
     }
@@ -6316,131 +5568,126 @@ void setATMixerSizingProperties(EnergyPlusData &state,
     CheckThisAirSystemForSizing(state, airLoopIndex, SizingDesRunThisAirSys); // check for Sizing:System object
 
     if (SizingDesRunThisAirSys) {
+        auto &finalSysSizing = state.dataSize->FinalSysSizing(airLoopIndex);
+        auto &zoneEqSizing = state.dataSize->ZoneEqSizing(curZoneEqNum);
 
         // set ATMixer outlet air flow rate in ZoneEqSizing array for ATMixer. If this value > 0, then the Sizer will know an ATMixer exists
-        ZoneEqSizing(curZoneEqNum).ATMixerVolFlow = state.dataSingleDuct->SysATMixer(inletATMixerIndex).DesignPrimaryAirVolRate;
+        zoneEqSizing.ATMixerVolFlow = state.dataSingleDuct->SysATMixer(inletATMixerIndex).DesignPrimaryAirVolRate;
 
         // If air loop has heating coil use SA conditions, else if OA sys has coils then use precool conditions, else use OA conditions
         if (state.dataAirSystemsData->PrimaryAirSystems(airLoopIndex).CentralHeatCoilExists) {
             // if central heating coil exists, ATMixer outlet is assumed to be at supply air conditions described in sizing input
-            ZoneEqSizing(curZoneEqNum).ATMixerHeatPriDryBulb = FinalSysSizing(airLoopIndex).HeatSupTemp;
-            ZoneEqSizing(curZoneEqNum).ATMixerHeatPriHumRat = FinalSysSizing(airLoopIndex).HeatSupHumRat;
+            zoneEqSizing.ATMixerHeatPriDryBulb = finalSysSizing.HeatSupTemp;
+            zoneEqSizing.ATMixerHeatPriHumRat = finalSysSizing.HeatSupHumRat;
         } else if (state.dataAirSystemsData->PrimaryAirSystems(airLoopIndex).NumOAHeatCoils > 0) {
             // if no central heating coil exists and an outdoor air coil does exist, then ATMixer outlet is mixture of preheat and return
-            if (FinalSysSizing(airLoopIndex).DesMainVolFlow == 0.0) { // protect divide by 0
+            if (finalSysSizing.DesMainVolFlow == 0.0) { // protect divide by 0
                 // doesn't matter, just pick a condition
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriDryBulb = FinalSysSizing(airLoopIndex).PreheatTemp;
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriHumRat = FinalSysSizing(airLoopIndex).PreheatHumRat;
+                zoneEqSizing.ATMixerHeatPriDryBulb = finalSysSizing.PreheatTemp;
+                zoneEqSizing.ATMixerHeatPriHumRat = finalSysSizing.PreheatHumRat;
             } else {
                 // mix preheat condition with return air condition based on OA frac. OA frac should nearly always be 1.
                 // OA frac is based on air loop fraction, not ATMixer flow fraction since air loop can serve multiple ATMixers
-                Real64 OutAirFrac = FinalSysSizing(airLoopIndex).DesOutAirVolFlow / FinalSysSizing(airLoopIndex).DesMainVolFlow;
+                Real64 OutAirFrac = finalSysSizing.DesOutAirVolFlow / finalSysSizing.DesMainVolFlow;
                 OutAirFrac = min(1.0, max(0.0, OutAirFrac));
 
                 // calculate humrat based on simple mixing
-                Real64 CoilInHumRatForSizing =
-                    OutAirFrac * FinalSysSizing(airLoopIndex).PreheatHumRat + (1 - OutAirFrac) * FinalSysSizing(airLoopIndex).HeatRetHumRat;
+                Real64 CoilInHumRatForSizing = OutAirFrac * finalSysSizing.PreheatHumRat + (1 - OutAirFrac) * finalSysSizing.HeatRetHumRat;
 
                 // calculate enthalpy based on simple mixing
                 Real64 CoilInEnthalpyForSizing =
-                    OutAirFrac * Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).PreheatTemp, FinalSysSizing(airLoopIndex).PreheatHumRat) +
-                    (1 - OutAirFrac) *
-                        Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).HeatRetTemp, FinalSysSizing(airLoopIndex).HeatRetHumRat);
+                    OutAirFrac * Psychrometrics::PsyHFnTdbW(finalSysSizing.PreheatTemp, finalSysSizing.PreheatHumRat) +
+                    (1 - OutAirFrac) * Psychrometrics::PsyHFnTdbW(finalSysSizing.HeatRetTemp, finalSysSizing.HeatRetHumRat);
 
                 // back calculate temperature based on humrat and enthalpy state points
                 Real64 CoilInTempForSizing = Psychrometrics::PsyTdbFnHW(CoilInEnthalpyForSizing, CoilInHumRatForSizing);
 
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriDryBulb = CoilInTempForSizing;
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriHumRat = CoilInHumRatForSizing;
+                zoneEqSizing.ATMixerHeatPriDryBulb = CoilInTempForSizing;
+                zoneEqSizing.ATMixerHeatPriHumRat = CoilInHumRatForSizing;
             }
         } else {
             // else no coils exist in air loop so mix OA condition with return air condition
-            if (FinalSysSizing(airLoopIndex).DesMainVolFlow == 0.0) { // protect divide by 0
+            if (finalSysSizing.DesMainVolFlow == 0.0) { // protect divide by 0
                 // doesn't matter, just pick a condition
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriDryBulb = FinalSysSizing(airLoopIndex).HeatOutTemp;
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriHumRat = FinalSysSizing(airLoopIndex).HeatOutHumRat;
+                zoneEqSizing.ATMixerHeatPriDryBulb = finalSysSizing.HeatOutTemp;
+                zoneEqSizing.ATMixerHeatPriHumRat = finalSysSizing.HeatOutHumRat;
             } else {
                 // OA frac is based on air loop fraction, not ATMixer flow fraction since air loop can serve multiple ATMixers
-                Real64 OutAirFrac = FinalSysSizing(airLoopIndex).DesOutAirVolFlow / FinalSysSizing(airLoopIndex).DesMainVolFlow;
+                Real64 OutAirFrac = finalSysSizing.DesOutAirVolFlow / finalSysSizing.DesMainVolFlow;
                 OutAirFrac = min(1.0, max(0.0, OutAirFrac));
 
                 // calculate humrat based on simple mixing
-                Real64 CoilInHumRatForSizing =
-                    OutAirFrac * FinalSysSizing(airLoopIndex).HeatOutHumRat + (1 - OutAirFrac) * FinalSysSizing(airLoopIndex).HeatRetHumRat;
+                Real64 CoilInHumRatForSizing = OutAirFrac * finalSysSizing.HeatOutHumRat + (1 - OutAirFrac) * finalSysSizing.HeatRetHumRat;
 
                 // calculate enthalpy based on simple mixing
                 Real64 CoilInEnthalpyForSizing =
-                    OutAirFrac * Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).HeatOutTemp, FinalSysSizing(airLoopIndex).HeatOutHumRat) +
-                    (1 - OutAirFrac) *
-                        Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).HeatRetTemp, FinalSysSizing(airLoopIndex).HeatRetHumRat);
+                    OutAirFrac * Psychrometrics::PsyHFnTdbW(finalSysSizing.HeatOutTemp, finalSysSizing.HeatOutHumRat) +
+                    (1 - OutAirFrac) * Psychrometrics::PsyHFnTdbW(finalSysSizing.HeatRetTemp, finalSysSizing.HeatRetHumRat);
 
                 // back calculate temperature based on humrat and enthalpy state points
                 Real64 CoilInTempForSizing = Psychrometrics::PsyTdbFnHW(CoilInEnthalpyForSizing, CoilInHumRatForSizing);
 
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriDryBulb = CoilInTempForSizing;
-                ZoneEqSizing(curZoneEqNum).ATMixerHeatPriHumRat = CoilInHumRatForSizing;
+                zoneEqSizing.ATMixerHeatPriDryBulb = CoilInTempForSizing;
+                zoneEqSizing.ATMixerHeatPriHumRat = CoilInHumRatForSizing;
             }
         }
 
         // If air loop has cooling coil use SA conditions, else if OA sys has coils then use precool conditions, else use OA conditions
         if (state.dataAirSystemsData->PrimaryAirSystems(airLoopIndex).CentralCoolCoilExists) {
             // if central cooling coil exists, ATMixer outlet is assumed to be at supply air conditions described in sizing input
-            ZoneEqSizing(curZoneEqNum).ATMixerCoolPriDryBulb = FinalSysSizing(airLoopIndex).CoolSupTemp;
-            ZoneEqSizing(curZoneEqNum).ATMixerCoolPriHumRat = FinalSysSizing(airLoopIndex).CoolSupHumRat;
+            zoneEqSizing.ATMixerCoolPriDryBulb = finalSysSizing.CoolSupTemp;
+            zoneEqSizing.ATMixerCoolPriHumRat = finalSysSizing.CoolSupHumRat;
         } else if (state.dataAirSystemsData->PrimaryAirSystems(airLoopIndex).NumOACoolCoils > 0) {
             // if no central cooling coil exists and an outdoor air coil does exist, then ATMixer outlet is mixture of precool and return
-            if (FinalSysSizing(airLoopIndex).DesMainVolFlow == 0.0) { // protect divide by 0
+            if (finalSysSizing.DesMainVolFlow == 0.0) { // protect divide by 0
                 // doesn't matter, just pick a condition
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriDryBulb = FinalSysSizing(airLoopIndex).PrecoolTemp;
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriHumRat = FinalSysSizing(airLoopIndex).PrecoolHumRat;
+                zoneEqSizing.ATMixerCoolPriDryBulb = finalSysSizing.PrecoolTemp;
+                zoneEqSizing.ATMixerCoolPriHumRat = finalSysSizing.PrecoolHumRat;
             } else {
                 // mix precool condition with return air condition based on OA frac. OA frac should nearly always be 1.
                 // OA frac is based on air loop fraction, not ATMixer flow fraction since air loop can serve multiple ATMixers
-                Real64 OutAirFrac = FinalSysSizing(airLoopIndex).DesOutAirVolFlow / FinalSysSizing(airLoopIndex).DesMainVolFlow;
+                Real64 OutAirFrac = finalSysSizing.DesOutAirVolFlow / finalSysSizing.DesMainVolFlow;
+                OutAirFrac = min(1.0, max(0.0, OutAirFrac));
+
+                // calculate humrat based on simple mixing
+                Real64 CoilInHumRatForSizing = OutAirFrac * finalSysSizing.PrecoolHumRat + (1 - OutAirFrac) * finalSysSizing.RetHumRatAtCoolPeak;
+
+                // calculate enthalpy based on simple mixing
+                Real64 CoilInEnthalpyForSizing =
+                    OutAirFrac * Psychrometrics::PsyHFnTdbW(finalSysSizing.PrecoolTemp, finalSysSizing.PrecoolHumRat) +
+                    (1 - OutAirFrac) * Psychrometrics::PsyHFnTdbW(finalSysSizing.RetTempAtCoolPeak, finalSysSizing.RetHumRatAtCoolPeak);
+
+                // back calculate temperature based on humrat and enthalpy state points
+                Real64 CoilInTempForSizing = Psychrometrics::PsyTdbFnHW(CoilInEnthalpyForSizing, CoilInHumRatForSizing);
+
+                zoneEqSizing.ATMixerCoolPriDryBulb = CoilInTempForSizing;
+                zoneEqSizing.ATMixerCoolPriHumRat = CoilInHumRatForSizing;
+            }
+        } else {
+            // else no coils exist in air loop so mix OA condition with return air condition
+            if (finalSysSizing.DesMainVolFlow == 0.0) { // protect divide by 0
+                // doesn't matter, just pick a condition
+                zoneEqSizing.ATMixerCoolPriDryBulb = finalSysSizing.OutTempAtCoolPeak;
+                zoneEqSizing.ATMixerCoolPriHumRat = finalSysSizing.OutHumRatAtCoolPeak;
+            } else {
+                // OA frac is based on air loop fraction, not ATMixer flow fraction since air loop can serve multiple ATMixers
+                Real64 OutAirFrac = finalSysSizing.DesOutAirVolFlow / finalSysSizing.DesMainVolFlow;
                 OutAirFrac = min(1.0, max(0.0, OutAirFrac));
 
                 // calculate humrat based on simple mixing
                 Real64 CoilInHumRatForSizing =
-                    OutAirFrac * FinalSysSizing(airLoopIndex).PrecoolHumRat + (1 - OutAirFrac) * FinalSysSizing(airLoopIndex).RetHumRatAtCoolPeak;
+                    OutAirFrac * finalSysSizing.OutHumRatAtCoolPeak + (1 - OutAirFrac) * finalSysSizing.RetHumRatAtCoolPeak;
 
                 // calculate enthalpy based on simple mixing
                 Real64 CoilInEnthalpyForSizing =
-                    OutAirFrac * Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).PrecoolTemp, FinalSysSizing(airLoopIndex).PrecoolHumRat) +
-                    (1 - OutAirFrac) *
-                        Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).RetTempAtCoolPeak, FinalSysSizing(airLoopIndex).RetHumRatAtCoolPeak);
+                    OutAirFrac * Psychrometrics::PsyHFnTdbW(finalSysSizing.OutTempAtCoolPeak, finalSysSizing.OutHumRatAtCoolPeak) +
+                    (1 - OutAirFrac) * Psychrometrics::PsyHFnTdbW(finalSysSizing.RetTempAtCoolPeak, finalSysSizing.RetHumRatAtCoolPeak);
 
                 // back calculate temperature based on humrat and enthalpy state points
                 Real64 CoilInTempForSizing = Psychrometrics::PsyTdbFnHW(CoilInEnthalpyForSizing, CoilInHumRatForSizing);
 
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriDryBulb = CoilInTempForSizing;
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriHumRat = CoilInHumRatForSizing;
-            }
-        } else {
-            // else no coils exist in air loop so mix OA condition with return air condition
-            if (FinalSysSizing(airLoopIndex).DesMainVolFlow == 0.0) { // protect divide by 0
-                // doesn't matter, just pick a condition
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriDryBulb = FinalSysSizing(airLoopIndex).OutTempAtCoolPeak;
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriHumRat = FinalSysSizing(airLoopIndex).OutHumRatAtCoolPeak;
-            } else {
-                // OA frac is based on air loop fraction, not ATMixer flow fraction since air loop can serve multiple ATMixers
-                Real64 OutAirFrac = FinalSysSizing(airLoopIndex).DesOutAirVolFlow / FinalSysSizing(airLoopIndex).DesMainVolFlow;
-                OutAirFrac = min(1.0, max(0.0, OutAirFrac));
-
-                // calculate humrat based on simple mixing
-                Real64 CoilInHumRatForSizing = OutAirFrac * FinalSysSizing(airLoopIndex).OutHumRatAtCoolPeak +
-                                               (1 - OutAirFrac) * FinalSysSizing(airLoopIndex).RetHumRatAtCoolPeak;
-
-                // calculate enthalpy based on simple mixing
-                Real64 CoilInEnthalpyForSizing = OutAirFrac * Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).OutTempAtCoolPeak,
-                                                                                         FinalSysSizing(airLoopIndex).OutHumRatAtCoolPeak) +
-                                                 (1 - OutAirFrac) * Psychrometrics::PsyHFnTdbW(FinalSysSizing(airLoopIndex).RetTempAtCoolPeak,
-                                                                                               FinalSysSizing(airLoopIndex).RetHumRatAtCoolPeak);
-
-                // back calculate temperature based on humrat and enthalpy state points
-                Real64 CoilInTempForSizing = Psychrometrics::PsyTdbFnHW(CoilInEnthalpyForSizing, CoilInHumRatForSizing);
-
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriDryBulb = CoilInTempForSizing;
-                ZoneEqSizing(curZoneEqNum).ATMixerCoolPriHumRat = CoilInHumRatForSizing;
+                zoneEqSizing.ATMixerCoolPriDryBulb = CoilInTempForSizing;
+                zoneEqSizing.ATMixerCoolPriHumRat = CoilInHumRatForSizing;
             }
         }
 
@@ -6478,22 +5725,21 @@ void SingleDuctAirTerminal::reportTerminalUnit(EnergyPlusData &state)
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermTypeInp, adu.Name, this->sysType);
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermPrimFlow, adu.Name, this->MaxAirVolFlowRate);
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermSecdFlow, adu.Name, "n/a");
-    if (this->ZoneMinAirFracSchPtr > 0) {
-        OutputReportPredefined::PreDefTableEntry(
-            state, orp->pdchAirTermMinFlowSch, adu.Name, ScheduleManager::GetScheduleName(state, this->ZoneMinAirFracSchPtr));
+    if (this->zoneMinAirFracSched != nullptr) {
+        OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermMinFlowSch, adu.Name, this->zoneMinAirFracSched->Name);
     } else {
         OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermMinFlowSch, adu.Name, "n/a");
     }
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermMaxFlowReh, adu.Name, this->MaxAirVolFlowRateDuringReheat);
     std::string schName = "n/a";
     if (this->OARequirementsPtr > 0) {
-        int minOAsch = state.dataSize->OARequirements(this->OARequirementsPtr).OAFlowFracSchPtr;
-        if (minOAsch > 0) schName = ScheduleManager::GetScheduleName(state, minOAsch);
+        auto const *minOASched = state.dataSize->OARequirements(this->OARequirementsPtr).oaFlowFracSched;
+        if (minOASched != nullptr) schName = minOASched->Name;
     }
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermMinOAflowSch, adu.Name, schName);
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermHeatCoilType, adu.Name, this->ReheatComp);
     OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermCoolCoilType, adu.Name, "n/a");
-    if ((int)this->fanType >= 0) {
+    if (this->fanType != HVAC::FanType::Invalid) {
         OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermFanType, adu.Name, HVAC::fanTypeNames[(int)this->fanType]);
     } else {
         OutputReportPredefined::PreDefTableEntry(state, orp->pdchAirTermFanType, adu.Name, "n/a");

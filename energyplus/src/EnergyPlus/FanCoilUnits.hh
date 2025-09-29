@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -110,11 +110,11 @@ namespace FanCoilUnits {
         // Members
         // Input data
         int UnitType_Num = 0;
-        std::string Sched;                              // availability schedule
-        int SchedPtr = 0;                               // index to schedule
+        std::string availSchedName;                     // availability schedule
+        Sched::Schedule *availSched = nullptr;          // availability schedule
         std::string SchedOutAir;                        // outside air schedule, multipliy maximum outdoor air flow rate
-        int SchedOutAirPtr = 0;                         // index to outside air schedule
-        HVAC::FanType fanType = HVAC::FanType::Invalid; // index to fan type
+        Sched::Schedule *oaSched = nullptr;             // outside air schedule
+        HVAC::FanType fanType = HVAC::FanType::Invalid; // fan type
         int SpeedFanSel = 0;                            // Speed fan selected
         CCM CapCtrlMeth_Num = CCM::Invalid;
         Real64 PLR = 0.0;             // Part Load Ratio, fraction of time step fancoil is on
@@ -176,7 +176,7 @@ namespace FanCoilUnits {
         int ATMixerSecNode = 0;                                 // secondary air inlet node number for the air terminal mixer
         int HVACSizingIndex = 0;                                // index of a HVACSizing object for a fancoil unit
         Real64 SpeedRatio = 0.0;                                // speed ratio when the fan is cycling between stages
-        int FanOpModeSchedPtr = 0;                              // pointer to supply air fan operating mode schedule
+        Sched::Schedule *fanOpModeSched = nullptr;              // supply air fan operating mode schedule
         HVAC::FanOp fanOp = HVAC::FanOp::Cycling;               // 1=cycling fan cycling coil; 2=constant fan cycling coil
         bool ASHRAETempControl = false;                         // ASHRAE90.1 control to temperature set point when true
         Real64 QUnitOutNoHC = 0.0;                              // unit output with coils off [W]
@@ -187,21 +187,21 @@ namespace FanCoilUnits {
         int ConvgErrCountH = 0;                                 // count of SolveRoot iteration limit errors
         int ConvgErrCountC = 0;                                 // count of SolveRoot iteration limit errors
         // Report data
-        Real64 HeatPower = 0.0;          // unit heating output in watts
-        Real64 HeatEnergy = 0.0;         // unit heating output in J
-        Real64 TotCoolPower = 0.0;       // unit total cooling power output in watts
-        Real64 TotCoolEnergy = 0.0;      // unit total cooling energy output in joules
-        Real64 SensCoolPower = 0.0;      // unit sensible cooling power output in watts
-        Real64 SensCoolEnergy = 0.0;     // unit sensible cooling energy output in joules
-        Real64 ElecPower = 0.0;          // unit electric power consumption in watts
-        Real64 ElecEnergy = 0.0;         // unit electiric energy consumption in joules
-        Real64 DesCoolingLoad = 0.0;     // used for reporting in watts
-        Real64 DesHeatingLoad = 0.0;     // used for reporting in watts
-        Real64 DesZoneCoolingLoad = 0.0; // used for reporting in watts
-        Real64 DesZoneHeatingLoad = 0.0; // used for reporting in watts
-        int DSOAPtr = 0;                 // design specification outdoor air object index
-        bool FirstPass = true;           // detects first time through for resetting sizing data
-        int fanAvailSchIndex = 0;        // fan availability schedule index
+        Real64 HeatPower = 0.0;                   // unit heating output in watts
+        Real64 HeatEnergy = 0.0;                  // unit heating output in J
+        Real64 TotCoolPower = 0.0;                // unit total cooling power output in watts
+        Real64 TotCoolEnergy = 0.0;               // unit total cooling energy output in joules
+        Real64 SensCoolPower = 0.0;               // unit sensible cooling power output in watts
+        Real64 SensCoolEnergy = 0.0;              // unit sensible cooling energy output in joules
+        Real64 ElecPower = 0.0;                   // unit electric power consumption in watts
+        Real64 ElecEnergy = 0.0;                  // unit electiric energy consumption in joules
+        Real64 DesCoolingLoad = 0.0;              // used for reporting in watts
+        Real64 DesHeatingLoad = 0.0;              // used for reporting in watts
+        Real64 DesZoneCoolingLoad = 0.0;          // used for reporting in watts
+        Real64 DesZoneHeatingLoad = 0.0;          // used for reporting in watts
+        int DSOAPtr = 0;                          // design specification outdoor air object index
+        bool FirstPass = true;                    // detects first time through for resetting sizing data
+        Sched::Schedule *fanAvailSched = nullptr; // fan availability schedule index
 
         // SZVAV Model inputs
         std::string Name;                      // name of unit
@@ -418,6 +418,10 @@ struct FanCoilUnitsData : BaseGlobalStruct
     int CoilWaterOutletNode = 0;
     int ATMixOutNode = 0; // outlet node of ATM Mixer
     int ZoneNode = 0;     // zone node
+
+    void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
+    {
+    }
 
     void init_state([[maybe_unused]] EnergyPlusData &state) override
     {

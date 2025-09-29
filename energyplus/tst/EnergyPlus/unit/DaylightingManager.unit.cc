@@ -1,4 +1,4 @@
-// EnergyPlus, Copyright (c) 1996-2024, The Board of Trustees of the University of Illinois,
+// EnergyPlus, Copyright (c) 1996-2025, The Board of Trustees of the University of Illinois,
 // The Regents of the University of California, through Lawrence Berkeley National Laboratory
 // (subject to receipt of any required approvals from the U.S. Dept. of Energy), Oak Ridge
 // National Laboratory, managed by UT-Battelle, Alliance for Sustainable Energy, LLC, and other
@@ -130,6 +130,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -243,6 +244,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_3RefPt_
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -340,6 +342,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDayliteRefPt_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -404,6 +407,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputOutputIlluminanceMap_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -437,6 +441,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputOutputIlluminanceMap_Test)
 
 TEST_F(EnergyPlusFixture, DaylightingManager_doesDayLightingUseDElight_Test)
 {
+    state->init_state(*state);
     EXPECT_FALSE(doesDayLightingUseDElight(*state));
 
     auto &dl = state->dataDayltg;
@@ -854,13 +859,13 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
     bool foundErrors = false;
-
-    HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
-    EXPECT_FALSE(foundErrors);                                      // expect no errors
 
     Material::GetMaterialData(*state, foundErrors); // read material data
     EXPECT_FALSE(foundErrors);                      // expect no errors
@@ -876,10 +881,10 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(2);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(2);
 
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
 
@@ -890,11 +895,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
     EXPECT_FALSE(foundErrors);                               // expect no errors
     HeatBalanceIntRadExchange::InitSolarViewFactors(*state);
 
-    int constexpr HoursInDay(24);
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
     state->dataGlobal->PreviousHour = 1;
@@ -905,7 +905,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
     state->dataEnvrn->DayOfWeek = 2;
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
     state->dataInternalHeatGains->GetInternalHeatGainsInputFlag = false;
 
@@ -941,8 +941,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
     state->dataGlobal->WeightNow = 1.0;
     state->dataGlobal->WeightPreviousHour = 0.0;
 
-    state->dataSurface->SurfSunCosHourly.allocate(HoursInDay);
-    for (int hour = 1; hour <= HoursInDay; hour++) {
+    state->dataSurface->SurfSunCosHourly.allocate(Constant::iHoursInDay);
+    for (int hour = 1; hour <= Constant::iHoursInDay; hour++) {
         state->dataSurface->SurfSunCosHourly(hour) = 0.0;
     }
     CalcDayltgCoefficients(*state);
@@ -957,6 +957,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetDaylParamInGeoTrans_Test)
 
 TEST_F(EnergyPlusFixture, DaylightingManager_ProfileAngle_Test)
 {
+    state->init_state(*state);
 
     state->dataSurface->Surface.allocate(1);
     state->dataSurface->Surface(1).Tilt = 90.0;
@@ -989,6 +990,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_ProfileAngle_Test)
 
 TEST_F(EnergyPlusFixture, AssociateWindowShadingControlWithDaylighting_Test)
 {
+    state->init_state(*state);
+
     auto &dl = state->dataDayltg;
 
     state->dataGlobal->NumOfZones = 4;
@@ -1019,6 +1022,8 @@ TEST_F(EnergyPlusFixture, AssociateWindowShadingControlWithDaylighting_Test)
 
 TEST_F(EnergyPlusFixture, CreateShadeDeploymentOrder_test)
 {
+    state->init_state(*state);
+
     auto &dl = state->dataDayltg;
     state->dataSurface->TotWinShadingControl = 3;
     state->dataSurface->WindowShadingControl.allocate(state->dataSurface->TotWinShadingControl);
@@ -1098,6 +1103,7 @@ TEST_F(EnergyPlusFixture, CreateShadeDeploymentOrder_test)
 
 TEST_F(EnergyPlusFixture, MapShadeDeploymentOrderToLoopNumber_Test)
 {
+    state->init_state(*state);
     auto &dl = state->dataDayltg;
     state->dataSurface->TotWinShadingControl = 3;
     state->dataSurface->WindowShadingControl.allocate(state->dataSurface->TotWinShadingControl);
@@ -1416,9 +1422,9 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
 
     auto &dl = state->dataDayltg;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->init_state(*state);
+
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 10;
     state->dataGlobal->PreviousHour = 9;
@@ -1429,8 +1435,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     state->dataEnvrn->HolidayIndex = 0;
 
     bool foundErrors = false;
-    HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
-    EXPECT_FALSE(foundErrors);                                      // expect no errors
 
     Material::GetMaterialData(*state, foundErrors); // read material data
     EXPECT_FALSE(foundErrors);                      // expect no errors
@@ -1456,7 +1460,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
 
     // Set the following values to make thisDaylightControl.SourceLumFromWinAtRefPt much larger than
     // luminance threshold of 2000 (WindowShadingControl SetPoint2)
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         dl->horIllum[iHr].sky = {8.0, 8.0, 8.0, 8.0};
     }
     state->dataGlobal->WeightNow = 0.54;
@@ -1468,7 +1472,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     int numExtWins = dl->enclDaylight(1).TotalExtWindows;
     int numRefPts = thisDaylgtCtrl.TotalDaylRefPoints;
 
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
                 for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
@@ -1495,7 +1499,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     EXPECT_TRUE(state->dataSurface->SurfWinShadingFlag(ISurf) == WinShadingType::IntShade);
 
     // Set the following values to make thisDaylightControl.SourceLumFromWinAtRefPt 0
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         dl->horIllum[iHr].sky = {100.0, 100.0, 100.0, 100.0};
     }
     state->dataGlobal->WeightNow = 1.0;
@@ -1503,7 +1507,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_LuminanceShadin
     state->dataEnvrn->HISKF = 100.0;
     state->dataEnvrn->SkyClearness = 6.0;
 
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
                 for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
@@ -1743,11 +1747,11 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
 
     ASSERT_TRUE(process_idf(idf_objects));
 
+    state->dataGlobal->TimeStepsInHour = 1;
+    state->init_state(*state);
+
     auto &dl = state->dataDayltg;
 
-    state->dataGlobal->NumOfTimeStepInHour = 1;
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 10;
     state->dataGlobal->PreviousHour = 10;
@@ -1758,8 +1762,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
     state->dataEnvrn->HolidayIndex = 0;
 
     bool foundErrors = false;
-    HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
-    EXPECT_FALSE(foundErrors);                                      // expect no errors
 
     Material::GetMaterialData(*state, foundErrors); // read material data
     EXPECT_FALSE(foundErrors);                      // expect no errors
@@ -1782,7 +1784,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
     Dayltg::GetInputDayliteRefPt(*state, foundErrors);
     Dayltg::GetDaylightingParametersInput(*state);
 
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         dl->horIllum[iHr].sky = {100.0, 100.0, 100.0, 100.0};
     }
 
@@ -1795,7 +1797,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
     int numExtWins = dl->enclDaylight(1).TotalExtWindows;
     int numRefPts = thisDaylgtCtrl.TotalDaylRefPoints;
 
-    for (int iHr = 1; iHr <= Constant::HoursInDay; ++iHr) {
+    for (int iHr = 1; iHr <= Constant::iHoursInDay; ++iHr) {
         for (int iWin = 1; iWin <= numExtWins; ++iWin) {
             for (int iRefPt = 1; iRefPt <= numRefPts; ++iRefPt) {
                 for (int iWinCover = 0; iWinCover < (int)WinCover::Num; ++iWinCover) {
@@ -1855,7 +1857,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgInteriorIllum_Test)
 // yet with double rounding errors it throws a severe about sum of fraction > 1.0
 TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_RoundingError)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  West Zone,               !- Name",
@@ -1986,6 +1987,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_Roundin
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -2054,7 +2056,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_Roundin
 
 TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_NotAroundOne)
 {
-
     std::string const idf_objects = delimited_string({
         "Zone,",
         "  West Zone,               !- Name",
@@ -2105,6 +2106,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_GetInputDaylightingControls_NotArou
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -2551,13 +2553,13 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->dataGlobal->TimeStepsInHour = 1;    // must initialize this to get schedules initialized
+    state->dataGlobal->MinutesInTimeStep = 60; // must initialize this to get schedules initialized
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
     bool foundErrors = false;
-
-    HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
-    EXPECT_FALSE(foundErrors);                                      // expect no errors
 
     Material::GetMaterialData(*state, foundErrors); // read material data
     EXPECT_FALSE(foundErrors);                      // expect no errors
@@ -2577,10 +2579,10 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(2);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(2);
 
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
 
@@ -2591,11 +2593,6 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
     EXPECT_FALSE(foundErrors);                               // expect no errors
     HeatBalanceIntRadExchange::InitSolarViewFactors(*state);
 
-    int constexpr HoursInDay(24);
-    state->dataGlobal->NumOfTimeStepInHour = 1; // must initialize this to get schedules initialized
-    state->dataGlobal->MinutesPerTimeStep = 60; // must initialize this to get schedules initialized
-    ScheduleManager::ProcessScheduleInput(*state);
-    state->dataScheduleMgr->ScheduleInputProcessed = true;
     state->dataGlobal->TimeStep = 1;
     state->dataGlobal->HourOfDay = 1;
     state->dataGlobal->PreviousHour = 1;
@@ -2607,7 +2604,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
     state->dataEnvrn->HolidayIndex = 0;
     state->dataEnvrn->CurMnDy = "01/21";
     state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
-    ScheduleManager::UpdateScheduleValues(*state);
+    Sched::UpdateScheduleVals(*state);
     InternalHeatGains::GetInternalHeatGainsInput(*state);
     state->dataInternalHeatGains->GetInternalHeatGainsInputFlag = false;
 
@@ -2661,8 +2658,8 @@ TEST_F(EnergyPlusFixture, DaylightingManager_OutputFormats)
     state->dataGlobal->BeginSimFlag = true;
     state->dataGlobal->WeightNow = 1.0;
     state->dataGlobal->WeightPreviousHour = 0.0;
-    state->dataSurface->SurfSunCosHourly.allocate(HoursInDay);
-    for (int hour = 1; hour <= HoursInDay; hour++) {
+    state->dataSurface->SurfSunCosHourly.allocate(Constant::iHoursInDay);
+    for (int hour = 1; hour <= Constant::iHoursInDay; hour++) {
         state->dataSurface->SurfSunCosHourly(hour) = 0.0;
     }
     CalcDayltgCoefficients(*state);
@@ -3337,10 +3334,9 @@ TEST_F(EnergyPlusFixture, DaylightingManager_TDD_NoDaylightingControls)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    bool foundErrors = false;
+    state->init_state(*state);
 
-    HeatBalanceManager::GetProjectControlData(*state, foundErrors); // read project control data
-    EXPECT_FALSE(foundErrors);                                      // expect no errors
+    bool foundErrors = false;
 
     Material::GetMaterialData(*state, foundErrors); // read material data
     EXPECT_FALSE(foundErrors);                      // expect no errors
@@ -3355,10 +3351,10 @@ TEST_F(EnergyPlusFixture, DaylightingManager_TDD_NoDaylightingControls)
     state->dataSurfaceGeometry->CosZoneRelNorth.allocate(2);
     state->dataSurfaceGeometry->SinZoneRelNorth.allocate(2);
 
-    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
-    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRadians);
+    state->dataSurfaceGeometry->CosZoneRelNorth(1) = std::cos(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(1) = std::sin(-state->dataHeatBal->Zone(1).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->CosZoneRelNorth(2) = std::cos(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
+    state->dataSurfaceGeometry->SinZoneRelNorth(2) = std::sin(-state->dataHeatBal->Zone(2).RelNorth * Constant::DegToRad);
     state->dataSurfaceGeometry->CosBldgRelNorth = 1.0;
     state->dataSurfaceGeometry->SinBldgRelNorth = 0.0;
     int constexpr HoursInDay(24);
@@ -3388,6 +3384,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_TDD_NoDaylightingControls)
 
 TEST_F(EnergyPlusFixture, DaylightingManager_ReportillumMaps)
 {
+    state->init_state(*state);
     auto &dl = state->dataDayltg;
 
     int MapNum = 1;
@@ -3423,6 +3420,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_ReportillumMaps)
     EXPECT_EQ(expectedResultName, dl->illumMaps(1).Name);
     EXPECT_EQ(expectedResultPtsHeader, dl->illumMaps(MapNum).pointsHeader);
 }
+
 TEST_F(EnergyPlusFixture, DaylightingManager_DayltgIlluminanceMap)
 {
     std::string const idf_objects = delimited_string({
@@ -3697,6 +3695,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgIlluminanceMap)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state);
 
     auto &dl = state->dataDayltg;
 
@@ -3725,6 +3724,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_DayltgIlluminanceMap)
 
 TEST_F(EnergyPlusFixture, DaylightingManager_SteppedControl_LowDaylightConditions)
 {
+    state->init_state(*state);
     // Test for #9060
     auto &dl = state->dataDayltg;
 
@@ -3747,7 +3747,7 @@ TEST_F(EnergyPlusFixture, DaylightingManager_SteppedControl_LowDaylightCondition
     thisDaylightControl.DaylightMethod = DaylightingMethod::SplitFlux;
     thisDaylightControl.LightControlType = LtgCtrlType::Stepped;
     thisDaylightControl.LightControlProbability = 1.0;
-    thisDaylightControl.AvailSchedNum = -1; // Always Available
+    thisDaylightControl.availSched = Sched::GetScheduleAlwaysOn(*state); // Always Available
     thisDaylightControl.LightControlSteps = 4;
 
     dl->DaylIllum.allocate(nRefPts);
