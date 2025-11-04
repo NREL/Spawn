@@ -98,11 +98,19 @@ TEST_CASE("Test Zone Group Sizing Variables")
            {{ "name": "Perimeter_ZN_3" }},
            {{ "name": "Perimeter_ZN_4" }}
           ]
+        }},{{
+          "name": "default",
+          "zones": [
+           {{ "name": "Attic" }}
+          ]
         }}],
         "hvacSystems": [{{
           "name": "conditioned_zones",
           "autosize": "true"
-        }}]
+        }},{{
+          "name": "default",
+          "autosize": "false"
+       }}]
       }}
     }})",
       fmt::arg("idfpath", idfpath.generic_string()),
@@ -137,6 +145,33 @@ TEST_CASE("Test Zone Group Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("hvac_sizing_group_conditioned_zones_tHea");
   CHECK(value > 0.0);
+
+  // The default group contains only the Attic, which does not have sizing information.
+  // We should expect default sizing values.
+  value = spawn1.GetValue("hvac_sizing_group_default_QCooSen_flow");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_QCooLat_flow");
+  // The Sizing:Zone input for "Zone Load Sizing Method" defaults to "Sensible Load Only No Latent Load",
+  // and most common IDFs use this option, therefore we will not have latent loads reported.
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_TOutCoo");
+  CHECK(value > 0.0);
+  value = spawn1.GetValue("hvac_sizing_group_default_XOutCoo");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_mOutCoo_flow");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_tCoo");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_QHea_flow");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_TOutHea");
+  CHECK(value > 0.0);
+  value = spawn1.GetValue("hvac_sizing_group_default_XOutHea");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_mOutHea_flow");
+  CHECK(value == Approx(0.0));
+  value = spawn1.GetValue("hvac_sizing_group_default_tHea");
+  CHECK(value == Approx(0.0));
 
   spawn1.Stop();
 }
