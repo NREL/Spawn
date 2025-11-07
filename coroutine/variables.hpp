@@ -388,12 +388,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit QCooSenFlow(Variables &variables, const std::string_view zone_name);
+    explicit QCooSenFlow(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class QCooLatFlow : public Parameter
@@ -401,12 +402,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit QCooLatFlow(Variables &variables, const std::string_view zone_name);
+    explicit QCooLatFlow(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class TOutCoo : public Parameter
@@ -414,12 +416,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit TOutCoo(Variables &variables, const std::string_view zone_name);
+    explicit TOutCoo(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class XOutCoo : public Parameter
@@ -427,12 +430,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit XOutCoo(Variables &variables, const std::string_view zone_name);
+    explicit XOutCoo(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class MOutCooFlow : public Parameter
@@ -440,12 +444,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit MOutCooFlow(Variables &variables, const std::string_view zone_name);
+    explicit MOutCooFlow(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class TCoo : public Parameter
@@ -453,12 +458,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit TCoo(Variables &variables, const std::string_view zone_name);
+    explicit TCoo(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class QHeaFlow : public Parameter
@@ -466,12 +472,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit QHeaFlow(Variables &variables, const std::string_view zone_name);
+    explicit QHeaFlow(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class TOutHea : public Parameter
@@ -479,12 +486,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit TOutHea(Variables &variables, const std::string_view zone_name);
+    explicit TOutHea(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class XOutHea : public Parameter
@@ -492,12 +500,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit XOutHea(Variables &variables, const std::string_view zone_name);
+    explicit XOutHea(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class MOutHeaFlow : public Parameter
@@ -505,12 +514,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit MOutHeaFlow(Variables &variables, const std::string_view zone_name);
+    explicit MOutHeaFlow(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 
   class THea : public Parameter
@@ -518,12 +528,13 @@ namespace zone {
     friend class variable::Variables;
 
   private:
-    explicit THea(Variables &variables, const std::string_view zone_name);
+    explicit THea(Variables &variables, const std::string_view zone_name, bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool log_missing_sizing_;
   };
 } // namespace zone
 
@@ -535,12 +546,14 @@ namespace zone_group_sizing {
   private:
     explicit QCooSenFlow(Variables &variables,
                          const std::string_view group_name,
-                         const std::vector<std::string> &zone_names);
+                         const std::vector<std::string> &zone_names,
+                         bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class QCooLatFlow : public Parameter
@@ -550,12 +563,14 @@ namespace zone_group_sizing {
   private:
     explicit QCooLatFlow(Variables &variables,
                          const std::string_view group_name,
-                         const std::vector<std::string> &zone_names);
+                         const std::vector<std::string> &zone_names,
+                         bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class TOutCoo : public Parameter
@@ -565,12 +580,14 @@ namespace zone_group_sizing {
   private:
     explicit TOutCoo(Variables &variables,
                      const std::string_view group_name,
-                     const std::vector<std::string> &zone_names);
+                     const std::vector<std::string> &zone_names,
+                     bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class XOutCoo : public Parameter
@@ -580,12 +597,14 @@ namespace zone_group_sizing {
   private:
     explicit XOutCoo(Variables &variables,
                      const std::string_view group_name,
-                     const std::vector<std::string> &zone_names);
+                     const std::vector<std::string> &zone_names,
+                     bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class MOutCooFlow : public Parameter
@@ -595,12 +614,14 @@ namespace zone_group_sizing {
   private:
     explicit MOutCooFlow(Variables &variables,
                          const std::string_view group_name,
-                         const std::vector<std::string> &zone_names);
+                         const std::vector<std::string> &zone_names,
+                         bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class TCoo : public Parameter
@@ -608,12 +629,16 @@ namespace zone_group_sizing {
     friend class variable::Variables;
 
   private:
-    explicit TCoo(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names);
+    explicit TCoo(Variables &variables,
+                  const std::string_view group_name,
+                  const std::vector<std::string> &zone_names,
+                  bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class QHeaFlow : public Parameter
@@ -623,12 +648,14 @@ namespace zone_group_sizing {
   private:
     explicit QHeaFlow(Variables &variables,
                       const std::string_view group_name,
-                      const std::vector<std::string> &zone_names);
+                      const std::vector<std::string> &zone_names,
+                      bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class TOutHea : public Parameter
@@ -638,12 +665,14 @@ namespace zone_group_sizing {
   private:
     explicit TOutHea(Variables &variables,
                      const std::string_view group_name,
-                     const std::vector<std::string> &zone_names);
+                     const std::vector<std::string> &zone_names,
+                     bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class XOutHea : public Parameter
@@ -653,12 +682,14 @@ namespace zone_group_sizing {
   private:
     explicit XOutHea(Variables &variables,
                      const std::string_view group_name,
-                     const std::vector<std::string> &zone_names);
+                     const std::vector<std::string> &zone_names,
+                     bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class MOutHeaFlow : public Parameter
@@ -668,12 +699,14 @@ namespace zone_group_sizing {
   private:
     explicit MOutHeaFlow(Variables &variables,
                          const std::string_view group_name,
-                         const std::vector<std::string> &zone_names);
+                         const std::vector<std::string> &zone_names,
+                         bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 
   class THea : public Parameter
@@ -681,12 +714,16 @@ namespace zone_group_sizing {
     friend class variable::Variables;
 
   private:
-    explicit THea(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names);
+    explicit THea(Variables &variables,
+                  const std::string_view group_name,
+                  const std::vector<std::string> &zone_names,
+                  bool log_missing);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
+    bool log_missing_sizing_;
   };
 } // namespace zone_group_sizing
 

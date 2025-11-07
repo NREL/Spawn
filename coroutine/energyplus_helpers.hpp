@@ -45,62 +45,97 @@ bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_
 
 namespace zone_sizing {
 
-  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                           int zone_num,
+                                           bool log_missing = true);
 
-  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                         int zone_num,
+                                         bool log_missing = true);
 
-  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             int zone_num,
+                                             bool log_missing = true);
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      int zone_num,
+                                                      bool log_missing = true);
 
-  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      int zone_num,
+                                      bool log_missing = true);
 
-  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                   int zone_num,
+                                   bool log_missing = true);
 
-  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             int zone_num,
+                                             bool log_missing = true);
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      int zone_num,
+                                                      bool log_missing = true);
 
-  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      int zone_num,
+                                      bool log_missing = true);
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 int zone_num,
+                                 bool log_missing = true);
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 int zone_num,
+                                 bool log_missing = true);
 
 } // namespace zone_sizing
 
 namespace zone_group_sizing {
 
   [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                           const std::vector<int> &zone_nums);
+                                           const std::vector<int> &zone_nums,
+                                           bool log_missing = true);
 
   [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                         const std::vector<int> &zone_nums);
+                                         const std::vector<int> &zone_nums,
+                                         bool log_missing = true);
 
   [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             const std::vector<int> &zone_nums);
+                                             const std::vector<int> &zone_nums,
+                                             bool log_missing = true);
 
   [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      const std::vector<int> &zone_nums);
+                                                      const std::vector<int> &zone_nums,
+                                                      bool log_missing = true);
 
   [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      const std::vector<int> &zone_nums);
+                                      const std::vector<int> &zone_nums,
+                                      bool log_missing = true);
 
   [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                   const std::vector<int> &zone_nums);
+                                   const std::vector<int> &zone_nums,
+                                   bool log_missing = true);
 
   [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             const std::vector<int> &zone_nums);
+                                             const std::vector<int> &zone_nums,
+                                             bool log_missing = true);
 
   [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      const std::vector<int> &zone_nums);
+                                                      const std::vector<int> &zone_nums,
+                                                      bool log_missing = true);
 
   [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      const std::vector<int> &zone_nums);
+                                      const std::vector<int> &zone_nums,
+                                      bool log_missing = true);
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums);
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 const std::vector<int> &zone_nums,
+                                 bool log_missing = true);
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums);
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 const std::vector<int> &zone_nums,
+                                 bool log_missing = true);
 
 } // namespace zone_group_sizing
 

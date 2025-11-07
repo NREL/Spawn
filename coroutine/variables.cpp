@@ -708,14 +708,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<QCooSenFlow>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<QCooSenFlow>(variables, zone_name, log_missing);
     }
   }
 
-  QCooSenFlow::QCooSenFlow(Variables &variables, const std::string_view zone_name) // NOLINT
+  QCooSenFlow::QCooSenFlow(Variables &variables, const std::string_view zone_name, bool log_missing) // NOLINT
       : Parameter(variables, std::string(zone_name) + "_QCooSen_flow", units::UnitType::W, units::UnitType::W),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -733,7 +735,8 @@ namespace zone {
 
   void QCooSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::SensibleCoolingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::SensibleCoolingLoad(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -743,14 +746,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<QCooLatFlow>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<QCooLatFlow>(variables, zone_name, log_missing);
     }
   }
 
-  QCooLatFlow::QCooLatFlow(Variables &variables, const std::string_view zone_name) // NOLINT
+  QCooLatFlow::QCooLatFlow(Variables &variables, const std::string_view zone_name, bool log_missing) // NOLINT
       : Parameter(variables, std::string(zone_name) + "_QCooLat_flow", units::UnitType::W, units::UnitType::W),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -768,7 +773,8 @@ namespace zone {
 
   void QCooLatFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::LatentCoolingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::LatentCoolingLoad(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -778,14 +784,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<TOutCoo>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<TOutCoo>(variables, zone_name, log_missing);
     }
   }
 
-  TOutCoo::TOutCoo(Variables &variables, const std::string_view zone_name) // NOLINT
+  TOutCoo::TOutCoo(Variables &variables, const std::string_view zone_name, bool log_missing) // NOLINT
       : Parameter(variables, std::string(zone_name) + "_TOutCoo", units::UnitType::C, units::UnitType::K),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -803,7 +811,8 @@ namespace zone {
 
   void TOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakCool(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -813,14 +822,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<XOutCoo>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<XOutCoo>(variables, zone_name, log_missing);
     }
   }
 
-  XOutCoo::XOutCoo(Variables &variables, const std::string_view zone_name) // NOLINT
+  XOutCoo::XOutCoo(Variables &variables, const std::string_view zone_name, bool log_missing) // NOLINT
       : Parameter(variables, std::string(zone_name) + "_XOutCoo", units::UnitType::one, units::UnitType::one),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -838,9 +849,9 @@ namespace zone {
 
   void XOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_sizing::OutdoorHumidityRatioAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::OutdoorHumidityRatioAtPeakCool(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void MOutCooFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -849,15 +860,17 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<MOutCooFlow>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<MOutCooFlow>(variables, zone_name, log_missing);
     }
   }
 
-  MOutCooFlow::MOutCooFlow(Variables &variables, const std::string_view zone_name)
+  MOutCooFlow::MOutCooFlow(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(
             variables, std::string(zone_name) + "_mOutCoo_flow", units::UnitType::kg_per_s, units::UnitType::kg_per_s),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -875,7 +888,8 @@ namespace zone {
 
   void MOutCooFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::MinCoolOA(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::MinCoolOA(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -885,14 +899,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<TCoo>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<TCoo>(variables, zone_name, log_missing);
     }
   }
 
-  TCoo::TCoo(Variables &variables, const std::string_view zone_name)
+  TCoo::TCoo(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(variables, std::string(zone_name) + "_tCoo", units::UnitType::s, units::UnitType::s),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -910,7 +926,8 @@ namespace zone {
 
   void TCoo::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakCool(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakCool(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -920,14 +937,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<QHeaFlow>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<QHeaFlow>(variables, zone_name, log_missing);
     }
   }
 
-  QHeaFlow::QHeaFlow(Variables &variables, const std::string_view zone_name)
+  QHeaFlow::QHeaFlow(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(variables, std::string(zone_name) + "_QHea_flow", units::UnitType::W, units::UnitType::W),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -945,7 +964,8 @@ namespace zone {
 
   void QHeaFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::HeatingLoad(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::HeatingLoad(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -955,14 +975,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<TOutHea>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<TOutHea>(variables, zone_name, log_missing);
     }
   }
 
-  TOutHea::TOutHea(Variables &variables, const std::string_view zone_name)
+  TOutHea::TOutHea(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(variables, std::string(zone_name) + "_TOutHea", units::UnitType::C, units::UnitType::K),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -980,7 +1002,8 @@ namespace zone {
 
   void TOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::OutdoorTempAtPeakHeat(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -990,14 +1013,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<XOutHea>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<XOutHea>(variables, zone_name, log_missing);
     }
   }
 
-  XOutHea::XOutHea(Variables &variables, const std::string_view zone_name) // NOLINT
+  XOutHea::XOutHea(Variables &variables, const std::string_view zone_name, bool log_missing) // NOLINT
       : Parameter(variables, std::string(zone_name) + "_XOutHea", units::UnitType::one, units::UnitType::one),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1015,9 +1040,9 @@ namespace zone {
 
   void XOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_sizing::OutdoorHumidityRatioAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::OutdoorHumidityRatioAtPeakHeat(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void MOutHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1026,15 +1051,17 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<MOutHeaFlow>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<MOutHeaFlow>(variables, zone_name, log_missing);
     }
   }
 
-  MOutHeaFlow::MOutHeaFlow(Variables &variables, const std::string_view zone_name)
+  MOutHeaFlow::MOutHeaFlow(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(
             variables, std::string(zone_name) + "_mOutHea_flow", units::UnitType::kg_per_s, units::UnitType::kg_per_s),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1052,7 +1079,8 @@ namespace zone {
 
   void MOutHeaFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::MinHeatOA(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::MinHeatOA(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1062,14 +1090,16 @@ namespace zone {
 
     for (const auto &zone : zones) {
       const auto zone_name = zone.value("name", "");
-      Variables::CreateOne<THea>(variables, zone_name);
+      const bool log_missing = Variables::ShouldAutosizeZone(user_config, zone_name);
+      Variables::CreateOne<THea>(variables, zone_name, log_missing);
     }
   }
 
-  THea::THea(Variables &variables, const std::string_view zone_name)
+  THea::THea(Variables &variables, const std::string_view zone_name, bool log_missing)
       : Parameter(variables, std::string(zone_name) + "_tHea", units::UnitType::s, units::UnitType::s),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1087,7 +1117,8 @@ namespace zone {
 
   void THea::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakHeat(energyplus_data, zone_num_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_sizing::TimeAtPeakHeat(
+                           energyplus_data, zone_num_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1104,19 +1135,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<QCooSenFlow>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<QCooSenFlow>(variables, group_name, zone_names, log_missing);
     }
   }
 
   QCooSenFlow::QCooSenFlow(Variables &variables,
                            const std::string_view group_name,
-                           const std::vector<std::string> &zone_names) // NOLINT
+                           const std::vector<std::string> &zone_names,
+                           bool log_missing) // NOLINT
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_QCooSen_flow",
                   units::UnitType::W,
                   units::UnitType::W),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1135,7 +1169,8 @@ namespace zone_group_sizing {
   void QCooSenFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
     Variable::SetValue(
-        energyplus::zone_group_sizing::SensibleCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+        energyplus::zone_group_sizing::SensibleCoolingLoad(
+            energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
         units::UnitSystem::EP);
   }
 
@@ -1149,19 +1184,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<QCooLatFlow>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<QCooLatFlow>(variables, group_name, zone_names, log_missing);
     }
   }
 
   QCooLatFlow::QCooLatFlow(Variables &variables,
                            const std::string_view group_name,
-                           const std::vector<std::string> &zone_names) // NOLINT
+                           const std::vector<std::string> &zone_names,
+                           bool log_missing) // NOLINT
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_QCooLat_flow",
                   units::UnitType::W,
                   units::UnitType::W),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1179,9 +1217,9 @@ namespace zone_group_sizing {
 
   void QCooLatFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_group_sizing::LatentCoolingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::LatentCoolingLoad(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void TOutCoo::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1194,19 +1232,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<TOutCoo>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<TOutCoo>(variables, group_name, zone_names, log_missing);
     }
   }
 
   TOutCoo::TOutCoo(Variables &variables,
                    const std::string_view group_name,
-                   const std::vector<std::string> &zone_names) // NOLINT
+                   const std::vector<std::string> &zone_names,
+                   bool log_missing) // NOLINT
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_TOutCoo",
                   units::UnitType::C,
                   units::UnitType::K),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1224,9 +1265,9 @@ namespace zone_group_sizing {
 
   void TOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_group_sizing::OutdoorTempAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::OutdoorTempAtPeakCool(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void XOutCoo::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1239,17 +1280,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<XOutCoo>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<XOutCoo>(variables, group_name, zone_names, log_missing);
     }
   }
 
-  XOutCoo::XOutCoo(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
+  XOutCoo::XOutCoo(Variables &variables,
+                   const std::string_view group_name,
+                   const std::vector<std::string> &zone_names,
+                   bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_XOutCoo",
                   units::UnitType::one,
                   units::UnitType::one),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1267,9 +1313,9 @@ namespace zone_group_sizing {
 
   void XOutCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_group_sizing::OutdoorHumidityRatioAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::OutdoorHumidityRatioAtPeakCool(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void MOutCooFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1282,19 +1328,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<MOutCooFlow>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<MOutCooFlow>(variables, group_name, zone_names, log_missing);
     }
   }
 
   MOutCooFlow::MOutCooFlow(Variables &variables,
                            const std::string_view group_name,
-                           const std::vector<std::string> &zone_names)
+                           const std::vector<std::string> &zone_names,
+                           bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_mOutCoo_flow",
                   units::UnitType::kg_per_s,
                   units::UnitType::kg_per_s),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1312,7 +1361,8 @@ namespace zone_group_sizing {
 
   void MOutCooFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_group_sizing::MinCoolOA(energyplus_data, zone_nums_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_group_sizing::MinCoolOA(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1326,17 +1376,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<TCoo>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<TCoo>(variables, group_name, zone_names, log_missing);
     }
   }
 
-  TCoo::TCoo(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
+  TCoo::TCoo(Variables &variables,
+             const std::string_view group_name,
+             const std::vector<std::string> &zone_names,
+             bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_tCoo",
                   units::UnitType::s,
                   units::UnitType::s),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1354,7 +1409,8 @@ namespace zone_group_sizing {
 
   void TCoo::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_group_sizing::TimeAtPeakCool(energyplus_data, zone_nums_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_group_sizing::TimeAtPeakCool(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1368,19 +1424,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<QHeaFlow>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<QHeaFlow>(variables, group_name, zone_names, log_missing);
     }
   }
 
   QHeaFlow::QHeaFlow(Variables &variables,
                      const std::string_view group_name,
-                     const std::vector<std::string> &zone_names)
+                     const std::vector<std::string> &zone_names,
+                     bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_QHea_flow",
                   units::UnitType::W,
                   units::UnitType::W),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1398,7 +1457,8 @@ namespace zone_group_sizing {
 
   void QHeaFlow::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_group_sizing::HeatingLoad(energyplus_data, zone_nums_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_group_sizing::HeatingLoad(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1412,17 +1472,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<TOutHea>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<TOutHea>(variables, group_name, zone_names, log_missing);
     }
   }
 
-  TOutHea::TOutHea(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
+  TOutHea::TOutHea(Variables &variables,
+                   const std::string_view group_name,
+                   const std::vector<std::string> &zone_names,
+                   bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_TOutHea",
                   units::UnitType::C,
                   units::UnitType::K),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1440,9 +1505,9 @@ namespace zone_group_sizing {
 
   void TOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_group_sizing::OutdoorTempAtPeakHeat(energyplus_data, zone_nums_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::OutdoorTempAtPeakHeat(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void XOutHea::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1455,17 +1520,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<XOutHea>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<XOutHea>(variables, group_name, zone_names, log_missing);
     }
   }
 
-  XOutHea::XOutHea(Variables &variables, const std::string_view group_name, const std::vector<std::string> &zone_names)
+  XOutHea::XOutHea(Variables &variables,
+                   const std::string_view group_name,
+                   const std::vector<std::string> &zone_names,
+                   bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_XOutHea",
                   units::UnitType::one,
                   units::UnitType::one),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1483,9 +1553,9 @@ namespace zone_group_sizing {
 
   void XOutHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::zone_group_sizing::OutdoorHumidityRatioAtPeakHeat(energyplus_data, zone_nums_.get(energyplus_data)),
-        units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_group_sizing::OutdoorHumidityRatioAtPeakHeat(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
+                       units::UnitSystem::EP);
   }
 
   void MOutHeaFlow::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -1498,19 +1568,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<MOutHeaFlow>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<MOutHeaFlow>(variables, group_name, zone_names, log_missing);
     }
   }
 
   MOutHeaFlow::MOutHeaFlow(Variables &variables,
                            const std::string_view group_name,
-                           const std::vector<std::string> &zone_names)
+                           const std::vector<std::string> &zone_names,
+                           bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_mOutHea_flow",
                   units::UnitType::kg_per_s,
                   units::UnitType::kg_per_s),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1528,7 +1601,8 @@ namespace zone_group_sizing {
 
   void MOutHeaFlow::Update([[maybe_unused]] EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_group_sizing::MinHeatOA(energyplus_data, zone_nums_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_group_sizing::MinHeatOA(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 
@@ -1542,19 +1616,22 @@ namespace zone_group_sizing {
       auto zone_names = std::vector<std::string>(zones.size());
       std::transform(
           zones.begin(), zones.end(), zone_names.begin(), [](const auto &zone) { return zone.value("name", ""); });
-      Variables::CreateOne<THea>(variables, group_name, zone_names);
+      const bool log_missing = Variables::ShouldAutosizeGroup(user_config, group_name);
+      Variables::CreateOne<THea>(variables, group_name, zone_names, log_missing);
     }
   }
 
   THea::THea(Variables &variables,
              const std::string_view group_name,
-             const std::vector<std::string> &zone_names)
+             const std::vector<std::string> &zone_names,
+             bool log_missing)
       : Parameter(variables,
                   std::string("hvac_sizing_group_") + std::string(group_name) + "_tHea",
                   units::UnitType::s,
                   units::UnitType::s),
         zone_names_(zone_names),
-        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); })
+        zone_nums_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNums(data, zone_names_); }),
+        log_missing_sizing_(log_missing)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
@@ -1572,7 +1649,8 @@ namespace zone_group_sizing {
 
   void THea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(energyplus::zone_group_sizing::TimeAtPeakHeat(energyplus_data, zone_nums_.get(energyplus_data)),
+    Variable::SetValue(energyplus::zone_group_sizing::TimeAtPeakHeat(
+                           energyplus_data, zone_nums_.get(energyplus_data), log_missing_sizing_),
                        units::UnitSystem::EP);
   }
 } // namespace zone_group_sizing

@@ -2,8 +2,8 @@
 
 // C++ standard library headers
 #include <algorithm>
-#include <string_view>
 #include <stdexcept>
+#include <string_view>
 
 // EnergyPlus headers
 #include <DataEnvironment.hh>
@@ -106,8 +106,15 @@ int ZoneNum(EnergyPlus::EnergyPlusData &energyplus_data, const std::string_view 
 
 namespace {
 
-  void LogMissingSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, std::string_view context)
+  void LogMissingSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data,
+                            int zone_num,
+                            std::string_view context,
+                            bool should_log)
   {
+    if (!should_log) {
+      return;
+    }
+
     if (zone_num <= 0) {
       spdlog::warn("No sizing information available for zone index {} while computing {}", zone_num, context);
       return;
@@ -155,7 +162,9 @@ bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_
 }
 
 // this function will filter zone_nums to only those with sizing information
-std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, std::vector<int> zone_nums)
+std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                     std::vector<int> zone_nums,
+                                     bool log_missing)
 {
   std::vector<int> result;
 
@@ -163,7 +172,7 @@ std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplu
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       result.push_back(zone_num);
     } else {
-      LogMissingSizingInfo(energyplus_data, zone_num, "zone group sizing");
+      LogMissingSizingInfo(energyplus_data, zone_num, "zone group sizing", log_missing);
     }
   }
 
@@ -172,47 +181,57 @@ std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplu
 
 namespace zone_sizing {
 
-  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                           int zone_num,
+                                           bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolLoad;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::SensibleCoolingLoad");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::SensibleCoolingLoad", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                         int zone_num,
+                                         bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).DesLatentCoolLoad;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::LatentCoolingLoad");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::LatentCoolingLoad", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             int zone_num,
+                                             bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).OutTempAtCoolPeak;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorTempAtPeakCool");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorTempAtPeakCool", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      int zone_num,
+                                                      bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).OutHumRatAtCoolPeak;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorHumidityRatioAtPeakCool");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorHumidityRatioAtPeakCool", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      int zone_num,
+                                      bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       // TODO: Are we sure this is right when the sizing is from a DesignDay
@@ -220,70 +239,78 @@ namespace zone_sizing {
              energyplus_data.dataGlobal->TimeStepZoneSec;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::TimeAtPeakCool");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::TimeAtPeakCool", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                   int zone_num,
+                                   bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatLoad;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::HeatingLoad");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::HeatingLoad", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                             int zone_num,
+                                             bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).OutTempAtHeatPeak;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorTempAtPeakHeat");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorTempAtPeakHeat", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                      int zone_num,
+                                                      bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).OutHumRatAtHeatPeak;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorHumidityRatioAtPeakHeat");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::OutdoorHumidityRatioAtPeakHeat", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                      int zone_num,
+                                      bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).TimeStepNumAtHeatMax *
              energyplus_data.dataGlobal->TimeStepZoneSec;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::TimeAtPeakHeat");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::TimeAtPeakHeat", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
              energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolDens;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::MinCoolOA");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::MinCoolOA", log_missing);
     return 0.0;
   }
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool log_missing)
   {
     if (HaveSizingInfo(energyplus_data, zone_num)) {
       return energyplus_data.dataSize->FinalZoneSizing(zone_num).MinOA *
              energyplus_data.dataSize->FinalZoneSizing(zone_num).DesHeatDens;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::MinHeatOA");
+    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::MinHeatOA", log_missing);
     return 0.0;
   }
 
@@ -308,47 +335,47 @@ namespace zone_group_sizing {
   [[nodiscard]] static PeakLoad GetPeakLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
                                             const std::vector<int> &zone_nums,
                                             const GetLoadSeqFunc &get_load_seq,
-                                            std::string_view context)
+                                            bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
 
     if (sizing_zones.empty()) {
-      spdlog::warn("No sizing information available for any requested zones while computing {}", context);
       return {};
-    } else {
-      auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
-      size_t first_zone_num = sizing_zones.front();
-      const auto num_design_days = zone_sizing.isize1();
-      std::vector<PeakLoad> peak_loads;
+    }
 
-      for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
-        const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
-        std::vector<double> combined_group_load(num_timesteps);
+    auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
+    size_t first_zone_num = sizing_zones.front();
+    const auto num_design_days = zone_sizing.isize1();
+    std::vector<PeakLoad> peak_loads;
 
-        for (const auto &zone_num : sizing_zones) {
-          const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
-          for (int i = 0; i < num_timesteps; ++i) {
-            combined_group_load[i] += load_seq[i];
-          }
+    for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
+      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
+      std::vector<double> combined_group_load(num_timesteps);
+
+      for (const auto &zone_num : sizing_zones) {
+        const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
+        for (int i = 0; i < num_timesteps; ++i) {
+          combined_group_load[i] += load_seq[i];
         }
-
-        const auto peak_value = std::max_element(combined_group_load.begin(), combined_group_load.end());
-        const auto timestep_of_peak = static_cast<int>(std::distance(combined_group_load.begin(), peak_value) + 1);
-
-        // Store the PeakLoad for this design day
-        peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
       }
 
-      // Find the PeakLoad across all design days
-      const auto gloabl_peak_load = std::max_element(
-          peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
+      const auto peak_value = std::max_element(combined_group_load.begin(), combined_group_load.end());
+      const auto timestep_of_peak = static_cast<int>(std::distance(combined_group_load.begin(), peak_value) + 1);
 
-      return *gloabl_peak_load;
+      // Store the PeakLoad for this design day
+      peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
     }
+
+    // Find the PeakLoad across all design days
+    const auto gloabl_peak_load = std::max_element(
+        peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
+
+    return *gloabl_peak_load;
   }
 
   [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                           const std::vector<int> &zone_nums)
+                                           const std::vector<int> &zone_nums,
+                                           bool log_missing)
   {
     const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
       return sizing_data.CoolLoadSeq;
@@ -357,12 +384,13 @@ namespace zone_group_sizing {
     return GetPeakLoad(energyplus_data,
                        zone_nums,
                        get_cooling_load_seq,
-                       "zone_group_sizing::SensibleCoolingLoad")
+                       log_missing)
         .value;
   }
 
   [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                         const std::vector<int> &zone_nums)
+                                         const std::vector<int> &zone_nums,
+                                         bool log_missing)
   {
     const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
       return sizing_data.LatentCoolLoadSeq;
@@ -373,14 +401,15 @@ namespace zone_group_sizing {
     return GetPeakLoad(energyplus_data,
                        zone_nums,
                        get_cooling_load_seq,
-                       "zone_group_sizing::LatentCoolingLoad")
+                       log_missing)
         .value;
   }
 
   [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             [[maybe_unused]] const std::vector<int> &zone_nums)
+                                             const std::vector<int> &zone_nums,
+                                             bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.CoolLoadSeq;
@@ -389,23 +418,26 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_cooling_load_seq,
-                                         "zone_group_sizing::OutdoorTempAtPeakCool");
+                                         log_missing);
       // The outdoor temperature should be the same for all zones, so get the sizing data for the
       // peak design day, using any one of the zones in the group.
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
 
       return zone_sizing.CoolOutTempSeq(peak_load.day_timestep);
     } else {
-      spdlog::warn(
-          "No sizing information available for any requested zones while computing zone_group_sizing::OutdoorTempAtPeakCool; returning default 21 C");
+      if (log_missing) {
+        spdlog::warn("No sizing information available for any requested zones while computing "
+                     "zone_group_sizing::OutdoorTempAtPeakCool; returning default 21 C");
+      }
       return 21.0;
     }
   }
 
   [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      const std::vector<int> &zone_nums)
+                                                      const std::vector<int> &zone_nums,
+                                                      bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.CoolLoadSeq;
@@ -414,21 +446,24 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_cooling_load_seq,
-                                         "zone_group_sizing::OutdoorHumidityRatioAtPeakCool");
+                                         log_missing);
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
 
       return zone_sizing.CoolOutHumRatSeq(peak_load.day_timestep);
     } else {
-      spdlog::warn("No sizing information available for any requested zones while computing "
-                   "zone_group_sizing::OutdoorHumidityRatioAtPeakCool; returning default 0.0");
+      if (log_missing) {
+        spdlog::warn("No sizing information available for any requested zones while computing "
+                     "zone_group_sizing::OutdoorHumidityRatioAtPeakCool; returning default 0.0");
+      }
       return 0.0;
     }
   }
 
   [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      const std::vector<int> &zone_nums)
+                                      const std::vector<int> &zone_nums,
+                                      bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.CoolLoadSeq;
@@ -436,17 +471,21 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_cooling_load_seq,
-                                         "zone_group_sizing::TimeAtPeakCool");
+                                         log_missing);
       // TODO: Are we sure this is right when the sizing is from a DesignDay?
       return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
     }
 
-    spdlog::warn(
-        "No sizing information available for any requested zones while computing zone_group_sizing::TimeAtPeakCool; returning default 0 s");
+    if (log_missing) {
+      spdlog::warn("No sizing information available for any requested zones while computing "
+                   "zone_group_sizing::TimeAtPeakCool; returning default 0 s");
+    }
     return 0.0;
   }
 
-  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                   const std::vector<int> &zone_nums,
+                                   bool log_missing)
   {
     const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
       return sizing_data.HeatLoadSeq;
@@ -455,14 +494,15 @@ namespace zone_group_sizing {
     return GetPeakLoad(energyplus_data,
                        zone_nums,
                        get_heating_load_seq,
-                       "zone_group_sizing::HeatingLoad")
+                       log_missing)
         .value;
   }
 
   [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             [[maybe_unused]] const std::vector<int> &zone_nums)
+                                             const std::vector<int> &zone_nums,
+                                             bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.HeatLoadSeq;
@@ -471,23 +511,26 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_heating_load_seq,
-                                         "zone_group_sizing::OutdoorTempAtPeakHeat");
+                                         log_missing);
       // The outdoor temperature should be the same for all zones, so get the sizing data for the
       // peak design day, using any one of the zones in the group.
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
 
       return zone_sizing.HeatOutTempSeq(peak_load.day_timestep);
     } else {
-      spdlog::warn(
-          "No sizing information available for any requested zones while computing zone_group_sizing::OutdoorTempAtPeakHeat; returning default 21 C");
+      if (log_missing) {
+        spdlog::warn("No sizing information available for any requested zones while computing "
+                     "zone_group_sizing::OutdoorTempAtPeakHeat; returning default 21 C");
+      }
       return 21.0;
     }
   }
 
   [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      [[maybe_unused]] const std::vector<int> &zone_nums)
+                                                      const std::vector<int> &zone_nums,
+                                                      bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.HeatLoadSeq;
@@ -496,23 +539,26 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_heating_load_seq,
-                                         "zone_group_sizing::OutdoorHumidityRatioAtPeakHeat");
+                                         log_missing);
       // The outdoor temperature should be the same for all zones, so get the sizing data for the
       // peak design day, using any one of the zones in the group.
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
 
       return zone_sizing.HeatOutHumRatSeq(peak_load.day_timestep);
     } else {
-      spdlog::warn(
-          "No sizing information available for any requested zones while computing zone_group_sizing::OutdoorHumidityRatioAtPeakHeat; returning default 0.0");
+      if (log_missing) {
+        spdlog::warn("No sizing information available for any requested zones while computing "
+                     "zone_group_sizing::OutdoorHumidityRatioAtPeakHeat; returning default 0.0");
+      }
       return 0.0;
     }
   }
 
   [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      const std::vector<int> &zone_nums)
+                                      const std::vector<int> &zone_nums,
+                                      bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       // TODO: Are we sure this is right when the sizing is from a DesignDay
       const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
@@ -521,18 +567,22 @@ namespace zone_group_sizing {
       const auto peak_load = GetPeakLoad(energyplus_data,
                                          sizing_zones,
                                          get_heating_load_seq,
-                                         "zone_group_sizing::TimeAtPeakHeat");
+                                         log_missing);
       return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
     }
 
-    spdlog::warn(
-        "No sizing information available for any requested zones while computing zone_group_sizing::TimeAtPeakHeat; returning default 0 s");
+    if (log_missing) {
+      spdlog::warn("No sizing information available for any requested zones while computing "
+                   "zone_group_sizing::TimeAtPeakHeat; returning default 0 s");
+    }
     return 0.0;
   }
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 const std::vector<int> &zone_nums,
+                                 bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       double sum_oa = 0;
 
@@ -544,14 +594,18 @@ namespace zone_group_sizing {
       return sum_oa;
     }
 
-    spdlog::warn(
-        "No sizing information available for any requested zones while computing zone_group_sizing::MinCoolOA; returning default 0.0");
+    if (log_missing) {
+      spdlog::warn("No sizing information available for any requested zones while computing "
+                   "zone_group_sizing::MinCoolOA; returning default 0.0");
+    }
     return 0.0;
   }
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums)
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                 const std::vector<int> &zone_nums,
+                                 bool log_missing)
   {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums);
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
     if (!sizing_zones.empty()) {
       double sum_oa = 0;
 
@@ -563,8 +617,10 @@ namespace zone_group_sizing {
       return sum_oa;
     }
 
-    spdlog::warn(
-        "No sizing information available for any requested zones while computing zone_group_sizing::MinHeatOA; returning default 0.0");
+    if (log_missing) {
+      spdlog::warn("No sizing information available for any requested zones while computing "
+                   "zone_group_sizing::MinHeatOA; returning default 0.0");
+    }
     return 0.0;
   }
 
