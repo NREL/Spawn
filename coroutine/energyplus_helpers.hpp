@@ -41,7 +41,7 @@ private:
 
 [[nodiscard]] double ZoneMeanRadiantTemp(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
-bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data);
+bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 namespace zone_sizing {
 
