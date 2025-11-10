@@ -394,7 +394,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class QCooLatFlow : public Parameter
@@ -408,7 +408,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TOutCoo : public Parameter
@@ -422,7 +422,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class XOutCoo : public Parameter
@@ -436,7 +436,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class MOutCooFlow : public Parameter
@@ -450,7 +450,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TCoo : public Parameter
@@ -464,7 +464,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class QHeaFlow : public Parameter
@@ -478,7 +478,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TOutHea : public Parameter
@@ -492,7 +492,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class XOutHea : public Parameter
@@ -506,7 +506,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class MOutHeaFlow : public Parameter
@@ -520,7 +520,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class THea : public Parameter
@@ -534,7 +534,7 @@ namespace zone {
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 } // namespace zone
 
@@ -553,7 +553,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class QCooLatFlow : public Parameter
@@ -570,7 +570,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TOutCoo : public Parameter
@@ -587,7 +587,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class XOutCoo : public Parameter
@@ -604,7 +604,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class MOutCooFlow : public Parameter
@@ -621,7 +621,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TCoo : public Parameter
@@ -638,7 +638,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class QHeaFlow : public Parameter
@@ -655,7 +655,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class TOutHea : public Parameter
@@ -672,7 +672,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class XOutHea : public Parameter
@@ -689,7 +689,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class MOutHeaFlow : public Parameter
@@ -706,7 +706,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 
   class THea : public Parameter
@@ -723,7 +723,7 @@ namespace zone_group_sizing {
 
     std::vector<std::string> zone_names_;
     CachedValue<std::vector<int>> zone_nums_;
-    bool log_missing_sizing_;
+    bool use_sizing_data_;
   };
 } // namespace zone_group_sizing
 
