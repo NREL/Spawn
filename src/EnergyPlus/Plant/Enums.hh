@@ -105,6 +105,9 @@ enum class OpScheme
     Num
 };
 
+// Adding a new item to the PlantEquipmentType enum requires similar changes to
+// Component.hh PlantEquipmentCtrlType and PlantEquipmentTypeIsPump
+// DataPlant.hh PlantEquipTypeNames, PlantEquipTypeNamesUC, and ValidLoopEquipTypes
 enum class PlantEquipmentType
 {
     Invalid = -1,
@@ -138,6 +141,7 @@ enum class PlantEquipmentType
     PurchHotWater,
     TS_IceDetailed,
     TS_IceSimple,
+    TS_PCM,
     ValveTempering,
     WtrHeaterMixed,
     WtrHeaterStratified,
@@ -167,6 +171,7 @@ enum class PlantEquipmentType
     EvapFluidCooler_TwoSpd,
     ChilledWaterTankMixed,
     ChilledWaterTankStratified,
+    HotWaterTankStratified,
     PVTSolarCollectorFlatPlate,
     Baseboard_Conv_Water,
     Baseboard_Rad_Conv_Steam,
@@ -207,9 +212,15 @@ enum class PlantEquipmentType
     HeatPumpEIRHeating,
     HeatPumpFuelFiredCooling,
     HeatPumpFuelFiredHeating,
+    HeatPumpAirToWaterCooling,
+    HeatPumpAirToWaterHeating,
+    HeatPumpAirToWater,
     PurchSteam,
     Num
 };
+// Adding a new item to the PlantEquipmentType enum (above) requires similar changes to
+// Component.hh PlantEquipmentCtrlType and PlantEquipmentTypeIsPump
+// DataPlant.hh PlantEquipTypeNames, PlantEquipTypeNamesUC, and ValidLoopEquipTypes
 
 // Parameters for component character wrt how load gets met (or not)
 //  used in %HowLoadServed to facilitate load dispatch logic

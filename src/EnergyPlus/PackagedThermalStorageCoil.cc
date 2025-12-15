@@ -2894,7 +2894,7 @@ void CalcTESCoilCoolingAndChargeMode(EnergyPlusData &state,
 
         // total cooling capacity modification factors
         Real64 const SHRTempFac =
-            (state.dataCurveManager->PerfCurve(thisTESCoil.CoolingAndChargeSHRFTempCurve)->numDims == 2)
+            (state.dataCurveManager->curves(thisTESCoil.CoolingAndChargeSHRFTempCurve)->numDims == 2)
                 ? EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndChargeSHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb)
                 : EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndChargeSHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb, sTES);
         Real64 const SHRFlowFac = EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndChargeSHRFFlowCurve, AirMassFlowRatio);
@@ -3296,7 +3296,7 @@ void CalcTESCoilCoolingAndDischargeMode(EnergyPlusData &state,
 
         // total cooling capacity modification factors
         Real64 const SHRTempFac =
-            (state.dataCurveManager->PerfCurve(thisTESCoil.CoolingAndDischargeSHRFTempCurve)->numDims == 2)
+            (state.dataCurveManager->curves(thisTESCoil.CoolingAndDischargeSHRFTempCurve)->numDims == 2)
                 ? EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndDischargeSHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb)
                 : EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndDischargeSHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb, sTES);
         Real64 const SHRFlowFac = EnergyPlus::Curve::CurveValue(state, thisTESCoil.CoolingAndDischargeSHRFFlowCurve, AirMassFlowRatio);
@@ -3663,7 +3663,7 @@ void CalcTESCoilDischargeOnlyMode(EnergyPlusData &state, int const TESCoilNum, R
 
     Real64 QdotDischargeLimit;     // limit for how much storage can be discharged without overshooting
     Real64 sTES = 0.0;             // state of charge of Thermal Energy Storage
-    bool TESHasSomeCharge = false; // true when there is something avaiable in storage
+    bool TESHasSomeCharge = false; // true when there is something available in storage
 
     switch (thisTESCoil.StorageMedia) {
     case MediaType::Water:
@@ -3799,7 +3799,7 @@ void CalcTESCoilDischargeOnlyMode(EnergyPlusData &state, int const TESCoilNum, R
 
         // total cooling capacity modification factors
         Real64 SHRTempFac;
-        if (state.dataCurveManager->PerfCurve(thisTESCoil.DischargeOnlySHRFTempCurve)->numDims == 2) {
+        if (state.dataCurveManager->curves(thisTESCoil.DischargeOnlySHRFTempCurve)->numDims == 2) {
             SHRTempFac = EnergyPlus::Curve::CurveValue(state, thisTESCoil.DischargeOnlySHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb);
         } else {
             SHRTempFac = EnergyPlus::Curve::CurveValue(state, thisTESCoil.DischargeOnlySHRFTempCurve, EvapInletWetBulb, EvapInletDryBulb, sTES);

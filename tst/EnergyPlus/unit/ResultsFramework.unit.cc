@@ -59,7 +59,7 @@
 #include <EnergyPlus/SimulationManager.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
 
-#include <nlohmann/json_literals.hpp>
+#include <nlohmann/json.hpp>
 
 // Fixture
 #include "Fixtures/ResultsFrameworkFixture.hh"
@@ -69,6 +69,7 @@ using namespace EnergyPlus::ResultsFramework;
 using namespace EnergyPlus::SimulationManager;
 using namespace EnergyPlus::DataOutputs;
 using namespace EnergyPlus::NodeInputManager;
+using namespace nlohmann::literals;
 
 namespace EnergyPlus {
 

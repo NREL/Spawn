@@ -123,6 +123,8 @@ TEST_F(EnergyPlusFixture, MicroturbineElectricGenerator_Fueltype)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state); // Calls GetCurveInput
+
     state->dataIPShortCut->cAlphaArgs(1) = "Capstone C65";
     state->dataIPShortCut->cCurrentModuleObject = "Generator:MicroTurbine";
     GetMTGeneratorInput(*state);

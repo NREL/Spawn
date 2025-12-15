@@ -91,6 +91,50 @@ namespace EnergyPlus::PlantHeatExchangerFluidToFluid {
 
 std::string const ComponentClassName("HeatExchanger:FluidToFluid");
 
+[[maybe_unused]] constexpr std::array<std::string_view, (int)FluidHXType::Num> fluidHXTypeNames = {"CrossFlowBothUnMixed",
+                                                                                                   "CrossFlowBothMixed",
+                                                                                                   "CrossFlowSupplyMixedDemandUnMixed",
+                                                                                                   "CrossFlowSupplyUnMixedDemandMixed",
+                                                                                                   "CounterFlow",
+                                                                                                   "ParallelFlow",
+                                                                                                   "Ideal"};
+constexpr std::array<std::string_view, (int)FluidHXType::Num> fluidHXTypeNamesUC = {"CROSSFLOWBOTHUNMIXED",
+                                                                                    "CROSSFLOWBOTHMIXED",
+                                                                                    "CROSSFLOWSUPPLYMIXEDDEMANDUNMIXED",
+                                                                                    "CROSSFLOWSUPPLYUNMIXEDDEMANDMIXED",
+                                                                                    "COUNTERFLOW",
+                                                                                    "PARALLELFLOW",
+                                                                                    "IDEAL"};
+
+[[maybe_unused]] constexpr std::array<std::string_view, (int)ControlType::Num> controlTypeNames = {"UncontrolledOn",
+                                                                                                   "OperationSchemeModulated",
+                                                                                                   "OperationSchemeOnOff",
+                                                                                                   "HeatingSetpointModulated",
+                                                                                                   "HeatingSetpointOnOff",
+                                                                                                   "CoolingSetpointModulated",
+                                                                                                   "CoolingSetpointOnOff",
+                                                                                                   "DualDeadbandSetpointModulated",
+                                                                                                   "DualDeadbandSetpointOnOff",
+                                                                                                   "CoolingDifferentialOnOff",
+                                                                                                   "CoolingSetpointOnOffWithComponentOverride",
+                                                                                                   "TrackComponentOnOff"};
+constexpr std::array<std::string_view, (int)ControlType::Num> controlTypeNamesUC = {"UNCONTROLLEDON",
+                                                                                    "OPERATIONSCHEMEMODULATED",
+                                                                                    "OPERATIONSCHEMEONOFF",
+                                                                                    "HEATINGSETPOINTMODULATED",
+                                                                                    "HEATINGSETPOINTONOFF",
+                                                                                    "COOLINGSETPOINTMODULATED",
+                                                                                    "COOLINGSETPOINTONOFF",
+                                                                                    "DUALDEADBANDSETPOINTMODULATED",
+                                                                                    "DUALDEADBANDSETPOINTONOFF",
+                                                                                    "COOLINGDIFFERENTIALONOFF",
+                                                                                    "COOLINGSETPOINTONOFFWITHCOMPONENTOVERRIDE",
+                                                                                    "TRACKCOMPONENTONOFF"};
+
+[[maybe_unused]] constexpr std::array<std::string_view, (int)CtrlTempType::Num> ctrlTempTypeNames = {
+    "WetBulbTemperature", "DryBulbTemperature", "Loop"};
+constexpr std::array<std::string_view, (int)CtrlTempType::Num> ctrlTempTypeNamesUC = {"WETBULBTEMPERATURE", "DRYBULBTEMPERATURE", "LOOP"};
+
 PlantComponent *HeatExchangerStruct::factory(EnergyPlusData &state, std::string const &objectName)
 {
     // Process the input data for heat exchangers if it hasn't been done already
@@ -195,7 +239,9 @@ void GetFluidHeatExchangerInput(EnergyPlusData &state)
     cCurrentModuleObject = "HeatExchanger:FluidToFluid";
 
     state.dataPlantHXFluidToFluid->NumberOfPlantFluidHXs = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, cCurrentModuleObject);
-    if (state.dataPlantHXFluidToFluid->NumberOfPlantFluidHXs == 0) return;
+    if (state.dataPlantHXFluidToFluid->NumberOfPlantFluidHXs == 0) {
+        return;
+    }
 
     state.dataInputProcessing->inputProcessor->getObjectDefMaxArgs(state, cCurrentModuleObject, TotalArgs, NumAlphas, NumNums);
     MaxNumNumbers = NumNums;
@@ -291,23 +337,12 @@ void GetFluidHeatExchangerInput(EnergyPlusData &state)
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).SupplySideLoop.DesignVolumeFlowRateWasAutoSized = true;
             }
 
-            if (Util::SameString(cAlphaArgs(7), "CrossFlowBothUnMixed")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::CrossFlowBothUnMixed;
-            } else if (Util::SameString(cAlphaArgs(7), "CrossFlowBothMixed")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::CrossFlowBothMixed;
-            } else if (Util::SameString(cAlphaArgs(7), "CrossFlowSupplyMixedDemandUnMixed")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::CrossFlowSupplyLoopMixedDemandLoopUnMixed;
-            } else if (Util::SameString(cAlphaArgs(7), "CrossFlowSupplyUnMixedDemandMixed")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::CrossFlowSupplyLoopUnMixedDemandLoopMixed;
-            } else if (Util::SameString(cAlphaArgs(7), "CounterFlow")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::CounterFlow;
-            } else if (Util::SameString(cAlphaArgs(7), "ParallelFlow")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::ParallelFlow;
-            } else if (Util::SameString(cAlphaArgs(7), "Ideal")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType = FluidHXType::Ideal;
-            } else {
-                ShowSevereError(state, format("{}{}=\"{}\", invalid entry.", RoutineName, cCurrentModuleObject, cAlphaArgs(1)));
-                ShowContinueError(state, format("Invalid {} = {}", cAlphaFieldNames(7), cAlphaArgs(7)));
+            if (lAlphaFieldBlanks(7)) {
+                ShowSevereEmptyField(state, eoh, cAlphaFieldNames(7), cAlphaArgs(7));
+                ErrorsFound = true;
+            } else if ((state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatExchangeModelType =
+                            static_cast<FluidHXType>(getEnumValue(fluidHXTypeNamesUC, cAlphaArgs(7)))) == FluidHXType::Invalid) {
+                ShowSevereInvalidKey(state, eoh, cAlphaFieldNames(7), cAlphaArgs(7));
                 ErrorsFound = true;
             }
 
@@ -324,33 +359,12 @@ void GetFluidHeatExchangerInput(EnergyPlusData &state)
                 }
             }
 
-            if (Util::SameString(cAlphaArgs(8), "UncontrolledOn")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::UncontrolledOn;
-            } else if (Util::SameString(cAlphaArgs(8), "OperationSchemeModulated")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::OperationSchemeModulated;
-            } else if (Util::SameString(cAlphaArgs(8), "OperationSchemeOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::OperationSchemeOnOff;
-            } else if (Util::SameString(cAlphaArgs(8), "HeatingSetpointModulated")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::HeatingSetPointModulated;
-            } else if (Util::SameString(cAlphaArgs(8), "HeatingSetpointOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::HeatingSetPointOnOff;
-            } else if (Util::SameString(cAlphaArgs(8), "CoolingSetpointModulated")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::CoolingSetPointModulated;
-            } else if (Util::SameString(cAlphaArgs(8), "CoolingSetpointOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::CoolingSetPointOnOff;
-            } else if (Util::SameString(cAlphaArgs(8), "DualDeadbandSetpointModulated")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::DualDeadBandSetPointModulated;
-            } else if (Util::SameString(cAlphaArgs(8), "DualDeadbandSetpointOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::DualDeadBandSetPointOnOff;
-            } else if (Util::SameString(cAlphaArgs(8), "CoolingDifferentialOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::CoolingDifferentialOnOff;
-            } else if (Util::SameString(cAlphaArgs(8), "CoolingSetpointOnOffWithComponentOverride")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::CoolingSetPointOnOffWithComponentOverride;
-            } else if (Util::SameString(cAlphaArgs(8), "TrackComponentOnOff")) {
-                state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode = ControlType::TrackComponentOnOff;
-            } else {
-                ShowSevereError(state, format("{}{}=\"{}\", invalid entry.", RoutineName, cCurrentModuleObject, cAlphaArgs(1)));
-                ShowContinueError(state, format("Invalid {} = {}", cAlphaFieldNames(8), cAlphaArgs(8)));
+            if (lAlphaFieldBlanks(8)) {
+                ShowSevereEmptyField(state, eoh, cAlphaFieldNames(8));
+                ErrorsFound = true;
+            } else if ((state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode =
+                            static_cast<ControlType>(getEnumValue(controlTypeNamesUC, cAlphaArgs(8)))) == ControlType::Invalid) {
+                ShowSevereInvalidKey(state, eoh, cAlphaFieldNames(8), cAlphaArgs(8));
                 ErrorsFound = true;
             }
 
@@ -447,17 +461,17 @@ void GetFluidHeatExchangerInput(EnergyPlusData &state)
             }
 
             std::string endUseCat = Util::makeUPPER(cAlphaArgs(10));
-            if (endUseCat == "FREECOOLING")
+            if (endUseCat == "FREECOOLING") {
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatTransferMeteringEndUse = OutputProcessor::EndUseCat::FreeCooling;
-            else if (endUseCat == "HEATREJECTION")
+            } else if (endUseCat == "HEATREJECTION") {
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatTransferMeteringEndUse = OutputProcessor::EndUseCat::HeatRejection;
-            else if (endUseCat == "HEATRECOVERYFORCOOLING")
+            } else if (endUseCat == "HEATRECOVERYFORCOOLING") {
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatTransferMeteringEndUse = OutputProcessor::EndUseCat::HeatRecoveryForCooling;
-            else if (endUseCat == "HEATRECOVERYFORCOOLING")
+            } else if (endUseCat == "HEATRECOVERYFORCOOLING") {
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatTransferMeteringEndUse = OutputProcessor::EndUseCat::HeatRecoveryForHeating;
-            else if (endUseCat == "LOOPTOLOOP")
+            } else if (endUseCat == "LOOPTOLOOP") {
                 state.dataPlantHXFluidToFluid->FluidHX(CompLoop).HeatTransferMeteringEndUse = OutputProcessor::EndUseCat::LoopToLoop;
-            else {
+            } else {
                 ShowWarningError(
                     state,
                     format("{} = {}, {} is an invalid value for {}", cCurrentModuleObject, cAlphaArgs(1), cAlphaArgs(10), cAlphaFieldNames(10)));
@@ -502,20 +516,15 @@ void GetFluidHeatExchangerInput(EnergyPlusData &state)
                 }
             }
 
-            if (!lAlphaFieldBlanks(13)) {
-                if (Util::SameString(cAlphaArgs(13), "WetBulbTemperature")) {
-                    state.dataPlantHXFluidToFluid->FluidHX(CompLoop).ControlSignalTemp = CtrlTempType::WetBulbTemperature;
-                } else if (Util::SameString(cAlphaArgs(13), "DryBulbTemperature")) {
-                    state.dataPlantHXFluidToFluid->FluidHX(CompLoop).ControlSignalTemp = CtrlTempType::DryBulbTemperature;
-                } else if (Util::SameString(cAlphaArgs(13), "Loop")) {
-                    state.dataPlantHXFluidToFluid->FluidHX(CompLoop).ControlSignalTemp = CtrlTempType::LoopTemperature;
-                }
-            } else {
+            if (lAlphaFieldBlanks(13)) {
                 if (state.dataPlantHXFluidToFluid->FluidHX(CompLoop).controlMode == ControlType::CoolingSetPointOnOffWithComponentOverride) {
-                    ShowSevereError(state, format("{}{}=\"{}\", invalid entry.", RoutineName, cCurrentModuleObject, cAlphaArgs(1)));
-                    ShowContinueError(state, format("Missing entry for {}", cAlphaFieldNames(13)));
+                    ShowSevereEmptyField(state, eoh, cAlphaFieldNames(13), cAlphaFieldNames(8), cAlphaArgs(8));
                     ErrorsFound = true;
                 }
+            } else if ((state.dataPlantHXFluidToFluid->FluidHX(CompLoop).ControlSignalTemp =
+                            static_cast<CtrlTempType>(getEnumValue(ctrlTempTypeNamesUC, cAlphaArgs(13)))) == CtrlTempType::Invalid) {
+                ShowSevereInvalidKey(state, eoh, cAlphaFieldNames(13), cAlphaArgs(13));
+                ErrorsFound = true;
             }
 
             if (!lNumericFieldBlanks(5)) {
@@ -647,7 +656,7 @@ void HeatExchangerStruct::initialize(EnergyPlusData &state)
 
     if (state.dataGlobal->BeginEnvrnFlag && this->MyEnvrnFlag && (state.dataPlnt->PlantFirstSizesOkayToFinalize)) {
 
-        Real64 rho = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineNameNoColon);
+        Real64 rho = this->DemandSideLoop.loop->glycol->getDensity(state, Constant::InitConvTemp, RoutineNameNoColon);
         this->DemandSideLoop.MassFlowRateMax = rho * this->DemandSideLoop.DesignVolumeFlowRate;
         PlantUtilities::InitComponentNodes(state,
                                            this->DemandSideLoop.MassFlowRateMin,
@@ -655,7 +664,7 @@ void HeatExchangerStruct::initialize(EnergyPlusData &state)
                                            this->DemandSideLoop.inletNodeNum,
                                            this->DemandSideLoop.outletNodeNum);
 
-        rho = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineNameNoColon);
+        rho = this->SupplySideLoop.loop->glycol->getDensity(state, Constant::InitConvTemp, RoutineNameNoColon);
         this->SupplySideLoop.MassFlowRateMax = rho * this->SupplySideLoop.DesignVolumeFlowRate;
         PlantUtilities::InitComponentNodes(state,
                                            this->SupplySideLoop.MassFlowRateMin,
@@ -673,12 +682,7 @@ void HeatExchangerStruct::initialize(EnergyPlusData &state)
 
     if (this->controlMode == ControlType::CoolingSetPointOnOffWithComponentOverride) {
         // store current value for setpoint in central plant loop data structure
-        int LoopNum2 = this->OtherCompSupplySideLoop.loopNum;
-        DataPlant::LoopSideLocation LoopSideNum = this->OtherCompSupplySideLoop.loopSideNum;
-        int BranchNum = this->OtherCompSupplySideLoop.branchNum;
-        int LoopCompNum = this->OtherCompSupplySideLoop.compNum;
-
-        state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).FreeCoolCntrlMinCntrlTemp =
+        this->OtherCompSupplySideLoop.comp->FreeCoolCntrlMinCntrlTemp =
             state.dataLoopNodes->Node(this->SetPointNodeNum).TempSetPoint - this->TempControlTol; // issue #5626, include control tolerance
     }
 }
@@ -704,17 +708,21 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
     static constexpr std::string_view RoutineName("SizeFluidHeatExchanger");
 
     // first deal with Loop Supply Side
-    int PltSizNumSupSide = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).PlantSizNum;
-    int PltSizNumDmdSide = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).PlantSizNum;
+    int PltSizNumSupSide = this->SupplySideLoop.loop->PlantSizNum;
+    int PltSizNumDmdSide = this->DemandSideLoop.loop->PlantSizNum;
     Real64 tmpSupSideDesignVolFlowRate = this->SupplySideLoop.DesignVolumeFlowRate;
     if (this->SupplySideLoop.DesignVolumeFlowRateWasAutoSized) {
         if (PltSizNumSupSide > 0) {
             if (state.dataSize->PlantSizData(PltSizNumSupSide).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
                 tmpSupSideDesignVolFlowRate = state.dataSize->PlantSizData(PltSizNumSupSide).DesVolFlowRate * this->SizingFactor;
-                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->SupplySideLoop.DesignVolumeFlowRate = tmpSupSideDesignVolFlowRate;
+                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                    this->SupplySideLoop.DesignVolumeFlowRate = tmpSupSideDesignVolFlowRate;
+                }
             } else {
                 tmpSupSideDesignVolFlowRate = 0.0;
-                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->SupplySideLoop.DesignVolumeFlowRate = tmpSupSideDesignVolFlowRate;
+                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                    this->SupplySideLoop.DesignVolumeFlowRate = tmpSupSideDesignVolFlowRate;
+                }
             }
             if (state.dataPlnt->PlantFinalSizesOkayToReport) {
                 BaseSizer::reportSizerOutput(state,
@@ -744,10 +752,14 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
     if (this->DemandSideLoop.DesignVolumeFlowRateWasAutoSized) {
         if (tmpSupSideDesignVolFlowRate > HVAC::SmallWaterVolFlow) {
             tmpDmdSideDesignVolFlowRate = tmpSupSideDesignVolFlowRate;
-            if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->DemandSideLoop.DesignVolumeFlowRate = tmpDmdSideDesignVolFlowRate;
+            if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                this->DemandSideLoop.DesignVolumeFlowRate = tmpDmdSideDesignVolFlowRate;
+            }
         } else {
             tmpDmdSideDesignVolFlowRate = 0.0;
-            if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->DemandSideLoop.DesignVolumeFlowRate = tmpDmdSideDesignVolFlowRate;
+            if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                this->DemandSideLoop.DesignVolumeFlowRate = tmpDmdSideDesignVolFlowRate;
+            }
         }
         if (state.dataPlnt->PlantFinalSizesOkayToReport) {
             BaseSizer::reportSizerOutput(state,
@@ -798,15 +810,18 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
             Real64 tmpDeltaTSupLoop = state.dataSize->PlantSizData(PltSizNumSupSide).DeltaT;
             if (tmpSupSideDesignVolFlowRate >= HVAC::SmallWaterVolFlow) {
 
-                Real64 Cp =
-                    state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).glycol->getSpecificHeat(state, Constant::InitConvTemp, RoutineName);
+                Real64 Cp = this->SupplySideLoop.loop->glycol->getSpecificHeat(state, Constant::InitConvTemp, RoutineName);
 
-                Real64 rho = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
+                Real64 rho = this->SupplySideLoop.loop->glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
 
                 Real64 tmpDesCap = Cp * rho * tmpDeltaTSupLoop * tmpSupSideDesignVolFlowRate;
-                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->UA = tmpDesCap / tmpDeltaTloopToLoop;
+                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                    this->UA = tmpDesCap / tmpDeltaTloopToLoop;
+                }
             } else {
-                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) this->UA = 0.0;
+                if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
+                    this->UA = 0.0;
+                }
             }
             if (state.dataPlnt->PlantFinalSizesOkayToReport) {
                 BaseSizer::reportSizerOutput(
@@ -857,14 +872,13 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
 
         } else { // don't rely on sizing, use loop setpoints
             // loop supply side
-            if (state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::SingleSetPoint) {
+            if (this->SupplySideLoop.loop->LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::SingleSetPoint) {
                 state.dataLoopNodes->Node(this->SupplySideLoop.inletNodeNum).Temp =
-                    state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).TempSetPointNodeNum).TempSetPoint;
-            } else if (state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).LoopDemandCalcScheme ==
-                       DataPlant::LoopDemandCalcScheme::DualSetPointDeadBand) {
+                    state.dataLoopNodes->Node(this->SupplySideLoop.loop->TempSetPointNodeNum).TempSetPoint;
+            } else if (this->SupplySideLoop.loop->LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::DualSetPointDeadBand) {
                 state.dataLoopNodes->Node(this->SupplySideLoop.inletNodeNum).Temp =
-                    (state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).TempSetPointNodeNum).TempSetPointHi +
-                     state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).TempSetPointNodeNum).TempSetPointLo) /
+                    (state.dataLoopNodes->Node(this->SupplySideLoop.loop->TempSetPointNodeNum).TempSetPointHi +
+                     state.dataLoopNodes->Node(this->SupplySideLoop.loop->TempSetPointNodeNum).TempSetPointLo) /
                     2.0;
             }
         }
@@ -873,21 +887,20 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
             state.dataLoopNodes->Node(this->DemandSideLoop.inletNodeNum).Temp = state.dataSize->PlantSizData(PltSizNumDmdSide).ExitTemp;
         } else { // don't rely on sizing, use loop setpoints
             // loop demand side
-            if (state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::SingleSetPoint) {
+            if (this->DemandSideLoop.loop->LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::SingleSetPoint) {
                 state.dataLoopNodes->Node(this->DemandSideLoop.inletNodeNum).Temp =
-                    state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).TempSetPointNodeNum).TempSetPoint;
-            } else if (state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).LoopDemandCalcScheme ==
-                       DataPlant::LoopDemandCalcScheme::DualSetPointDeadBand) {
+                    state.dataLoopNodes->Node(this->DemandSideLoop.loop->TempSetPointNodeNum).TempSetPoint;
+            } else if (this->DemandSideLoop.loop->LoopDemandCalcScheme == DataPlant::LoopDemandCalcScheme::DualSetPointDeadBand) {
                 state.dataLoopNodes->Node(this->DemandSideLoop.inletNodeNum).Temp =
-                    (state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).TempSetPointNodeNum).TempSetPointHi +
-                     state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).TempSetPointNodeNum).TempSetPointLo) /
+                    (state.dataLoopNodes->Node(this->DemandSideLoop.loop->TempSetPointNodeNum).TempSetPointHi +
+                     state.dataLoopNodes->Node(this->DemandSideLoop.loop->TempSetPointNodeNum).TempSetPointLo) /
                     2.0;
             }
         }
 
-        Real64 rho = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
+        Real64 rho = this->SupplySideLoop.loop->glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
         Real64 SupSideMdot = this->SupplySideLoop.DesignVolumeFlowRate * rho;
-        rho = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
+        rho = this->DemandSideLoop.loop->glycol->getDensity(state, Constant::InitConvTemp, RoutineName);
         Real64 DmdSideMdot = this->DemandSideLoop.DesignVolumeFlowRate * rho;
 
         this->calculate(state, SupSideMdot, DmdSideMdot);
@@ -897,6 +910,7 @@ void HeatExchangerStruct::size(EnergyPlusData &state)
         OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchMechType, this->Name, "HeatExchanger:FluidToFluid");
         OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchMechNomCap, this->Name, this->SupplySideLoop.MaxLoad);
     }
+    this->updateCompFlowData(state);
 }
 
 void HeatExchangerStruct::control(EnergyPlusData &state, Real64 MyLoad, bool FirstHVACIteration)
@@ -972,8 +986,7 @@ void HeatExchangerStruct::control(EnergyPlusData &state, Real64 MyLoad, bool Fir
                             state, mdotSupSide, this->SupplySideLoop.inletNodeNum, this->SupplySideLoop.outletNodeNum, this->SupplySideLoop);
                         if (mdotSupSide > DataBranchAirLoopPlant::MassFlowTolerance) {
                             // if supply side loop has massflow, request demand side flow
-                            Real64 cp = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum)
-                                            .glycol->getSpecificHeat(state, this->SupplySideLoop.InletTemp, RoutineName);
+                            Real64 cp = this->SupplySideLoop.loop->glycol->getSpecificHeat(state, this->SupplySideLoop.InletTemp, RoutineName);
                             Real64 TargetLeavingTemp = this->SupplySideLoop.InletTemp - std::abs(MyLoad) / (cp * mdotSupSide);
 
                             this->findDemandSideLoopFlow(state, TargetLeavingTemp, HXAction::CoolingSupplySideLoop);
@@ -1004,8 +1017,7 @@ void HeatExchangerStruct::control(EnergyPlusData &state, Real64 MyLoad, bool Fir
                         PlantUtilities::SetComponentFlowRate(
                             state, mdotSupSide, this->SupplySideLoop.inletNodeNum, this->SupplySideLoop.outletNodeNum, this->SupplySideLoop);
                         if (mdotSupSide > DataBranchAirLoopPlant::MassFlowTolerance) {
-                            Real64 cp = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum)
-                                            .glycol->getSpecificHeat(state, this->SupplySideLoop.InletTemp, RoutineName);
+                            Real64 cp = this->SupplySideLoop.loop->glycol->getSpecificHeat(state, this->SupplySideLoop.InletTemp, RoutineName);
                             Real64 TargetLeavingTemp = this->SupplySideLoop.InletTemp + std::abs(MyLoad) / (cp * mdotSupSide);
 
                             this->findDemandSideLoopFlow(state, TargetLeavingTemp, HXAction::HeatingSupplySideLoop);
@@ -1401,11 +1413,7 @@ void HeatExchangerStruct::control(EnergyPlusData &state, Real64 MyLoad, bool Fir
             Real64 SetPointTemp = state.dataLoopNodes->Node(this->SetPointNodeNum).TempSetPoint;
             Real64 DeltaTCooling = SetPointTemp - ControlSignalValue;
             // obtain shut down state
-            bool ChillerShutDown = state.dataPlnt->PlantLoop(this->OtherCompSupplySideLoop.loopNum)
-                                       .LoopSide(this->OtherCompSupplySideLoop.loopSideNum)
-                                       .Branch(this->OtherCompSupplySideLoop.branchNum)
-                                       .Comp(this->OtherCompSupplySideLoop.compNum)
-                                       .FreeCoolCntrlShutDown;
+            bool ChillerShutDown = this->OtherCompSupplySideLoop.comp->FreeCoolCntrlShutDown;
             if (ChillerShutDown && (DeltaTCooling > this->TempControlTol)) {
                 // can and want to cool
                 mdotSupSide = this->SupplySideLoop.MassFlowRateMax;
@@ -1459,7 +1467,7 @@ void HeatExchangerStruct::calculate(EnergyPlusData &state, Real64 const SupSideM
     //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS SUBROUTINE:
-    // Evalutate heat exchanger model and calculate leaving temperatures
+    // Evaluate heat exchanger model and calculate leaving temperatures
 
     // METHODOLOGY EMPLOYED:
     // apply heat transfer model depending on type of HX used
@@ -1473,12 +1481,10 @@ void HeatExchangerStruct::calculate(EnergyPlusData &state, Real64 const SupSideM
     Real64 DmdSideLoopInletTemp = state.dataLoopNodes->Node(this->DemandSideLoop.inletNodeNum).Temp;
 
     // specific heat of fluid entering from supply side loop at inlet temp
-    Real64 SupSideLoopInletCp =
-        state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).glycol->getSpecificHeat(state, SupSideLoopInletTemp, RoutineName);
+    Real64 SupSideLoopInletCp = this->SupplySideLoop.loop->glycol->getSpecificHeat(state, SupSideLoopInletTemp, RoutineName);
 
     // specific heat of fluid entering from demand side loop at inlet temp
-    Real64 DmdSideLoopInletCp =
-        state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).glycol->getSpecificHeat(state, DmdSideLoopInletTemp, RoutineName);
+    Real64 DmdSideLoopInletCp = this->DemandSideLoop.loop->glycol->getSpecificHeat(state, DmdSideLoopInletTemp, RoutineName);
 
     Real64 SupSideCapRate = SupSideMdot * SupSideLoopInletCp;
     Real64 DmdSideCapRate = DmdSideMdot * DmdSideLoopInletCp;
@@ -1928,21 +1934,14 @@ void HeatExchangerStruct::oneTimeInit(EnergyPlusData &state)
                 state, RoutineName, this->OtherCompDemandSideLoop.inletNodeNum, this->OtherCompDemandSideLoop, this->OtherCompDemandSideLoop.compNum);
 
             // revise how loads served category for other controlled equipment
-            int LoopNum2 = this->OtherCompSupplySideLoop.loopNum;
-            DataPlant::LoopSideLocation LoopSideNum = this->OtherCompSupplySideLoop.loopSideNum;
-            int BranchNum = this->OtherCompSupplySideLoop.branchNum;
-            int LoopCompNum = this->OtherCompSupplySideLoop.compNum;
-
-            switch (state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).HowLoadServed) {
+            switch (this->OtherCompSupplySideLoop.comp->HowLoadServed) {
 
             case DataPlant::HowMet::ByNominalCap: {
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).HowLoadServed =
-                    DataPlant::HowMet::ByNominalCapFreeCoolCntrl;
+                this->OtherCompSupplySideLoop.comp->HowLoadServed = DataPlant::HowMet::ByNominalCapFreeCoolCntrl;
                 break;
             }
             case DataPlant::HowMet::ByNominalCapLowOutLimit: {
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).HowLoadServed =
-                    DataPlant::HowMet::ByNominalCapLowOutLimitFreeCoolCntrl;
+                this->OtherCompSupplySideLoop.comp->HowLoadServed = DataPlant::HowMet::ByNominalCapLowOutLimitFreeCoolCntrl;
                 break;
             }
             default:
@@ -1951,20 +1950,16 @@ void HeatExchangerStruct::oneTimeInit(EnergyPlusData &state)
 
             switch (this->ControlSignalTemp) {
             case CtrlTempType::WetBulbTemperature: {
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).FreeCoolCntrlMode =
-                    DataPlant::FreeCoolControlMode::WetBulb;
+                this->OtherCompSupplySideLoop.comp->FreeCoolCntrlMode = DataPlant::FreeCoolControlMode::WetBulb;
                 break;
             }
             case CtrlTempType::DryBulbTemperature: {
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).FreeCoolCntrlMode =
-                    DataPlant::FreeCoolControlMode::DryBulb;
+                this->OtherCompSupplySideLoop.comp->FreeCoolCntrlMode = DataPlant::FreeCoolControlMode::DryBulb;
                 break;
             }
             case CtrlTempType::LoopTemperature: {
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).FreeCoolCntrlMode =
-                    DataPlant::FreeCoolControlMode::Loop;
-                state.dataPlnt->PlantLoop(LoopNum2).LoopSide(LoopSideNum).Branch(BranchNum).Comp(LoopCompNum).FreeCoolCntrlNodeNum =
-                    this->OtherCompDemandSideLoop.inletNodeNum;
+                this->OtherCompSupplySideLoop.comp->FreeCoolCntrlMode = DataPlant::FreeCoolControlMode::Loop;
+                this->OtherCompSupplySideLoop.comp->FreeCoolCntrlNodeNum = this->OtherCompDemandSideLoop.inletNodeNum;
                 break;
             }
             default:
@@ -2003,6 +1998,103 @@ void HeatExchangerStruct::oneTimeInit(EnergyPlusData &state)
         }
         this->MyFlag = false;
     }
+}
+
+void HeatExchangerStruct::updateCompFlowData(EnergyPlusData &state)
+{
+    int demandArrayIndex = -1;
+    int supplyArrayIndex = -1;
+    auto &demandCompNames = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).plantCoilObjectNames;
+    auto &demandCompTypes = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).plantCoilObjectTypes;
+    auto &supplyCompNames = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).plantCoilObjectNames;
+    auto &supplyCompTypes = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).plantCoilObjectTypes;
+    for (size_t i = 0; i < demandCompNames.size(); ++i) {
+        if (demandCompNames[i] == this->Name && demandCompTypes[i] == this->DemandSideLoop.comp->Type) {
+            demandArrayIndex = i;
+            break;
+        }
+    }
+    for (size_t i = 0; i < supplyCompNames.size(); ++i) {
+        if (supplyCompNames[i] == this->Name && supplyCompTypes[i] == this->SupplySideLoop.comp->Type) {
+            supplyArrayIndex = i;
+            break;
+        }
+    }
+    size_t demandCompSize = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).compDesWaterFlowRate.size();
+    auto &demandCoilData = state.dataPlnt->PlantLoop(this->DemandSideLoop.loopNum).compDesWaterFlowRate;
+    size_t supplyCompSize = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).compDesWaterFlowRate.size();
+    auto &supplyCoilData = state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).compDesWaterFlowRate;
+    std::vector<Real64> supplyFlowData;
+    supplyFlowData.resize(size_t(24 * state.dataGlobal->TimeStepsInHour + 1));
+    for (size_t i = 0; i < supplyFlowData.size(); ++i) {
+        supplyFlowData[i] = 0.0;
+    }
+    if (supplyCompSize > 0) {
+        for (size_t comp = 0; comp < supplyCoilData.size(); ++comp) {
+            if (static_cast<int>(comp) == supplyArrayIndex) {
+                continue;
+            }
+            for (size_t ts = 0; ts < supplyCoilData[comp].tsDesWaterFlowRate.size(); ++ts) {
+                supplyFlowData[ts] += supplyCoilData[comp].tsDesWaterFlowRate[ts];
+            }
+            supplyFlowData[0] = -1;
+        }
+        if (demandArrayIndex == -1) {
+            demandCompNames.emplace_back(this->Name);
+            demandCompTypes.emplace_back(this->SupplySideLoop.comp->Type);
+            size_t arrayIndex = demandCoilData.size() + 1;
+            demandCoilData.resize(arrayIndex);
+            demandCoilData[arrayIndex - 1].tsDesWaterFlowRate.resize(size_t(24 * state.dataGlobal->TimeStepsInHour));
+            demandCoilData[arrayIndex - 1].tsDesWaterFlowRate = supplyFlowData;
+        } else {
+            demandCoilData[demandArrayIndex].tsDesWaterFlowRate = supplyFlowData;
+        }
+    }
+    if (hasSupplySideTES(state)) {
+        // if the supply side of the HX contains a TES system then copy demand side coil data to supply side so TES can size on the whole load
+        std::vector<Real64> demandFlowData;
+        demandFlowData.resize(size_t(24 * state.dataGlobal->TimeStepsInHour + 1));
+        for (size_t i = 0; i < demandFlowData.size(); ++i) {
+            demandFlowData[i] = 0.0;
+        }
+        if (demandCompSize > 0) {
+            for (size_t comp = 0; comp < demandCoilData.size(); ++comp) {
+                if (static_cast<int>(comp) == demandArrayIndex) {
+                    continue;
+                }
+                for (size_t ts = 0; ts < demandCoilData.size(); ++ts) {
+                    demandFlowData[ts] += demandCoilData[comp].tsDesWaterFlowRate[ts];
+                }
+                demandFlowData[0] = -1;
+            }
+        }
+        if (demandCompSize > 0) {
+            if (supplyArrayIndex == -1) {
+                supplyCompNames.emplace_back(this->Name);
+                supplyCompTypes.emplace_back(this->SupplySideLoop.comp->Type);
+                size_t arrayIndex = supplyCoilData.size() + 1;
+                supplyCoilData.resize(arrayIndex);
+                supplyCoilData[arrayIndex - 1].tsDesWaterFlowRate.resize(size_t(24 * state.dataGlobal->TimeStepsInHour));
+                supplyCoilData[arrayIndex - 1].tsDesWaterFlowRate = demandFlowData;
+            } else {
+                supplyCoilData[demandArrayIndex].tsDesWaterFlowRate = demandFlowData;
+            }
+        }
+    }
+}
+
+bool HeatExchangerStruct::hasSupplySideTES(EnergyPlusData &state)
+{
+    for (auto const &loopSide : state.dataPlnt->PlantLoop(this->SupplySideLoop.loopNum).LoopSide) {
+        for (auto const &branch : loopSide.Branch) {
+            for (auto const &comp : branch.Comp) {
+                if (comp.Type == DataPlant::PlantEquipmentType::TS_IceDetailed || comp.Type == DataPlant::PlantEquipmentType::TS_IceSimple) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 } // namespace EnergyPlus::PlantHeatExchangerFluidToFluid

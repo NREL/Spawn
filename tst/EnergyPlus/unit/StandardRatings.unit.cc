@@ -55,6 +55,7 @@
 #include <EnergyPlus/ChillerElectricEIR.hh>
 #include <EnergyPlus/ChillerReformulatedEIR.hh>
 #include <EnergyPlus/Coils/CoilCoolingDX.hh>
+#include <EnergyPlus/Coils/CoilCoolingDXCurveFitPerformance.hh>
 #include <EnergyPlus/CurveManager.hh>
 #include <EnergyPlus/DXCoils.hh>
 // #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -123,82 +124,67 @@ TEST_F(EnergyPlusFixture, SingleSpeedHeatingCoilCurveTest)
     Coil.RegionNum = 4;
     Coil.OATempCompressorOn = -5.0;
     Coil.OATempCompressorOnOffBlank = "true";
-    state->dataCurveManager->allocateCurveVector(5);
-    Curve::Curve *pCurve;
 
-    int constexpr nCapfT = 1;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfT);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingCAPFT";
-    pCurve->coeff[0] = 0.876825;
-    pCurve->coeff[1] = -0.002955;
-    pCurve->coeff[2] = 5.8e-005;
-    pCurve->coeff[3] = 0.025335;
-    pCurve->inputLimits[0].min = -5;
-    pCurve->inputLimits[0].max = 25;
+    auto *curve1 = Curve::AddCurve(*state, "PTHPHeatingCAPFT");
+    curve1->curveType = CurveType::Cubic;
+    curve1->numDims = 1;
+    curve1->Name = curve1->coeff[0] = 0.876825;
+    curve1->coeff[1] = -0.002955;
+    curve1->coeff[2] = 5.8e-005;
+    curve1->coeff[3] = 0.025335;
+    curve1->inputLimits[0].min = -5;
+    curve1->inputLimits[0].max = 25;
 
-    Coil.CCapFTemp(1) = nCapfT;
+    Coil.CCapFTemp(1) = curve1->Num;
 
-    int constexpr nCapfFF = 2;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfFF);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatCapfFF";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 2;
-    pCurve->outputLimits.min = 0;
-    pCurve->outputLimits.max = 2;
-    Coil.CCapFFlow(1) = nCapfFF;
+    auto *curve2 = Curve::AddCurve(*state, "HPHeatCapfFF");
+    curve2->curveType = CurveType::Quadratic;
+    curve2->numDims = 1;
+    curve2->Name = curve2->coeff[0] = 1;
+    curve2->coeff[1] = 0;
+    curve2->coeff[2] = 0;
+    curve2->inputLimits[0].min = 0;
+    curve2->inputLimits[0].max = 2;
+    curve2->outputLimits.min = 0;
+    curve2->outputLimits.max = 2;
+    Coil.CCapFFlow(1) = curve2->Num;
 
-    int constexpr nEIRfT = 3;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfT);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingEIRFT";
-    pCurve->coeff[0] = 0.704658;
-    pCurve->coeff[1] = 0.008767;
-    pCurve->coeff[2] = 0.000625;
-    pCurve->coeff[3] = -0.009037;
-    pCurve->inputLimits[0].min = -5;
-    pCurve->inputLimits[0].max = 25;
-    Coil.EIRFTemp(1) = nEIRfT;
+    auto *curve3 = Curve::AddCurve(*state, "PTHPHeatingEIRFT");
+    curve3->curveType = CurveType::Cubic;
+    curve3->numDims = 1;
+    curve3->coeff[0] = 0.704658;
+    curve3->coeff[1] = 0.008767;
+    curve3->coeff[2] = 0.000625;
+    curve3->coeff[3] = -0.009037;
+    curve3->inputLimits[0].min = -5;
+    curve3->inputLimits[0].max = 25;
+    Coil.EIRFTemp(1) = curve3->Num;
 
-    int constexpr nEIRfFF = 4;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfFF);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatEIRfFF";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 2;
-    pCurve->outputLimits.min = 0;
-    pCurve->outputLimits.max = 2;
-    Coil.EIRFFlow(1) = nEIRfFF;
+    auto *curve4 = Curve::AddCurve(*state, "HPHeatEIRfFF");
+    curve4->curveType = CurveType::Quadratic;
+    curve4->numDims = 1;
+    curve4->coeff[0] = 1;
+    curve4->coeff[1] = 0;
+    curve4->coeff[2] = 0;
+    curve4->inputLimits[0].min = 0;
+    curve4->inputLimits[0].max = 2;
+    curve4->outputLimits.min = 0;
+    curve4->outputLimits.max = 2;
+    Coil.EIRFFlow(1) = curve4->Num;
 
     int constexpr nPLFfPLR = 5;
-    pCurve = state->dataCurveManager->PerfCurve(nPLFfPLR);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatPLFfPLR";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 1;
-    pCurve->outputLimits.min = 0.7;
-    pCurve->outputLimits.max = 1;
+    auto *curve5 = Curve::AddCurve(*state, "HPHeatPLFfPLR");
+    curve5->curveType = CurveType::Quadratic;
+    curve5->numDims = 1;
+    curve5->coeff[0] = 1;
+    curve5->coeff[1] = 0;
+    curve5->coeff[2] = 0;
+    curve5->inputLimits[0].min = 0;
+    curve5->inputLimits[0].max = 1;
+    curve5->outputLimits.min = 0.7;
+    curve5->outputLimits.max = 1;
     Coil.PLFFPLR(1) = nPLFfPLR;
 
-    for (int CurveNum = 1; CurveNum <= state->dataCurveManager->NumCurves; ++CurveNum) {
-        Curve::Curve *rCurve = state->dataCurveManager->PerfCurve(CurveNum);
-        rCurve->interpolationType = InterpType::EvaluateCurveToLimits;
-    }
     Real64 NetHeatingCapRatedHighTemp;
     Real64 NetHeatingCapRatedLowTemp;
     Real64 HSPF;
@@ -319,82 +305,66 @@ TEST_F(EnergyPlusFixture, SingleSpeedHeatingCoilCurveTest_PositiveCurve)
     Coil.RegionNum = 4;
     Coil.OATempCompressorOn = -5.0;
     Coil.OATempCompressorOnOffBlank = "true";
-    state->dataCurveManager->allocateCurveVector(5);
-    Curve::Curve *pCurve;
 
-    int constexpr nCapfT = 1;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfT);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingCAPFT";
-    pCurve->coeff[0] = 0.876825;
-    pCurve->coeff[1] = 0.002955; // previously -ve
-    pCurve->coeff[2] = 5.8e-005;
-    pCurve->coeff[3] = 0.025335;
-    pCurve->inputLimits[0].min = 5; // previously -ve
-    pCurve->inputLimits[0].max = 25;
+    auto *curve1 = Curve::AddCurve(*state, "PTHPHeatingCAPFT");
+    curve1->curveType = CurveType::Cubic;
+    curve1->numDims = 1;
+    curve1->coeff[0] = 0.876825;
+    curve1->coeff[1] = 0.002955; // previously -ve
+    curve1->coeff[2] = 5.8e-005;
+    curve1->coeff[3] = 0.025335;
+    curve1->inputLimits[0].min = 5; // previously -ve
+    curve1->inputLimits[0].max = 25;
 
-    Coil.CCapFTemp(1) = nCapfT;
+    Coil.CCapFTemp(1) = curve1->Num;
 
-    int constexpr nCapfFF = 2;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfFF);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatCapfFF";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 2;
-    pCurve->outputLimits.min = 0;
-    pCurve->outputLimits.max = 2;
-    Coil.CCapFFlow(1) = nCapfFF;
+    auto *curve2 = Curve::AddCurve(*state, "HPHeatCapfFF");
+    curve2->curveType = CurveType::Quadratic;
+    curve2->numDims = 1;
+    curve2->coeff[0] = 1;
+    curve2->coeff[1] = 0;
+    curve2->coeff[2] = 0;
+    curve2->inputLimits[0].min = 0;
+    curve2->inputLimits[0].max = 2;
+    curve2->outputLimits.min = 0;
+    curve2->outputLimits.max = 2;
+    Coil.CCapFFlow(1) = curve2->Num;
 
-    int constexpr nEIRfT = 3;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfT);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingEIRFT";
-    pCurve->coeff[0] = 0.704658;
-    pCurve->coeff[1] = 0.008767;
-    pCurve->coeff[2] = 0.000625;
-    pCurve->coeff[3] = 0.009037;    // previously -ve
-    pCurve->inputLimits[0].min = 5; // previously -ve
-    pCurve->inputLimits[0].max = 25;
-    Coil.EIRFTemp(1) = nEIRfT;
+    auto *curve3 = Curve::AddCurve(*state, "PTHPHeatingEIRFT");
+    curve3->curveType = CurveType::Cubic;
+    curve3->numDims = 1;
+    curve3->coeff[0] = 0.704658;
+    curve3->coeff[1] = 0.008767;
+    curve3->coeff[2] = 0.000625;
+    curve3->coeff[3] = 0.009037;    // previously -ve
+    curve3->inputLimits[0].min = 5; // previously -ve
+    curve3->inputLimits[0].max = 25;
+    Coil.EIRFTemp(1) = curve3->Num;
 
-    int constexpr nEIRfFF = 4;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfFF);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatEIRfFF";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 2;
-    pCurve->outputLimits.min = 0;
-    pCurve->outputLimits.max = 2;
-    Coil.EIRFFlow(1) = nEIRfFF;
+    auto *curve4 = Curve::AddCurve(*state, "HPHeatEIRfFF");
+    curve4->curveType = CurveType::Quadratic;
+    curve4->numDims = 1;
+    curve4->coeff[0] = 1;
+    curve4->coeff[1] = 0;
+    curve4->coeff[2] = 0;
+    curve4->inputLimits[0].min = 0;
+    curve4->inputLimits[0].max = 2;
+    curve4->outputLimits.min = 0;
+    curve4->outputLimits.max = 2;
+    Coil.EIRFFlow(1) = curve4->Num;
 
-    int constexpr nPLFfPLR = 5;
-    pCurve = state->dataCurveManager->PerfCurve(nPLFfPLR);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatPLFfPLR";
-    pCurve->coeff[0] = 1;
-    pCurve->coeff[1] = 0;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 1;
-    pCurve->outputLimits.min = 0.7;
-    pCurve->outputLimits.max = 1;
-    Coil.PLFFPLR(1) = nPLFfPLR;
+    auto *curve5 = Curve::AddCurve(*state, "HPHeatPLFfPLR");
+    curve5->curveType = CurveType::Quadratic;
+    curve5->numDims = 1;
+    curve5->coeff[0] = 1;
+    curve5->coeff[1] = 0;
+    curve5->coeff[2] = 0;
+    curve5->inputLimits[0].min = 0;
+    curve5->inputLimits[0].max = 1;
+    curve5->outputLimits.min = 0.7;
+    curve5->outputLimits.max = 1;
+    Coil.PLFFPLR(1) = curve5->Num;
 
-    for (int CurveNum = 1; CurveNum <= state->dataCurveManager->NumCurves; ++CurveNum) {
-        Curve::Curve *rCurve = state->dataCurveManager->PerfCurve(CurveNum);
-        rCurve->interpolationType = InterpType::EvaluateCurveToLimits;
-    }
     Real64 NetHeatingCapRatedHighTemp;
     Real64 NetHeatingCapRatedLowTemp;
     Real64 HSPF;
@@ -506,86 +476,70 @@ TEST_F(EnergyPlusFixture, SingleSpeedHeatingCoilCurveTest2023)
     Coil.RegionNum = 4; //
     Coil.OATempCompressorOn = -5.0;
     Coil.OATempCompressorOnOffBlank = "true";
-    state->dataCurveManager->allocateCurveVector(5);
-    Curve::Curve *pCurve;
 
-    int constexpr nCapfT = 1;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfT);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingCAPFT"; // Simpl_HPACHeatCapFT_Cubic
-    pCurve->coeff[0] = 0.759;
-    pCurve->coeff[1] = 0.028;
-    pCurve->coeff[2] = 0;
-    pCurve->coeff[3] = 0;
-    pCurve->inputLimits[0].min = -20;
-    pCurve->inputLimits[0].max = 20;
+    auto *curve1 = AddCurve(*state, "PTHPHeatingCAPFT"); // Simpl_HPACHeatCapFT_Cubic
+    curve1->curveType = CurveType::Cubic;
+    curve1->numDims = 1;
+    curve1->coeff[0] = 0.759;
+    curve1->coeff[1] = 0.028;
+    curve1->coeff[2] = 0;
+    curve1->coeff[3] = 0;
+    curve1->inputLimits[0].min = -20;
+    curve1->inputLimits[0].max = 20;
 
-    Coil.CCapFTemp(1) = nCapfT;
+    Coil.CCapFTemp(1) = curve1->Num;
 
-    int constexpr nCapfFF = 2;
-    pCurve = state->dataCurveManager->PerfCurve(nCapfFF);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatCapfFF"; // Simpl_HPACHeatCapFFF_Cubic
-    pCurve->coeff[0] = 0.84;
-    pCurve->coeff[1] = 0.16;
-    pCurve->coeff[2] = 0;
-    pCurve->coeff[3] = 0;
-    pCurve->inputLimits[0].min = 0.5;
-    pCurve->inputLimits[0].max = 1.5;
-    Coil.CCapFFlow(1) = nCapfFF;
+    auto *curve2 = AddCurve(*state, "HPHeatCapfFF"); // Simpl_HPACHeatCapFFF_Cubic
+    curve2->curveType = CurveType::Cubic;
+    curve2->numDims = 1;
+    curve2->coeff[0] = 0.84;
+    curve2->coeff[1] = 0.16;
+    curve2->coeff[2] = 0;
+    curve2->coeff[3] = 0;
+    curve2->inputLimits[0].min = 0.5;
+    curve2->inputLimits[0].max = 1.5;
+    Coil.CCapFFlow(1) = curve2->Num;
 
-    int constexpr nEIRfT = 3;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfT);
-    pCurve->curveType = CurveType::BiQuadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "PTHPHeatingEIRFT"; // Simpl_HPACEIRFT_Biquadratic
-    pCurve->coeff[0] = 0.342;
-    pCurve->coeff[1] = 0.035;
-    pCurve->coeff[2] = -0.001;
-    pCurve->coeff[3] = 0.005;
-    pCurve->coeff[4] = 0;
-    pCurve->coeff[5] = -0.001;
-    pCurve->inputLimits[0].min = 12.778;
-    pCurve->inputLimits[0].max = 23.889;
-    pCurve->inputLimits[1].min = 18;
-    pCurve->inputLimits[1].max = 46.111;
-    Coil.EIRFTemp(1) = nEIRfT;
+    auto *curve3 = AddCurve(*state, "PTHPHeatingEIRFT"); // Simpl_HPACEIRFT_Biquadratic
+    curve3->curveType = CurveType::BiQuadratic;
+    curve3->numDims = 1;
+    curve3->coeff[0] = 0.342;
+    curve3->coeff[1] = 0.035;
+    curve3->coeff[2] = -0.001;
+    curve3->coeff[3] = 0.005;
+    curve3->coeff[4] = 0;
+    curve3->coeff[5] = -0.001;
+    curve3->inputLimits[0].min = 12.778;
+    curve3->inputLimits[0].max = 23.889;
+    curve3->inputLimits[1].min = 18;
+    curve3->inputLimits[1].max = 46.111;
+    Coil.EIRFTemp(1) = curve3->Num;
 
-    int constexpr nEIRfFF = 4;
-    pCurve = state->dataCurveManager->PerfCurve(nEIRfFF);
-    pCurve->curveType = CurveType::Cubic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatEIRfFF"; // Simpl_HPACHeatEIRFT_Cubic
-    pCurve->coeff[0] = 1.192;
-    pCurve->coeff[1] = -0.03;
-    pCurve->coeff[2] = 0.001;
-    pCurve->coeff[3] = 0;
-    pCurve->inputLimits[0].min = -20;
-    pCurve->inputLimits[0].max = 20;
-    pCurve->outputLimits.min = -20;
-    pCurve->outputLimits.max = 20;
-    Coil.EIRFFlow(1) = nEIRfFF;
+    auto *curve4 = AddCurve(*state, "HPHeatEIRfFF"); // Simpl_HPACHeatEIRFT_Cubic
+    curve4->curveType = CurveType::Cubic;
+    curve4->numDims = 1;
+    curve4->coeff[0] = 1.192;
+    curve4->coeff[1] = -0.03;
+    curve4->coeff[2] = 0.001;
+    curve4->coeff[3] = 0;
+    curve4->inputLimits[0].min = -20;
+    curve4->inputLimits[0].max = 20;
+    curve4->outputLimits.min = -20;
+    curve4->outputLimits.max = 20;
+    Coil.EIRFFlow(1) = curve4->Num;
 
-    int constexpr nPLFfPLR = 5;
-    pCurve = state->dataCurveManager->PerfCurve(nPLFfPLR);
-    pCurve->curveType = CurveType::Quadratic;
-    pCurve->numDims = 1;
-    pCurve->Name = "HPHeatPLFfPLR"; // Simpl_HPACCOOLPLFFPLR_Quadratic
-    pCurve->coeff[0] = 0.75;
-    pCurve->coeff[1] = 0.25;
-    pCurve->coeff[2] = 0;
-    pCurve->inputLimits[0].min = 0;
-    pCurve->inputLimits[0].max = 1;
-    pCurve->outputLimits.min = 0;
-    pCurve->outputLimits.max = 1;
-    Coil.PLFFPLR(1) = nPLFfPLR;
+    auto *curve5 = AddCurve(*state, "HPHeatPLFfPLR"); // Simpl_HPACCOOLPLFFPLR_Quadratic
+    curve5->curveType = CurveType::Quadratic;
+    curve5->numDims = 1;
+    curve5->coeff[0] = 0.75;
+    curve5->coeff[1] = 0.25;
+    curve5->coeff[2] = 0;
+    curve5->inputLimits[0].min = 0;
+    curve5->inputLimits[0].max = 1;
+    curve5->outputLimits.min = 0;
+    curve5->outputLimits.max = 1;
+    Coil.PLFFPLR(1) = curve5->Num;
 
-    for (int CurveNum = 1; CurveNum <= state->dataCurveManager->NumCurves; ++CurveNum) {
-        Curve::Curve *rCurve = state->dataCurveManager->PerfCurve(CurveNum);
-        rCurve->interpolationType = InterpType::EvaluateCurveToLimits;
-    }
     Real64 NetHeatingCapRatedHighTemp;
     Real64 NetHeatingCapRatedLowTemp;
     Real64 HSPF;
@@ -1041,14 +995,10 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestAirCooled)
     state->dataChillerElectricEIR->ElectricEIRChiller(1).CondenserType = DataPlant::CondenserType::AirCooled;
     state->dataChillerElectricEIR->ElectricEIRChiller(1).MinUnloadRat = 0.15;
 
-    state->dataCurveManager->allocateCurveVector(3);
-
     // Cap=f(T)
-    auto *curve1 = state->dataCurveManager->PerfCurve(1);
+    auto *curve1 = AddCurve(*state, "AirCooledChillerScrewCmpCapfT");
     curve1->curveType = CurveType::BiQuadratic;
     curve1->numDims = 2;
-    curve1->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve1->Name = "AirCooledChillerScrewCmpCapfT";
     curve1->coeff[0] = 0.98898813;
     curve1->coeff[1] = 0.036832851;
     curve1->coeff[2] = 0.000174006;
@@ -1059,14 +1009,12 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestAirCooled)
     curve1->inputLimits[0].max = 10;
     curve1->inputLimits[1].min = 23.89;
     curve1->inputLimits[1].max = 46.11;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerCapFTIndex = 1;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerCapFTIndex = curve1->Num;
 
     // EIR=f(T)
-    auto *curve2 = state->dataCurveManager->PerfCurve(2);
+    auto *curve2 = AddCurve(*state, "AirCooledChillerScrewCmpEIRfT");
     curve2->curveType = CurveType::BiQuadratic;
     curve2->numDims = 2;
-    curve2->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve2->Name = "AirCooledChillerScrewCmpEIRfT";
     curve2->coeff[0] = 0.814058418;
     curve2->coeff[1] = 0.002335553;
     curve2->coeff[2] = 0.000817786;
@@ -1077,21 +1025,19 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestAirCooled)
     curve2->inputLimits[0].max = 10;
     curve2->inputLimits[1].min = 10;
     curve2->inputLimits[1].max = 46.11;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFTIndex = 2;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFTIndex = curve2->Num;
 
     // EIR=f(PLR)
-    auto *curve3 = state->dataCurveManager->PerfCurve(3);
+    auto *curve3 = AddCurve(*state, "AirCooledChillerScrewCmpEIRfPLR");
     curve3->curveType = CurveType::Cubic;
     curve3->numDims = 1;
-    curve3->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve3->Name = "AirCooledChillerScrewCmpEIRfPLR";
     curve3->coeff[0] = -0.08117804;
     curve3->coeff[1] = 1.433532026;
     curve3->coeff[2] = -0.762289434;
     curve3->coeff[3] = 0.412199944;
     curve3->inputLimits[0].min = 0;
     curve3->inputLimits[0].max = 1;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFPLRIndex = 3;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFPLRIndex = curve3->Num;
 
     Real64 IPLVSI = 0.0;
     Real64 IPLVIP = 0.0;
@@ -1129,14 +1075,10 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooled)
     state->dataChillerElectricEIR->ElectricEIRChiller(1).MinUnloadRat = 0.10;
     state->dataChillerElectricEIR->ElectricEIRChiller(1).MaxPartLoadRat = 1.15;
 
-    state->dataCurveManager->allocateCurveVector(3);
-
     // Cap=f(T)
-    auto *curve1 = state->dataCurveManager->PerfCurve(1);
+    auto *curve1 = AddCurve(*state, "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes CAPFT");
     curve1->curveType = CurveType::BiQuadratic;
     curve1->numDims = 2;
-    curve1->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve1->Name = "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes CAPFT";
     curve1->coeff[0] = 2.521130E-01;
     curve1->coeff[1] = 1.324053E-02;
     curve1->coeff[2] = -8.637329E-03;
@@ -1147,14 +1089,12 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooled)
     curve1->inputLimits[0].max = 12.78;
     curve1->inputLimits[1].min = 12.78;
     curve1->inputLimits[1].max = 26.67;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerCapFTIndex = 1;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerCapFTIndex = curve1->Num;
 
     // EIR=f(T)
-    auto *curve2 = state->dataCurveManager->PerfCurve(2);
+    auto *curve2 = AddCurve(*state, "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFT");
     curve2->curveType = CurveType::BiQuadratic;
     curve2->numDims = 2;
-    curve2->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve2->Name = "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFT";
     curve2->coeff[0] = 4.475238E-01;
     curve2->coeff[1] = -2.588210E-02;
     curve2->coeff[2] = -1.459053E-03;
@@ -1165,20 +1105,18 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooled)
     curve2->inputLimits[0].max = 12.78;
     curve2->inputLimits[1].min = 12.78;
     curve2->inputLimits[1].max = 26.67;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFTIndex = 2;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFTIndex = curve2->Num;
 
     // EIR=f(PLR)
-    auto *curve3 = state->dataCurveManager->PerfCurve(3);
+    auto *curve3 = AddCurve(*state, "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFPLR");
     curve3->curveType = CurveType::Cubic;
     curve3->numDims = 1;
-    curve3->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve3->Name = "ElectricEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFPLR";
     curve3->coeff[0] = 2.778889E-01;
     curve3->coeff[1] = 2.338363E-01;
     curve3->coeff[2] = 4.883748E-01;
     curve3->inputLimits[0].min = 0;
     curve3->inputLimits[0].max = 1.15;
-    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFPLRIndex = 3;
+    state->dataChillerElectricEIR->ElectricEIRChiller(1).ChillerEIRFPLRIndex = curve3->Num;
 
     Real64 IPLVSI = 0.0;
     Real64 IPLVIP = 0.0;
@@ -1217,14 +1155,10 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooledReform)
     state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).MaxPartLoadRat = 1.08;
     state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).CondVolFlowRate = 0.01924;
 
-    state->dataCurveManager->allocateCurveVector(3);
-
     // Cap=f(T)
-    auto *curve1 = state->dataCurveManager->PerfCurve(1);
+    auto *curve1 = AddCurve(*state, "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes CAPFT");
     curve1->curveType = CurveType::BiQuadratic;
     curve1->numDims = 2;
-    curve1->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve1->Name = "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes CAPFT";
     curve1->coeff[0] = -4.862465E-01;
     curve1->coeff[1] = -7.293218E-02;
     curve1->coeff[2] = -8.514849E-03;
@@ -1235,14 +1169,12 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooledReform)
     curve1->inputLimits[0].max = 12.78;
     curve1->inputLimits[1].min = 18.81;
     curve1->inputLimits[1].max = 35.09;
-    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerCapFTIndex = 1;
+    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerCapFTIndex = curve1->Num;
 
     // EIR=f(T)
-    auto *curve2 = state->dataCurveManager->PerfCurve(2);
+    auto *curve2 = AddCurve(*state, "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFT");
     curve2->curveType = CurveType::BiQuadratic;
     curve2->numDims = 2;
-    curve2->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve2->Name = "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFT";
     curve2->coeff[0] = 3.522647E-01;
     curve2->coeff[1] = -3.311790E-02;
     curve2->coeff[2] = -1.374491E-04;
@@ -1253,14 +1185,12 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooledReform)
     curve2->inputLimits[0].max = 12.78;
     curve2->inputLimits[1].min = 18.81;
     curve2->inputLimits[1].max = 35.09;
-    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerEIRFTIndex = 2;
+    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerEIRFTIndex = curve2->Num;
 
     // EIR=f(PLR)
-    auto *curve3 = state->dataCurveManager->PerfCurve(3);
+    auto *curve3 = AddCurve(*state, "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFPLR");
     curve3->curveType = CurveType::BiCubic;
     curve3->numDims = 2;
-    curve3->interpolationType = InterpType::EvaluateCurveToLimits;
-    curve3->Name = "ReformEIRChiller McQuay WSC 471kW/5.89COP/Vanes EIRFPLR";
     curve3->coeff[0] = 8.215998E-01;
     curve3->coeff[1] = -2.209969E-02;
     curve3->coeff[2] = -1.725652E-05;
@@ -1275,7 +1205,7 @@ TEST_F(EnergyPlusFixture, ChillerIPLVTestWaterCooledReform)
     curve3->inputLimits[0].max = 33.32;
     curve3->inputLimits[1].min = 0.10;
     curve3->inputLimits[1].max = 1.08;
-    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerEIRFPLRIndex = 3;
+    state->dataChillerReformulatedEIR->ElecReformEIRChiller(1).ChillerEIRFPLRIndex = curve3->Num;
 
     state->dataPlnt->TotNumLoops = 1;
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
@@ -1438,9 +1368,9 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoil_15000W_SameFanPower_SEER2_2023_
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
-    //?? Default PLF cofficients source ?
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
+    //?? Default PLF coefficients source ?
     EXPECT_EQ(0.90, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.10, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -1707,8 +1637,8 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoil_9000W_SEER2_2023_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -1975,8 +1905,8 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoil_18000W_SEER2_2023_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -2233,8 +2163,8 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoilAir_25000W_IEER_2022_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -2385,9 +2315,9 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoilEvap_32000W_IEER_2022_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
 
-    // ckeck user PLF curve coefficients
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -2400,14 +2330,7 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoilEvap_32000W_IEER_2022_ValueTest)
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
     std::map<std::string, Real64> StandardRatingsResult;
-    Real64 NetCoolingCapRated(0.0);
-    Real64 IEER_2022(0.0);
-    Real64 NetCoolingCapRated2022(0.0);
-    Real64 EER_2022(0.0);
 
-    Real64 constexpr AirMassFlowRatioRated(1.0);
-    Real64 CapFFlowCurveIndex = thisCoil.CCapFFlow(1);
-    Real64 EIRFFlowCurveIndex = thisCoil.EIRFFlow(1);
     thisCoil.RatedTotCap(1) = 32000.00;
     thisCoil.RatedAirVolFlowRate(1) = 1.70;
     std::map<std::string, Real64> StandarRatingResults;
@@ -2531,8 +2454,8 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoilAir_AHRIExample_IEER_2022_ValueT
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -2545,14 +2468,6 @@ TEST_F(EnergyPlusFixture, SingleSpeedCoolingCoilAir_AHRIExample_IEER_2022_ValueT
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
     std::map<std::string, Real64> StandardRatingsResult;
-    Real64 NetCoolingCapRated(0.0);
-    Real64 IEER_2022(0.0);
-    Real64 NetCoolingCapRated2022(0.0);
-    Real64 EER_2022(0.0);
-
-    Real64 constexpr AirMassFlowRatioRated(1.0); // AHRI test is at the design flow rate and hence AirMassFlowRatio is 1.0
-    Real64 CapFFlowCurveIndex = thisCoil.CCapFFlow(1);
-    Real64 EIRFFlowCurveIndex = thisCoil.EIRFFlow(1);
 
     EXPECT_EQ(26669.5, thisCoil.RatedTotCap(1));
     EXPECT_NEAR(1.227, thisCoil.RatedAirVolFlowRate(1), 0.01);
@@ -2812,8 +2727,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_02_Speed_4400W_SEER2_2023_ValueT
         "  Autosize,                                                !- Maximum Supply Air Temperature {C}",
         "  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Heater Operation {C}",
         "  ,                                                        !- Outdoor Dry-Bulb Temperature Sensor Node Name",
-        "  ,                                                        !- Ancilliary On-Cycle Electric Power",
-        "  ,                                                        !- Ancilliary Off-Cycle Electric Power",
+        "  ,                                                        !- Ancillary On-Cycle Electric Power",
+        "  ,                                                        !- Ancillary Off-Cycle Electric Power",
         "  ,                                                        !- Design Heat Recovery Water Flow Rate",
         "  ,                                                        !- Maximum Temperature for Heat Recovery",
         "  ,                                                        !- Heat Recovery Water Inlet Node Name",
@@ -3019,8 +2934,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_02_Speed_4400W_SEER2_2023_ValueT
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.90, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.10, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -3385,8 +3300,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_03_Speed_12000W_SEER2_2023_Value
         "  Autosize,                                                !- Maximum Supply Air Temperature {C}",
         "  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Heater Operation {C}",
         "  ,                                                        !- Outdoor Dry-Bulb Temperature Sensor Node Name",
-        "  ,                                                        !- Ancilliary On-Cycle Electric Power",
-        "  ,                                                        !- Ancilliary Off-Cycle Electric Power",
+        "  ,                                                        !- Ancillary On-Cycle Electric Power",
+        "  ,                                                        !- Ancillary Off-Cycle Electric Power",
         "  ,                                                        !- Design Heat Recovery Water Flow Rate",
         "  ,                                                        !- Maximum Temperature for Heat Recovery",
         "  ,                                                        !- Heat Recovery Water Inlet Node Name",
@@ -3615,9 +3530,9 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_03_Speed_12000W_SEER2_2023_Value
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
 
-    // ckeck user PLF curve coefficients
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -4166,9 +4081,9 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_04_Speed_17750W_SEER2_2023_Value
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
 
-    // ckeck user PLF curve coefficients
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -4353,8 +4268,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_02_Speeds_27717W_IEER_2022_Value
 
     GetDXCoils(*state);
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
-    // ckeck user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
+    // check user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
     EXPECT_EQ(0.771, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.229, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -4595,8 +4510,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_03_Speeds_27717W_IEER_2022_Value
         "  Autosize,                                                !- Maximum Supply Air Temperature {C}",
         "  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Heater Operation {C}",
         "  ,                                                        !- Outdoor Dry-Bulb Temperature Sensor Node Name",
-        "  ,                                                        !- Ancilliary On-Cycle Electric Power",
-        "  ,                                                        !- Ancilliary Off-Cycle Electric Power",
+        "  ,                                                        !- Ancillary On-Cycle Electric Power",
+        "  ,                                                        !- Ancillary Off-Cycle Electric Power",
         "  ,                                                        !- Design Heat Recovery Water Flow Rate",
         "  ,                                                        !- Maximum Temperature for Heat Recovery",
         "  ,                                                        !- Heat Recovery Water Inlet Node Name",
@@ -4824,8 +4739,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_03_Speeds_27717W_IEER_2022_Value
 
     GetDXCoils(*state);
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
-    // ckeck user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
+    // check user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -5330,8 +5245,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_04_Speeds_35500W_COP3_IEER_2022_
 
     GetDXCoils(*state);
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
-    // ckeck user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
+    // check user PLF curve coefficients | HPACCOOLPLFFPLR Speed 1
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -5587,8 +5502,8 @@ TEST_F(EnergyPlusFixture, MultiSpeedCoolingCoil_04_Speed_35500W_COP4_IEER_2022_V
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.MSPLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.MSPLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.90, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.10, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -5633,6 +5548,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    1,                       !- Number of Speeds {dimensionless}",
@@ -5748,8 +5664,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -5784,22 +5700,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -5853,6 +5769,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    2,                       !- Number of Speeds {dimensionless}",
@@ -5981,8 +5898,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -6017,22 +5934,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -6086,6 +6003,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    3,                       !- Number of Speeds {dimensionless}",
@@ -6222,8 +6140,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -6258,22 +6176,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -6327,6 +6245,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    4,                       !- Number of Speeds {dimensionless}",
@@ -6476,8 +6395,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -6512,22 +6431,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -6581,6 +6500,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    7,                       !- Number of Speeds {dimensionless}",
@@ -6768,8 +6688,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -6804,22 +6724,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -6874,6 +6794,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_14400W_SEER2_2023_ValueT
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    7,                       !- Number of Speeds {dimensionless}",
@@ -7061,8 +6982,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_14400W_SEER2_2023_ValueT
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -7097,22 +7018,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_14400W_SEER2_2023_ValueT
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -7166,6 +7087,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_7200W_SEER2_2023_ValueTe
     std::string const idf_objects = delimited_string({
         "  Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    10.0,                    !- Number of Speeds {dimensionless}",
@@ -7390,8 +7312,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_7200W_SEER2_2023_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -7426,22 +7348,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_7200W_SEER2_2023_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -7495,6 +7417,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_14400W_SEER2_2023_ValueT
     std::string const idf_objects = delimited_string({
         "  Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    10.0,                    !- Number of Speeds {dimensionless}",
@@ -7718,8 +7641,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_14400W_SEER2_2023_ValueT
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -7754,22 +7677,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_14400W_SEER2_2023_ValueT
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -7823,6 +7746,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_22000W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Desiccant DXSystem VS Cooling Coil,  !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Desiccant DXSystem Mixed Air Node,  !- Indoor Air Inlet Node Name",
         "    HX Process Inlet Node,   !- Indoor Air Outlet Node Name",
         "    1.0,                     !- Number of Speeds {dimensionless}",
@@ -7929,8 +7853,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_22000W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.75, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.25, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -7961,22 +7885,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_01_Speed_22000W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(1.3544202152, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(-0.0493402773, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.0001514017, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.0655062896, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(1.0, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.0, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisEIRFFlowHs->coeff[1]);
 
@@ -8029,6 +7953,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_36000W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "            Heat Pump ACDXCoil 1,    !- Name,",
+        "            ,                        !- Availability Schedule Name",
         "            DX Cooling Coil Air Inlet Node,  !- Indoor Air Inlet Node Name,",
         "            Heating Coil Air Inlet Node,  !- Indoor Air Outlet Node Name,",
         "            2.0,                     !- Number of Speeds {dimensionless},",
@@ -8184,8 +8109,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_36000W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -8220,22 +8145,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_02_Speed_36000W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(1.6253449506, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(-0.0786550838, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(-0.2808139299, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.0987778868, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(1.0, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.0, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisEIRFFlowHs->coeff[1]);
 
@@ -8288,6 +8213,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_36000W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Heat Pump ACDXCoil 1,    !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    DX Cooling Coil Air Inlet Node,  !- Indoor Air Inlet Node Name",
         "    Heating Coil Air Inlet Node,  !- Indoor Air Outlet Node Name",
         "    3.0,                     !- Number of Speeds {dimensionless}",
@@ -8490,8 +8416,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_36000W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -8526,22 +8452,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_03_Speed_36000W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(1.6253449506, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(-0.0786550838, thisCCpaFTempHS->coeff[1]);
 
     // EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(-0.2808139299, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.0987778868, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(1.0, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.0, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisEIRFFlowHs->coeff[1]);
 
@@ -8589,6 +8515,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_36000W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Sys 4 Heat Pump Air Source Cooling Coil,  !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Sys 4 Heat Pump Air Source Supply Fan Outlet,  !- Indoor Air Inlet Node Name",
         "    Sys 4 Heat Pump Air Source Cooling Coil Outlet,  !- Indoor Air Outlet Node Name",
         "    4,                       !- Number of Speeds {dimensionless}",
@@ -8758,8 +8685,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_36000W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -8794,22 +8721,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_36000W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.476428, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.0401147, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.632475, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.0121321, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_NEAR(0.472786, thisCapFFlowHs->coeff[0], 0.01);
     EXPECT_NEAR(1.24334, thisCapFFlowHs->coeff[1], 0.01);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_NEAR(0.472786, thisEIRFFlowHs->coeff[0], 0.01);
     EXPECT_NEAR(1.24334, thisEIRFFlowHs->coeff[1], 0.01);
 
@@ -8857,6 +8784,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_25001W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    7.0,                    !- Number of Speeds {dimensionless}",
@@ -9051,8 +8979,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_25001W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -9087,22 +9015,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_07_Speed_25001W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -9152,6 +9080,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_34582W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    10.0,                    !- Number of Speeds {dimensionless}",
@@ -9384,8 +9313,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_34582W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -9420,22 +9349,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_34582W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -9489,6 +9418,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_32000W_IEER_2022_ValueTe
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Zone1PTHPDXCoolCoil,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Zone1PTHPFanOutletNode,  !- Indoor Air Inlet Node Name",
         "    Zone1PTHPDXCoolCoilOutletNode,  !- Indoor Air Outlet Node Name",
         "    10.0,                    !- Number of Speeds {dimensionless}",
@@ -9721,8 +9651,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_32000W_IEER_2022_ValueTe
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -9757,22 +9687,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_10_Speed_32000W_IEER_2022_ValueTe
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(0.942587793, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.009543347, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(0.342414409, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.034885008, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(0.8, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.2, thisCapFFlowHs->coeff[1]);
 
     //// EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.1552, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(-0.1808, thisEIRFFlowHs->coeff[1]);
 
@@ -9822,6 +9752,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_AutoSize_IEER_2022_Value
     std::string const idf_objects = delimited_string({
         "Coil:Cooling:DX:VariableSpeed,",
         "    Heat Pump ACDXCoil 1,    !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    DX Cooling Coil Air Inlet Node,  !- Indoor Air Inlet Node Name",
         "    Heating Coil Air Inlet Node,  !- Indoor Air Outlet Node Name",
         "    4.0,                     !- Number of Speeds {dimensionless}",
@@ -10071,8 +10002,8 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_AutoSize_IEER_2022_Value
     auto vsCoilType = thisCoil.VSCoilType; // 30
     EXPECT_TRUE(30 == vsCoilType);
     auto pLFfPLR_Curve = thisCoil.PLFFPLR;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -10107,22 +10038,22 @@ TEST_F(EnergyPlusFixture, VariableSpeedCooling_04_Speed_AutoSize_IEER_2022_Value
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSCCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.MSCCapFTemp(1)));
     EXPECT_EQ(1.6253449506, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(-0.0786550838, thisCCpaFTempHS->coeff[1]);
 
     //// EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.MSEIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.MSEIRFTemp(1)));
     EXPECT_EQ(-0.2808139299, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(0.0987778868, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSCCapAirFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.MSCCapAirFFlow(1)));
     EXPECT_EQ(1.0, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.MSEIRAirFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.MSEIRAirFFlow(1)));
     EXPECT_EQ(1.0, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.0, thisEIRFFlowHs->coeff[1]);
 
@@ -10327,9 +10258,9 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_18000W_SEER2_2023_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
 
-    // ckeck user PLF curve coefficients
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -10362,34 +10293,34 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_18000W_SEER2_2023_ValueTest)
     EXPECT_TRUE(DataHeatBalance::RefrigCondenserType::Air == thisCoil.CondenserType(1));
     EXPECT_FALSE(DataHeatBalance::RefrigCondenserType::Evap == thisCoil.CondenserType(1));
 
-    // Ckeck user curve coefficients
+    // Check user curve coefficients
 
     // CCapFTemp High Speed
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.CCapFTemp(1)));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
     // CCapFTemp Low Speed
-    auto &thisCCpaFTempLS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp2));
+    auto &thisCCpaFTempLS(state->dataCurveManager->curves(thisCoil.CCapFTemp2));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempLS->coeff[0]);
     EXPECT_EQ(0.226411E-03, thisCCpaFTempLS->coeff[2]);
 
     // EIRFTemp High Speed Curve
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.EIRFTemp(1)));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
     // EIRFTemp Low Speed Curve
-    auto &thisEIRFTempLS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp2));
+    auto &thisEIRFTempLS(state->dataCurveManager->curves(thisCoil.EIRFTemp2));
     EXPECT_EQ(0.774645E+00, thisEIRFTempLS->coeff[0]);
     EXPECT_EQ(-0.343731E-01, thisEIRFTempLS->coeff[1]);
 
     // CapFFlow High Speed
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.CCapFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.CCapFFlow(1)));
     EXPECT_EQ(0.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
     // Note -- No CapFlow for Low Speed
 
     // EIRFFlow High Speed
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.EIRFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.EIRFFlow(1)));
     EXPECT_EQ(1.0079484, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.34544129, thisEIRFFlowHs->coeff[1]);
     // Note -- No EIRFlow for Low Speed
@@ -10400,11 +10331,6 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_18000W_SEER2_2023_ValueTest)
     Real64 SEER2_Standard(0.0);
     Real64 EER2(0.0); // Energy Efficiency Ratio using AHRI 210/240 - 2023
     Real64 NetCoolingCapRated2023(0.0);
-
-    Real64 NetCoolingCapRated(0.0);
-    Real64 IEER_2022(0.0);
-    Real64 EER_2022(0.0);
-    Real64 NetCoolingCapRated2022(0.0);
 
     Array1D_int TSCCapFTemp;
     TSCCapFTemp.push_back(thisCoil.CCapFTemp(1)); // High Speed
@@ -10619,8 +10545,8 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_12000W_SEER2_2023_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -10653,34 +10579,34 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_12000W_SEER2_2023_ValueTest)
     EXPECT_TRUE(DataHeatBalance::RefrigCondenserType::Air == thisCoil.CondenserType(1));
     EXPECT_FALSE(DataHeatBalance::RefrigCondenserType::Evap == thisCoil.CondenserType(1));
 
-    // Ckeck user curve coefficients
+    // Check user curve coefficients
 
     // CCapFTemp High Speed
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.CCapFTemp(1)));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
     // CCapFTemp Low Speed
-    auto &thisCCpaFTempLS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp2));
+    auto &thisCCpaFTempLS(state->dataCurveManager->curves(thisCoil.CCapFTemp2));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempLS->coeff[0]);
     EXPECT_EQ(0.226411E-03, thisCCpaFTempLS->coeff[2]);
 
     // EIRFTemp High Speed Curve
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.EIRFTemp(1)));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
     // EIRFTemp Low Speed Curve
-    auto &thisEIRFTempLS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp2));
+    auto &thisEIRFTempLS(state->dataCurveManager->curves(thisCoil.EIRFTemp2));
     EXPECT_EQ(0.774645E+00, thisEIRFTempLS->coeff[0]);
     EXPECT_EQ(-0.343731E-01, thisEIRFTempLS->coeff[1]);
 
     // CapFFlow High Speed
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.CCapFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.CCapFFlow(1)));
     EXPECT_EQ(0.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
     // Note -- No CapFlow for Low Speed
 
     // EIRFFlow High Speed
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.EIRFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.EIRFFlow(1)));
     EXPECT_EQ(1.0079484, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.34544129, thisEIRFFlowHs->coeff[1]);
     // Note -- No EIRFlow for Low Speed
@@ -10899,8 +10825,8 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_39000W_IEER_2022_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -10912,7 +10838,6 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_39000W_IEER_2022_ValueTest)
     EXPECT_EQ(0.0, minEIRfLowPLRXInput);
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
-    auto ratedTotcap = thisCoil.RatedTotCap(1);
     // Rated Total Capacity
     EXPECT_NEAR(39000, thisCoil.RatedTotCap(1), 0.01);
     EXPECT_NEAR(12000, thisCoil.RatedTotCap2, 0.01);
@@ -10934,49 +10859,39 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_39000W_IEER_2022_ValueTest)
     EXPECT_TRUE(DataHeatBalance::RefrigCondenserType::Air == thisCoil.CondenserType(1));
     EXPECT_FALSE(DataHeatBalance::RefrigCondenserType::Evap == thisCoil.CondenserType(1));
 
-    // Ckeck user curve coefficients
+    // Check user curve coefficients
 
     // CCapFTemp High Speed
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.CCapFTemp(1)));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
     // CCapFTemp Low Speed
-    auto &thisCCpaFTempLS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp2));
+    auto &thisCCpaFTempLS(state->dataCurveManager->curves(thisCoil.CCapFTemp2));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempLS->coeff[0]);
     EXPECT_EQ(0.226411E-03, thisCCpaFTempLS->coeff[2]);
 
     // EIRFTemp High Speed Curve
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.EIRFTemp(1)));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
     // EIRFTemp Low Speed Curve
-    auto &thisEIRFTempLS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp2));
+    auto &thisEIRFTempLS(state->dataCurveManager->curves(thisCoil.EIRFTemp2));
     EXPECT_EQ(0.774645E+00, thisEIRFTempLS->coeff[0]);
     EXPECT_EQ(-0.343731E-01, thisEIRFTempLS->coeff[1]);
 
     // CapFFlow High Speed
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.CCapFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.CCapFFlow(1)));
     EXPECT_EQ(0.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
     // Note -- No CapFlow for Low Speed
 
     // EIRFFlow High Speed
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.EIRFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.EIRFFlow(1)));
     EXPECT_EQ(1.0079484, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.34544129, thisEIRFFlowHs->coeff[1]);
     // Note -- No EIRFlow for Low Speed
 
     std::map<std::string, Real64> StandardRatingsResult;
-    Real64 NetCoolingCapRatedMaxSpeed(0.0);
-    Real64 SEER2_User(0.0);
-    Real64 SEER2_Standard(0.0);
-    Real64 NetCoolingCapRated2023(0.0);
-    Real64 EER2(0.0); // Energy Efficiency Ratio using AHRI 210/240 - 2023
-
-    Real64 NetCoolingCapRated(0.0);
-    Real64 IEER_2022(0.0);
-    Real64 EER_2022(0.0);
-    Real64 NetCoolingCapRated2022(0.0);
 
     StandardRatingsResult = TwoSpeedDXCoilStandardRatings(*state,
                                                           thisCoil.Name,
@@ -11189,8 +11104,8 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_54000W_IEER_2022_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -11202,7 +11117,6 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_54000W_IEER_2022_ValueTest)
     EXPECT_EQ(0.0, minEIRfLowPLRXInput);
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
-    auto ratedTotcap = thisCoil.RatedTotCap(1);
     // Rated Total Capacity
     EXPECT_NEAR(54883.780765317439, thisCoil.RatedTotCap(1), 0.01);
     EXPECT_NEAR(18292.764129080300, thisCoil.RatedTotCap2, 0.01);
@@ -11224,49 +11138,39 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_54000W_IEER_2022_ValueTest)
     EXPECT_TRUE(DataHeatBalance::RefrigCondenserType::Air == thisCoil.CondenserType(1));
     EXPECT_FALSE(DataHeatBalance::RefrigCondenserType::Evap == thisCoil.CondenserType(1));
 
-    // Ckeck user curve coefficients
+    // Check user curve coefficients
 
     // CCapFTemp High Speed
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.CCapFTemp(1)));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
     // CCapFTemp Low Speed
-    auto &thisCCpaFTempLS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp2));
+    auto &thisCCpaFTempLS(state->dataCurveManager->curves(thisCoil.CCapFTemp2));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempLS->coeff[0]);
     EXPECT_EQ(0.226411E-03, thisCCpaFTempLS->coeff[2]);
 
     // EIRFTemp High Speed Curve
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.EIRFTemp(1)));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
     // EIRFTemp Low Speed Curve
-    auto &thisEIRFTempLS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp2));
+    auto &thisEIRFTempLS(state->dataCurveManager->curves(thisCoil.EIRFTemp2));
     EXPECT_EQ(0.774645E+00, thisEIRFTempLS->coeff[0]);
     EXPECT_EQ(-0.343731E-01, thisEIRFTempLS->coeff[1]);
 
     // CapFFlow High Speed
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.CCapFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.CCapFFlow(1)));
     EXPECT_EQ(0.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
     // Note -- No CapFlow for Low Speed
 
     // EIRFFlow High Speed
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.EIRFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.EIRFFlow(1)));
     EXPECT_EQ(1.0079484, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.34544129, thisEIRFFlowHs->coeff[1]);
     // Note -- No EIRFlow for Low Speed
 
     std::map<std::string, Real64> StandardRatingsResult;
-    Real64 NetCoolingCapRatedMaxSpeed(0.0);
-    Real64 SEER2_User(0.0);
-    Real64 SEER2_Standard(0.0);
-    Real64 NetCoolingCapRated2023(0.0);
-    Real64 EER2(0.0); // Energy Efficiency Ratio using AHRI 210/240 - 2023
-
-    Real64 NetCoolingCapRated(0.0);
-    Real64 IEER_2022(0.0);
-    Real64 EER_2022(0.0);
-    Real64 NetCoolingCapRated2022(0.0);
 
     StandardRatingsResult = TwoSpeedDXCoilStandardRatings(*state,
                                                           thisCoil.Name,
@@ -11487,8 +11391,8 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_33000W_IEER_2022_ValueTest)
     GetDXCoils(*state);
 
     auto &thisCoil(state->dataDXCoils->DXCoil(1));
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(thisCoil.PLFFPLR(1)));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(thisCoil.PLFFPLR(1)));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -11521,34 +11425,34 @@ TEST_F(EnergyPlusFixture, TwoSpeedCoolingCoilAir_33000W_IEER_2022_ValueTest)
     EXPECT_TRUE(DataHeatBalance::RefrigCondenserType::Air == thisCoil.CondenserType(1));
     EXPECT_FALSE(DataHeatBalance::RefrigCondenserType::Evap == thisCoil.CondenserType(1));
 
-    // Ckeck user curve coefficients
+    // Check user curve coefficients
 
     // CCapFTemp High Speed
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp(1)));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(thisCoil.CCapFTemp(1)));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
     // CCapFTemp Low Speed
-    auto &thisCCpaFTempLS(state->dataCurveManager->PerfCurve(thisCoil.CCapFTemp2));
+    auto &thisCCpaFTempLS(state->dataCurveManager->curves(thisCoil.CCapFTemp2));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempLS->coeff[0]);
     EXPECT_EQ(0.226411E-03, thisCCpaFTempLS->coeff[2]);
 
     // EIRFTemp High Speed Curve
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp(1)));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(thisCoil.EIRFTemp(1)));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
     // EIRFTemp Low Speed Curve
-    auto &thisEIRFTempLS(state->dataCurveManager->PerfCurve(thisCoil.EIRFTemp2));
+    auto &thisEIRFTempLS(state->dataCurveManager->curves(thisCoil.EIRFTemp2));
     EXPECT_EQ(0.774645E+00, thisEIRFTempLS->coeff[0]);
     EXPECT_EQ(-0.343731E-01, thisEIRFTempLS->coeff[1]);
 
     // CapFFlow High Speed
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.CCapFFlow(1)));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(thisCoil.CCapFFlow(1)));
     EXPECT_EQ(0.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
     // Note -- No CapFlow for Low Speed
 
     // EIRFFlow High Speed
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(thisCoil.EIRFFlow(1)));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(thisCoil.EIRFFlow(1)));
     EXPECT_EQ(1.0079484, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0.34544129, thisEIRFFlowHs->coeff[1]);
     // Note -- No EIRFlow for Low Speed
@@ -11789,21 +11693,22 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_15000W_alternateMode_SEER2_2023_Valu
     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
     // size it
     thisCoil.size(*state);
+    auto performance{dynamic_cast<CoilCoolingDXCurveFitPerformance *>(thisCoil.performance.get())};
 
     ASSERT_EQ("DX COOLING COIL", thisCoil.name);
-    ASSERT_EQ("DX COOL COOLING COIL PERFORMANCE", thisCoil.performance.name);
-    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE", thisCoil.performance.normalMode.name);
-    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE2", thisCoil.performance.alternateMode.name);
-    int nsp = (int)thisCoil.performance.normalMode.speeds.size();
+    ASSERT_EQ("DX COOL COOLING COIL PERFORMANCE", performance->name);
+    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE", performance->normalMode.name);
+    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE2", performance->alternateMode.name);
+    int nsp = performance->numSpeeds();
     ASSERT_EQ(2, nsp);
-    auto speed1 = thisCoil.performance.normalMode.speeds[0];
+    auto speed1 = performance->normalMode.speeds[0];
     ASSERT_EQ("DX COOL COOLING COIL SPEED 1 PERFORMANCE", speed1.name);
-    auto speed2 = thisCoil.performance.normalMode.speeds[1];
+    auto speed2 = performance->normalMode.speeds[1];
     ASSERT_EQ("DX COOL COOLING COIL SPEED 2 PERFORMANCE", speed2.name);
 
-    auto coilMode = thisCoil.performance.maxAvailCoilMode;
-    auto normalMode = thisCoil.performance.normalMode.speeds;
-    auto alternateMode1 = thisCoil.performance.alternateMode;
+    auto coilMode = performance->maxAvailCoilMode;
+    auto normalMode = performance->normalMode.speeds;
+    auto alternateMode1 = performance->alternateMode;
     EXPECT_EQ((int)HVAC::CoilMode::Enhanced, (int)coilMode);
     EXPECT_TRUE(2 == normalMode.size());
     auto speedA1 = alternateMode1.speeds[0];
@@ -11812,8 +11717,8 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_15000W_alternateMode_SEER2_2023_Valu
     ASSERT_EQ("DX COOL COOLING COIL SPEED 2 PERFORMANCE2", speedA2.name);
 
     auto pLFfPLR_Curve = speed1.indexPLRFPLF;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.83, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -11827,10 +11732,10 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_15000W_alternateMode_SEER2_2023_Valu
     EXPECT_EQ(0.3, maxEIRfLowPLRXInput);
 
     // Rated Total Capacity
-    EXPECT_NEAR(15000, thisCoil.performance.normalMode.ratedGrossTotalCap, 0.01);
+    EXPECT_NEAR(15000, performance->ratedGrossTotalCap(), 0.01);
 
     // Reated Air Vol Flow Rate | evap air flow rate and condenser air flow rate ??
-    EXPECT_NEAR(0.80, thisCoil.performance.normalMode.ratedEvapAirFlowRate, 0.01);
+    EXPECT_NEAR(0.80, performance->ratedEvapAirFlowRate(*state), 0.01);
 
     EXPECT_NEAR(7500, speed1.rated_total_capacity, 0.01);
     EXPECT_NEAR(15000, speed2.rated_total_capacity, 0.01);
@@ -11847,64 +11752,64 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_15000W_alternateMode_SEER2_2023_Valu
     EXPECT_NEAR(631.3, speed2.rated_evap_fan_power_per_volume_flow_rate_2023, 0.01);
 
     // CondenserType is a different enum that is being used in case of CurveFit in comparison to other Cooling DX Coils
-    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == thisCoil.performance.normalMode.condenserType);
-    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == thisCoil.performance.normalMode.condenserType);
+    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == performance->normalMode.condenserType);
+    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == performance->normalMode.condenserType);
 
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(speed1.indexCapFT));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(speed1.indexCapFT));
     EXPECT_EQ(0.483, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.0305, thisCCpaFTempHS->coeff[1]);
 
     // EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(speed1.indexEIRFT));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(speed1.indexEIRFT));
     EXPECT_EQ(1.33, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.034, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexCapFFF));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(speed1.indexCapFFF));
     EXPECT_EQ(1, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexEIRFFF));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(speed1.indexEIRFFF));
     EXPECT_EQ(1, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0, thisEIRFFlowHs->coeff[1]);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity == 0);
+    ASSERT_TRUE(performance->standardRatingEER == 0);
+    ASSERT_TRUE(performance->standardRatingSEER == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 == 0);
 
-    thisCoil.performance.calcStandardRatings210240(*state);
+    performance->calcStandardRatings210240(*state);
     // 2017 TBD
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity > 0);
-    EXPECT_NEAR(3.39, thisCoil.performance.standardRatingEER, 0.01);
-    EXPECT_NEAR(3.93, thisCoil.performance.standardRatingSEER, 0.01);
-    EXPECT_NEAR(14399.91, thisCoil.performance.standardRatingCoolingCapacity, 0.01);
-    EXPECT_NEAR(13.42, thisCoil.performance.standardRatingSEER * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER > 0);
+    ASSERT_TRUE(performance->standardRatingSEER > 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity > 0);
+    EXPECT_NEAR(3.39, performance->standardRatingEER, 0.01);
+    EXPECT_NEAR(3.93, performance->standardRatingSEER, 0.01);
+    EXPECT_NEAR(14399.91, performance->standardRatingCoolingCapacity, 0.01);
+    EXPECT_NEAR(13.42, performance->standardRatingSEER * StandardRatings::ConvFromSIToIP, 0.01);
     // 2023
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User > 0.0);
-    EXPECT_TRUE(thisCoil.performance.standardRatingSEER2_Standard > 0.0);
-    EXPECT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 > 0.0);
-    EXPECT_NEAR(3.51, thisCoil.performance.standardRatingEER2, 0.01);
-    EXPECT_NEAR(4.18, thisCoil.performance.standardRatingSEER2_User, 0.01);
-    EXPECT_NEAR(4.12, thisCoil.performance.standardRatingSEER2_Standard, 0.01);
-    EXPECT_NEAR(14513.51, thisCoil.performance.standardRatingCoolingCapacity2023, 0.01);
-    EXPECT_NEAR(14.26, thisCoil.performance.standardRatingSEER2_User * StandardRatings::ConvFromSIToIP, 0.01);
-    EXPECT_NEAR(14.07, thisCoil.performance.standardRatingSEER2_Standard * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User > 0.0);
+    EXPECT_TRUE(performance->standardRatingSEER2_Standard > 0.0);
+    EXPECT_TRUE(performance->standardRatingCoolingCapacity2023 > 0.0);
+    EXPECT_NEAR(3.51, performance->standardRatingEER2, 0.01);
+    EXPECT_NEAR(4.18, performance->standardRatingSEER2_User, 0.01);
+    EXPECT_NEAR(4.12, performance->standardRatingSEER2_Standard, 0.01);
+    EXPECT_NEAR(14513.51, performance->standardRatingCoolingCapacity2023, 0.01);
+    EXPECT_NEAR(14.26, performance->standardRatingSEER2_User * StandardRatings::ConvFromSIToIP, 0.01);
+    EXPECT_NEAR(14.07, performance->standardRatingSEER2_Standard * StandardRatings::ConvFromSIToIP, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER > 0);
-    EXPECT_NEAR(3.42, thisCoil.performance.standardRatingIEER, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 > 0);
-    EXPECT_NEAR(3.97, thisCoil.performance.standardRatingIEER2, 0.01);
+    ASSERT_TRUE(performance->standardRatingIEER > 0);
+    EXPECT_NEAR(3.42, performance->standardRatingIEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingIEER2 > 0);
+    EXPECT_NEAR(3.97, performance->standardRatingIEER2, 0.01);
 }
 
 TEST_F(EnergyPlusFixture, CurveFit_03_Speed_5000W_SEER2_2023_ValueTest)
@@ -12113,27 +12018,29 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_5000W_SEER2_2023_ValueTest)
     // size it
     thisCoil.size(*state);
 
+    auto performance{dynamic_cast<CoilCoolingDXCurveFitPerformance *>(thisCoil.performance.get())};
+
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL", thisCoil.name);
-    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL PERFORMANCE", thisCoil.performance.name);
-    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL OPERATING MODE", thisCoil.performance.normalMode.name);
-    int nsp = (int)thisCoil.performance.normalMode.speeds.size();
+    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL PERFORMANCE", performance->name);
+    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL OPERATING MODE", performance->normalMode.name);
+    int nsp = performance->numSpeeds();
     ASSERT_EQ(3, nsp);
-    auto speed1 = thisCoil.performance.normalMode.speeds[0];
+    auto speed1 = performance->normalMode.speeds[0];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 1 PERFORMANCE", speed1.name);
-    auto speed2 = thisCoil.performance.normalMode.speeds[1];
+    auto speed2 = performance->normalMode.speeds[1];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 2 PERFORMANCE", speed2.name);
-    auto speed3 = thisCoil.performance.normalMode.speeds[2];
+    auto speed3 = performance->normalMode.speeds[2];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 3 PERFORMANCE", speed3.name);
 
-    HVAC::CoilMode coilMode = thisCoil.performance.maxAvailCoilMode;
-    auto alternateMode1 = thisCoil.performance.alternateMode.speeds; // Do you know what auto types to here?
-    auto alternateMode2 = thisCoil.performance.alternateMode2.speeds;
+    HVAC::CoilMode coilMode = performance->maxAvailCoilMode;
+    auto alternateMode1 = performance->alternateMode.speeds;
+    auto alternateMode2 = performance->alternateMode2.speeds;
     EXPECT_EQ((int)HVAC::CoilMode::Normal, (int)coilMode);
     EXPECT_TRUE(alternateMode1.empty());
     EXPECT_TRUE(alternateMode2.empty());
     auto pLFfPLR_Curve = speed1.indexPLRFPLF;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -12147,10 +12054,10 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_5000W_SEER2_2023_ValueTest)
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
     // Rated Total Capacity
-    EXPECT_NEAR(5000, thisCoil.performance.normalMode.ratedGrossTotalCap, 0.01);
+    EXPECT_NEAR(5000, performance->ratedGrossTotalCap(), 0.01);
 
     // Reated Air Vol Flow Rate | evap air flow rate and condenser air flow rate ??
-    EXPECT_NEAR(0.25, thisCoil.performance.normalMode.ratedEvapAirFlowRate, 0.01);
+    EXPECT_NEAR(0.25, performance->ratedEvapAirFlowRate(*state), 0.01);
 
     EXPECT_NEAR(1666.5, speed1.rated_total_capacity, 0.01);
     EXPECT_NEAR(3333.5, speed2.rated_total_capacity, 0.01);
@@ -12171,64 +12078,64 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_5000W_SEER2_2023_ValueTest)
     EXPECT_NEAR(812.9, speed3.rated_evap_fan_power_per_volume_flow_rate_2023, 0.01);
 
     // CondenserType is a different enum that is being used in case of CurveFit in comparison to other Cooling DX Coils
-    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == thisCoil.performance.normalMode.condenserType);
-    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == thisCoil.performance.normalMode.condenserType);
+    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == performance->normalMode.condenserType);
+    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == performance->normalMode.condenserType);
 
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(speed1.indexCapFT));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(speed1.indexCapFT));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
 
     // EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(speed1.indexEIRFT));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(speed1.indexEIRFT));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexCapFFF));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(speed1.indexCapFFF));
     EXPECT_EQ(.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexEIRFFF));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(speed1.indexEIRFFF));
     EXPECT_EQ(.47278589, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisEIRFFlowHs->coeff[1]);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity == 0);
+    ASSERT_TRUE(performance->standardRatingEER == 0);
+    ASSERT_TRUE(performance->standardRatingSEER == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 == 0);
 
-    thisCoil.performance.calcStandardRatings210240(*state);
+    performance->calcStandardRatings210240(*state);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity > 0);
-    EXPECT_NEAR(2.62, thisCoil.performance.standardRatingEER, 0.01);
-    EXPECT_NEAR(2.80, thisCoil.performance.standardRatingSEER, 0.01);
-    EXPECT_NEAR(4831.92, thisCoil.performance.standardRatingCoolingCapacity, 0.01);
-    EXPECT_NEAR(9.56, thisCoil.performance.standardRatingSEER * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER > 0);
+    ASSERT_TRUE(performance->standardRatingSEER > 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity > 0);
+    EXPECT_NEAR(2.62, performance->standardRatingEER, 0.01);
+    EXPECT_NEAR(2.80, performance->standardRatingSEER, 0.01);
+    EXPECT_NEAR(4831.92, performance->standardRatingCoolingCapacity, 0.01);
+    EXPECT_NEAR(9.56, performance->standardRatingSEER * StandardRatings::ConvFromSIToIP, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User > 0.0);
-    EXPECT_TRUE(thisCoil.performance.standardRatingSEER2_Standard > 0.0);
-    EXPECT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 > 0.0);
-    EXPECT_NEAR(2.55, thisCoil.performance.standardRatingEER2, 0.01);
-    EXPECT_NEAR(3.05, thisCoil.performance.standardRatingSEER2_User, 0.01);
-    EXPECT_NEAR(3.07, thisCoil.performance.standardRatingSEER2_Standard, 0.01);
-    EXPECT_NEAR(4798.04, thisCoil.performance.standardRatingCoolingCapacity2023, 0.01);
-    EXPECT_NEAR(10.41, thisCoil.performance.standardRatingSEER2_User * StandardRatings::ConvFromSIToIP, 0.01);
-    EXPECT_NEAR(10.47, thisCoil.performance.standardRatingSEER2_Standard * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User > 0.0);
+    EXPECT_TRUE(performance->standardRatingSEER2_Standard > 0.0);
+    EXPECT_TRUE(performance->standardRatingCoolingCapacity2023 > 0.0);
+    EXPECT_NEAR(2.55, performance->standardRatingEER2, 0.01);
+    EXPECT_NEAR(3.05, performance->standardRatingSEER2_User, 0.01);
+    EXPECT_NEAR(3.07, performance->standardRatingSEER2_Standard, 0.01);
+    EXPECT_NEAR(4798.04, performance->standardRatingCoolingCapacity2023, 0.01);
+    EXPECT_NEAR(10.41, performance->standardRatingSEER2_User * StandardRatings::ConvFromSIToIP, 0.01);
+    EXPECT_NEAR(10.47, performance->standardRatingSEER2_Standard * StandardRatings::ConvFromSIToIP, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER > 0);
-    EXPECT_NEAR(2.78, thisCoil.performance.standardRatingIEER, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 > 0);
-    EXPECT_NEAR(3.17, thisCoil.performance.standardRatingIEER2, 0.01);
+    ASSERT_TRUE(performance->standardRatingIEER > 0);
+    EXPECT_NEAR(2.78, performance->standardRatingIEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingIEER2 > 0);
+    EXPECT_NEAR(3.17, performance->standardRatingIEER2, 0.01);
 }
 
 TEST_F(EnergyPlusFixture, CurveFit_02_Speed_30000W_alternateMode_IEER_2022_ValueTest)
@@ -12415,21 +12322,22 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_30000W_alternateMode_IEER_2022_Value
     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
     // size it
     thisCoil.size(*state);
+    auto performance{dynamic_cast<CoilCoolingDXCurveFitPerformance *>(thisCoil.performance.get())};
 
     ASSERT_EQ("DX COOLING COIL", thisCoil.name);
-    ASSERT_EQ("DX COOL COOLING COIL PERFORMANCE", thisCoil.performance.name);
-    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE", thisCoil.performance.normalMode.name);
-    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE2", thisCoil.performance.alternateMode.name);
-    int nsp = (int)thisCoil.performance.normalMode.speeds.size();
+    ASSERT_EQ("DX COOL COOLING COIL PERFORMANCE", performance->name);
+    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE", performance->normalMode.name);
+    ASSERT_EQ("DX COOL COOLING COIL OPERATING MODE2", performance->alternateMode.name);
+    int nsp = (int)performance->normalMode.speeds.size();
     ASSERT_EQ(2, nsp);
-    auto speed1 = thisCoil.performance.normalMode.speeds[0];
+    auto speed1 = performance->normalMode.speeds[0];
     ASSERT_EQ("DX COOL COOLING COIL SPEED 1 PERFORMANCE", speed1.name);
-    auto speed2 = thisCoil.performance.normalMode.speeds[1];
+    auto speed2 = performance->normalMode.speeds[1];
     ASSERT_EQ("DX COOL COOLING COIL SPEED 2 PERFORMANCE", speed2.name);
 
-    // auto hasAlternateMode = thisCoil.performance.hasAlternateMode;
-    auto normalMode = thisCoil.performance.normalMode.speeds;
-    auto alternateMode1 = thisCoil.performance.alternateMode;
+    // auto hasAlternateMode = performance->hasAlternateMode;
+    auto normalMode = performance->normalMode.speeds;
+    auto alternateMode1 = performance->alternateMode;
     // EXPECT_EQ(1, hasAlternateMode);
     EXPECT_TRUE(2 == normalMode.size());
     auto speedA1 = alternateMode1.speeds[0];
@@ -12438,8 +12346,8 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_30000W_alternateMode_IEER_2022_Value
     ASSERT_EQ("DX COOL COOLING COIL SPEED 2 PERFORMANCE2", speedA2.name);
 
     auto pLFfPLR_Curve = speed1.indexPLRFPLF;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.83, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -12453,10 +12361,10 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_30000W_alternateMode_IEER_2022_Value
     EXPECT_EQ(0.3, maxEIRfLowPLRXInput);
 
     // Rated Total Capacity
-    EXPECT_NEAR(30000, thisCoil.performance.normalMode.ratedGrossTotalCap, 0.01);
+    EXPECT_NEAR(30000, performance->normalMode.ratedGrossTotalCap, 0.01);
 
     // Reated Air Vol Flow Rate | evap air flow rate and condenser air flow rate ??
-    EXPECT_NEAR(1.60, thisCoil.performance.normalMode.ratedEvapAirFlowRate, 0.01);
+    EXPECT_NEAR(1.60, performance->normalMode.ratedEvapAirFlowRate, 0.01);
 
     EXPECT_NEAR(15000, speed1.rated_total_capacity, 0.01);
     EXPECT_NEAR(30000, speed2.rated_total_capacity, 0.01);
@@ -12473,62 +12381,62 @@ TEST_F(EnergyPlusFixture, CurveFit_02_Speed_30000W_alternateMode_IEER_2022_Value
     EXPECT_NEAR(631.3, speed2.rated_evap_fan_power_per_volume_flow_rate_2023, 0.01);
 
     // CondenserType is a different enum that is being used in case of CurveFit in comparison to other Cooling DX Coils
-    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == thisCoil.performance.normalMode.condenserType);
-    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == thisCoil.performance.normalMode.condenserType);
+    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == performance->normalMode.condenserType);
+    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == performance->normalMode.condenserType);
 
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(speed1.indexCapFT));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(speed1.indexCapFT));
     EXPECT_EQ(0.483, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.0305, thisCCpaFTempHS->coeff[1]);
 
     // EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(speed1.indexEIRFT));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(speed1.indexEIRFT));
     EXPECT_EQ(1.33, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.034, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexCapFFF));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(speed1.indexCapFFF));
     EXPECT_EQ(1, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(0, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexEIRFFF));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(speed1.indexEIRFFF));
     EXPECT_EQ(1, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(0, thisEIRFFlowHs->coeff[1]);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity == 0);
+    ASSERT_TRUE(performance->standardRatingEER == 0);
+    ASSERT_TRUE(performance->standardRatingSEER == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 == 0);
+    ASSERT_TRUE(performance->standardRatingIEER == 0);
+    ASSERT_TRUE(performance->standardRatingIEER2 == 0);
 
-    thisCoil.performance.calcStandardRatings210240(*state);
+    performance->calcStandardRatings210240(*state);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 > 0);
-    EXPECT_NEAR(3.51, thisCoil.performance.standardRatingEER2, 0.01);
-    EXPECT_NEAR(3.97, thisCoil.performance.standardRatingIEER2, 0.01);
-    EXPECT_NEAR(29027.03, thisCoil.performance.standardRatingCoolingCapacity2023, 0.01);
-    EXPECT_NEAR(13.56, thisCoil.performance.standardRatingIEER2 * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingIEER > 0);
+    ASSERT_TRUE(performance->standardRatingIEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 > 0);
+    EXPECT_NEAR(3.51, performance->standardRatingEER2, 0.01);
+    EXPECT_NEAR(3.97, performance->standardRatingIEER2, 0.01);
+    EXPECT_NEAR(29027.03, performance->standardRatingCoolingCapacity2023, 0.01);
+    EXPECT_NEAR(13.56, performance->standardRatingIEER2 * StandardRatings::ConvFromSIToIP, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER > 0);
-    EXPECT_NEAR(3.39, thisCoil.performance.standardRatingEER, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER > 0);
-    EXPECT_NEAR(3.93, thisCoil.performance.standardRatingSEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER > 0);
+    EXPECT_NEAR(3.39, performance->standardRatingEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER > 0);
+    EXPECT_NEAR(3.93, performance->standardRatingSEER, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User > 0);
-    EXPECT_NEAR(4.18, thisCoil.performance.standardRatingSEER2_User, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard > 0);
-    EXPECT_NEAR(4.12, thisCoil.performance.standardRatingSEER2_Standard, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER2_User > 0);
+    EXPECT_NEAR(4.18, performance->standardRatingSEER2_User, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard > 0);
+    EXPECT_NEAR(4.12, performance->standardRatingSEER2_Standard, 0.01);
 }
 
 TEST_F(EnergyPlusFixture, CurveFit_03_Speed_20000W_IEER_2022_ValueTest)
@@ -12733,31 +12641,32 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_20000W_IEER_2022_ValueTest)
 
     int coilIndex = CoilCoolingDX::factory(*state, "Sys 2 Furnace DX Cool Cooling Coil");
     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
+    auto performance{dynamic_cast<CoilCoolingDXCurveFitPerformance *>(thisCoil.performance.get())};
 
     // size it
     thisCoil.size(*state);
 
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL", thisCoil.name);
-    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL PERFORMANCE", thisCoil.performance.name);
-    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL OPERATING MODE", thisCoil.performance.normalMode.name);
-    int nsp = (int)thisCoil.performance.normalMode.speeds.size();
+    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL PERFORMANCE", performance->name);
+    ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL OPERATING MODE", performance->normalMode.name);
+    int nsp = (int)performance->normalMode.speeds.size();
     ASSERT_EQ(3, nsp);
-    auto speed1 = thisCoil.performance.normalMode.speeds[0];
+    auto speed1 = performance->normalMode.speeds[0];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 1 PERFORMANCE", speed1.name);
-    auto speed2 = thisCoil.performance.normalMode.speeds[1];
+    auto speed2 = performance->normalMode.speeds[1];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 2 PERFORMANCE", speed2.name);
-    auto speed3 = thisCoil.performance.normalMode.speeds[2];
+    auto speed3 = performance->normalMode.speeds[2];
     ASSERT_EQ("SYS 2 FURNACE DX COOL COOLING COIL SPEED 3 PERFORMANCE", speed3.name);
 
-    // auto hasAlternateMode = thisCoil.performance.hasAlternateMode;
-    auto alternateMode1 = thisCoil.performance.alternateMode.speeds;
-    auto alternateMode2 = thisCoil.performance.alternateMode2.speeds;
+    // auto hasAlternateMode = performance->hasAlternateMode;
+    auto alternateMode1 = performance->alternateMode.speeds;
+    auto alternateMode2 = performance->alternateMode2.speeds;
     // EXPECT_EQ(0, hasAlternateMode);
     EXPECT_TRUE(alternateMode1.empty());
     EXPECT_TRUE(alternateMode2.empty());
     auto pLFfPLR_Curve = speed1.indexPLRFPLF;
-    auto &thisCoolPLFfPLR(state->dataCurveManager->PerfCurve(pLFfPLR_Curve));
-    // ckeck user PLF curve coefficients
+    auto &thisCoolPLFfPLR(state->dataCurveManager->curves(pLFfPLR_Curve));
+    // check user PLF curve coefficients
     EXPECT_EQ(0.85, thisCoolPLFfPLR->coeff[0]);
     EXPECT_EQ(0.15, thisCoolPLFfPLR->coeff[1]);
     EXPECT_EQ(0.0, thisCoolPLFfPLR->inputLimits[0].min);
@@ -12771,10 +12680,10 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_20000W_IEER_2022_ValueTest)
     EXPECT_EQ(1.0, maxEIRfLowPLRXInput);
 
     // Rated Total Capacity
-    EXPECT_NEAR(20000, thisCoil.performance.normalMode.ratedGrossTotalCap, 0.01);
+    EXPECT_NEAR(20000, performance->normalMode.ratedGrossTotalCap, 0.01);
 
     // Reated Air Vol Flow Rate | evap air flow rate and condenser air flow rate ??
-    EXPECT_NEAR(1.0, thisCoil.performance.normalMode.ratedEvapAirFlowRate, 0.01);
+    EXPECT_NEAR(1.0, performance->normalMode.ratedEvapAirFlowRate, 0.01);
 
     EXPECT_NEAR(6666, speed1.rated_total_capacity, 0.01);
     EXPECT_NEAR(13334, speed2.rated_total_capacity, 0.01);
@@ -12795,61 +12704,61 @@ TEST_F(EnergyPlusFixture, CurveFit_03_Speed_20000W_IEER_2022_ValueTest)
     EXPECT_NEAR(812.9, speed3.rated_evap_fan_power_per_volume_flow_rate_2023, 0.01);
 
     // CondenserType is a different enum that is being used in case of CurveFit in comparison to other Cooling DX Coils
-    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == thisCoil.performance.normalMode.condenserType);
-    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == thisCoil.performance.normalMode.condenserType);
+    EXPECT_TRUE(CoilCoolingDXCurveFitOperatingMode::CondenserType::AIRCOOLED == performance->normalMode.condenserType);
+    EXPECT_FALSE(CoilCoolingDXCurveFitOperatingMode::CondenserType::EVAPCOOLED == performance->normalMode.condenserType);
 
     // Check user curve coefficients
 
     // CCapFTemp Speed 1
-    auto &thisCCpaFTempHS(state->dataCurveManager->PerfCurve(speed1.indexCapFT));
+    auto &thisCCpaFTempHS(state->dataCurveManager->curves(speed1.indexCapFT));
     EXPECT_EQ(0.476428E+00, thisCCpaFTempHS->coeff[0]);
     EXPECT_EQ(0.401147E-01, thisCCpaFTempHS->coeff[1]);
 
     // EIRFTemp Speed 1
-    auto &thisEIRFTempHS(state->dataCurveManager->PerfCurve(speed1.indexEIRFT));
+    auto &thisEIRFTempHS(state->dataCurveManager->curves(speed1.indexEIRFT));
     EXPECT_EQ(0.632475E+00, thisEIRFTempHS->coeff[0]);
     EXPECT_EQ(-0.121321E-01, thisEIRFTempHS->coeff[1]);
 
     // CapFFlow Speed 1
-    auto &thisCapFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexCapFFF));
+    auto &thisCapFFlowHs(state->dataCurveManager->curves(speed1.indexCapFFF));
     EXPECT_EQ(.47278589, thisCapFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisCapFFlowHs->coeff[1]);
 
     // EIRFFlow Speed 1
-    auto &thisEIRFFlowHs(state->dataCurveManager->PerfCurve(speed1.indexEIRFFF));
+    auto &thisEIRFFlowHs(state->dataCurveManager->curves(speed1.indexEIRFFF));
     EXPECT_EQ(.47278589, thisEIRFFlowHs->coeff[0]);
     EXPECT_EQ(1.2433415, thisEIRFFlowHs->coeff[1]);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity == 0);
+    ASSERT_TRUE(performance->standardRatingEER == 0);
+    ASSERT_TRUE(performance->standardRatingSEER == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_User == 0);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard == 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 == 0);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER == 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 == 0);
+    ASSERT_TRUE(performance->standardRatingIEER == 0);
+    ASSERT_TRUE(performance->standardRatingIEER2 == 0);
 
-    thisCoil.performance.calcStandardRatings210240(*state);
+    performance->calcStandardRatings210240(*state);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingIEER2 > 0);
-    ASSERT_TRUE(thisCoil.performance.standardRatingCoolingCapacity2023 > 0);
-    EXPECT_NEAR(2.55, thisCoil.performance.standardRatingEER2, 0.01);
-    EXPECT_NEAR(3.18, thisCoil.performance.standardRatingIEER2, 0.01);
-    EXPECT_NEAR(19192.186657893722, thisCoil.performance.standardRatingCoolingCapacity2023, 0.01);
-    EXPECT_NEAR(10.85, thisCoil.performance.standardRatingIEER2 * StandardRatings::ConvFromSIToIP, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingIEER > 0);
+    ASSERT_TRUE(performance->standardRatingIEER2 > 0);
+    ASSERT_TRUE(performance->standardRatingCoolingCapacity2023 > 0);
+    EXPECT_NEAR(2.55, performance->standardRatingEER2, 0.01);
+    EXPECT_NEAR(3.18, performance->standardRatingIEER2, 0.01);
+    EXPECT_NEAR(19192.186657893722, performance->standardRatingCoolingCapacity2023, 0.01);
+    EXPECT_NEAR(10.85, performance->standardRatingIEER2 * StandardRatings::ConvFromSIToIP, 0.01);
 
-    ASSERT_TRUE(thisCoil.performance.standardRatingEER > 0);
-    EXPECT_NEAR(2.62, thisCoil.performance.standardRatingEER, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER > 0);
-    EXPECT_NEAR(2.80, thisCoil.performance.standardRatingSEER, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_User > 0);
-    EXPECT_NEAR(3.05, thisCoil.performance.standardRatingSEER2_User, 0.01);
-    ASSERT_TRUE(thisCoil.performance.standardRatingSEER2_Standard > 0);
-    EXPECT_NEAR(3.07, thisCoil.performance.standardRatingSEER2_Standard, 0.01);
+    ASSERT_TRUE(performance->standardRatingEER > 0);
+    EXPECT_NEAR(2.62, performance->standardRatingEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER > 0);
+    EXPECT_NEAR(2.80, performance->standardRatingSEER, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER2_User > 0);
+    EXPECT_NEAR(3.05, performance->standardRatingSEER2_User, 0.01);
+    ASSERT_TRUE(performance->standardRatingSEER2_Standard > 0);
+    EXPECT_NEAR(3.07, performance->standardRatingSEER2_Standard, 0.01);
 }
 
 TEST_F(EnergyPlusFixture, ChillerCondenserEnteringFluidTemp_AHRIIPTestConditions)

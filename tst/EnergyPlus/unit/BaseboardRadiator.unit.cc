@@ -64,6 +64,7 @@
 #include <EnergyPlus/IOFiles.hh>
 #include <EnergyPlus/Material.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/SurfaceGeometry.hh>
 
@@ -402,6 +403,8 @@ TEST_F(EnergyPlusFixture, BaseboardConvWater_SizingTest)
     state->dataSize->FinalZoneSizing(CntrlZoneNum).ZoneHumRatAtHeatPeak = 0.005;
     // do baseboard sizing
     state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc);
+
     state->dataBaseboardRadiator->baseboards(BaseboardNum).ZonePtr = 1;
     state->dataBaseboardRadiator->baseboards(BaseboardNum).SizeBaseboard(*state, BaseboardNum);
     // check UA value
@@ -429,6 +432,8 @@ TEST_F(EnergyPlusFixture, BaseboardConvWater_SizingTest)
     state->dataHeatBal->Zone(CntrlZoneNum).FloorArea = 100.0;
     // do baseboard sizing
     state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc);
+
     state->dataBaseboardRadiator->baseboards(BaseboardNum).ZonePtr = 2;
     state->dataBaseboardRadiator->baseboards(BaseboardNum).SizeBaseboard(*state, BaseboardNum);
     // check UA value
@@ -456,6 +461,8 @@ TEST_F(EnergyPlusFixture, BaseboardConvWater_SizingTest)
     state->dataHeatBal->Zone(CntrlZoneNum).FloorArea = 100.0;
     // do baseboard sizing
     state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataBaseboardRadiator->baseboards(BaseboardNum).plantLoc);
+
     state->dataBaseboardRadiator->baseboards(BaseboardNum).ZonePtr = 3;
     state->dataBaseboardRadiator->baseboards(BaseboardNum).SizeBaseboard(*state, BaseboardNum);
     // check UA value

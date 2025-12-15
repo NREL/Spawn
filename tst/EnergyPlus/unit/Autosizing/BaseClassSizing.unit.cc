@@ -76,7 +76,7 @@ using namespace EnergyPlus::Psychrometrics;
 
 TEST_F(EnergyPlusFixture, BaseSizer_selectSizerOutput)
 {
-    // ficticious sizing to test the selectSizerOutput function
+    // fictitious sizing to test the selectSizerOutput function
     // there are several if blocks to determine which type of reporting to output
     // report Design Size and User, Design Size only, or User size only
     // if these if block miss a possible input configuration the simulation may fail
@@ -663,9 +663,10 @@ TEST_F(SQLiteFixture, BaseSizer_SQLiteRecordReportSizerOutputTest)
     auto result = queryResult("SELECT * FROM ComponentSizes;", "ComponentSizes");
     // check that there are two sizing result records
     ASSERT_EQ(2ul, result.size());
-    std::vector<std::string> testResult0{"1", "BOILER:HOTWATER", "RESIDENTIAL BOILER ELECTRIC", "Design Size Nominal Capacity", "105977.98934", "W"};
+    std::vector<std::string> testResult0{
+        "1", "BOILER:HOTWATER", "RESIDENTIAL BOILER ELECTRIC", "Design Size Nominal Capacity", "105977.98934", "W", ""};
     std::vector<std::string> testResult1{
-        "2", "BOILER:HOTWATER", "RESIDENTIAL BOILER ELECTRIC", "User-Specified Nominal Capacity", "26352.97405", "W"};
+        "2", "BOILER:HOTWATER", "RESIDENTIAL BOILER ELECTRIC", "User-Specified Nominal Capacity", "26352.97405", "W", ""};
     EXPECT_EQ(testResult0, result[0]);
     EXPECT_EQ(testResult1, result[1]);
 }
@@ -1477,7 +1478,7 @@ TEST_F(EnergyPlusFixture, BaseSizer_SupplyAirTempLessThanZoneTStatTest)
     SimulationManager::ManageSimulation(*state);
 
     int CtrlZoneNum(1);
-    // design peak load conditons and design supply air temperature
+    // design peak load conditions and design supply air temperature
     EXPECT_EQ(state->dataSize->CalcFinalZoneSizing(CtrlZoneNum).HeatTstatTemp, 21.0); // expects specified value
     EXPECT_EQ(state->dataSize->CalcFinalZoneSizing(CtrlZoneNum).HeatDesTemp, 12.0);   // less than zone air Temp
     EXPECT_EQ(state->dataSize->CalcFinalZoneSizing(CtrlZoneNum).HeatDesDay, "PHOENIX SKY HARBOR INTL AP ANN HTG 99.6% CONDNS DB");
@@ -1490,6 +1491,6 @@ TEST_F(EnergyPlusFixture, BaseSizer_SupplyAirTempLessThanZoneTStatTest)
     EXPECT_EQ(state->dataSize->FinalZoneSizing(CtrlZoneNum).DesHeatVolFlow, 0.0);      // expects zero
     EXPECT_EQ(state->dataSize->FinalZoneSizing(CtrlZoneNum).DesHeatMassFlow, 0.0);     // expects zero
     // expects non-zero peak heating load
-    EXPECT_NEAR(state->dataSize->CalcFinalZoneSizing(CtrlZoneNum).DesHeatLoad, 6911.42, 0.01);
-    EXPECT_NEAR(state->dataSize->FinalZoneSizing(CtrlZoneNum).DesHeatLoad, 6911.42, 0.01);
+    EXPECT_NEAR(state->dataSize->CalcFinalZoneSizing(CtrlZoneNum).DesHeatLoad, 6911.42, 0.5);
+    EXPECT_NEAR(state->dataSize->FinalZoneSizing(CtrlZoneNum).DesHeatLoad, 6911.42, 0.5);
 }

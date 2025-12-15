@@ -908,9 +908,13 @@ void ReportCoilSelection::associateZoneCoilWithParent(EnergyPlusData &state, std
             c->userNameforHVACsystem = zoneEquipList.EquipName(equipLoop);
             c->coilLocation = "Zone Equipment";
             int zoneEqListIndex = Util::FindItemInList(zoneEquipList.Name, state.dataZoneEquip->ZoneEquipList);
-            if (c->zoneNum.empty()) c->zoneNum.resize(1);
+            if (c->zoneNum.empty()) {
+                c->zoneNum.resize(1);
+            }
             c->zoneNum[0] = zoneEqListIndex;
-            if (c->zoneName.empty()) c->zoneName.resize(1);
+            if (c->zoneName.empty()) {
+                c->zoneName.resize(1);
+            }
             c->zoneName[0] = state.dataHeatBal->Zone(zoneEqListIndex).Name;
             coilFound = true;
         }
@@ -933,9 +937,13 @@ void ReportCoilSelection::associateZoneCoilWithParent(EnergyPlusData &state, std
                         c->userNameforHVACsystem = zoneEquipList.EquipName(equipLoop);
                         c->coilLocation = "Zone Equipment";
                         int zoneEqListIndex = Util::FindItemInList(zoneEquipList.Name, state.dataZoneEquip->ZoneEquipList);
-                        if (c->zoneNum.empty()) c->zoneNum.resize(1);
+                        if (c->zoneNum.empty()) {
+                            c->zoneNum.resize(1);
+                        }
                         c->zoneNum[0] = zoneEqListIndex;
-                        if (c->zoneName.empty()) c->zoneName.resize(1);
+                        if (c->zoneName.empty()) {
+                            c->zoneName.resize(1);
+                        }
                         c->zoneName[0] = state.dataHeatBal->Zone(zoneEqListIndex).Name;
                         coilFound = true;
                     }
@@ -950,7 +958,9 @@ void ReportCoilSelection::associateZoneCoilWithParent(EnergyPlusData &state, std
                         fanFound = true;
                     }
                 }
-                if (coilFound && fanFound) break;
+                if (coilFound && fanFound) {
+                    break;
+                }
             }
         }
         if (coilFound) {
@@ -1263,10 +1273,14 @@ void ReportCoilSelection::setCoilCoolingCapacity(
         int SysPeakTimeStepInDay(0);
         if (finalSysSizing.coolingPeakLoad == DataSizing::PeakLoad::TotalCooling) {
             SysPeakDDnum = SysSizPeakDDNum(curSysNum).TotCoolPeakDD;
-            if (SysPeakDDnum > 0) SysPeakTimeStepInDay = SysSizPeakDDNum(curSysNum).TimeStepAtTotCoolPk(SysSizPeakDDNum(curSysNum).TotCoolPeakDD);
+            if (SysPeakDDnum > 0) {
+                SysPeakTimeStepInDay = SysSizPeakDDNum(curSysNum).TimeStepAtTotCoolPk(SysSizPeakDDNum(curSysNum).TotCoolPeakDD);
+            }
         } else if (finalSysSizing.coolingPeakLoad == DataSizing::PeakLoad::SensibleCooling) {
             SysPeakDDnum = SysSizPeakDDNum(curSysNum).SensCoolPeakDD;
-            if (SysPeakDDnum > 0) SysPeakTimeStepInDay = SysSizPeakDDNum(curSysNum).TimeStepAtSensCoolPk(SysSizPeakDDNum(curSysNum).SensCoolPeakDD);
+            if (SysPeakDDnum > 0) {
+                SysPeakTimeStepInDay = SysSizPeakDDNum(curSysNum).TimeStepAtSensCoolPk(SysSizPeakDDNum(curSysNum).SensCoolPeakDD);
+            }
         }
 
         if (SysPeakDDnum > 0 && SysPeakTimeStepInDay > 0) {
@@ -1362,7 +1376,9 @@ void ReportCoilSelection::setCoilCoolingCapacity(
         c->zoneNum.resize(1);
         c->zoneName.resize(1);
         c->zoneNum[0] = curZoneEqNum;
-        if (allocated(state.dataZoneEquip->ZoneEquipConfig)) c->zoneName[0] = state.dataZoneEquip->ZoneEquipConfig(curZoneEqNum).ZoneName;
+        if (allocated(state.dataZoneEquip->ZoneEquipConfig)) {
+            c->zoneName[0] = state.dataZoneEquip->ZoneEquipConfig(curZoneEqNum).ZoneName;
+        }
         auto const &thisFinalZoneSizing = state.dataSize->FinalZoneSizing(curZoneEqNum);
         c->desDayNameAtSensPeak = thisFinalZoneSizing.CoolDesDay;
         c->oaPeakTemp = thisFinalZoneSizing.OutTempAtCoolPeak;
@@ -1587,25 +1603,41 @@ void ReportCoilSelection::setCoilHeatingCapacity(
         // now set Coil Ent And Lvg Conditions
 
         if (curOASysNum > 0) { // then this system coil is part of OA system
-            if (c->coilDesEntTemp == -999.0) c->coilDesEntTemp = finalSysSizing.HeatOutTemp;
-            if (c->coilDesEntHumRat == -999.0) c->coilDesEntHumRat = finalSysSizing.HeatOutHumRat;
+            if (c->coilDesEntTemp == -999.0) {
+                c->coilDesEntTemp = finalSysSizing.HeatOutTemp;
+            }
+            if (c->coilDesEntHumRat == -999.0) {
+                c->coilDesEntHumRat = finalSysSizing.HeatOutHumRat;
+            }
             c->coilDesEntWetBulb = Psychrometrics::PsyTwbFnTdbWPb(
                 state, c->coilDesEntTemp, c->coilDesEntHumRat, state.dataEnvrn->StdBaroPress, "ReportCoilSelection::setCoilHeatingCapacity");
             c->coilDesEntEnth = Psychrometrics::PsyHFnTdbW(c->coilDesEntTemp, c->coilDesEntHumRat);
-            if (c->coilDesLvgTemp == -999.0) c->coilDesLvgTemp = finalSysSizing.PreheatTemp;
-            if (c->coilDesLvgHumRat == -999.0) c->coilDesLvgHumRat = finalSysSizing.PreheatHumRat;
+            if (c->coilDesLvgTemp == -999.0) {
+                c->coilDesLvgTemp = finalSysSizing.PreheatTemp;
+            }
+            if (c->coilDesLvgHumRat == -999.0) {
+                c->coilDesLvgHumRat = finalSysSizing.PreheatHumRat;
+            }
             c->coilDesLvgWetBulb = Psychrometrics::PsyTwbFnTdbWPb(
                 state, c->coilDesLvgTemp, c->coilDesLvgHumRat, state.dataEnvrn->StdBaroPress, "ReportCoilSelection::setCoilHeatingCapacity");
             c->coilDesLvgEnth = Psychrometrics::PsyHFnTdbW(c->coilDesLvgTemp, c->coilDesLvgHumRat);
 
         } else { // part of main air loop
-            if (c->coilDesEntTemp == -999.0) c->coilDesEntTemp = finalSysSizing.HeatMixTemp;
-            if (c->coilDesEntHumRat == -999.0) c->coilDesEntHumRat = finalSysSizing.HeatMixHumRat;
+            if (c->coilDesEntTemp == -999.0) {
+                c->coilDesEntTemp = finalSysSizing.HeatMixTemp;
+            }
+            if (c->coilDesEntHumRat == -999.0) {
+                c->coilDesEntHumRat = finalSysSizing.HeatMixHumRat;
+            }
             c->coilDesEntWetBulb = Psychrometrics::PsyTwbFnTdbWPb(
                 state, c->coilDesEntTemp, c->coilDesEntHumRat, state.dataEnvrn->StdBaroPress, "ReportCoilSelection::setCoilHeatingCapacity");
             c->coilDesEntEnth = Psychrometrics::PsyHFnTdbW(c->coilDesEntTemp, c->coilDesEntHumRat);
-            if (c->coilDesLvgTemp == -999.0) c->coilDesLvgTemp = finalSysSizing.HeatSupTemp;
-            if (c->coilDesLvgHumRat == -999.0) c->coilDesLvgHumRat = finalSysSizing.HeatSupHumRat;
+            if (c->coilDesLvgTemp == -999.0) {
+                c->coilDesLvgTemp = finalSysSizing.HeatSupTemp;
+            }
+            if (c->coilDesLvgHumRat == -999.0) {
+                c->coilDesLvgHumRat = finalSysSizing.HeatSupHumRat;
+            }
             c->coilDesLvgWetBulb = Psychrometrics::PsyTwbFnTdbWPb(
                 state, c->coilDesLvgTemp, c->coilDesLvgHumRat, state.dataEnvrn->StdBaroPress, "ReportCoilSelection::setCoilHeatingCapacity");
             c->coilDesLvgEnth = Psychrometrics::PsyHFnTdbW(c->coilDesLvgTemp, c->coilDesLvgHumRat);
@@ -1619,7 +1651,9 @@ void ReportCoilSelection::setCoilHeatingCapacity(
         c->zoneNum.resize(1);
         c->zoneName.resize(1);
         c->zoneNum[0] = curZoneEqNum;
-        if (allocated(state.dataZoneEquip->ZoneEquipConfig)) c->zoneName[0] = state.dataZoneEquip->ZoneEquipConfig(curZoneEqNum).ZoneName;
+        if (allocated(state.dataZoneEquip->ZoneEquipConfig)) {
+            c->zoneName[0] = state.dataZoneEquip->ZoneEquipConfig(curZoneEqNum).ZoneName;
+        }
         c->desDayNameAtSensPeak = finalZoneSizing.HeatDesDay;
         c->oaPeakTemp = finalZoneSizing.OutTempAtHeatPeak;
         c->oaPeakHumRat = finalZoneSizing.OutHumRatAtHeatPeak;
@@ -1946,7 +1980,9 @@ void ReportCoilSelection::setCoilSupplyFanInfo(EnergyPlusData &state,
     c->fanAssociatedWithCoilName = fanName;
     c->supFanType = fanType;
     c->supFanNum = fanIndex;
-    if (c->supFanNum == 0) c->supFanNum = Fans::GetFanIndex(state, fanName);
+    if (c->supFanNum == 0) {
+        c->supFanNum = Fans::GetFanIndex(state, fanName);
+    }
 }
 
 void ReportCoilSelection::setCoilEqNum(EnergyPlusData &state,

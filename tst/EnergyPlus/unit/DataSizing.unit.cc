@@ -63,9 +63,10 @@
 #include <EnergyPlus/ZoneEquipmentManager.hh>
 
 #include "Fixtures/EnergyPlusFixture.hh"
-#include <nlohmann/json_literals.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace EnergyPlus;
+using namespace nlohmann::literals;
 
 TEST_F(EnergyPlusFixture, DataSizingTest_resetHVACSizingGlobals)
 {

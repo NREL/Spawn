@@ -80,16 +80,14 @@ TEST_F(EnergyPlusFixture, CurveExponentialSkewNormal_MaximumCurveOutputTest)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    EXPECT_EQ(1.0, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
+    EXPECT_EQ(1.0, state->dataCurveManager->curves(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
 
-    EXPECT_EQ(0.1, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
+    EXPECT_EQ(0.1, state->dataCurveManager->curves(1)->outputLimits.min);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
 }
 
 TEST_F(EnergyPlusFixture, QuadraticCurve)
@@ -115,16 +113,14 @@ TEST_F(EnergyPlusFixture, QuadraticCurve)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    EXPECT_EQ(38.0, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
+    EXPECT_EQ(38.0, state->dataCurveManager->curves(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
 
-    EXPECT_EQ(0., state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
+    EXPECT_EQ(0., state->dataCurveManager->curves(1)->outputLimits.min);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
 
     double var1 = 1, var2 = 0.1, var3 = 20, var4 = 10;
     double expected_value = -3.3333 + (0.1 * 1) + (38.9 * 0.1) + (0.1 * 20) + (0.5 * 10);
@@ -157,16 +153,14 @@ TEST_F(EnergyPlusFixture, QuintLinearCurve)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    EXPECT_EQ(38.0, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
+    EXPECT_EQ(38.0, state->dataCurveManager->curves(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
 
-    EXPECT_EQ(0., state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
+    EXPECT_EQ(0., state->dataCurveManager->curves(1)->outputLimits.min);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
 
     double var1 = 1, var2 = 0.1, var3 = 0.5, var4 = 10, var5 = 15;
     double expected_value = -3.3333 + (0.1 * 1) + (38.9 * 0.1) + (0.1 * 0.5) + (0.5 * 10) + (1.5 * 15);
@@ -263,20 +257,17 @@ TEST_F(EnergyPlusFixture, TableLookup)
                                                       "  1.04;"});
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(3, state->dataCurveManager->curves.size());
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(3, state->dataCurveManager->NumCurves);
+    EXPECT_ENUM_EQ(Curve::CurveType::BtwxtTableLookup, state->dataCurveManager->curves(1)->curveType);
+    EXPECT_EQ("CAPMODFUNCOFWATERFLOW", state->dataCurveManager->curves(1)->Name);
 
-    EXPECT_ENUM_EQ(Curve::InterpType::BtwxtMethod, state->dataCurveManager->PerfCurve(1)->interpolationType);
-    EXPECT_EQ("CAPMODFUNCOFWATERFLOW", state->dataCurveManager->PerfCurve(1)->Name);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
+    EXPECT_EQ(0.0, state->dataCurveManager->curves(1)->outputLimits.min);
 
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
-    EXPECT_EQ(0.0, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
-    EXPECT_EQ(1.04, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
+    EXPECT_EQ(1.04, state->dataCurveManager->curves(1)->outputLimits.max);
 }
 
 TEST_F(EnergyPlusFixture, DivisorNormalizationNone)
@@ -362,17 +353,14 @@ TEST_F(EnergyPlusFixture, DivisorNormalizationNone)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
+    EXPECT_EQ(expected_curve_min, state->dataCurveManager->curves(1)->outputLimits.min);
 
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
-    EXPECT_EQ(expected_curve_min, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
-    EXPECT_EQ(expected_curve_max, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
+    EXPECT_EQ(expected_curve_max, state->dataCurveManager->curves(1)->outputLimits.max);
 
     for (auto data_point : table_data) {
         EXPECT_DOUBLE_EQ(data_point.first * data_point.second, Curve::CurveValue(*state, 1, data_point.first, data_point.second));
@@ -463,17 +451,14 @@ TEST_F(EnergyPlusFixture, DivisorNormalizationDivisorOnly)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
+    EXPECT_EQ(expected_curve_min, state->dataCurveManager->curves(1)->outputLimits.min);
 
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
-    EXPECT_EQ(expected_curve_min, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
-    EXPECT_EQ(expected_curve_max, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
+    EXPECT_EQ(expected_curve_max, state->dataCurveManager->curves(1)->outputLimits.max);
 
     for (auto data_point : table_data) {
         EXPECT_DOUBLE_EQ(data_point.first * data_point.second / expected_divisor, Curve::CurveValue(*state, 1, data_point.first, data_point.second));
@@ -516,7 +501,6 @@ TEST_F(EnergyPlusFixture, DivisorNormalizationDivisorOnlyButItIsZero)
                                                       "3.0;                                   !- Value 3"});
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
 
     EXPECT_THROW(Curve::GetCurveInput(*state), std::runtime_error);
     EXPECT_TRUE(this->compare_err_stream_substring("Normalization divisor entered as zero"));
@@ -607,17 +591,14 @@ TEST_F(EnergyPlusFixture, DivisorNormalizationAutomaticWithDivisor)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
+    EXPECT_EQ(expected_curve_min, state->dataCurveManager->curves(1)->outputLimits.min);
 
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
-    EXPECT_EQ(expected_curve_min, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
-    EXPECT_EQ(expected_curve_max, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
+    EXPECT_EQ(expected_curve_max, state->dataCurveManager->curves(1)->outputLimits.max);
 
     for (auto data_point : table_data) {
         EXPECT_DOUBLE_EQ(data_point.first * data_point.second / expected_auto_divisor,
@@ -711,17 +692,14 @@ TEST_F(EnergyPlusFixture, NormalizationAutomaticWithDivisorAndSpecifiedDivisor)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.minPresent);
+    EXPECT_EQ(expected_curve_min, state->dataCurveManager->curves(1)->outputLimits.min);
 
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.minPresent);
-    EXPECT_EQ(expected_curve_min, state->dataCurveManager->PerfCurve(1)->outputLimits.min);
-
-    EXPECT_TRUE(state->dataCurveManager->PerfCurve(1)->outputLimits.maxPresent);
-    EXPECT_EQ(expected_curve_max, state->dataCurveManager->PerfCurve(1)->outputLimits.max);
+    EXPECT_TRUE(state->dataCurveManager->curves(1)->outputLimits.maxPresent);
+    EXPECT_EQ(expected_curve_max, state->dataCurveManager->curves(1)->outputLimits.max);
 
     for (auto data_point : table_data) {
         EXPECT_DOUBLE_EQ(data_point.first * data_point.second / expected_auto_divisor / normalization_divisor,
@@ -848,10 +826,7 @@ TEST_P(InputUnitTypeIsValid, IndepentVariable)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
-
     Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
     EXPECT_TRUE(compare_err_stream("", true));
 }
 
@@ -909,10 +884,7 @@ TEST_P(OutputUnitTypeIsValid, TableLookup)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
-
     Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
     EXPECT_TRUE(compare_err_stream("", true));
 }
 
@@ -994,10 +966,8 @@ TEST_F(EnergyPlusFixture, QuadraticCurve_CheckCurveMinMaxValues)
     });
 
     EXPECT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
     ASSERT_THROW(Curve::GetCurveInput(*state), std::runtime_error);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
 
     auto const expected_error = delimited_string({
         "   ** Severe  ** GetCurveInput: For Curve:Quadratic: ",
@@ -1032,22 +1002,22 @@ public:
 
 TEST_P(CurveManagerValidationFixture, CurveMinMaxValues)
 {
-    const auto &[object_name, tested_dim, idf_objects, expected_error] = GetParam();
+    const auto &[object_name, tested_dim, idf_objects, expected_error] = GetParam(); // What is this? Are you bored?
     EXPECT_TRUE(process_idf(idf_objects));
-    EXPECT_EQ(0, state->dataCurveManager->NumCurves);
+    EXPECT_EQ(0, state->dataCurveManager->curves.size());
     try {
         Curve::GetCurveInput(*state);
     } catch (const EnergyPlus::FatalError &err) {
         std::string w = err.what();
-        EXPECT_TRUE(w.find("Error with format") == std::string::npos) << w;
+        EXPECT_TRUE(w.find("Error with format") == std::string::npos) << w; // What is this?
         // Otherwise, this is expected
     } catch (std::runtime_error const &err) {
         FAIL() << err.what();
     } catch (...) {
         FAIL() << "Got another exception!";
     }
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    ASSERT_EQ(1, state->dataCurveManager->NumCurves);
+
+    ASSERT_EQ(1, state->dataCurveManager->curves.size());
     EXPECT_TRUE(compare_err_stream_substring(expected_error));
 }
 
@@ -1983,7 +1953,6 @@ INSTANTIATE_TEST_SUITE_P(CurveManager,
                                             "Minimum Value of z [0.80] > Maximum Value of z [0.50]"}),
                          [](const testing::TestParamInfo<CurveManagerValidationFixture::ParamType> &info) -> std::string {
                              auto object_name = info.param.object_name;
-                             std::replace_if(
-                                 object_name.begin(), object_name.end(), [](char c) { return !std::isalnum(c); }, '_');
+                             std::replace_if(object_name.begin(), object_name.end(), [](char c) { return !std::isalnum(c); }, '_');
                              return object_name + "_" + info.param.tested_dim;
                          });

@@ -63,6 +63,10 @@ namespace EnergyPlus {
 // Forward declarations
 struct EnergyPlusData;
 
+namespace Curve {
+    struct Curve;
+}
+
 namespace EvaporativeCoolers {
 
     // MODULE PARAMETER DEFINITIONS
@@ -170,35 +174,35 @@ namespace EvaporativeCoolers {
         std::string EvapWaterSupplyName; // name of water source e.g. water storage tank
         int EvapWaterSupTankID;
         int EvapWaterTankDemandARRID;
-        Real64 DriftFraction;                // excess water from drift as fraction of Evap Water Consumption rate
-        Real64 BlowDownRatio;                // excess water use for blowdown as solids ratio to be maintained
-        Real64 EvapWaterConsumpRate;         // Evap Water Consumption rate in m3/sec
-        Real64 EvapWaterConsump;             // Evap Water Consumption in m3
-        Real64 EvapWaterStarvMakupRate;      // Evap water consumed but not really available from tank m3/s
-        Real64 EvapWaterStarvMakup;          // Evap water consumed but not really available from tank m3
-        Real64 SatEff;                       // Reporting for Direct Stage and Ind Dry Saturation Efficiency
-        Real64 StageEff;                     // Reporting for Indirect Total Stage Efficiency
-        Real64 DPBoundFactor;                // in RDDSpecial efficency w.r.t. dewpoint
-        int EvapControlNodeNum;              // need to control to avoid over cooling
-        Real64 DesiredOutletTemp;            // setpoint manager should set this
-        Real64 PartLoadFract;                // reduces cooling performance and associated fan power
-        int DewPointBoundFlag;               // report when indirect research special cooler is bound by dewpoint
-        Real64 MinOATDBEvapCooler;           // Minimum outdoor air operating dry-bulb temperature for evaporative cooler
-        Real64 MaxOATDBEvapCooler;           // Maximum outdoor air operating dry-bulb temperature for evaporative cooler
-        bool EvapCoolerOperationControlFlag; // turns the evap cooler on/off depending on the outdoor air temperature min and max limits
-        Real64 MaxOATWBEvapCooler;           // Evaporative Operation Maximum Limit Outdoor Wetbulb Temperature
-        Real64 DryCoilMaxEfficiency;         // Cooler Drybulb Design Effectiveness
-        Real64 IndirectFanPower;             // Secondary Fan Design Power
-        Real64 FanSizingSpecificPower;       // secondary fan sizing specific power in W/(m3/s)
-        Real64 RecircPumpSizingFactor;       // water pump power sizing factor W/(m3/s) air
-        Real64 IndirectVolFlowScalingFactor; // secondary air flow sizing Factor
-        int WetbulbEffecCurveIndex;          // wetbulb effectiveness modifier curve name as a function of flow fraction
-        int DrybulbEffecCurveIndex;          // drybulb effectiveness modifier curve name as a function of flow fraction
-        int FanPowerModifierCurveIndex;      // secondary fan power modifier curve name as a function of flow fraction
-        int PumpPowerModifierCurveIndex;     // recirculating pump power modifier curve name as a function of flow fraction
-        int IECOperatingStatus;              // operating mode status of indirect evaporative cooler research special (0: Off, 1: Dry, 2: Wet)
-        int IterationLimit;                  // used for Used for RegulaFalsi recurring error message error -1
-        int IterationFailed;                 // Used for RegulaFalsi recurring error message error -2
+        Real64 DriftFraction;                           // excess water from drift as fraction of Evap Water Consumption rate
+        Real64 BlowDownRatio;                           // excess water use for blowdown as solids ratio to be maintained
+        Real64 EvapWaterConsumpRate;                    // Evap Water Consumption rate in m3/sec
+        Real64 EvapWaterConsump;                        // Evap Water Consumption in m3
+        Real64 EvapWaterStarvMakupRate;                 // Evap water consumed but not really available from tank m3/s
+        Real64 EvapWaterStarvMakup;                     // Evap water consumed but not really available from tank m3
+        Real64 SatEff;                                  // Reporting for Direct Stage and Ind Dry Saturation Efficiency
+        Real64 StageEff;                                // Reporting for Indirect Total Stage Efficiency
+        Real64 DPBoundFactor;                           // in RDDSpecial efficiency w.r.t. dewpoint
+        int EvapControlNodeNum;                         // need to control to avoid over cooling
+        Real64 DesiredOutletTemp;                       // setpoint manager should set this
+        Real64 PartLoadFract;                           // reduces cooling performance and associated fan power
+        int DewPointBoundFlag;                          // report when indirect research special cooler is bound by dewpoint
+        Real64 MinOATDBEvapCooler;                      // Minimum outdoor air operating dry-bulb temperature for evaporative cooler
+        Real64 MaxOATDBEvapCooler;                      // Maximum outdoor air operating dry-bulb temperature for evaporative cooler
+        bool EvapCoolerOperationControlFlag;            // turns the evap cooler on/off depending on the outdoor air temperature min and max limits
+        Real64 MaxOATWBEvapCooler;                      // Evaporative Operation Maximum Limit Outdoor Wetbulb Temperature
+        Real64 DryCoilMaxEfficiency;                    // Cooler Drybulb Design Effectiveness
+        Real64 IndirectFanPower;                        // Secondary Fan Design Power
+        Real64 FanSizingSpecificPower;                  // secondary fan sizing specific power in W/(m3/s)
+        Real64 RecircPumpSizingFactor;                  // water pump power sizing factor W/(m3/s) air
+        Real64 IndirectVolFlowScalingFactor;            // secondary air flow sizing Factor
+        Curve::Curve *WetbulbEffecCurve = nullptr;      // wetbulb effectiveness modifier curve name as a function of flow fraction
+        Curve::Curve *DrybulbEffecCurve = nullptr;      // drybulb effectiveness modifier curve name as a function of flow fraction
+        Curve::Curve *FanPowerModifierCurve = nullptr;  // secondary fan power modifier curve name as a function of flow fraction
+        Curve::Curve *PumpPowerModifierCurve = nullptr; // recirculating pump power modifier curve name as a function of flow fraction
+        int IECOperatingStatus; // operating mode status of indirect evaporative cooler research special (0: Off, 1: Dry, 2: Wet)
+        int IterationLimit;     // used for Used for RegulaFalsi recurring error message error -1
+        int IterationFailed;    // Used for RegulaFalsi recurring error message error -2
         // rather than wetbulb-depression approach
         OperatingMode EvapCoolerRDDOperatingMode; // the indirect evaporative cooler Research Special operating mode variable
         // Operational fault parameters
@@ -224,8 +228,7 @@ namespace EvaporativeCoolers {
               SatEff(0.0), StageEff(0.0), DPBoundFactor(0.0), EvapControlNodeNum(0), DesiredOutletTemp(0.0), PartLoadFract(0.0), DewPointBoundFlag(0),
               MinOATDBEvapCooler(0.0), MaxOATDBEvapCooler(0.0), EvapCoolerOperationControlFlag(false), MaxOATWBEvapCooler(0.0),
               DryCoilMaxEfficiency(0.0), IndirectFanPower(0.0), FanSizingSpecificPower(0.0), RecircPumpSizingFactor(0.0),
-              IndirectVolFlowScalingFactor(0.0), WetbulbEffecCurveIndex(0), DrybulbEffecCurveIndex(0), FanPowerModifierCurveIndex(0),
-              PumpPowerModifierCurveIndex(0), IECOperatingStatus(0), IterationLimit(0), IterationFailed(0),
+              IndirectVolFlowScalingFactor(0.0), IECOperatingStatus(0), IterationLimit(0), IterationFailed(0),
               EvapCoolerRDDOperatingMode(OperatingMode::Invalid), FaultyEvapCoolerFoulingFlag(false), FaultyEvapCoolerFoulingIndex(0),
               FaultyEvapCoolerFoulingFactor(1.0), MySizeFlag(true)
         {
@@ -258,7 +261,7 @@ namespace EvaporativeCoolers {
         HVAC::FanPlace fanPlace;
         ControlType ControlSchemeType;
         Real64 TimeElapsed;
-        Real64 ThrottlingRange; // temperature range for hystersis type tstat contorl [Delta C]
+        Real64 ThrottlingRange; // temperature range for hystersis type tstat control [Delta C]
         bool IsOnThisTimestep;
         bool WasOnLastTimestep;
         Real64 ThresholdCoolingLoad;

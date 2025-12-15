@@ -113,6 +113,8 @@ def process_enum_str(input_str: str, file_name: str, line_no: int, print_errors:
             "OutputProcessor.hh:ReportFreqSOV",
             "HVACInterfaceManager.cc:UpdateType",
             "DataHeatBalance.hh:PERptVars",
+            "EconomicTariff.hh:StepType",
+            "LowTempRadiantSystem.hh:OpMode"
         ]
         if f"{file_name}:{name}" not in exceptions:
             error_str += "\tMissing 'Invalid' at position 0\n"
@@ -132,6 +134,8 @@ def process_enum_str(input_str: str, file_name: str, line_no: int, print_errors:
         exceptions = [
             "HVACInterfaceManager.cc:UpdateType",
             "IdfParser.hh:Token",
+            "EconomicTariff.hh:StepType",
+            "LowTempRadiantSystem.hh:OpMode"
         ]
         if f"{file_name}:{name}" not in exceptions:
             error_str += "\tMissing 'Num' at position N\n"
@@ -167,7 +171,7 @@ def process_enum_str(input_str: str, file_name: str, line_no: int, print_errors:
             error_str += "\tenum keys must begin with upper case letter\n"
 
     if difflib.get_close_matches(name, keys, cutoff=0.7):
-        exceptions = ["DataGlobalConstants.hh:HeatOrCool", "DataHVACGlobals.hh:UnitarySysType"]
+        exceptions = ["DataGlobalConstants.hh:HeatOrCool", "DataHVACGlobals.hh:UnitarySysType", "DataGenerators.hh:WaterTempMode"]
         if f"{file_name}:{name}" not in exceptions:
             error_str += "\tenum keys are too similar to enum name\n"
 

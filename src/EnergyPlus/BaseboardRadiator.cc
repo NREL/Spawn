@@ -514,12 +514,11 @@ namespace BaseboardRadiator {
         // Do the Begin Environment initializations
         if (state.dataGlobal->BeginEnvrnFlag && this->MyEnvrnFlag && !this->SetLoopIndexFlag) {
             int WaterInletNode = this->WaterInletNode;
-            Real64 rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+            Real64 rho = this->plantLoc.loop->glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
             this->WaterMassFlowRateMax = rho * this->WaterVolFlowRateMax;
             PlantUtilities::InitComponentNodes(state, 0.0, this->WaterMassFlowRateMax, this->WaterInletNode, this->WaterOutletNode);
             state.dataLoopNodes->Node(WaterInletNode).Temp = Constant::HWInitConvTemp;
-            Real64 Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
-                            .glycol->getSpecificHeat(state, state.dataLoopNodes->Node(WaterInletNode).Temp, RoutineName);
+            Real64 Cp = this->plantLoc.loop->glycol->getSpecificHeat(state, state.dataLoopNodes->Node(WaterInletNode).Temp, RoutineName);
             state.dataLoopNodes->Node(WaterInletNode).Enthalpy = Cp * state.dataLoopNodes->Node(WaterInletNode).Temp;
             state.dataLoopNodes->Node(WaterInletNode).Quality = 0.0;
             state.dataLoopNodes->Node(WaterInletNode).Press = 0.0;
@@ -582,7 +581,7 @@ namespace BaseboardRadiator {
         Real64 TempSize;                     // autosized value of coil input field
 
         // find the appropriate heating Plant Sizing object
-        int PltSizHeatNum = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).PlantSizNum;
+        int PltSizHeatNum = this->plantLoc.loop->PlantSizNum;
 
         if (PltSizHeatNum > 0) {
 
@@ -649,8 +648,8 @@ namespace BaseboardRadiator {
                     }
 
                     if (DesCoilLoad >= SmallLoad) {
-                        Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
-                        rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+                        Cp = this->plantLoc.loop->glycol->getSpecificHeat(state, Constant::HWInitConvTemp, RoutineName);
+                        rho = this->plantLoc.loop->glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
                         WaterVolFlowRateMaxDes = DesCoilLoad / (state.dataSize->PlantSizData(PltSizHeatNum).DeltaT * Cp * rho);
                     } else {
                         WaterVolFlowRateMaxDes = 0.0;
@@ -709,7 +708,7 @@ namespace BaseboardRadiator {
                     this->WaterInletTemp = state.dataSize->PlantSizData(PltSizHeatNum).ExitTemp;
                     this->AirInletTemp = finalZoneSizing.ZoneTempAtHeatPeak;
                     this->AirInletHumRat = finalZoneSizing.ZoneHumRatAtHeatPeak;
-                    rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
+                    rho = this->plantLoc.loop->glycol->getDensity(state, Constant::HWInitConvTemp, RoutineName);
                     state.dataLoopNodes->Node(this->WaterInletNode).MassFlowRate = rho * this->WaterVolFlowRateMax;
 
                     std::string_view const CompType = cCMO_BBRadiator_Water;
@@ -959,13 +958,14 @@ namespace BaseboardRadiator {
 
         ZoneNum = baseboard.ZonePtr;
         QZnReq = state.dataZoneEnergyDemand->ZoneSysEnergyDemand(ZoneNum).RemainingOutputReqToHeatSP;
-        if (baseboard.MySizeFlag)
+        if (baseboard.MySizeFlag) {
             QZnReq = state.dataSize->FinalZoneSizing(state.dataSize->CurZoneEqNum).NonAirSysDesHeatLoad; // If in sizing, assign design condition
+        }
 
         WaterInletTemp = baseboard.WaterInletTemp;
         AirInletTemp = baseboard.AirInletTemp;
 
-        CpWater = state.dataPlnt->PlantLoop(baseboard.plantLoc.loopNum).glycol->getSpecificHeat(state, WaterInletTemp, RoutineName);
+        CpWater = baseboard.plantLoc.loop->glycol->getSpecificHeat(state, WaterInletTemp, RoutineName);
         CpAir = PsyCpAirFnW(baseboard.AirInletHumRat);
 
         if (baseboard.DesAirMassFlowRate > 0.0) { // If UA is autosized, assign design condition
@@ -973,7 +973,9 @@ namespace BaseboardRadiator {
         } else {
             AirMassFlowRate = baseboard.AirMassFlowRate;
             // pick a mass flow rate that depends on the max water mass flow rate. CR 8842 changed to factor of 2.0
-            if (AirMassFlowRate <= 0.0) AirMassFlowRate = 2.0 * baseboard.WaterMassFlowRateMax;
+            if (AirMassFlowRate <= 0.0) {
+                AirMassFlowRate = 2.0 * baseboard.WaterMassFlowRateMax;
+            }
         }
 
         WaterMassFlowRate = state.dataLoopNodes->Node(baseboard.WaterInletNode).MassFlowRate;

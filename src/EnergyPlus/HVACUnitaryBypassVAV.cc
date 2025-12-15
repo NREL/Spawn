@@ -1081,8 +1081,9 @@ namespace HVACUnitaryBypassVAV {
                         if (!Util::SameString(state.dataAirSystemsData->PrimaryAirSystems(AirLoopNum).Branch(BranchNum).Comp(CompNum).Name,
                                               thisCBVAV.Name) ||
                             !Util::SameString(state.dataAirSystemsData->PrimaryAirSystems(AirLoopNum).Branch(BranchNum).Comp(CompNum).TypeOf,
-                                              thisCBVAV.UnitType))
+                                              thisCBVAV.UnitType)) {
                             continue;
+                        }
                         thisCBVAV.AirLoopNumber = AirLoopNum;
                         //         Should EXIT here or do other checking?
                         break;
@@ -1111,8 +1112,9 @@ namespace HVACUnitaryBypassVAV {
                         // check for thermostat in controlled zone
                         bool FoundTstatZone = false;
                         for (int TstatZoneNum = 1; TstatZoneNum <= state.dataZoneCtrls->NumTempControlledZones; ++TstatZoneNum) {
-                            if (state.dataZoneCtrls->TempControlledZone(TstatZoneNum).ActualZoneNum != thisCBVAV.ControlledZoneNum(AirLoopZoneNum))
+                            if (state.dataZoneCtrls->TempControlledZone(TstatZoneNum).ActualZoneNum != thisCBVAV.ControlledZoneNum(AirLoopZoneNum)) {
                                 continue;
+                            }
                             FoundTstatZone = true;
                         }
                         if (!FoundTstatZone) {
@@ -1491,7 +1493,7 @@ namespace HVACUnitaryBypassVAV {
                 PlantUtilities::InitComponentNodes(state, 0.0, cBVAV.MaxHeatCoilFluidFlow, cBVAV.CoilControlNode, cBVAV.CoilOutletNode);
 
             } // end of IF(cBVAV%CoilControlNode .GT. 0)THEN
-        }     // end one time inits
+        } // end one time inits
 
         if (!state.dataGlobal->BeginEnvrnFlag) {
             state.dataHVACUnitaryBypassVAV->MyEnvrnFlag(CBVAVNum) = true;
@@ -1620,7 +1622,9 @@ namespace HVACUnitaryBypassVAV {
         }
 
         // Returns load only for zones requesting cooling (heating). If in deadband, Qzoneload = 0.
-        if (FirstHVACIteration) cBVAV.modeChanged = false;
+        if (FirstHVACIteration) {
+            cBVAV.modeChanged = false;
+        }
         GetZoneLoads(state, CBVAVNum);
 
         OutsideAirMultiplier = (cBVAV.outAirSched != nullptr) ? cBVAV.outAirSched->getCurrentVal() : 1.0;
@@ -1761,7 +1765,9 @@ namespace HVACUnitaryBypassVAV {
 
         SetAverageAirFlow(state, CBVAVNum, OnOffAirFlowRatio);
 
-        if (FirstHVACIteration) cBVAV.OutletTempSetPoint = CalcSetPointTempTarget(state, CBVAVNum);
+        if (FirstHVACIteration) {
+            cBVAV.OutletTempSetPoint = CalcSetPointTempTarget(state, CBVAVNum);
+        }
 
         // The setpoint is used to control the DX coils at their respective outlet nodes (not the unit outlet), correct
         // for fan heat for draw thru units only (fan heat is included at the outlet of each coil when blowthru is used)
@@ -1802,7 +1808,7 @@ namespace HVACUnitaryBypassVAV {
                 cBVAV.DesignSuppHeatingCapacity = QCoilActual;
 
             } // from IF(cBVAV%HeatCoilType == HVAC::Coil_HeatingSteam) THEN
-        }     // from IF( FirstHVACIteration ) THEN
+        } // from IF( FirstHVACIteration ) THEN
 
         if ((cBVAV.HeatCoolMode == 0 && cBVAV.fanOp == HVAC::FanOp::Cycling) || state.dataHVACUnitaryBypassVAV->CompOnMassFlow == 0.0) {
             state.dataHVACUnitaryBypassVAV->PartLoadFrac = 0.0;
@@ -2001,7 +2007,9 @@ namespace HVACUnitaryBypassVAV {
 
         auto &cBVAV = state.dataHVACUnitaryBypassVAV->CBVAV(CBVAVNum);
 
-        if (cBVAV.availSched->getCurrentVal() == 0.0) return;
+        if (cBVAV.availSched->getCurrentVal() == 0.0) {
+            return;
+        }
 
         // Get operating result
         PartLoadFrac = 1.0;
@@ -3407,7 +3415,9 @@ namespace HVACUnitaryBypassVAV {
         int dayOfSim = state.dataGlobal->DayOfSim; // DayOfSim increments during Warmup when it actually simulates the same day
         if (state.dataGlobal->WarmupFlag) {
             // when warmupday increments then reset timer
-            if (lastDayOfSim != dayOfSim) cBVAV.changeOverTimer = -1.0; // reset to default (thisTime always > -1)
+            if (lastDayOfSim != dayOfSim) {
+                cBVAV.changeOverTimer = -1.0; // reset to default (thisTime always > -1)
+            }
             lastDayOfSim = dayOfSim;
             dayOfSim = 1; // reset so that thisTime is <= 24 during warmup
         }
@@ -3646,14 +3656,22 @@ namespace HVACUnitaryBypassVAV {
             //   Reset cooling/heating mode to OFF if mixed air inlet temperature is below/above setpoint temperature.
             //   HeatCoolMode = 0 for OFF, 1 for cooling, 2 for heating
         } else if (cBVAV.HeatCoolMode == CoolingMode) {
-            if (DXCoolCoilInletTemp < CalcSetPointTempTarget) CalcSetPointTempTarget = DXCoolCoilInletTemp;
+            if (DXCoolCoilInletTemp < CalcSetPointTempTarget) {
+                CalcSetPointTempTarget = DXCoolCoilInletTemp;
+            }
         } else if (cBVAV.HeatCoolMode == HeatingMode) {
-            if (DXCoolCoilInletTemp > CalcSetPointTempTarget) CalcSetPointTempTarget = DXCoolCoilInletTemp;
+            if (DXCoolCoilInletTemp > CalcSetPointTempTarget) {
+                CalcSetPointTempTarget = DXCoolCoilInletTemp;
+            }
         }
 
         //   Limit outlet node temperature to MAX/MIN specified in input
-        if (CalcSetPointTempTarget < cBVAV.MinLATCooling) CalcSetPointTempTarget = cBVAV.MinLATCooling;
-        if (CalcSetPointTempTarget > cBVAV.MaxLATHeating) CalcSetPointTempTarget = cBVAV.MaxLATHeating;
+        if (CalcSetPointTempTarget < cBVAV.MinLATCooling) {
+            CalcSetPointTempTarget = cBVAV.MinLATCooling;
+        }
+        if (CalcSetPointTempTarget > cBVAV.MaxLATHeating) {
+            CalcSetPointTempTarget = cBVAV.MaxLATHeating;
+        }
 
         return CalcSetPointTempTarget;
     }

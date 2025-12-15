@@ -72,7 +72,7 @@ namespace DataPlant {
         //       MODIFIED       June 2000  -Brandon Anderson
         //                             Changed to Group Similar Components.  Components will
         //                         be defined by ComponentType:SpecificComponent.
-        //                         The colon will act as the type delimeter, So all
+        //                         The colon will act as the type delimiter, So all
         //                         components of one type will be grouped. ex.(Boilers,Chillers)
         //                       May 2003 - Simon Rees
         //                         Added initial loop to force free cooling chiller etc to be
@@ -128,7 +128,9 @@ namespace DataPlant {
 
     Real64 CompData::getDynamicMaxCapacity(EnergyPlusData &state) const
     {
-        if (this->compPtr == NULL) return this->MaxLoad;
+        if (this->compPtr == NULL) {
+            return this->MaxLoad;
+        }
         Real64 possibleLoad = this->compPtr->getDynamicMaxCapacity(state);
         return (possibleLoad == 0) ? this->MaxLoad : possibleLoad;
     }

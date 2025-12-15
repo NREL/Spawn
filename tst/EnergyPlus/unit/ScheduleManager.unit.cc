@@ -96,7 +96,6 @@ TEST_F(EnergyPlusFixture, ScheduleManager_isMinuteMultipleOfTimestep)
 TEST_F(EnergyPlusFixture, ScheduleManager_UpdateScheduleVals)
 {
     auto &s_glob = state->dataGlobal;
-    auto &s_sched = state->dataSched;
     state->dataEnvrn->DSTIndicator = 0;
 
     auto *sched1 = Sched::AddScheduleDetailed(*state, "Detailed-1");
@@ -111,11 +110,13 @@ TEST_F(EnergyPlusFixture, ScheduleManager_UpdateScheduleVals)
     auto *daySched2 = Sched::AddDaySchedule(*state, "Day-2");
     auto *daySched3 = Sched::AddDaySchedule(*state, "Day-3");
 
-    for (int i = 1; i <= 249; i++)
+    for (int i = 1; i <= 249; i++) {
         sched1->weekScheds[i] = weekSched1;
+    }
     sched1->weekScheds[250] = weekSched2;
-    for (int i = 251; i <= 366; i++)
+    for (int i = 251; i <= 366; i++) {
         sched1->weekScheds[i] = weekSched3;
+    }
 
     std::fill(weekSched1->dayScheds.begin() + 1, weekSched1->dayScheds.end(), daySched1);
     std::fill(weekSched2->dayScheds.begin() + 1, weekSched2->dayScheds.end(), daySched2);
@@ -964,7 +965,6 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_SouthernHemispher
 
 TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_Leap)
 {
-    auto &s_sched = state->dataSched;
     auto &s_glob = state->dataGlobal;
     // So here we'll mimic using a Schedule:Compact that ramps up constantly
 
@@ -991,12 +991,12 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_Leap)
 
     // # 'THROUGH" => Number of additional week schedules
     // # 'FOR' => Number of additional day schedules
-    // So we use 366 Week Schedules, all with one day (LeapYear)
+    // So we use 366 Week Schedules, all with one day (leap year)
     state->dataEnvrn->CurrentYearIsLeapYear = true;
     state->dataWeather->WFAllowsLeapYears = true;
     state->dataWeather->LeapYearAdd = 1;
 
-    int nDays = 366;
+    // int nDays = 366;
     s_glob->TimeStepsInHour = 4;
 
     auto *sched1 = Sched::AddScheduleDetailed(*state, "SCHED-1");
@@ -1022,7 +1022,8 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_Leap)
     }
 
     EXPECT_EQ(365, sched1->weekScheds[366]->Num);
-    EXPECT_EQ(365, Sched::GetWeekSchedule(*state, format("WEEK_{}", 366))->dayScheds[2]->Num);
+    constexpr int num_internal_day_schedules = 1;
+    EXPECT_EQ(num_internal_day_schedules + 365, Sched::GetWeekSchedule(*state, format("WEEK_{}", 366))->dayScheds[2]->Num);
     EXPECT_EQ(8784.0, Sched::GetDaySchedule(*state, format("DAY_{}", 366))->tsVals[23 * s_glob->TimeStepsInHour + 3]);
 
     s_glob->TimeStepsInHour = s_glob->TimeStepsInHour; // must initialize this to get schedules initialized
@@ -1164,21 +1165,23 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
 
     // # 'THROUGH" => Number of additional week schedules
     // # 'FOR' => Number of additional day schedules
-    // So we use 366 Week Schedules, all with one day (LeapYear)
+    // So we use 366 Week Schedules, all with one day (leap year)
     state->dataEnvrn->CurrentYearIsLeapYear = false;
     state->dataWeather->WFAllowsLeapYears = false;
     state->dataWeather->LeapYearAdd = 0;
 
-    // ScheduleManager always assume LeapYear really.
-    int nDays = 365;
+    // ScheduleManager always assume leap year really.
+    // int nDays = 365;
     s_glob->TimeStepsInHour = 4;
 
     auto *sched1 = Sched::AddScheduleDetailed(*state, "SCHED-1");
 
-    for (int i = 1; i <= 366; ++i)
+    for (int i = 1; i <= 366; ++i) {
         Sched::AddWeekSchedule(*state, format("WEEK_{}", i));
-    for (int i = 1; i <= 365; ++i)
+    }
+    for (int i = 1; i <= 365; ++i) {
         Sched::AddDaySchedule(*state, format("DAY_{}", i));
+    }
 
     Array1D_int EndDayOfMonth(12, {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31});
 
@@ -1207,9 +1210,11 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
         }
     }
 
+    constexpr int num_internal_day_schedules = 1;
+
     // Feb 28
     EXPECT_EQ(58, sched1->weekScheds[59]->Num);
-    EXPECT_EQ(58, Sched::GetWeekSchedule(*state, "WEEK_59")->dayScheds[1]->Num);
+    EXPECT_EQ(num_internal_day_schedules + 58, Sched::GetWeekSchedule(*state, "WEEK_59")->dayScheds[1]->Num);
     EXPECT_EQ(59 * Constant::rHoursInDay, Sched::GetDaySchedule(*state, "DAY_59")->tsVals[23 * s_glob->TimeStepsInHour + 3]);
 
     // Feb 29: doesn't exist, and I default initialized everything above to -1
@@ -1219,11 +1224,11 @@ TEST_F(EnergyPlusFixture, Schedule_GetCurrentScheduleValue_DST_RampUp_NoLeap)
 
     // March 1
     EXPECT_EQ(60, sched1->weekScheds[61]->Num);
-    EXPECT_EQ(59, sched1->weekScheds[61]->dayScheds[1]->Num);
+    EXPECT_EQ(num_internal_day_schedules + 59, sched1->weekScheds[61]->dayScheds[1]->Num);
     EXPECT_EQ(60 * Constant::rHoursInDay, sched1->weekScheds[61]->dayScheds[1]->tsVals[23 * s_glob->TimeStepsInHour + 3]);
 
     EXPECT_EQ(365, sched1->weekScheds[366]->Num);
-    EXPECT_EQ(364, sched1->weekScheds[366]->dayScheds[1]->Num);
+    EXPECT_EQ(num_internal_day_schedules + 364, sched1->weekScheds[366]->dayScheds[1]->Num);
     EXPECT_EQ(8760.0, sched1->weekScheds[366]->dayScheds[1]->tsVals[23 * s_glob->TimeStepsInHour + 3]);
 
     s_glob->TimeStepsInHour = s_glob->TimeStepsInHour; // must initialize this to get schedules initialized
@@ -1456,14 +1461,22 @@ TEST_F(EnergyPlusFixture, ScheduleFileDSTtoggleOptionTest)
 
 TEST_F(EnergyPlusFixture, ScheduleFile_Blanks)
 {
-
     // On the third line (second data record after header), there is a blank in the second column
+    // Hour,Value1,Value2
+    // 0,0.01,0.01
+    // 1,,0.33
+    // 2,0.37,0.37
     fs::path scheduleFile = FileSystem::makeNativePath(configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file_with_blank.csv");
 
+    // Here I am requesting that column with a blank, and it should throw, but not crash
+
     std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Any Number;             !- Name",
+
         "Schedule:File,",
         "  Test1,                   !- Name",
-        "  ,                        !- Schedule Type Limits Name",
+        "  Any Number,              !- Schedule Type Limits Name",
         "  " + scheduleFile.string() + ",              !- File Name",
         "  2,                       !- Column Number",
         "  1,                       !- Rows to Skip at Top",
@@ -1487,17 +1500,265 @@ TEST_F(EnergyPlusFixture, ScheduleFile_Blanks)
 
     const std::string expected_error = delimited_string({
         "   ** Warning ** ProcessScheduleInput: Schedule:File = TEST1",
-        "   **   ~~~   ** Schedule Type Limits Name is empty.",
-        "   **   ~~~   ** Schedule will not be validated.",
-        "   ** Severe  ** CsvParser - Line 3 - Expected 3 columns, got 2. Error in following line.",
+        "   **   ~~~   ** CsvParser - Line 3 Column 2 - Blank value found, setting to null. Error in following line.",
         "   **   ~~~   ** 1,,0.33",
+        "   ** Severe  ** ProcessScheduleInput: Schedule:File = TEST1",
+        "   **   ~~~   ** Column number 2 has non-numeric data.",
+        "   **   ~~~   ** [json.exception.type_error.302] type must be number, but is null",
         "   **   ~~~   ** Error Occurred in " + scheduleFile.string(),
         "   **  Fatal  ** Program terminates due to previous condition.",
         "   ...Summary of Errors that led to program termination:",
         "   ..... Reference severe error count=1",
-        "   ..... Last severe error=CsvParser - Line 3 - Expected 3 columns, got 2. Error in following line.",
+        "   ..... Last severe error=ProcessScheduleInput: Schedule:File = TEST1",
     });
 
+    compare_err_stream(expected_error);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleFile_Blanks_OnlyWarnIfNotUsingThatColumn)
+{
+    // On the third line (second data record after header), there is a blank in the second column
+    // Hour,Value1,Value2
+    // 0,0.01,0.01
+    // 1,,0.33
+    // 2,0.37,0.37
+    fs::path scheduleFile = FileSystem::makeNativePath(configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file_with_blank.csv");
+
+    // Here I am requested a column that is properly filled, and it should work fine
+
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Any Number;             !- Name",
+
+        "Schedule:File,",
+        "  Test1,                   !- Name",
+        "  Any Number,              !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  3,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  Yes;                     !- Adjust Schedule for Daylight Savings",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_NO_THROW(state->init_state(*state)); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Warning ** ProcessScheduleInput: Schedule:File = TEST1",
+        "   **   ~~~   ** CsvParser - Line 3 Column 2 - Blank value found, setting to null. Error in following line.",
+        "   **   ~~~   ** 1,,0.33",
+    });
+
+    compare_err_stream(expected_error);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleFile_MissingValue)
+{
+    // On the third line (second data record after header), there is a blank in the second column, no extra delimiter.
+    // Hour,Value1
+    // 0,0.01
+    // 1,
+    // 2,0.37
+    fs::path scheduleFile =
+        FileSystem::makeNativePath(configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file_with_missing_value.csv");
+
+    // In this case, the csvParser registers an error and that one is thrown
+
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Any Number;             !- Name",
+
+        "Schedule:File,",
+        "  Test1,                   !- Name",
+        "  Any Number,              !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  1,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  Yes;                     !- Adjust Schedule for Daylight Savings",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    ASSERT_THROW(state->init_state(*state), EnergyPlus::FatalError); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Severe  ** ProcessScheduleInput: Schedule:File = TEST1",
+        "   **   ~~~   ** CsvParser - Line 3 - Expected 2 columns, got 1. Error in following line.",
+        "   **   ~~~   ** 1,",
+        "   **   ~~~   ** Error Occurred in " + scheduleFile.string(),
+        "   **  Fatal  ** Program terminates due to previous condition.",
+        "   ...Summary of Errors that led to program termination:",
+        "   ..... Reference severe error count=1",
+        "   ..... Last severe error=ProcessScheduleInput: Schedule:File = TEST1",
+    });
+
+    compare_err_stream(expected_error);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleFile_ExtraColumn)
+{
+    // On the third line (second data record after header), there is an extra column
+
+    // Hour,Value1,
+    // 0,0.01,
+    // 1,0.04,0.33
+    // 2,0.37,
+    fs::path scheduleFile =
+        FileSystem::makeNativePath(configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file_with_extra_column.csv");
+
+    // I am requesting column 2, so it should warn but work
+
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Any Number;             !- Name",
+
+        "Schedule:File,",
+        "  Test1,                   !- Name",
+        "  Any Number,              !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  2,                       !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  Yes;                     !- Adjust Schedule for Daylight Savings",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_NO_THROW(state->init_state(*state)); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Warning ** ProcessScheduleInput: Schedule:File = TEST1",
+        "   **   ~~~   ** CsvParser - Line 3 - Expected 2 columns, got 3. Ignored extra columns. Error in following line.",
+        "   **   ~~~   ** 1,0.04,0.33",
+    });
+
+    compare_err_stream(expected_error);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleFile_RequestNonExistingColumn)
+{
+
+    // This a properly formed CSV file with two columns
+    // Datetime,Value
+    // 1/1 01:00:00,1.0
+    // 1/1 02:00:00,1.0
+    // [...]
+    // 12/31 23:00:00,0.0
+    // 12/31 24:00:00,0.0
+
+    fs::path scheduleFile = FileSystem::makeNativePath(configured_source_directory() / "tst/EnergyPlus/unit/Resources/schedule_file1.csv");
+
+    // I am requesting column 100, so it should NOT work
+
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Any Number;             !- Name",
+
+        "Schedule:File,",
+        "  Test1,                   !- Name",
+        "  Any Number,              !- Schedule Type Limits Name",
+        "  " + scheduleFile.string() + ",              !- File Name",
+        "  100,                     !- Column Number",
+        "  1,                       !- Rows to Skip at Top",
+        "  8760,                    !- Number of Hours of Data",
+        "  Comma,                   !- Column Separator",
+        "  No,                      !- Interpolate to Timestep",
+        "  60,                      !- Minutes per item",
+        "  Yes;                     !- Adjust Schedule for Daylight Savings",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_THROW(state->init_state(*state), EnergyPlus::FatalError); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Severe  ** ProcessScheduleInput: Schedule:File = TEST1",
+        "   **   ~~~   ** Requested column number 100, but found only 2 columns.",
+        "   **   ~~~   ** Error Occurred in " + scheduleFile.string(),
+        "   **  Fatal  ** Program terminates due to previous condition.",
+        "   ...Summary of Errors that led to program termination:",
+        "   ..... Reference severe error count=1",
+        "   ..... Last severe error=ProcessScheduleInput: Schedule:File = TEST1",
+    });
+
+    compare_err_stream(expected_error);
+}
+
+TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_broken)
+{
+    // This file has one more header than data columns
+    // Surface Name,EAST SIDE TREE,WEST SIDE TREE
+    //  01/01 00:15,0,
+    //  01/01 00:30,0,
+
+    // a CSV exported with the extra '()' at the end (22.2.0 and below) should still be importable in E+ without crashing
+    fs::path scheduleFile = configured_source_directory() / "tst/EnergyPlus/unit/Resources/shading_data_2220_broken.csv";
+    scheduleFile.make_preferred();
+
+    std::string const idf_objects = delimited_string({
+        "Schedule:File:Shading,",
+        "  " + scheduleFile.string() + ";              !- Name of File",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_THROW(state->init_state(*state), EnergyPlus::FatalError); // read schedules
+
+    const std::string expected_error = delimited_string({
+        "   ** Severe  ** ProcessScheduleInput: Schedule:File:Shading = shading_data_2220_broken.csv",
+        "   **   ~~~   ** For header 'WEST SIDE TREE', Requested column number 3, but found only 2 columns.",
+        "   **   ~~~   ** Error Occurred in " + scheduleFile.string(),
+        "   **  Fatal  ** Program terminates due to previous condition.",
+        "   ...Summary of Errors that led to program termination:",
+        "   ..... Reference severe error count=1",
+        "   ..... Last severe error=ProcessScheduleInput: Schedule:File:Shading = shading_data_2220_broken.csv",
+    });
     compare_err_stream(expected_error);
 }
 
@@ -1534,7 +1795,9 @@ TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_extra_parenthesis)
     EXPECT_TRUE(s_sched->ScheduleFileShadingProcessed);
     EXPECT_EQ(3, s_sched->schedules.size()); // AlwaysOn, AlwaysOff, plus file
     EXPECT_EQ(365, s_sched->weekSchedules.size());
-    EXPECT_EQ(365, s_sched->daySchedules.size());
+    // MissingDaySchedule-0.0 is daySchedules[0]
+    constexpr int num_internal_day_schedules = 1;
+    EXPECT_EQ(num_internal_day_schedules + 365, s_sched->daySchedules.size());
     EXPECT_EQ(1, s_sched->UniqueProcessedExternalFiles.size());
 
     auto &[fPath, root] = *(s_sched->UniqueProcessedExternalFiles.begin());
@@ -1562,11 +1825,11 @@ TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_extra_parenthesis)
     EXPECT_EQ(Sched::GetWeekScheduleNum(*state, "EAST SIDE TREE_SHADING_WK_62"), 60);
     EXPECT_EQ(Sched::GetWeekScheduleNum(*state, "EAST SIDE TREE_SHADING_WK_366"), 364);
 
-    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_1"), 0);
-    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_59"), 58);
-    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_61"), 59);
-    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_62"), 60);
-    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_366"), 364);
+    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_1"), num_internal_day_schedules + 0);
+    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_59"), num_internal_day_schedules + 58);
+    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_61"), num_internal_day_schedules + 59);
+    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_62"), num_internal_day_schedules + 60);
+    EXPECT_EQ(Sched::GetDayScheduleNum(*state, "EAST SIDE TREE_SHADING_DY_366"), num_internal_day_schedules + 364);
 
     auto const *sched = dynamic_cast<Sched::ScheduleDetailed const *>(Sched::GetSchedule(*state, "EAST SIDE TREE_SHADING"));
 
@@ -1578,10 +1841,10 @@ TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_extra_parenthesis)
     for (int iDay = 0; iDay < 365; ++iDay) {
         if (iDay <= 58) {
             EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_wk_{}", iDay + 1), s_sched->weekSchedules[iDay]->Name);
-            EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_dy_{}", iDay + 1), s_sched->daySchedules[iDay]->Name);
+            EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_dy_{}", iDay + 1), s_sched->daySchedules[num_internal_day_schedules + iDay]->Name);
         } else {
             EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_wk_{}", iDay + 2), s_sched->weekSchedules[iDay]->Name);
-            EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_dy_{}", iDay + 2), s_sched->daySchedules[iDay]->Name);
+            EXPECT_EQ(fmt::format("EAST SIDE TREE_shading_dy_{}", iDay + 2), s_sched->daySchedules[num_internal_day_schedules + iDay]->Name);
         }
     }
 
@@ -1589,25 +1852,25 @@ TEST_F(EnergyPlusFixture, ShadowCalculation_CSV_extra_parenthesis)
     int iDay = 1;
     int TS = 1;
     int iHour = 1;
-    EXPECT_EQ(0.00000000, s_sched->daySchedules[(iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
+    EXPECT_EQ(0.00000000, s_sched->daySchedules[(num_internal_day_schedules + iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
 
     // 01/01 13:00
     iDay = 1;
     TS = 4;
     iHour = 13;
-    EXPECT_EQ(0.96107882, s_sched->daySchedules[(iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
+    EXPECT_EQ(0.96107882, s_sched->daySchedules[(num_internal_day_schedules + iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
 
     // 12/31 16:15,0.19556231,
     iDay = 365;
     TS = 1;
     iHour = 17;
-    EXPECT_EQ(0.19556231, s_sched->daySchedules[(iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
+    EXPECT_EQ(0.19556231, s_sched->daySchedules[(num_internal_day_schedules + iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
 
     // 12/31 24:00
     iDay = 365;
     TS = 4;
     iHour = 24;
-    EXPECT_EQ(0.00000000, s_sched->daySchedules[(iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
+    EXPECT_EQ(0.00000000, s_sched->daySchedules[(num_internal_day_schedules + iDay - 1)]->tsVals[(iHour - 1) * s_glob->TimeStepsInHour + (TS - 1)]);
 }
 
 TEST_F(EnergyPlusFixture, getScheduleMinMaxByDayType_test)
@@ -1730,4 +1993,143 @@ TEST_F(EnergyPlusFixture, getScheduleMinMaxByDayType_test)
     std::tie(schMin, schMax) = sched->getMinMaxValsByDayType(*state, Sched::DayTypeGroup::WinterDesignDay);
     EXPECT_EQ(0.16, schMin);
     EXPECT_EQ(0.25, schMax);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleCompact_MissingDayTypes)
+{
+    // Test for #11054
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Fraction,                !- Name",
+        "  0,                       !- Lower Limit Value",
+        "  1,                       !- Upper Limit Value",
+        "  Continuous,              !- Numeric Type",
+        "  percent;                 !- Unit Type",
+
+        "Schedule:Compact,",
+        "  WindowVentSched,         !- Name",
+        "  Fraction,                !- Schedule Type Limits Name",
+        "  Through: 12/31,          !- Field 1",
+        "  For: Monday Tuesday Wednesday Thursday Friday Saturday, !- Field 2",
+        "  Until: 24:00,1;          !- Field 3",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    state->init_state(*state); // read schedules (this calls ProcessScheduleInput via ScheduleManagerData::init_state)
+
+    const std::string expected_error = delimited_string({
+        "   ** Warning ** ProcessScheduleInput: Schedule:Compact = WINDOWVENTSCHED",
+        "   **   ~~~   ** has missing day types in Through=12/31",
+        "   **   ~~~   ** Last \"For\" field=FOR: MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY",
+        R"(   **   ~~~   ** Missing day types= "Sunday", "Holiday", "SummerDesignDay", "WinterDesignDay", "CustomDay1", "CustomDay2")",
+        "   **   ~~~   ** Missing day types will have 0.0 as Schedule Values",
+    });
+
+    compare_err_stream(expected_error);
+
+    auto const *sch = dynamic_cast<Sched::ScheduleDetailed const *>(Sched::GetSchedule(*state, "WINDOWVENTSCHED"));
+    EXPECT_NE(sch, nullptr);
+    EXPECT_EQ(367, sch->weekScheds.size());
+    EXPECT_EQ(sch->weekScheds.front(), nullptr);
+    const auto &weekSched = sch->weekScheds[1];
+    EXPECT_EQ("WINDOWVENTSCHED_wk_1", weekSched->Name);
+    for (size_t i = 2; i < 367; ++i) {
+        EXPECT_EQ(weekSched, sch->weekScheds[i]);
+    }
+    EXPECT_EQ((int)Sched::DayType::Num, weekSched->dayScheds.size());
+
+    EXPECT_EQ(nullptr, weekSched->dayScheds[(int)Sched::DayType::Unused]);
+
+    Sched::DaySchedule const *const missingDaySchedule = state->dataSched->daySchedules[Sched::SchedNum_AlwaysOff];
+    EXPECT_EQ(0, missingDaySchedule->minVal);
+    EXPECT_EQ(0, missingDaySchedule->maxVal);
+    EXPECT_EQ(4 * 24, missingDaySchedule->tsVals.size());
+    for (auto v : missingDaySchedule->tsVals) {
+        EXPECT_EQ(0.0, v);
+    }
+
+    EXPECT_EQ(0, weekSched->minVal);
+    EXPECT_EQ(1, weekSched->maxVal);
+
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::Sunday]);
+
+    auto const &daySched = weekSched->dayScheds[(int)Sched::DayType::Monday];
+    for (int i = (int)Sched::DayType::Monday; i <= (int)Sched::DayType::Saturday; ++i) {
+        ASSERT_NE(nullptr, weekSched->dayScheds[i]);
+        EXPECT_EQ(daySched, weekSched->dayScheds[i]);
+    }
+
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::Holiday]);
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::SummerDesignDay]);
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::WinterDesignDay]);
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::CustomDay1]);
+    EXPECT_EQ(missingDaySchedule, weekSched->dayScheds[(int)Sched::DayType::CustomDay2]);
+
+    state->dataEnvrn->Month = 1;
+    state->dataEnvrn->DayOfMonth = 1;
+    state->dataEnvrn->DayOfYear_Schedule = General::OrdinalDay(state->dataEnvrn->Month, state->dataEnvrn->DayOfMonth, 1);
+    s_glob->HourOfDay = 1;
+    s_glob->TimeStep = 1;
+    state->dataEnvrn->DSTIndicator = 0;
+    state->dataEnvrn->HolidayIndex = 0;
+
+    // Monday is defined, so we should get 1.0
+    state->dataEnvrn->DayOfWeek = 2;
+    EXPECT_NEAR(1.0, sch->getHrTsVal(*state, 7, 4), 0.000001);
+
+    // Now test a day that is not defined, like Sunday
+    // We shouldn't segfault, and it should default to returning 0.0
+    state->dataEnvrn->DayOfWeek = 1;
+    ASSERT_NO_THROW(sch->getHrTsVal(*state, 7, 4));
+    EXPECT_NEAR(0.0, sch->getHrTsVal(*state, 7, 4), 0.000001);
+}
+
+TEST_F(EnergyPlusFixture, ScheduleCompact_MissingValues)
+{
+    std::string const idf_objects = delimited_string({
+        "ScheduleTypeLimits,",
+        "  Fraction,                !- Name",
+        "  0,                       !- Lower Limit Value",
+        "  1,                       !- Upper Limit Value",
+        "  Continuous,              !- Numeric Type",
+        "  Percent;                 !- Unit Type",
+
+        "Schedule:Compact,",
+        "  OccSched,                !- Name",
+        "  Fraction,                !- Schedule Type Limits Name",
+        "  ,                        !- Field 1",
+        "  ,                        !- Field 2",
+        "  ;                        !- Field 3",
+    });
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    auto &s_glob = state->dataGlobal;
+
+    s_glob->TimeStepsInHour = 4;    // must initialize this to get schedules initialized
+    s_glob->MinutesInTimeStep = 15; // must initialize this to get schedules initialized
+    s_glob->TimeStepZone = 0.25;
+    s_glob->TimeStepZoneSec = s_glob->TimeStepZone * Constant::rSecsInHour;
+    state->dataEnvrn->CurrentYearIsLeapYear = false;
+
+    EXPECT_THROW(state->init_state(*state), EnergyPlus::FatalError); // read schedules
+
+    const std::string expected_error = delimited_string({"   ** Severe  ** ProcessScheduleInput: Schedule:Compact = OCCSCHED",
+                                                         "   **   ~~~   ** Expecting \"Through:\" date, instead found entry=",
+                                                         "   ** Severe  ** ProcessScheduleInput: Schedule:Compact = OCCSCHED",
+                                                         "   **   ~~~   ** has missing days in its schedule pointers",
+                                                         "   **  Fatal  ** ProcessScheduleInput: Preceding Errors cause termination.",
+                                                         "   ...Summary of Errors that led to program termination:",
+                                                         "   ..... Reference severe error count=2",
+                                                         "   ..... Last severe error=ProcessScheduleInput: Schedule:Compact = OCCSCHED"});
+
+    compare_err_stream(expected_error);
 }

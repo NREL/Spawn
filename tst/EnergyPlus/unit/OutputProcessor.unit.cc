@@ -1069,7 +1069,7 @@ namespace OutputProcessor {
         iVar.StoreValue = 0;
         iVar.NumStored = 1;
         iVar.MinValue = iVar.MaxValue = 0;
-        iVar.minValueDate = iVar.minValueDate = 0;
+        iVar.minValueDate = 0;
         iVar.freq = ReportFreq::TimeStep;
 
         iVar.writeReportData(*state);
@@ -1539,8 +1539,8 @@ namespace OutputProcessor {
 
         // For now I don't accept anything else than TimeStepZone or TimeStepSystem, but to make it easier if we need to change that later
         // and to preserve the original test (passing int=3 before should have defaulted to Zone...)
-        TimeStepType aThirdTimeStepType = TimeStepType::Zone;
-        std::string aThirdTimeStepString = timeStepZoneString;
+        // TimeStepType aThirdTimeStepType = TimeStepType::Zone;
+        // std::string aThirdTimeStepString = timeStepZoneString;
 
         OutVarReal rVar;
         rVar.freq = ReportFreq::TimeStep;
@@ -1774,8 +1774,9 @@ namespace OutputProcessor {
              {"29", "0", "Avg", "indexGroup", timeStepSystemString, "keyedValue", "variableName", "Run Period", "", "m3/s"}});
 
         EXPECT_EQ(reportDataDictionary.size(), reportDataDictionaryResults.size());
-        for (int i = 0; i < reportDataDictionary.size(); ++i)
+        for (size_t i = 0; i < reportDataDictionary.size(); ++i) {
             EXPECT_EQ(reportDataDictionary[i], reportDataDictionaryResults[i]);
+        }
     }
 
     TEST_F(SQLiteFixture, OutputProcessor_writeCumulativeReportMeterData)
@@ -3897,8 +3898,9 @@ namespace OutputProcessor {
             {"5", "", "", "", "", "", "", "525600", "4", "365", "", "0", "0"},
         });
 
-        for (int i = 0; i < (int)timeData.size(); ++i)
+        for (int i = 0; i < (int)timeData.size(); ++i) {
             EXPECT_EQ(timeData[i], timeResults[i]);
+        }
 
         auto reportDataDictionaryResults = queryResult("SELECT * FROM ReportDataDictionary;", "ReportDataDictionary");
 
@@ -3915,8 +3917,9 @@ namespace OutputProcessor {
             {"12", "1", "Sum", "Facility:Electricity", "Zone", "", "Electricity:Facility", "Run Period", "", "J"},
         });
 
-        for (int i = 0; i < (int)reportDataDictionary.size(); ++i)
+        for (int i = 0; i < (int)reportDataDictionary.size(); ++i) {
             EXPECT_EQ(reportDataDictionary[i], reportDataDictionaryResults[i]);
+        }
 
         auto reportDataResults = queryResult("SELECT * FROM ReportData;", "ReportData");
         auto reportExtendedDataResults = queryResult("SELECT * FROM ReportExtendedData;", "ReportExtendedData");
@@ -3942,11 +3945,13 @@ namespace OutputProcessor {
              {"5", "9", "0.0", "12", "31", "24", "", "0", "0.0", "12", "31", "24", "", "0"},
              {"6", "10", "4995.0", "12", "31", "24", "-9", "0", "4995.0", "12", "31", "24", "-9", "0"}});
 
-        for (int i = 0; i < (int)reportData.size(); ++i)
+        for (int i = 0; i < (int)reportData.size(); ++i) {
             EXPECT_EQ(reportData[i], reportDataResults[i]);
+        }
 
-        for (int i = 0; i < (int)reportExtendedData.size(); ++i)
+        for (int i = 0; i < (int)reportExtendedData.size(); ++i) {
             EXPECT_EQ(reportExtendedData[i], reportExtendedDataResults[i]);
+        }
 
         compare_eso_stream(delimited_string(
             {
@@ -4214,8 +4219,9 @@ namespace OutputProcessor {
             {"241", "0", "Avg", "System", "HVAC System", "Boiler1", "Boiler NaturalGas Rate", "HVAC System Timestep", "", "W"},
         });
 
-        for (int i = 0; i < (int)reportDataDictionary.size(); ++i)
+        for (int i = 0; i < (int)reportDataDictionary.size(); ++i) {
             EXPECT_EQ(reportDataDictionary[i], reportDataDictionaryResults[i]);
+        }
 
         auto reportDataResults = queryResult("SELECT * FROM ReportData;", "ReportData");
         auto reportExtendedDataResults = queryResult("SELECT * FROM ReportExtendedData;", "ReportExtendedData");
@@ -4243,11 +4249,13 @@ namespace OutputProcessor {
             {"6", "11", "4995.0", "12", "31", "24", "-9", "0", "4995.0", "12", "31", "24", "-9", "0"},
         });
 
-        for (int i = 0; i < (int)reportData.size(); ++i)
+        for (int i = 0; i < (int)reportData.size(); ++i) {
             EXPECT_EQ(reportData[i], reportDataResults[i]);
+        }
 
-        for (int i = 0; i < (int)reportExtendedData.size(); ++i)
+        for (int i = 0; i < (int)reportExtendedData.size(); ++i) {
             EXPECT_EQ(reportExtendedData[i], reportExtendedDataResults[i]);
+        }
 
         compare_eso_stream(delimited_string(
             {
@@ -4833,22 +4841,17 @@ namespace OutputProcessor {
                             fakeVar,
                             TimeStepType::System,
                             StoreType::Average,
-                            // TODO: is that supposed to look like a regex?!
-                            // SetupOutputVariable is the only one that used to call BuildKeyVarList
-                            // So it should pass actual NodeID(NodeNum)
                             "Air Loop 1 InletNode");
+        // TODO: is that supposed to look like a regex?!
+        // Setup Output Variable is the only one that used to call BuildKeyVarList
+        // So it should pass actual NodeID(NodeNum)
         // BuildKeyVarList(*state, "Air Loop 1|AirSupply InletNode", "SYSTEM NODE SETPOINT TEMPERATURE", 1, 2); // TODO: WHAT?
         EXPECT_TRUE(varSetpTempRegex->Used);
         EXPECT_FALSE(varTempRegex->Used);
 
-        SetupOutputVariable(*state,
-                            "System Node Temperature",
-                            Constant::Units::C,
-                            fakeVar,
-                            TimeStepType::System,
-                            StoreType::Average,
-                            // TODO: is that supposed to look like a regex?!
-                            "Air Loop 1 InletNode");
+        SetupOutputVariable(
+            *state, "System Node Temperature", Constant::Units::C, fakeVar, TimeStepType::System, StoreType::Average, "Air Loop 1 InletNode");
+        // TODO: is that supposed to look like a regex?!
         // BuildKeyVarList(*state, "Air Loop 1|AirSupply InletNode", "SYSTEM NODE TEMPERATURE", 1, 2);
         EXPECT_TRUE(varSetpTempRegex->Used);
         EXPECT_TRUE(varTempRegex->Used);
@@ -5059,12 +5062,12 @@ namespace OutputProcessor {
             {"   ** Warning ** Meter:Custom=\"CUSTOMMETER1\", invalid Output Variable or Meter Name=\"DISTRICTHEATINGWATER:FACILITY\".",
              "   **   ~~~   ** ...will not be shown with the Meter results.",
              "   ** Warning ** Meter:Custom=\"CUSTOMMETER1\", no items assigned ",
-             "   **   ~~~   ** ...will not be shown with the Meter results. This may be caused by a Meter:Custom be assigned to another "
+             "   **   ~~~   ** ...will not be shown with the Meter results. This may be caused by a Meter:Custom being assigned to another "
              "Meter:Custom.",
              "   ** Warning ** Meter:Custom=\"CUSTOMMETER2\", contains a reference to another Meter:Custom in field: Output Variable or Meter "
              "Name=\"CUSTOMMETER1\".",
              "   ** Warning ** Meter:Custom=\"CUSTOMMETER2\", no items assigned ",
-             "   **   ~~~   ** ...will not be shown with the Meter results. This may be caused by a Meter:Custom be assigned to another "
+             "   **   ~~~   ** ...will not be shown with the Meter results. This may be caused by a Meter:Custom being assigned to another "
              "Meter:Custom."});
         compare_err_stream(errMsg);
     }
@@ -5358,13 +5361,13 @@ namespace OutputProcessor {
              {"125", "0", "Sum", "Zone", "Zone", "LIGHTS 1", "Lights Electricity Energy", "Zone Timestep", "", "J"},
              {"126", "0", "Sum", "System", "HVAC System", "Site", "Environmental Impact Fuel Oil No 2 CO2 Emissions Mass", "Run Period", "", "kg"}});
 
-        for (int i = 0; i < (int)reportDataDictionary.size(); ++i)
+        for (int i = 0; i < (int)reportDataDictionary.size(); ++i) {
             EXPECT_EQ(reportDataDictionary[i], reportDataDictionaryResults[i]);
+        }
     }
 
     TEST_F(EnergyPlusFixture, OutputProcessor_StdoutRecordCount)
     {
-        auto &op = state->dataOutputProcessor;
         std::string const idf_objects = delimited_string({
             "Output:Meter,Electricity:Facility,Timestep;",
             "Output:Variable,*,Lights Electricity Energy,Timestep;",

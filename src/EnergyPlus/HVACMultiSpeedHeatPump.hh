@@ -64,15 +64,6 @@ struct EnergyPlusData;
 
 namespace HVACMultiSpeedHeatPump {
 
-    // Heating coil types
-    int constexpr MultiSpeedHeatingCoil(1); // COIL:DX:MultiSpeed:Heating
-    // Cooling coil types
-    int constexpr MultiSpeedCoolingCoil(2); // COIL:DX:MultiSpeed:Cooling
-    // Supplymental heating coil types
-    int constexpr SuppHeatingCoilGas(1);  // Supplymental heating coil type: COIL:GAS:HEATING
-    int constexpr SuppHeatingCoilElec(2); // Supplymental heating coil type: COIL:ELECTRIC:HEATING
-    int constexpr SuppHeatingCoilRec(3);  // Supplymental heating coil type: COIL:ENGINEHEATRECOVERY:HEATING
-
     // Mode of operation
     enum class ModeOfOperation
     {
@@ -117,7 +108,7 @@ namespace HVACMultiSpeedHeatPump {
         int FanOutletNode;                         // Fan Outlet node
         Real64 FanVolFlow;                         // Supply fan volumetric flow rate
         Sched::Schedule *fanOpModeSched = nullptr; // Supply air fan operating mode schedule
-        HVAC::FanOp fanOp = HVAC::FanOp::Invalid;  // mode of operation; 1=cycling fan, cycling compressor; 2=continuous fan, cycling compresor
+        HVAC::FanOp fanOp = HVAC::FanOp::Invalid;  // mode of operation; 1=cycling fan, cycling compressor; 2=continuous fan, cycling compressor
         std::string DXHeatCoilName;                // COIL:DX:MultiSpeed:Heating name
         int HeatCoilType;                          // Heating coil type: 1 COIL:DX:MultiSpeed:Heating only
         int HeatCoilNum;                           // Heating coil number
@@ -218,6 +209,9 @@ namespace HVACMultiSpeedHeatPump {
         bool EMSOverrideCoilSpeedNumOn;
         Real64 EMSOverrideCoilSpeedNumValue;
         int CoilSpeedErrIndex;
+        Real64 HeatingSizingRatio = 1.0;
+        bool isHeatPump = false;
+        bool reportACCAManualS = true;
 
         // Default Constructor
         MSHeatPumpData()
@@ -234,12 +228,11 @@ namespace HVACMultiSpeedHeatPump {
               HeatRecoveryRate(0.0), HeatRecoveryInletTemp(0.0), HeatRecoveryOutletTemp(0.0), HeatRecoveryMassFlowRate(0.0),
               AirFlowControl(AirflowControl::Invalid), ErrIndexCyc(0), ErrIndexVar(0), LoadLoss(0.0), SuppCoilAirInletNode(0),
               SuppCoilAirOutletNode(0), SuppHeatCoilType_Num(0), SuppHeatCoilIndex(0), SuppCoilControlNode(0), MaxSuppCoilFluidFlow(0.0),
-              SuppCoilOutletNode(0), CoilAirInletNode(0), CoilControlNode(0), MaxCoilFluidFlow(0.0), CoilOutletNode(0),
-              HotWaterCoilControlNode(0), plantLoc{}, SuppPlantLoc{}, HotWaterPlantLoc{}, HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0),
-              StageNum(0), Staged(false), CoolCountAvail(0), CoolIndexAvail(0), HeatCountAvail(0), HeatIndexAvail(0), FirstPass(true),
-              MinOATCompressorCooling(0.0), MinOATCompressorHeating(0.0), MyEnvrnFlag(true), MySizeFlag(true), MyCheckFlag(true),
-              MyFlowFracFlag(true), MyPlantScantFlag(true), MyStagedFlag(true), EMSOverrideCoilSpeedNumOn(false), EMSOverrideCoilSpeedNumValue(0.0),
-              CoilSpeedErrIndex(0)
+              SuppCoilOutletNode(0), CoilAirInletNode(0), CoilControlNode(0), MaxCoilFluidFlow(0.0), CoilOutletNode(0), HotWaterCoilControlNode(0),
+              plantLoc{}, SuppPlantLoc{}, HotWaterPlantLoc{}, HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0), StageNum(0), Staged(false),
+              CoolCountAvail(0), CoolIndexAvail(0), HeatCountAvail(0), HeatIndexAvail(0), FirstPass(true), MinOATCompressorCooling(0.0),
+              MinOATCompressorHeating(0.0), MyEnvrnFlag(true), MySizeFlag(true), MyCheckFlag(true), MyFlowFracFlag(true), MyPlantScantFlag(true),
+              MyStagedFlag(true), EMSOverrideCoilSpeedNumOn(false), EMSOverrideCoilSpeedNumValue(0.0), CoilSpeedErrIndex(0)
         {
         }
     };
@@ -247,7 +240,7 @@ namespace HVACMultiSpeedHeatPump {
     struct MSHeatPumpReportData
     {
         // Members
-        Real64 ElecPowerConsumption;   // Electricity Rate comsumption: CondenserFan+CrankcaseHeater+Defroster+aux
+        Real64 ElecPowerConsumption;   // Electricity Rate consumption: CondenserFan+CrankcaseHeater+Defroster+aux
         Real64 HeatRecoveryEnergy;     // Heat recovery rate [J]
         Real64 CycRatio;               // Cycle ratio
         Real64 SpeedRatio;             // Speed ratio between two stages

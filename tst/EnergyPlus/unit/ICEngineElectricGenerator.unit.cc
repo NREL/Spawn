@@ -126,6 +126,7 @@ TEST_F(EnergyPlusFixture, ICEngineElectricGenerator_Fueltype)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
+    state->init_state(*state); // Calls GetCurveInput
 
     GetICEngineGeneratorInput(*state);
 

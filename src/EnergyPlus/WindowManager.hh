@@ -310,7 +310,7 @@ namespace Window {
 
     void W5LsqFit(std::array<Real64, numPhis> const &ivars,       // Independent variables
                   std::array<Real64, numPhis> const &dvars,       // Dependent variables
-                  std::array<Real64, Window::maxPolyCoef> &coeffs // Polynomial coeffients from fit
+                  std::array<Real64, Window::maxPolyCoef> &coeffs // Polynomial coefficients from fit
     );
 
     Real64 DiffuseAverage(std::array<Real64, numPhis> const &props); // Property value at angles of incidence
@@ -347,7 +347,7 @@ namespace Window {
     void WindowTempsForNominalCond(EnergyPlusData &state,
                                    int ConstrNum,        // Construction number
                                    Array1A<Real64> hgap, // Gap gas conductive conductance (W/m2-K)
-                                   Real64 adjRatio       // adjusment Ratio to hcin
+                                   Real64 adjRatio       // adjustment Ratio to hcin
     );
 
     void StartingWinTempsForNominalCond(EnergyPlusData &state);
@@ -488,14 +488,14 @@ struct WindowManagerData : BaseGlobalStruct
     std::array<Real64, Window::maxGlassLayers> thick = {0.0};                           // Glass layer thickness (m)
     std::array<Real64, Window::maxGlassLayers> scon = {0.0};                            // Glass layer conductance--conductivity/thickness (W/m2-K)
 
-    std::array<Real64, 2 *Window::maxGlassLayers> tir = {0.0};  // Front and back IR transmittance for each glass layer
-    std::array<Real64, 2 *Window::maxGlassLayers> emis = {0.0}; // Front and back IR emissivity for each glass layer
-    std::array<Real64, 2 *Window::maxGlassLayers> rir = {0.0};  // Front and back IR reflectance for each glass layer
-                                                                //  (program calculates from tir and emis)
-    std::array<Real64, 2 *Window::maxGlassLayers> AbsRadGlassFace = {
-        0.0};                                                         // Solar radiation and IR radiation from internal gains absorbed by glass face
-    std::array<Real64, 2 *Window::maxGlassLayers> thetas = {0.0};     // Glass surface temperatures (K)
-    std::array<Real64, 2 *Window::maxGlassLayers> thetasPrev = {0.0}; // Previous-iteration glass surface temperatures (K)
+    std::array<Real64, 2 * Window::maxGlassLayers> tir = {0.0};  // Front and back IR transmittance for each glass layer
+    std::array<Real64, 2 * Window::maxGlassLayers> emis = {0.0}; // Front and back IR emissivity for each glass layer
+    std::array<Real64, 2 * Window::maxGlassLayers> rir = {0.0};  // Front and back IR reflectance for each glass layer
+                                                                 //  (program calculates from tir and emis)
+    std::array<Real64, 2 * Window::maxGlassLayers> AbsRadGlassFace = {
+        0.0};                                                          // Solar radiation and IR radiation from internal gains absorbed by glass face
+    std::array<Real64, 2 * Window::maxGlassLayers> thetas = {0.0};     // Glass surface temperatures (K)
+    std::array<Real64, 2 * Window::maxGlassLayers> thetasPrev = {0.0}; // Previous-iteration glass surface temperatures (K)
 
     std::array<Real64, Window::maxGlassLayers> hrgap = {0.0}; // Radiative gap conductance
 

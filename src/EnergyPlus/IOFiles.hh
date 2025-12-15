@@ -75,7 +75,9 @@ struct DoubleWrapper
 {
     // this cannot be marked explicit
     // we need the implicit conversion for it to work
-    DoubleWrapper(double val) : value(val){};
+    // clang-format off
+    DoubleWrapper(double val) : value(val) {};
+    // clang-format on
     operator double() const
     {
         return value;
@@ -148,15 +150,21 @@ private:
         //    [[fill]align]
         switch (specs_.align) {
         case align_t::left:
-            if (specs_.fill.size()) buffer.append(specs_.fill);
+            if (specs_.fill.size()) {
+                buffer.append(specs_.fill);
+            }
             buffer.push_back('<');
             break;
         case align_t::right:
-            if (specs_.fill.size()) buffer.append(specs_.fill);
+            if (specs_.fill.size()) {
+                buffer.append(specs_.fill);
+            }
             buffer.push_back('>');
             break;
         case align_t::center:
-            if (specs_.fill.size()) buffer.append(specs_.fill);
+            if (specs_.fill.size()) {
+                buffer.append(specs_.fill);
+            }
             buffer.push_back('^');
             break;
         case align_t::none:
@@ -229,7 +237,9 @@ public:
     {
         auto begin = ctx.begin(), end = ctx.end();
         format_str_ = begin;
-        if (begin == end) return begin;
+        if (begin == end) {
+            return begin;
+        }
         using handler_type = fmt::detail::dynamic_specs_handler<ParseContext>;
         auto it = fmt::detail::parse_format_specs(begin, end, handler_type(specs_, ctx));
         return it;
@@ -258,132 +268,17 @@ public:
         handle_specs(ctx);
         detail::specs_checker<null_handler> checker(null_handler(), detail::mapped_type_constant<double, FormatContext>::value);
         checker.on_align(specs_.align);
-        if (specs_.sign != sign::none) checker.on_sign(specs_.sign);
-        if (specs_.alt) checker.on_hash();
-        if (specs_.precision >= 0) checker.end_precision();
+        if (specs_.sign != sign::none) {
+            checker.on_sign(specs_.sign);
+        }
+        if (specs_.alt) {
+            checker.on_hash();
+        }
+        if (specs_.precision >= 0) {
+            checker.end_precision();
+        }
 
-        // matches Fortran's 'E' format
-        if (specs_.type == 'Z') {
-            // The Fortran 'G' format insists on a leading 0, even though
-            // that actually means losing data
-            specs_.type = 'E';
-
-            // 0 pad the end
-            specs_.alt = true;
-
-            bool initialPrecisionWas1 = false;
-            if (specs_.precision > 1) {
-                // reduce the precision to get rounding behavior
-                --specs_.precision;
-            } else {
-                // We need AT LEAST one in precision so we capture a '.' below
-                initialPrecisionWas1 = true;
-                specs_.precision = 1;
-                ++specs_.width;
-            }
-
-            // multiply by 10 to get the exponent we want
-            auto str = fmt::format(spec_builder(), val * 10);
-            //      auto str = write_to_string(value * 10);
-
-            // we need "space" to insert our leading 0
-            if (str.front() != ' ') {
-                str.insert(str.begin(), ' ');
-            }
-
-            auto begin = std::find(std::begin(str), std::end(str), '.');
-            if (initialPrecisionWas1) {
-                // 123.45 => 1.2E+03, except we asked for precision = 1. So we delete the thing after the dot
-                // and this is why we manually increased the specs_.width by one above
-                str.erase(std::next(begin));
-            }
-            // if (begin != std::end(str)) {
-            // ' -1.2345E15'
-            //     ^
-            std::swap(*begin, *std::prev(begin));
-            // ' -.12345E15'
-            //     ^
-            std::advance(begin, -2);
-            // ' -.12345E15'
-            //   ^
-            if (*begin != ' ') {
-                // found a sign
-                std::swap(*begin, *std::prev(begin));
-                // '- .12345E15'
-                //   ^
-            }
-            // '-0.12345E15'
-            //   ^
-            *begin = '0';
-            return fmt::format_to(ctx.out(), "{}", str);
-        } else if (specs_.type == 'S') {
-            // matches Fortran's 'G', but stripped of whitespace
-            specs_.type = 'N';
-            // Need to rerun with double wrapper since 'N' is one of our custom ones
-            auto str = fmt::format(spec_builder(), doubleWrapper);
-
-            auto strip_whitespace = [](std::string_view const s) -> std::string {
-                if (s.empty()) {
-                    return std::string{};
-                }
-                auto const first = s.find_first_not_of(' ');
-                auto const last = s.find_last_not_of(' ');
-                if ((first == std::string::npos) || (last == std::string::npos)) {
-                    return std::string{};
-                } else {
-                    return std::string{s.substr(first, last - first + 1)};
-                }
-            };
-
-            return fmt::format_to(ctx.out(), "{}", strip_whitespace(str));
-        } else if (specs_.type == 'N') {
-            // matches Fortran's 'G' format
-
-            if (specs_.width == 0 && specs_.precision == -1) {
-                // Need to rerun with double wrapper since 'N' is one of our custom ones
-                return fmt::format_to(ctx.out(), "{:20N}", doubleWrapper);
-            } else if (should_be_fixed_output(val) && fixed_will_fit(val, specs_.width - 5)) {
-                specs_.type = 'F';
-
-                // account for alignment with E formatted
-                specs_.width -= 4;
-                if (val == 0.0) {
-                    --specs_.precision;
-                } else if (val < 1.0 && val > -1.0) {
-                    // No adjustment necessary
-                } else if (specs_.precision == -1) {
-                    const auto order_of_magnitude = static_cast<int>(std::log10(std::abs(val)));
-                    specs_.precision = specs_.width - (order_of_magnitude + 2);
-                } else {
-                    const auto order_of_magnitude = static_cast<int>(std::log10(std::abs(val)));
-                    specs_.precision -= (order_of_magnitude + 1);
-                }
-
-                // if precision adjustment would result in negative, make it 0 to get rounding
-                // and adjust spacing
-                if (specs_.precision <= 0) {
-                    specs_.width -= 1;
-                    specs_.precision = 0;
-                }
-
-                auto str = fmt::format(spec_builder(), val);
-
-                // When precision hit 0, add . to match Fortran formatting
-                if (specs_.precision == 0) {
-                    // write the last 4 chars
-                    return fmt::format_to(ctx.out(), "{}.    ", str);
-                } else {
-                    // write the last 4 chars
-                    return fmt::format_to(ctx.out(), "{}    ", str);
-                }
-            } else {
-                // The Fortran 'G' format insists on a leading 0, even though
-                // that actually means losing data
-                specs_.type = 'Z';
-                // Need to rerun with double wrapper since 'Z' is one of our custom ones
-                return fmt::format_to(ctx.out(), spec_builder(), doubleWrapper);
-            }
-        } else if (specs_.type == 'R') { // matches RoundSigDigits() behavior
+        if (specs_.type == 'R') { // matches RoundSigDigits() behavior
             // push the value up a tad to get the same rounding behavior as Objexx
             const auto fixed_output = should_be_fixed_output(val);
 
@@ -474,9 +369,6 @@ inline constexpr bool is_fortran_syntax(const std::string_view format_str)
             within_fmt_str = false;
             break;
         case 'R':
-        case 'S':
-        case 'N':
-        case 'Z':
         case 'T':
             if (within_fmt_str) {
                 return true;
@@ -492,7 +384,7 @@ inline constexpr bool is_fortran_syntax(const std::string_view format_str)
 
 class InputOutputFile;
 template <FormatSyntax formatSyntax = FormatSyntax::Fortran, typename... Args>
-void print(InputOutputFile &outputFile, std::string_view format_str, Args &&... args);
+void print(InputOutputFile &outputFile, std::string_view format_str, Args &&...args);
 
 inline constexpr FormatSyntax check_syntax(const std::string_view format_str)
 {
@@ -610,7 +502,7 @@ public:
 private:
     std::unique_ptr<std::iostream> os;
     bool print_to_dev_null = false;
-    template <FormatSyntax, typename... Args> friend void print(InputOutputFile &outputFile, std::string_view format_str, Args &&... args);
+    template <FormatSyntax, typename... Args> friend void print(InputOutputFile &outputFile, std::string_view format_str, Args &&...args);
     friend class IOFiles;
 };
 
@@ -683,6 +575,7 @@ public:
         bool spsz = true;
         bool zsz = true;
         bool ssz = true;
+        bool psz = true;
         bool dxf = true;
         bool bnd = true;
         bool rdd = true;
@@ -691,7 +584,6 @@ public:
         bool end = true;
         bool shd = true;
         bool dfs = true;
-        bool glhe = true;
         bool delightin = true;
         bool delighteldmp = true;
         bool delightdfdmp = true;
@@ -729,6 +621,11 @@ public:
     fs::path outputSszCsvFilePath{"eplusssz.csv"};
     fs::path outputSszTabFilePath{"eplusssz.tab"};
     fs::path outputSszTxtFilePath{"eplusssz.txt"};
+
+    InputOutputFile psz{""};
+    fs::path outputPszCsvFilePath{"epluspsz.csv"};
+    fs::path outputPszTabFilePath{"epluspsz.tab"};
+    fs::path outputPszTxtFilePath{"epluspsz.txt"};
 
     InputOutputFile map{""};
     fs::path outputMapCsvFilePath{"eplusmap.csv"};
@@ -809,7 +706,7 @@ public:
     }
 };
 
-template <typename... Args> void vprint(std::ostream &os, std::string_view format_str, const Args &... args)
+template <typename... Args> void vprint(std::ostream &os, std::string_view format_str, const Args &...args)
 {
     //    assert(os.good());
     auto buffer = fmt::memory_buffer();
@@ -821,7 +718,7 @@ template <typename... Args> void vprint(std::ostream &os, std::string_view forma
     os.write(buffer.data(), buffer.size());
 }
 
-template <typename... Args> std::string vprint(std::string_view format_str, const Args &... args)
+template <typename... Args> std::string vprint(std::string_view format_str, const Args &...args)
 {
     auto buffer = fmt::memory_buffer();
     try {
@@ -841,33 +738,24 @@ template <typename... Args> std::string vprint(std::string_view format_str, cons
 // on the value being printed.
 // This is necessary for parity with the old "RoundSigDigits" utility function
 //
-// Defines a custom formatting type 'S' that behaves like Fortran's G type, but stripped of whitespace
-// 'S' was chosen for "Stripped". It is implemented in terms of 'N'
-//
-// Defines a custom formatting type 'N' that behaves like Fortran's G type.
-// 'N' was chosen for "Number"
-//
-// Defines a custom formatting type 'Z' that behaves like Fortran's E type.
-// 'Z' was chosen because Fortran's 'E' format always starts with a Zero
-//
 // Defines a custom formatting type 'T' that that truncates the value
 // to match the behavior of TrimSigDigits utility function
 //
 
 namespace {
-    template <typename... Args> void print_fortran_syntax(std::ostream &os, std::string_view format_str, const Args &... args)
+    template <typename... Args> void print_fortran_syntax(std::ostream &os, std::string_view format_str, const Args &...args)
     {
         EnergyPlus::vprint<std::conditional_t<std::is_same_v<double, Args>, DoubleWrapper, Args>...>(os, format_str, args...);
     }
 
-    template <typename... Args> std::string format_fortran_syntax(std::string_view format_str, const Args &... args)
+    template <typename... Args> std::string format_fortran_syntax(std::string_view format_str, const Args &...args)
     {
         return EnergyPlus::vprint<std::conditional_t<std::is_same_v<double, Args>, DoubleWrapper, Args>...>(format_str, args...);
     }
 } // namespace
 
 template <FormatSyntax formatSyntax = FormatSyntax::Fortran, typename... Args>
-void print(std::ostream &os, std::string_view format_str, Args &&... args)
+void print(std::ostream &os, std::string_view format_str, Args &&...args)
 {
     if constexpr (formatSyntax == FormatSyntax::Fortran) {
         print_fortran_syntax(os, format_str, args...);
@@ -878,7 +766,7 @@ void print(std::ostream &os, std::string_view format_str, Args &&... args)
     }
 }
 
-template <FormatSyntax formatSyntax, typename... Args> void print(InputOutputFile &outputFile, std::string_view format_str, Args &&... args)
+template <FormatSyntax formatSyntax, typename... Args> void print(InputOutputFile &outputFile, std::string_view format_str, Args &&...args)
 {
     auto *outputStream = [&]() -> std::ostream * {
         if (outputFile.os) {
@@ -901,7 +789,7 @@ template <FormatSyntax formatSyntax, typename... Args> void print(InputOutputFil
     }
 }
 
-template <FormatSyntax formatSyntax = FormatSyntax::Fortran, typename... Args> std::string format(std::string_view format_str, Args &&... args)
+template <FormatSyntax formatSyntax = FormatSyntax::Fortran, typename... Args> std::string format(std::string_view format_str, Args &&...args)
 {
     if constexpr (formatSyntax == FormatSyntax::Fortran) {
         return format_fortran_syntax(format_str, args...);

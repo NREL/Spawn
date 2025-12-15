@@ -980,9 +980,13 @@ void InitExternalInterfaceFMUImport(EnergyPlusData &state)
         // So this check that if I entered two different things and get the same end filename, then it's wrong?
         for (int j = 1; j <= state.dataExternalInterface->NumFMUObjects; ++j) {
             for (int k = 2; k <= state.dataExternalInterface->NumFMUObjects; ++k) {
-                if (!Util::SameString(strippedFileName(j), strippedFileName(k))) continue;
+                if (!Util::SameString(strippedFileName(j), strippedFileName(k))) {
+                    continue;
+                }
                 // base file names are the same
-                if (Util::SameString(fullFileName(j), fullFileName(k))) continue;
+                if (Util::SameString(fullFileName(j), fullFileName(k))) {
+                    continue;
+                }
                 ShowSevereError(state, "ExternalInterface/InitExternalInterfaceFMUImport:");
                 ShowContinueError(state, "duplicate file names (but not same file) entered.");
                 ShowContinueError(state, format("...entered file name=\"{}\"", state.dataExternalInterface->FMU(j).Name));
@@ -1124,7 +1128,7 @@ void InitExternalInterfaceFMUImport(EnergyPlusData &state)
                     // get the path to the binaries
                     // preprocess args for library call
                     std::vector<char> workingFolderArr(getCharArrayFromString(workingFolderStr));
-                    // Reserve some space in the string, becasue addLibPathCurrentWorkflowFolder doesn't allocate memory for the
+                    // Reserve some space in the string, because addLibPathCurrentWorkflowFolder doesn't allocate memory for the
                     // workingFolderWithLibArr Note: you can't call str.resize(str.length() + 91) because the conversion to std::vector<char> will
                     // find the null terminator and so it will have no effect
                     std::string reservedString =
@@ -2269,7 +2273,7 @@ void GetReportVariableKey(
     int numKeys(0);                                                                 // Number of keys found
     OutputProcessor::StoreType varAvgSum(OutputProcessor::StoreType::Average);      // Variable  is Averaged=1 or Summed=2
     OutputProcessor::TimeStepType varStepType(OutputProcessor::TimeStepType::Zone); // Variable time step is Zone=1 or HVAC=2
-    Constant::Units varUnits(Constant::Units::None);                                // Units sting, may be blank
+    Constant::Units varUnits(Constant::Units::None);                                // Units string, may be blank
     Array1D_string keyNames;
     Array1D_int keyIndexes; // Array index for
     int Loop, iKey;         // Loop counters

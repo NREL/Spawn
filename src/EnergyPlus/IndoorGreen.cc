@@ -119,7 +119,9 @@ namespace IndoorGreen {
         int IOStat;                                                 // Status flag from GetObjectItem
 
         s_lw->NumIndoorGreen = s_ip->getNumObjectsFound(state, cCurrentModuleObject);
-        if (s_lw->NumIndoorGreen > 0) s_lw->indoorGreens.allocate(s_lw->NumIndoorGreen); // Allocate the IndoorGreen input data array
+        if (s_lw->NumIndoorGreen > 0) {
+            s_lw->indoorGreens.allocate(s_lw->NumIndoorGreen); // Allocate the IndoorGreen input data array
+        }
         for (int IndoorGreenNum = 1; IndoorGreenNum <= s_lw->NumIndoorGreen; ++IndoorGreenNum) {
             auto &ig = s_lw->indoorGreens(IndoorGreenNum);
             s_ip->getObjectItem(state,
@@ -155,7 +157,7 @@ namespace IndoorGreen {
 
                 if (ig.ZonePtr <= 0 || ig.SpacePtr <= 0) {
                     ShowSevereError(state,
-                                    format("{}=\"{}\", invalid {} entered={}, {} is not assoicated with a thermal zone or space",
+                                    format("{}=\"{}\", invalid {} entered={}, {} is not associated with a thermal zone or space",
                                            RoutineName,
                                            s_ipsc->cAlphaArgs(1),
                                            s_ipsc->cAlphaFieldNames(2),
@@ -407,9 +409,9 @@ namespace IndoorGreen {
         // SUBROUTINE PARAMETER DEFINITIONS:
         static constexpr std::string_view RoutineName("ETModel: ");
         auto &lw = state.dataIndoorGreen;
-        Real64 ZonePreTemp; // Indoor air temprature (C)
+        Real64 ZonePreTemp; // Indoor air temperature (C)
         Real64 ZonePreHum;  // Indoor humidity ratio (kg moisture / kg dry air)
-        Real64 ZoneNewTemp; // Indoor air temprature (C) after ET
+        Real64 ZoneNewTemp; // Indoor air temperature (C) after ET
         Real64 ZoneNewHum;  // Indoor humidity ratio (kg moisture / kg dry air) after ET
         Real64 ZoneSatHum;  // Saturated humidity ratio
         Real64 ZoneCO2;     // Indoor zone co2 concentration (ppm)
@@ -529,8 +531,8 @@ namespace IndoorGreen {
         // Wageningen, The Netherlands
 
         Real64 hfg = Psychrometrics::PsyHfgAirFnWTdb(ZonePreHum, ZonePreTemp) / std::pow(10, 6); // Latent heat of vaporization (MJ/kg)
-        Real64 slopepat =
-            0.200 * std::pow((0.00738 * ZonePreTemp + 0.8072), 7) - 0.000116; // Slope of the saturation vapor pressure-temperature curve (kPa/°C)
+        // Slope of the saturation vapor pressure-temperature curve (kPa/°C)
+        Real64 slopepat = 0.200 * std::pow((0.00738 * ZonePreTemp + 0.8072), 7) - 0.000116;
         Real64 CpAir = Psychrometrics::PsyCpAirFnW(ZonePreHum) / std::pow(10, 6); // specific heat of air at constant pressure (MJ kg−1 °C−1)
         Real64 OutPb = state.dataEnvrn->OutBaroPress / 1000;                      // outdoor pressure (kPa)
         Real64 constexpr mw(0.622);                                               // ratio molecular weight of water vapor / dry air = 0.622.

@@ -117,11 +117,8 @@ TEST_F(EnergyPlusFixture, AirflowNetwork_AdvancedTest_Test1)
     state->afn->OccupantVentilationControl(1).ComfortLowTempCurveNum = 1;
     state->afn->OccupantVentilationControl(1).ComfortHighTempCurveNum = 2;
 
-    state->dataCurveManager->allocateCurveVector(2);
-
-    auto *curve1 = state->dataCurveManager->PerfCurve(1);
+    auto *curve1 = AddCurve(*state, "Curve1");
     curve1->curveType = CurveType::Quadratic;
-    curve1->interpolationType = InterpType::EvaluateCurveToLimits;
     curve1->coeff[0] = 21.2;
     curve1->coeff[1] = 0.09;
     curve1->coeff[2] = 0.0;
@@ -133,9 +130,8 @@ TEST_F(EnergyPlusFixture, AirflowNetwork_AdvancedTest_Test1)
     curve1->inputLimits[1].min = 0.0;
     curve1->inputLimits[1].max = 2.0;
 
-    auto *curve2 = state->dataCurveManager->PerfCurve(2);
+    auto *curve2 = AddCurve(*state, "Curve2");
     curve2->curveType = CurveType::Quadratic;
-    curve2->interpolationType = InterpType::EvaluateCurveToLimits;
     curve2->coeff[0] = 18.8;
     curve2->coeff[1] = 0.33;
     curve2->coeff[2] = 0.0;

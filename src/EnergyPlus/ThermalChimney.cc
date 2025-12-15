@@ -78,7 +78,7 @@ namespace ThermalChimney {
     //       RE-ENGINEERED  na
 
     // PURPOSE OF THIS MODULE:
-    // To encapsulate the data and algorithyms required to manage the ThermalChimney System Component
+    // To encapsulate the data and algorithm required to manage the ThermalChimney System Component
 
     // METHODOLOGY EMPLOYED:
     // na
@@ -124,7 +124,9 @@ namespace ThermalChimney {
             state.dataThermalChimneys->ThermalChimneyGetInputFlag = false;
         }
 
-        if (state.dataThermalChimneys->TotThermalChimney == 0) return;
+        if (state.dataThermalChimneys->TotThermalChimney == 0) {
+            return;
+        }
 
         CalcThermalChimney(state);
 
@@ -282,8 +284,9 @@ namespace ThermalChimney {
                     state.dataIPShortCut->rNumericArgs(3 * TCZoneNum + 1);
                 state.dataThermalChimneys->ThermalChimneySys(Loop).RatioThermChimAirFlow(TCZoneNum) =
                     state.dataIPShortCut->rNumericArgs(3 * TCZoneNum + 2);
-                if (state.dataIPShortCut->lNumericFieldBlanks(3 * TCZoneNum + 2))
+                if (state.dataIPShortCut->lNumericFieldBlanks(3 * TCZoneNum + 2)) {
                     state.dataThermalChimneys->ThermalChimneySys(Loop).RatioThermChimAirFlow(TCZoneNum) = 1.0;
+                }
                 state.dataThermalChimneys->ThermalChimneySys(Loop).EachAirInletCrossArea(TCZoneNum) =
                     state.dataIPShortCut->rNumericArgs(3 * TCZoneNum + 3);
 
@@ -572,7 +575,7 @@ namespace ThermalChimney {
                     RepVarSet(state.dataThermalChimneys->ThermalChimneySys(Loop).ZonePtr(TCZoneNum)) = false;
                 }
             } // DO TCZoneNum = 1, ThermalChimneySys(Loop)%TotZoneToDistrib
-        }     // DO Loop=1, TotThermalChimney
+        } // DO Loop=1, TotThermalChimney
 
         //! LKL-more renaming effort and code review might be possible here
         // Check to make sure there is only one thermal chimney statement per zone
@@ -616,8 +619,8 @@ namespace ThermalChimney {
                     } // IF ( ThermalChimneySys(Loop)%TotZoneToDistrib >= (TCZoneNum+1) ) THEN
 
                 } // DO TCZoneNum = 1, ThermalChimneySys(Loop)%TotZoneToDistrib
-            }     // IF (ThermalChimneySys(Loop)%TotZoneToDistrib > 1) THEN
-        }         // DO Loop = 1, TotThermalChimney
+            } // IF (ThermalChimneySys(Loop)%TotZoneToDistrib > 1) THEN
+        } // DO Loop = 1, TotThermalChimney
 
         // Check to make sure there is only one thermal chimney statement per zone
         if (state.dataThermalChimneys->TotThermalChimney > 1) {
@@ -670,7 +673,7 @@ namespace ThermalChimney {
                 } // IF ( TotThermalChimney >= (Loop+1) ) THEN
 
             } // DO Loop = 1, TotThermalChimney
-        }     // IF (TotThermalChimney > 1) THEN
+        } // IF (TotThermalChimney > 1) THEN
 
         if (ErrorsFound) {
             ShowFatalError(state, format("{} Errors found in input.  Preceding condition(s) cause termination.", cCurrentModuleObject));
@@ -694,11 +697,11 @@ namespace ThermalChimney {
         // To be obtained from other modules and subroutines
         Real64 SurfTempAbsorberWall;     // Absorber wall surface temperature (K)
         Real64 SurfTempGlassCover;       // Glass cover surface temperature (K)
-        Real64 ConvTransCoeffWallFluid;  // Absorber wall convection trasnfer coefficient
-        Real64 ConvTransCoeffGlassFluid; // Glass cover convection trasnfer coefficient
+        Real64 ConvTransCoeffWallFluid;  // Absorber wall convection transfer coefficient
+        Real64 ConvTransCoeffGlassFluid; // Glass cover convection transfer coefficient
 
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
-        // Real local vaiables
+        // Real local variables
         Real64 minorW; // width of enclosure (narrow dimension)
         Real64 majorW; // width of major surface
         Real64 TempmajorW;
@@ -730,7 +733,7 @@ namespace ThermalChimney {
         Real64 DeltaL; // OverallThermalChimLength / NTC
         int ThermChimLoop1;
         int ThermChimLoop2;
-        Array2D<Real64> EquaCoef(NTC, NTC);    // Coefficients in Linear Algebraic Euqation for FINITE DIFFERENCE
+        Array2D<Real64> EquaCoef(NTC, NTC);    // Coefficients in Linear Algebraic Equation for FINITE DIFFERENCE
         Array1D<Real64> EquaConst(NTC);        // Constants in Linear Algebraic Equation for FINITE DIFFERENCE
         Array1D<Real64> ThermChimSubTemp(NTC); // Air temperature of each thermal chimney air channel subregion
 
@@ -749,7 +752,9 @@ namespace ThermalChimney {
             for (int spaceNum : state.dataHeatBal->Zone(ZoneNum).spaceIndexes) {
                 auto const &thisSpace = state.dataHeatBal->space(spaceNum);
                 for (int SurfNum = thisSpace.HTSurfaceFirst; SurfNum <= thisSpace.HTSurfaceLast; ++SurfNum) {
-                    if (state.dataSurface->Surface(SurfNum).Class != SurfaceClass::Wall) continue;
+                    if (state.dataSurface->Surface(SurfNum).Class != SurfaceClass::Wall) {
+                        continue;
+                    }
 
                     if (state.dataSurface->Surface(SurfNum).Width > majorW) {
                         majorW = state.dataSurface->Surface(SurfNum).Width;
@@ -837,7 +842,7 @@ namespace ThermalChimney {
             for (IterationLoop = 1; IterationLoop <= 10; ++IterationLoop) {
 
                 if (IterationLoop == 1) {
-                    TempTCMassAirFlowRate(IterationLoop) = 0.05; // Inital Guess
+                    TempTCMassAirFlowRate(IterationLoop) = 0.05; // Initial Guess
 
                 } else {
                     TempTCMassAirFlowRate(IterationLoop) = TempTCVolumeAirFlowRate(IterationLoop - 1) * AirDensityThermalChim;
@@ -1054,7 +1059,7 @@ namespace ThermalChimney {
     void GaussElimination(Array2A<Real64> EquaCoef, Array1D<Real64> &EquaConst, Array1D<Real64> &ThermChimSubTemp, int const NTC)
     {
         // PURPOSE OF THIS SUBROUTINE:
-        // This subroutine sovles linear algebraic equations using Gauss Elimination Method.
+        // This subroutine solves linear algebraic equations using Gauss Elimination Method.
 
         EquaCoef.dim(NTC, NTC);
         EP_SIZE_CHECK(EquaConst, NTC);

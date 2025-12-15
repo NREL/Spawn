@@ -131,17 +131,16 @@ TEST_F(EnergyPlusFixture, GetMaterialDataReadVarAbsorptance)
     mat3->Num = s_mat->materials.isize();
     s_mat->materialMap.insert_or_assign(mat3->Name, mat3->Num);
 
-    state->dataCurveManager->allocateCurveVector(2);
-    state->dataCurveManager->PerfCurve(1)->Name = "THERMAL_ABSORPTANCE_TABLE";
-    state->dataCurveManager->PerfCurve(2)->Name = "SOLAR_ABSORPTANCE_CURVE";
-    state->dataCurveManager->GetCurvesInputFlag = false;
+    [[maybe_unused]] auto *curve1 = Curve::AddCurve(*state, "THERMAL_ABSORPTANCE_TABLE");
+    [[maybe_unused]] auto *curve2 = Curve::AddCurve(*state, "SOLAR_ABSORPTANCE_CURVE");
+
     bool errors_found(false);
     Material::GetVariableAbsorptanceInput(*state, errors_found);
     EXPECT_ENUM_EQ(mat1->absorpVarCtrlSignal, Material::VariableAbsCtrlSignal::SurfaceTemperature);
-    EXPECT_EQ(mat1->absorpThermalVarFuncIdx, 1);
-    EXPECT_EQ(mat1->absorpSolarVarFuncIdx, 2);
+    EXPECT_EQ(mat1->absorpThermalVarCurve->Num, 1);
+    EXPECT_EQ(mat1->absorpSolarVarCurve->Num, 2);
     EXPECT_ENUM_EQ(mat2->absorpVarCtrlSignal, Material::VariableAbsCtrlSignal::SurfaceReceivedSolarRadiation);
-    EXPECT_EQ(mat2->absorpSolarVarFuncIdx, 2);
+    EXPECT_EQ(mat2->absorpSolarVarCurve->Num, 2);
     EXPECT_ENUM_EQ(mat3->absorpVarCtrlSignal, Material::VariableAbsCtrlSignal::Scheduled);
     EXPECT_NE(mat3->absorpThermalVarSched, nullptr);
     EXPECT_NE(mat3->absorpSolarVarSched, nullptr);

@@ -843,10 +843,8 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_CalculateCurveVal)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    EXPECT_EQ(4, state->dataCurveManager->NumCurves);
+    state->init_state(*state);
+    EXPECT_EQ(4, state->dataCurveManager->curves.size());
 
     bool ErrorsFound(false);
     GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);
@@ -1254,9 +1252,7 @@ TEST_F(EnergyPlusFixture, Test_UnitaryHybridAirConditioner_ModelOperatingSetting
     ASSERT_TRUE(process_idf(idf_objects));
     state->init_state(*state);
 
-    Curve::GetCurveInput(*state);
-    state->dataCurveManager->GetCurvesInputFlag = false;
-    EXPECT_EQ(8, state->dataCurveManager->NumCurves);
+    EXPECT_EQ(8, state->dataCurveManager->curves.size());
 
     bool ErrorsFound(false);
     GetInputZoneHybridUnitaryAirConditioners(*state, ErrorsFound);

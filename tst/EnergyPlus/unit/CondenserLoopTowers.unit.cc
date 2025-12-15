@@ -63,6 +63,7 @@
 #include <EnergyPlus/OutputReportPredefined.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
 #include <EnergyPlus/Plant/PlantManager.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/Psychrometrics.hh>
 #include <EnergyPlus/SimulationManager.hh>
 #include <EnergyPlus/SizingManager.hh>
@@ -4245,10 +4246,12 @@ TEST_F(EnergyPlusFixture, CondenserLoopTowers_checkMassFlowAndLoadTest)
     state->dataLoopNodes->Node.allocate(2);
     tower.WaterInletNodeNum = 1;
     tower.WaterOutletNodeNum = 2;
+
     tower.plantLoc.loopNum = 1;
     tower.plantLoc.loopSideNum = DataPlant::LoopSideLocation::Supply;
     tower.plantLoc.branchNum = 1;
     tower.plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, tower.plantLoc);
 
     // Test 1: Mass flow rate is low but myLoad is ok--flag should be set to true
     flagToReturn = false;

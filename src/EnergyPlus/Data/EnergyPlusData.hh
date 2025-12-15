@@ -113,8 +113,10 @@ struct DemandManagerData;
 struct DesiccantDehumidifiersData;
 struct DisplacementVentMgrData;
 struct DualDuctData;
+struct DuctLossData;
 struct EIRFuelFiredHeatPumpsData;
 struct EIRPlantLoopHeatPumpsData;
+struct HeatPumpAirToWatersData;
 struct EMSManagerData;
 struct EarthTubeData;
 struct EcoRoofManagerData;
@@ -369,8 +371,10 @@ struct EnergyPlusData : BaseGlobalStruct
     std::unique_ptr<DesiccantDehumidifiersData> dataDesiccantDehumidifiers;
     std::unique_ptr<DisplacementVentMgrData> dataDispVentMgr;
     std::unique_ptr<DualDuctData> dataDualDuct;
+    std::unique_ptr<DuctLossData> dataDuctLoss;
     std::unique_ptr<EIRFuelFiredHeatPumpsData> dataEIRFuelFiredHeatPump;
     std::unique_ptr<EIRPlantLoopHeatPumpsData> dataEIRPlantLoopHeatPump;
+    std::unique_ptr<HeatPumpAirToWatersData> dataHeatPumpAirToWater;
     std::unique_ptr<EMSManagerData> dataEMSMgr;
     std::unique_ptr<EarthTubeData> dataEarthTube;
     std::unique_ptr<EcoRoofManagerData> dataEcoRoofMgr;
@@ -577,7 +581,7 @@ struct EnergyPlusData : BaseGlobalStruct
     // Ok, so what's up with these two?  Why do we need both of them?
 
     // First, what do they do?  init_constant_state creates and
-    // initalizes state objects that are built into EnergyPlus and do
+    // initializes state objects that are built into EnergyPlus and do
     // not appear in the IDF file.  Examples include the AlwaysOn and
     // AlwaysOff Schedule objects, the Water and Steam FluidProperties
     // objects, and perhaps other objects that will be identified as
@@ -592,9 +596,9 @@ struct EnergyPlusData : BaseGlobalStruct
     // The reason these are split is because of the unit testing
     // framework.  There are a good number of fixture objects that do
     // a lot of setup before reading the IDF snippet, and that setup
-    // often requires some of hte constant objects.  The unit testing
+    // often requires some of the constant objects.  The unit testing
     // framework calls init_constant_state in
-    // EnergyPlusFixture::Setup() and then inidividual unit tests call
+    // EnergyPlusFixture::Setup() and then individual unit tests call
     // init_state() after calling process_idf().  In fact, we can
     // probably move init_state() into process_idf().
 

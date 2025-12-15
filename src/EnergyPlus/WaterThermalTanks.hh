@@ -302,6 +302,7 @@ namespace WaterThermalTanks {
         bool StandAlone;                                            // Flag for operation with no plant connections (no use nodes)
         Sched::Schedule *availSched = nullptr;                      // Availability Schedule
         Sched::Schedule *setptTempSched = nullptr;                  // Setpoint Temperature Schedule
+        Sched::Schedule *dxCoilAvailSched = nullptr;                // DX WaterHeating Coil Availability Schedule
         Real64 DeadBandTempDiff;                                    // Dead band temperature difference (cut-in temperature)
         Real64 Capacity;                                            // Heat Pump rated capacity (W)
         Real64 BackupElementCapacity;                               // Tank backup element capacity (W)
@@ -475,13 +476,14 @@ namespace WaterThermalTanks {
         std::string Type;                                   // Type of water heater (MIXED or STRATIFIED)
         DataPlant::PlantEquipmentType WaterThermalTankType; // integer parameter for water heater(if part of an HPWH,then=HPWH)
         bool IsChilledWaterTank;                            // logical flag, true if for chilled water, false if for hot water
-        std::string EndUseSubcategoryName;                  // User-defined end-use subcategory name
-        bool Init;                                          // Flag for initialization:  TRUE means do the init
-        bool StandAlone;                                    // Flag for operation with no plant connections (no source or use)
-        Real64 Volume;                                      // Tank volume (m3)
-        bool VolumeWasAutoSized;                            // true if tank volume was autosize on input
-        Real64 Mass;                                        // Total mass of fluid in the tank (kg)
-        Real64 TimeElapsed;                                 // Fraction of the current hour that has elapsed (h)
+        bool IsPassiveWaterTank;           // logical flag, true if for passive water tank (no internal heaters), false if for active water tank
+        std::string EndUseSubcategoryName; // User-defined end-use subcategory name
+        bool Init;                         // Flag for initialization:  TRUE means do the init
+        bool StandAlone;                   // Flag for operation with no plant connections (no source or use)
+        Real64 Volume;                     // Tank volume (m3)
+        bool VolumeWasAutoSized;           // true if tank volume was autosize on input
+        Real64 Mass;                       // Total mass of fluid in the tank (kg)
+        Real64 TimeElapsed;                // Fraction of the current hour that has elapsed (h)
         // Saved in order to identify the beginning of a new system time
         WTTAmbientTemp AmbientTempIndicator;                       // Indicator for ambient tank losses (SCHEDULE, ZONE, EXTERIOR)
         Sched::Schedule *ambientTempSched = nullptr;               // Schedule
@@ -505,6 +507,10 @@ namespace WaterThermalTanks {
         Real64 Efficiency;                                         // Thermal efficiency of auxiliary heater 1 ()
         int PLFCurve;                                              // Part load factor curve as a function of part load ratio
         Sched::Schedule *setptTempSched = nullptr;                 // Schedule
+        Sched::Schedule *setptTempSchedTop = nullptr;              // Schedule
+        Sched::Schedule *setptTempSchedBottom = nullptr;           // Schedule
+        Sched::Schedule *UseFlowDirectionSched = nullptr;          // Schedule
+        Sched::Schedule *SourceFlowDirectionSched = nullptr;       // Schedule
         Real64 SetPointTemp;                                       // Setpoint temperature of auxiliary heater 1 (C)
         Real64 DeadBandDeltaTemp;                                  // Deadband temperature difference of auxiliary heater 1 (deltaC)
         Real64 TankTempLimit;                                      // Maximum tank temperature limit before venting (C)
@@ -550,6 +556,7 @@ namespace WaterThermalTanks {
         SourceSideControl SourceSideControlMode;               // flag for how source side flow is controlled
         Sched::Schedule *sourceSideAltSetpointSched = nullptr; // schedule of alternate temperature setpoint values
         Real64 SizingRecoveryTime;                             // sizing parameter for autosizing indirect water heaters (hr)
+        Real64 VolFlowRateMax;                                 // Used only in reporting {m3/s)
         Real64 MassFlowRateMax;                                // Maximum flow rate for scheduled DHW (kg/s)
         Real64 VolFlowRateMin;                                 // Minimum flow rate for heater ignition (kg/s)
         Real64 MassFlowRateMin;                                // Minimum mass flow rate for heater ignition (kg/s)
@@ -565,14 +572,21 @@ namespace WaterThermalTanks {
         TankShape Shape;         // Tank shape:  VERTICAL CYLINDER, HORIZONTAL CYLINDER, or OTHER
         Real64 HeaterHeight1;
         int HeaterNode1;
+        Real64 TempSensorHeight1;
         bool HeaterOn1;
         bool SavedHeaterOn1;
         Real64 HeaterHeight2;
         int HeaterNode2;
+        Real64 TempSensorHeight2;
+        Real64 NeedsHeatOrCoolReport;
         bool HeaterOn2;
         bool SavedHeaterOn2;
-        Real64 AdditionalCond; // Additional destratification conductivity (W/m K)
-        Real64 SetPointTemp2;  // Setpoint temperature of auxiliary heater 2 (C)
+        Real64 AdditionalCond;    // Additional destratification conductivity (W/m K)
+        Real64 SetPointTemp2;     // Setpoint temperature of auxiliary heater 2 (C)
+        Real64 SensedTemp;        // Temperature sensor reading for the tank. For ThermalStorage:HotWater:Stratified, it's the temperature on top
+        Real64 SensedTemp2;       // Temperature sensor reading for the tank. For ThermalStorage:HotWater:Stratified, it's the temperature on bottom
+        int UseSideFlowDirection; // Use side flow direction, 1 = forward, -1 = reverse
+        int SourceSideFlowDirection; // Source side flow direction, 1 = forward, -1 = reverse
         Sched::Schedule *setptTemp2Sched = nullptr;
         Real64 DeadBandDeltaTemp2;
         Real64 MaxCapacity2;
@@ -679,21 +693,21 @@ namespace WaterThermalTanks {
 
         // Default Constructor
         WaterThermalTankData()
-            : WaterThermalTankType(DataPlant::PlantEquipmentType::Invalid), IsChilledWaterTank(false), Init(true), StandAlone(false), Volume(0.0),
-              VolumeWasAutoSized(false), Mass(0.0), TimeElapsed(0.0), AmbientTempIndicator(WTTAmbientTemp::OutsideAir), AmbientTempZone(0),
-              AmbientTempOutsideAirNode(0), AmbientTemp(0.0), AmbientZoneGain(0.0), LossCoeff(0.0), OffCycLossCoeff(0.0), OffCycLossFracToZone(0.0),
-              OnCycLossCoeff(0.0), OnCycLossFracToZone(0.0), ControlType(HeaterControlMode::Cycle),
-              StratifiedControlMode(PriorityControlMode::Invalid), MaxCapacity(0.0), MaxCapacityWasAutoSized(false), MinCapacity(0.0),
-              Efficiency(0.0), PLFCurve(0), SetPointTemp(0.0), DeadBandDeltaTemp(0.0), TankTempLimit(0.0), IgnitionDelay(0.0), OffCycParaLoad(0.0),
-              OffCycParaFracToTank(0.0), OnCycParaLoad(0.0), OnCycParaFracToTank(0.0), UseCurrentFlowLock(DataPlant::FlowLock::Unlocked),
-              UseInletNode(0), UseInletTemp(0.0), UseOutletNode(0), UseOutletTemp(0.0), UseMassFlowRate(0.0), UseEffectiveness(0.0),
-              PlantUseMassFlowRateMax(0.0), SavedUseOutletTemp(0.0), UseDesignVolFlowRate(0.0), UseDesignVolFlowRateWasAutoSized(false),
-              UseBranchControlType(DataBranchAirLoopPlant::ControlType::Passive), UseSidePlantSizNum(0), UseSideSeries(true),
-              UseSideLoadRequested(0.0), UseSidePlantLoc{}, SourceInletNode(0), SourceInletTemp(0.0), SourceOutletNode(0), SourceOutletTemp(0.0),
-              SourceMassFlowRate(0.0), SourceEffectiveness(0.0), PlantSourceMassFlowRateMax(0.0), SavedSourceOutletTemp(0.0),
+            : WaterThermalTankType(DataPlant::PlantEquipmentType::Invalid), IsChilledWaterTank(false), IsPassiveWaterTank(false), Init(true),
+              StandAlone(false), Volume(0.0), VolumeWasAutoSized(false), Mass(0.0), TimeElapsed(0.0),
+              AmbientTempIndicator(WTTAmbientTemp::OutsideAir), AmbientTempZone(0), AmbientTempOutsideAirNode(0), AmbientTemp(0.0),
+              AmbientZoneGain(0.0), LossCoeff(0.0), OffCycLossCoeff(0.0), OffCycLossFracToZone(0.0), OnCycLossCoeff(0.0), OnCycLossFracToZone(0.0),
+              ControlType(HeaterControlMode::Cycle), StratifiedControlMode(PriorityControlMode::Invalid), MaxCapacity(0.0),
+              MaxCapacityWasAutoSized(false), MinCapacity(0.0), Efficiency(0.0), PLFCurve(0), SetPointTemp(0.0), DeadBandDeltaTemp(0.0),
+              TankTempLimit(0.0), IgnitionDelay(0.0), OffCycParaLoad(0.0), OffCycParaFracToTank(0.0), OnCycParaLoad(0.0), OnCycParaFracToTank(0.0),
+              UseCurrentFlowLock(DataPlant::FlowLock::Unlocked), UseInletNode(0), UseInletTemp(0.0), UseOutletNode(0), UseOutletTemp(0.0),
+              UseMassFlowRate(0.0), UseEffectiveness(0.0), PlantUseMassFlowRateMax(0.0), SavedUseOutletTemp(0.0), UseDesignVolFlowRate(0.0),
+              UseDesignVolFlowRateWasAutoSized(false), UseBranchControlType(DataBranchAirLoopPlant::ControlType::Passive), UseSidePlantSizNum(0),
+              UseSideSeries(true), UseSideLoadRequested(0.0), UseSidePlantLoc{}, SourceInletNode(0), SourceInletTemp(0.0), SourceOutletNode(0),
+              SourceOutletTemp(0.0), SourceMassFlowRate(0.0), SourceEffectiveness(0.0), PlantSourceMassFlowRateMax(0.0), SavedSourceOutletTemp(0.0),
               SourceDesignVolFlowRate(0.0), SourceDesignVolFlowRateWasAutoSized(false),
-              SourceBranchControlType(DataBranchAirLoopPlant::ControlType::Passive), SourceSidePlantSizNum(0),
-              SourceSideSeries(true), SrcSidePlantLoc{}, SourceSideControlMode(SourceSideControl::IndirectHeatAltSetpoint), SizingRecoveryTime(0.0),
+              SourceBranchControlType(DataBranchAirLoopPlant::ControlType::Passive), SourceSidePlantSizNum(0), SourceSideSeries(true),
+              SrcSidePlantLoc{}, SourceSideControlMode(SourceSideControl::IndirectHeatAltSetpoint), SizingRecoveryTime(0.0), VolFlowRateMax(0.0),
               MassFlowRateMax(0.0), VolFlowRateMin(0.0), MassFlowRateMin(0.0), TankTemp(0.0), SavedTankTemp(0.0), TankTempAvg(0.0), Height(0.0),
               HeightWasAutoSized(false), Perimeter(0.0), Shape(TankShape::VertCylinder), HeaterHeight1(0.0), HeaterNode1(0), HeaterOn1(false),
               SavedHeaterOn1(false), HeaterHeight2(0.0), HeaterNode2(0), HeaterOn2(false), SavedHeaterOn2(false), AdditionalCond(0.0),
@@ -721,6 +735,7 @@ namespace WaterThermalTanks {
 
         void setupZoneInternalGains(EnergyPlusData &state);
 
+        void setupHotWaterTankOutputVars(EnergyPlusData &state);
         void setupChilledWaterTankOutputVars(EnergyPlusData &state);
 
         void setupWaterHeaterOutputVars(EnergyPlusData &state);
@@ -731,6 +746,9 @@ namespace WaterThermalTanks {
         Real64 PartLoadFactor(EnergyPlusData &state, Real64 PartLoadRatio_loc);
 
         void CalcNodeMassFlows(InletPositionMode inletMode);
+
+        void CalcNodeMassFlowsWithDirection(
+            InletPositionMode inletMode, int useInletStratNod, int useOutletStratNode, int sourceInletStratNode, int sourceOutletStratNode);
 
         void SetupStratifiedNodes(EnergyPlusData &state);
 
@@ -777,9 +795,7 @@ namespace WaterThermalTanks {
                                       DataPlant::LoopSideLocation PlantLoopSide,
                                       bool PlumbedInSeries, // !unused1208
                                       DataBranchAirLoopPlant::ControlType BranchControlType,
-                                      Real64 OutletTemp,
-                                      Real64 DeadBandTemp,
-                                      Real64 SetPointTemp_loc);
+                                      bool const NeedsHeatOrCool);
 
         static Real64 CalcTimeNeeded(Real64 Ti, // Initial tank temperature (C)
                                      Real64 Tf, // Final tank temperature (C)
@@ -980,9 +996,9 @@ namespace WaterThermalTanks {
 
     bool getWaterTankMixedInput(EnergyPlusData &state);
 
-    bool getWaterTankStratifiedInput(EnergyPlusData &state);
+    bool getWaterTankStratifiedInput(EnergyPlusData &state, std::string objectType);
 
-    bool GetWaterThermalTankInput(EnergyPlusData &state);
+    void GetWaterThermalTankInput(EnergyPlusData &state);
 
     void CalcWaterThermalTankZoneGains(EnergyPlusData &state);
 
@@ -1000,6 +1016,7 @@ struct WaterThermalTanksData : BaseGlobalStruct
 {
     int numChilledWaterMixed = 0;        // number of mixed chilled water tanks
     int numChilledWaterStratified = 0;   // number of stratified chilled water tanks
+    int numHotWaterStratified = 0;       // number of stratified hot water tanks
     int numWaterHeaterMixed = 0;         // number of mixed water heaters
     int numWaterHeaterStratified = 0;    // number of stratified water heaters
     int numWaterThermalTank = 0;         // total number of water thermal tanks, hot and cold (MIXED + STRATIFIED)

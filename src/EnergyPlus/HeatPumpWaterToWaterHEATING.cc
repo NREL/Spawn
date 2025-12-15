@@ -101,7 +101,9 @@ GshpPeHeatingSpecs *GshpPeHeatingSpecs::factory(EnergyPlusData &state, const std
     auto thisObj = std::find_if(state.dataHPWaterToWaterHtg->GSHP.begin(),
                                 state.dataHPWaterToWaterHtg->GSHP.end(),
                                 [&objectName](const GshpPeHeatingSpecs &myObj) { return myObj.Name == objectName; });
-    if (thisObj != state.dataHPWaterToWaterHtg->GSHP.end()) return thisObj;
+    if (thisObj != state.dataHPWaterToWaterHtg->GSHP.end()) {
+        return thisObj;
+    }
     // If we didn't find it, fatal
     ShowFatalError(state, format("WWHPHeatingFactory: Error getting inputs for heat pump named: {}", objectName)); // LCOV_EXCL_LINE
     // Shut up the compiler
@@ -245,13 +247,13 @@ void GetGshpInput(EnergyPlusData &state)
 
         thisGSHP.LoadSideUACoeff = NumArray(8);
         if (NumArray(8) == 0.0) {
-            ShowSevereError(state, format("{}:Load Side Heat Transfer Coeffcient = 0.0, Heatpump={}", ModuleCompName, thisGSHP.Name));
+            ShowSevereError(state, format("{}:Load Side Heat Transfer Coefficient = 0.0, Heatpump={}", ModuleCompName, thisGSHP.Name));
             ErrorsFound = true;
         }
 
         thisGSHP.SourceSideUACoeff = NumArray(9);
         if (NumArray(9) == 0.0) {
-            ShowSevereError(state, format("{}:Source Side Heat Transfer Coeffcient = 0.0, Heatpump={}", ModuleCompName, thisGSHP.Name));
+            ShowSevereError(state, format("{}:Source Side Heat Transfer Coefficient = 0.0, Heatpump={}", ModuleCompName, thisGSHP.Name));
             ErrorsFound = true;
         }
 
@@ -491,12 +493,15 @@ void GshpPeHeatingSpecs::initialize(EnergyPlusData &state)
         this->SourceSideDesignMassFlow = this->SourceSideVolFlowRate * rho;
 
         PlantUtilities::InitComponentNodes(state, 0.0, this->SourceSideDesignMassFlow, this->SourceSideInletNodeNum, this->SourceSideOutletNodeNum);
-        if (state.dataLoopNodes->Node(this->SourceSideOutletNodeNum).TempSetPoint == DataLoopNode::SensedNodeFlagValue)
+        if (state.dataLoopNodes->Node(this->SourceSideOutletNodeNum).TempSetPoint == DataLoopNode::SensedNodeFlagValue) {
             state.dataLoopNodes->Node(this->SourceSideOutletNodeNum).TempSetPoint = 0.0;
+        }
         state.dataLoopNodes->Node(this->SourceSideInletNodeNum).Temp = state.dataLoopNodes->Node(this->SourceSideOutletNodeNum).TempSetPoint + 30.0;
     }
 
-    if (!state.dataGlobal->BeginEnvrnFlag) this->beginEnvironFlag = true;
+    if (!state.dataGlobal->BeginEnvrnFlag) {
+        this->beginEnvironFlag = true;
+    }
 
     // On every call
     this->Running = 0;
@@ -730,13 +735,13 @@ void GshpPeHeatingSpecs::calculate(EnergyPlusData &state, Real64 &MyLoad)
                 ShowContinueError(state, format("Heatpump Name = {}", this->Name));
                 ShowContinueError(
                     state,
-                    format("Heat Inbalance (%)             = {:S}", std::abs(100.0 * (this->QLoad - initialQLoad) / (initialQLoad + SmallNum))));
-                ShowContinueError(state, format("Load-side heat transfer rate   = {:S}", this->QLoad));
-                ShowContinueError(state, format("Source-side heat transfer rate = {:S}", this->QSource));
-                ShowContinueError(state, format("Source-side mass flow rate     = {:S}", this->SourceSideWaterMassFlowRate));
-                ShowContinueError(state, format("Load-side mass flow rate       = {:S}", this->LoadSideWaterMassFlowRate));
-                ShowContinueError(state, format("Source-side inlet temperature  = {:S}", this->SourceSideWaterInletTemp));
-                ShowContinueError(state, format("Load-side inlet temperature    = {:S}", this->LoadSideWaterInletTemp));
+                    format("Heat Imbalance (%)             = {:G}", std::abs(100.0 * (this->QLoad - initialQLoad) / (initialQLoad + SmallNum))));
+                ShowContinueError(state, format("Load-side heat transfer rate   = {:G}", this->QLoad));
+                ShowContinueError(state, format("Source-side heat transfer rate = {:G}", this->QSource));
+                ShowContinueError(state, format("Source-side mass flow rate     = {:G}", this->SourceSideWaterMassFlowRate));
+                ShowContinueError(state, format("Load-side mass flow rate       = {:G}", this->LoadSideWaterMassFlowRate));
+                ShowContinueError(state, format("Source-side inlet temperature  = {:G}", this->SourceSideWaterInletTemp));
+                ShowContinueError(state, format("Load-side inlet temperature    = {:G}", this->LoadSideWaterInletTemp));
             }
             goto LOOPLoadEnth_exit;
 

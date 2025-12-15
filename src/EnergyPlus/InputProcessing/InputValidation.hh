@@ -48,10 +48,12 @@
 #ifndef InputValidation_hh_INCLUDED
 #define InputValidation_hh_INCLUDED
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include <re2/re2.h>
 
 class Validation
 {
@@ -72,6 +74,24 @@ private:
     json const *schema;
     std::vector<std::string> errors_;
     std::vector<std::string> warnings_;
+};
+
+// Struct that provides a valijson Regular Expression Engine using RE2 rather than std::regex
+struct RE2RegexpEngine
+{
+    RE2RegexpEngine(const std::string &pattern) : regex_ptr(std::make_unique<RE2>(pattern))
+    {
+    }
+
+    static bool search(const std::string &s, const RE2RegexpEngine &r)
+    {
+        return RE2::PartialMatch(s, *r.regex_ptr);
+    }
+
+private:
+    // RE2 is NOT movable nor copyable... and so the valijson_validator code which emplaces the RegexEngine object into a std::unordered_map for
+    // caching will fail unless we use a pointer
+    std::unique_ptr<RE2> regex_ptr;
 };
 
 #endif // InputValidation_hh_INCLUDED

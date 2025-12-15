@@ -66,7 +66,7 @@ namespace EnergyPlus::TARCOGMain {
 //       AUTHOR         D. Charlie Curcija
 //       DATE WRITTEN   July 2000
 //       MODIFIED       na
-//       RE-ENGINEERED  (see information bellow)
+//       RE-ENGINEERED  (see information below)
 //  Revision: 7.0.13  (March/27/2012), Simon Vidanovic
 //   - feature: New set of equations is set instead of hhat coefficients and new approach to solution which improves
 //               speed and stability.  Note that this solution does not include laminates
@@ -1110,8 +1110,8 @@ void TARCOG90(EnergyPlusData &state,
                     ErrorMessage = "Deflection calculations failed to converge";
                 }
             } // do while (.not.(converged))
-        }     // if ((CalcDeflection.eq.DeflectionCalculation::TEMPERATURE).or.(CalcDeflection.eq.DeflectionCalculation::GAP_WIDTHS)) then
-    }         // if (GoAhead(nperr)) then
+        } // if ((CalcDeflection.eq.DeflectionCalculation::TEMPERATURE).or.(CalcDeflection.eq.DeflectionCalculation::GAP_WIDTHS)) then
+    } // if (GoAhead(nperr)) then
 
     FinishDebugOutputFiles(files, nperr);
 }

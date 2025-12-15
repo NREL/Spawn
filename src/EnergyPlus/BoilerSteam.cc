@@ -99,7 +99,9 @@ namespace BoilerSteam {
         auto myBoiler = std::find_if(state.dataBoilerSteam->Boiler.begin(),
                                      state.dataBoilerSteam->Boiler.end(),
                                      [&objectName](const BoilerSpecs &boiler) { return boiler.Name == objectName; });
-        if (myBoiler != state.dataBoilerSteam->Boiler.end()) return myBoiler;
+        if (myBoiler != state.dataBoilerSteam->Boiler.end()) {
+            return myBoiler;
+        }
 
         // If we didn't find it, fatal
         ShowFatalError(state, format("LocalBoilerSteamFactory: Error getting inputs for steam boiler named: {}", objectName)); // LCOV_EXCL_LINE
@@ -146,7 +148,6 @@ namespace BoilerSteam {
 
         // Locals
         static constexpr std::string_view RoutineName("GetBoilerInput: ");
-        static constexpr std::string_view routineName = "GetBoilerInput";
 
         // LOCAL VARIABLES
         int BoilerNum; // boiler identifier
@@ -164,7 +165,9 @@ namespace BoilerSteam {
         }
 
         // See if load distribution manager has already gotten the input
-        if (allocated(state.dataBoilerSteam->Boiler)) return;
+        if (allocated(state.dataBoilerSteam->Boiler)) {
+            return;
+        }
 
         // Boiler will have fuel input to it , that is it !
         state.dataBoilerSteam->Boiler.allocate(numBoilers);
@@ -215,7 +218,9 @@ namespace BoilerSteam {
             thisBoiler.FullLoadCoef[1] = state.dataIPShortCut->rNumericArgs(9);
             thisBoiler.FullLoadCoef[2] = state.dataIPShortCut->rNumericArgs(10);
             thisBoiler.SizFac = state.dataIPShortCut->rNumericArgs(11);
-            if (thisBoiler.SizFac <= 0.0) thisBoiler.SizFac = 1.0;
+            if (thisBoiler.SizFac <= 0.0) {
+                thisBoiler.SizFac = 1.0;
+            }
 
             if ((state.dataIPShortCut->rNumericArgs(8) + state.dataIPShortCut->rNumericArgs(9) + state.dataIPShortCut->rNumericArgs(10)) == 0.0) {
                 ShowSevereError(state,
@@ -377,15 +382,15 @@ namespace BoilerSteam {
             // fix for clumsy old input that worked because loop setpoint was spread.
             //  could be removed with transition, testing , model change, period of being obsolete.
             int BoilerOutletNode = this->BoilerOutletNodeNum;
-            switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+            switch (this->plantLoc.loop->LoopDemandCalcScheme) {
 
             case DataPlant::LoopDemandCalcScheme::SingleSetPoint:
                 state.dataLoopNodes->Node(BoilerOutletNode).TempSetPoint =
-                    state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->plantLoc.loopNum).TempSetPointNodeNum).TempSetPoint;
+                    state.dataLoopNodes->Node(this->plantLoc.loop->TempSetPointNodeNum).TempSetPoint;
                 break;
             case DataPlant::LoopDemandCalcScheme::DualSetPointDeadBand:
                 state.dataLoopNodes->Node(BoilerOutletNode).TempSetPointLo =
-                    state.dataLoopNodes->Node(state.dataPlnt->PlantLoop(this->plantLoc.loopNum).TempSetPointNodeNum).TempSetPointLo;
+                    state.dataLoopNodes->Node(this->plantLoc.loop->TempSetPointNodeNum).TempSetPointLo;
                 break;
             default:
                 break;
@@ -484,7 +489,7 @@ namespace BoilerSteam {
         // SUBROUTINE LOCAL VARIABLE DECLARATIONS:
         bool ErrorsFound(false); // If errors detected in input
         Real64 tmpNomCap = this->NomCap;
-        int PltSizNum = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).PlantSizNum;
+        int PltSizNum = this->plantLoc.loop->PlantSizNum;
 
         if (PltSizNum > 0) {
             if (state.dataSize->PlantSizData(PltSizNum).DesVolFlowRate >= HVAC::SmallWaterVolFlow) {
@@ -498,7 +503,9 @@ namespace BoilerSteam {
                                  state.dataSize->PlantSizData(PltSizNum).DesVolFlowRate +
                              state.dataSize->PlantSizData(PltSizNum).DesVolFlowRate * SteamDensity * LatentEnthSteam);
             } else {
-                if (this->NomCapWasAutoSized) tmpNomCap = 0.0;
+                if (this->NomCapWasAutoSized) {
+                    tmpNomCap = 0.0;
+                }
             }
             if (state.dataPlnt->PlantFirstSizesOkayToFinalize) {
                 if (this->NomCapWasAutoSized) {
@@ -515,16 +522,11 @@ namespace BoilerSteam {
                         OutputReportPredefined::PreDefTableEntry(state,
                                                                  state.dataOutRptPredefined->pdchBoilerPlantloopName,
                                                                  this->Name,
-                                                                 this->plantLoc.loopNum > 0 ? state.dataPlnt->PlantLoop(this->plantLoc.loopNum).Name
-                                                                                            : "N/A");
+                                                                 (this->plantLoc.loop != nullptr) ? this->plantLoc.loop->Name : "N/A");
                         OutputReportPredefined::PreDefTableEntry(state,
                                                                  state.dataOutRptPredefined->pdchBoilerPlantloopBranchName,
                                                                  this->Name,
-                                                                 this->plantLoc.loopNum > 0 ? state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
-                                                                                                  .LoopSide(this->plantLoc.loopSideNum)
-                                                                                                  .Branch(this->plantLoc.branchNum)
-                                                                                                  .Name
-                                                                                            : "N/A");
+                                                                 (this->plantLoc.branch != nullptr) ? this->plantLoc.branch->Name : "N/A");
                         OutputReportPredefined::PreDefTableEntry(
                             state, state.dataOutRptPredefined->pdchBoilerMinPLR, this->Name, this->MinPartLoadRat);
                         OutputReportPredefined::PreDefTableEntry(state,
@@ -556,19 +558,14 @@ namespace BoilerSteam {
                             OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchBoilerRatedCap, this->Name, this->NomCap);
                             OutputReportPredefined::PreDefTableEntry(
                                 state, state.dataOutRptPredefined->pdchBoilerRatedEff, this->Name, this->NomEffic);
-                            OutputReportPredefined::PreDefTableEntry(
-                                state,
-                                state.dataOutRptPredefined->pdchBoilerPlantloopName,
-                                this->Name,
-                                this->plantLoc.loopNum > 0 ? state.dataPlnt->PlantLoop(this->plantLoc.loopNum).Name : "N/A");
+                            OutputReportPredefined::PreDefTableEntry(state,
+                                                                     state.dataOutRptPredefined->pdchBoilerPlantloopName,
+                                                                     this->Name,
+                                                                     (this->plantLoc.loop != nullptr) ? this->plantLoc.loop->Name : "N/A");
                             OutputReportPredefined::PreDefTableEntry(state,
                                                                      state.dataOutRptPredefined->pdchBoilerPlantloopBranchName,
                                                                      this->Name,
-                                                                     this->plantLoc.loopNum > 0 ? state.dataPlnt->PlantLoop(this->plantLoc.loopNum)
-                                                                                                      .LoopSide(this->plantLoc.loopSideNum)
-                                                                                                      .Branch(this->plantLoc.branchNum)
-                                                                                                      .Name
-                                                                                                : "N/A");
+                                                                     (this->plantLoc.branch != nullptr) ? this->plantLoc.branch->Name : "N/A");
                             OutputReportPredefined::PreDefTableEntry(
                                 state, state.dataOutRptPredefined->pdchBoilerMinPLR, this->Name, this->MinPartLoadRat);
                             OutputReportPredefined::PreDefTableEntry(state,
@@ -644,7 +641,7 @@ namespace BoilerSteam {
         this->BoilerLoad = 0.0;
         this->BoilerMassFlowRate = 0.0;
 
-        switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+        switch (this->plantLoc.loop->LoopDemandCalcScheme) {
         case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
             this->BoilerOutletTemp = state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint;
         } break;
@@ -658,8 +655,9 @@ namespace BoilerSteam {
         // if the component control is SERIESACTIVE we set the component flow to inlet flow so that flow resolver
         // will not shut down the branch
         if (MyLoad <= 0.0 || !RunFlag) {
-            if (EquipFlowCtrl == DataBranchAirLoopPlant::ControlType::SeriesActive)
+            if (EquipFlowCtrl == DataBranchAirLoopPlant::ControlType::SeriesActive) {
                 this->BoilerMassFlowRate = state.dataLoopNodes->Node(this->BoilerInletNodeNum).MassFlowRate;
+            }
             return;
         }
 
@@ -688,11 +686,10 @@ namespace BoilerSteam {
 
         CpWater = this->fluid->getSatSpecificHeat(state, state.dataLoopNodes->Node(this->BoilerInletNodeNum).Temp, 0.0, RoutineName);
 
-        if (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopSide(this->plantLoc.loopSideNum).FlowLock ==
-            DataPlant::FlowLock::Unlocked) { // TODO: Components shouldn't check FlowLock
+        if (this->plantLoc.side->FlowLock == DataPlant::FlowLock::Unlocked) { // TODO: Components shouldn't check FlowLock
             // Calculate the flow for the boiler
 
-            switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+            switch (this->plantLoc.loop->LoopDemandCalcScheme) {
             case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
                 BoilerDeltaTemp =
                     state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint - state.dataLoopNodes->Node(this->BoilerInletNodeNum).Temp;
@@ -716,7 +713,7 @@ namespace BoilerSteam {
             // Set the boiler flow rate from inlet node and then check performance
             this->BoilerMassFlowRate = state.dataLoopNodes->Node(this->BoilerInletNodeNum).MassFlowRate;
             // Assume that it can meet the setpoint
-            switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+            switch (this->plantLoc.loop->LoopDemandCalcScheme) {
             case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
                 BoilerDeltaTemp =
                     state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint - state.dataLoopNodes->Node(this->BoilerInletNodeNum).Temp;
@@ -730,7 +727,7 @@ namespace BoilerSteam {
             }
             // If boiler outlet temp is already greater than setpoint than it does not need to operate this iteration
             if (BoilerDeltaTemp < 0.0) {
-                switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+                switch (this->plantLoc.loop->LoopDemandCalcScheme) {
                 case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
                     this->BoilerOutletTemp = state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint;
                 } break;
@@ -746,7 +743,7 @@ namespace BoilerSteam {
                 this->BoilerLoad = (this->BoilerMassFlowRate * LatentEnthSteam);
 
             } else {
-                switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+                switch (this->plantLoc.loop->LoopDemandCalcScheme) {
                 case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
                     this->BoilerOutletTemp = state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint;
                 } break;
@@ -769,7 +766,7 @@ namespace BoilerSteam {
                 this->BoilerLoad = MyLoad;
 
                 // Reset later , here just for calculating latent heat
-                switch (state.dataPlnt->PlantLoop(this->plantLoc.loopNum).LoopDemandCalcScheme) {
+                switch (this->plantLoc.loop->LoopDemandCalcScheme) {
                 case DataPlant::LoopDemandCalcScheme::SingleSetPoint: {
                     this->BoilerOutletTemp = state.dataLoopNodes->Node(this->BoilerOutletNodeNum).TempSetPoint;
                 } break;

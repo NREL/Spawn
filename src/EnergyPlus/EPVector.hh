@@ -137,7 +137,7 @@ template <typename T> struct EPVector : private std::vector<T>
         std::fill(this->begin(), this->end(), v);
     }
 
-    // dimension is often used to initalize the vector instead of allocate + operator=
+    // dimension is often used to initialize the vector instead of allocate + operator=
     void dimension(std::size_t size, const T &v)
     {
         std::vector<T>::clear();
@@ -246,7 +246,7 @@ template <> struct EPVector<bool> : private std::vector<std::uint8_t>
         std::fill(this->begin(), this->end(), v);
     }
 
-    // dimension is often used to initalize the vector instead of allocate + operator=
+    // dimension is often used to initialize the vector instead of allocate + operator=
     void dimension(std::size_t size, const bool v)
     {
         std::vector<std::uint8_t>::clear();
@@ -263,12 +263,12 @@ private:
     bool m_allocated{false};
 };
 
-template <typename T>[[nodiscard]] bool allocated(EPVector<T> const &v) noexcept
+template <typename T> [[nodiscard]] bool allocated(EPVector<T> const &v) noexcept
 {
     return v.allocated();
 }
 
-template <typename T>[[nodiscard]] auto isize(const EPVector<T> &v) noexcept
+template <typename T> [[nodiscard]] auto isize(const EPVector<T> &v) noexcept
 {
     return v.isize();
 }
@@ -294,7 +294,7 @@ template <typename T>[[nodiscard]] auto isize(const EPVector<T> &v) noexcept
     return std::count_if(values.cbegin(), values.cend(), [](bool v) { return v; });
 }
 
-template <typename T>[[nodiscard]] EPVector<T> pack(EPVector<T> const &v, EPVector<bool> const &mask)
+template <typename T> [[nodiscard]] EPVector<T> pack(EPVector<T> const &v, EPVector<bool> const &mask)
 {
     EPVector<T> r;
     r.reserve(mask.size());
@@ -306,7 +306,7 @@ template <typename T>[[nodiscard]] EPVector<T> pack(EPVector<T> const &v, EPVect
     return r;
 }
 
-template <typename T>[[nodiscard]] Array1D<T> pack(Array1<T> const &a, EPVector<bool> const &mask)
+template <typename T> [[nodiscard]] Array1D<T> pack(Array1<T> const &a, EPVector<bool> const &mask)
 {
     Array1D<T> r;
     r.reserve(mask.size());
@@ -318,17 +318,17 @@ template <typename T>[[nodiscard]] Array1D<T> pack(Array1<T> const &a, EPVector<
     return r;
 }
 
-template <typename T>[[nodiscard]] T magnitude_squared(const EPVector<T> &v)
+template <typename T> [[nodiscard]] T magnitude_squared(const EPVector<T> &v)
 {
     return std::inner_product(v.begin(), v.end(), v.begin(), T{});
 }
 
-template <typename T, typename V>[[nodiscard]] T dot(const EPVector<T> &u, const V &v)
+template <typename T, typename V> [[nodiscard]] T dot(const EPVector<T> &u, const V &v)
 {
     return std::inner_product(u.begin(), u.end(), v.begin(), T{});
 }
 
-template <typename Element, typename Member>[[nodiscard]] Member maxval(EPVector<Element> const &a, Member Element::*pmem)
+template <typename Element, typename Member> [[nodiscard]] Member maxval(EPVector<Element> const &a, Member Element::*pmem)
 {
     Member v(a.empty() ? std::numeric_limits<Member>::lowest() : a(1).*pmem);
     for (int i = 2, e = a.isize(); i <= e; ++i) {
@@ -343,7 +343,7 @@ template <typename Element, typename Member> inline Member sum(EPVector<Element>
     return std::accumulate(c.cbegin(), c.cend(), 0.0, [&pmem](const Member &sum, const Element &e) { return sum + e.*pmem; });
 }
 
-template <typename T>[[nodiscard]] T maxval(EPVector<T> const &a)
+template <typename T> [[nodiscard]] T maxval(EPVector<T> const &a)
 {
     auto max = std::max_element(a.begin(), a.end());
     if (max == a.end()) {

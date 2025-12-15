@@ -767,8 +767,12 @@ TEST_F(EnergyPlusFixture, PlantLoopSourceSideTest)
 
         Weather::GetNextEnvironment(*state, Available, ErrorsFound);
 
-        if (!Available) break;
-        if (ErrorsFound) break;
+        if (!Available) {
+            break;
+        }
+        if (ErrorsFound) {
+            break;
+        }
 
         ++EnvCount;
 
@@ -1551,7 +1555,7 @@ TEST_F(EnergyPlusFixture, WWHP_AutosizeTest1)
     EXPECT_NEAR(state->dataHPWaterToWaterSimple->GSHP(1).RatedCapHeat, 7200.71, 0.1);
     EXPECT_NEAR(state->dataHPWaterToWaterSimple->GSHP(1).RatedPowerHeat, 2151.07, 0.1);
 
-    // Check that we are outputing the correct values
+    // Check that we are outputting the correct values
     EXPECT_EQ("HeatPump:WaterToWater:EquationFit:Heating",
               OutputReportPredefined::RetrievePreDefTableEntry(
                   *state, state->dataOutRptPredefined->pdchMechType, state->dataHPWaterToWaterSimple->GSHP(1).Name));

@@ -58,6 +58,7 @@
 #include <EnergyPlus/DataSizing.hh>
 #include <EnergyPlus/FluidCoolers.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
 
 using namespace EnergyPlus;
@@ -438,6 +439,8 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedFluidCooler)
     ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Supply;
     ptr->plantLoc.branchNum = 1;
     ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
+
     ptr->DesWaterMassFlowRate = 3.141;
     ptr->WaterMassFlowRate = 3.141;
     ptr->onInitLoopEquip(*state, pl);
@@ -512,6 +515,7 @@ TEST_F(EnergyPlusFixture, ExerciseTwoSpeedFluidCooler)
     ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Supply;
     ptr->plantLoc.branchNum = 1;
     ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
     ptr->DesWaterMassFlowRate = 3.141;
     ptr->WaterMassFlowRate = 3.141;
     ptr->HighSpeedAirFlowRate = 2.124; // Autosizing didn't occur so...
@@ -554,6 +558,7 @@ TEST_F(EnergyPlusFixture, FluidCooler_SizeWhenPlantSizingIndexIsZeroAndAutosized
 
     auto &thisFluidCooler = state->dataFluidCoolers->SimpleFluidCooler(FluidCoolerNum);
     thisFluidCooler.plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, thisFluidCooler.plantLoc);
 
     // Necessary to trigger the crash from #
     state->dataPlnt->PlantFirstSizesOkayToFinalize = false;

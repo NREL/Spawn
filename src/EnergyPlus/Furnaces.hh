@@ -127,6 +127,7 @@ namespace Furnaces {
         int ReheatingCoilIndex;                                    // Index to reheat coil
         std::string HeatingCoilName;                               // name of heating coil
         std::string HeatingCoilType;                               // type of heating coil
+        Real64 HeatingSizingRatio = 1.0;                           // Ratio of heat pump heating to cooling capacity
         int CoilControlNode;                                       // control node for hot water and steam heating coils
         int HWCoilAirInletNode;                                    // air inlet node number of HW coil for PTAC, PTHP, HeatCool, HeatOnly
         int HWCoilAirOutletNode;                                   // air outlet node number of HW coil for PTAC, PTHP, HeatCool, HeatOnly
@@ -223,7 +224,7 @@ namespace Furnaces {
         Real64 EMSSensibleZoneLoadValue;      // Value EMS is directing to use
         bool EMSOverrideMoistZoneLoadRequest; // if true, then EMS is calling to override zone load
         Real64 EMSMoistureZoneLoadValue;      // Value EMS is directing to use
-        // starting added varibles for variable speed water source heat pump, Bo Shen, ORNL, March 2012
+        // starting added variables for variable speed water source heat pump, Bo Shen, ORNL, March 2012
         Furnaces::ModeOfOperation HeatCoolMode; // System operating mode (0 = floating, 1 = cooling, 2 = heating)
         int NumOfSpeedCooling;                  // The number of speeds for cooling
         int NumOfSpeedHeating;                  // The number of speeds for heating
@@ -275,13 +276,12 @@ namespace Furnaces {
               SensibleRegulaFalsiFailedIndex(0), WSHPHeatMaxIterIndex(0), WSHPHeatRegulaFalsiFailedIndex(0), DXHeatingMaxIterIndex(0),
               DXHeatingRegulaFalsiFailedIndex(0), HeatingMaxIterIndex(0), HeatingMaxIterIndex2(0), HeatingRegulaFalsiFailedIndex(0),
               ActualFanVolFlowRate(0.0), HeatingSpeedRatio(1.0), CoolingSpeedRatio(1.0), NoHeatCoolSpeedRatio(1.0), ZoneInletNode(0),
-              SenLoadLoss(0.0), LatLoadLoss(0.0), SensibleLoadMet(0.0), LatentLoadMet(0.0), DehumidInducedHeatingDemandRate(0.0),
-              CoilOutletNode(0), plantLoc{}, SuppPlantLoc{}, HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0),
-              EMSOverrideSensZoneLoadRequest(false), EMSSensibleZoneLoadValue(0.0), EMSOverrideMoistZoneLoadRequest(false),
-              EMSMoistureZoneLoadValue(0.0), HeatCoolMode(Furnaces::ModeOfOperation::Invalid), NumOfSpeedCooling(0), NumOfSpeedHeating(0),
-              IdleSpeedRatio(0.0), IdleVolumeAirRate(0.0), IdleMassFlowRate(0.0), FanVolFlow(0.0), CheckFanFlow(true),
-              HeatVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), HeatMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
-              CoolVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), CoolMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
+              SenLoadLoss(0.0), LatLoadLoss(0.0), SensibleLoadMet(0.0), LatentLoadMet(0.0), DehumidInducedHeatingDemandRate(0.0), CoilOutletNode(0),
+              plantLoc{}, SuppPlantLoc{}, HotWaterCoilMaxIterIndex(0), HotWaterCoilMaxIterIndex2(0), EMSOverrideSensZoneLoadRequest(false),
+              EMSSensibleZoneLoadValue(0.0), EMSOverrideMoistZoneLoadRequest(false), EMSMoistureZoneLoadValue(0.0),
+              HeatCoolMode(Furnaces::ModeOfOperation::Invalid), NumOfSpeedCooling(0), NumOfSpeedHeating(0), IdleSpeedRatio(0.0),
+              IdleVolumeAirRate(0.0), IdleMassFlowRate(0.0), FanVolFlow(0.0), CheckFanFlow(true), HeatVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0),
+              HeatMassFlowRate(HVAC::MaxSpeedLevels, 0.0), CoolVolumeFlowRate(HVAC::MaxSpeedLevels, 0.0), CoolMassFlowRate(HVAC::MaxSpeedLevels, 0.0),
               MSHeatingSpeedRatio(HVAC::MaxSpeedLevels, 0.0), MSCoolingSpeedRatio(HVAC::MaxSpeedLevels, 0.0), bIsIHP(false), CompSpeedNum(0),
               CompSpeedRatio(0.0), ErrIndexCyc(0), ErrIndexVar(0), iterationCounter(0), iterationMode(0), FirstPass(true)
         {
@@ -564,10 +564,10 @@ struct FurnacesData : BaseGlobalStruct
     Array1D_bool MyFanFlag;               // used for sizing fan inputs one time
     Array1D_bool MyCheckFlag;             // Used to obtain the zone inlet node number in the controlled zone
     Array1D_bool MyFlowFracFlag;          // Used for calculatig flow fraction once
-    Array1D_bool MyPlantScanFlag;         // used to initializa plant comp for water and steam heating coils
+    Array1D_bool MyPlantScanFlag;         // used to initialize plant comp for water and steam heating coils
     Array1D_bool MySuppCoilPlantScanFlag; // used to initialize plant comp for water and steam heating coils
 
-    // used to be statics
+    // used to be statistics
     Real64 CoolCoilLoad;        // Negative value means cooling required
     Real64 SystemSensibleLoad;  // Positive value means heating required
     Real64 TotalZoneLatentLoad; // Total ZONE latent load (not including outside air) to be removed by furnace/unitary system

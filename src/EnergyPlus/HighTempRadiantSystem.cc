@@ -136,8 +136,9 @@ namespace HighTempRadiantSystem {
         if (state.dataHighTempRadSys->GetInputFlag) {
             bool ErrorsFoundInGet = false;
             GetHighTempRadiantSystem(state, ErrorsFoundInGet);
-            if (ErrorsFoundInGet)
+            if (ErrorsFoundInGet) {
                 ShowFatalError(state, "GetHighTempRadiantSystem: Errors found in input.  Preceding condition(s) cause termination.");
+            }
             state.dataHighTempRadSys->GetInputFlag = false;
         }
 
@@ -440,7 +441,14 @@ namespace HighTempRadiantSystem {
             }
 
             // Process the temperature control type
-            highTempRadSys.ControlType = static_cast<RadControlType>(getEnumValue(radControlTypeNamesUC, state.dataIPShortCut->cAlphaArgs(6)));
+            if (state.dataIPShortCut->lAlphaFieldBlanks(6)) {
+                ShowWarningEmptyField(state, eoh, state.dataIPShortCut->cAlphaFieldNames(6), "OperativeTemperature");
+                highTempRadSys.ControlType = RadControlType::OperativeControl;
+            } else if ((highTempRadSys.ControlType = static_cast<RadControlType>(
+                            getEnumValue(radControlTypeNamesUC, state.dataIPShortCut->cAlphaArgs(6)))) == RadControlType::Invalid) {
+                ShowSevereInvalidKey(state, eoh, state.dataIPShortCut->cAlphaFieldNames(6), state.dataIPShortCut->cAlphaArgs(6));
+                ErrorsFound = true;
+            }
 
             highTempRadSys.ThrottlRange = state.dataIPShortCut->rNumericArgs(8);
             if (highTempRadSys.ThrottlRange < MinThrottlingRange) {
@@ -451,6 +459,12 @@ namespace HighTempRadiantSystem {
             }
 
             if (state.dataIPShortCut->lAlphaFieldBlanks(7)) {
+                ShowSevereEmptyField(state,
+                                     eoh,
+                                     state.dataIPShortCut->cAlphaFieldNames(7),
+                                     state.dataIPShortCut->cAlphaFieldNames(6),
+                                     state.dataIPShortCut->cAlphaArgs(6));
+                ErrorsFound = true;
             } else if ((highTempRadSys.setptSched = Sched::GetSchedule(state, state.dataIPShortCut->cAlphaArgs(7))) == nullptr) {
                 ShowSevereItemNotFound(state, eoh, state.dataIPShortCut->cAlphaFieldNames(7), state.dataIPShortCut->cAlphaArgs(7));
                 ErrorsFound = true;
@@ -632,7 +646,9 @@ namespace HighTempRadiantSystem {
         if (!state.dataHighTempRadSys->ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
             state.dataHighTempRadSys->ZoneEquipmentListChecked = true;
             for (auto &thisHTRSys : state.dataHighTempRadSys->HighTempRadSys) {
-                if (CheckZoneEquipmentList(state, "ZoneHVAC:HighTemperatureRadiant", thisHTRSys.Name)) continue;
+                if (CheckZoneEquipmentList(state, "ZoneHVAC:HighTemperatureRadiant", thisHTRSys.Name)) {
+                    continue;
+                }
                 ShowSevereError(state,
                                 format("InitHighTempRadiantSystem: Unit=[ZoneHVAC:HighTemperatureRadiant,{}] is not on any ZoneHVAC:EquipmentList.  "
                                        "It will not be simulated.",
@@ -820,8 +836,12 @@ namespace HighTempRadiantSystem {
             default:
                 break;
             }
-            if (HeatFrac < 0.0) HeatFrac = 0.0;
-            if (HeatFrac > 1.0) HeatFrac = 1.0;
+            if (HeatFrac < 0.0) {
+                HeatFrac = 0.0;
+            }
+            if (HeatFrac > 1.0) {
+                HeatFrac = 1.0;
+            }
 
             // Set the heat source for the high temperature electric radiant system
             thisHTR.QHTRRadSource = HeatFrac * thisHTR.MaxPowerCapac;
@@ -969,7 +989,9 @@ namespace HighTempRadiantSystem {
                         }
                     } else { // (ZoneTemp > SetPtTemp)
                         // The zone temperature is too high--try decreasing the radiant heater output
-                        if (IterNum > 0) HeatFracMax = HeatFrac;
+                        if (IterNum > 0) {
+                            HeatFracMax = HeatFrac;
+                        }
                     }
 
                     ++IterNum;
@@ -1080,12 +1102,16 @@ namespace HighTempRadiantSystem {
         HighTempRadSysOn = false;
 
         // If this was never allocated, then there are no radiant systems in this input file (just RETURN)
-        if (state.dataHighTempRadSys->NumOfHighTempRadSys == 0) return;
+        if (state.dataHighTempRadSys->NumOfHighTempRadSys == 0) {
+            return;
+        }
 
         // If it was allocated, then we have to check to see if this was running at all...
         for (auto &thisHTR : state.dataHighTempRadSys->HighTempRadSys) {
             thisHTR.QHTRRadSource = thisHTR.QHTRRadSrcAvg;
-            if (thisHTR.QHTRRadSrcAvg != 0.0) HighTempRadSysOn = true;
+            if (thisHTR.QHTRRadSrcAvg != 0.0) {
+                HighTempRadSysOn = true;
+            }
         }
 
         DistributeHTRadGains(

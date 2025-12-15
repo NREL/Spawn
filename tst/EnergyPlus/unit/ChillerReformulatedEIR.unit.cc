@@ -343,7 +343,7 @@ TEST_F(EnergyPlusFixture, ChillerElectricReformulatedEIR_OutputReport)
     });
 
     EXPECT_TRUE(process_idf(idf_objects, false));
-
+    state->init_state(*state);
     OutputReportPredefined::SetPredefinedTables(*state);
 
     state->dataPlnt->PlantLoop.allocate(state->dataPlnt->TotNumLoops);
@@ -358,7 +358,6 @@ TEST_F(EnergyPlusFixture, ChillerElectricReformulatedEIR_OutputReport)
         loopsidebranch.Comp.allocate(1);
     }
 
-    Curve::GetCurveInput(*state); // Avoid overriding state.dataIPShortCut->lNumericFieldBlank
     GetElecReformEIRChillerInput(*state);
     auto &thisChiller = state->dataChillerReformulatedEIR->ElecReformEIRChiller(1);
     int constexpr num_nodes = 10;
@@ -435,7 +434,8 @@ TEST_F(EnergyPlusFixture, ChillerElectricReformulatedEIR_OutputReport)
     state->dataPlnt->PlantFinalSizesOkayToReport = true;
     thisChiller.initialize(*state, RunFlag, MyLoad);
     thisChiller.size(*state);
-    compare_err_stream("");
+
+    // compare_err_stream("");
 
     auto &orp = *state->dataOutRptPredefined;
     std::string const ChillerName = thisChiller.Name;

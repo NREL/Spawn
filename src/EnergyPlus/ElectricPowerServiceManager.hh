@@ -83,23 +83,23 @@ enum class GeneratorType
     Num
 };
 
-static constexpr std::array<std::string_view, static_cast<int>(GeneratorType::Num)> GeneratorTypeNames{"Generator:InternalCombustionEngine",
-                                                                                                       "Generator:CombustionTurbine",
-                                                                                                       "Generator:Photovoltaic",
-                                                                                                       "Generator:FuelCell",
-                                                                                                       "Generator:MicroCHP",
-                                                                                                       "Generator:MicroTurbine",
-                                                                                                       "Generator:WindTurbine",
-                                                                                                       "Generator:PVWatts"};
+constexpr std::array<std::string_view, (int)GeneratorType::Num> generatorTypeNames = {"Generator:InternalCombustionEngine",
+                                                                                      "Generator:CombustionTurbine",
+                                                                                      "Generator:Photovoltaic",
+                                                                                      "Generator:FuelCell",
+                                                                                      "Generator:MicroCHP",
+                                                                                      "Generator:MicroTurbine",
+                                                                                      "Generator:WindTurbine",
+                                                                                      "Generator:PVWatts"};
 
-static constexpr std::array<std::string_view, static_cast<int>(GeneratorType::Num)> GeneratorTypeNamesUC{"GENERATOR:INTERNALCOMBUSTIONENGINE",
-                                                                                                         "GENERATOR:COMBUSTIONTURBINE",
-                                                                                                         "GENERATOR:PHOTOVOLTAIC",
-                                                                                                         "GENERATOR:FUELCELL",
-                                                                                                         "GENERATOR:MICROCHP",
-                                                                                                         "GENERATOR:MICROTURBINE",
-                                                                                                         "GENERATOR:WINDTURBINE",
-                                                                                                         "GENERATOR:PVWATTS"};
+constexpr std::array<std::string_view, (int)GeneratorType::Num> generatorTypeNamesUC = {"GENERATOR:INTERNALCOMBUSTIONENGINE",
+                                                                                        "GENERATOR:COMBUSTIONTURBINE",
+                                                                                        "GENERATOR:PHOTOVOLTAIC",
+                                                                                        "GENERATOR:FUELCELL",
+                                                                                        "GENERATOR:MICROCHP",
+                                                                                        "GENERATOR:MICROTURBINE",
+                                                                                        "GENERATOR:WINDTURBINE",
+                                                                                        "GENERATOR:PVWATTS"};
 
 enum class ThermalLossDestination
 {
@@ -178,7 +178,7 @@ private:               // data
     Real64 zoneRadFract_;                      // radiative fraction for thermal losses to zone
     Real64 nominalVoltage_;                    // CEC lookup table model
     std::vector<Real64> nomVoltEfficiencyARR_; // eff at 10, 20, 30, 50, 75, & 100% CEC lookup table model
-    int curveNum_;                             // curve index for eff as func of power
+    Curve::Curve *effCurve_ = nullptr;         // curve for eff as func of power
     Real64 ratedPower_;                        // rated, max continuous power output level for inverter
     Real64 minPower_;
     Real64 maxPower_;
@@ -223,6 +223,9 @@ private: // data
         Num
     };
 
+    static constexpr std::array<std::string_view, (int)ConverterModelType::Num> converterModelTypeNames = {"FunctionOfPower", "SimpleFixed"};
+    static constexpr std::array<std::string_view, (int)ConverterModelType::Num> converterModelTypeNamesUC = {"FUNCTIONOFPOWER", "SIMPLEFIXED"};
+
     std::string name_; // user identifier
     Real64 efficiency_;
     Real64 aCPowerIn_;
@@ -240,7 +243,7 @@ private: // data
     Real64 ancillACuseEnergy_;
     Sched::Schedule *availSched_ = nullptr; // number for availability schedule.
     ConverterModelType modelType_;          // type of inverter model used
-    int curveNum_;                          // performance curve or table index
+    Curve::Curve *effCurve_ = nullptr;      // performance curve or table index
     ThermalLossDestination heatLossesDestination_;
     int zoneNum_;         // destination zone for heat losses from inverter.
     Real64 zoneRadFract_; // radiative fraction for thermal losses to zone
@@ -295,7 +298,7 @@ public: // methods
                                              Real64 &curVolt,
                                              Real64 const Pw,
                                              Real64 const q0,
-                                             int const CurveNum,
+                                             Curve::Curve *curve,
                                              Real64 const k,
                                              Real64 const c,
                                              Real64 const qmax,
@@ -354,14 +357,6 @@ private: // data
         Num
     };
 
-    enum class BatteryDegradationModelType
-    {
-        Invalid = -1,
-        LifeCalculationYes,
-        LifeCalculationNo,
-        Num
-    };
-
     std::string name_;               // name of this electrical storage module
     Real64 storedPower_;             // [W]
     Real64 storedEnergy_;            // [J]
@@ -384,8 +379,8 @@ private: // data
     int parallelNum_;                              // [ ] number of battery modules in parallel
     int seriesNum_;                                // [ ] number of battery modules in series
     int numBattery_;                               // total number of batteries all together
-    int chargeCurveNum_;                           // [ ] voltage change curve index number for charging
-    int dischargeCurveNum_;                        // [ ] voltage change curve index number for discharging
+    Curve::Curve *chargeCurve_ = nullptr;          // [ ] voltage change curve for charging
+    Curve::Curve *dischargeCurve_ = nullptr;       // [ ] voltage change curve for discharging
     int cycleBinNum_;                              // [ ] number of cycle bins
     Real64 startingSOC_;                           // [ ] initial fractional state of charge
     Real64 maxAhCapacity_;                         // [Ah]maximum capacity
@@ -397,8 +392,8 @@ private: // data
     Real64 maxDischargeI_;                         // [A] maximum discharging current
     Real64 cutoffV_;                               // [V] cut-off voltage
     Real64 maxChargeRate_;                         // [1/h] charge rate limit
-    BatteryDegradationModelType lifeCalculation_;  // [ ] battery life calculation: Yes or No
-    int lifeCurveNum_;                             // [ ] battery life curve name index number
+    bool lifeCalculation_;                         // [ ] battery life calculation: Yes or No
+    Curve::Curve *lifeCurve_ = nullptr;            // [ ] battery life curve
     Real64 liIon_dcToDcChargingEff_;               // [ ] DC to DC Charging Efficiency (Li-ion NMC model)
     Real64 liIon_mass_;                            // [kg] mass of battery (Li-ion NMC model)
     Real64 liIon_surfaceArea_;                     // [m2] battery surface area (Li-ion NMC model)
@@ -485,6 +480,12 @@ private: // data
                                        // draws
         Num
     };
+
+    static constexpr std::array<std::string_view, (int)TransformerUse::Num> transformerUseNames = {
+        "PowerInFromGrid", "PowerOutToGrid", "LoadCenterPowerConditioning"};
+    static constexpr std::array<std::string_view, (int)TransformerUse::Num> transformerUseNamesUC = {
+        "POWERINFROMGRID", "POWEROUTTOGRID", "LOADCENTERPOWERCONDITIONING"};
+
     enum class TransformerPerformanceInput
     {
         Invalid = -1,
@@ -492,6 +493,11 @@ private: // data
         EfficiencyMethod,
         Num
     };
+
+    static constexpr std::array<std::string_view, (int)TransformerPerformanceInput::Num> transformerPerformanceInputNames = {"RatedLosses",
+                                                                                                                             "NominalEfficiency"};
+    static constexpr std::array<std::string_view, (int)TransformerPerformanceInput::Num> transformerPerformanceInputNamesUC = {"RATEDLOSSES",
+                                                                                                                               "NOMINALEFFICIENCY"};
 
     std::string name_; // user identifier
     bool myOneTimeFlag_;
@@ -515,7 +521,7 @@ private: // data
     std::vector<int> wiredMeterPtrs_;                  // array of "pointers" to meters wired to transformer
     std::vector<bool> specialMeter_;                   // indicates whether a meter needs special consideration
     // Electricity:Facility and Electricity:HVAC are two special
-    // meters because tranformer loss is part of them
+    // meters because transformer loss is part of them
     // calculated and from elsewhere vars
     Real64 ratedNL_;         // rated no load losses, user input or calculated [W]
     Real64 ratedLL_;         // rated load losses, user input or calculated [W]
@@ -540,7 +546,7 @@ private: // data
     // Negative values
     Real64 qdotConvZone_; // [W]
     Real64 qdotRadZone_;  // [W]
-};                        // ElectricTransformer
+}; // ElectricTransformer
 
 class GeneratorController
 // this class is used as part of the supervisory control and calling of electric power generators.  Each instances is for one generator
@@ -636,6 +642,17 @@ public: // data public for unit test
         Num
     };
 
+    static constexpr std::array<std::string_view, (int)ElectricBussType::Num> electricBussTypeNames = {"AlternatingCurrent",
+                                                                                                       "DirectCurrentWithInverter",
+                                                                                                       "AlternatingCurrentWithStorage",
+                                                                                                       "DirectCurrentWithInverterDCStorage",
+                                                                                                       "DirectCurrentWithInverterACStorage"};
+    static constexpr std::array<std::string_view, (int)ElectricBussType::Num> electricBussTypeNamesUC = {"ALTERNATINGCURRENT",
+                                                                                                         "DIRECTCURRENTWITHINVERTER",
+                                                                                                         "ALTERNATINGCURRENTWITHSTORAGE",
+                                                                                                         "DIRECTCURRENTWITHINVERTERDCSTORAGE",
+                                                                                                         "DIRECTCURRENTWITHINVERTERACSTORAGE"};
+
     std::unique_ptr<ElectricStorage> storageObj;
     std::unique_ptr<ACtoDCConverter> converterObj;
     std::unique_ptr<ElectricTransformer> transformerObj;
@@ -676,6 +693,11 @@ private: // data
         Num
     };
 
+    static constexpr std::array<std::string_view, (int)GeneratorOpScheme::Num> generatorOpSchemeNames = {
+        "Baseload", "DemandLimit", "TrackElectrical", "TrackSchedule", "TrackMeter", "FollowThermal", "FollowThermalLimitElectrical"};
+    static constexpr std::array<std::string_view, (int)GeneratorOpScheme::Num> generatorOpSchemeNamesUC = {
+        "BASELOAD", "DEMANDLIMIT", "TRACKELECTRICAL", "TRACKSCHEDULE", "TRACKMETER", "FOLLOWTHERMAL", "FOLLOWTHERMALLIMITELECTRICAL"};
+
     enum class StorageOpScheme : int
     {
         Invalid = -1,
@@ -685,6 +707,15 @@ private: // data
         FacilityDemandLeveling,
         Num
     };
+
+    static constexpr std::array<std::string_view, (int)StorageOpScheme::Num> storageOpSchemeNames = {"TrackFacilityElectricDemandStoreExcessOnSite",
+                                                                                                     "TrackMeterDemandStoreExcessOnSite",
+                                                                                                     "TrackChargeDischargeSchedules",
+                                                                                                     "FacilityDemandLeveling"};
+    static constexpr std::array<std::string_view, (int)StorageOpScheme::Num> storageOpSchemeNamesUC = {"TRACKFACILITYELECTRICDEMANDSTOREEXCESSONSITE",
+                                                                                                       "TRACKMETERDEMANDSTOREEXCESSONSITE",
+                                                                                                       "TRACKCHARGEDISCHARGESCHEDULES",
+                                                                                                       "FACILITYDEMANDLEVELING"};
 
     std::string name_;                     // user identifier
     std::string generatorListName_;        // List name of available generators
@@ -817,10 +848,10 @@ private:                      // data
 
 void createFacilityElectricPowerServiceObject(const EnergyPlusData &state);
 
-Real64 checkUserEfficiencyInput(EnergyPlusData &state, Real64 userInputValue, std::string whichType, std::string deviceName, bool &errorsFound);
+Real64 checkUserEfficiencyInput(EnergyPlusData &state, Real64 userInputValue, bool isCharging, std::string const &deviceName, bool &errorsFound);
 
 void checkChargeDischargeVoltageCurves(
-    EnergyPlusData &state, std::string_view nameBatt, Real64 const E0c, Real64 const E0d, int const chargeIndex, int const dischargeIndex);
+    EnergyPlusData &state, std::string_view nameBatt, Real64 const E0c, Real64 const E0d, Curve::Curve *chargeCurve, Curve::Curve *dischargeCurve);
 
 struct ElectPwrSvcMgrData : BaseGlobalStruct
 {

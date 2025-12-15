@@ -50,6 +50,8 @@
 
 // EnergyPlus Headers
 #include <EnergyPlus/Coils/CoilCoolingDX.hh>
+#include <EnergyPlus/Coils/CoilCoolingDXCurveFitOperatingMode.hh>
+#include <EnergyPlus/Coils/CoilCoolingDXCurveFitPerformance.hh>
 #include <EnergyPlus/CurveManager.hh>
 #include <EnergyPlus/DataEnvironment.hh>
 #include <EnergyPlus/DataSizing.hh>
@@ -62,8 +64,9 @@ using namespace EnergyPlus;
 
 TEST_F(CoilCoolingDXTest, CoilCoolingDXCurveFitModeInput)
 {
-    std::string idf_objects = this->getModeObjectString("mode1", 2);
+    std::string idf_objects = this->getModeObjectString("mode1", 2); // What is going on here?
     EXPECT_TRUE(process_idf(idf_objects, false));
+    state->init_state(*state);
     CoilCoolingDXCurveFitOperatingMode thisMode(*state, "mode1");
     EXPECT_EQ("MODE1", thisMode.name);
     EXPECT_EQ("MODE1SPEED1", thisMode.speeds[0].name);
@@ -169,9 +172,11 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXCurveFitOperatingMode_Sizing)
 
     struct TestQuery
     {
+        // clang-format off
         TestQuery(std::string t_description, std::string t_units, Real64 t_value)
             : description(t_description), units(t_units), expectedValue(t_value),
-              displayString("Description='" + description + "'; Units='" + units + "'"){};
+              displayString("Description='" + description + "'; Units='" + units + "'") {};
+        // clang-format on
 
         const std::string description;
         const std::string units;
@@ -267,11 +272,9 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXCurveFitCrankcaseHeaterCurve)
     int coilIndex = CoilCoolingDX::factory(*state, "Coil Cooling DX 1");
     auto &thisCoil(state->dataCoilCoolingDX->coilCoolingDXs[coilIndex]);
     EXPECT_EQ("COIL COOLING DX 1", thisCoil.name);
-    EXPECT_EQ("COIL COOLING DX CURVE FIT PERFORMANCE 1", thisCoil.performance.name);
-    EXPECT_EQ("HEATERCAPCURVE", Curve::GetCurveName(*state, thisCoil.performance.crankcaseHeaterCapacityCurveIndex));
+    EXPECT_EQ("COIL COOLING DX CURVE FIT PERFORMANCE 1", thisCoil.performance->name);
 
     HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
-    Real64 PLR = 1.0;
     int speedNum = 1;
     Real64 speedRatio = 1.0;
     HVAC::FanOp fanOp = HVAC::FanOp::Cycling;
@@ -283,7 +286,23 @@ TEST_F(CoilCoolingDXTest, CoilCoolingDXCurveFitCrankcaseHeaterCurve)
     auto &condInletNode = state->dataLoopNodes->Node(thisCoil.condInletNodeIndex);
     auto &condOutletNode = state->dataLoopNodes->Node(thisCoil.condOutletNodeIndex);
     Real64 LoadSHR = 0.0;
-    thisCoil.performance.simulate(
+    thisCoil.performance->simulate(
         *state, evapInletNode, evapOutletNode, coilMode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode, LoadSHR);
-    EXPECT_EQ(thisCoil.performance.crankcaseHeaterPower, 120.0);
+    EXPECT_EQ(thisCoil.performance->crankcaseHeaterPower, 120.0);
+    EXPECT_EQ(thisCoil.performance->minOutdoorDrybulb, -25.0);
+    auto performance{dynamic_cast<CoilCoolingDXCurveFitPerformance *>(thisCoil.performance.get())};
+    EXPECT_EQ(performance->normalMode.minOutdoorDrybulb, -25.0);
+    EXPECT_EQ(performance->alternateMode.minOutdoorDrybulb, -25.0);
+    EXPECT_EQ(performance->alternateMode2.minOutdoorDrybulb, -25.0);
+    EXPECT_EQ(thisCoil.totalCoolingEnergyRate, 0.0);
+    // change the minimum OA temp for compressor operation to 5.0C
+    thisCoil.performance->minOutdoorDrybulb = 5.0;
+    performance->myOneTimeMinOATFlag = true;
+    thisCoil.size(*state); // run size() to reset the min OA temp
+    thisCoil.performance->simulate(
+        *state, evapInletNode, evapOutletNode, coilMode, speedNum, speedRatio, fanOp, condInletNode, condOutletNode, singleMode, LoadSHR);
+    EXPECT_EQ(performance->normalMode.minOutdoorDrybulb, 5.0);
+    EXPECT_EQ(performance->alternateMode.minOutdoorDrybulb, 5.0);
+    EXPECT_EQ(performance->alternateMode2.minOutdoorDrybulb, 5.0);
+    EXPECT_EQ(thisCoil.totalCoolingEnergyRate, 0.0);
 }

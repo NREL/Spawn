@@ -200,7 +200,9 @@ void InputFile::backspace() noexcept
         is->seekg(0, std::ios::beg);    // Beginning of file
         std::streampos const g0(is->tellg());
         is->seekg(g1, std::ios::beg); // Restore position
-        if (g1 > g0) --g1;
+        if (g1 > g0) {
+            --g1;
+        }
         while (g1 > g0) {
             is->seekg(--g1, std::ios::beg); // Backup by 1
             if (is->peek() == '\n') {       // Found end of previous record
@@ -409,9 +411,6 @@ void IOFiles::OutputControl::getInput(EnergyPlusData &state)
             { // "output_dfs"
                 dfs = boolean_choice(find_input(fields, "output_dfs"));
             }
-            { // "output_glhe"
-                glhe = boolean_choice(find_input(fields, "output_glhe"));
-            }
             { // "output_delightin"
                 delightin = boolean_choice(find_input(fields, "output_delightin"));
             }
@@ -456,6 +455,9 @@ void IOFiles::OutputControl::getInput(EnergyPlusData &state)
             }
             { // "sqlite"
                 sqlite = boolean_choice(find_input(fields, "output_sqlite"));
+            }
+            { // "psz"
+                psz = boolean_choice(find_input(fields, "output_plant_component_sizing"));
             }
         }
     }

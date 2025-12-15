@@ -451,7 +451,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     std::string const error_string1 = delimited_string({
         "   ** Warning ** CalcEquipmentFlowRates: \"CORE_ZN WATER EQUIPMENT\" - Hot water temperature is less than the cold water temperature by "
         "(5.00 C)",
-        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:00",
+        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:15",
         "   **   ~~~   ** ...hot water temperature        = 10.00 C",
         "   **   ~~~   ** ...cold water temperature       = 15.00 C",
         "   **   ~~~   ** ...Hot water temperature should be greater than or equal to the cold water temperature. Verify temperature setpoints and "
@@ -460,7 +460,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
 
     EXPECT_TRUE(compare_err_stream(error_string1, true));
 
-    // configuration allows hot water mixing. A target temp schedule exists with either a hot temp schedule or a connnections object
+    // configuration allows hot water mixing. A target temp schedule exists with either a hot temp schedule or a connections object
     EXPECT_TRUE(thisWaterEquipment.allowHotControl);
     EXPECT_NE(thisWaterEquipment.targetTempSched, nullptr);
     EXPECT_TRUE(thisWaterEquipment.hotTempSched != nullptr || thisWaterEquipment.Connections);
@@ -478,7 +478,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     std::string const error_string2 = delimited_string({
         "   ** Warning ** CalcEquipmentFlowRates: \"CORE_ZN WATER EQUIPMENT\" - Target water temperature is greater than the hot water temperature "
         "by (6.70 C)",
-        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:00",
+        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:15",
         "   **   ~~~   ** ...target water temperature     = 50.00 C",
         "   **   ~~~   ** ...hot water temperature        = 43.30 C",
         "   **   ~~~   ** ...Target water temperature should be less than or equal to the hot water temperature. Verify temperature setpoints and "
@@ -496,7 +496,7 @@ TEST_F(EnergyPlusFixture, WaterUse_WaterTempWarnings)
     std::string const error_string3 = delimited_string({
         "   ** Warning ** CalcEquipmentFlowRates: \"CORE_ZN WATER EQUIPMENT\" - Target water temperature is less than the cold water temperature "
         "by (15.00 C)",
-        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:00",
+        "   **   ~~~   **  Environment=, at Simulation time= 00:00 - 00:15",
         "   **   ~~~   ** ...target water temperature     = 0.00 C",
         "   **   ~~~   ** ...cold water temperature       = 15.00 C",
         "   **   ~~~   ** ...Target water temperature should be greater than or equal to the cold water temperature. Verify temperature setpoints "
@@ -885,7 +885,7 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test1)
     thisWaterConnections.InitConnections(*state);
     thisWaterEquipment.WaterEquipmentType::CalcEquipmentFlowRates(*state);
 
-    // The target temp will default to the hot water temperature if there exists either a hot temp schedule or a water use connnections object.
+    // The target temp will default to the hot water temperature if there exists either a hot temp schedule or a water use connections object.
     EXPECT_TRUE(thisWaterEquipment.allowHotControl);
     EXPECT_EQ(thisWaterEquipment.targetTempSched, nullptr);
     EXPECT_NEAR(thisWaterEquipment.TargetTemp, 45, 1e-5);
@@ -1255,7 +1255,7 @@ TEST_F(EnergyPlusFixture, WaterUse_Default_Target_Temperature_Test2)
     auto &thisWaterEquipment = state->dataWaterUse->WaterEquipment(WaterEquipNum);
     thisWaterEquipment.WaterEquipmentType::CalcEquipmentFlowRates(*state);
 
-    // A target temp will default to cold water temperature is there is neither a hot temp schedule nor a water use connnections object.
+    // A target temp will default to cold water temperature is there is neither a hot temp schedule nor a water use connections object.
     EXPECT_FALSE(thisWaterEquipment.allowHotControl);
     EXPECT_EQ(thisWaterEquipment.targetTempSched, nullptr);
     EXPECT_NEAR(thisWaterEquipment.TargetTemp, 15, 1e-5);
