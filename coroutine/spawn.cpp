@@ -13,6 +13,7 @@
 #include "../energyplus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../energyplus/src/EnergyPlus/api/func.h"
 #include "../energyplus/src/EnergyPlus/api/runtime.h"
+#include "../energyplus/src/EnergyPlus/ScheduleManager.hh"
 
 #include <limits>
 
@@ -253,7 +254,7 @@ void Spawn::Exchange(const bool force)
   EnergyPlus::HVACManager::ReportAirHeatBalance(sim_state_);
   EnergyPlus::InternalHeatGains::InitInternalHeatGains(sim_state_);
   EnergyPlus::InternalHeatGains::ReportInternalHeatGains(sim_state_);
-  EnergyPlus::ScheduleManager::UpdateScheduleValues(sim_state_);
+  EnergyPlus::Sched::UpdateScheduleVals(sim_state_);
   EnergyPlus::HeatBalanceSurfaceManager::ReportSurfaceHeatBalance(sim_state_);
   energyplus::UpdateLatentGains(sim_state_);
 
