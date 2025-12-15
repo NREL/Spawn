@@ -842,6 +842,7 @@ TEST_F(EnergyPlusFixture, SiteGroundDomainSlab_CheckInputs_BadVertInsDepth)
     EXPECT_TRUE(errorsFound);
 }
 
+#ifdef GET_OUT // TimeStepSelection is not used
 TEST_F(EnergyPlusFixture, SiteGroundDomainSlab_CheckInputs_BadTimeStepSelection)
 {
 
@@ -911,6 +912,7 @@ TEST_F(EnergyPlusFixture, SiteGroundDomainSlab_CheckInputs_BadTimeStepSelection)
 
     EXPECT_TRUE(errorsFound);
 }
+#endif // GET_OUT
 
 TEST_F(EnergyPlusFixture, SiteGroundDomainBasement_CheckInputs_CorrectInputs)
 {
@@ -1542,6 +1544,7 @@ TEST_F(EnergyPlusFixture, SiteGroundDomainBasement_CheckInputs_BadVertInsName)
     EXPECT_TRUE(errorsFound);
 }
 
+#ifdef GET_OUT // TimeStep is not actually used
 TEST_F(EnergyPlusFixture, SiteGroundDomainBasement_CheckInputs_BadTimestepSelection)
 {
 
@@ -1611,6 +1614,7 @@ TEST_F(EnergyPlusFixture, SiteGroundDomainBasement_CheckInputs_BadTimestepSelect
 
     EXPECT_TRUE(errorsFound);
 }
+#endif // GET_OUT
 
 TEST_F(EnergyPlusFixture, PipingSystemFullSimulation)
 {

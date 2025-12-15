@@ -208,7 +208,7 @@ namespace HVACDXHeatPumpSystem {
         }
         // set econo lockout flag
         // set econo lockout flag
-        if (AirLoopNum != -1) { // IF the sysem is not an equipment of outdoor air unit
+        if (AirLoopNum != -1) { // IF the system is not an equipment of outdoor air unit
 
             if ((DXHeatPumpSystem(DXSystemNum).PartLoadFrac > 0.0) &&
                 state.dataAirLoop->AirLoopControlInfo(AirLoopNum).CanLockoutEconoWithCompressor) {
@@ -621,8 +621,9 @@ namespace HVACDXHeatPumpSystem {
             // Determine if there is a sensible load on this system
             if ((state.dataLoopNodes->Node(InletNode).Temp < state.dataLoopNodes->Node(ControlNode).TempSetPoint) &&
                 (state.dataLoopNodes->Node(InletNode).Temp < DesOutTemp) &&
-                (std::abs(state.dataLoopNodes->Node(InletNode).Temp - DesOutTemp) > TempControlTol))
+                (std::abs(state.dataLoopNodes->Node(InletNode).Temp - DesOutTemp) > TempControlTol)) {
                 SensibleLoad = true;
+            }
 
             // If DXHeatingSystem runs with a heating load then set PartLoadFrac on Heating System
             if (SensibleLoad) {
@@ -1032,7 +1033,7 @@ namespace HVACDXHeatPumpSystem {
                     }
                 }
             } // End of cooling load type (sensible or latent) if block
-        }     // End of If DXheatingSystem is scheduled on and there is flow
+        } // End of If DXheatingSystem is scheduled on and there is flow
 
         // Set the final results
         DXHeatPumpSystem.PartLoadFrac = PartLoadFrac;
@@ -1128,7 +1129,9 @@ namespace HVACDXHeatPumpSystem {
                 NodeNum = state.dataHVACDXHeatPumpSys->DXHeatPumpSystem(DXHeatSysNum).DXHeatPumpCoilInletNodeNum;
             }
         }
-        if (NodeNum == 0) InletNodeErrFlag = true;
+        if (NodeNum == 0) {
+            InletNodeErrFlag = true;
+        }
 
         return NodeNum;
     }
@@ -1153,7 +1156,9 @@ namespace HVACDXHeatPumpSystem {
                 NodeNum = state.dataHVACDXHeatPumpSys->DXHeatPumpSystem(DXHeatSysNum).DXHeatPumpCoilOutletNodeNum;
             }
         }
-        if (NodeNum == 0) OutletNodeErrFlag = true;
+        if (NodeNum == 0) {
+            OutletNodeErrFlag = true;
+        }
 
         return NodeNum;
     }

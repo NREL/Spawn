@@ -185,7 +185,9 @@ void GetPondGroundHeatExchanger(EnergyPlusData &state)
     state.dataPondGHE->NumOfPondGHEs =
         state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, state.dataIPShortCut->cCurrentModuleObject);
     // allocate data structures
-    if (allocated(state.dataPondGHE->PondGHE)) state.dataPondGHE->PondGHE.deallocate();
+    if (allocated(state.dataPondGHE->PondGHE)) {
+        state.dataPondGHE->PondGHE.deallocate();
+    }
 
     state.dataPondGHE->PondGHE.allocate(state.dataPondGHE->NumOfPondGHEs);
 
@@ -569,7 +571,7 @@ Real64 PondGroundHeatExchangerData::CalcTotalFLux(EnergyPlusData &state, Real64 
     Real64 FluxSolAbsorbed = CalcSolarFlux(state);
 
     // specific heat from fluid prop routines
-    Real64 SpecHeat = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, max(this->InletTemp, 0.0), RoutineName);
+    Real64 SpecHeat = this->plantLoc.loop->glycol->getSpecificHeat(state, max(this->InletTemp, 0.0), RoutineName);
     // heat transfer with fluid - heat exchanger analogy.
 
     // convective flux
@@ -707,9 +709,9 @@ Real64 PondGroundHeatExchangerData::CalcEffectiveness(EnergyPlusData &state,
 
     // evaluate properties at pipe fluid temperature for given pipe fluid
 
-    Real64 SpecificHeat = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, InsideTemperature, CalledFrom);
-    Real64 Conductivity = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getConductivity(state, InsideTemperature, CalledFrom);
-    Real64 Viscosity = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getViscosity(state, InsideTemperature, CalledFrom);
+    Real64 SpecificHeat = this->plantLoc.loop->glycol->getSpecificHeat(state, InsideTemperature, CalledFrom);
+    Real64 Conductivity = this->plantLoc.loop->glycol->getConductivity(state, InsideTemperature, CalledFrom);
+    Real64 Viscosity = this->plantLoc.loop->glycol->getViscosity(state, InsideTemperature, CalledFrom);
 
     // Calculate the Reynold's number from RE=(4*Mdot)/(Pi*Mu*Diameter)
     Real64 ReynoldsNum = 4.0 * massFlowRate / (Constant::Pi * Viscosity * this->TubeInDiameter * this->NumCircuits);
@@ -823,7 +825,7 @@ void PondGroundHeatExchangerData::UpdatePondGroundHeatExchanger(EnergyPlusData &
 
     // Calculate the water side outlet conditions and set the
     // appropriate conditions on the correct HVAC node.
-    Real64 CpFluid = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, this->InletTemp, RoutineName);
+    Real64 CpFluid = this->plantLoc.loop->glycol->getSpecificHeat(state, this->InletTemp, RoutineName);
 
     PlantUtilities::SafeCopyPlantNode(state, InletNodeNum, OutletNodeNum);
 
@@ -875,8 +877,8 @@ void PondGroundHeatExchangerData::oneTimeInit(EnergyPlusData &state)
         if (errFlag) {
             ShowFatalError(state, "InitPondGroundHeatExchanger: Program terminated due to previous condition(s).");
         }
-        Real64 rho = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getDensity(state, 0.0, RoutineName);
-        Real64 Cp = state.dataPlnt->PlantLoop(this->plantLoc.loopNum).glycol->getSpecificHeat(state, 0.0, RoutineName);
+        Real64 rho = this->plantLoc.loop->glycol->getDensity(state, 0.0, RoutineName);
+        Real64 Cp = this->plantLoc.loop->glycol->getSpecificHeat(state, 0.0, RoutineName);
         this->DesignMassFlowRate = Constant::Pi / 4.0 * pow_2(this->TubeInDiameter) * DesignVelocity * rho * this->NumCircuits;
         this->DesignCapacity = this->DesignMassFlowRate * Cp * 10.0; // assume 10C delta T?
         PlantUtilities::InitComponentNodes(state, 0.0, this->DesignMassFlowRate, this->InletNodeNum, this->OutletNodeNum);

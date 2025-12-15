@@ -174,7 +174,9 @@ bool EnergyPlusFixture::compare_eso_stream(std::string const &expected_string, b
     auto const stream_str = state->files.eso.get_output();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) state->files.eso.open_as_stringstream();
+    if (reset_stream) {
+        state->files.eso.open_as_stringstream();
+    }
     return are_equal;
 }
 
@@ -183,7 +185,9 @@ bool EnergyPlusFixture::compare_eio_stream(std::string const &expected_string, b
     auto const stream_str = state->files.eio.get_output();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) state->files.eio.open_as_stringstream();
+    if (reset_stream) {
+        state->files.eio.open_as_stringstream();
+    }
     return are_equal;
 }
 
@@ -192,7 +196,9 @@ bool EnergyPlusFixture::compare_eio_stream_substring(std::string const &search_s
     auto const stream_str = state->files.eio.get_output();
     bool const found = stream_str.find(search_string) != std::string::npos;
     EXPECT_TRUE(found);
-    if (reset_stream) state->files.eio.open_as_stringstream();
+    if (reset_stream) {
+        state->files.eio.open_as_stringstream();
+    }
     return found;
 }
 
@@ -201,7 +207,9 @@ bool EnergyPlusFixture::compare_mtr_stream(std::string const &expected_string, b
     auto const stream_str = state->files.mtr.get_output();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) state->files.mtr.open_as_stringstream();
+    if (reset_stream) {
+        state->files.mtr.open_as_stringstream();
+    }
     return are_equal;
 }
 
@@ -210,18 +218,22 @@ bool EnergyPlusFixture::compare_err_stream(std::string const &expected_string, b
     auto const stream_str = this->err_stream->str();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) this->err_stream->str(std::string());
+    if (reset_stream) {
+        this->err_stream->str(std::string());
+    }
     return are_equal;
 }
 
-bool EnergyPlusFixture::compare_err_stream_substring(std::string const &search_string, bool reset_stream)
+bool EnergyPlusFixture::compare_err_stream_substring(std::string const &search_string, bool reset_stream, bool call_expect)
 {
     auto const stream_str = this->err_stream->str();
     bool const found = stream_str.find(search_string) != std::string::npos;
-    EXPECT_TRUE(found) << "Not found in:"
-                       << "\n"
-                       << stream_str;
-    if (reset_stream) this->err_stream->str(std::string());
+    if (call_expect) {
+        EXPECT_TRUE(found) << "Not found in:" << "\n" << stream_str;
+    }
+    if (reset_stream) {
+        this->err_stream->str(std::string());
+    }
     return found;
 }
 
@@ -230,8 +242,19 @@ bool EnergyPlusFixture::compare_cout_stream(std::string const &expected_string, 
     auto const stream_str = this->m_cout_buffer->str();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) this->m_cout_buffer->str(std::string());
+    if (reset_stream) {
+        this->m_cout_buffer->str(std::string());
+    }
     return are_equal;
+}
+bool EnergyPlusFixture::compare_cout_stream_substring(std::string const &search_string, bool reset_stream)
+{
+    auto const stream_str = this->m_cout_buffer->str();
+    bool const found = stream_str.find(search_string) != std::string::npos;
+    if (reset_stream) {
+        this->m_cout_buffer->str(std::string());
+    }
+    return found;
 }
 
 bool EnergyPlusFixture::compare_cerr_stream(std::string const &expected_string, bool reset_stream)
@@ -239,7 +262,9 @@ bool EnergyPlusFixture::compare_cerr_stream(std::string const &expected_string, 
     auto const stream_str = this->m_cerr_buffer->str();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) this->m_cerr_buffer->str(std::string());
+    if (reset_stream) {
+        this->m_cerr_buffer->str(std::string());
+    }
     return are_equal;
 }
 
@@ -248,56 +273,72 @@ bool EnergyPlusFixture::compare_dfs_stream(std::string const &expected_string, b
     auto const stream_str = state->files.dfs.get_output();
     EXPECT_EQ(expected_string, stream_str);
     bool are_equal = (expected_string == stream_str);
-    if (reset_stream) state->files.dfs.open_as_stringstream();
+    if (reset_stream) {
+        state->files.dfs.open_as_stringstream();
+    }
     return are_equal;
 }
 
 bool EnergyPlusFixture::has_eso_output(bool reset_stream)
 {
     bool const has_output = !state->files.eso.get_output().empty();
-    if (reset_stream) state->files.eso.open_as_stringstream();
+    if (reset_stream) {
+        state->files.eso.open_as_stringstream();
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_eio_output(bool reset_stream)
 {
     bool const has_output = !state->files.eio.get_output().empty();
-    if (reset_stream) state->files.eio.open_as_stringstream();
+    if (reset_stream) {
+        state->files.eio.open_as_stringstream();
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_mtr_output(bool reset_stream)
 {
     bool const has_output = !state->files.mtr.get_output().empty();
-    if (reset_stream) state->files.mtr.open_as_stringstream();
+    if (reset_stream) {
+        state->files.mtr.open_as_stringstream();
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_err_output(bool reset_stream)
 {
     bool const has_output = this->err_stream->str().size() > 0;
-    if (reset_stream) this->err_stream->str(std::string());
+    if (reset_stream) {
+        this->err_stream->str(std::string());
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_cout_output(bool reset_stream)
 {
     bool const has_output = this->m_cout_buffer->str().size() > 0;
-    if (reset_stream) this->m_cout_buffer->str(std::string());
+    if (reset_stream) {
+        this->m_cout_buffer->str(std::string());
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_cerr_output(bool reset_stream)
 {
     bool const has_output = this->m_cerr_buffer->str().size() > 0;
-    if (reset_stream) this->m_cerr_buffer->str(std::string());
+    if (reset_stream) {
+        this->m_cerr_buffer->str(std::string());
+    }
     return has_output;
 }
 
 bool EnergyPlusFixture::has_dfs_output(bool reset_stream)
 {
     bool const has_output = !state->files.dfs.get_output().empty();
-    if (reset_stream) state->files.dfs.open_as_stringstream();
+    if (reset_stream) {
+        state->files.dfs.open_as_stringstream();
+    }
     return has_output;
 }
 
@@ -310,7 +351,9 @@ bool EnergyPlusFixture::match_err_stream(std::string const &expected_match, bool
     } else {
         match_found = stream_str.find(expected_match) != std::string::npos;
     }
-    if (reset_stream) this->err_stream->str(std::string());
+    if (reset_stream) {
+        this->err_stream->str(std::string());
+    }
     return match_found;
 }
 

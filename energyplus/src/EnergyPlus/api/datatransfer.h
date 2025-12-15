@@ -109,6 +109,9 @@ ENERGYPLUSLIB_API char *listAllAPIDataCSV(EnergyPlusState state);
 ///          Do not call for variable, meter, actuator, or any other internal exchange data prior to this returning true.
 /// \param[in] state An active EnergyPlusState instance created with `stateNew`.
 /// \return Returns 1 (true) once the data is ready, otherwise returns 0 (false).
+/// \remark  Note that in the case of Surface actuators for "Construction State" and for a call to \link getConstructionHandle \endlink,
+///          this is not required to be true, as construction data is generally available earlier in the simulation process.
+///          Bypassing this check will allow affecting the Sizing calculations.
 ENERGYPLUSLIB_API int apiDataFullyReady(EnergyPlusState state);
 /// \brief Provides a user-facing check on the API error flag
 /// \details Some API functions return a value of 0, which could potentially indicate an error, or an actual 0 value.
@@ -473,7 +476,7 @@ ENERGYPLUSLIB_API Real64 getPluginTrendVariableDirection(EnergyPlusState state, 
 
 /// \brief Returns the current year of the simulation, taken from the EPW.
 /// \details This is directly read from the EPW, and as such, if the EPW is for example a TMY3 file
-///          the year could be set to an abritrary number and change from one timestep to the next. See calendarYear for an alternative
+///          the year could be set to an arbitrary number and change from one timestep to the next. See calendarYear for an alternative
 /// \param[in] state An active EnergyPlusState instance created with `stateNew`.
 /// \remark The behavior of this function is not well-defined until the `apiDataFullyReady` function returns true.
 /// \see apiDataFullyReady

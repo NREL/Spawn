@@ -170,6 +170,23 @@ namespace PlantPipingSystemsManager {
         Num
     };
 
+    enum class SlabPosition
+    {
+        Invalid = -1,
+        InGrade,
+        OnGrade,
+        Num
+    };
+
+    enum class HorizInsulation
+    {
+        Invalid = -1,
+        None,
+        Perimeter,
+        Full,
+        Num
+    };
+
     struct BaseThermalPropertySet
     {
         // Members
@@ -782,7 +799,7 @@ namespace PlantPipingSystemsManager {
         std::vector<ZoneCoupledSurfaceData> ZoneCoupledSurfaces;
         int ZoneCoupledOSCMIndex;
         Real64 PerimeterOffset;
-        bool SlabInGradeFlag;
+        SlabPosition slabPosition = SlabPosition::Invalid;
         int SlabMaterialNum;
         Real64 SlabArea;
         Real64 SlabWidth;
@@ -794,7 +811,7 @@ namespace PlantPipingSystemsManager {
         int x_max_index;
         int y_max_index;
         int z_max_index;
-        bool HorizInsPresentFlag;
+        HorizInsulation HorizIns = HorizInsulation::Invalid;
         int HorizInsMaterialNum;
         Real64 HorizInsThickness;
         Real64 HorizInsWidth;
@@ -807,7 +824,6 @@ namespace PlantPipingSystemsManager {
         int NumHeatFlux;
         bool ResetHeatFluxFlag;
         Real64 ConvectionCoefficient;
-        bool FullHorizInsPresent;
         bool VertInsPresentFlag;
         int VertInsMaterialNum;
         Real64 VertInsThickness;
@@ -818,9 +834,12 @@ namespace PlantPipingSystemsManager {
         int InsulationXIndex;
         int InsulationYIndex;
         int InsulationZIndex;
-        bool SimTimeStepFlag;
-        bool SimHourlyFlag;
-        bool SimDailyFlag;
+#ifdef GET_OUT
+        // Don't seem to be used anywhere
+        bool SimTimeStepFlag = false;
+        bool SimHourlyFlag = false;
+        bool SimDailyFlag = false;
+#endif // GET_OUT
         Real64 ZoneCoupledSurfaceTemp;
         Real64 BasementWallTemp;
         Real64 BasementFloorTemp;
@@ -848,13 +867,12 @@ namespace PlantPipingSystemsManager {
         Domain()
             : MaxIterationsPerTS(10), OneTimeInit(true), BeginSimInit(true), BeginSimEnvironment(true), DomainNeedsSimulation(true),
               DomainNeedsToBeMeshed(true), IsActuallyPartOfAHorizontalTrench(false), HasAPipeCircuit(true), HasZoneCoupledSlab(false),
-              HasZoneCoupledBasement(false), HasBasement(false), ZoneCoupledOSCMIndex(0), PerimeterOffset(0.0), SlabInGradeFlag(false),
-              SlabMaterialNum(0), SlabArea(0.0), SlabWidth(0.0), SlabLength(0.0), SlabThickness(0.0), XIndex(0), YIndex(0), ZIndex(0), x_max_index(0),
-              y_max_index(0), z_max_index(0), HorizInsPresentFlag(false), HorizInsMaterialNum(0), HorizInsThickness(0.0254), HorizInsWidth(0.0),
-              HeatFlux(0.0), WallHeatFlux(0.0), FloorHeatFlux(0.0), AggregateHeatFlux(0.0), AggregateWallHeatFlux(0.0), AggregateFloorHeatFlux(0.0),
-              NumHeatFlux(0), ResetHeatFluxFlag(true), ConvectionCoefficient(0.0), FullHorizInsPresent(false), VertInsPresentFlag(false),
-              VertInsMaterialNum(0), VertInsThickness(0.0254), VertInsDepth(0.0), XWallIndex(0), YFloorIndex(0), ZWallIndex(0), InsulationXIndex(0),
-              InsulationYIndex(0), InsulationZIndex(0), SimTimeStepFlag(false), SimHourlyFlag(false), SimDailyFlag(false),
+              HasZoneCoupledBasement(false), HasBasement(false), ZoneCoupledOSCMIndex(0), PerimeterOffset(0.0), SlabMaterialNum(0), SlabArea(0.0),
+              SlabWidth(0.0), SlabLength(0.0), SlabThickness(0.0), XIndex(0), YIndex(0), ZIndex(0), x_max_index(0), y_max_index(0), z_max_index(0),
+              HorizInsMaterialNum(0), HorizInsThickness(0.0254), HorizInsWidth(0.0), HeatFlux(0.0), WallHeatFlux(0.0), FloorHeatFlux(0.0),
+              AggregateHeatFlux(0.0), AggregateWallHeatFlux(0.0), AggregateFloorHeatFlux(0.0), NumHeatFlux(0), ResetHeatFluxFlag(true),
+              ConvectionCoefficient(0.0), VertInsPresentFlag(false), VertInsMaterialNum(0), VertInsThickness(0.0254), VertInsDepth(0.0),
+              XWallIndex(0), YFloorIndex(0), ZWallIndex(0), InsulationXIndex(0), InsulationYIndex(0), InsulationZIndex(0),
               ZoneCoupledSurfaceTemp(0.0), BasementWallTemp(0.0), BasementFloorTemp(0.0), NumDomainCells(0), NumGroundSurfCells(0),
               NumInsulationCells(0), NumSlabCells(0)
         {

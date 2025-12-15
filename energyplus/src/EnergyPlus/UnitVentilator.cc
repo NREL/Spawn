@@ -602,7 +602,7 @@ namespace UnitVentilator {
                     ShowContinueError(state, format("a heating coil is required for {}=\"{}\".", cAlphaFields(13), Alphas(13)));
                     ErrorsFound = true;
                 } // IF (.NOT. lAlphaBlanks(15)) THEN - from the start of heating coil information
-            }     // is option both or heating only
+            } // is option both or heating only
 
             if (unitVent.CoilOption == CoilsUsed::Both || unitVent.CoilOption == CoilsUsed::Cooling) {
                 if (!lAlphaBlanks(18)) {
@@ -644,7 +644,9 @@ namespace UnitVentilator {
                         } else {
                             if (unitVent.CCoilType != CoolCoilType::HXAssisted) {
                                 WaterCoils::CoilModel coilModel = WaterCoils::CoilModel::CoolingSimple;
-                                if (unitVent.CCoilType == CoolCoilType::Detailed) coilModel = WaterCoils::CoilModel::CoolingDetailed;
+                                if (unitVent.CCoilType == CoolCoilType::Detailed) {
+                                    coilModel = WaterCoils::CoilModel::CoolingDetailed;
+                                }
                                 unitVent.CCoil_Index = WaterCoils::GetCompIndex(state, coilModel, unitVent.CCoilName);
                                 unitVent.ColdControlNode = state.dataWaterCoils->WaterCoil(unitVent.CCoil_Index).WaterInletNodeNum;
                                 unitVent.MaxVolColdWaterFlow = state.dataWaterCoils->WaterCoil(unitVent.CCoil_Index).MaxWaterVolFlowRate;
@@ -769,7 +771,7 @@ namespace UnitVentilator {
                         ErrorsFound = true;
                     }
 
-                    // check that air teminal mixer outlet node is the same as a zone inlet node.
+                    // check that air terminal mixer outlet node is the same as a zone inlet node.
                     ZoneNodeNotFound = true;
                     for (int NodeNum = 1; NodeNum <= state.dataZoneEquip->ZoneEquipConfig(unitVent.ZonePtr).NumInletNodes; ++NodeNum) {
                         if (unitVent.ATMixerOutNode == state.dataZoneEquip->ZoneEquipConfig(unitVent.ZonePtr).InletNode(NodeNum)) {
@@ -875,7 +877,9 @@ namespace UnitVentilator {
         lAlphaBlanks.deallocate();
         lNumericBlanks.deallocate();
 
-        if (ErrorsFound) ShowFatalError(state, format("{}Errors found in input.", RoutineName));
+        if (ErrorsFound) {
+            ShowFatalError(state, format("{}Errors found in input.", RoutineName));
+        }
 
         // Setup Report variables for the Unit Ventilators, CurrentModuleObject='ZoneHVAC:UnitVentilator'
         for (int UnitVentNum = 1; UnitVentNum <= state.dataUnitVentilators->NumOfUnitVents; ++UnitVentNum) {
@@ -943,7 +947,7 @@ namespace UnitVentilator {
             SetupOutputVariable(state,
                                 "Zone Unit Ventilator Fan Availability Status",
                                 Constant::Units::None,
-                                (int &)unitVent.availStatus,
+                                unitVent.availStatus,
                                 OutputProcessor::TimeStepType::System,
                                 OutputProcessor::StoreType::Average,
                                 unitVent.Name);
@@ -1042,8 +1046,9 @@ namespace UnitVentilator {
 
                 unitVent.ColdCoilOutNodeNum = DataPlant::CompData::getPlantComponent(state, unitVent.CWPlantLoc).NodeNumOut;
             } else {
-                if (unitVent.CCoilPresent)
+                if (unitVent.CCoilPresent) {
                     ShowFatalError(state, format("InitUnitVentilator: Unit={}, invalid cooling coil type. Program terminated.", unitVent.Name));
+                }
             }
             state.dataUnitVentilators->MyPlantScanFlag(UnitVentNum) = false;
         } else if (state.dataUnitVentilators->MyPlantScanFlag(UnitVentNum) && !state.dataGlobal->AnyPlantInModel) {
@@ -1053,8 +1058,9 @@ namespace UnitVentilator {
         if (!state.dataUnitVentilators->ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
             state.dataUnitVentilators->ZoneEquipmentListChecked = true;
             for (int Loop = 1; Loop <= state.dataUnitVentilators->NumOfUnitVents; ++Loop) {
-                if (DataZoneEquipment::CheckZoneEquipmentList(state, "ZoneHVAC:UnitVentilator", state.dataUnitVentilators->UnitVent(Loop).Name))
+                if (DataZoneEquipment::CheckZoneEquipmentList(state, "ZoneHVAC:UnitVentilator", state.dataUnitVentilators->UnitVent(Loop).Name)) {
                     continue;
+                }
                 ShowSevereError(
                     state,
                     format("InitUnitVentilator: Unit=[UNIT VENTILATOR,{}] is not on any ZoneHVAC:EquipmentList.  It will not be simulated.",
@@ -1136,7 +1142,9 @@ namespace UnitVentilator {
             state.dataUnitVentilators->MyEnvrnFlag(UnitVentNum) = false;
         } // ...end start of environment inits
 
-        if (!state.dataGlobal->BeginEnvrnFlag) state.dataUnitVentilators->MyEnvrnFlag(UnitVentNum) = true;
+        if (!state.dataGlobal->BeginEnvrnFlag) {
+            state.dataUnitVentilators->MyEnvrnFlag(UnitVentNum) = true;
+        }
 
         // These initializations are done every iteration...
 
@@ -2565,8 +2573,9 @@ namespace UnitVentilator {
                                     CalcUnitVentilatorComponents(state, UnitVentNum, FirstHVACIteration, QUnitOut, fanOp, PartLoadRatio);
                                     if (state.dataUnitVentilators->QZnReq) {
                                         return (QUnitOut - state.dataUnitVentilators->QZnReq) / state.dataUnitVentilators->QZnReq;
-                                    } else
+                                    } else {
                                         return 0.0;
+                                    }
                                 };
                                 General::SolveRoot(state, 0.001, MaxIter, SolFlag, PartLoadFrac, f, 0.0, 1.0);
                             }
@@ -2940,7 +2949,9 @@ namespace UnitVentilator {
                                            (state.dataLoopNodes->Node(HCoilInAirNode).Temp - state.dataLoopNodes->Node(unitVent.AirInNode).Temp);
                         }
 
-                        if (QCoilReq < 0.0) QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        if (QCoilReq < 0.0) {
+                            QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        }
 
                         SteamCoils::SimulateSteamCoilComponents(state, unitVent.HCoilName, FirstHVACIteration, unitVent.HCoil_Index, QCoilReq);
                     } break;
@@ -2956,7 +2967,9 @@ namespace UnitVentilator {
                                            (state.dataLoopNodes->Node(HCoilInAirNode).Temp - state.dataLoopNodes->Node(unitVent.AirInNode).Temp);
                         }
 
-                        if (QCoilReq < 0.0) QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        if (QCoilReq < 0.0) {
+                            QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        }
 
                         HeatingCoils::SimulateHeatingCoilComponents(state, unitVent.HCoilName, FirstHVACIteration, QCoilReq, unitVent.HCoil_Index);
                     } break;
@@ -3024,7 +3037,9 @@ namespace UnitVentilator {
                             mdot = unitVent.MaxHotWaterFlow * PartLoadFrac;
                         }
 
-                        if (QCoilReq < 0.0) QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        if (QCoilReq < 0.0) {
+                            QCoilReq = 0.0; // a heating coil can only heat, not cool
+                        }
                         PlantUtilities::SetComponentFlowRate(state, mdot, unitVent.HotControlNode, unitVent.HotCoilOutNodeNum, unitVent.HWplantLoc);
                         WaterCoils::SimulateWaterCoilComponents(
                             state, unitVent.HCoilName, FirstHVACIteration, unitVent.HCoil_Index, QCoilReq, fanOp, PartLoadFrac);
@@ -3042,7 +3057,9 @@ namespace UnitVentilator {
                             mdot = unitVent.MaxHotSteamFlow * PartLoadFrac;
                         }
 
-                        if (QCoilReq < 0.0) QCoilReq = 0.0;
+                        if (QCoilReq < 0.0) {
+                            QCoilReq = 0.0;
+                        }
                         PlantUtilities::SetComponentFlowRate(state, mdot, unitVent.HotControlNode, unitVent.HotCoilOutNodeNum, unitVent.HWplantLoc);
                         SteamCoils::SimulateSteamCoilComponents(
                             state, unitVent.HCoilName, FirstHVACIteration, unitVent.HCoil_Index, QCoilReq, _, fanOp, PartLoadFrac);
@@ -3058,7 +3075,9 @@ namespace UnitVentilator {
                                        state.dataLoopNodes->Node(HCoilInAirNode).MassFlowRate * CpAirZn *
                                            (state.dataLoopNodes->Node(HCoilInAirNode).Temp - state.dataLoopNodes->Node(unitVent.AirInNode).Temp);
                         }
-                        if (QCoilReq < 0.0) QCoilReq = 0.0;
+                        if (QCoilReq < 0.0) {
+                            QCoilReq = 0.0;
+                        }
                         HeatingCoils::SimulateHeatingCoilComponents(
                             state, unitVent.HCoilName, FirstHVACIteration, QCoilReq, unitVent.HCoil_Index, _, _, fanOp, PartLoadFrac);
                     } break;

@@ -231,6 +231,7 @@ TEST_F(EnergyPlusFixture, HXAssistCCUnitarySystem_VStest1)
 
         "  Coil:Cooling:DX:VariableSpeed,",
         "    Main Cooling Coil 1,    !- Name",
+        "    ,                       !- Availability Schedule Name",
         "    Heat Recovery Supply Outlet,  !- Indoor Air Inlet Node Name",
         "    Heat Recovery Exhuast Inlet Node,  !- Indoor Air Outlet Node Name",
         "    1,                       !- Number of Speeds {dimensionless}",
@@ -468,7 +469,7 @@ TEST_F(EnergyPlusFixture, HXAssistCCUnitarySystem_VStest1)
     OutletNode = thisSys->AirOutNode;
     ControlZoneNum = thisSys->NodeNumOfControlledZone;
 
-    // set up unitary system inlet condtions
+    // set up unitary system inlet conditions
     state->dataLoopNodes->Node(InletNode).Temp = 26.666667;             // AHRI condition 80F dry-bulb temp
     state->dataLoopNodes->Node(InletNode).HumRat = 0.01117049542334198; // AHRI condition at 80F DB/67F WB lb/lb or kg/kg
     state->dataLoopNodes->Node(InletNode).Enthalpy =

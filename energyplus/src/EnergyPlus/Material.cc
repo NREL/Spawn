@@ -147,10 +147,6 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
     Real64 TransmittivityVis; // Glass transmittivity, visible
     Real64 DenomRGas;         // Denominator for WindowGas calculations of NominalR
     Real64 Openness;          // insect screen openness fraction = (1-d/s)^2
-    Real64 minAngValue;       // minimum value of angle
-    Real64 maxAngValue;       // maximum value of angle
-    Real64 minLamValue;       // minimum value of wavelength
-    Real64 maxLamValue;       // maximum value of wavelength
 
     // Added TH 1/9/2009 to read the thermochromic glazings
 
@@ -471,7 +467,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
         mat->GlassTransDirtFactor = s_ipsc->rNumericArgs(12);
         mat->YoungModulus = s_ipsc->rNumericArgs(13);
         mat->PoissonsRatio = s_ipsc->rNumericArgs(14);
-        if (s_ipsc->rNumericArgs(12) == 0.0) mat->GlassTransDirtFactor = 1.0;
+        if (s_ipsc->rNumericArgs(12) == 0.0) {
+            mat->GlassTransDirtFactor = 1.0;
+        }
         mat->AbsorpThermal = mat->AbsorpThermalBack;
 
         if (mat->Conductivity > 0.0) {
@@ -615,29 +613,28 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             if (s_ipsc->lAlphaFieldBlanks(5)) {
                 ErrorsFound = true;
                 ShowSevereEmptyField(state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaFieldNames(2), "SpectralAndAngle");
-            } else if ((mat->GlassSpecAngTransDataPtr = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(5))) == 0) {
+            } else if ((mat->GlassSpecAngTransCurve = Curve::GetCurve(state, s_ipsc->cAlphaArgs(5))) == nullptr) {
                 ErrorsFound = true;
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5));
+            } else if (mat->GlassSpecAngTransCurve->numDims != 2) {
+                Curve::ShowSevereCurveDims(state, eoh, s_ipsc->cAlphaFieldNames(5), s_ipsc->cAlphaArgs(5), "2", mat->GlassSpecAngTransCurve->numDims);
+                ErrorsFound = true;
             } else {
-                ErrorsFound |= Curve::CheckCurveDims(state,
-                                                     mat->GlassSpecAngTransDataPtr, // Curve index
-                                                     {2},                           // Valid dimensions
-                                                     routineName,                   // Routine name
-                                                     s_ipsc->cCurrentModuleObject,  // Object Type
-                                                     mat->Name,                     // Object Name
-                                                     s_ipsc->cAlphaFieldNames(5));  // Field Name
+                Real64 minAng = mat->GlassSpecAngTransCurve->inputLimits[0].min;
+                Real64 maxAng = mat->GlassSpecAngTransCurve->inputLimits[0].max;
+                Real64 minLam = mat->GlassSpecAngTransCurve->inputLimits[1].min;
+                Real64 maxLam = mat->GlassSpecAngTransCurve->inputLimits[1].max;
 
-                GetCurveMinMaxValues(state, mat->GlassSpecAngTransDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
-                if (minAngValue > 1.0e-6) {
+                if (minAng > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                     format("{} requires the minimum value = 0.0 in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
 
-                if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
+                if (std::abs(maxAng - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -646,16 +643,16 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                                             s_ipsc->cAlphaArgs(5)));
                 }
 
-                if (minLamValue < 0.1) {
+                if (minLam < 0.1) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                     format("{} requires the minimum value = 0.1 micron in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
 
-                if (maxLamValue > 4.0) {
+                if (maxLam > 4.0) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -668,28 +665,26 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             if (s_ipsc->lAlphaFieldBlanks(6)) {
                 ErrorsFound = true;
                 ShowSevereEmptyField(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaFieldNames(2), "SpectralAndAngle");
-            } else if ((mat->GlassSpecAngFRefleDataPtr = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(6))) == 0) {
+            } else if ((mat->GlassSpecAngFReflCurve = Curve::GetCurve(state, s_ipsc->cAlphaArgs(6))) == nullptr) {
                 ErrorsFound = true;
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6));
+            } else if (mat->GlassSpecAngFReflCurve->numDims != 2) {
+                Curve::ShowSevereCurveDims(state, eoh, s_ipsc->cAlphaFieldNames(6), s_ipsc->cAlphaArgs(6), "2", mat->GlassSpecAngFReflCurve->numDims);
+                ErrorsFound = true;
             } else {
-                ErrorsFound |= Curve::CheckCurveDims(state,
-                                                     mat->GlassSpecAngFRefleDataPtr, // Curve index
-                                                     {2},                            // Valid dimensions
-                                                     routineName,                    // Routine name
-                                                     s_ipsc->cCurrentModuleObject,   // Object Type
-                                                     mat->Name,                      // Object Name
-                                                     s_ipsc->cAlphaFieldNames(6));   // Field Name
-
-                GetCurveMinMaxValues(state, mat->GlassSpecAngFRefleDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
-                if (minAngValue > 1.0e-6) {
+                Real64 minAng = mat->GlassSpecAngFReflCurve->inputLimits[0].min;
+                Real64 maxAng = mat->GlassSpecAngFReflCurve->inputLimits[0].max;
+                Real64 minLam = mat->GlassSpecAngFReflCurve->inputLimits[1].min;
+                Real64 maxLam = mat->GlassSpecAngFReflCurve->inputLimits[1].max;
+                if (minAng > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                     format("{} requires the minimum value = 0.0 in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
+                if (std::abs(maxAng - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -697,15 +692,15 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (minLamValue < 0.1) {
+                if (minLam < 0.1) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                     format("{} requires the minimum value = 0.1 micron in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (maxLamValue > 4.0) {
+                if (maxLam > 4.0) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -718,28 +713,26 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             if (s_ipsc->lAlphaFieldBlanks(7)) {
                 ErrorsFound = true;
                 ShowSevereEmptyField(state, eoh, s_ipsc->cAlphaFieldNames(7), s_ipsc->cAlphaFieldNames(2), "SpectralAndAngle");
-            } else if ((mat->GlassSpecAngBRefleDataPtr = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(7))) == 0) {
+            } else if ((mat->GlassSpecAngBReflCurve = Curve::GetCurve(state, s_ipsc->cAlphaArgs(7))) == nullptr) {
                 ErrorsFound = true;
                 ShowSevereItemNotFound(state, eoh, s_ipsc->cAlphaFieldNames(7), s_ipsc->cAlphaArgs(7));
+            } else if (mat->GlassSpecAngBReflCurve->numDims != 2) {
+                Curve::ShowSevereCurveDims(state, eoh, s_ipsc->cAlphaFieldNames(7), s_ipsc->cAlphaArgs(7), "2", mat->GlassSpecAngBReflCurve->numDims);
+                ErrorsFound = true;
             } else {
-                ErrorsFound |= Curve::CheckCurveDims(state,
-                                                     mat->GlassSpecAngBRefleDataPtr, // Curve index
-                                                     {2},                            // Valid dimensions
-                                                     routineName,                    // Routine name
-                                                     s_ipsc->cCurrentModuleObject,   // Object Type
-                                                     mat->Name,                      // Object Name
-                                                     s_ipsc->cAlphaFieldNames(7));   // Field Name
-
-                GetCurveMinMaxValues(state, mat->GlassSpecAngBRefleDataPtr, minAngValue, maxAngValue, minLamValue, maxLamValue);
-                if (minAngValue > 1.0e-6) {
+                Real64 minAng = mat->GlassSpecAngFReflCurve->inputLimits[0].min;
+                Real64 maxAng = mat->GlassSpecAngFReflCurve->inputLimits[0].max;
+                Real64 minLam = mat->GlassSpecAngFReflCurve->inputLimits[1].min;
+                Real64 maxLam = mat->GlassSpecAngFReflCurve->inputLimits[1].max;
+                if (minAng > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.0 in the entered table name={}",
+                                     format("{} requires the minimum value = 0.0 in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (std::abs(maxAngValue - 90.0) > 1.0e-6) {
+                if (std::abs(maxAng - 90.0) > 1.0e-6) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -747,15 +740,15 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (minLamValue < 0.1) {
+                if (minLam < 0.1) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
-                                     format("{} requires the minumum value = 0.1 micron in the entered table name={}",
+                                     format("{} requires the minimum value = 0.1 micron in the entered table name={}",
                                             s_ipsc->cAlphaFieldNames(5),
                                             s_ipsc->cAlphaArgs(5)));
                 }
-                if (maxLamValue > 4.0) {
+                if (maxLam > 4.0) {
                     ErrorsFound = true;
                     ShowSevereCustom(state,
                                      eoh,
@@ -829,7 +822,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
         mat->AbsorpThermalBack = s_ipsc->rNumericArgs(7);
         mat->Conductivity = s_ipsc->rNumericArgs(8);
         mat->GlassTransDirtFactor = s_ipsc->rNumericArgs(9);
-        if (s_ipsc->rNumericArgs(9) == 0.0) mat->GlassTransDirtFactor = 1.0;
+        if (s_ipsc->rNumericArgs(9) == 0.0) {
+            mat->GlassTransDirtFactor = 1.0;
+        }
         mat->AbsorpThermal = mat->AbsorpThermalBack;
 
         if (mat->Conductivity > 0.0) {
@@ -920,7 +915,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
         mat->TAR.IR.Ft.Emi = s_ipsc->rNumericArgs(24);
         mat->TAR.IR.Bk.Emi = s_ipsc->rNumericArgs(25);
         mat->Resistance = s_ipsc->rNumericArgs(26);
-        if (mat->Resistance <= 0.0) mat->Resistance = 0.158; // equivalent to single pane of 1/4" inch standard glass
+        if (mat->Resistance <= 0.0) {
+            mat->Resistance = 0.158; // equivalent to single pane of 1/4" inch standard glass
+        }
         // Assumes thermal emissivity is the same as thermal absorptance
         mat->AbsorpThermalFront = mat->TAR.IR.Ft.Tra;
         mat->AbsorpThermalBack = mat->TAR.IR.Bk.Tra;
@@ -2156,7 +2153,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             mat->slatAngleType = static_cast<SlatAngleType>(getEnumValue(slatAngleTypeNamesUC, Util::makeUPPER(s_ipsc->cAlphaArgs(3))));
         }
         if (mat->SlatWidth < mat->SlatSeparation) {
-            ShowWarningError(state, format("{}=\"{}\", Slat Seperation/Width", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowWarningError(state, format("{}=\"{}\", Slat Separation/Width", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state,
                               format("{} [{:.2R}] is less than {} [{:.2R}].",
                                      s_ipsc->cNumericFieldNames(1),
@@ -2166,7 +2163,7 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             ShowContinueError(state, "This will allow direct beam to be transmitted when Slat angle = 0.");
         }
         if (mat->SlatSeparation < 0.001) {
-            ShowWarningError(state, format("{}=\"{}\", Slat Seperation", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
+            ShowWarningError(state, format("{}=\"{}\", Slat Separation", s_ipsc->cCurrentModuleObject, s_ipsc->cAlphaArgs(1)));
             ShowContinueError(state, format("{} [{:.2R}]. Slate spacing must be > 0.0", s_ipsc->cNumericFieldNames(2), mat->SlatSeparation));
             ShowContinueError(state,
                               "...Setting slate spacing to default value of 0.025 m and "
@@ -2499,7 +2496,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             auto itObj = instances2.begin();
             // Can't use find here because epJSON keys are not upper-cased
             for (; itObj != instances2.end(); ++itObj) {
-                if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(3)) break;
+                if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(3)) {
+                    break;
+                }
             }
 
             if (itObj == instances2.end()) {
@@ -2527,7 +2526,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             auto itObj = instances3.begin();
             // Can't use find here because epJSON keys are not upper-cased
             for (; itObj != instances3.end(); ++itObj) {
-                if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(4)) break;
+                if (Util::makeUPPER(itObj.key()) == s_ipsc->cAlphaArgs(4)) {
+                    break;
+                }
             }
 
             if (itObj == instances3.end()) {
@@ -2708,7 +2709,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
             }
         }
 
-        if (ErrorsFound) ShowFatalError(state, "Error in complex fenestration material input.");
+        if (ErrorsFound) {
+            ShowFatalError(state, "Error in complex fenestration material input.");
+        }
     }
 
     bool DoReport = false;
@@ -2757,7 +2760,9 @@ void GetMaterialData(EnergyPlusData &state, bool &ErrorsFound) // set to true if
     if (state.dataGlobal->AnyEnergyManagementSystemInModel) { // setup surface property EMS actuators
 
         for (auto *mat : s_mat->materials) {
-            if (mat->group != Group::Regular) continue;
+            if (mat->group != Group::Regular) {
+                continue;
+            }
 
             SetupEMSActuator(state,
                              "Material",
@@ -2842,9 +2847,9 @@ void GetVariableAbsorptanceInput(EnergyPlusData &state, bool &errorsFound)
         mat->absorpVarCtrlSignal = VariableAbsCtrlSignal::SurfaceTemperature; // default value
         mat->absorpVarCtrlSignal = static_cast<VariableAbsCtrlSignal>(getEnumValue(variableAbsCtrlSignalNamesUC, s_ipsc->cAlphaArgs(3)));
 
-        mat->absorpThermalVarFuncIdx = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(4));
+        mat->absorpThermalVarCurve = Curve::GetCurve(state, s_ipsc->cAlphaArgs(4));
         mat->absorpThermalVarSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(5));
-        mat->absorpSolarVarFuncIdx = Curve::GetCurveIndex(state, s_ipsc->cAlphaArgs(6));
+        mat->absorpSolarVarCurve = Curve::GetCurve(state, s_ipsc->cAlphaArgs(6));
         mat->absorpSolarVarSched = Sched::GetSchedule(state, s_ipsc->cAlphaArgs(7));
         if (mat->absorpVarCtrlSignal == VariableAbsCtrlSignal::Scheduled) {
             if ((mat->absorpThermalVarSched == nullptr) && (mat->absorpSolarVarSched == nullptr)) {
@@ -2856,7 +2861,7 @@ void GetVariableAbsorptanceInput(EnergyPlusData &state, bool &errorsFound)
                 errorsFound = true;
                 return;
             }
-            if ((mat->absorpThermalVarFuncIdx > 0) || (mat->absorpSolarVarFuncIdx > 0)) {
+            if ((mat->absorpThermalVarCurve != nullptr) || (mat->absorpSolarVarCurve != nullptr)) {
                 ShowWarningError(state,
                                  format("{}: Control signal \"Scheduled\" is chosen. Thermal or solar absorptance function name is going to be "
                                         "ignored, for object {}",
@@ -2865,8 +2870,9 @@ void GetVariableAbsorptanceInput(EnergyPlusData &state, bool &errorsFound)
                 errorsFound = true;
                 return;
             }
+
         } else { // controlled by performance table or curve
-            if ((mat->absorpThermalVarFuncIdx == 0) && (mat->absorpSolarVarFuncIdx == 0)) {
+            if ((mat->absorpThermalVarCurve == nullptr) && (mat->absorpSolarVarCurve == nullptr)) {
                 ShowSevereError(state,
                                 format("{}: Non-schedule control signal is chosen but both thermal and solar absorptance table or curve are "
                                        "undefined, for object {}",
@@ -2920,7 +2926,9 @@ void GetWindowGlassSpectralData(EnergyPlusData &state, bool &ErrorsFound) // set
     s_ipsc->cCurrentModuleObject = "MaterialProperty:GlazingSpectralData";
     s_mat->NumSpectralData = s_ip->getNumObjectsFound(state, s_ipsc->cCurrentModuleObject);
 
-    if (s_mat->NumSpectralData == 0) return;
+    if (s_mat->NumSpectralData == 0) {
+        return;
+    }
 
     s_mat->SpectralData.allocate(s_mat->NumSpectralData);
 
@@ -2975,7 +2983,9 @@ void GetWindowGlassSpectralData(EnergyPlusData &state, bool &ErrorsFound) // set
             specData.Trans(LamNum) = s_ipsc->rNumericArgs(4 * LamNum - 2);
             // Following is needed since angular calculation in subr TransAndReflAtPhi
             // fails for Trans = 0.0
-            if (specData.Trans(LamNum) < 0.001) specData.Trans(LamNum) = 0.001;
+            if (specData.Trans(LamNum) < 0.001) {
+                specData.Trans(LamNum) = 0.001;
+            }
             specData.ReflFront(LamNum) = s_ipsc->rNumericArgs(4 * LamNum - 1);
             specData.ReflBack(LamNum) = s_ipsc->rNumericArgs(4 * LamNum);
         }
@@ -3143,7 +3153,9 @@ void MaterialGlass::SetupSimpleWindowGlazingSystem(EnergyPlusData &state)
 
         this->Trans = ((this->SimpleWindowUfactor - 3.4) / (4.5 - 3.4)) * (TsolHiSide - TsolLowSide) + TsolLowSide;
     }
-    if (this->Trans < 0.0) this->Trans = 0.0;
+    if (this->Trans < 0.0) {
+        this->Trans = 0.0;
+    }
 
     // step 5.  determine solar reflectances
 
@@ -3249,8 +3261,12 @@ void CalcScreenTransmittance([[maybe_unused]] EnergyPlusData &state,
     // ************************************************************************************************
 
     // Now we need to normalize phi and theta to the 0 to Pi/2 range using reflection.
-    if (phi > Constant::PiOvr2) phi = Constant::Pi - phi;
-    if (theta > Constant::PiOvr2) theta = Constant::Pi - theta;
+    if (phi > Constant::PiOvr2) {
+        phi = Constant::Pi - phi;
+    }
+    if (theta > Constant::PiOvr2) {
+        theta = Constant::Pi - theta;
+    }
 
     // calculate compliment of relative solar azimuth
     Real64 Beta = Constant::PiOvr2 - theta;
@@ -3397,13 +3413,19 @@ void GetRelativePhiTheta(Real64 phiWin, Real64 thetaWin, Vector3<Real64> const &
 void NormalizePhiTheta(Real64 &phi, Real64 &theta)
 {
 
-    while (phi > 2 * Constant::Pi)
+    while (phi > 2 * Constant::Pi) {
         phi -= 2 * Constant::Pi;
-    if (phi > Constant::Pi) phi = 2 * Constant::Pi - phi;
+    }
+    if (phi > Constant::Pi) {
+        phi = 2 * Constant::Pi - phi;
+    }
 
-    while (theta > 2 * Constant::Pi)
+    while (theta > 2 * Constant::Pi) {
         theta -= 2 * Constant::Pi;
-    if (theta > Constant::Pi) theta = 2 * Constant::Pi - theta;
+    }
+    if (theta > Constant::Pi) {
+        theta = 2 * Constant::Pi - theta;
+    }
 } // NormalizePhiTheta()
 
 void GetPhiThetaIndices(Real64 phi, Real64 theta, Real64 dPhi, Real64 dTheta, int &iPhi1, int &iPhi2, int &iTheta1, int &iTheta2)
@@ -3434,7 +3456,9 @@ Real64 MaterialBlind::BeamBeamTrans(Real64 const ProfAng, // Solar profile angle
     Real64 CosProfAng = std::cos(ProfAng); // Cosine of profile angle
     Real64 gamma = SlatAng - ProfAng;
     Real64 wbar = this->SlatSeparation;
-    if (CosProfAng != 0.0) wbar = this->SlatWidth * std::cos(gamma) / CosProfAng;
+    if (CosProfAng != 0.0) {
+        wbar = this->SlatWidth * std::cos(gamma) / CosProfAng;
+    }
     Real64 BeamBeamTrans = max(0.0, 1.0 - std::abs(wbar / this->SlatSeparation));
 
     if (BeamBeamTrans > 0.0) {
@@ -3447,9 +3471,10 @@ Real64 MaterialBlind::BeamBeamTrans(Real64 const ProfAng, // Solar profile angle
         Real64 fEdge1 = 0.0;
         if (std::abs(std::sin(gamma)) > 0.01) {
             if ((SlatAng > 0.0 && SlatAng <= Constant::PiOvr2 && ProfAng <= SlatAng) ||
-                (SlatAng > Constant::PiOvr2 && SlatAng <= Constant::Pi && ProfAng > -(Constant::Pi - SlatAng)))
+                (SlatAng > Constant::PiOvr2 && SlatAng <= Constant::Pi && ProfAng > -(Constant::Pi - SlatAng))) {
                 fEdge1 = this->SlatThickness * std::abs(std::sin(gamma)) /
                          ((this->SlatSeparation + this->SlatThickness / std::abs(std::sin(SlatAng))) * CosProfAng);
+            }
             fEdge = min(1.0, std::abs(fEdge1));
         }
         BeamBeamTrans *= (1.0 - fEdge);

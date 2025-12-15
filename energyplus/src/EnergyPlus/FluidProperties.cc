@@ -508,8 +508,6 @@ namespace Fluid {
 
     void InitConstantFluidPropertiesData(EnergyPlusData &state)
     {
-        constexpr std::string_view routineName = "InitConstantFluidPropertiesData";
-
         auto &df = state.dataFluid;
         bool ErrorsFound = false;
 
@@ -657,17 +655,21 @@ namespace Fluid {
 #ifdef PERFORMANCE_OPT
         // This is a speed optimization.  Maybe.
         water->CpTempRatios.allocate(water->NumCpTempPoints);
-        for (int i = 1; i < water->NumCpTempPoints; ++i)
+        for (int i = 1; i < water->NumCpTempPoints; ++i) {
             water->CpTempRatios(i) = (water->CpValues(i + 1) - water->CpValues(i)) / (water->CpTemps(i + 1) - water->CpTemps(i));
+        }
         water->RhoTempRatios.allocate(water->NumRhoTempPoints);
-        for (int i = 1; i < water->NumRhoTempPoints; ++i)
+        for (int i = 1; i < water->NumRhoTempPoints; ++i) {
             water->RhoTempRatios(i) = (water->RhoValues(i + 1) - water->RhoValues(i)) / (water->RhoTemps(i + 1) - water->RhoTemps(i));
+        }
         water->CondTempRatios.allocate(water->NumCondTempPoints);
-        for (int i = 1; i < water->NumCondTempPoints; ++i)
+        for (int i = 1; i < water->NumCondTempPoints; ++i) {
             water->CondTempRatios(i) = (water->CondValues(i + 1) - water->CondValues(i)) / (water->CondTemps(i + 1) - water->CondTemps(i));
+        }
         water->ViscTempRatios.allocate(water->NumViscTempPoints);
-        for (int i = 1; i < water->NumCondTempPoints; ++i)
+        for (int i = 1; i < water->NumCondTempPoints; ++i) {
             water->ViscTempRatios(i) = (water->ViscValues(i + 1) - water->ViscValues(i)) / (water->ViscTemps(i + 1) - water->ViscTemps(i));
+        }
 #endif // PERFORMANCE_OPT
 
     } // InitConstantFluidPropertiesData()
@@ -1130,7 +1132,9 @@ namespace Fluid {
 
             refrig->supTempArrayName = Alphas(3);
 
-            if (Alphas(2) != "ENTHALPY") continue;
+            if (Alphas(2) != "ENTHALPY") {
+                continue;
+            }
 
             int supTempArrayNum = Util::FindItemInList(refrig->supTempArrayName, FluidTemps);
             if (supTempArrayNum == 0) {
@@ -1159,7 +1163,9 @@ namespace Fluid {
 
         // Sort and allocate pressure point arrays
         for (auto *refrig : df->refrigs) {
-            if (refrig->Name == "STEAM") continue;
+            if (refrig->Name == "STEAM") {
+                continue;
+            }
 
             std::sort(refrig->SupPress.begin(), refrig->SupPress.end());
 
@@ -1225,8 +1231,9 @@ namespace Fluid {
         } // for (InData)
 
         if (!ErrorsFound) {
-            for (auto *refrig : df->refrigs)
+            for (auto *refrig : df->refrigs) {
                 refrig->setTempLimits(state, ErrorsFound);
+            }
         }
 
         // Ethylene and Propylene are available
@@ -1250,8 +1257,9 @@ namespace Fluid {
         ethylene->CpConcs = DefaultGlycolConcs;
 
         ethylene->CpValues.allocate(ethylene->NumCpConcPoints, ethylene->NumCpTempPoints); // Specific heat data values
-        for (int i = 1; i <= ethylene->NumCpConcPoints; ++i)
+        for (int i = 1; i <= ethylene->NumCpConcPoints; ++i) {
             ethylene->CpValues(i, {1, ethylene->NumCpTempPoints}) = DefaultEthGlyCpData[i - 1];
+        }
 
         // Density
         ethylene->RhoDataPresent = true;
@@ -1265,8 +1273,9 @@ namespace Fluid {
         ethylene->RhoConcs = DefaultGlycolConcs;
 
         ethylene->RhoValues.allocate(ethylene->NumRhoConcPoints, ethylene->NumRhoTempPoints); // Density data values
-        for (int i = 1; i <= ethylene->NumRhoConcPoints; ++i)
+        for (int i = 1; i <= ethylene->NumRhoConcPoints; ++i) {
             ethylene->RhoValues(i, {1, ethylene->NumRhoTempPoints}) = DefaultEthGlyRhoData[i - 1];
+        }
 
         // Conductivity
         ethylene->CondDataPresent = true;
@@ -1280,8 +1289,9 @@ namespace Fluid {
         ethylene->CondConcs = DefaultGlycolConcs;
 
         ethylene->CondValues.allocate(ethylene->NumCondConcPoints, ethylene->NumCondTempPoints); // Density data values
-        for (int i = 1; i <= ethylene->NumCondConcPoints; ++i)
+        for (int i = 1; i <= ethylene->NumCondConcPoints; ++i) {
             ethylene->CondValues(i, {1, ethylene->NumCondTempPoints}) = DefaultEthGlyCondData[i - 1];
+        }
 
         // Viscosity
         ethylene->ViscDataPresent = true;
@@ -1295,8 +1305,9 @@ namespace Fluid {
         ethylene->ViscConcs = DefaultGlycolConcs;
 
         ethylene->ViscValues.allocate(ethylene->NumViscConcPoints, ethylene->NumViscTempPoints); // Density data values
-        for (int i = 1; i <= ethylene->NumViscConcPoints; ++i)
+        for (int i = 1; i <= ethylene->NumViscConcPoints; ++i) {
             ethylene->ViscValues(i, {1, ethylene->NumViscTempPoints}) = DefaultEthGlyViscData[i - 1];
+        }
 
         // Propylene
         auto *propylene = GetGlycolRaw(state, "PROPYLENEGLYCOL");
@@ -1320,8 +1331,9 @@ namespace Fluid {
         propylene->CpConcs = DefaultGlycolConcs;
 
         propylene->CpValues.allocate(propylene->NumCpConcPoints, propylene->NumCpTempPoints); // Specific heat data values
-        for (int i = 1; i <= propylene->NumCpConcPoints; ++i)
+        for (int i = 1; i <= propylene->NumCpConcPoints; ++i) {
             propylene->CpValues(i, {1, propylene->NumCpTempPoints}) = DefaultPropGlyCpData[i - 1];
+        }
 
         // Density
         propylene->RhoDataPresent = true;
@@ -1335,8 +1347,9 @@ namespace Fluid {
         propylene->RhoConcs = DefaultGlycolConcs;
 
         propylene->RhoValues.allocate(propylene->NumRhoConcPoints, propylene->NumRhoTempPoints); // Density data values
-        for (int i = 1; i <= propylene->NumRhoConcPoints; ++i)
+        for (int i = 1; i <= propylene->NumRhoConcPoints; ++i) {
             propylene->RhoValues(i, {1, propylene->NumRhoTempPoints}) = DefaultPropGlyRhoData[i - 1];
+        }
 
         // Conductivity
         propylene->CondDataPresent = true;
@@ -1350,8 +1363,9 @@ namespace Fluid {
         propylene->CondConcs = DefaultGlycolConcs;
 
         propylene->CondValues.allocate(propylene->NumCondConcPoints, propylene->NumCondTempPoints); // Density data values
-        for (int i = 1; i <= propylene->NumCondConcPoints; ++i)
+        for (int i = 1; i <= propylene->NumCondConcPoints; ++i) {
             propylene->CondValues(i, {1, propylene->NumCondTempPoints}) = DefaultPropGlyCondData[i - 1];
+        }
 
         // Viscosity
         propylene->ViscDataPresent = true;
@@ -1365,8 +1379,9 @@ namespace Fluid {
         propylene->ViscConcs = DefaultGlycolConcs;
 
         propylene->ViscValues.allocate(propylene->NumViscConcPoints, propylene->NumViscTempPoints); // Density data values
-        for (int i = 1; i <= propylene->NumViscConcPoints; ++i)
+        for (int i = 1; i <= propylene->NumViscConcPoints; ++i) {
             propylene->ViscValues(i, {1, propylene->NumViscTempPoints}) = DefaultPropGlyViscData[i - 1];
+        }
 
         // *************** RAW GLYCOLS ***************
         // Go through each glycol found in the fluid names statement and read in the data
@@ -1374,7 +1389,7 @@ namespace Fluid {
         // be produced.
 
         CurrentModuleObject = "FluidProperties:Concentration";
-        for (int InData = 1; InData <= NumOfGlyFluidPropArrays; ++InData) { // check temperatures given for specific heat are consistant
+        for (int InData = 1; InData <= NumOfGlyFluidPropArrays; ++InData) { // check temperatures given for specific heat are consistent
             state.dataInputProcessing->inputProcessor->getObjectItem(state,
                                                                      CurrentModuleObject,
                                                                      InData,
@@ -1388,7 +1403,9 @@ namespace Fluid {
                                                                      cAlphaFields,
                                                                      cNumericFields);
 
-            if (Alphas(1) == "WATER") continue; // Is this the right thing to do?
+            if (Alphas(1) == "WATER") {
+                continue; // Is this the right thing to do?
+            }
 
             ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
 
@@ -1559,7 +1576,9 @@ namespace Fluid {
                                                                      cAlphaFields,
                                                                      cNumericFields);
 
-            if (Alphas(1) == "WATER") continue; // Is this the right thing to do?
+            if (Alphas(1) == "WATER") {
+                continue; // Is this the right thing to do?
+            }
 
             ErrorObjectHeader eoh{routineName, CurrentModuleObject, Alphas(1)};
             auto *glycolRaw = GetGlycolRaw(state, Alphas(1));
@@ -1797,18 +1816,22 @@ namespace Fluid {
 #ifdef PERFORMANCE_OPT
             // This is a speed optimization.  Maybe.
             glycol->CpTempRatios.allocate(glycol->NumCpTempPoints);
-            for (int i = 1; i < glycol->NumCpTempPoints; ++i)
+            for (int i = 1; i < glycol->NumCpTempPoints; ++i) {
                 glycol->CpTempRatios(i) = (glycol->CpValues(i + 1) - glycol->CpValues(i)) / (glycol->CpTemps(i + 1) - glycol->CpTemps(i));
+            }
             glycol->RhoTempRatios.allocate(glycol->NumRhoTempPoints);
-            for (int i = 1; i < glycol->NumRhoTempPoints; ++i)
+            for (int i = 1; i < glycol->NumRhoTempPoints; ++i) {
                 glycol->RhoTempRatios(i) = (glycol->RhoValues(i + 1) - glycol->RhoValues(i)) / (glycol->RhoTemps(i + 1) - glycol->RhoTemps(i));
+            }
             glycol->CondTempRatios.allocate(glycol->NumCondTempPoints);
-            for (int i = 1; i < glycol->NumCondTempPoints; ++i)
+            for (int i = 1; i < glycol->NumCondTempPoints; ++i) {
                 glycol->CondTempRatios(i) = (glycol->CondValues(i + 1) - glycol->CondValues(i)) / (glycol->CondTemps(i + 1) - glycol->CondTemps(i));
+            }
             glycol->ViscTempRatios.allocate(glycol->NumViscTempPoints);
-            for (int i = 1; i < glycol->NumCondTempPoints; ++i)
+            for (int i = 1; i < glycol->NumCondTempPoints; ++i) {
                 glycol->ViscTempRatios(i) = (glycol->ViscValues(i + 1) - glycol->ViscValues(i)) / (glycol->ViscTemps(i + 1) - glycol->ViscTemps(i));
-#endif    // PERFORMANCE_OPT
+            }
+#endif // PERFORMANCE_OPT
         } // for (Loop)
 
         FluidTemps.deallocate();
@@ -1824,13 +1847,25 @@ namespace Fluid {
             ShowFatalError(state, format("{}: Previous errors in input cause program termination.", routineName));
         }
 
-        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("REPORTGLYCOLS") > 0) df->DebugReportGlycols = true;
-        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("REPORTREFRIGERANTS") > 0) df->DebugReportRefrigerants = true;
-        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("INCREASEGLYCOLERRORLIMIT") > 0) df->GlycolErrorLimitTest += 10;
-        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("INCREASEREFRIGERANTERRORLIMIT") > 0) df->RefrigErrorLimitTest += 10;
+        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("REPORTGLYCOLS") > 0) {
+            df->DebugReportGlycols = true;
+        }
+        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("REPORTREFRIGERANTS") > 0) {
+            df->DebugReportRefrigerants = true;
+        }
+        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("INCREASEGLYCOLERRORLIMIT") > 0) {
+            df->GlycolErrorLimitTest += 10;
+        }
+        if (state.dataInputProcessing->inputProcessor->getNumSectionsFound("INCREASEREFRIGERANTERRORLIMIT") > 0) {
+            df->RefrigErrorLimitTest += 10;
+        }
 
-        if (df->DebugReportGlycols) ReportAndTestGlycols(state);
-        if (df->DebugReportRefrigerants) ReportAndTestRefrigerants(state);
+        if (df->DebugReportGlycols) {
+            ReportAndTestGlycols(state);
+        }
+        if (df->DebugReportRefrigerants) {
+            ReportAndTestRefrigerants(state);
+        }
     }
 
     //*****************************************************************************
@@ -1943,14 +1978,18 @@ namespace Fluid {
         if (this->CpDataPresent) {
             // check for lowest non-zero value by referencing temp data
             for (int IndexNum = 1; IndexNum <= this->NumCpTempPoints; ++IndexNum) {
-                if (this->CpValues(IndexNum) <= 0.0) continue;
+                if (this->CpValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->CpLowTempIndex = IndexNum;
                 this->CpLowTempValue = this->CpTemps(IndexNum);
                 break;
             }
             // check for highest non-zero value by referencing temp data
             for (int IndexNum = this->NumCpTempPoints; IndexNum >= 1; --IndexNum) {
-                if (this->CpValues(IndexNum) <= 0.0) continue;
+                if (this->CpValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->CpHighTempIndex = IndexNum;
                 this->CpHighTempValue = this->CpTemps(IndexNum);
                 break;
@@ -1960,14 +1999,18 @@ namespace Fluid {
         if (this->RhoDataPresent) {
             // check for lowest non-zero value by referencing temp data
             for (int IndexNum = 1; IndexNum <= this->NumRhoTempPoints; ++IndexNum) {
-                if (this->RhoValues(IndexNum) <= 0.0) continue;
+                if (this->RhoValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->RhoLowTempIndex = IndexNum;
                 this->RhoLowTempValue = this->RhoTemps(IndexNum);
                 break;
             }
             // check for highest non-zero value  by referencing temp data
             for (int IndexNum = this->NumRhoTempPoints; IndexNum >= 1; --IndexNum) {
-                if (this->RhoValues(IndexNum) <= 0.0) continue;
+                if (this->RhoValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->RhoHighTempIndex = IndexNum;
                 this->RhoHighTempValue = this->RhoTemps(IndexNum);
                 break;
@@ -1977,14 +2020,18 @@ namespace Fluid {
         if (this->CondDataPresent) {
             // check for lowest non-zero value by referencing temp data
             for (int IndexNum = 1; IndexNum <= this->NumCondTempPoints; ++IndexNum) {
-                if (this->CondValues(IndexNum) <= 0.0) continue;
+                if (this->CondValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->CondLowTempIndex = IndexNum;
                 this->CondLowTempValue = this->CondTemps(IndexNum);
                 break;
             }
             // check for highest non-zero value  by referencing temp data
             for (int IndexNum = this->NumCondTempPoints; IndexNum >= 1; --IndexNum) {
-                if (this->CondValues(IndexNum) <= 0.0) continue;
+                if (this->CondValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->CondHighTempIndex = IndexNum;
                 this->CondHighTempValue = this->CondTemps(IndexNum);
                 break;
@@ -1993,14 +2040,18 @@ namespace Fluid {
         if (this->ViscDataPresent) {
             // check for lowest non-zero value by referencing temp data
             for (int IndexNum = 1; IndexNum <= this->NumViscTempPoints; ++IndexNum) {
-                if (this->ViscValues(IndexNum) <= 0.0) continue;
+                if (this->ViscValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->ViscLowTempIndex = IndexNum;
                 this->ViscLowTempValue = this->ViscTemps(IndexNum);
                 break;
             }
             // check for highest non-zero value  by referencing temp data
             for (int IndexNum = this->NumViscTempPoints; IndexNum >= 1; --IndexNum) {
-                if (this->ViscValues(IndexNum) <= 0.0) continue;
+                if (this->ViscValues(IndexNum) <= 0.0) {
+                    continue;
+                }
                 this->ViscHighTempIndex = IndexNum;
                 this->ViscHighTempValue = this->ViscTemps(IndexNum);
                 break;
@@ -2042,7 +2093,9 @@ namespace Fluid {
         // Most properties requested (e.g., Specific Heat) must be > 0 but the tables may
         // be set up for symmetry and not be limited to just valid values.
         for (int IndexNum = 1; IndexNum <= this->NumPsPoints; ++IndexNum) {
-            if (this->PsValues(IndexNum) <= 0.0) continue;
+            if (this->PsValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->PsLowPresIndex = IndexNum;
             this->PsLowPresValue = this->PsValues(IndexNum);
             this->PsLowTempValue = this->PsTemps(IndexNum);
@@ -2050,7 +2103,9 @@ namespace Fluid {
             break;
         }
         for (int IndexNum = this->NumPsPoints; IndexNum >= 1; --IndexNum) {
-            if (this->PsValues(IndexNum) <= 0.0) continue;
+            if (this->PsValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->PsHighPresIndex = IndexNum;
             this->PsHighPresValue = this->PsValues(IndexNum);
             this->PsHighTempValue = this->PsTemps(IndexNum);
@@ -2058,73 +2113,97 @@ namespace Fluid {
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumHPoints; ++IndexNum) {
-            if (this->HfValues(IndexNum) <= 0.0) continue;
+            if (this->HfValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->HfLowTempValue = this->HfValues(IndexNum);
             this->HfLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumHPoints; IndexNum >= 1; --IndexNum) {
-            if (this->HfValues(IndexNum) <= 0.0) continue;
+            if (this->HfValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->HfHighTempValue = this->HfValues(IndexNum);
             this->HfHighTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumHPoints; ++IndexNum) {
-            if (this->HfgValues(IndexNum) <= 0.0) continue;
+            if (this->HfgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->HfgLowTempValue = this->HfgValues(IndexNum);
             this->HfgLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumHPoints; IndexNum >= 1; --IndexNum) {
-            if (this->HfgValues(IndexNum) <= 0.0) continue;
+            if (this->HfgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->HfgHighTempValue = this->HfgValues(IndexNum);
             this->HfgHighTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumCpPoints; ++IndexNum) {
-            if (this->CpfValues(IndexNum) <= 0.0) continue;
+            if (this->CpfValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->CpfLowTempValue = this->CpfValues(IndexNum);
             this->CpfLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumCpPoints; IndexNum >= 1; --IndexNum) {
-            if (this->CpfValues(IndexNum) <= 0.0) continue;
+            if (this->CpfValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->CpfHighTempValue = this->CpfValues(IndexNum);
             this->CpfHighTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumCpPoints; ++IndexNum) {
-            if (this->CpfgValues(IndexNum) <= 0.0) continue;
+            if (this->CpfgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->CpfgLowTempValue = this->CpfgValues(IndexNum);
             this->CpfgLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumCpPoints; IndexNum >= 1; --IndexNum) {
-            if (this->CpfgValues(IndexNum) <= 0.0) continue;
+            if (this->CpfgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->CpfgHighTempValue = this->CpfgValues(IndexNum);
             this->CpfgHighTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumRhoPoints; ++IndexNum) {
-            if (this->RhofValues(IndexNum) <= 0.0) continue;
+            if (this->RhofValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->RhofLowTempValue = this->RhofValues(IndexNum);
             this->RhofLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumRhoPoints; IndexNum >= 1; --IndexNum) {
-            if (this->RhofValues(IndexNum) <= 0.0) continue;
+            if (this->RhofValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->RhofHighTempValue = this->RhofValues(IndexNum);
             this->RhofHighTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = 1; IndexNum <= this->NumRhoPoints; ++IndexNum) {
-            if (this->RhofgValues(IndexNum) <= 0.0) continue;
+            if (this->RhofgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->RhofgLowTempValue = this->RhofgValues(IndexNum);
             this->RhofgLowTempIndex = IndexNum;
             break;
         }
         for (int IndexNum = this->NumRhoPoints; IndexNum >= 1; --IndexNum) {
-            if (this->RhofgValues(IndexNum) <= 0.0) continue;
+            if (this->RhofgValues(IndexNum) <= 0.0) {
+                continue;
+            }
             this->RhofgHighTempValue = this->RhofgValues(IndexNum);
             this->RhofgHighTempIndex = IndexNum;
             break;
@@ -2180,7 +2259,6 @@ namespace Fluid {
 
         for (auto *glycol : df->glycols) {
 
-            int GlycolIndex = 0; // used in routine calls -- value is returned when first 0
             // Lay out the basic values:
             if (!glycol->GlycolName.empty()) {
                 print(state.files.debug, "Glycol={}, Mixture fluid={}\n", glycol->Name, glycol->GlycolName);
@@ -2931,7 +3009,7 @@ namespace Fluid {
 
         // PURPOSE OF THIS FUNCTION:
         // This finds enthalpy for given temperature and a quality under the vapor dome.
-        // This fucntion is only called with a valid refrigerant and quality between 0 and 1.
+        // This function is only called with a valid refrigerant and quality between 0 and 1.
 
         // METHODOLOGY EMPLOYED:
         // Calls GetInterpolatedSatProp to linearly interpolate between the saturated
@@ -3106,7 +3184,7 @@ namespace Fluid {
 
         // PURPOSE OF THIS SUBROUTINE:
         // This finds specific heat for given temperature and a quality under the vapor dome.
-        // This fucntion is only called with a valid refrigerant and quality between 0 and 1.
+        // This function is only called with a valid refrigerant and quality between 0 and 1.
 
         // METHODOLOGY EMPLOYED:
         // Calls GetInterpolatedSatProp to linearly interpolate between the saturated
@@ -3717,7 +3795,9 @@ namespace Fluid {
             auto f = [&state, this, Enthalpy, Pressure](Real64 Temp) {
                 static constexpr std::string_view routineName = "GetSupHeatTempRefrigResidual";
                 Real64 Enthalpy_Req = Enthalpy;
-                if (std::abs(Enthalpy_Req) < 100.0) Enthalpy_Req = sign(100.0, Enthalpy_Req);
+                if (std::abs(Enthalpy_Req) < 100.0) {
+                    Enthalpy_Req = sign(100.0, Enthalpy_Req);
+                }
                 Real64 Enthalpy_Act = this->getSupHeatEnthalpy(state, Temp, Pressure, routineName);
                 return (Enthalpy_Act - Enthalpy_Req) / Enthalpy_Req;
             };
@@ -4549,7 +4629,9 @@ namespace Fluid {
         auto found =
             std::find_if(df->refrigs.begin(), df->refrigs.end(), [refrigName](RefrigProps const *refrig) { return refrig->Name == refrigName; });
 
-        if (found == df->refrigs.end()) return 0;
+        if (found == df->refrigs.end()) {
+            return 0;
+        }
 
         int refrigNum = (found - df->refrigs.begin()) + 1;
         df->refrigs(refrigNum)->used = true;
@@ -4586,7 +4668,9 @@ namespace Fluid {
         auto found =
             std::find_if(df->glycols.begin(), df->glycols.end(), [glycolName](GlycolProps const *glycol) { return glycol->Name == glycolName; });
 
-        if (found == df->glycols.end()) return 0;
+        if (found == df->glycols.end()) {
+            return 0;
+        }
 
         int glycolNum = (found - df->glycols.begin()) + 1;
         df->glycols(glycolNum)->used = true;
@@ -4614,7 +4698,9 @@ namespace Fluid {
             return glycolRaw->Name == glycolRawName;
         });
 
-        if (found == df->glycolsRaw.end()) return 0;
+        if (found == df->glycolsRaw.end()) {
+            return 0;
+        }
 
         int glycolRawNum = (found - df->glycolsRaw.begin()) + 1;
         return glycolRawNum;
@@ -4653,7 +4739,7 @@ namespace Fluid {
         auto &df = state.dataFluid;
         if (Idx > 0 && Idx <= df->glycols.isize()) {
             return df->glycols(Idx)->Name;
-        } else { // return blank - error checking in calling proceedure
+        } else { // return blank - error checking in calling procedure
             return "";
         }
     }
@@ -4864,8 +4950,12 @@ namespace Fluid {
         auto const &df = state.dataFluid;
 
         for (auto const *refrig : df->refrigs) {
-            if (refrig->used) continue;
-            if (refrig->Name == "STEAM") continue;
+            if (refrig->used) {
+                continue;
+            }
+            if (refrig->Name == "STEAM") {
+                continue;
+            }
             if (NeedOrphanMessage && state.dataGlobal->DisplayUnusedObjects) {
                 ShowWarningError(state, "The following fluid names are \"Unused Fluids\".  These fluids are in the idf");
                 ShowContinueError(state, " file but are never obtained by the simulation and therefore are NOT used.");
@@ -4881,10 +4971,18 @@ namespace Fluid {
         int NumUnusedGlycol = 0;
 
         for (auto const *glycol : df->glycols) {
-            if (glycol->used) continue;
-            if (glycol->Name == "WATER") continue;
-            if (glycol->Name == "ETHYLENEGLYCOL") continue;
-            if (glycol->Name == "PROPYLENEGLYCOL") continue;
+            if (glycol->used) {
+                continue;
+            }
+            if (glycol->Name == "WATER") {
+                continue;
+            }
+            if (glycol->Name == "ETHYLENEGLYCOL") {
+                continue;
+            }
+            if (glycol->Name == "PROPYLENEGLYCOL") {
+                continue;
+            }
             if (NeedOrphanMessage && state.dataGlobal->DisplayUnusedObjects) {
                 ShowWarningError(state, "The following fluid names are \"Unused Fluids\".  These fluids are in the idf");
                 ShowContinueError(state, " file but are never obtained by the simulation and therefore are NOT used.");
@@ -4898,19 +4996,23 @@ namespace Fluid {
         }
 
         if (NumUnusedRefrig > 0 || NumUnusedGlycol > 0) {
-            if (NumUnusedRefrig > 0) ShowMessage(state, format("There are {} unused refrigerants in input.", NumUnusedRefrig));
-            if (NumUnusedGlycol > 0) ShowMessage(state, format("There are {} unused glycols in input.", NumUnusedGlycol));
+            if (NumUnusedRefrig > 0) {
+                ShowMessage(state, format("There are {} unused refrigerants in input.", NumUnusedRefrig));
+            }
+            if (NumUnusedGlycol > 0) {
+                ShowMessage(state, format("There are {} unused glycols in input.", NumUnusedGlycol));
+            }
             ShowMessage(state, "Use Output:Diagnostics,DisplayUnusedObjects; to see them.");
         }
     }
 
-    void GlycolProps::getDensityTemperatureLimits(EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit)
+    void GlycolProps::getDensityTemperatureLimits([[maybe_unused]] EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit)
     {
         MinTempLimit = this->RhoLowTempValue;
         MaxTempLimit = this->RhoHighTempValue;
     }
 
-    void GlycolProps::getSpecificHeatTemperatureLimits(EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit)
+    void GlycolProps::getSpecificHeatTemperatureLimits([[maybe_unused]] EnergyPlusData &state, Real64 &MinTempLimit, Real64 &MaxTempLimit)
     {
         MinTempLimit = this->CpLowTempValue;
         MaxTempLimit = this->CpHighTempValue;

@@ -60,6 +60,7 @@
 #include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
 #include <EnergyPlus/PlantLoadProfile.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 
 using namespace EnergyPlus;
@@ -153,6 +154,7 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Waterloop)
     PlantLocation locWater(1, DataPlant::LoopSideLocation::Demand, 1, 1);
     thisLoadProfileWaterLoop.Name = "LOAD PROFILE WATER";
     thisLoadProfileWaterLoop.FluidType = PlantLoopFluidType::Water;
+
     thisLoadProfileWaterLoop.PeakVolFlowRate = 0.002;
     thisLoadProfileWaterLoop.loadSched = Sched::AddScheduleConstant(*state, "LOAD");
     thisLoadProfileWaterLoop.flowRateFracSched = Sched::AddScheduleConstant(*state, "FLOWRATEFRAC");
@@ -160,6 +162,7 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Waterloop)
     thisLoadProfileWaterLoop.OutletNode = 2;
     thisLoadProfileWaterLoop.plantLoc = locWater;
     thisLoadProfileWaterLoop.plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, thisLoadProfileWaterLoop.plantLoc);
 
     thisLoadProfileWaterLoop.loadSched->EMSActuatedOn = false;
     thisLoadProfileWaterLoop.loadSched->currentVal = 10000;
@@ -233,6 +236,7 @@ TEST_F(EnergyPlusFixture, LoadProfile_initandsimulate_Steamloop)
     thisLoadProfileSteamLoop.OutletNode = 2;
     thisLoadProfileSteamLoop.plantLoc = locSteam;
     thisLoadProfileSteamLoop.plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, thisLoadProfileSteamLoop.plantLoc);
 
     thisLoadProfileSteamLoop.loadSched->EMSActuatedOn = false;
     thisLoadProfileSteamLoop.loadSched->currentVal = 10000;

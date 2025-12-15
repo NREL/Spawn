@@ -106,7 +106,7 @@ void FanBase::simulate(EnergyPlusData &state,
                        ObjexxFCL::Optional<Real64 const> _massFlowRate1,    // Mass flow rate in operating mode 1 [kg/s]
                        ObjexxFCL::Optional<Real64 const> _runTimeFraction1, // Run time fraction in operating mode 1
                        ObjexxFCL::Optional<Real64 const> _massFlowRate2,    // Mass flow rate in operating mode 2 [kg/s]
-                       ObjexxFCL::Optional<Real64 const> _runTimeFraction2, // Run time fraction in opearating mode 2
+                       ObjexxFCL::Optional<Real64 const> _runTimeFraction2, // Run time fraction in operating mode 2
                        ObjexxFCL::Optional<Real64 const> _pressureRise2     // Pressure difference for operating mode 2
 )
 {
@@ -154,7 +154,9 @@ void FanBase::simulate(EnergyPlusData &state,
 
     } else { // FanType::SystemModel
 
-        if (sizingFlag) return;
+        if (sizingFlag) {
+            return;
+        }
 
         auto *_thisFan = dynamic_cast<FanSystem *>(this);
         assert(_thisFan != nullptr);
@@ -1042,7 +1044,9 @@ void GetFanInput(EnergyPlusData &state)
     // There is a faster way to do this if this gets too slow (doubt it)
     for (auto const *fan1 : df->fans) {
         for (auto const *fan2 : df->fans) {
-            if (fan1 == fan2) continue;
+            if (fan1 == fan2) {
+                continue;
+            }
 
             if (fan1->inletNodeNum == fan2->inletNodeNum) {
                 ErrorsFound = true;
@@ -1147,7 +1151,9 @@ void GetFanInput(EnergyPlusData &state)
             auto *fanSystem = dynamic_cast<FanSystem *>(fan);
             assert(fanSystem != nullptr);
 
-            if (fanSystem->speedControl != SpeedControl::Discrete) continue;
+            if (fanSystem->speedControl != SpeedControl::Discrete) {
+                continue;
+            }
 
             if (fanSystem->numSpeeds == 1) {
                 SetupOutputVariable(state,
@@ -1213,8 +1219,12 @@ void FanComponent::init(EnergyPlusData &state)
     if (!state.dataFans->ZoneEquipmentListChecked && state.dataZoneEquip->ZoneEquipInputsFilled) {
         state.dataFans->ZoneEquipmentListChecked = true;
         for (auto *fan : df->fans) {
-            if (fan->type != HVAC::FanType::Exhaust) continue;
-            if (DataZoneEquipment::CheckZoneEquipmentList(state, HVAC::fanTypeNames[(int)fan->type], fan->Name)) continue;
+            if (fan->type != HVAC::FanType::Exhaust) {
+                continue;
+            }
+            if (DataZoneEquipment::CheckZoneEquipmentList(state, HVAC::fanTypeNames[(int)fan->type], fan->Name)) {
+                continue;
+            }
             ShowSevereError(state,
                             format("InitFans: Fan=[{},{}] is not on any ZoneHVAC:EquipmentList.  It will not be simulated.",
                                    HVAC::fanTypeNames[(int)fan->type],
@@ -1301,7 +1311,9 @@ void FanComponent::init(EnergyPlusData &state)
         } else { // always run at max
             inletAirMassFlowRate = massFlowRateMaxAvail;
         }
-        if (EMSMaxMassFlowOverrideOn) inletAirMassFlowRate = min(EMSAirMassFlowValue, massFlowRateMaxAvail);
+        if (EMSMaxMassFlowOverrideOn) {
+            inletAirMassFlowRate = min(EMSAirMassFlowValue, massFlowRateMaxAvail);
+        }
     }
 
     // Then set the other conditions
@@ -1338,7 +1350,9 @@ void FanComponent::set_size(EnergyPlusData &state)
     state.dataSize->DataAutosizable = maxAirFlowRateIsAutosized;
     state.dataSize->DataEMSOverrideON = EMSMaxAirFlowRateOverrideOn;
     state.dataSize->DataEMSOverride = EMSMaxAirFlowRateValue;
-    airLoopNum = state.dataSize->CurSysNum;
+    if (state.dataSize->CurSysNum > 0) {
+        airLoopNum = state.dataSize->CurSysNum;
+    }
 
     bool errorsFound = false;
     SystemAirFlowSizer sizerSystemAirFlow;
@@ -1565,6 +1579,15 @@ void FanComponent::set_size(EnergyPlusData &state)
     OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanMotorEff, Name, motorEff);
     OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanMotorHeatToZoneFrac, Name, 0.0);
     OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanMotorHeatZone, Name, "N/A");
+    if ((type == HVAC::FanType::VAV) || (type == HVAC::FanType::ComponentModel)) {
+        OutputReportPredefined::PreDefTableEntry(
+            state, state.dataOutRptPredefined->pdchFanSpeedCtrlMethod, Name, speedControlNames[(int)SpeedControl::Continuous]);
+        OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanNumSpeeds, Name, "N/A");
+    } else {
+        OutputReportPredefined::PreDefTableEntry(
+            state, state.dataOutRptPredefined->pdchFanSpeedCtrlMethod, Name, speedControlNames[(int)SpeedControl::Discrete]);
+        OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanNumSpeeds, Name, 1);
+    }
     if (airLoopNum == 0) {
         OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanAirLoopName, Name, "N/A");
     } else if (airLoopNum <= state.dataHVACGlobal->NumPrimaryAirSys) {
@@ -1592,7 +1615,7 @@ void FanComponent::set_size(EnergyPlusData &state)
         if (!fault.CheckFaultyAirFilterFanCurve(state)) {
             ShowSevereError(state, format("FaultModel:Fouling:AirFilter = \"{}\"", fault.Name));
             ShowContinueError(state,
-                              format("Invalid Fan Curve Name = \"{}\" does not cover ", state.dataCurveManager->PerfCurve(fault.fanCurveNum)->Name));
+                              format("Invalid Fan Curve Name = \"{}\" does not cover ", state.dataCurveManager->curves(fault.fanCurveNum)->Name));
             ShowContinueError(state, format("the operational point of Fan {}", Name));
             ShowFatalError(state, format("SizeFan: Invalid FaultModel:Fouling:AirFilter={}", fault.Name));
         }
@@ -1659,9 +1682,15 @@ void FanComponent::simulateConstant(EnergyPlusData &state)
     }
 
     // EMS overwrite MassFlow, DeltaPress, and FanEff
-    if (EMSMaxMassFlowOverrideOn) _massFlow = EMSAirMassFlowValue;
-    if (EMSPressureOverrideOn) _deltaPress = EMSPressureValue;
-    if (EMSTotalEffOverrideOn) _totalEff = EMSTotalEffValue;
+    if (EMSMaxMassFlowOverrideOn) {
+        _massFlow = EMSAirMassFlowValue;
+    }
+    if (EMSPressureOverrideOn) {
+        _deltaPress = EMSPressureValue;
+    }
+    if (EMSTotalEffOverrideOn) {
+        _totalEff = EMSTotalEffValue;
+    }
 
     _massFlow = min(_massFlow, maxAirMassFlowRate);
     _massFlow = max(_massFlow, minAirMassFlowRate);
@@ -1771,9 +1800,15 @@ void FanComponent::simulateVAV(EnergyPlusData &state, ObjexxFCL::Optional<Real64
     }
 
     // EMS overwrite MassFlow, DeltaPress, and FanEff
-    if (EMSPressureOverrideOn) _deltaPress = EMSPressureValue;
-    if (EMSTotalEffOverrideOn) _totalEff = EMSTotalEffValue;
-    if (EMSMaxMassFlowOverrideOn) _massFlow = EMSAirMassFlowValue;
+    if (EMSPressureOverrideOn) {
+        _deltaPress = EMSPressureValue;
+    }
+    if (EMSTotalEffOverrideOn) {
+        _totalEff = EMSTotalEffValue;
+    }
+    if (EMSMaxMassFlowOverrideOn) {
+        _massFlow = EMSAirMassFlowValue;
+    }
 
     _massFlow = min(_massFlow, _maxAirMassFlowRate);
 
@@ -1908,9 +1943,15 @@ void FanComponent::simulateOnOff(EnergyPlusData &state, ObjexxFCL::Optional<Real
     }
 
     // EMS overwrite MassFlow, DeltaPress, and FanEff
-    if (EMSMaxMassFlowOverrideOn) _massFlow = EMSAirMassFlowValue;
-    if (EMSPressureOverrideOn) _deltaPress = EMSPressureValue;
-    if (EMSTotalEffOverrideOn) _totalEff = EMSTotalEffValue;
+    if (EMSMaxMassFlowOverrideOn) {
+        _massFlow = EMSAirMassFlowValue;
+    }
+    if (EMSPressureOverrideOn) {
+        _deltaPress = EMSPressureValue;
+    }
+    if (EMSTotalEffOverrideOn) {
+        _totalEff = EMSTotalEffValue;
+    }
 
     _massFlow = min(_massFlow, _maxAirMassFlowRate);
     _massFlow = max(_massFlow, minAirMassFlowRate);
@@ -1950,7 +1991,9 @@ void FanComponent::simulateOnOff(EnergyPlusData &state, ObjexxFCL::Optional<Real
 
                 //      adjust RTF to be in line with speed ratio (i.e., MaxAirMassFlowRate is not MAX when SpeedRatio /= 1)
                 //      PLR = Mdot/MAXFlow => Mdot/(MAXFlow * SpeedRatio), RTF = PLR/PLF => PLR/SpeedRatio/PLF = RTF / SpeedRatio
-                if (_speedRatio > 0.0) runtimeFrac = min(1.0, runtimeFrac / _speedRatio);
+                if (_speedRatio > 0.0) {
+                    runtimeFrac = min(1.0, runtimeFrac / _speedRatio);
+                }
 
                 Real64 _speedRaisedToPower = Curve::CurveValue(state, powerRatioAtSpeedRatioCurveNum, _speedRatio);
                 if (_speedRaisedToPower < 0.0) {
@@ -2036,10 +2079,14 @@ void FanComponent::simulateZoneExhaust(EnergyPlusData &state)
     bool _fanIsRunning = false; // There seems to be a missing else case below unless false is assumed
 
     Real64 _deltaPress = deltaPress; // [N/m2]
-    if (EMSPressureOverrideOn) _deltaPress = EMSPressureValue;
+    if (EMSPressureOverrideOn) {
+        _deltaPress = EMSPressureValue;
+    }
 
     Real64 _totalEff = totalEff;
-    if (EMSTotalEffOverrideOn) _totalEff = EMSTotalEffValue;
+    if (EMSTotalEffOverrideOn) {
+        _totalEff = EMSTotalEffValue;
+    }
 
     // For a Constant Volume Simple Fan the Max Flow Rate is the Flow Rate for the fan
     Real64 _Tin = inletAirTemp;
@@ -2420,8 +2467,7 @@ Real64 CalFaultyFanAirFlowReduction(EnergyPlusData &state,
         FanFaultyAirFlowRate = FanFaultyAirFlowRate - 0.005;
         FanCalDeltaPresstemp = Curve::CurveValue(state, FanCurvePtr, FanFaultyAirFlowRate);
 
-        if ((FanCalDeltaPresstemp <= FanCalDeltaPress) ||
-            (FanFaultyAirFlowRate <= state.dataCurveManager->PerfCurve(FanCurvePtr)->inputLimits[0].min)) {
+        if ((FanCalDeltaPresstemp <= FanCalDeltaPress) || (FanFaultyAirFlowRate <= state.dataCurveManager->curves(FanCurvePtr)->inputLimits[0].min)) {
             // The new operational point of the fan go beyond the fan selection range
             ShowWarningError(state, format("The operational point of the fan {} may go beyond the fan selection ", FanName));
             ShowContinueError(state, "range in the faulty fouling air filter cases");
@@ -2556,7 +2602,9 @@ void FanSystem::set_size(EnergyPlusData &state)
     state.dataSize->DataAutosizable = true;
     state.dataSize->DataEMSOverrideON = EMSMaxAirFlowRateOverrideOn;
     state.dataSize->DataEMSOverride = EMSMaxAirFlowRateValue;
-    airLoopNum = state.dataSize->CurSysNum;
+    if (state.dataSize->CurSysNum > 0) {
+        airLoopNum = state.dataSize->CurSysNum;
+    }
 
     bool ErrorsFound = false;
     SystemAirFlowSizer sizerSystemAirFlow;
@@ -2644,6 +2692,16 @@ void FanSystem::set_size(EnergyPlusData &state)
                                              state.dataOutRptPredefined->pdchFanMotorHeatZone,
                                              Name,
                                              heatLossDest == HeatLossDest::Zone ? state.dataHeatBal->Zone(zoneNum).Name : "N/A");
+    if (speedControl != SpeedControl::Invalid) {
+        OutputReportPredefined::PreDefTableEntry(
+            state, state.dataOutRptPredefined->pdchFanSpeedCtrlMethod, Name, speedControlNames[(int)speedControl]);
+        if (speedControl == SpeedControl::Discrete) {
+            OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanNumSpeeds, Name, numSpeeds);
+        } else {
+            OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanNumSpeeds, Name, "N/A");
+        }
+    }
+
     if (airLoopNum == 0) {
         OutputReportPredefined::PreDefTableEntry(state, state.dataOutRptPredefined->pdchFanAirLoopName, Name, "N/A");
     } else if (airLoopNum <= state.dataHVACGlobal->NumPrimaryAirSys) {
@@ -2780,9 +2838,15 @@ void FanSystem::calcSimpleSystemFan(
 
     for (int mode = 0; mode < _numModes; ++mode) {
         // EMS override MassFlow, DeltaPress, and FanEff
-        if (EMSPressureOverrideOn) _localPressureRise[mode] = EMSPressureValue;
-        if (EMSTotalEffOverrideOn) _localTotalEff = EMSTotalEffValue;
-        if (EMSMaxMassFlowOverrideOn) _localAirMassFlow[mode] = EMSAirMassFlowValue;
+        if (EMSPressureOverrideOn) {
+            _localPressureRise[mode] = EMSPressureValue;
+        }
+        if (EMSTotalEffOverrideOn) {
+            _localTotalEff = EMSTotalEffValue;
+        }
+        if (EMSMaxMassFlowOverrideOn) {
+            _localAirMassFlow[mode] = EMSAirMassFlowValue;
+        }
 
         _localAirMassFlow[mode] = min(_localAirMassFlow[mode], maxAirMassFlowRate);
         if (_faultActive) {
@@ -2815,7 +2879,9 @@ void FanSystem::calcSimpleSystemFan(
         for (int mode = 0; mode < _numModes; ++mode) {
 
             // if no flow for this mode then continue to the next mode
-            if (_localAirMassFlow[mode] == 0.0) continue;
+            if (_localAirMassFlow[mode] == 0.0) {
+                continue;
+            }
 
             switch (speedControl) {
 

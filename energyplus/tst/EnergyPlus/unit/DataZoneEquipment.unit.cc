@@ -64,10 +64,11 @@
 
 #include "Fixtures/EnergyPlusFixture.hh"
 
-#include <nlohmann/json_literals.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace EnergyPlus;
 using namespace EnergyPlus::DataZoneEquipment;
+using namespace nlohmann::literals;
 
 TEST_F(EnergyPlusFixture, DataZoneEquipment_TestGetSystemNodeNumberForZone)
 {

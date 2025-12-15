@@ -139,7 +139,7 @@ TEST_F(EnergyPlusFixture, CTElectricGenerator_Fueltype)
     });
 
     ASSERT_TRUE(process_idf(idf_objects));
-
+    state->init_state(*state); // Calls GetCurveInput
     GetCTGeneratorInput(*state);
 
     EXPECT_ENUM_EQ(state->dataCTElectricGenerator->CTGenerator(1).FuelType, Constant::eFuel::NaturalGas);

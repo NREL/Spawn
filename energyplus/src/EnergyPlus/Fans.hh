@@ -355,6 +355,8 @@ namespace Fans {
         Num
     };
 
+    static constexpr std::array<std::string_view, (int)SpeedControl::Num> speedControlNames = {"Discrete", "Continuous"};
+
     static constexpr std::array<std::string_view, (int)SpeedControl::Num> speedControlNamesUC = {"DISCRETE", "CONTINUOUS"};
 
     class FanSystem : public FanBase
@@ -465,8 +467,9 @@ struct FansData : BaseGlobalStruct
 
     void clear_state() override
     {
-        for (int i = 1; i <= (int)fans.size(); ++i)
+        for (int i = 1; i <= (int)fans.size(); ++i) {
             delete fans(i);
+        }
 
         fans.clear();
         fanMap.clear();

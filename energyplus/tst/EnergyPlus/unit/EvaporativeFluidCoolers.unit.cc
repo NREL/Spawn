@@ -58,6 +58,7 @@
 #include <EnergyPlus/DataLoopNode.hh>
 #include <EnergyPlus/DataSizing.hh>
 #include <EnergyPlus/EvaporativeFluidCoolers.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/Psychrometrics.hh>
 #include <EnergyPlus/SimAirServingZones.hh>
 
@@ -79,6 +80,30 @@ TEST_F(EnergyPlusFixture, EvapFluidCoolerSpecs_getDesignCapacitiesTest)
     Real64 ExpectedMinLoad;
     Real64 ExpectedOptLoad;
 
+    state->dataEnvrn->OutDryBulbTemp = 20.0;
+    state->dataEnvrn->OutHumRat = 0.02;
+    state->dataEnvrn->OutBaroPress = 101325.;
+    state->dataEnvrn->OutWetBulbTemp = 8.0;
+
+    state->dataPlnt->PlantLoop.allocate(1);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).FlowLock = DataPlant::FlowLock::Locked;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).MyLoad = 1.0;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).ON = false;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).CurOpSchemeType = DataPlant::OpScheme::Invalid;
+    state->dataPlnt->PlantLoop(1).PlantSizNum = 1;
+    state->dataPlnt->PlantFinalSizesOkayToReport = false;
+    state->dataSize->SaveNumPlantComps = 0;
+
+    state->dataSize->PlantSizData.allocate(1);
+    state->dataSize->PlantSizData(1).DeltaT = 5.0;
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    state->dataSize->PlantSizData(1).ExitTemp = 20.0;
+
     // Set up information required to actually run the routines that get called as a result of running this test.
     // In general, values set here attempt to avoid as much code as possible so that only the defect code is run.
     // Obviously, not everything can be skipped so some of this information is needed to avoid crashes in other routines.
@@ -96,11 +121,15 @@ TEST_F(EnergyPlusFixture, EvapFluidCoolerSpecs_getDesignCapacitiesTest)
     thisEFC.plantLoc.loopSideNum = DataPlant::LoopSideLocation::Supply;
     thisEFC.plantLoc.branchNum = 1;
     thisEFC.plantLoc.compNum = 1;
-    PlantLocation pl;
-    state->dataEnvrn->OutDryBulbTemp = 20.0;
-    state->dataEnvrn->OutHumRat = 0.02;
-    state->dataEnvrn->OutBaroPress = 101325.;
-    state->dataEnvrn->OutWetBulbTemp = 8.0;
+    PlantUtilities::SetPlantLocationLinks(*state, thisEFC.plantLoc);
+
+    thisEFC.DesignWaterFlowRateWasAutoSized = false;
+    thisEFC.LowSpeedAirFlowRateWasAutoSized = false;
+    thisEFC.HighSpeedEvapFluidCoolerUAWasAutoSized = false;
+    thisEFC.PerformanceInputMethod_Num = PIM::UFactor;
+
+    thisEFC.DesignWaterFlowRate = 0.001;
+
     state->dataLoopNodes->Node.allocate(2);
     state->dataLoopNodes->Node(thisEFC.WaterInletNodeNum).Temp = 20.0;
     state->dataLoopNodes->Node(1).Temp = 23.0;
@@ -109,29 +138,6 @@ TEST_F(EnergyPlusFixture, EvapFluidCoolerSpecs_getDesignCapacitiesTest)
     state->dataLoopNodes->Node(1).MassFlowRateMin = 0.0;
     state->dataLoopNodes->Node(1).MassFlowRateMax = 0.05;
     state->dataLoopNodes->Node(1).MassFlowRateMaxAvail = 0.05;
-
-    state->dataPlnt->PlantLoop.allocate(1);
-    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).FlowLock = DataPlant::FlowLock::Locked;
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).MyLoad = 1.0;
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).ON = false;
-    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp(1).CurOpSchemeType = DataPlant::OpScheme::Invalid;
-    thisEFC.DesignWaterFlowRateWasAutoSized = false;
-    thisEFC.LowSpeedAirFlowRateWasAutoSized = false;
-    thisEFC.HighSpeedEvapFluidCoolerUAWasAutoSized = false;
-    thisEFC.PerformanceInputMethod_Num = PIM::UFactor;
-    state->dataPlnt->PlantLoop(1).PlantSizNum = 1;
-    state->dataPlnt->PlantFinalSizesOkayToReport = false;
-    state->dataSize->SaveNumPlantComps = 0;
-    thisEFC.DesignWaterFlowRate = 0.001;
-    state->dataSize->PlantSizData.allocate(1);
-    state->dataSize->PlantSizData(1).DeltaT = 5.0;
-    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
-    state->dataSize->PlantSizData(1).ExitTemp = 20.0;
 
     // Now set the specific data for the actual test
     MaxLoad = 0.0;
@@ -145,8 +151,10 @@ TEST_F(EnergyPlusFixture, EvapFluidCoolerSpecs_getDesignCapacitiesTest)
 
     // Call the routine to be tested and see if the fix is correct
     PlantLocation loc = PlantLocation(1, DataPlant::LoopSideLocation::Supply, 1, 1);
+    PlantUtilities::SetPlantLocationLinks(*state, loc);
+
     thisEFC.onInitLoopEquip(*state, loc);
-    thisEFC.getDesignCapacities(*state, pl, MaxLoad, MinLoad, OptLoad);
+    thisEFC.getDesignCapacities(*state, loc, MaxLoad, MinLoad, OptLoad);
     EXPECT_NEAR(MaxLoad, ExpectedMaxLoad, 0.01);
     EXPECT_NEAR(MinLoad, ExpectedMinLoad, 0.01);
     EXPECT_NEAR(OptLoad, ExpectedOptLoad, 0.01);
@@ -178,15 +186,17 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedEvapFluidCooler)
     EvapFluidCoolerSpecs *ptr =
         EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_SingleSpd, "BIG EVAPORATIVEFLUIDCOOLER");
 
-    PlantLocation pl{1, EnergyPlus::DataPlant::LoopSideLocation::Supply, 1, 1};
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).FluidName = "WATER";
     state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
     state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
     state->dataPlnt->PlantLoop(1).LoopSide(EnergyPlus::DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
 
+    PlantLocation loc{1, EnergyPlus::DataPlant::LoopSideLocation::Supply, 1, 1};
+    PlantUtilities::SetPlantLocationLinks(*state, loc);
+
     Real64 max, opt, min = 0.0;
-    ptr->getDesignCapacities(*state, pl, max, min, opt);
+    ptr->getDesignCapacities(*state, loc, max, min, opt);
     EXPECT_NEAR(max, 1250, 1.0);
     EXPECT_NEAR(min, 0.0, 1.0);
     EXPECT_NEAR(opt, 1000.0, 1.0);
@@ -219,10 +229,12 @@ TEST_F(EnergyPlusFixture, ExerciseSingleSpeedEvapFluidCooler)
     ptr->plantLoc.loopSideNum = EnergyPlus::DataPlant::LoopSideLocation::Supply;
     ptr->plantLoc.branchNum = 1;
     ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
+
     ptr->DesWaterMassFlowRate = 3.141;
     ptr->WaterMassFlowRate = 3.141;
-    ptr->onInitLoopEquip(*state, pl);
-    ptr->simulate(*state, pl, firstHVAC, curLoad, true);
+    ptr->onInitLoopEquip(*state, loc);
+    ptr->simulate(*state, loc, firstHVAC, curLoad, true);
 }
 TEST_F(EnergyPlusFixture, ExerciseTwoSpeedEvapFluidCooler)
 {
@@ -346,7 +358,14 @@ TEST_F(EnergyPlusFixture, EvapFluidCooler_SizeWhenPlantSizingIndexIsZeroAndAutos
 
     state->dataPlnt->PlantLoop.allocate(1);
     state->dataPlnt->PlantLoop(1).PlantSizNum = 0;
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
+
     ptr->plantLoc.loopNum = 1;
+    ptr->plantLoc.loopSideNum = DataPlant::LoopSideLocation::Supply;
+    ptr->plantLoc.branchNum = 1;
+    ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
 
     // Necessary to trigger the crash from #
     state->dataPlnt->PlantFirstSizesOkayToFinalize = false;
@@ -359,4 +378,271 @@ TEST_F(EnergyPlusFixture, EvapFluidCooler_SizeWhenPlantSizingIndexIsZeroAndAutos
     ptr->SizeEvapFluidCooler(*state);
 }
 
+TEST_F(EnergyPlusFixture, EvapFluidCooler_SingleSpeed_DesignEnteringWaterIsAutosized)
+{
+    // Test for #11283
+    std::string const idf_objects = delimited_string({
+        "EvaporativeFluidCooler:SingleSpeed,",
+        "  Big EvaporativeFluidCooler,  !- Name",
+        "  Condenser EvaporativeFluidCooler Inlet Node,  !- Water Inlet Node Name",
+        "  Condenser EvaporativeFluidCooler Outlet Node,  !- Water Outlet Node Name",
+        "  3.02,                    !- Design Air Flow Rate {m3/s}",
+        "  2250,                    !- Design Air Flow Rate Fan Power {W}",
+        "  0.002208,                !- Design Spray Water Flow Rate {m3/s}",
+        "  UserSpecifiedDesignCapacity,  !- Performance Input Method",
+        "  ,                        !- Outdoor Air Inlet Node Name",
+        "  ,                        !- Heat Rejection Capacity and Nominal Capacity Sizing Ratio",
+        "  ,                        !- Standard Design Capacity {W}",
+        "  ,                        !- Design Air Flow Rate U-factor Times Area Value {W/K}",
+        "  0.001703,                !- Design Water Flow Rate {m3/s}",
+        "  87921,                   !- User Specified Design Capacity {W}",
+        "  Autosize,                !- Design Entering Water Temperature {C}",
+        "  35,                      !- Design Entering Air Temperature {C}",
+        "  25.6;                    !- Design Entering Air Wet-bulb Temperature {C}",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    EXPECT_NO_THROW(EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_SingleSpd, "BIG EVAPORATIVEFLUIDCOOLER"));
+    compare_err_stream("");
+
+    EvapFluidCoolerSpecs *ptr =
+        EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_SingleSpd, "BIG EVAPORATIVEFLUIDCOOLER");
+
+    EXPECT_EQ(DataSizing::AutoSize, ptr->DesignEnteringWaterTemp);
+    EXPECT_TRUE(ptr->DesignEnteringWaterTempWasAutoSized);
+
+    state->dataPlnt->PlantLoop.allocate(1);
+    auto &plantLoop = state->dataPlnt->PlantLoop(1);
+    plantLoop.PlantSizNum = 0;
+    plantLoop.LoopSide(DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    plantLoop.LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
+    plantLoop.FluidName = "WATER";
+    plantLoop.glycol = Fluid::GetWater(*state);
+
+    ptr->plantLoc.loopNum = 1;
+    ptr->plantLoc.loopSideNum = DataPlant::LoopSideLocation::Supply;
+    ptr->plantLoc.branchNum = 1;
+    ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
+
+    // Necessary to trigger the crash about the Missing Sizing:Plant
+    state->dataPlnt->PlantFirstSizesOkayToFinalize = true;
+    state->dataPlnt->PlantFinalSizesOkayToReport = true;
+
+    EXPECT_THROW(ptr->SizeEvapFluidCooler(*state), EnergyPlus::FatalError);
+    EXPECT_TRUE(compare_err_stream_substring(delimited_string({
+        "   ** Severe  ** Autosizing error for evaporative fluid cooler object = BIG EVAPORATIVEFLUIDCOOLER",
+        "   **  Fatal  ** Autosizing of evaporative fluid cooler Design Entering Water Temperature requires a loop Sizing:Plant object.",
+    })));
+
+    EXPECT_FALSE(ptr->DesignWaterFlowRateWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedAirFlowRateWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedFanPowerWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedEvapFluidCoolerUAWasAutoSized);
+    EXPECT_TRUE(ptr->DesignEnteringWaterTempWasAutoSized);
+
+    state->dataSize->PlantSizData.allocate(1);
+    auto &sizingPlant = state->dataSize->PlantSizData(1);
+    plantLoop.PlantSizNum = 1;
+    sizingPlant.ExitTemp = 10.0;
+    sizingPlant.DeltaT = 10.0;
+    // 20.0C, which is below the Entering Air Wet-bulb Temp of 25.6C, so it should throw
+    Real64 expected_ewt = sizingPlant.ExitTemp + sizingPlant.DeltaT;
+    EXPECT_EQ(20.0, expected_ewt);
+
+    EXPECT_THROW(ptr->SizeEvapFluidCooler(*state), EnergyPlus::FatalError);
+    EXPECT_TRUE(compare_err_stream_substring(delimited_string({
+        "   ** Severe  ** Error when autosizing the Design Entering Water Temperature for Evaporative Fluid Cooler = BIG EVAPORATIVEFLUIDCOOLER.",
+        "   **   ~~~   ** Design Entering Water Temperature (20.00 C) must be greater than design entering air wet-bulb temperature (25.60 C).",
+        "   **   ~~~   ** Check the Sizing:Plant object and the Design Entering Air Wet-bulb Temp input field for the Evaporative Fluid Cooler.",
+        "   **  Fatal  ** Review and revise design input values as appropriate.",
+    })));
+    EXPECT_NE(DataSizing::AutoSize, ptr->DesignEnteringWaterTemp);
+    EXPECT_EQ(expected_ewt, ptr->DesignEnteringWaterTemp);
+
+    compare_eio_stream("");
+
+    sizingPlant.ExitTemp = 30.0;
+    expected_ewt = sizingPlant.ExitTemp + sizingPlant.DeltaT;
+    EXPECT_EQ(40.0, expected_ewt);
+
+    EXPECT_NO_THROW(ptr->SizeEvapFluidCooler(*state));
+    compare_err_stream("");
+    EXPECT_EQ(expected_ewt, ptr->DesignEnteringWaterTemp);
+
+    EXPECT_TRUE(compare_eio_stream_substring("Component Sizing Information, EvaporativeFluidCooler:SingleSpeed, BIG EVAPORATIVEFLUIDCOOLER, "
+                                             "Design Entering Water Temperature [C], 40.00000"));
+}
+
+TEST_F(EnergyPlusFixture, EvapFluidCooler_TwoSpeed_DesignEnteringWaterIsAutosized)
+{
+
+    // Test for #11283
+    std::string const idf_objects = delimited_string({
+
+        "EvaporativeFluidCooler:TwoSpeed,",
+        "  Big EvaporativeFluidCooler,  !- Name",
+        "  Condenser EvaporativeFluidCooler Inlet Node,  !- Water Inlet Node Name",
+        "  Condenser EvaporativeFluidCooler Outlet Node,  !- Water Outlet Node Name",
+        "  3.02,                    !- High Fan Speed Air Flow Rate {m3/s}",
+        "  2250,                    !- High Fan Speed Fan Power {W}",
+        "  autocalculate,           !- Low Fan Speed Air Flow Rate {m3/s}",
+        "  ,                        !- Low Fan Speed Air Flow Rate Sizing Factor",
+        "  autocalculate,           !- Low Fan Speed Fan Power {W}",
+        "  ,                        !- Low Fan Speed Fan Power Sizing Factor",
+        "  0.002208,                !- Design Spray Water Flow Rate {m3/s}",
+        "  UserSpecifiedDesignCapacity,  !- Performance Input Method",
+        "  ,                        !- Outdoor Air Inlet Node Name",
+        "  1.0,                     !- Heat Rejection Capacity and Nominal Capacity Sizing Ratio",
+        "  ,                        !- High Speed Standard Design Capacity {W}",
+        "  ,                        !- Low Speed Standard Design Capacity {W}",
+        "  ,                        !- Low Speed Standard Capacity Sizing Factor",
+        "  ,                        !- High Fan Speed U-factor Times Area Value {W/K}",
+        "  ,                        !- Low Fan Speed U-factor Times Area Value {W/K}",
+        "  ,                        !- Low Fan Speed U-Factor Times Area Sizing Factor",
+        "  0.001703,                !- Design Water Flow Rate {m3/s}",
+        "  87921,                   !- High Speed User Specified Design Capacity {W}",
+        "  21980,                   !- Low Speed User Specified Design Capacity {W}",
+        "  0.25,                    !- Low Speed User Specified Design Capacity Sizing Factor",
+        "  Autosize,                !- Design Entering Water Temperature {C}",
+        "  35.0,                    !- Design Entering Air Temperature {C}",
+        "  25.6,                    !- Design Entering Air Wet-bulb Temperature {C}",
+        "  1,                       !- High Speed Sizing Factor",
+        "  SaturatedExit,           !- Evaporation Loss Mode",
+        "  ,                        !- Evaporation Loss Factor {percent/K}",
+        "  0.008,                   !- Drift Loss Percent {percent}",
+        "  ConcentrationRatio,      !- Blowdown Calculation Mode",
+        "  3;                       !- Blowdown Concentration Ratio",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    EXPECT_NO_THROW(EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_TwoSpd, "BIG EVAPORATIVEFLUIDCOOLER"));
+    compare_err_stream("");
+
+    EvapFluidCoolerSpecs *ptr =
+        EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_TwoSpd, "BIG EVAPORATIVEFLUIDCOOLER");
+
+    EXPECT_EQ(DataSizing::AutoSize, ptr->DesignEnteringWaterTemp);
+    EXPECT_TRUE(ptr->DesignEnteringWaterTempWasAutoSized);
+
+    EXPECT_EQ(DataSizing::AutoSize, ptr->DesignEnteringWaterTemp);
+    EXPECT_TRUE(ptr->DesignEnteringWaterTempWasAutoSized);
+
+    state->dataPlnt->PlantLoop.allocate(1);
+    auto &plantLoop = state->dataPlnt->PlantLoop(1);
+    plantLoop.PlantSizNum = 0;
+    plantLoop.LoopSide(DataPlant::LoopSideLocation::Supply).Branch.allocate(1);
+    plantLoop.LoopSide(DataPlant::LoopSideLocation::Supply).Branch(1).Comp.allocate(1);
+    plantLoop.FluidName = "WATER";
+    plantLoop.glycol = Fluid::GetWater(*state);
+
+    ptr->plantLoc.loopNum = 1;
+    ptr->plantLoc.loopSideNum = DataPlant::LoopSideLocation::Supply;
+    ptr->plantLoc.branchNum = 1;
+    ptr->plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, ptr->plantLoc);
+
+    // Necessary to trigger the crash about the Missing Sizing:Plant
+    state->dataPlnt->PlantFirstSizesOkayToFinalize = true;
+    state->dataPlnt->PlantFinalSizesOkayToReport = true;
+
+    EXPECT_THROW(ptr->SizeEvapFluidCooler(*state), EnergyPlus::FatalError);
+    EXPECT_TRUE(compare_err_stream_substring(delimited_string({
+        "   ** Severe  ** Autosizing error for evaporative fluid cooler object = BIG EVAPORATIVEFLUIDCOOLER",
+        "   **  Fatal  ** Autosizing of evaporative fluid cooler Design Entering Water Temperature requires a loop Sizing:Plant object.",
+    })));
+
+    EXPECT_FALSE(ptr->DesignWaterFlowRateWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedAirFlowRateWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedFanPowerWasAutoSized);
+    EXPECT_FALSE(ptr->HighSpeedEvapFluidCoolerUAWasAutoSized);
+    EXPECT_TRUE(ptr->DesignEnteringWaterTempWasAutoSized);
+
+    state->dataSize->PlantSizData.allocate(1);
+    auto &sizingPlant = state->dataSize->PlantSizData(1);
+    plantLoop.PlantSizNum = 1;
+    sizingPlant.ExitTemp = 10.0;
+    sizingPlant.DeltaT = 10.0;
+    // 20.0C, which is below the Entering Air Wet-bulb Temp of 25.6C, so it should throw
+    Real64 expected_ewt = sizingPlant.ExitTemp + sizingPlant.DeltaT;
+    EXPECT_EQ(20.0, expected_ewt);
+
+    EXPECT_THROW(ptr->SizeEvapFluidCooler(*state), EnergyPlus::FatalError);
+    EXPECT_TRUE(compare_err_stream_substring(delimited_string({
+        "   ** Severe  ** Error when autosizing the Design Entering Water Temperature for Evaporative Fluid Cooler = BIG EVAPORATIVEFLUIDCOOLER.",
+        "   **   ~~~   ** Design Entering Water Temperature (20.00 C) must be greater than design entering air wet-bulb temperature (25.60 C).",
+        "   **   ~~~   ** Check the Sizing:Plant object and the Design Entering Air Wet-bulb Temp input field for the Evaporative Fluid Cooler.",
+        "   **  Fatal  ** Review and revise design input values as appropriate.",
+    })));
+    EXPECT_NE(DataSizing::AutoSize, ptr->DesignEnteringWaterTemp);
+    EXPECT_EQ(expected_ewt, ptr->DesignEnteringWaterTemp);
+
+    compare_eio_stream("");
+
+    sizingPlant.ExitTemp = 30.0;
+    expected_ewt = sizingPlant.ExitTemp + sizingPlant.DeltaT;
+    EXPECT_EQ(40.0, expected_ewt);
+
+    EXPECT_NO_THROW(ptr->SizeEvapFluidCooler(*state));
+    compare_err_stream("");
+    EXPECT_EQ(expected_ewt, ptr->DesignEnteringWaterTemp);
+
+    EXPECT_TRUE(compare_eio_stream_substring("Component Sizing Information, EvaporativeFluidCooler:TwoSpeed, BIG EVAPORATIVEFLUIDCOOLER, "
+                                             "Design Entering Water Temperature [C], 40.00000"));
+}
+
+TEST_F(EnergyPlusFixture, EvapFluidCooler_TwoSpeed_UserSpecifiedDesignCapacity_LowSpeed_CanAutocalculate)
+{
+
+    // Test for #11283
+    std::string const idf_objects = delimited_string({
+
+        "EvaporativeFluidCooler:TwoSpeed,",
+        "  Big EvaporativeFluidCooler,  !- Name",
+        "  Condenser EvaporativeFluidCooler Inlet Node,  !- Water Inlet Node Name",
+        "  Condenser EvaporativeFluidCooler Outlet Node,  !- Water Outlet Node Name",
+        "  3.02,                    !- High Fan Speed Air Flow Rate {m3/s}",
+        "  2250,                    !- High Fan Speed Fan Power {W}",
+        "  autocalculate,           !- Low Fan Speed Air Flow Rate {m3/s}",
+        "  ,                        !- Low Fan Speed Air Flow Rate Sizing Factor",
+        "  autocalculate,           !- Low Fan Speed Fan Power {W}",
+        "  ,                        !- Low Fan Speed Fan Power Sizing Factor",
+        "  0.002208,                !- Design Spray Water Flow Rate {m3/s}",
+        "  UserSpecifiedDesignCapacity,  !- Performance Input Method",
+        "  ,                        !- Outdoor Air Inlet Node Name",
+        "  1.0,                     !- Heat Rejection Capacity and Nominal Capacity Sizing Ratio",
+        "  ,                        !- High Speed Standard Design Capacity {W}",
+        "  ,                        !- Low Speed Standard Design Capacity {W}",
+        "  ,                        !- Low Speed Standard Capacity Sizing Factor",
+        "  ,                        !- High Fan Speed U-factor Times Area Value {W/K}",
+        "  ,                        !- Low Fan Speed U-factor Times Area Value {W/K}",
+        "  ,                        !- Low Fan Speed U-Factor Times Area Sizing Factor",
+        "  0.001703,                !- Design Water Flow Rate {m3/s}",
+        "  87921,                   !- High Speed User Specified Design Capacity {W}",
+        "  Autocalculate,           !- Low Speed User Specified Design Capacity {W}",           // This is set to autocalculate
+        "  0.25,                    !- Low Speed User Specified Design Capacity Sizing Factor", // This has a default of 0.5 anyways
+        "  46.11,                   !- Design Entering Water Temperature {C}",
+        "  35.0,                    !- Design Entering Air Temperature {C}",
+        "  25.6,                    !- Design Entering Air Wet-bulb Temperature {C}",
+        "  1,                       !- High Speed Sizing Factor",
+        "  SaturatedExit,           !- Evaporation Loss Mode",
+        "  ,                        !- Evaporation Loss Factor {percent/K}",
+        "  0.008,                   !- Drift Loss Percent {percent}",
+        "  ConcentrationRatio,      !- Blowdown Calculation Mode",
+        "  3;                       !- Blowdown Concentration Ratio",
+    });
+
+    ASSERT_TRUE(process_idf(idf_objects));
+
+    EXPECT_NO_THROW(EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_TwoSpd, "BIG EVAPORATIVEFLUIDCOOLER"));
+    compare_err_stream("");
+
+    EvapFluidCoolerSpecs *ptr =
+        EvapFluidCoolerSpecs::factory(*state, DataPlant::PlantEquipmentType::EvapFluidCooler_TwoSpd, "BIG EVAPORATIVEFLUIDCOOLER");
+
+    EXPECT_EQ(87921.0, ptr->HighSpeedUserSpecifiedDesignCapacity);
+    EXPECT_EQ(87921.0 * 0.25, ptr->LowSpeedUserSpecifiedDesignCapacity);
+}
 } // namespace EnergyPlus

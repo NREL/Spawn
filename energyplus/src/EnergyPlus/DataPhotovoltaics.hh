@@ -194,7 +194,7 @@ namespace DataPhotovoltaics {
         //  coefficient  (V/°C)
         Real64 BVmp0; // Temperature coefficient for module maximum-power-voltage at reference conditions
         //   (V/°C)
-        Real64 mBVmp; // Cofficient for irradiance dependence of maximum-power-voltage-temperature
+        Real64 mBVmp; // Coefficient for irradiance dependence of maximum-power-voltage-temperature
         //   coefficient (V/°C)
         Real64 DiodeFactor; // Empirically determined 'diode factor' for individual cells (unitless)
         Real64 c_2;         // Empirical coefficients relating Vmp to Ee (unitless)
@@ -337,11 +337,6 @@ namespace DataPhotovoltaics {
 
 struct PhotovoltaicsData : BaseGlobalStruct
 {
-
-    std::string const cPVGeneratorObjectName = "Generator:Photovoltaic";
-    std::string const cPVSimplePerfObjectName = "PhotovoltaicPerformance:Simple";
-    std::string const cPVEquiv1DiodePerfObjectName = "PhotovoltaicPerformance:EquivalentOne-Diode";
-    std::string const cPVSandiaPerfObjectName = "PhotovoltaicPerformance:Sandia";
 
     int NumPVs = 0;                 // count of number of PV generators
     int Num1DiodePVModuleTypes = 0; // count for Equivalent one-diode model

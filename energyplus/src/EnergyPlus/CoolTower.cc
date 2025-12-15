@@ -110,7 +110,9 @@ namespace CoolTower {
             state.dataCoolTower->GetInputFlag = false;
         }
 
-        if ((int)state.dataCoolTower->CoolTowerSys.size() == 0) return;
+        if ((int)state.dataCoolTower->CoolTowerSys.size() == 0) {
+            return;
+        }
 
         CalcCoolTower(state);
 
@@ -265,7 +267,7 @@ namespace CoolTower {
                 ShowContinueError(state, format("...Minimum Allowable=[{:.2R}].", MinimumWaterFlowRate));
             }
 
-            state.dataCoolTower->CoolTowerSys(CoolTowerNum).TowerHeight = s_ipsc->rNumericArgs(2); // Get effctive tower height
+            state.dataCoolTower->CoolTowerSys(CoolTowerNum).TowerHeight = s_ipsc->rNumericArgs(2); // Get effective tower height
             if (state.dataCoolTower->CoolTowerSys(CoolTowerNum).TowerHeight > MaxHeight) {
                 state.dataCoolTower->CoolTowerSys(CoolTowerNum).TowerHeight = MaxHeight;
                 ShowWarningError(
@@ -372,7 +374,9 @@ namespace CoolTower {
         lAlphaBlanks.deallocate();
         lNumericBlanks.deallocate();
 
-        if (ErrorsFound) ShowFatalError(state, format("{} errors occurred in input.  Program terminates.", CurrentModuleObject));
+        if (ErrorsFound) {
+            ShowFatalError(state, format("{} errors occurred in input.  Program terminates.", CurrentModuleObject));
+        }
 
         for (int CoolTowerNum = 1; CoolTowerNum <= NumCoolTowers; ++CoolTowerNum) {
             SetupOutputVariable(state,
@@ -577,9 +581,13 @@ namespace CoolTower {
 
             if (state.dataCoolTower->CoolTowerSys(CoolTowerNum).availSched->getCurrentVal() > 0.0) {
                 // check component operation
-                if (state.dataEnvrn->WindSpeed < MinWindSpeed || state.dataEnvrn->WindSpeed > MaxWindSpeed) continue;
-                if (state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum).MAT < state.dataCoolTower->CoolTowerSys(CoolTowerNum).MinZoneTemp)
+                if (state.dataEnvrn->WindSpeed < MinWindSpeed || state.dataEnvrn->WindSpeed > MaxWindSpeed) {
                     continue;
+                }
+                if (state.dataZoneTempPredictorCorrector->zoneHeatBalance(ZoneNum).MAT <
+                    state.dataCoolTower->CoolTowerSys(CoolTowerNum).MinZoneTemp) {
+                    continue;
+                }
 
                 // Unit is on and simulate this component
                 // Determine the temperature and air flow rate at the cooltower outlet

@@ -90,14 +90,11 @@ TEST_F(EnergyPlusFixture, FaultsManager_FaultFoulingAirFilters_CheckFaultyAirFil
     bool TestResult;
 
     // Allocate
-    state->dataCurveManager->allocateCurveVector(1);
-
     state->dataFaultsMgr->FaultsFouledAirFilters.allocate(numFans);
 
     // Inputs: fan curve
-    auto *curve = state->dataCurveManager->PerfCurve(1);
+    auto *curve = AddCurve(*state, "Curve1");
     curve->curveType = CurveType::Cubic;
-    curve->interpolationType = InterpType::EvaluateCurveToLimits;
     curve->coeff[0] = 1151.1;
     curve->coeff[1] = 13.509;
     curve->coeff[2] = -0.9105;
@@ -145,7 +142,7 @@ TEST_F(EnergyPlusFixture, FaultsManager_FaultFoulingAirFilters_CheckFaultyAirFil
     EXPECT_FALSE(TestResult);
 
     // Clean up
-    state->dataCurveManager->PerfCurve.deallocate();
+    state->dataCurveManager->curves.deallocate();
 }
 
 TEST_F(EnergyPlusFixture, FaultsManager_FaultFoulingAirFilters_CheckFaultyAirFilterFanCurve_AutosizedFan)
@@ -341,19 +338,12 @@ TEST_F(EnergyPlusFixture, FaultsManager_FaultFoulingAirFilters_CalFaultyFanAirFl
     //     Calculate the decrease of the fan air flow rate, given the fan curve
     //     and the increase of fan pressure rise due to fouling air filters
 
-    int FanNum;
     double FanDesignFlowRateDec;
     double FanFaultyDeltaPressInc = 0.10; // Increase by 10%
 
-    state->init_state(*state);
-
-    // Allocate
-    state->dataCurveManager->allocateCurveVector(1);
-
     // Inputs: fan curve
-    auto *curve = state->dataCurveManager->PerfCurve(1);
+    auto *curve = AddCurve(*state, "Curve1");
     curve->curveType = CurveType::Cubic;
-    curve->interpolationType = InterpType::EvaluateCurveToLimits;
     curve->coeff[0] = 1151.1;
     curve->coeff[1] = 13.509;
     curve->coeff[2] = -0.9105;
@@ -380,7 +370,7 @@ TEST_F(EnergyPlusFixture, FaultsManager_FaultFoulingAirFilters_CalFaultyFanAirFl
     EXPECT_NEAR(3.845, FanDesignFlowRateDec, 0.005);
 
     // Clean up
-    state->dataCurveManager->PerfCurve.deallocate();
+    state->dataCurveManager->curves.deallocate();
 }
 
 TEST_F(EnergyPlusFixture, FaultsManager_TemperatureSensorOffset_CoilSAT)
@@ -784,7 +774,7 @@ TEST_F(EnergyPlusFixture, FaultsManager_FoulingCoil_AssignmentAndCalc)
         "  0.000010,                !- Maximum Water Flow Rate {m3/s}",
         "  AHU HW Heating Coil Water Inlet Node,  !- Water Inlet Node Name",
         "  AHU HW Heating Coil Water Outlet Node,  !- Water Outlet Node Name",
-        "  Air Loop Referenz AHU Cooling Coil Air Outlet Node,  !- Air Inlet Node Name",
+        "  Air Loop Reference AHU Cooling Coil Air Outlet Node,  !- Air Inlet Node Name",
         "  AHU HW Heating Coil Air Outlet Node,  !- Air Outlet Node Name",
         "  UFactorTimesAreaAndDesignWaterFlowRate,  !- Performance Input Method",
         "  438.32,                  !- Rated Capacity {W}",

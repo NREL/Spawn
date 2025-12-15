@@ -59,6 +59,7 @@
 #include <EnergyPlus/FluidProperties.hh>
 #include <EnergyPlus/OutsideEnergySources.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 
 using namespace EnergyPlus;
 using namespace OutsideEnergySources;
@@ -138,6 +139,8 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     state->dataLoopNodes->Node(thisDistrictHeatingWater.InletNodeNum).Temp = 55.0;
     thisDistrictHeatingWater.plantLoc = locHotWater;
     thisDistrictHeatingWater.plantLoc.loopNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, thisDistrictHeatingWater.plantLoc);
+
     thisDistrictHeatingWater.BeginEnvrnInitFlag = true;
     thisDistrictHeatingWater.simulate(*state, locHotWater, firstHVAC, MyLoad, RunFlag);
 
@@ -172,6 +175,7 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     state->dataLoopNodes->Node(thisDistrictCooling.InletNodeNum).Temp = 65.0;
     thisDistrictCooling.plantLoc = locChilledWater;
     thisDistrictCooling.plantLoc.loopNum = 2;
+    PlantUtilities::SetPlantLocationLinks(*state, thisDistrictCooling.plantLoc);
     thisDistrictCooling.BeginEnvrnInitFlag = true;
     thisDistrictCooling.simulate(*state, locChilledWater, firstHVAC, MyLoad, RunFlag);
 
@@ -203,6 +207,7 @@ TEST_F(EnergyPlusFixture, DistrictCoolingandHeating)
     state->dataLoopNodes->Node(thisDistrictHeatingSteam.OutletNodeNum).TempSetPoint = 105.0;
     thisDistrictHeatingSteam.plantLoc = locSteam;
     thisDistrictHeatingSteam.plantLoc.loopNum = 3;
+    PlantUtilities::SetPlantLocationLinks(*state, thisDistrictHeatingSteam.plantLoc);
     thisDistrictHeatingSteam.BeginEnvrnInitFlag = true;
     thisDistrictHeatingSteam.simulate(*state, locSteam, firstHVAC, MyLoad, RunFlag);
 

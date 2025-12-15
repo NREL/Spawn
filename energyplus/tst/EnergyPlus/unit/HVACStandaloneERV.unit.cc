@@ -254,7 +254,7 @@ TEST_F(EnergyPlusFixture, HVACStandAloneERV_Test2)
     erv.SupplyAirFanIndex = 1;
     erv.ExhaustAirFanName = state->dataFans->fans(2)->Name;
     erv.ExhaustAirFanIndex = 2;
-    erv.hxType = HVAC::HXType::AirToAir_Generic;
+    erv.hxType = HVAC::HXType::AirToAir_SensAndLatent;
     erv.HeatExchangerName = "ERV Heat Exchanger";
     erv.AirVolFlowPerFloorArea = 0.01;
     erv.AirVolFlowPerOccupant = 0.0;

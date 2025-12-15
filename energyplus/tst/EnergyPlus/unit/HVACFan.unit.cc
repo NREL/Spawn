@@ -273,7 +273,6 @@ TEST_F(EnergyPlusFixture, SystemFanObj_TwoSpeedFanPowerCalc2)
 
     state->init_state(*state);
 
-    Curve::GetCurveInput(*state);
     Fans::GetFanInput(*state);
     state->dataSize->CurZoneEqNum = 0;
     state->dataSize->CurSysNum = 0;
@@ -442,7 +441,6 @@ TEST_F(EnergyPlusFixture, SystemFanObj_TwoSpeedFanPowerCalc4)
 
     state->init_state(*state);
 
-    Curve::GetCurveInput(*state);
     Fans::GetFanInput(*state);
     state->dataSize->CurZoneEqNum = 0;
     state->dataSize->CurSysNum = 0;

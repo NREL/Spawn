@@ -238,7 +238,6 @@ TEST_F(EnergyPlusFixture, Humidifiers_GetHumidifierInput)
 TEST_F(EnergyPlusFixture, Humidifiers_ThermalEfficiency)
 {
     // tests thermal efficiency modifier curve use
-    state->init_state(*state);
     HumidifierData thisHum;
 
     state->dataHVACGlobal->TimeStepSys = 0.25;

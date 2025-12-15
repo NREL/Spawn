@@ -184,7 +184,9 @@ namespace SteamCoils {
 
         CalcSteamAirCoil(
             state, CoilNum, QCoilReqLocal, QCoilActualTemp, fanOp, PartLoadFrac); // Autodesk:OPTIONAL QCoilReq used without PRESENT check
-        if (present(QCoilActual)) QCoilActual = QCoilActualTemp;
+        if (present(QCoilActual)) {
+            QCoilActual = QCoilActualTemp;
+        }
 
         // Update the current SteamCoil to the outlet nodes
         UpdateSteamCoil(state, CoilNum);
@@ -595,7 +597,7 @@ namespace SteamCoils {
 
         // First set the conditions for the air into the coil model
 
-        // If a temperature setpoint controlled coil must set the desired outlet temp everytime
+        // If a temperature setpoint controlled coil must set the desired outlet temp every time
         if (ControlNode == 0) {
             state.dataSteamCoils->SteamCoil(CoilNum).DesiredOutletTemp = 0.0;
         } else if (ControlNode == AirOutletNode) {
@@ -996,7 +998,7 @@ namespace SteamCoils {
         // Steam coils are different, All of steam condenses in heat exchanger
         // Steam traps allow only water to leave the coil,the degree of subcooling
         // desired is input by the user, which is used to calculate water outlet temp.
-        // Heat exchange is = Latent Heat + Sensible heat,coil effectivness is 1.0
+        // Heat exchange is = Latent Heat + Sensible heat,coil effectiveness is 1.0
 
         using HVAC::TempControlTol;
         using PlantUtilities::SetComponentFlowRate;
@@ -1082,7 +1084,7 @@ namespace SteamCoils {
                 (state.dataSteamCoils->SteamCoil(CoilNum).availSched->getCurrentVal() > 0.0 || state.dataSteamCoils->MySizeFlag(CoilNum)) &&
                 (QCoilReq > 0.0)) {
 
-                // Steam heat exchangers would not have effectivness, since all of the steam is
+                // Steam heat exchangers would not have effectiveness, since all of the steam is
                 // converted to water and only then the steam trap allows it to leave the heat
                 // exchanger, subsequently heat exchange is latent heat + subcooling.
                 EnthSteamInDry = state.dataSteamCoils->SteamCoil(CoilNum).steam->getSatEnthalpy(state, TempSteamIn, 1.0, RoutineName);
@@ -1169,7 +1171,7 @@ namespace SteamCoils {
                 // Point 3-Point 5,
                 EnergyLossToEnvironment = SteamMassFlowRate * (EnthCoilOutlet - EnthPumpInlet);
 
-                // Loss to enviornment due to pressure drop
+                // Loss to environment due to pressure drop
                 state.dataSteamCoils->SteamCoil(CoilNum).LoopLoss = EnergyLossToEnvironment;
                 //************************* Loop Losses *****************************
             } else { // Coil is not running.
@@ -1190,7 +1192,7 @@ namespace SteamCoils {
                 (state.dataSteamCoils->SteamCoil(CoilNum).availSched->getCurrentVal() > 0.0 || state.dataSteamCoils->MySizeFlag(CoilNum)) &&
                 (std::abs(TempSetPoint - TempAirIn) > TempControlTol)) {
 
-                // Steam heat exchangers would not have effectivness, since all of the steam is
+                // Steam heat exchangers would not have effectiveness, since all of the steam is
                 // converted to water and only then the steam trap allows it to leave the heat
                 // exchanger, subsequently heat exchange is latent heat + subcooling.
                 EnthSteamInDry = state.dataSteamCoils->SteamCoil(CoilNum).steam->getSatEnthalpy(state, TempSteamIn, 1.0, RoutineName);
@@ -1209,7 +1211,7 @@ namespace SteamCoils {
                 // Coil Load in case of temperature setpoint
                 QCoilCap = CapacitanceAir * (TempSetPoint - TempAirIn);
 
-                // Check to see if setpoint above enetering temperature. If not, set
+                // Check to see if setpoint above entering temperature. If not, set
                 // output to zero.
                 if (QCoilCap <= 0.0) {
                     QCoilCap = 0.0;
@@ -1335,7 +1337,7 @@ namespace SteamCoils {
                     // Point 3-Point 5,
                     EnergyLossToEnvironment = SteamMassFlowRate * (EnthCoilOutlet - EnthPumpInlet);
 
-                    // Loss to enviornment due to pressure drop
+                    // Loss to environment due to pressure drop
                     state.dataSteamCoils->SteamCoil(CoilNum).LoopLoss = EnergyLossToEnvironment;
                     //************************* Loop Losses *****************************
                 }

@@ -111,7 +111,9 @@ Real64 CoolingWaterflowSizer::size(EnergyPlusData &state, Real64 _originalValue,
             if (!this->wasAutoSized && !this->sizingDesRunThisAirSys) {
                 this->autoSizedValue = _originalValue;
             } else {
-                if (this->curOASysNum > 0) CoilDesWaterDeltaT *= 0.5;
+                if (this->curOASysNum > 0) {
+                    CoilDesWaterDeltaT *= 0.5;
+                }
                 if (this->dataCapacityUsedForSizing >= HVAC::SmallLoad) {
                     if (this->dataWaterLoopNum > 0 && this->dataWaterLoopNum <= (int)state.dataPlnt->PlantLoop.size() && CoilDesWaterDeltaT > 0.0) {
                         Real64 Cp = state.dataPlnt->PlantLoop(this->dataWaterLoopNum)
@@ -144,7 +146,9 @@ Real64 CoolingWaterflowSizer::size(EnergyPlusData &state, Real64 _originalValue,
                 this->sizingString = "Maximum Water Flow Rate [m3/s]";
             }
         } else {
-            if (this->isEpJSON) this->sizingString = "design_water_flow_rate [m3/s]";
+            if (this->isEpJSON) {
+                this->sizingString = "design_water_flow_rate [m3/s]";
+            }
         }
     }
     this->selectSizerOutput(state, errorsFound);
@@ -162,6 +166,16 @@ Real64 CoolingWaterflowSizer::size(EnergyPlusData &state, Real64 _originalValue,
             state.dataRptCoilSelection->coilSelectionReportObj->setCoilLvgWaterTemp(
                 state, this->compName, this->compType, Constant::CWInitConvTemp + CoilDesWaterDeltaT);
         }
+        this->calcCoilWaterFlowRates(state,
+                                     this->compName,
+                                     this->compType,
+                                     this->autoSizedValue,
+                                     this->dataWaterLoopNum,
+                                     this->curZoneEqNum,
+                                     this->curSysNum,
+                                     this->curOASysNum,
+                                     this->finalZoneSizing,
+                                     this->finalSysSizing);
     }
     return this->autoSizedValue;
 }

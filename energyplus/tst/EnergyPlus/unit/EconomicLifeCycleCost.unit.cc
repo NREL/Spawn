@@ -517,7 +517,7 @@ TEST_F(EnergyPlusFixture, EconomicLifeCycleCost_ExpressAsCashFlows)
     state->dataEconTariff->tariff.allocate(1);
     state->dataEconTariff->tariff(1).isSelected = true;
     state->dataEconTariff->tariff(1).resource = Constant::eResource::Electricity;
-    state->dataEconTariff->tariff(1).ptTotal = 1;
+    state->dataEconTariff->tariff(1).cats[(int)Cat::Total] = 1;
     state->dataEconTariff->econVar.allocate(1);
     state->dataEconTariff->econVar(1).values.allocate(12);
     state->dataEconTariff->econVar(1).values(1) = 101.;

@@ -100,7 +100,9 @@ GshpPeCoolingSpecs *GshpPeCoolingSpecs::factory(EnergyPlusData &state, const std
     auto thisObj = std::find_if(state.dataHPWaterToWaterClg->GSHP.begin(),
                                 state.dataHPWaterToWaterClg->GSHP.end(),
                                 [&objectName](const GshpPeCoolingSpecs &myObj) { return myObj.Name == objectName; });
-    if (thisObj != state.dataHPWaterToWaterClg->GSHP.end()) return thisObj;
+    if (thisObj != state.dataHPWaterToWaterClg->GSHP.end()) {
+        return thisObj;
+    }
     // If we didn't find it, fatal
     ShowFatalError(state, format("WWHPCoolingFactory: Error getting inputs for heat pump named: {}", objectName)); // LCOV_EXCL_LINE
     // Shut up the compiler
@@ -504,7 +506,9 @@ void GshpPeCoolingSpecs::initialize(EnergyPlusData &state)
         state.dataLoopNodes->Node(this->SourceSideInletNodeNum).Temp = 35.0;
     }
 
-    if (!state.dataGlobal->BeginEnvrnFlag) this->beginEnvironFlag = true;
+    if (!state.dataGlobal->BeginEnvrnFlag) {
+        this->beginEnvironFlag = true;
+    }
 
     // Init more variables
 
@@ -671,7 +675,7 @@ void GshpPeCoolingSpecs::calculate(EnergyPlusData &state, Real64 &MyLoad)
         // To determine Load Side temperature
         LoadSideRefridgTemp = this->LoadSideWaterInletTemp - initialQLoad / (LoadSideEffect * CpLoadSide * this->LoadSideWaterMassFlowRate);
 
-        // Determine Source Side tempertaure
+        // Determine Source Side temperature
         SourceSideRefridgTemp =
             this->SourceSideWaterInletTemp + initialQSource / (SourceSideEffect * CpSourceSide * this->SourceSideWaterMassFlowRate);
 
@@ -787,7 +791,7 @@ void GshpPeCoolingSpecs::calculate(EnergyPlusData &state, Real64 &MyLoad)
                 ShowContinueError(state, format("Heatpump Name = {}", this->Name));
                 ShowContinueError(
                     state,
-                    format("Heat Inbalance (%)             = {}", std::abs(100.0 * (this->QSource - initialQSource) / (initialQSource + SmallNum))));
+                    format("Heat Imbalance (%)             = {}", std::abs(100.0 * (this->QSource - initialQSource) / (initialQSource + SmallNum))));
                 ShowContinueError(state, format("Load-side heat transfer rate   = {}", this->QLoad));
                 ShowContinueError(state, format("Source-side heat transfer rate = {}", this->QSource));
                 ShowContinueError(state, format("Source-side mass flow rate     = {}", this->SourceSideWaterMassFlowRate));

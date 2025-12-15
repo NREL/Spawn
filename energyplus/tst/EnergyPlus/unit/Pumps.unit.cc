@@ -55,6 +55,7 @@
 #include <EnergyPlus/Data/EnergyPlusData.hh>
 #include <EnergyPlus/DataSizing.hh>
 #include <EnergyPlus/Plant/DataPlant.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/Pumps.hh>
 #include <EnergyPlus/SizingManager.hh>
 
@@ -669,7 +670,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPump_MinFlowGreaterThanMax)
     std::string const error_string = delimited_string({
         "   ** Warning ** GetPumpInput: Pump:VariableSpeed=\"SUPPLY INLET PUMP\", Invalid 'Design Minimum Flow Rate'",
         "   **   ~~~   ** Entered Value=[2.00000E-003] is above or too close (equal) to the Design Maximum Flow Rate=[1.00000E-003].",
-        "   **   ~~~   ** Reseting value of 'Design Minimum Flow Rate' to the value of 99% of 'Design Maximum Flow Rate'.",
+        "   **   ~~~   ** Resetting value of 'Design Minimum Flow Rate' to the value of 99% of 'Design Maximum Flow Rate'.",
     });
 
     EXPECT_TRUE(compare_err_stream(error_string, true));
@@ -721,7 +722,7 @@ TEST_F(EnergyPlusFixture, VariableSpeedPump_MinFlowEqualToMax)
     std::string const error_string = delimited_string({
         "   ** Warning ** GetPumpInput: Pump:VariableSpeed=\"SUPPLY INLET PUMP\", Invalid 'Design Minimum Flow Rate'",
         "   **   ~~~   ** Entered Value=[9.95000E-004] is above or too close (equal) to the Design Maximum Flow Rate=[1.00000E-003].",
-        "   **   ~~~   ** Reseting value of 'Design Minimum Flow Rate' to the value of 99% of 'Design Maximum Flow Rate'.",
+        "   **   ~~~   ** Resetting value of 'Design Minimum Flow Rate' to the value of 99% of 'Design Maximum Flow Rate'.",
     });
 
     EXPECT_TRUE(compare_err_stream(error_string, true));
@@ -765,6 +766,15 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpEMSPressureTest)
 
     ASSERT_TRUE(process_idf(idf_objects));
     state->init_state(*state);
+
+    int thisBranchNum = 1;
+    DataPlant::LoopSideLocation thisLoopSideNum = DataPlant::LoopSideLocation::Supply;
+    state->dataPlnt->PlantLoop.allocate(1);
+    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
+    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
+    state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch.allocate(1);
+    state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch(thisBranchNum).Comp.allocate(1);
+
     Pumps::GetPumpInput(*state);
     Pumps::SizePump(*state, 1);
     Real64 massflowrate = 1.0;
@@ -773,16 +783,10 @@ TEST_F(EnergyPlusFixture, HeaderedVariableSpeedPumpEMSPressureTest)
     state->dataPumps->PumpEquip(1).plantLoc.loopNum = 1;
     state->dataPumps->PumpEquip(1).plantLoc.branchNum = 1;
     state->dataPumps->PumpEquip(1).plantLoc.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataPumps->PumpEquip(1).plantLoc);
     state->dataPumps->PumpEquip(1).MassFlowRateMax = massflowrate;
     bool PumpRunning = true;
-    int thisLoopNum = 1, thisBranchNum = 1, thisCompNum = 1;
-    DataPlant::LoopSideLocation thisLoopSideNum = DataPlant::LoopSideLocation::Supply;
-    PlantLocation plantLoc{thisLoopNum, thisLoopSideNum, thisBranchNum, thisCompNum};
-    state->dataPlnt->PlantLoop.allocate(1);
-    state->dataPlnt->PlantLoop(1).FluidName = "WATER";
-    state->dataPlnt->PlantLoop(1).glycol = Fluid::GetWater(*state);
-    state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch.allocate(1);
-    state->dataPlnt->PlantLoop(1).LoopSide(thisLoopSideNum).Branch(thisBranchNum).Comp.allocate(1);
+
     state->dataLoopNodes->Node(1).MassFlowRate = massflowrate;
     state->dataLoopNodes->Node(1).MassFlowRateMinAvail = massflowrate;
     state->dataLoopNodes->Node(1).MassFlowRateMin = massflowrate;

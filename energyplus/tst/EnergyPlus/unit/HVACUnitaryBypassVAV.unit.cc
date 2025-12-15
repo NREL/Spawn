@@ -290,10 +290,9 @@ protected:
         cbvav.CBVAVBoxOutletNode.allocate(1);
         cbvav.CBVAVBoxOutletNode(1) = 11;
 
-        state->dataCurveManager->allocateCurveVector(1);
-        state->dataCurveManager->PerfCurve(1)->interpolationType = Curve::InterpType::EvaluateCurveToLimits;
-        state->dataCurveManager->PerfCurve(1)->curveType = Curve::CurveType::Linear;
-        state->dataCurveManager->PerfCurve(1)->coeff[0] = 1.0;
+        auto *curve1 = Curve::AddCurve(*state, "Curve1");
+        curve1->curveType = Curve::CurveType::Linear;
+        curve1->coeff[0] = 1.0;
 
         state->dataEnvrn->OutDryBulbTemp = 35.0;
         state->dataEnvrn->OutHumRat = 0.0141066;
@@ -785,7 +784,7 @@ TEST_F(CBVAVSys, UnitaryBypassVAV_NoOASys)
     cbvav.AirLoopNumber = 1;
     state->dataAirLoop->AirLoopFlow.allocate(cbvav.AirLoopNumber);
 
-    // First time through GetZoneLoads CBVAV.HeatCoolMode gets set IF there is a load and won't exectute again until the simulation time increases
+    // First time through GetZoneLoads CBVAV.HeatCoolMode gets set IF there is a load and won't execute again until the simulation time increases
     // There is no load here and CBVAV.HeatCoolMode did not change so cbvav.changeOverTimer also did not get set (change) in previous call
     // so there is no need to reset cbvav.changeOverTimer here but it wouldn't hurt if it was reset to -1.0
     HVACUnitaryBypassVAV::InitCBVAV(*state, cbvavNum, FirstHVACIteration, AirLoopNum, OnOffAirFlowRatio, HXUnitOn);
@@ -1476,6 +1475,7 @@ TEST_F(EnergyPlusFixture, UnitaryBypassVAV_ParentElectricityRateTest)
 
         "  Coil:Heating:DX:VariableSpeed,",
         "    Main DX Heating Coil 1,  !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    Heating Coil Air Inlet Node,  !- Indoor Air Inlet Node Name",
         "    Heating Coil Air Outlet Node,  !- Indoor Air Outlet Node Name",
         "    5.0,                     !-Number of Speeds{dimensionless}",
@@ -1542,6 +1542,7 @@ TEST_F(EnergyPlusFixture, UnitaryBypassVAV_ParentElectricityRateTest)
 
         "  Coil:Cooling:DX:VariableSpeed,",
         "    Main Cooling Coil 1,     !- Name",
+        "    ,                        !- Availability Schedule Name",
         "    DX Cooling Coil Air Inlet Node,  !- Indoor Air Inlet Node Name",
         "    Heating Coil Air Inlet Node,  !- Indoor Air Outlet Node Name",
         "    4.0,                     !- Number of Speeds {dimensionless}",

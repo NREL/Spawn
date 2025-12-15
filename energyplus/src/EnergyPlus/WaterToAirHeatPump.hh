@@ -77,6 +77,7 @@ namespace WaterToAirHeatPump {
     {
         // Members
         std::string Name;                       // Name of the Water to Air Heat pump
+        Sched::Schedule *availSched = nullptr;  // availability schedule
         std::string WatertoAirHPType;           // Type of WatertoAirHP ie. Heating or Cooling
         DataPlant::PlantEquipmentType WAHPType; // type of component in plant
         std::string Refrigerant;                // Refrigerant name

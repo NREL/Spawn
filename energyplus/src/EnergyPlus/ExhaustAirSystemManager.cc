@@ -99,7 +99,9 @@ namespace ExhaustAirSystemManager {
 
     void GetExhaustAirSystemInput(EnergyPlusData &state)
     {
-        if (!state.dataExhAirSystemMrg->GetInputFlag) return;
+        if (!state.dataExhAirSystemMrg->GetInputFlag) {
+            return;
+        }
         // state.dataExhAirSystemMrg->GetInputFlag = false;
 
         // Locals
@@ -288,7 +290,9 @@ namespace ExhaustAirSystemManager {
                                                                           state.dataEnvrn->OutBaroPress,
                                                                           state.dataLoopNodes->Node(outletNode_Num).Temp,
                                                                           state.dataLoopNodes->Node(outletNode_Num).HumRat);
-            if (RhoAirCurrent <= 0.0) RhoAirCurrent = state.dataEnvrn->StdRhoAir;
+            if (RhoAirCurrent <= 0.0) {
+                RhoAirCurrent = state.dataEnvrn->StdRhoAir;
+            }
             thisExhSys.centralFan_VolumeFlowRate_Cur = state.dataLoopNodes->Node(outletNode_Num).MassFlowRate / RhoAirCurrent;
 
             thisExhSys.centralFan_Power = state.dataFans->fans(thisExhSys.CentralFanIndex)->totalPower;
@@ -311,7 +315,9 @@ namespace ExhaustAirSystemManager {
                                                                           state.dataEnvrn->OutBaroPress,
                                                                           state.dataLoopNodes->Node(outletNode_Num).Temp,
                                                                           state.dataLoopNodes->Node(outletNode_Num).HumRat);
-            if (RhoAirCurrent <= 0.0) RhoAirCurrent = state.dataEnvrn->StdRhoAir;
+            if (RhoAirCurrent <= 0.0) {
+                RhoAirCurrent = state.dataEnvrn->StdRhoAir;
+            }
             thisExhSys.centralFan_VolumeFlowRate_Cur = fan->outletAirMassFlowRate / RhoAirCurrent;
 
             thisExhSys.centralFan_Power = fan->totalPower * 1000.0;
@@ -328,7 +334,7 @@ namespace ExhaustAirSystemManager {
             // but this still can use the ratio
         }
         if (mixerFlow_Prior < HVAC::SmallMassFlow) {
-            // this is the case where the fan flow should be resetted to zeros and not run the ratio
+            // this is the case where the fan flow should be reset to zeros and not run the ratio
         }
         if ((mixerFlow_Prior - mixerFlow_Posterior > HVAC::SmallMassFlow) || (mixerFlow_Prior - mixerFlow_Posterior < -HVAC::SmallMassFlow)) {
             // calculate a ratio
@@ -396,7 +402,7 @@ namespace ExhaustAirSystemManager {
                 } else if ((thisExhCtrl.availSched = Sched::GetSchedule(state, availSchName)) == nullptr) {
                     // mismatch, reset to always on
                     thisExhCtrl.availSched = Sched::GetScheduleAlwaysOn(state);
-                    ShowWarningItemNotFound(state, eoh, "Avaiability Schedule Name", availSchName, "Availability Schedule is reset to Always ON.");
+                    ShowWarningItemNotFound(state, eoh, "Availability Schedule Name", availSchName, "Availability Schedule is reset to Always ON.");
                 }
 
                 std::string zoneName = ip->getAlphaFieldValue(objectFields, objectSchemaProps, "zone_name");
@@ -575,8 +581,8 @@ namespace ExhaustAirSystemManager {
             }
 
             Real64 DesignFlowRate = thisExhCtrl.DesignExhaustFlowRate;
-            Real64 FlowFrac = 0.0;
-            if (thisExhCtrl.minExhFlowFracSched != nullptr) {
+            Real64 FlowFrac = 1.0;
+            if (thisExhCtrl.exhaustFlowFractionSched != nullptr) {
                 FlowFrac = thisExhCtrl.exhaustFlowFractionSched->getCurrentVal();
                 if (FlowFrac < 0.0) {
                     ShowWarningError(
@@ -704,7 +710,7 @@ namespace ExhaustAirSystemManager {
             //
         }
 
-        // after evertyhing sized, set the sizing flag to be false
+        // after everything sized, set the sizing flag to be false
         thisExhSys.SizingFlag = false;
     }
 
@@ -739,7 +745,7 @@ namespace ExhaustAirSystemManager {
 
     void CheckForSupplyNode(EnergyPlusData &state, int const ExhCtrlNum, bool &NodeNotFound)
     {
-        // Trying to check a node to see if it is truely a supply node
+        // Trying to check a node to see if it is truly a supply node
         // for a nodelist, need a call loop to check each node in the list
 
         auto &thisExhCtrl = state.dataZoneEquip->ZoneExhaustControlSystem(ExhCtrlNum);

@@ -51,7 +51,7 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define __PRETTY_FUNCTION__ __FUNCSIG__
+#    define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
 
 int numWarnings = 0;
@@ -220,7 +220,7 @@ int main(int argc, const char *argv[])
     // With the Python API, we can leverage Python's introspection to find the pyenergyplus folder, and thus the E+ repo
     // For C programs that link to the API, we don't have this.
     // Of course, we do have the path to the E+ library in CMake land, but that would then require configuring this file, adding complexity
-    // For now we will call the setEnergyPlusRootDirectory function to exercise the funcional interface, but not attempt anything further
+    // For now we will call the setEnergyPlusRootDirectory function to exercise the functional interface, but not attempt anything further
     // The Python API tests will exercise the functionality of the setEnergyPlusRootDirectory implicitly
     printf("Setting EnergyPlus root directory for potential runs with auxiliary tools...\n");
     EnergyPlusState state4 = stateNew();
@@ -228,7 +228,9 @@ int main(int argc, const char *argv[])
 
     // OK, now just try to run one of the dirty states and it should fail
     int bad = energyplus(state3, argc, argv);
-    if (bad == 0) return 1;
+    if (bad == 0) {
+        return 1;
+    }
 
     // OK, so now let's run with a callback that stops the simulation
     EnergyPlusState state5 = stateNew();

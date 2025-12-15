@@ -186,7 +186,7 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
                             Real64 CoilInWetBulb =
                                 Psychrometrics::PsyTwbFnTdbWPb(state, CoilInTemp, CoilInHumRat, state.dataEnvrn->StdBaroPress, this->callingRoutine);
                             if (this->dataTotCapCurveIndex > 0) {
-                                switch (state.dataCurveManager->PerfCurve(this->dataTotCapCurveIndex)->numDims) {
+                                switch (state.dataCurveManager->curves(this->dataTotCapCurveIndex)->numDims) {
                                 case 1:
                                     TotCapTempModFac = Curve::CurveValue(state, this->dataTotCapCurveIndex, CoilInWetBulb);
                                     break;
@@ -372,8 +372,12 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
                                 CoilInHumRat =
                                     OutAirFrac * thisFinalSysSizing.PrecoolHumRat + (1.0 - OutAirFrac) * thisFinalSysSizing.RetHumRatAtCoolPeak;
                             }
-                            if (this->dataDesInletAirTemp > 0.0) CoilInTemp = this->dataDesInletAirTemp;
-                            if (this->dataDesInletAirHumRat > 0.0) CoilInHumRat = this->dataDesInletAirHumRat;
+                            if (this->dataDesInletAirTemp > 0.0) {
+                                CoilInTemp = this->dataDesInletAirTemp;
+                            }
+                            if (this->dataDesInletAirHumRat > 0.0) {
+                                CoilInHumRat = this->dataDesInletAirHumRat;
+                            }
                         }
                         Real64 OutTemp = thisFinalSysSizing.OutTempAtCoolPeak;
                         if (this->dataCoolCoilType == HVAC::Coil_CoolingWaterToAirHPVSEquationFit) {
@@ -388,10 +392,12 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
                         if (this->curOASysNum > 0) { // coil is in the OA stream
                             // need to find fan type in OA system
                         } else {
-                            if (this->primaryAirSystem(this->curSysNum).supFanType != HVAC::FanType::Invalid)
+                            if (this->primaryAirSystem(this->curSysNum).supFanType != HVAC::FanType::Invalid) {
                                 FanCoolLoad = this->calcFanDesHeatGain(DesVolFlow);
-                            if (this->primaryAirSystem(this->curSysNum).retFanType != HVAC::FanType::Invalid)
+                            }
+                            if (this->primaryAirSystem(this->curSysNum).retFanType != HVAC::FanType::Invalid) {
                                 FanCoolLoad += (1.0 - OutAirFrac) * this->calcFanDesHeatGain(DesVolFlow);
+                            }
                             this->primaryAirSystem(this->curSysNum).FanDesCoolLoad = FanCoolLoad;
                         }
                         Real64 PeakCoilLoad = max(0.0, (state.dataEnvrn->StdRhoAir * DesVolFlow * (CoilInEnth - CoilOutEnth)));
@@ -409,7 +415,7 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
                             }
                         }
                         if (this->dataTotCapCurveIndex > 0) {
-                            switch (state.dataCurveManager->PerfCurve(this->dataTotCapCurveIndex)->numDims) {
+                            switch (state.dataCurveManager->curves(this->dataTotCapCurveIndex)->numDims) {
                             case 1:
                                 TotCapTempModFac = Curve::CurveValue(state, this->dataTotCapCurveIndex, CoilInWetBulb);
                                 break;
@@ -437,8 +443,8 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
                     }
                     this->autoSizedValue =
                         NominalCapacityDes * this->dataFracOfAutosizedCoolingCapacity; // Fixed Moved up 1 line inside block per Richard Raustad
-                }                                                                      // IF(OASysFlag) THEN or ELSE IF(AirLoopSysFlag) THEN
-                this->dataDesAccountForFanHeat = true;                                 // reset for next water coil
+                } // IF(OASysFlag) THEN or ELSE IF(AirLoopSysFlag) THEN
+                this->dataDesAccountForFanHeat = true; // reset for next water coil
                 if (state.dataGlobal->DisplayExtraWarnings && this->autoSizedValue <= 0.0) {
                     ShowWarningMessage(state,
                                        this->callingRoutine + ": Potential issue with equipment sizing for " + this->compType + ' ' + this->compName);
@@ -477,11 +483,12 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
     if (!this->hardSizeNoDesignRun || this->dataScalableSizingON || this->dataScalableCapSizingON) {
         if (this->wasAutoSized) {
             // Note: the VolFlowPerRatedTotCap check is not applicable for VRF-FluidTCtrl coil model, which implements variable flow fans and
-            // determines capacity using physical calculations instead of emperical curves
+            // determines capacity using physical calculations instead of empirical curves
             bool FlagCheckVolFlowPerRatedTotCap = true;
             if (Util::SameString(this->compType, "Coil:Cooling:DX:VariableRefrigerantFlow:FluidTemperatureControl") ||
-                Util::SameString(this->compType, "Coil:Heating:DX:VariableRefrigerantFlow:FluidTemperatureControl"))
+                Util::SameString(this->compType, "Coil:Heating:DX:VariableRefrigerantFlow:FluidTemperatureControl")) {
                 FlagCheckVolFlowPerRatedTotCap = false;
+            }
 
             if (this->dataIsDXCoil && FlagCheckVolFlowPerRatedTotCap) {
                 Real64 RatedVolFlowPerRatedTotCap = 0.0;
@@ -535,7 +542,9 @@ Real64 CoolingCapacitySizer::size(EnergyPlusData &state, Real64 _originalValue, 
 
     // override sizing string
     if (this->overrideSizeString) {
-        if (this->isEpJSON) this->sizingString = "cooling_design_capacity [W]";
+        if (this->isEpJSON) {
+            this->sizingString = "cooling_design_capacity [W]";
+        }
     }
     if (this->dataScalableCapSizingON) {
         int const SELECT_CASE_var(this->zoneEqSizing(this->curZoneEqNum).SizingMethod(HVAC::CoolingCapacitySizing));

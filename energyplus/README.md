@@ -15,9 +15,8 @@ This is the EnergyPlus Development Repository.  EnergyPlus™ is a whole buildin
 
 ## Testing
 
-[![](https://github.com/NREL/EnergyPlus/workflows/Custom%20Check/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/custom_check.yml) 
-[![](https://github.com/NREL/EnergyPlus/workflows/Documentation/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/documentation.yml) 
-[![](https://github.com/NREL/EnergyPlus/workflows/CppCheck/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/cppcheck.yml)
+[![](https://github.com/NREL/EnergyPlus/workflows/Code%20Integrity/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/test_code_integrity.yml)
+[![](https://github.com/NREL/EnergyPlus/workflows/Documentation/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/documentation.yml)
 
 Every commit and every release of EnergyPlus undergoes rigorous testing.
 The testing consists of building EnergyPlus, of course, then there are unit tests, integration tests, API tests, and regression tests.
@@ -27,8 +26,8 @@ In the meantime, while Decent CI is still handling the regression and bulkier te
 
 ## Releases
 
-[![](https://github.com/NREL/EnergyPlus/workflows/Windows%20Releases/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/windows_release.yml) 
-[![](https://github.com/NREL/EnergyPlus/workflows/Mac%20Releases/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/mac_release.yml) 
+[![](https://github.com/NREL/EnergyPlus/workflows/Windows%20Releases/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/windows_release.yml)
+[![](https://github.com/NREL/EnergyPlus/workflows/Mac%20Releases/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/mac_release.yml)
 [![](https://github.com/NREL/EnergyPlus/workflows/Linux%20Releases/badge.svg)](https://github.com/NREL/EnergyPlus/actions/workflows/linux_release.yml)
 
 EnergyPlus is released twice annually, usually in March and September.

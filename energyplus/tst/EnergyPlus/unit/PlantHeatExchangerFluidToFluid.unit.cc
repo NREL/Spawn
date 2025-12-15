@@ -65,6 +65,7 @@
 #include <EnergyPlus/OutputReportPredefined.hh>
 #include <EnergyPlus/Plant/PlantManager.hh>
 #include <EnergyPlus/PlantHeatExchangerFluidToFluid.hh>
+#include <EnergyPlus/PlantUtilities.hh>
 #include <EnergyPlus/ScheduleManager.hh>
 #include <EnergyPlus/SimulationManager.hh>
 #include <EnergyPlus/WeatherManager.hh>
@@ -926,7 +927,7 @@ TEST_F(EnergyPlusFixture, PlantHXModulatedDualDeadDefectFileHi)
         "    SOURCE Demand Mixer;     !- Connector 2 Name",
 
         "  Connector:Splitter,",
-        "    SOURCE Demand Splitter,  !- Nam",
+        "    SOURCE Demand Splitter,  !- Name",
         "    SOURCE Demand Inlet Branch,  !- Inlet Branch Name",
         "    SOURCE Demand HX Branch; !- Outlet Branch 1 Name",
 
@@ -1090,8 +1091,12 @@ TEST_F(EnergyPlusFixture, PlantHXModulatedDualDeadDefectFileHi)
 
         Weather::GetNextEnvironment(*state, Available, ErrorsFound);
 
-        if (!Available) break;
-        if (ErrorsFound) break;
+        if (!Available) {
+            break;
+        }
+        if (ErrorsFound) {
+            break;
+        }
 
         ++EnvCount;
 
@@ -2019,7 +2024,7 @@ TEST_F(EnergyPlusFixture, PlantHXModulatedDualDeadDefectFileLo)
         "    SOURCE Demand Mixer;     !- Connector 2 Name",
 
         "  Connector:Splitter,",
-        "    SOURCE Demand Splitter,  !- Nam",
+        "    SOURCE Demand Splitter,  !- Name",
         "    SOURCE Demand Inlet Branch,  !- Inlet Branch Name",
         "    SOURCE Demand HX Branch; !- Outlet Branch 1 Name",
 
@@ -2182,8 +2187,12 @@ TEST_F(EnergyPlusFixture, PlantHXModulatedDualDeadDefectFileLo)
 
         Weather::GetNextEnvironment(*state, Available, ErrorsFound);
 
-        if (!Available) break;
-        if (ErrorsFound) break;
+        if (!Available) {
+            break;
+        }
+        if (ErrorsFound) {
+            break;
+        }
 
         ++EnvCount;
 
@@ -2331,10 +2340,12 @@ TEST_F(EnergyPlusFixture, PlantHXControlWithFirstHVACIteration)
         DataPlant::PlantEquipmentType::FluidToFluidPlantHtExchg;
     state->dataPlnt->PlantLoop(1).LoopSide(DataPlant::LoopSideLocation::Demand).Branch(1).Comp(1).NodeNumIn =
         state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop.inletNodeNum;
+
     state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop.loopNum = 1;
     state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop.loopSideNum = DataPlant::LoopSideLocation::Demand;
     state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop.branchNum = 1;
     state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataPlantHXFluidToFluid->FluidHX(1).SupplySideLoop);
 
     state->dataPlnt->PlantLoop(2).Name = "HX demand side loop ";
     state->dataPlnt->PlantLoop(2).FluidName = "WATER";
@@ -2349,6 +2360,7 @@ TEST_F(EnergyPlusFixture, PlantHXControlWithFirstHVACIteration)
     state->dataPlantHXFluidToFluid->FluidHX(1).DemandSideLoop.branchNum = 1;
     state->dataPlantHXFluidToFluid->FluidHX(1).DemandSideLoop.compNum = 1;
     state->dataPlantHXFluidToFluid->FluidHX(1).DemandSideLoop.MassFlowRateMax = 2.0;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataPlantHXFluidToFluid->FluidHX(1).DemandSideLoop);
 
     // when FirstHVACIteration is true, mass flow should match design max
     bool testFirstHVACIteration = true;
@@ -2465,6 +2477,7 @@ TEST_F(EnergyPlusFixture, PlantHXControl_CoolingSetpointOnOffWithComponentOverri
     state->dataPlantHXFluidToFluid->FluidHX(1).OtherCompSupplySideLoop.loopSideNum = DataPlant::LoopSideLocation::Supply;
     state->dataPlantHXFluidToFluid->FluidHX(1).OtherCompSupplySideLoop.branchNum = 2;
     state->dataPlantHXFluidToFluid->FluidHX(1).OtherCompSupplySideLoop.compNum = 1;
+    PlantUtilities::SetPlantLocationLinks(*state, state->dataPlantHXFluidToFluid->FluidHX(1).OtherCompSupplySideLoop);
 
     state->dataPlantHXFluidToFluid->NumberOfPlantFluidHXs = 1;
 

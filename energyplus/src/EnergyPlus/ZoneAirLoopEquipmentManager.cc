@@ -465,8 +465,9 @@ namespace ZoneAirLoopEquipmentManager {
                     auto &thisZoneEqConfig(state.dataZoneEquip->ZoneEquipConfig(ControlledZoneNum));
                     thisADU.ZoneNum = ControlledZoneNum;
                     for (int inletNum = 1; inletNum <= thisZoneEqConfig.NumInletNodes; ++inletNum) {
-                        if (thisZoneEqConfig.InletNode(inletNum) == thisADU.OutletNodeNum)
+                        if (thisZoneEqConfig.InletNode(inletNum) == thisADU.OutletNodeNum) {
                             thisZoneEqConfig.InletNodeADUNum(inletNum) = AirDistUnitNum;
+                        }
                     }
                 }
 
@@ -574,8 +575,8 @@ namespace ZoneAirLoopEquipmentManager {
             MassFlowRateMaxAvail = 0.0;
             MassFlowRateMinAvail = 0.0;
             // check for no plenum
-            // set the max and min avail flow rates taking into acount the upstream leak
-            if (airDistUnit.UpStreamLeak) {
+            // set the max and min avail flow rates taking into account the upstream leak
+            if (airDistUnit.UpStreamLeak || airDistUnit.DownStreamLeak) {
                 if (InNodeNum > 0) {
                     MassFlowRateMaxAvail = state.dataLoopNodes->Node(InNodeNum).MassFlowRateMaxAvail;
                     MassFlowRateMinAvail = state.dataLoopNodes->Node(InNodeNum).MassFlowRateMinAvail;

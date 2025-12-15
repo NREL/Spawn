@@ -139,7 +139,9 @@ Real64 HeatingWaterflowSizer::size(EnergyPlusData &state, Real64 _originalValue,
         }
     }
     if (this->overrideSizeString) {
-        if (this->isEpJSON) this->sizingString = "maximum_water_flow_rate [m3/s]";
+        if (this->isEpJSON) {
+            this->sizingString = "maximum_water_flow_rate [m3/s]";
+        }
     }
     this->selectSizerOutput(state, errorsFound);
     if (this->isCoilReportObject) {
@@ -152,6 +154,16 @@ Real64 HeatingWaterflowSizer::size(EnergyPlusData &state, Real64 _originalValue,
             state.dataRptCoilSelection->coilSelectionReportObj->setCoilLvgWaterTemp(
                 state, this->compName, this->compType, Constant::HWInitConvTemp - this->plantSizData(this->dataPltSizHeatNum).DeltaT);
         }
+        this->calcCoilWaterFlowRates(state,
+                                     this->compName,
+                                     this->compType,
+                                     this->autoSizedValue,
+                                     this->dataWaterLoopNum,
+                                     this->curZoneEqNum,
+                                     this->curSysNum,
+                                     this->curOASysNum,
+                                     this->finalZoneSizing,
+                                     this->finalSysSizing);
     }
     return this->autoSizedValue;
 }

@@ -220,7 +220,7 @@ namespace HVACHXAssistedCoolingCoil {
         //       DATE WRITTEN   Sept 2003
 
         // PURPOSE OF THIS SUBROUTINE:
-        //  Obtains input data for this compount object and stores it in data structure
+        //  Obtains input data for this compound object and stores it in data structure
 
         // METHODOLOGY EMPLOYED:
         //  Uses "Get" routines to read in data.
@@ -323,7 +323,7 @@ namespace HVACHXAssistedCoolingCoil {
                     ErrorsFound = true;
                 }
 
-                thisHXCoil.DXCoilNumOfSpeeds = state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilIndex_temp].performance.normalMode.speeds.size();
+                thisHXCoil.DXCoilNumOfSpeeds = state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilIndex_temp].performance->numSpeeds();
                 if (thisHXCoil.DXCoilNumOfSpeeds < 1) {
                     CoolingCoilErrFlag = true;
                 }
@@ -677,7 +677,9 @@ namespace HVACHXAssistedCoolingCoil {
                     WaterCoils::GetCoilWaterInletNode(state, thisHXCoil.CoolingCoilType, thisHXCoil.CoolingCoilName, CoolingCoilErrFlag);
                 HVACControllers::GetControllerNameAndIndex(
                     state, CoolingCoilWaterInletNodeNum, thisHXCoil.ControllerName, thisHXCoil.ControllerIndex, CoolingCoilErrFlag);
-                if (CoolingCoilErrFlag) ShowContinueError(state, format("...occurs in {} \"{}\"", CurrentModuleObject, thisHXCoil.Name));
+                if (CoolingCoilErrFlag) {
+                    ShowContinueError(state, format("...occurs in {} \"{}\"", CurrentModuleObject, thisHXCoil.Name));
+                }
                 if (SupplyAirOutletNode != CoolingCoilInletNodeNum) {
                     ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, thisHXCoil.Name));
                     ShowContinueError(state, "Node names are inconsistent in heat exchanger and cooling coil object.");
@@ -697,7 +699,9 @@ namespace HVACHXAssistedCoolingCoil {
                 CoolingCoilErrFlag = false;
                 CoolingCoilOutletNodeNum =
                     WaterCoils::GetCoilOutletNode(state, thisHXCoil.CoolingCoilType, thisHXCoil.CoolingCoilName, CoolingCoilErrFlag);
-                if (CoolingCoilErrFlag) ShowContinueError(state, format("...occurs in {} \"{}\"", CurrentModuleObject, thisHXCoil.Name));
+                if (CoolingCoilErrFlag) {
+                    ShowContinueError(state, format("...occurs in {} \"{}\"", CurrentModuleObject, thisHXCoil.Name));
+                }
                 if (SecondaryAirInletNode != CoolingCoilOutletNodeNum) {
                     ShowSevereError(state, format("{}{}=\"{}\"", RoutineName, CurrentModuleObject, thisHXCoil.Name));
                     ShowContinueError(state, "Node names are inconsistent in heat exchanger and cooling coil object.");
@@ -934,10 +938,10 @@ namespace HVACHXAssistedCoolingCoil {
                 bool singleMode = (mSingleMode == 1);
 
                 Real64 mCoolingSpeedNum = state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilIndex]
-                                              .performance.normalMode.speeds.size(); // used the same for the original variable speed coil
+                                              .performance->numSpeeds(); // used the same for the original variable speed coil
 
                 HVAC::CoilMode coilMode = HVAC::CoilMode::Normal;
-                if (state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilIndex].SubcoolReheatFlag) {
+                if (state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilIndex].subcoolReheatFlag) {
                     coilMode = HVAC::CoilMode::SubcoolReheat;
                 } else if (DehumidificationMode == HVAC::CoilMode::Enhanced) {
                     coilMode = HVAC::CoilMode::Enhanced;
@@ -976,7 +980,9 @@ namespace HVACHXAssistedCoolingCoil {
                 Real64 QLatReq(0.0);           // Zone latent load, input to variable-speed DX coil
                 Real64 OnOffAirFlowRatio(1.0); // ratio of compressor on flow to average flow over time step
                 HVAC::CompressorOp compressorOn = compressorOp;
-                if (PartLoadRatio == 0.0) compressorOn = HVAC::CompressorOp::Off;
+                if (PartLoadRatio == 0.0) {
+                    compressorOn = HVAC::CompressorOp::Off;
+                }
                 VariableSpeedCoils::SimVariableSpeedCoils(state,
                                                           thisHXCoil.CoolingCoilName,
                                                           thisHXCoil.CoolingCoilIndex,
@@ -993,8 +999,9 @@ namespace HVACHXAssistedCoolingCoil {
 
             Error = state.dataHVACAssistedCC->CoilOutputTempLast - state.dataLoopNodes->Node(thisHXCoil.HXExhaustAirInletNodeNum).Temp;
             if (Iter > 40) { // check for oscillation (one of these being negative and one positive) before hitting max iteration limit
-                if (Error + ErrorLast < 0.000001)
+                if (Error + ErrorLast < 0.000001) {
                     Error = 0.0; // result bounced back and forth with same positive and negative result, no possible solution without this check
+                }
             }
             ErrorLast = Error;
             state.dataHVACAssistedCC->CoilOutputTempLast = state.dataLoopNodes->Node(thisHXCoil.HXExhaustAirInletNodeNum).Temp;
@@ -1165,7 +1172,7 @@ namespace HVACHXAssistedCoolingCoil {
 
                 if (state.dataHVACAssistedCC->HXAssistedCoil(WhichCoil).CoolingCoilType_Num == HVAC::CoilDX_Cooling) {
                     int coolingCoilDXIndex = state.dataHVACAssistedCC->HXAssistedCoil(WhichCoil).CoolingCoilIndex;
-                    CoilCapacity = state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilDXIndex].performance.normalMode.ratedGrossTotalCap;
+                    CoilCapacity = state.dataCoilCoolingDX->coilCoolingDXs[coolingCoilDXIndex].performance->ratedGrossTotalCap();
                 } else if (state.dataHVACAssistedCC->HXAssistedCoil(WhichCoil).CoolingCoilType_Num == HVAC::CoilDX_CoolingSingleSpeed) {
                     CoilCapacity = DXCoils::GetCoilCapacity(state,
                                                             state.dataHVACAssistedCC->HXAssistedCoil(WhichCoil).CoolingCoilType,
@@ -1206,7 +1213,9 @@ namespace HVACHXAssistedCoolingCoil {
             CoilCapacity = -1000.0;
         }
 
-        if (errFlag) ErrorsFound = true;
+        if (errFlag) {
+            ErrorsFound = true;
+        }
 
         return CoilCapacity;
     }

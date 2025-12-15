@@ -433,11 +433,10 @@ TEST_F(EnergyPlusFixture, EvaporativeCoolers_IndEvapCoolerPower)
     OperatingMode DryWetMode(EvaporativeCoolers::OperatingMode::DryFull);
     Real64 FlowRatio(1.0);
 
-    EvapCond(EvapCoolNum).FanPowerModifierCurveIndex = 1;
-    state->dataCurveManager->allocateCurveVector(1);
-    auto *curve = state->dataCurveManager->PerfCurve(1);
+    auto *curve = AddCurve(*state, "Curve1");
+    EvapCond(EvapCoolNum).FanPowerModifierCurve = curve;
+
     curve->curveType = CurveType::Quadratic;
-    curve->interpolationType = InterpType::EvaluateCurveToLimits;
     curve->coeff[0] = 0.0;
     curve->coeff[1] = 1.0;
     curve->coeff[2] = 0.0;
@@ -468,7 +467,7 @@ TEST_F(EnergyPlusFixture, EvaporativeCoolers_IndEvapCoolerPower)
     EXPECT_EQ(200 * 0.8 + 100 * 0.8 * 0.5, EvapCond(EvapCoolNum).EvapCoolerPower);
 
     EvapCond.deallocate();
-    state->dataCurveManager->PerfCurve.deallocate();
+    state->dataCurveManager->curves.deallocate();
 }
 
 TEST_F(EnergyPlusFixture, EvaporativeCoolers_SizeEvapCooler)
@@ -734,10 +733,8 @@ TEST_F(EnergyPlusFixture, DirectEvapCoolerResearchSpecialCalcTest)
     auto &thisEvapCooler = EvapCond(EvapCoolNum);
     state->dataEnvrn->OutBaroPress = 101325.0;
 
-    state->dataCurveManager->allocateCurveVector(1);
-    auto *curve = state->dataCurveManager->PerfCurve(1);
+    auto *curve = AddCurve(*state, "Curve1");
     curve->curveType = CurveType::Quadratic;
-    curve->interpolationType = InterpType::EvaluateCurveToLimits;
     curve->coeff[0] = 0.0;
     curve->coeff[1] = 1.0;
     curve->inputLimits[0].min = 0.0;
@@ -747,7 +744,7 @@ TEST_F(EnergyPlusFixture, DirectEvapCoolerResearchSpecialCalcTest)
     thisEvapCooler.evapCoolerType = EvapCoolerType::DirectResearchSpecial;
     thisEvapCooler.Name = "MyDirectEvapCoolerRS";
     thisEvapCooler.availSched = Sched::GetScheduleAlwaysOn(*state);
-    thisEvapCooler.PumpPowerModifierCurveIndex = 1;
+    thisEvapCooler.PumpPowerModifierCurve = curve;
     thisEvapCooler.DirectEffectiveness = 0.75;
     thisEvapCooler.DesVolFlowRate = 1.0;
     thisEvapCooler.InletNode = 1;

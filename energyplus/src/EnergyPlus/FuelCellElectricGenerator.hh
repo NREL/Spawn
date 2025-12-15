@@ -60,6 +60,11 @@
 
 namespace EnergyPlus {
 
+// Forward declarations
+namespace Curve {
+    struct Curve;
+}
+
 namespace FuelCellElectricGenerator {
 
     enum class GasID
@@ -78,10 +83,10 @@ namespace FuelCellElectricGenerator {
     {
         std::string Name;                      // name of this PowerModule data
         DataGenerators::CurveMode EffMode;     // mode for efficiency curves
-        int EffCurveID;                        // pointer to curve for efficiency
+        Curve::Curve *EffCurve = nullptr;      // pointer to curve for efficiency
         Real64 NomEff;                         // nominal efficiency
         Real64 NomPel;                         // nominal power rate at rating point
-        int NumCyclesAtStart = 0.0;            // number of start stop cycles at beggining of simulation (user input)
+        int NumCyclesAtStart = 0.0;            // number of start stop cycles at beginning of simulation (user input)
         int NumCycles;                         // number of start stop cycles
         Real64 CyclingDegradRat;               // rate of degradation from cycles
         Real64 NumRunHours;                    // number of hours of operation
@@ -96,20 +101,20 @@ namespace FuelCellElectricGenerator {
         Real64 ShutDownTime;                   // time to shut down [hours]
         Real64 ShutDownFuel;                   // fuel consumed during shut down
         Real64 ShutDownElectConsum;            // Elect consumed during shut down
-        Real64 ANC0;                           // Ancilliary Loads constant term
-        Real64 ANC1;                           // Ancilliary Loads linear term
+        Real64 ANC0;                           // Ancillary Loads constant term
+        Real64 ANC1;                           // Ancillary Loads linear term
         DataGenerators::SkinLoss SkinLossMode; // how are skin losses determined
         std::string ZoneName;
         int ZoneID; // "pointer" to zone with component in it
         Real64 RadiativeFract;
         Real64 QdotSkin;
         Real64 UAskin;
-        int SkinLossCurveID;
-        int WaterSupplyCurveID;            // pointer to curve for water use in reforming
-        Real64 NdotDilutionAir;            // user defined constant flow of dilution air (kmol/sec)
-        Real64 StackHeatLossToDilution;    // (watts)
-        std::string DilutionInletNodeName; // dilution -> AirHR ?? added air heat recovery path
-        int DilutionInletNode;             // pointer to node for inlet
+        Curve::Curve *SkinLossCurve = nullptr;
+        Curve::Curve *WaterSupplyCurve = nullptr; // pointer to curve for water use in reforming
+        Real64 NdotDilutionAir;                   // user defined constant flow of dilution air (kmol/sec)
+        Real64 StackHeatLossToDilution;           // (watts)
+        std::string DilutionInletNodeName;        // dilution -> AirHR ?? added air heat recovery path
+        int DilutionInletNode;                    // pointer to node for inlet
         std::string DilutionExhaustNodeName;
         int DilutionExhaustNode; // pointer to node getting exhaust
         Real64 PelMin;           // minimum operating point for FCPM electrical power Pel
@@ -145,17 +150,16 @@ namespace FuelCellElectricGenerator {
 
         // Default Constructor
         FCPowerModuleStruct()
-            : EffMode(DataGenerators::CurveMode::Invalid), EffCurveID(0), NomEff(0.0), NomPel(0.0), NumCycles(0), CyclingDegradRat(0.0),
-              NumRunHours(0.0), OperateDegradRat(0.0), ThreshRunHours(0.0), UpTranLimit(0.0), DownTranLimit(0.0), StartUpTime(0.0), StartUpFuel(0.0),
+            : EffMode(DataGenerators::CurveMode::Invalid), NomEff(0.0), NomPel(0.0), NumCycles(0), CyclingDegradRat(0.0), NumRunHours(0.0),
+              OperateDegradRat(0.0), ThreshRunHours(0.0), UpTranLimit(0.0), DownTranLimit(0.0), StartUpTime(0.0), StartUpFuel(0.0),
               StartUpElectConsum(0.0), StartUpElectProd(0.0), ShutDownTime(0.0), ShutDownFuel(0.0), ShutDownElectConsum(0.0), ANC0(0.0), ANC1(0.0),
-              SkinLossMode(DataGenerators::SkinLoss::Invalid), ZoneID(0), RadiativeFract(0.0), QdotSkin(0.0), UAskin(0.0), SkinLossCurveID(0),
-              WaterSupplyCurveID(0), NdotDilutionAir(0.0), StackHeatLossToDilution(0.0), DilutionInletNode(0), DilutionExhaustNode(0), PelMin(0.0),
-              PelMax(0.0), Pel(0.0), PelLastTimeStep(0.0), Eel(0.0), QdotStackCool(0.0), FractionalDayofLastStartUp(0.0),
-              FractionalDayofLastShutDown(0.0), HasBeenOn(true), DuringShutDown(false), DuringStartUp(false), NdotFuel(0.0), TotFuelInEnthalpy(0.0),
-              NdotProdGas(0.0), ConstitMolalFract(14, 0.0), GasLibID(14, GasID::Invalid), TprodGasLeavingFCPM(0.0), NdotAir(0.0),
-              TotAirInEnthalpy(0.0), NdotLiqwater(0.0), TwaterInlet(0.0), WaterInEnthalpy(0.0), DilutionAirInEnthalpy(0.0),
-              DilutionAirOutEnthalpy(0.0), PelancillariesAC(0.0), TotProdGasEnthalpy(0.0), WaterOutEnthalpy(0.0), SeqSubstitIter(0),
-              RegulaFalsiIter(0)
+              SkinLossMode(DataGenerators::SkinLoss::Invalid), ZoneID(0), RadiativeFract(0.0), QdotSkin(0.0), UAskin(0.0), NdotDilutionAir(0.0),
+              StackHeatLossToDilution(0.0), DilutionInletNode(0), DilutionExhaustNode(0), PelMin(0.0), PelMax(0.0), Pel(0.0), PelLastTimeStep(0.0),
+              Eel(0.0), QdotStackCool(0.0), FractionalDayofLastStartUp(0.0), FractionalDayofLastShutDown(0.0), HasBeenOn(true), DuringShutDown(false),
+              DuringStartUp(false), NdotFuel(0.0), TotFuelInEnthalpy(0.0), NdotProdGas(0.0), ConstitMolalFract(14, 0.0), GasLibID(14, GasID::Invalid),
+              TprodGasLeavingFCPM(0.0), NdotAir(0.0), TotAirInEnthalpy(0.0), NdotLiqwater(0.0), TwaterInlet(0.0), WaterInEnthalpy(0.0),
+              DilutionAirInEnthalpy(0.0), DilutionAirOutEnthalpy(0.0), PelancillariesAC(0.0), TotProdGasEnthalpy(0.0), WaterOutEnthalpy(0.0),
+              SeqSubstitIter(0), RegulaFalsiIter(0)
         {
         }
     };
@@ -165,13 +169,13 @@ namespace FuelCellElectricGenerator {
         std::string Name;                              // name of this
         std::string NodeName;                          // Air supply node name
         int SupNodeNum;                                // Air supply node ID
-        int BlowerPowerCurveID;                        // "pointer" to blower power quadratic
+        Curve::Curve *BlowerPowerCurve = nullptr;      // "pointer" to blower power quadratic
         Real64 BlowerHeatLossFactor;                   // alpha for blower heat loss fraction
         DataGenerators::AirSupRateMode AirSupRateMode; // control for modeling method used to deterime supply air flow rate
         Real64 Stoics;                                 // excess air ratio
-        int AirFuncPelCurveID;                         // "pointer" to curve for air as function of power
+        Curve::Curve *AirFuncPelCurve = nullptr;       // "pointer" to curve for air as function of power
         Real64 AirTempCoeff;                           // coeff a3 in equ 16.
-        int AirFuncNdotCurveID;                        // "pointer" to curve for air as function of fuel flow rate
+        Curve::Curve *AirFuncNdotCurve = nullptr;      // "pointer" to curve for air as function of fuel flow rate
         DataGenerators::RecoverMode IntakeRecoveryMode;
         DataGenerators::ConstituentMode ConstituentMode; // how are air data input
         int NumConstituents;
@@ -188,25 +192,24 @@ namespace FuelCellElectricGenerator {
 
         // Default Constructor
         FCAirSupplyDataStruct()
-            : SupNodeNum(0), BlowerPowerCurveID(0), BlowerHeatLossFactor(0.0), AirSupRateMode(DataGenerators::AirSupRateMode::Invalid), Stoics(0.0),
-              AirFuncPelCurveID(0), AirTempCoeff(0.0), AirFuncNdotCurveID(0), IntakeRecoveryMode(DataGenerators::RecoverMode::Invalid),
-              ConstituentMode(DataGenerators::ConstituentMode::Invalid), NumConstituents(0), ConstitName(14), ConstitMolalFract(14, 0.0),
-              GasLibID(14, GasID::Invalid), O2fraction(0.0), TairIntoBlower(0.0), TairIntoFCPM(0.0), PairCompEl(0.0), QskinLoss(0.0),
-              QintakeRecovery(0.0)
+            : SupNodeNum(0), BlowerHeatLossFactor(0.0), AirSupRateMode(DataGenerators::AirSupRateMode::Invalid), Stoics(0.0), AirTempCoeff(0.0),
+              IntakeRecoveryMode(DataGenerators::RecoverMode::Invalid), ConstituentMode(DataGenerators::ConstituentMode::Invalid), NumConstituents(0),
+              ConstitName(14), ConstitMolalFract(14, 0.0), GasLibID(14, GasID::Invalid), O2fraction(0.0), TairIntoBlower(0.0), TairIntoFCPM(0.0),
+              PairCompEl(0.0), QskinLoss(0.0), QintakeRecovery(0.0)
         {
         }
     };
 
     struct FCWaterSupplyDataStruct
     {
-        std::string Name;                                   // name of this water supply module
-        DataGenerators::WaterTemperatureMode WaterTempMode; // temperature of water inlet determination
-        std::string NodeName;                               // node name for temperature at input
-        int NodeNum;                                        // node number for temperature at input
-        Sched::Schedule *sched = nullptr;                   // water temperature at input
-        int WaterSupRateCurveID;                            // "pointer" to water flow rate curve as a function of fuel rate
-        int PmpPowerCurveID;                                // "pointer to Pump power curve as a function of water flow Rate
-        Real64 PmpPowerLossFactor;                          // Pump heat loss factor
+        std::string Name;                                                                     // name of this water supply module
+        DataGenerators::WaterTempMode waterTempMode = DataGenerators::WaterTempMode::Invalid; // temperature of water inlet determination
+        std::string NodeName;                                                                 // node name for temperature at input
+        int NodeNum;                                                                          // node number for temperature at input
+        Sched::Schedule *sched = nullptr;                                                     // water temperature at input
+        Curve::Curve *WaterSupRateCurve = nullptr; // "pointer" to water flow rate curve as a function of fuel rate
+        Curve::Curve *PmpPowerCurve = nullptr;     // "pointer to Pump power curve as a function of water flow Rate
+        Real64 PmpPowerLossFactor;                 // Pump heat loss factor
         // calculated data
         bool IsModeled;
         Real64 TwaterIntoCompress; // inlet Water Temperature
@@ -216,8 +219,7 @@ namespace FuelCellElectricGenerator {
 
         // Default Constructor
         FCWaterSupplyDataStruct()
-            : WaterTempMode(DataGenerators::WaterTemperatureMode::Invalid), NodeNum(0), WaterSupRateCurveID(0), PmpPowerCurveID(0),
-              PmpPowerLossFactor(0.0), IsModeled(true), TwaterIntoCompress(0.0), TwaterIntoFCPM(0.0), PwaterCompEl(0.0), QskinLoss(0.0)
+            : NodeNum(0), PmpPowerLossFactor(0.0), IsModeled(true), TwaterIntoCompress(0.0), TwaterIntoFCPM(0.0), PwaterCompEl(0.0), QskinLoss(0.0)
         {
         }
     };
@@ -369,14 +371,13 @@ namespace FuelCellElectricGenerator {
         std::string Name;                               // name of this inverter
         DataGenerators::InverterEfficiencyMode EffMode; // efficiency calculation mode
         Real64 ConstEff;
-        int EffQuadraticCurveID;
+        Curve::Curve *EffQuadraticCurve = nullptr;
         // calculated and from elsewhere
         Real64 PCUlosses;
         Real64 QairIntake;
 
         // Default Constructor
-        FCInverterDataStruct()
-            : EffMode(DataGenerators::InverterEfficiencyMode::Invalid), ConstEff(0.0), EffQuadraticCurveID(0), PCUlosses(0.0), QairIntake(0.0)
+        FCInverterDataStruct() : EffMode(DataGenerators::InverterEfficiencyMode::Invalid), ConstEff(0.0), PCUlosses(0.0), QairIntake(0.0)
         {
         }
     };

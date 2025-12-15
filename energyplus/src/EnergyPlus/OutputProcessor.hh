@@ -52,6 +52,7 @@
 #include <array>
 #include <iosfwd>
 #include <map>
+#include <type_traits>
 
 // ObjexxFCL Headers
 #include <ObjexxFCL/Array1D.hh>
@@ -454,7 +455,7 @@ namespace OutputProcessor {
         std::string name = "";           // Name of Variable
         std::string nameUC = "";         // Name of Variable with out key in uppercase
         std::string key = "";            // Name of key only
-        std::string keyUC = "";          // Name of key only witht out variable in uppercase
+        std::string keyUC = "";          // Name of key only with out variable in uppercase
 
         Constant::Units units = Constant::Units::Invalid; // Units for Variable
         std::string unitNameCustomEMS;                    // name of units when customEMS is used for EMS variables that are unusual
@@ -464,7 +465,7 @@ namespace OutputProcessor {
 
         std::vector<int> meterNums; // Meter Numbers
 
-        virtual ~OutVar(){};
+        virtual ~OutVar() = default;
 
         std::string multiplierString() const;
 
@@ -678,6 +679,8 @@ namespace OutputProcessor {
 
     void UpdateMeters(EnergyPlusData &state, int TimeStamp); // Current TimeStamp (for max/min)
 
+    void ResetAccumulationWhenWarmupComplete(EnergyPlusData &state);
+
     void ReportTSMeters(EnergyPlusData &state,
                         Real64 StartMinute,      // Start Minute for TimeStep
                         Real64 EndMinute,        // End Minute for TimeStep
@@ -797,7 +800,7 @@ void SetupOutputVariable(
     std::string const &spaceType = {},                                          // Space type (applicable for Building group only)
     int const indexGroupKey = -999,                                             // Group identifier for SQL output
     std::string_view const customUnitName = {},                                 // the custom name for the units from EMS definition of units
-    OutputProcessor::ReportFreq reportFreq = OutputProcessor::ReportFreq::Hour  // Internal use -- causes reporting at this freqency
+    OutputProcessor::ReportFreq reportFreq = OutputProcessor::ReportFreq::Hour  // Internal use -- causes reporting at this frequency
 );
 
 void SetupOutputVariable(EnergyPlusData &state,
@@ -808,8 +811,31 @@ void SetupOutputVariable(EnergyPlusData &state,
                          OutputProcessor::StoreType VariableType,                             // State, Average=1, NonState, Sum=2
                          std::string const &KeyedValue,                                       // Associated Key for this variable
                          int const indexGroupKey = -999,                                      // Group identifier for SQL output
-                         OutputProcessor::ReportFreq freq = OutputProcessor::ReportFreq::Hour // Internal use -- causes reporting at this freqency
+                         OutputProcessor::ReportFreq freq = OutputProcessor::ReportFreq::Hour // Internal use -- causes reporting at this frequency
 );
+
+// A helper to be able to cast an enum to an int& for use in the above function
+template <typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
+void SetupOutputVariable(EnergyPlusData &state,
+                         std::string_view const VariableName,                                 // String Name of variable
+                         Constant::Units VariableUnit,                                        // Actual units corresponding to the actual variable
+                         EnumType &ActualVariable,                                            // Actual Variable, used to set up pointer
+                         OutputProcessor::TimeStepType TimeStepType,                          // Zone, HeatBalance=1, HVAC, System, Plant=2
+                         OutputProcessor::StoreType VariableType,                             // State, Average=1, NonState, Sum=2
+                         std::string const &KeyedValue,                                       // Associated Key for this variable
+                         int const indexGroupKey = -999,                                      // Group identifier for SQL output
+                         OutputProcessor::ReportFreq freq = OutputProcessor::ReportFreq::Hour // Internal use -- causes reporting at this frequency
+)
+{
+#if defined(__GNUC__) || defined(__clang__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+    SetupOutputVariable(state, VariableName, VariableUnit, (int &)ActualVariable, TimeStepType, VariableType, KeyedValue, indexGroupKey, freq);
+#if defined(__GNUC__) || defined(__clang__)
+#    pragma GCC diagnostic pop
+#endif
+}
 
 void UpdateDataandReport(EnergyPlusData &state, OutputProcessor::TimeStepType TimeStepTypeKey); // What kind of data to update (Zone, HVAC)
 
@@ -981,24 +1007,29 @@ struct OutputProcessorData : BaseGlobalStruct
         this->GetMeterIndexFirstCall = true;
         this->InitFlag = true;
 
-        for (int i = 0; i < (int)OutputProcessor::TimeStepType::Num; ++i)
+        for (int i = 0; i < (int)OutputProcessor::TimeStepType::Num; ++i) {
             new (&this->TimeValue[i]) OutputProcessor::TimeSteps();
+        }
 
-        for (int i = 0; i < (int)this->outVars.size(); ++i)
+        for (int i = 0; i < (int)this->outVars.size(); ++i) {
             delete this->outVars[i];
+        }
         this->outVars.clear();
 
-        for (int i = 0; i < (int)this->ddOutVars.size(); ++i)
+        for (int i = 0; i < (int)this->ddOutVars.size(); ++i) {
             delete this->ddOutVars[i];
+        }
         this->ddOutVars.clear();
         this->ddOutVarMap.clear();
 
-        for (int i = 0; i < (int)this->reqVars.size(); ++i)
+        for (int i = 0; i < (int)this->reqVars.size(); ++i) {
             delete this->reqVars[i];
+        }
         this->reqVars.clear();
 
-        for (int i = 0; i < (int)this->meters.size(); ++i)
+        for (int i = 0; i < (int)this->meters.size(); ++i) {
             delete this->meters[i];
+        }
         this->meters.clear();
         this->meterMap.clear();
 

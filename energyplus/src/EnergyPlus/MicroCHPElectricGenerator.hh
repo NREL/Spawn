@@ -66,34 +66,34 @@ namespace MicroCHPElectricGenerator {
 
     struct MicroCHPParamsNonNormalized
     {
-        std::string Name;         // name of this PowerModule data
-        Real64 MaxElecPower;      // net electric power [W]
-        Real64 MinElecPower;      // net electric power [W]
-        Real64 MinWaterMdot;      // minimum cooling water flow [kg/s]
-        Real64 MaxWaterTemp;      // limit temp for inlet cooling water [C]
-        int ElecEffCurveID;       // index for TriQuadratic for electrical efficiency
-        int ThermalEffCurveID;    // index for TriQuadric for thermal efficiency
-        bool InternalFlowControl; // Plant or Internal Flow rate control?
-        bool PlantFlowControl;    // default is plant control
-        int WaterFlowCurveID;     // index for BiQuadratic for water flow rate internal control
-        int AirFlowCurveID;       // index for Quadratic for generator air flow
-        Real64 DeltaPelMax;       // max rate of change in net electric power [W/s}
-        Real64 DeltaFuelMdotMax;  // Maximum Rate of change in fuel flow rate [kmol/s2]
-        Real64 UAhx;              // heat exchanger UA [W/K]
-        Real64 UAskin;            // skin loss UA [W/K]
-        Real64 RadiativeFraction; // skin loss fraction to radiant energy []
-        Real64 MCeng;             // aggregated thermal mass of engine [J/K]
-        Real64 MCcw;              // aggregated thermal mass of heat recovery [J/k]
-        Real64 Pstandby;          // standby power [w]
-        bool WarmUpByTimeDelay;   // Warm up mode control
-        bool WarmUpByEngineTemp;  // Warm up mode control
-        Real64 kf;                // coefficient k_f for warmup fuel flow rate
-        Real64 TnomEngOp;         // nominal engine operating temperature [C]
-        Real64 kp;                // coefficient k_p for warmup power
-        Real64 Rfuelwarmup;       // Warm Up Fuel Flow Rate Limit Ratio
-        Real64 WarmUpDelay;       // time for warm up delay [s]
-        Real64 PcoolDown;         // power during cool down
-        Real64 CoolDownDelay;     // time for cool down delay [s]
+        std::string Name;                        // name of this PowerModule data
+        Real64 MaxElecPower;                     // net electric power [W]
+        Real64 MinElecPower;                     // net electric power [W]
+        Real64 MinWaterMdot;                     // minimum cooling water flow [kg/s]
+        Real64 MaxWaterTemp;                     // limit temp for inlet cooling water [C]
+        Curve::Curve *ElecEffCurve = nullptr;    // index for TriQuadratic for electrical efficiency
+        Curve::Curve *ThermalEffCurve = nullptr; // index for TriQuadric for thermal efficiency
+        bool InternalFlowControl;                // Plant or Internal Flow rate control?
+        bool PlantFlowControl;                   // default is plant control
+        Curve::Curve *WaterFlowCurve = nullptr;  // index for BiQuadratic for water flow rate internal control
+        Curve::Curve *AirFlowCurve = nullptr;    // index for Quadratic for generator air flow
+        Real64 DeltaPelMax;                      // max rate of change in net electric power [W/s}
+        Real64 DeltaFuelMdotMax;                 // Maximum Rate of change in fuel flow rate [kmol/s2]
+        Real64 UAhx;                             // heat exchanger UA [W/K]
+        Real64 UAskin;                           // skin loss UA [W/K]
+        Real64 RadiativeFraction;                // skin loss fraction to radiant energy []
+        Real64 MCeng;                            // aggregated thermal mass of engine [J/K]
+        Real64 MCcw;                             // aggregated thermal mass of heat recovery [J/k]
+        Real64 Pstandby;                         // standby power [w]
+        bool WarmUpByTimeDelay;                  // Warm up mode control
+        bool WarmUpByEngineTemp;                 // Warm up mode control
+        Real64 kf;                               // coefficient k_f for warmup fuel flow rate
+        Real64 TnomEngOp;                        // nominal engine operating temperature [C]
+        Real64 kp;                               // coefficient k_p for warmup power
+        Real64 Rfuelwarmup;                      // Warm Up Fuel Flow Rate Limit Ratio
+        Real64 WarmUpDelay;                      // time for warm up delay [s]
+        Real64 PcoolDown;                        // power during cool down
+        Real64 CoolDownDelay;                    // time for cool down delay [s]
         bool MandatoryFullCoolDown;
         bool WarmRestartOkay;
         // calculated and from elsewhere
@@ -142,17 +142,16 @@ namespace MicroCHPElectricGenerator {
 
         // Default Constructor
         MicroCHPParamsNonNormalized()
-            : MaxElecPower(0.0), MinElecPower(0.0), MinWaterMdot(0.0), MaxWaterTemp(0.0), ElecEffCurveID(0), ThermalEffCurveID(0),
-              InternalFlowControl(false), PlantFlowControl(true), WaterFlowCurveID(0), AirFlowCurveID(0), DeltaPelMax(0.0), DeltaFuelMdotMax(0.0),
-              UAhx(0.0), UAskin(0.0), RadiativeFraction(0.0), MCeng(0.0), MCcw(0.0), Pstandby(0.0), WarmUpByTimeDelay(false),
-              WarmUpByEngineTemp(true), kf(0.0), TnomEngOp(0.0), kp(0.0), Rfuelwarmup(0.0), WarmUpDelay(0.0), PcoolDown(0.0), CoolDownDelay(0.0),
-              MandatoryFullCoolDown(false), WarmRestartOkay(true), TimeElapsed(0.0), OpMode(DataGenerators::OperatingMode::Invalid), OffModeTime(0.0),
-              StandyByModeTime(0.0), WarmUpModeTime(0.0), NormalModeTime(0.0), CoolDownModeTime(0.0), TengLast(20.0), TempCWOutLast(20.0), Pnet(0.0),
-              ElecEff(0.0), Qgross(0.0), ThermEff(0.0), Qgenss(0.0), NdotFuel(0.0), MdotFuel(0.0), Teng(20.0), TcwIn(20.0), TcwOut(20.0),
-              MdotAir(0.0), QdotSkin(0.0), QdotConvZone(0.0), QdotRadZone(0.0), ACPowerGen(0.0), ACEnergyGen(0.0), QdotHX(0.0), QdotHR(0.0),
-              TotalHeatEnergyRec(0.0), FuelEnergyLHV(0.0), FuelEnergyUseRateLHV(0.0), FuelEnergyHHV(0.0), FuelEnergyUseRateHHV(0.0),
-              HeatRecInletTemp(0.0), HeatRecOutletTemp(0.0), FuelCompressPower(0.0), FuelCompressEnergy(0.0), FuelCompressSkinLoss(0.0),
-              SkinLossPower(0.0), SkinLossEnergy(0.0), SkinLossConvect(0.0), SkinLossRadiat(0.0)
+            : MaxElecPower(0.0), MinElecPower(0.0), MinWaterMdot(0.0), MaxWaterTemp(0.0), InternalFlowControl(false), PlantFlowControl(true),
+              DeltaPelMax(0.0), DeltaFuelMdotMax(0.0), UAhx(0.0), UAskin(0.0), RadiativeFraction(0.0), MCeng(0.0), MCcw(0.0), Pstandby(0.0),
+              WarmUpByTimeDelay(false), WarmUpByEngineTemp(true), kf(0.0), TnomEngOp(0.0), kp(0.0), Rfuelwarmup(0.0), WarmUpDelay(0.0),
+              PcoolDown(0.0), CoolDownDelay(0.0), MandatoryFullCoolDown(false), WarmRestartOkay(true), TimeElapsed(0.0),
+              OpMode(DataGenerators::OperatingMode::Invalid), OffModeTime(0.0), StandyByModeTime(0.0), WarmUpModeTime(0.0), NormalModeTime(0.0),
+              CoolDownModeTime(0.0), TengLast(20.0), TempCWOutLast(20.0), Pnet(0.0), ElecEff(0.0), Qgross(0.0), ThermEff(0.0), Qgenss(0.0),
+              NdotFuel(0.0), MdotFuel(0.0), Teng(20.0), TcwIn(20.0), TcwOut(20.0), MdotAir(0.0), QdotSkin(0.0), QdotConvZone(0.0), QdotRadZone(0.0),
+              ACPowerGen(0.0), ACEnergyGen(0.0), QdotHX(0.0), QdotHR(0.0), TotalHeatEnergyRec(0.0), FuelEnergyLHV(0.0), FuelEnergyUseRateLHV(0.0),
+              FuelEnergyHHV(0.0), FuelEnergyUseRateHHV(0.0), HeatRecInletTemp(0.0), HeatRecOutletTemp(0.0), FuelCompressPower(0.0),
+              FuelCompressEnergy(0.0), FuelCompressSkinLoss(0.0), SkinLossPower(0.0), SkinLossEnergy(0.0), SkinLossConvect(0.0), SkinLossRadiat(0.0)
         {
         }
     };
