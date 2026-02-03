@@ -315,6 +315,32 @@ namespace zone {
     CachedValue<int> zone_num_;
   };
 
+  class TSetCoo : public Output
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit TSetCoo(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class TSetHea : public Output
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit TSetHea(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
   class MInletsFlow : public Input
   {
     friend class variable::Variables;

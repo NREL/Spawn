@@ -29,6 +29,8 @@ Variables::Variables([[maybe_unused]] const UserConfig &user_config)
   zone::QLatFlow::CreateAll(user_config, *this);
   zone::QPeoFlow::CreateAll(user_config, *this);
   zone::TRad::CreateAll(user_config, *this);
+  zone::TSetCoo::CreateAll(user_config, *this);
+  zone::TSetHea::CreateAll(user_config, *this);
 
   zone::MInletsFlow::CreateAll(user_config, *this);
   zone::TAveInlet::CreateAll(user_config, *this);
@@ -519,6 +521,76 @@ namespace zone {
   {
     Variable::SetValue(energyplus::ZoneMeanRadiantTemp(energyplus_data, zone_num_.get(energyplus_data)),
                        units::UnitSystem::EP);
+  }
+
+  void TSetCoo::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    for (const auto &zone : user_config.zones) {
+      if (!zone.isconnected) {
+        continue;
+      }
+      Variables::CreateOne<TSetCoo>(variables, zone.idfname);
+    }
+  }
+
+  TSetCoo::TSetCoo(Variables &variables, const std::string_view zone_name)
+      : Output(variables, std::string(zone_name) + "_TSetCoo", units::UnitType::C, units::UnitType::K),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Zone thermostat cooling setpoint temperature";
+    scalar_variable.append_attribute("causality") = "output";
+    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "ThermodynamicTemperature";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void TSetCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::ZoneThermostatSetPointHi(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+  }
+
+  void TSetHea::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    for (const auto &zone : user_config.zones) {
+      if (!zone.isconnected) {
+        continue;
+      }
+      Variables::CreateOne<TSetHea>(variables, zone.idfname);
+    }
+  }
+
+  TSetHea::TSetHea(Variables &variables, const std::string_view zone_name)
+      : Output(variables, std::string(zone_name) + "_TSetHea", units::UnitType::C, units::UnitType::K),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Zone thermostat heating setpoint temperature";
+    scalar_variable.append_attribute("causality") = "output";
+    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("quantity") = "ThermodynamicTemperature";
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void TSetHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::ZoneThermostatSetPointLo(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
   }
 
   void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)

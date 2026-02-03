@@ -4,13 +4,16 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string_view>
+#include <unordered_set>
 
 // EnergyPlus headers
 #include <DataEnvironment.hh>
 #include <DataGlobals.hh>
+#include <DataHeatBalFanSys.hh>
 #include <DataHeatBalSurface.hh>
 #include <DataHeatBalance.hh>
 #include <DataSizing.hh>
+#include <DataZoneControls.hh>
 #include <EnergyPlusData.hh>
 #include <InternalHeatGains.hh>
 #include <Psychrometrics.hh>
@@ -106,6 +109,72 @@ int ZoneNum(EnergyPlus::EnergyPlusData &energyplus_data, const std::string_view 
 
 namespace {
 
+  bool ZoneHasThermostatControl(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  {
+    if (zone_num <= 0 || !energyplus_data.dataZoneCtrls) {
+      return false;
+    }
+
+    const auto &zone_ctrls = *energyplus_data.dataZoneCtrls;
+
+    for (int i = 1; i <= zone_ctrls.NumTempControlledZones; ++i) {
+      if (zone_ctrls.TempControlledZone(i).ActualZoneNum == zone_num) {
+        return true;
+      }
+    }
+
+    for (int i = 1; i <= zone_ctrls.NumComfortControlledZones; ++i) {
+      if (zone_ctrls.ComfortControlledZone(i).ActualZoneNum == zone_num) {
+        return true;
+      }
+    }
+
+    if (energyplus_data.dataZoneTempPredictorCorrector &&
+        energyplus_data.dataZoneTempPredictorCorrector->NumStageCtrZone > 0) {
+      for (int i = 1; i <= energyplus_data.dataZoneTempPredictorCorrector->NumStageCtrZone; ++i) {
+        if (zone_ctrls.StageControlledZone(i).ActualZoneNum == zone_num) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  void LogMissingSetpoint(const EnergyPlus::EnergyPlusData &energyplus_data,
+                          int zone_num,
+                          std::string_view context,
+                          std::unordered_set<int> &warned_zones)
+  {
+    if (zone_num <= 0) {
+      if (warned_zones.insert(zone_num).second) {
+        spdlog::warn("No thermostat setpoint available for zone index {} while computing {}", zone_num, context);
+      }
+      return;
+    }
+
+    const auto &final_zone_sizing = energyplus_data.dataSize->FinalZoneSizing;
+    const auto zone_count = static_cast<int>(final_zone_sizing.size());
+    const bool within_bounds = zone_num <= zone_count;
+
+    std::string zone_name;
+    if (within_bounds) {
+      try {
+        zone_name = energyplus_data.dataHeatBal->Zone(zone_num).Name;
+      } catch (const std::out_of_range &) {
+        // Leave name empty if lookup fails; logging still proceeds.
+      }
+    }
+
+    if (warned_zones.insert(zone_num).second) {
+      if (!zone_name.empty()) {
+        spdlog::warn("No thermostat setpoint available for zone {} ({}) while computing {}", zone_num, zone_name, context);
+      } else {
+        spdlog::warn("No thermostat setpoint available for zone {} while computing {}", zone_num, context);
+      }
+    }
+  }
+
   void LogMissingSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data,
                             int zone_num,
                             std::string_view context,
@@ -141,6 +210,30 @@ namespace {
   }
 
 } // namespace
+
+double ZoneThermostatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  static std::unordered_set<int> warned_zones;
+
+  if (!ZoneHasThermostatControl(energyplus_data, zone_num)) {
+    LogMissingSetpoint(energyplus_data, zone_num, "ZoneThermostatSetPointHi", warned_zones);
+    return 21.0;
+  }
+
+  return energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointHi(zone_num);
+}
+
+double ZoneThermostatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  static std::unordered_set<int> warned_zones;
+
+  if (!ZoneHasThermostatControl(energyplus_data, zone_num)) {
+    LogMissingSetpoint(energyplus_data, zone_num, "ZoneThermostatSetPointLo", warned_zones);
+    return 21.0;
+  }
+
+  return energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointLo(zone_num);
+}
 
 bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
 {

@@ -68,6 +68,13 @@ TEST_CASE("Test Zone Sizing Variables")
   CHECK(value > 0.0);
   value = spawn1.GetValue("Core_ZN_tHea");
   CHECK(value > 0.0);
+  const auto tset_hea = spawn1.GetValue("Core_ZN_TSetHea");
+  const auto tset_coo = spawn1.GetValue("Core_ZN_TSetCoo");
+  CHECK(tset_hea > 250.0);
+  CHECK(tset_hea < 320.0);
+  CHECK(tset_coo > 250.0);
+  CHECK(tset_coo < 320.0);
+  CHECK(tset_coo > tset_hea);
 
   spawn1.Stop();
 }

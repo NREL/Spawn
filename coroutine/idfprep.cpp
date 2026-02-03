@@ -3,9 +3,69 @@
 #include "util/conversion.hpp"
 #include "util/strings.hpp"
 
+#include <spdlog/spdlog.h>
+
+#include <unordered_set>
+
 namespace spawn {
 
 namespace {
+
+  std::vector<std::string> expand_zone_or_zonelist(const json &zone_list_objects, const std::string &zone_or_zonelist_name)
+  {
+    std::vector<std::string> zone_names;
+
+    if (zone_or_zonelist_name.empty()) {
+      return zone_names;
+    }
+
+    if (zone_list_objects.contains(zone_or_zonelist_name)) {
+      const auto zone_name_objects = zone_list_objects.value(zone_or_zonelist_name, json()).value("zones", json());
+      for (const auto &zone_name_object : zone_name_objects) {
+        zone_names.push_back(zone_name_object.at("zone_name").get<std::string>());
+      }
+    } else {
+      zone_names.push_back(zone_or_zonelist_name);
+    }
+
+    return zone_names;
+  }
+
+  std::vector<std::string> autosize_zone_names(const json &jsonidf)
+  {
+    const auto zone_sizing_objects = jsonidf.value("Sizing:Zone", json());
+    if (!zone_sizing_objects.is_object()) {
+      return {};
+    }
+
+    const auto zone_list_objects = jsonidf.value("ZoneList", json::object());
+    std::unordered_set<std::string> zone_names;
+
+    for (const auto &zone_sizing : zone_sizing_objects) {
+      const auto zone_or_zonelist_name = zone_sizing.value("zone_or_zonelist_name", "");
+      for (const auto &zone_name : expand_zone_or_zonelist(zone_list_objects, zone_or_zonelist_name)) {
+        zone_names.insert(zone_name);
+      }
+    }
+
+    return std::vector<std::string>(zone_names.begin(), zone_names.end());
+  }
+
+  std::string unique_object_name(const json &objects, const std::string &base_name)
+  {
+    if (!objects.contains(base_name)) {
+      return base_name;
+    }
+
+    int suffix = 1;
+    std::string candidate = fmt::format("{} {}", base_name, suffix);
+    while (objects.contains(candidate)) {
+      ++suffix;
+      candidate = fmt::format("{} {}", base_name, suffix);
+    }
+
+    return candidate;
+  }
 
   json &adjustSimulationControl(json &jsonidf, const UserConfig &user_config)
   {
@@ -29,29 +89,11 @@ namespace {
   json &addIdealLoads(json &jsonidf, const UserConfig &user_config)
   {
     if (user_config.autosize()) {
-      const auto zone_sizing_objects = jsonidf["Sizing:Zone"];
       jsonidf["ZoneHVAC:EquipmentConnections"] = json();
       jsonidf["ZoneHVAC:EquipmentList"] = json();
       jsonidf["ZoneHVAC:IdealLoadsAirSystem"] = json();
 
-      const auto zone_list_objects = jsonidf["ZoneList"];
-      std::vector<std::string> zone_names;
-
-      for (const auto &zone_sizing : zone_sizing_objects) {
-        const auto zone_or_zonelist_name = zone_sizing.value("zone_or_zonelist_name", "");
-        if (zone_list_objects.contains(zone_or_zonelist_name)) {
-
-          const auto zone_name_objects = zone_list_objects.value(zone_or_zonelist_name, json()).value("zones", json());
-          for (const auto &zone_name_object : zone_name_objects) {
-            const auto zone_name = zone_name_object.at("zone_name").get<std::string>();
-            zone_names.push_back(zone_name);
-          }
-        } else {
-          zone_names.push_back(zone_or_zonelist_name);
-        }
-      }
-
-      for (const auto &zone_name : zone_names) {
+      for (const auto &zone_name : autosize_zone_names(jsonidf)) {
         const auto air_node_name = fmt::format("{} Air Node", zone_name);
         const auto supply_node_name = fmt::format("{} Supply Node", zone_name);
         const auto exhaust_node_name = fmt::format("{} Exhaust Node", zone_name);
@@ -91,6 +133,129 @@ namespace {
 
       jsonidf["ZoneHVAC:EquipmentConnections"][zone_name] = hvac_connections;
         // clang-format on
+      }
+    }
+
+    return jsonidf;
+  }
+
+  json &addDefaultZoneControls(json &jsonidf, const UserConfig &user_config)
+  {
+    if (!user_config.autosize()) {
+      return jsonidf;
+    }
+
+    const auto zone_names = autosize_zone_names(jsonidf);
+    if (zone_names.empty()) {
+      return jsonidf;
+    }
+
+    constexpr auto schedule_type = "Schedule:Constant";
+    constexpr auto control_type_schedule = "Spawn-DefaultThermostat-ControlType";
+    constexpr auto heating_setpoint_schedule = "Spawn-DefaultThermostat-Heating";
+    constexpr auto cooling_setpoint_schedule = "Spawn-DefaultThermostat-Cooling";
+    constexpr auto humidifying_schedule = "Spawn-DefaultHumidistat-Humidify";
+    constexpr auto dehumidifying_schedule = "Spawn-DefaultHumidistat-Dehumidify";
+
+    if (!jsonidf.contains(schedule_type)) {
+      jsonidf[schedule_type] = json::object();
+    }
+    auto &schedules = jsonidf[schedule_type];
+
+    if (!schedules.contains(control_type_schedule)) {
+      schedules[control_type_schedule] = {{"hourly_value", 4.0}};
+    }
+    if (!schedules.contains(heating_setpoint_schedule)) {
+      schedules[heating_setpoint_schedule] = {{"hourly_value", 20.0}};
+    }
+    if (!schedules.contains(cooling_setpoint_schedule)) {
+      schedules[cooling_setpoint_schedule] = {{"hourly_value", 22.0}};
+    }
+    if (!schedules.contains(humidifying_schedule)) {
+      schedules[humidifying_schedule] = {{"hourly_value", 45.0}};
+    }
+    if (!schedules.contains(dehumidifying_schedule)) {
+      schedules[dehumidifying_schedule] = {{"hourly_value", 55.0}};
+    }
+
+    const auto zone_list_objects = jsonidf.value("ZoneList", json::object());
+    std::unordered_set<std::string> thermostat_zones;
+    std::unordered_set<std::string> humidistat_zones;
+
+    if (jsonidf.contains("ZoneControl:Thermostat")) {
+      for (const auto &[name, fields] : jsonidf["ZoneControl:Thermostat"].items()) {
+        const auto zone_or_list = fields.value("zone_or_zonelist_name", "");
+        for (const auto &zone_name : expand_zone_or_zonelist(zone_list_objects, zone_or_list)) {
+          thermostat_zones.insert(zone_name);
+        }
+      }
+    }
+
+    if (jsonidf.contains("ZoneControl:Thermostat:StagedDualSetpoint")) {
+      for (const auto &[name, fields] : jsonidf["ZoneControl:Thermostat:StagedDualSetpoint"].items()) {
+        const auto zone_or_list = fields.value("zone_or_zonelist_name", "");
+        for (const auto &zone_name : expand_zone_or_zonelist(zone_list_objects, zone_or_list)) {
+          thermostat_zones.insert(zone_name);
+        }
+      }
+    }
+
+    if (jsonidf.contains("ZoneControl:Humidistat")) {
+      for (const auto &[name, fields] : jsonidf["ZoneControl:Humidistat"].items()) {
+        const auto zone_name = fields.value("zone_name", "");
+        if (!zone_name.empty()) {
+          humidistat_zones.insert(zone_name);
+        }
+      }
+    }
+
+    if (!jsonidf.contains("ZoneControl:Thermostat")) {
+      jsonidf["ZoneControl:Thermostat"] = json::object();
+    }
+    if (!jsonidf.contains("ThermostatSetpoint:DualSetpoint")) {
+      jsonidf["ThermostatSetpoint:DualSetpoint"] = json::object();
+    }
+    if (!jsonidf.contains("ZoneControl:Humidistat")) {
+      jsonidf["ZoneControl:Humidistat"] = json::object();
+    }
+
+    auto &thermostat_objects = jsonidf["ZoneControl:Thermostat"];
+    auto &setpoint_objects = jsonidf["ThermostatSetpoint:DualSetpoint"];
+    auto &humidistat_objects = jsonidf["ZoneControl:Humidistat"];
+
+    for (const auto &zone_name : zone_names) {
+      if (thermostat_zones.find(zone_name) == thermostat_zones.end()) {
+        const auto thermostat_name =
+            unique_object_name(thermostat_objects, fmt::format("Spawn-{}-Default Thermostat", zone_name));
+        const auto setpoint_name =
+            unique_object_name(setpoint_objects, fmt::format("Spawn-{}-Default Setpoint", zone_name));
+
+        thermostat_objects[thermostat_name] = {{"zone_or_zonelist_name", zone_name},
+                                               {"control_type_schedule_name", control_type_schedule},
+                                               {"control_1_object_type", "ThermostatSetpoint:DualSetpoint"},
+                                               {"control_1_name", setpoint_name}};
+
+        setpoint_objects[setpoint_name] = {{"heating_setpoint_temperature_schedule_name", heating_setpoint_schedule},
+                                           {"cooling_setpoint_temperature_schedule_name", cooling_setpoint_schedule}};
+        spdlog::warn(
+            "Injected default thermostat for autosized zone '{}' (heating {:.1f} C, cooling {:.1f} C) because none was defined.",
+            zone_name,
+            20.0,
+            22.0);
+      }
+
+      if (humidistat_zones.find(zone_name) == humidistat_zones.end()) {
+        const auto humidistat_name =
+            unique_object_name(humidistat_objects, fmt::format("Spawn-{}-Default Humidistat", zone_name));
+        humidistat_objects[humidistat_name] = {
+            {"zone_name", zone_name},
+            {"humidifying_relative_humidity_setpoint_schedule_name", humidifying_schedule},
+            {"dehumidifying_relative_humidity_setpoint_schedule_name", dehumidifying_schedule}};
+        spdlog::warn(
+            "Injected default humidistat for autosized zone '{}' (humidify {:.0f}%%, dehumidify {:.0f}%%) because none was defined.",
+            zone_name,
+            45.0,
+            55.0);
       }
     }
 
@@ -420,6 +585,12 @@ void prepare_idf(json &jsonidf, const UserConfig &user_config, const StartTime &
   removeUnusedObjects(jsonidf);
   adjustSimulationControl(jsonidf, user_config);
   addIdealLoads(jsonidf, user_config);
+  addDefaultZoneControls(jsonidf, user_config);
+  if (user_config.autosize() && autosize_zone_names(jsonidf).empty()) {
+    spdlog::warn(
+        "Autosize was requested, but no Sizing:Zone objects were found; Ideal Loads and default thermostat/humidistat "
+        "injection will be skipped.");
+  }
   addRunPeriod(jsonidf, user_config, start_time);
   removeInfiltration(jsonidf, user_config);
   addOtherEquipment(jsonidf, user_config);
