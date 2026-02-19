@@ -45,6 +45,10 @@ private:
 
 [[nodiscard]] double ZoneThermostatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
+[[nodiscard]] double ZoneHumidistatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
+[[nodiscard]] double ZoneHumidistatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
+
 bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 namespace zone_sizing {

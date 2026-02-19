@@ -17,6 +17,7 @@
 #include <EnergyPlusData.hh>
 #include <InternalHeatGains.hh>
 #include <Psychrometrics.hh>
+#include <ScheduleManager.hh>
 #include <ZoneTempPredictorCorrector.hh>
 #include <api/datatransfer.h>
 
@@ -141,6 +142,99 @@ namespace {
     return false;
   }
 
+  const EnergyPlus::DataZoneControls::ZoneHumidityControls *FindHumidityControlZone(
+      const EnergyPlus::EnergyPlusData &energyplus_data,
+      int zone_num)
+  {
+    if (zone_num <= 0 || !energyplus_data.dataZoneCtrls) {
+      return nullptr;
+    }
+
+    const auto &zone_ctrls = *energyplus_data.dataZoneCtrls;
+    for (int i = 1; i <= zone_ctrls.NumHumidityControlZones; ++i) {
+      if (zone_ctrls.HumidityControlZone(i).ActualZoneNum == zone_num) {
+        return &zone_ctrls.HumidityControlZone(i);
+      }
+    }
+
+    return nullptr;
+  }
+
+  [[nodiscard]] double HumidityRatioSetpoint(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool is_dehumidifying)
+  {
+    auto &state = const_cast<EnergyPlus::EnergyPlusData &>(energyplus_data);
+    const auto *humidity_control = FindHumidityControlZone(energyplus_data, zone_num);
+    if (humidity_control == nullptr) {
+      return 0.0;
+    }
+
+    double rh_setpoint = 0.0;
+    if (is_dehumidifying) {
+      if (humidity_control->DehumidifyingSchedIndex > 0) {
+        rh_setpoint = EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->DehumidifyingSchedIndex);
+      }
+      if (humidity_control->EMSOverrideDehumidifySetPointOn) {
+        rh_setpoint = humidity_control->EMSOverrideDehumidifySetPointValue;
+      }
+    } else {
+      if (humidity_control->HumidifyingSchedIndex > 0) {
+        rh_setpoint = EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->HumidifyingSchedIndex);
+      }
+      if (humidity_control->EMSOverrideHumidifySetPointOn) {
+        rh_setpoint = humidity_control->EMSOverrideHumidifySetPointValue;
+      }
+    }
+
+    rh_setpoint = std::clamp(rh_setpoint, 0.0, 100.0);
+
+    if (!energyplus_data.dataZoneTempPredictorCorrector || !energyplus_data.dataEnvrn) {
+      return 0.0;
+    }
+
+    try {
+      const auto &zone_heat_balance = energyplus_data.dataZoneTempPredictorCorrector->zoneHeatBalance(zone_num);
+      const auto zone_temp = zone_heat_balance.MAT;
+      const auto out_baro_press = energyplus_data.dataEnvrn->OutBaroPress;
+      constexpr auto routine_name = "ZoneHumidistatSetPoint";
+      return EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(
+          state, zone_temp, rh_setpoint / 100.0, out_baro_press, routine_name);
+    } catch (...) {
+      return 0.0;
+    }
+  }
+
+  [[nodiscard]] std::string LookupZoneName(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  {
+    if (zone_num <= 0) {
+      return {};
+    }
+
+    if (energyplus_data.dataHeatBal) {
+      try {
+        const auto name = energyplus_data.dataHeatBal->Zone(zone_num).Name;
+        if (!name.empty()) {
+          return name;
+        }
+      } catch (...) {
+        // Ignore lookup errors and continue trying other data sources.
+      }
+    }
+
+    if (energyplus_data.dataSize) {
+      try {
+        const auto &final_zone_sizing = energyplus_data.dataSize->FinalZoneSizing;
+        const auto zone_count = static_cast<int>(final_zone_sizing.size());
+        if ((zone_num <= zone_count) && !final_zone_sizing(zone_num).ZoneName.empty()) {
+          return final_zone_sizing(zone_num).ZoneName;
+        }
+      } catch (...) {
+        // Ignore lookup errors; caller will log without a name.
+      }
+    }
+
+    return {};
+  }
+
   void LogMissingSetpoint(const EnergyPlus::EnergyPlusData &energyplus_data,
                           int zone_num,
                           std::string_view context,
@@ -153,22 +247,11 @@ namespace {
       return;
     }
 
-    const auto &final_zone_sizing = energyplus_data.dataSize->FinalZoneSizing;
-    const auto zone_count = static_cast<int>(final_zone_sizing.size());
-    const bool within_bounds = zone_num <= zone_count;
-
-    std::string zone_name;
-    if (within_bounds) {
-      try {
-        zone_name = energyplus_data.dataHeatBal->Zone(zone_num).Name;
-      } catch (const std::out_of_range &) {
-        // Leave name empty if lookup fails; logging still proceeds.
-      }
-    }
+    const auto zone_name = LookupZoneName(energyplus_data, zone_num);
 
     if (warned_zones.insert(zone_num).second) {
       if (!zone_name.empty()) {
-        spdlog::warn("No thermostat setpoint available for zone {} ({}) while computing {}", zone_num, zone_name, context);
+        spdlog::warn("No thermostat setpoint available for zone {} while computing {}", zone_name, context);
       } else {
         spdlog::warn("No thermostat setpoint available for zone {} while computing {}", zone_num, context);
       }
@@ -189,18 +272,7 @@ namespace {
       return;
     }
 
-    const auto &final_zone_sizing = energyplus_data.dataSize->FinalZoneSizing;
-    const auto zone_count = static_cast<int>(final_zone_sizing.size());
-    const bool within_bounds = zone_num <= zone_count;
-
-    std::string zone_name;
-    if (within_bounds) {
-      try {
-        zone_name = energyplus_data.dataHeatBal->Zone(zone_num).Name;
-      } catch (const std::out_of_range &) {
-        // Leave name empty if lookup fails; logging still proceeds.
-      }
-    }
+    const auto zone_name = LookupZoneName(energyplus_data, zone_num);
 
     if (!zone_name.empty()) {
       spdlog::warn("No sizing information available for zone {} ({}) while computing {}", zone_num, zone_name, context);
@@ -220,7 +292,23 @@ double ZoneThermostatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_dat
     return 21.0;
   }
 
-  return energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointHi(zone_num);
+  auto &state = const_cast<EnergyPlus::EnergyPlusData &>(energyplus_data);
+  auto setpoint = energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointHi(zone_num);
+  if (setpoint <= 0.0) {
+    try {
+      EnergyPlus::ZoneTempPredictorCorrector::CalcZoneAirTempSetPoints(state);
+      setpoint = energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointHi(zone_num);
+    } catch (...) {
+      // Fall through to default setpoint value below.
+    }
+  }
+
+  if (setpoint <= 0.0) {
+    LogMissingSetpoint(energyplus_data, zone_num, "ZoneThermostatSetPointHi", warned_zones);
+    return 21.0;
+  }
+
+  return setpoint;
 }
 
 double ZoneThermostatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
@@ -232,7 +320,61 @@ double ZoneThermostatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_dat
     return 21.0;
   }
 
-  return energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointLo(zone_num);
+  auto &state = const_cast<EnergyPlus::EnergyPlusData &>(energyplus_data);
+  auto setpoint = energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointLo(zone_num);
+  if (setpoint <= 0.0) {
+    try {
+      EnergyPlus::ZoneTempPredictorCorrector::CalcZoneAirTempSetPoints(state);
+      setpoint = energyplus_data.dataHeatBalFanSys->ZoneThermostatSetPointLo(zone_num);
+    } catch (...) {
+      // Fall through to default setpoint value below.
+    }
+  }
+
+  if (setpoint <= 0.0) {
+    LogMissingSetpoint(energyplus_data, zone_num, "ZoneThermostatSetPointLo", warned_zones);
+    return 21.0;
+  }
+
+  return setpoint;
+}
+
+double ZoneHumidistatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  static std::unordered_set<int> warned_zones;
+
+  if (FindHumidityControlZone(energyplus_data, zone_num) == nullptr) {
+    if (warned_zones.insert(zone_num).second) {
+      const auto zone_name = LookupZoneName(energyplus_data, zone_num);
+      if (!zone_name.empty()) {
+        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointHi");
+      } else {
+        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointHi");
+      }
+    }
+    return 0.0;
+  }
+
+  return HumidityRatioSetpoint(energyplus_data, zone_num, true);
+}
+
+double ZoneHumidistatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+{
+  static std::unordered_set<int> warned_zones;
+
+  if (FindHumidityControlZone(energyplus_data, zone_num) == nullptr) {
+    if (warned_zones.insert(zone_num).second) {
+      const auto zone_name = LookupZoneName(energyplus_data, zone_num);
+      if (!zone_name.empty()) {
+        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointLo");
+      } else {
+        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointLo");
+      }
+    }
+    return 0.0;
+  }
+
+  return HumidityRatioSetpoint(energyplus_data, zone_num, false);
 }
 
 bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)

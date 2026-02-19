@@ -1,5 +1,7 @@
 #include "../coroutine/spawn.hpp"
+#include "../coroutine/idf_to_json.hpp"
 #include "../util/config.hpp"
+#include "../util/math.hpp"
 #include "paths.hpp"
 #include <catch2/catch.hpp>
 #include <filesystem>
@@ -70,11 +72,79 @@ TEST_CASE("Test Zone Sizing Variables")
   CHECK(value > 0.0);
   const auto tset_hea = spawn1.GetValue("Core_ZN_TSetHea");
   const auto tset_coo = spawn1.GetValue("Core_ZN_TSetCoo");
+  const auto xset_hea = spawn1.GetValue("Core_ZN_XSetHea");
+  const auto xset_coo = spawn1.GetValue("Core_ZN_XSetCoo");
   CHECK(tset_hea > 250.0);
   CHECK(tset_hea < 320.0);
   CHECK(tset_coo > 250.0);
   CHECK(tset_coo < 320.0);
   CHECK(tset_coo > tset_hea);
+  CHECK(xset_hea > 0.0);
+  CHECK(xset_hea < 0.03);
+  CHECK(xset_coo > 0.0);
+  CHECK(xset_coo < 0.03);
+  CHECK(xset_coo > xset_hea);
+
+  spawn1.Stop();
+}
+
+TEST_CASE("Test Injected Thermostat Setpoints")
+{
+  const auto test_dir = spawn::test::get_current_test_dir();
+  const auto no_thermostat_idf = test_dir / "RefBldgSmallOfficeNew2004_Chicago_no_thermostat.idf";
+
+  // Remove thermostat objects so idfprep must inject defaults for autosized zones.
+  auto idf_json = spawn::idf_to_json(idfpath);
+  idf_json.erase("ZoneControl:Thermostat");
+  idf_json.erase("ZoneControl:Thermostat:StagedDualSetpoint");
+  idf_json.erase("ThermostatSetpoint:DualSetpoint");
+  idf_json.erase("ThermostatSetpoint:SingleHeating");
+  idf_json.erase("ThermostatSetpoint:SingleCooling");
+  spawn::json_to_idf(idf_json, no_thermostat_idf);
+
+  const std::string spawn_input = fmt::format(
+      R"({{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "model": {{
+        "zones": [
+           {{ "name": "Core_ZN" }}
+        ],
+        "hvacZones": [{{
+          "name": "sys1",
+          "zones": [
+           {{ "name": "Core_ZN" }}
+          ]
+        }}],
+        "hvacSystems": [{{
+          "name": "sys1",
+          "autosize": "true"
+        }}]
+      }}
+    }})",
+      fmt::arg("idfpath", no_thermostat_idf.generic_string()),
+      fmt::arg("epwpath", epwpath.generic_string()));
+
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, test_dir);
+
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
+
+  const auto tset_hea = spawn1.GetValue("Core_ZN_TSetHea");
+  const auto tset_coo = spawn1.GetValue("Core_ZN_TSetCoo");
+  const auto xset_hea = spawn1.GetValue("Core_ZN_XSetHea");
+  const auto xset_coo = spawn1.GetValue("Core_ZN_XSetCoo");
+
+  CHECK(tset_hea == Approx(spawn::c_to_k(20.0)));
+  CHECK(tset_coo == Approx(spawn::c_to_k(22.0)));
+  CHECK(xset_hea > 0.0);
+  CHECK(xset_hea < 0.03);
+  CHECK(xset_coo > 0.0);
+  CHECK(xset_coo < 0.03);
+  CHECK(xset_coo > xset_hea);
 
   spawn1.Stop();
 }
@@ -179,6 +249,51 @@ TEST_CASE("Test Zone Group Sizing Variables")
   CHECK(value == Approx(0.0));
   value = spawn1.GetValue("hvac_sizing_group_default_tHea");
   CHECK(value == Approx(0.0));
+
+  spawn1.Stop();
+}
+
+TEST_CASE("Test Humidistat Setpoint Variables")
+{
+  const std::string spawn_input = fmt::format(
+      R"({{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "model": {{
+        "zones": [
+           {{ "name": "Core_ZN" }}
+        ],
+        "hvacZones": [{{
+          "name": "sys1",
+          "zones": [
+           {{ "name": "Core_ZN" }}
+          ]
+        }}],
+        "hvacSystems": [{{
+          "name": "sys1",
+          "autosize": "true"
+        }}]
+      }}
+    }})",
+      fmt::arg("idfpath", idfpath.generic_string()),
+      fmt::arg("epwpath", epwpath.generic_string()));
+
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, spawn::test::get_current_test_dir());
+
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
+
+  const auto xset_hea = spawn1.GetValue("Core_ZN_XSetHea");
+  const auto xset_coo = spawn1.GetValue("Core_ZN_XSetCoo");
+
+  CHECK(xset_hea > 0.0);
+  CHECK(xset_hea < 0.03);
+  CHECK(xset_coo > 0.0);
+  CHECK(xset_coo < 0.03);
+  CHECK(xset_coo > xset_hea);
 
   spawn1.Stop();
 }

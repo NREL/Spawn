@@ -341,6 +341,32 @@ namespace zone {
     CachedValue<int> zone_num_;
   };
 
+  class XSetCoo : public Output
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit XSetCoo(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
+  class XSetHea : public Output
+  {
+    friend class variable::Variables;
+
+  private:
+    explicit XSetHea(Variables &variables, const std::string_view zone_name);
+    static void CreateAll(const UserConfig &user_config, Variables &variables);
+    void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
+    std::string zone_name_;
+    CachedValue<int> zone_num_;
+  };
+
   class MInletsFlow : public Input
   {
     friend class variable::Variables;

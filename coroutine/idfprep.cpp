@@ -151,11 +151,35 @@ namespace {
     }
 
     constexpr auto schedule_type = "Schedule:Constant";
+    constexpr auto schedule_type_limits_type = "ScheduleTypeLimits";
     constexpr auto control_type_schedule = "Spawn-DefaultThermostat-ControlType";
     constexpr auto heating_setpoint_schedule = "Spawn-DefaultThermostat-Heating";
     constexpr auto cooling_setpoint_schedule = "Spawn-DefaultThermostat-Cooling";
     constexpr auto humidifying_schedule = "Spawn-DefaultHumidistat-Humidify";
     constexpr auto dehumidifying_schedule = "Spawn-DefaultHumidistat-Dehumidify";
+    constexpr auto control_type_limits = "Spawn-DefaultThermostat-ControlType-Limits";
+    constexpr auto temperature_limits = "Spawn-DefaultThermostat-Temperature-Limits";
+    constexpr auto humidity_limits = "Spawn-DefaultHumidistat-RelativeHumidity-Limits";
+
+    if (!jsonidf.contains(schedule_type_limits_type)) {
+      jsonidf[schedule_type_limits_type] = json::object();
+    }
+    auto &schedule_type_limits = jsonidf[schedule_type_limits_type];
+
+    if (!schedule_type_limits.contains(control_type_limits)) {
+      schedule_type_limits[control_type_limits] = {{"lower_limit_value", 0.0},
+                                                   {"upper_limit_value", 4.0},
+                                                   {"numeric_type", "Discrete"}};
+    }
+    if (!schedule_type_limits.contains(temperature_limits)) {
+      schedule_type_limits[temperature_limits] = {{"unit_type", "Temperature"},
+                                                  {"numeric_type", "Continuous"}};
+    }
+    if (!schedule_type_limits.contains(humidity_limits)) {
+      schedule_type_limits[humidity_limits] = {{"lower_limit_value", 0.0},
+                                               {"upper_limit_value", 100.0},
+                                               {"numeric_type", "Continuous"}};
+    }
 
     if (!jsonidf.contains(schedule_type)) {
       jsonidf[schedule_type] = json::object();
@@ -163,19 +187,29 @@ namespace {
     auto &schedules = jsonidf[schedule_type];
 
     if (!schedules.contains(control_type_schedule)) {
-      schedules[control_type_schedule] = {{"hourly_value", 4.0}};
+      schedules[control_type_schedule] = {{"schedule_type_limits_name", control_type_limits}, {"hourly_value", 4.0}};
+    } else if (!schedules[control_type_schedule].contains("schedule_type_limits_name")) {
+      schedules[control_type_schedule]["schedule_type_limits_name"] = control_type_limits;
     }
     if (!schedules.contains(heating_setpoint_schedule)) {
-      schedules[heating_setpoint_schedule] = {{"hourly_value", 20.0}};
+      schedules[heating_setpoint_schedule] = {{"schedule_type_limits_name", temperature_limits}, {"hourly_value", 20.0}};
+    } else if (!schedules[heating_setpoint_schedule].contains("schedule_type_limits_name")) {
+      schedules[heating_setpoint_schedule]["schedule_type_limits_name"] = temperature_limits;
     }
     if (!schedules.contains(cooling_setpoint_schedule)) {
-      schedules[cooling_setpoint_schedule] = {{"hourly_value", 22.0}};
+      schedules[cooling_setpoint_schedule] = {{"schedule_type_limits_name", temperature_limits}, {"hourly_value", 22.0}};
+    } else if (!schedules[cooling_setpoint_schedule].contains("schedule_type_limits_name")) {
+      schedules[cooling_setpoint_schedule]["schedule_type_limits_name"] = temperature_limits;
     }
     if (!schedules.contains(humidifying_schedule)) {
-      schedules[humidifying_schedule] = {{"hourly_value", 45.0}};
+      schedules[humidifying_schedule] = {{"schedule_type_limits_name", humidity_limits}, {"hourly_value", 45.0}};
+    } else if (!schedules[humidifying_schedule].contains("schedule_type_limits_name")) {
+      schedules[humidifying_schedule]["schedule_type_limits_name"] = humidity_limits;
     }
     if (!schedules.contains(dehumidifying_schedule)) {
-      schedules[dehumidifying_schedule] = {{"hourly_value", 55.0}};
+      schedules[dehumidifying_schedule] = {{"schedule_type_limits_name", humidity_limits}, {"hourly_value", 55.0}};
+    } else if (!schedules[dehumidifying_schedule].contains("schedule_type_limits_name")) {
+      schedules[dehumidifying_schedule]["schedule_type_limits_name"] = humidity_limits;
     }
 
     const auto zone_list_objects = jsonidf.value("ZoneList", json::object());

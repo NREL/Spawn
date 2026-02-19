@@ -32,6 +32,8 @@ TEST_CASE("Test SingleFamilyHouse as FMU")
   spawn::fmu::ModelDescription modelDescription(model_description_path);
   const auto core_zn_t_ref = modelDescription.valueReference("LIVING ZONE_T");
   const auto core_zone_q_ref = modelDescription.valueReference("LIVING ZONE_QConSen_flow");
+  [[maybe_unused]] const auto core_zone_xset_coo_ref = modelDescription.valueReference("LIVING ZONE_XSetCoo");
+  [[maybe_unused]] const auto core_zone_xset_hea_ref = modelDescription.valueReference("LIVING ZONE_XSetHea");
 
   std::array<fmi2ValueReference, 1> input_vr{core_zn_t_ref};
   std::array<fmi2Real, 1> input_v{294.15};

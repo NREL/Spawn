@@ -15,6 +15,10 @@ using json = nlohmann::json;
 
 TEST_CASE("Test SingleFamilyHouse")
 {
+  const auto run_dir = spawn::test::get_current_test_dir() / "single_family_house";
+  spawn_fs::remove_all(run_dir);
+  spawn_fs::create_directories(run_dir);
+
   std::string spawn_input_string = fmt::format(
       R"(
     {{
@@ -63,7 +67,7 @@ TEST_CASE("Test SingleFamilyHouse")
       fmt::arg("epwpath", chicago_epw_path().generic_string()));
 
   const auto fmu_file_path = create_epfmu(spawn_input_string);
-  spawn::fmu::FMU fmu{fmu_file_path, false}; // don't require all symbols
+  spawn::fmu::FMU fmu{fmu_file_path, false, run_dir}; // keep extracted/resources/eplusout in test output dir
   REQUIRE(fmu.fmi.fmi2GetVersion() == std::string("2.0"));
 
   const auto resource_path = (fmu.extractedFilesPath() / "resources").string();

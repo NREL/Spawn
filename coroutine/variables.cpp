@@ -31,6 +31,8 @@ Variables::Variables([[maybe_unused]] const UserConfig &user_config)
   zone::TRad::CreateAll(user_config, *this);
   zone::TSetCoo::CreateAll(user_config, *this);
   zone::TSetHea::CreateAll(user_config, *this);
+  zone::XSetCoo::CreateAll(user_config, *this);
+  zone::XSetHea::CreateAll(user_config, *this);
 
   zone::MInletsFlow::CreateAll(user_config, *this);
   zone::TAveInlet::CreateAll(user_config, *this);
@@ -591,6 +593,74 @@ namespace zone {
   {
     Variable::SetValue(
         energyplus::ZoneThermostatSetPointLo(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+  }
+
+  void XSetCoo::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    for (const auto &zone : user_config.zones) {
+      if (!zone.isconnected) {
+        continue;
+      }
+      Variables::CreateOne<XSetCoo>(variables, zone.idfname);
+    }
+  }
+
+  XSetCoo::XSetCoo(Variables &variables, const std::string_view zone_name)
+      : Output(variables, std::string(zone_name) + "_XSetCoo", units::UnitType::one, units::UnitType::one),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Zone humidistat dehumidifying setpoint humidity ratio";
+    scalar_variable.append_attribute("causality") = "output";
+    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void XSetCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::ZoneHumidistatSetPointHi(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+  }
+
+  void XSetHea::CreateAll(const UserConfig &user_config, Variables &variables)
+  {
+    for (const auto &zone : user_config.zones) {
+      if (!zone.isconnected) {
+        continue;
+      }
+      Variables::CreateOne<XSetHea>(variables, zone.idfname);
+    }
+  }
+
+  XSetHea::XSetHea(Variables &variables, const std::string_view zone_name)
+      : Output(variables, std::string(zone_name) + "_XSetHea", units::UnitType::one, units::UnitType::one),
+        zone_name_(zone_name),
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+  {
+    auto scalar_variable = metadata_.append_child("ScalarVariable");
+    scalar_variable.append_attribute("name") = name_.c_str();
+    scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
+    scalar_variable.append_attribute("description") = "Zone humidistat humidifying setpoint humidity ratio";
+    scalar_variable.append_attribute("causality") = "output";
+    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("initial") = "calculated";
+
+    auto real = scalar_variable.append_child("Real");
+    real.append_attribute("relativeQuantity") = "false";
+    real.append_attribute("unit") = units::toString(mo_unit_).c_str();
+  }
+
+  void XSetHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    Variable::SetValue(
+        energyplus::ZoneHumidistatSetPointLo(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
   }
 
   void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)
