@@ -89,13 +89,16 @@ void energyplus::CreateFMU::operator()() const
   spawn_fs::copy_file(idd_path, fmuiddPath, spawn_fs::copy_options::overwrite_existing);
   spawn_fs::copy_file(user_config.epwInputPath(), fmuepwPath, spawn_fs::copy_options::overwrite_existing);
 
-  createModelDescription(user_config, modelDescriptionPath, id);
-
   const auto relativeEPWPath = spawn_fs::relative(fmuepwPath, fmuResourcesPath);
   user_config.setEPWInputPath(relativeEPWPath);
   const auto relativeIdfPath = spawn_fs::relative(fmuidfPath, fmuResourcesPath);
   user_config.setIdfInputPath(relativeIdfPath);
   user_config.save(fmuspawnPath);
+
+  // Build modelDescription from the same prepared model.spawn configuration that runtime will load.
+  // This keeps value references aligned with runtime variable creation.
+  const spawn::UserConfig runtime_user_config(fmuspawnPath.string());
+  createModelDescription(runtime_user_config, modelDescriptionPath, id);
 
   if (!no_zip) {
     zip_directory(fmuStagingPath.string(), fmuPath.string(), no_compress);
