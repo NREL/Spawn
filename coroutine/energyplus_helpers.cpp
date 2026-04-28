@@ -142,9 +142,8 @@ namespace {
     return false;
   }
 
-  const EnergyPlus::DataZoneControls::ZoneHumidityControls *FindHumidityControlZone(
-      const EnergyPlus::EnergyPlusData &energyplus_data,
-      int zone_num)
+  const EnergyPlus::DataZoneControls::ZoneHumidityControls *
+  FindHumidityControlZone(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
   {
     if (zone_num <= 0 || !energyplus_data.dataZoneCtrls) {
       return nullptr;
@@ -160,7 +159,8 @@ namespace {
     return nullptr;
   }
 
-  [[nodiscard]] double HumidityRatioSetpoint(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool is_dehumidifying)
+  [[nodiscard]] double
+  HumidityRatioSetpoint(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool is_dehumidifying)
   {
     auto &state = const_cast<EnergyPlus::EnergyPlusData &>(energyplus_data);
     const auto *humidity_control = FindHumidityControlZone(energyplus_data, zone_num);
@@ -171,14 +171,16 @@ namespace {
     double rh_setpoint = 0.0;
     if (is_dehumidifying) {
       if (humidity_control->DehumidifyingSchedIndex > 0) {
-        rh_setpoint = EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->DehumidifyingSchedIndex);
+        rh_setpoint =
+            EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->DehumidifyingSchedIndex);
       }
       if (humidity_control->EMSOverrideDehumidifySetPointOn) {
         rh_setpoint = humidity_control->EMSOverrideDehumidifySetPointValue;
       }
     } else {
       if (humidity_control->HumidifyingSchedIndex > 0) {
-        rh_setpoint = EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->HumidifyingSchedIndex);
+        rh_setpoint =
+            EnergyPlus::ScheduleManager::GetCurrentScheduleValue(state, humidity_control->HumidifyingSchedIndex);
       }
       if (humidity_control->EMSOverrideHumidifySetPointOn) {
         rh_setpoint = humidity_control->EMSOverrideHumidifySetPointValue;
@@ -281,6 +283,42 @@ namespace {
     }
   }
 
+  [[nodiscard]] double MaxLoad(const Array1D<Real64> &load_sequence)
+  {
+    if (load_sequence.empty()) {
+      return 0.0;
+    }
+
+    return *std::max_element(load_sequence.begin(), load_sequence.end());
+  }
+
+  [[nodiscard]] double CoolingSizingMultiplier(const EnergyPlus::DataSizing::ZoneSizingData &sizing_data)
+  {
+    // EnergyPlus applies the zone cooling sizing factor directly unless the user entered an explicit cooling design
+    // airflow in Sizing:Zone. In that case the final cooling load and flow sequences are scaled by the ratio between
+    // the entered airflow and the calculated design cooling airflow, then by the cooling sizing factor. Spawn uses the
+    // calculated sensible and latent load data so the two outputs can be reported separately, therefore we need to
+    // apply the same multiplier here instead of relying on EnergyPlus' already-scaled FinalZoneSizing sequences.
+    if (sizing_data.InpDesCoolAirFlow > 0.0 &&
+        sizing_data.CoolAirDesMethod == EnergyPlus::DataSizing::AirflowSizingMethod::InpDesAirFlow &&
+        sizing_data.DesCoolVolFlow > 0.0) {
+      return (sizing_data.InpDesCoolAirFlow / sizing_data.DesCoolVolFlow) * sizing_data.CoolSizingFactor;
+    }
+
+    return sizing_data.CoolSizingFactor;
+  }
+
+  [[nodiscard]] double CoolingSizingMultiplier(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
+  {
+    const auto &calc_final_zone_sizing = energyplus_data.dataSize->CalcFinalZoneSizing;
+    const auto zone_count = static_cast<int>(calc_final_zone_sizing.size());
+    if (zone_num <= 0 || zone_num > zone_count) {
+      return 1.0;
+    }
+
+    return CoolingSizingMultiplier(calc_final_zone_sizing(zone_num));
+  }
+
 } // namespace
 
 double ZoneThermostatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num)
@@ -347,9 +385,11 @@ double ZoneHumidistatSetPointHi(const EnergyPlus::EnergyPlusData &energyplus_dat
     if (warned_zones.insert(zone_num).second) {
       const auto zone_name = LookupZoneName(energyplus_data, zone_num);
       if (!zone_name.empty()) {
-        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointHi");
+        spdlog::warn(
+            "No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointHi");
       } else {
-        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointHi");
+        spdlog::warn(
+            "No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointHi");
       }
     }
     return 0.0;
@@ -366,9 +406,11 @@ double ZoneHumidistatSetPointLo(const EnergyPlus::EnergyPlusData &energyplus_dat
     if (warned_zones.insert(zone_num).second) {
       const auto zone_name = LookupZoneName(energyplus_data, zone_num);
       if (!zone_name.empty()) {
-        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointLo");
+        spdlog::warn(
+            "No humidistat setpoint available for zone {} while computing {}", zone_name, "ZoneHumidistatSetPointLo");
       } else {
-        spdlog::warn("No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointLo");
+        spdlog::warn(
+            "No humidistat setpoint available for zone {} while computing {}", zone_num, "ZoneHumidistatSetPointLo");
       }
     }
     return 0.0;
@@ -397,9 +439,8 @@ bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_
 }
 
 // this function will filter zone_nums to only those with sizing information
-std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                     std::vector<int> zone_nums,
-                                     bool log_missing)
+std::vector<int>
+ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, std::vector<int> zone_nums, bool log_missing)
 {
   std::vector<int> result;
 
@@ -416,41 +457,77 @@ std::vector<int> ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplu
 
 namespace zone_sizing {
 
-  [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                           int zone_num,
-                                           bool use_sizing_data)
+  [[nodiscard]] double
+  SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
     }
 
     if (HaveSizingInfo(energyplus_data, zone_num)) {
-      return energyplus_data.dataSize->FinalZoneSizing(zone_num).DesCoolLoad;
+      // This backs the Spawn zone-level variable "<zone>_QCooSen_flow".
+      //
+      // Do not use FinalZoneSizing.DesCoolLoad here. In EnergyPlus that field is the cooling design load selected for
+      // equipment sizing, not always the sensible cooling load. For ordinary sensible sizing those two ideas coincide,
+      // but for latent sizing they can diverge. When the calculated latent cooling load is greater than the calculated
+      // sensible cooling load, EnergyPlus copies the latent result into the generic cooling fields so downstream
+      // equipment sizing can keep using DesCoolLoad, DesCoolVolFlow, etc. In that case FinalZoneSizing.DesCoolLoad
+      // contains the latent load, even though its name does not say latent.
+      //
+      // The sensible cooling load is still available as the peak of CoolLoadSeq in CalcFinalZoneSizing. We apply the
+      // cooling sizing multiplier on the Spawn side instead of reading FinalZoneSizing.CoolLoadSeq directly so this
+      // sensible variable follows the same scaling path as the latent variable below. The multiplier mirrors the
+      // EnergyPlus calculation: normally it is the zone cooling sizing factor, but when the Sizing:Zone object uses a
+      // user-entered cooling design airflow rate, EnergyPlus multiplies by the ratio of that entered flow to the
+      // calculated design cooling flow.
+      const auto &calc_final_zone_sizing = energyplus_data.dataSize->CalcFinalZoneSizing;
+      const auto zone_count = static_cast<int>(calc_final_zone_sizing.size());
+      if (zone_num <= zone_count) {
+        const auto &sizing_data = calc_final_zone_sizing(zone_num);
+        return MaxLoad(sizing_data.CoolLoadSeq) * CoolingSizingMultiplier(sizing_data);
+      }
     }
 
     LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::SensibleCoolingLoad", true);
     return 0.0;
   }
 
-  [[nodiscard]] double LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                         int zone_num,
-                                         bool use_sizing_data)
+  [[nodiscard]] double
+  LatentCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
     }
 
     if (HaveSizingInfo(energyplus_data, zone_num)) {
-      return energyplus_data.dataSize->FinalZoneSizing(zone_num).DesLatentCoolLoad;
+      // This backs the Spawn zone-level variable "<zone>_QCooLat_flow".
+      //
+      // The latent-specific design fields are calculated in CalcFinalZoneSizing and are written to the EnergyPlus zsz
+      // sizing report from there. EnergyPlus later copies calculated sizing data into FinalZoneSizing, but that copy
+      // path preserves the generic cooling/heating fields used for equipment sizing and does not maintain
+      // DesLatentCoolLoad in FinalZoneSizing. That is why FinalZoneSizing.DesLatentCoolLoad can be zero even when the
+      // zsz report shows a nonzero "Des Latent Cool Load".
+      //
+      // Because Spawn's QCooLat_flow is specifically the latent cooling load, the calculated latent field is the
+      // field that matches the EnergyPlus sizing report. This is intentionally not a fallback from FinalZoneSizing;
+      // using CalcFinalZoneSizing directly avoids implying that both structures carry the same latent-load meaning.
+      // EnergyPlus does not scale DesLatentCoolLoad when it applies the cooling sizing multiplier to the generic final
+      // cooling fields, so Spawn applies that same multiplier here. That keeps QCooLat_flow and QCooSen_flow consistent
+      // when the user provides a zone cooling sizing factor or an explicit cooling design airflow rate.
+      const auto &calc_final_zone_sizing = energyplus_data.dataSize->CalcFinalZoneSizing;
+      const auto zone_count = static_cast<int>(calc_final_zone_sizing.size());
+      if (zone_num <= zone_count) {
+        const auto &sizing_data = calc_final_zone_sizing(zone_num);
+        return sizing_data.DesLatentCoolLoad * CoolingSizingMultiplier(sizing_data);
+      }
     }
 
     LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::LatentCoolingLoad", true);
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             int zone_num,
-                                             bool use_sizing_data)
+  [[nodiscard]] double
+  OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -464,9 +541,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      int zone_num,
-                                                      bool use_sizing_data)
+  [[nodiscard]] double
+  OutdoorHumidityRatioAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -480,9 +556,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      int zone_num,
-                                      bool use_sizing_data)
+  [[nodiscard]] double
+  TimeAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -498,9 +573,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                   int zone_num,
-                                   bool use_sizing_data)
+  [[nodiscard]] double
+  HeatingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -514,9 +588,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                             int zone_num,
-                                             bool use_sizing_data)
+  [[nodiscard]] double
+  OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -530,9 +603,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                                      int zone_num,
-                                                      bool use_sizing_data)
+  [[nodiscard]] double
+  OutdoorHumidityRatioAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -546,9 +618,8 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                      int zone_num,
-                                      bool use_sizing_data)
+  [[nodiscard]] double
+  TimeAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -563,9 +634,7 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                 int zone_num,
-                                 bool use_sizing_data)
+  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -580,9 +649,7 @@ namespace zone_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                 int zone_num,
-                                 bool use_sizing_data)
+  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -619,19 +686,23 @@ namespace zone_group_sizing {
                                             const std::vector<int> &zone_nums,
                                             const GetLoadSeqFunc &get_load_seq,
                                             bool log_missing,
-                                            std::string_view context)
+                                            std::string_view context,
+                                            bool use_calc_zone_sizing = false,
+                                            bool apply_cooling_sizing_multiplier = false)
   {
     const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
 
     if (sizing_zones.empty()) {
       if (log_missing) {
         spdlog::warn(
-            "No sizing information available for any requested zones while computing {}; returning default value", context);
+            "No sizing information available for any requested zones while computing {}; returning default value",
+            context);
       }
       return {};
     }
 
-    auto &zone_sizing = energyplus_data.dataSize->ZoneSizing;
+    const auto &zone_sizing =
+        use_calc_zone_sizing ? energyplus_data.dataSize->CalcZoneSizing : energyplus_data.dataSize->ZoneSizing;
     size_t first_zone_num = sizing_zones.front();
     const auto num_design_days = zone_sizing.isize1();
     std::vector<PeakLoad> peak_loads;
@@ -642,8 +713,10 @@ namespace zone_group_sizing {
 
       for (const auto &zone_num : sizing_zones) {
         const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
+        const auto multiplier =
+            apply_cooling_sizing_multiplier ? CoolingSizingMultiplier(energyplus_data, zone_num) : 1.0;
         for (int i = 0; i < num_timesteps; ++i) {
-          combined_group_load[i] += load_seq[i];
+          combined_group_load[i] += load_seq[i] * multiplier;
         }
       }
 
@@ -673,11 +746,22 @@ namespace zone_group_sizing {
       return sizing_data.CoolLoadSeq;
     };
 
+    // This backs the Spawn group-level variable "hvac_sizing_group_<name>_QCooSen_flow".
+    //
+    // The group value is computed from the same sensible-load sequence used for the zone-level variable, but the
+    // aggregation has to be coincident across zones. For each design day and timestep, GetPeakLoad sums the calculated
+    // CoolLoadSeq for all zones in the group, with the cooling sizing multiplier applied to each zone before it is
+    // added to the group total, then returns the largest combined value. The per-zone multiplier matters because each
+    // zone may have a different Sizing:Zone cooling sizing factor or user-entered design cooling airflow. This gives
+    // the group sensible cooling peak without ever reading DesCoolLoad, which may contain the latent load when latent
+    // load is greater than sensible load.
     return GetPeakLoad(energyplus_data,
                        zone_nums,
                        get_cooling_load_seq,
                        true,
-                       "zone_group_sizing::SensibleCoolingLoad")
+                       "zone_group_sizing::SensibleCoolingLoad",
+                       true,
+                       true)
         .value;
   }
 
@@ -693,13 +777,20 @@ namespace zone_group_sizing {
       return sizing_data.LatentCoolLoadSeq;
     };
 
-    // This value may not be coincident with the peak sensible load. Is this what we want, or
-    // should we return the latent load at the time of the peak sensible load?
+    // This backs the Spawn group-level variable "hvac_sizing_group_<name>_QCooLat_flow".
+    //
+    // As with the sensible group load, the rollup is coincident across zones: sum each zone's latent cooling sequence
+    // at the same design-day timestep, with the cooling sizing multiplier applied to each zone before it is added to
+    // the group total, then take the peak combined latent value. This peak is not required to happen at the same
+    // design-day timestep as the sensible peak. Reporting separate sensible and latent design loads means each value
+    // represents its own maximum, not the latent load at the sensible peak or the sensible load at the latent peak.
     return GetPeakLoad(energyplus_data,
                        zone_nums,
                        get_cooling_load_seq,
                        true,
-                       "zone_group_sizing::LatentCoolingLoad")
+                       "zone_group_sizing::LatentCoolingLoad",
+                       true,
+                       true)
         .value;
   }
 
@@ -721,7 +812,9 @@ namespace zone_group_sizing {
                                          sizing_zones,
                                          get_cooling_load_seq,
                                          true,
-                                         "zone_group_sizing::OutdoorTempAtPeakCool");
+                                         "zone_group_sizing::OutdoorTempAtPeakCool",
+                                         true,
+                                         true);
       // The outdoor temperature should be the same for all zones, so get the sizing data for the
       // peak design day, using any one of the zones in the group.
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
@@ -750,7 +843,9 @@ namespace zone_group_sizing {
                                          sizing_zones,
                                          get_cooling_load_seq,
                                          true,
-                                         "zone_group_sizing::OutdoorHumidityRatioAtPeakCool");
+                                         "zone_group_sizing::OutdoorHumidityRatioAtPeakCool",
+                                         true,
+                                         true);
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
 
       return zone_sizing.CoolOutHumRatSeq(peak_load.day_timestep);
@@ -772,11 +867,8 @@ namespace zone_group_sizing {
       const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.CoolLoadSeq;
       };
-      const auto peak_load = GetPeakLoad(energyplus_data,
-                                         sizing_zones,
-                                         get_cooling_load_seq,
-                                         true,
-                                         "zone_group_sizing::TimeAtPeakCool");
+      const auto peak_load = GetPeakLoad(
+          energyplus_data, sizing_zones, get_cooling_load_seq, true, "zone_group_sizing::TimeAtPeakCool", true, true);
       // TODO: Are we sure this is right when the sizing is from a DesignDay?
       return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
     }
@@ -796,12 +888,7 @@ namespace zone_group_sizing {
       return sizing_data.HeatLoadSeq;
     };
 
-    return GetPeakLoad(energyplus_data,
-                       zone_nums,
-                       get_heating_load_seq,
-                       true,
-                       "zone_group_sizing::HeatingLoad")
-        .value;
+    return GetPeakLoad(energyplus_data, zone_nums, get_heating_load_seq, true, "zone_group_sizing::HeatingLoad").value;
   }
 
   [[nodiscard]] double OutdoorTempAtPeakHeat(const EnergyPlus::EnergyPlusData &energyplus_data,
@@ -818,11 +905,8 @@ namespace zone_group_sizing {
         return sizing_data.HeatLoadSeq;
       };
 
-      const auto peak_load = GetPeakLoad(energyplus_data,
-                                         sizing_zones,
-                                         get_heating_load_seq,
-                                         true,
-                                         "zone_group_sizing::OutdoorTempAtPeakHeat");
+      const auto peak_load = GetPeakLoad(
+          energyplus_data, sizing_zones, get_heating_load_seq, true, "zone_group_sizing::OutdoorTempAtPeakHeat");
       // The outdoor temperature should be the same for all zones, so get the sizing data for the
       // peak design day, using any one of the zones in the group.
       const auto zone_sizing = energyplus_data.dataSize->ZoneSizing(peak_load.design_day_index, sizing_zones.front());
@@ -876,20 +960,16 @@ namespace zone_group_sizing {
       const auto get_heating_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
         return sizing_data.HeatLoadSeq;
       };
-      const auto peak_load = GetPeakLoad(energyplus_data,
-                                         sizing_zones,
-                                         get_heating_load_seq,
-                                         true,
-                                         "zone_group_sizing::TimeAtPeakHeat");
+      const auto peak_load =
+          GetPeakLoad(energyplus_data, sizing_zones, get_heating_load_seq, true, "zone_group_sizing::TimeAtPeakHeat");
       return peak_load.day_timestep * energyplus_data.dataGlobal->TimeStepZoneSec;
     }
 
     return 0.0;
   }
 
-  [[nodiscard]] double MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                 const std::vector<int> &zone_nums,
-                                 bool use_sizing_data)
+  [[nodiscard]] double
+  MinCoolOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;
@@ -909,9 +989,8 @@ namespace zone_group_sizing {
     return 0.0;
   }
 
-  [[nodiscard]] double MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                 const std::vector<int> &zone_nums,
-                                 bool use_sizing_data)
+  [[nodiscard]] double
+  MinHeatOA(const EnergyPlus::EnergyPlusData &energyplus_data, const std::vector<int> &zone_nums, bool use_sizing_data)
   {
     if (!use_sizing_data) {
       return 0.0;

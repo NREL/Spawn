@@ -1,5 +1,5 @@
-#include "../coroutine/spawn.hpp"
 #include "../coroutine/idf_to_json.hpp"
+#include "../coroutine/spawn.hpp"
 #include "../util/config.hpp"
 #include "../util/math.hpp"
 #include "paths.hpp"
@@ -84,6 +84,72 @@ TEST_CASE("Test Zone Sizing Variables")
   CHECK(xset_coo > 0.0);
   CHECK(xset_coo < 0.03);
   CHECK(xset_coo > xset_hea);
+
+  spawn1.Stop();
+}
+
+TEST_CASE("Test Zone Sizing Latent Cooling Load")
+{
+  const auto test_dir = spawn::test::get_current_test_dir();
+  const auto latent_sizing_idfpath =
+      spawn::project_source_dir() / "energyplus/testfiles/5ZoneAirCooled_LatentSizing_OtherEquipmentLatentLoads.idf";
+  const auto scaled_latent_sizing_idfpath = test_dir / "5ZoneAirCooled_LatentSizing_scaled.idf";
+
+  auto idf_json = spawn::idf_to_json(latent_sizing_idfpath);
+  for (auto &[_, sizing_zone] : idf_json["Sizing:Zone"].items()) {
+    if (sizing_zone.value("zone_or_zonelist_name", "") == "SPACE2-1") {
+      sizing_zone["zone_cooling_sizing_factor"] = 2.0;
+    }
+  }
+  spawn::json_to_idf(idf_json, scaled_latent_sizing_idfpath);
+
+  const std::string spawn_input = fmt::format(
+      R"({{
+      "version": "0.1",
+      "EnergyPlus": {{
+        "idf": "{idfpath}",
+        "weather": "{epwpath}"
+      }},
+      "model": {{
+        "zones": [
+           {{ "name": "SPACE2-1" }}
+        ],
+        "hvacZones": [{{
+          "name": "sys1",
+          "zones": [
+           {{ "name": "SPACE2-1" }}
+          ]
+        }}],
+        "hvacSystems": [{{
+          "name": "sys1",
+          "autosize": "true"
+        }}]
+      }}
+    }})",
+      fmt::arg("idfpath", scaled_latent_sizing_idfpath.generic_string()),
+      fmt::arg("epwpath", epwpath.generic_string()));
+
+  spawn::Spawn spawn1("spawn1", spawn::test::idd_path(), spawn_input, test_dir);
+
+  spawn1.Start();
+  CHECK(spawn1.CurrentTime() == 0.0);
+
+  const auto sensible_cooling_load = spawn1.GetValue("SPACE2-1_QCooSen_flow");
+  const auto latent_cooling_load = spawn1.GetValue("SPACE2-1_QCooLat_flow");
+  const auto group_sensible_cooling_load = spawn1.GetValue("hvac_sizing_group_sys1_QCooSen_flow");
+  const auto group_latent_cooling_load = spawn1.GetValue("hvac_sizing_group_sys1_QCooLat_flow");
+
+  CHECK(sensible_cooling_load > 0.0);
+  CHECK(latent_cooling_load > 0.0);
+  CHECK(latent_cooling_load > sensible_cooling_load);
+  CHECK(group_sensible_cooling_load == Approx(sensible_cooling_load));
+  CHECK(group_latent_cooling_load == Approx(latent_cooling_load));
+
+  // The unscaled SPACE2-1 sensible and latent cooling loads in this fixture are both near 2200 W. Setting the zone
+  // cooling sizing factor to 2.0 should put both Spawn outputs above 4000 W. These checks intentionally leave room for
+  // small sizing-result changes while still failing if either output forgets to apply the cooling sizing factor.
+  CHECK(sensible_cooling_load > 4000.0);
+  CHECK(latent_cooling_load > 4000.0);
 
   spawn1.Stop();
 }
