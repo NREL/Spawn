@@ -11,7 +11,35 @@ namespace spawn {
 
 namespace {
 
-  std::vector<std::string> expand_zone_or_zonelist(const json &zone_list_objects, const std::string &zone_or_zonelist_name)
+  json::const_iterator find_object_case_insensitive(const json &objects, const std::string &name)
+  {
+    if (!objects.is_object()) {
+      return objects.cend();
+    }
+
+    for (auto object = objects.cbegin(); object != objects.cend(); ++object) {
+      if (case_insensitive_compare(object.key(), name)) {
+        return object;
+      }
+    }
+
+    return objects.cend();
+  }
+
+  std::string join_names(const std::vector<std::string> &names, const char *delimiter = ", ")
+  {
+    std::string result;
+    for (const auto &name : names) {
+      if (!result.empty()) {
+        result.append(delimiter);
+      }
+      result.append(name);
+    }
+    return result;
+  }
+
+  std::vector<std::string> expand_zone_or_zonelist(const json &zone_list_objects,
+                                                   const std::string &zone_or_zonelist_name)
   {
     std::vector<std::string> zone_names;
 
@@ -19,8 +47,9 @@ namespace {
       return zone_names;
     }
 
-    if (zone_list_objects.contains(zone_or_zonelist_name)) {
-      const auto zone_name_objects = zone_list_objects.value(zone_or_zonelist_name, json()).value("zones", json());
+    const auto zone_list = find_object_case_insensitive(zone_list_objects, zone_or_zonelist_name);
+    if (zone_list != zone_list_objects.cend()) {
+      const auto zone_name_objects = zone_list->value("zones", json());
       for (const auto &zone_name_object : zone_name_objects) {
         zone_names.push_back(zone_name_object.at("zone_name").get<std::string>());
       }
@@ -510,8 +539,9 @@ namespace {
     for (const auto &[infname, inffields] : infiltrationObjects.items()) {
       const auto possibleZoneListName = inffields.at("zone_or_zonelist_or_space_or_spacelist_name").get<std::string>();
       // if zoneName is the name of a zone list and not a real zone....
-      if (zoneListObjects.contains(possibleZoneListName)) {
-        const auto zoneNameObjects = zoneListObjects.value(possibleZoneListName, json()).value("zones", json());
+      const auto zoneList = find_object_case_insensitive(zoneListObjects, possibleZoneListName);
+      if (zoneList != zoneListObjects.cend()) {
+        const auto zoneNameObjects = zoneList->value("zones", json());
         if (!zoneNameObjects.is_null()) {
           // need to expand the infiltration objects associated with this zonelist
           for (const auto &zoneNameObject : zoneNameObjects) {
@@ -597,7 +627,7 @@ namespace {
       for (auto var = infiltrationObjects.cbegin(); var != infiltrationObjects.cend();) {
         const auto zoneName = var->at(type.second).get<std::string>();
         const auto connected_zone_it = std::find_if(zones.cbegin(), zones.cend(), [&](const spawn::Zone &z) {
-          return z.isconnected && (z.idfname == zoneName);
+          return z.isconnected && case_insensitive_compare(z.idfname, zoneName);
         });
         if (connected_zone_it != zones.cend()) {
           var = infiltrationObjects.erase(var);
@@ -634,28 +664,46 @@ void prepare_idf(json &jsonidf, const UserConfig &user_config, const StartTime &
 
 void validate_idf(json &jsonidf)
 {
-  std::vector<std::string> multiplier_zones;
+  std::vector<std::string> unsupported_multipliers;
 
-  auto &zone_objects = jsonidf["Zone"];
+  const auto zone_objects = jsonidf.value("Zone", json::object());
   for (const auto &[name, fields] : zone_objects.items()) {
     const auto multiplier = fields.value("multiplier", 1);
     if (multiplier != 1) {
-      multiplier_zones.push_back(name);
+      unsupported_multipliers.push_back(fmt::format("Zone '{}' has multiplier {}", name, multiplier));
     }
   }
 
-  if (!multiplier_zones.empty()) {
-    std::string names;
-    for (const auto &name : multiplier_zones) {
-      if (multiplier_zones.back() == name) {
-        // Each zone name except the last gets a comman and space appended
-        names.append(name);
-      } else {
-        names.append(name + ", ");
+  const auto zone_list_objects = jsonidf.value("ZoneList", json::object());
+  const auto zone_group_objects = jsonidf.value("ZoneGroup", json::object());
+  for (const auto &[group_name, fields] : zone_group_objects.items()) {
+    const auto multiplier = fields.value("zone_list_multiplier", 1);
+    if (multiplier == 1) {
+      continue;
+    }
+
+    const auto zone_list_name = fields.value("zone_list_name", "");
+    std::vector<std::string> affected_zones;
+    const auto zone_list = find_object_case_insensitive(zone_list_objects, zone_list_name);
+    if (zone_list != zone_list_objects.cend()) {
+      const auto zone_name_objects = zone_list->value("zones", json());
+      for (const auto &zone_name_object : zone_name_objects) {
+        affected_zones.push_back(zone_name_object.at("zone_name").get<std::string>());
       }
     }
+
+    const auto affected_zone_names = affected_zones.empty() ? "none found" : join_names(affected_zones);
+    unsupported_multipliers.push_back(fmt::format("ZoneGroup '{}' applies multiplier {} to ZoneList '{}' (zones: {})",
+                                                  group_name,
+                                                  multiplier,
+                                                  zone_list_name,
+                                                  affected_zone_names));
+  }
+
+  if (!unsupported_multipliers.empty()) {
     const auto message = fmt::format(
-        "The Spawn version of EnergyPlus does not support the zone multiplier input for the zones named: {}.", names);
+        "This version of Spawn does not support zone or zone-list multipliers. Unsupported inputs: {}.",
+        join_names(unsupported_multipliers, "; "));
     throw std::runtime_error(message);
   }
 }

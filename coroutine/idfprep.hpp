@@ -14,7 +14,7 @@ class UserConfig;
 void prepare_idf(json &jsonidf, const UserConfig &user_config, const StartTime &start_time);
 
 // Validate the jsonidf to ensure that the user input is not requesting something
-// that Spawn does not support, such as zone multipliers.
+// that Spawn does not support, such as Zone and ZoneGroup multipliers.
 // This function will throw an exception upon the first validation failure.
 void validate_idf(json &jsonidf);
 } // namespace spawn

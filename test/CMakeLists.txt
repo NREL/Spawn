@@ -51,6 +51,7 @@ add_executable(
   tests
   catch.cpp
   paths.hpp
+  test_idfprep.cpp
   ${MBL_TESTS}
   ${EMBEDDED_COMPILER_TESTS}
 )
