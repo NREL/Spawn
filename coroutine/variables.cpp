@@ -902,7 +902,7 @@ namespace zone {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Design latent cooling load";
+    scalar_variable.append_attribute("description") = "Design latent cooling load at the sensible cooling peak";
     scalar_variable.append_attribute("causality") = "calculatedParameter";
     scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";
@@ -1346,7 +1346,7 @@ namespace zone_group_sizing {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Design latent cooling load";
+    scalar_variable.append_attribute("description") = "Design latent cooling load at the sensible cooling peak";
     scalar_variable.append_attribute("causality") = "calculatedParameter";
     scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";

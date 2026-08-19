@@ -88,7 +88,7 @@ TEST_CASE("Test Zone Sizing Variables")
   spawn1.Stop();
 }
 
-TEST_CASE("Test Zone Sizing Latent Cooling Load")
+TEST_CASE("Test Sizing Latent Cooling Load at Sensible Peak")
 {
   const auto test_dir = spawn::test::get_current_test_dir();
   const auto latent_sizing_idfpath =
@@ -117,6 +117,7 @@ TEST_CASE("Test Zone Sizing Latent Cooling Load")
         "hvacZones": [{{
           "name": "sys1",
           "zones": [
+           {{ "name": "SPACE1-1" }},
            {{ "name": "SPACE2-1" }}
           ]
         }}],
@@ -141,13 +142,16 @@ TEST_CASE("Test Zone Sizing Latent Cooling Load")
 
   CHECK(sensible_cooling_load > 0.0);
   CHECK(latent_cooling_load > 0.0);
-  CHECK(latent_cooling_load > sensible_cooling_load);
-  CHECK(group_sensible_cooling_load == Approx(sensible_cooling_load));
-  CHECK(group_latent_cooling_load == Approx(latent_cooling_load));
+  CHECK(latent_cooling_load < sensible_cooling_load);
 
-  // The unscaled SPACE2-1 sensible and latent cooling loads in this fixture are both near 2200 W. Setting the zone
-  // cooling sizing factor to 2.0 should put both Spawn outputs above 4000 W. These checks intentionally leave room for
-  // small sizing-result changes while still failing if either output forgets to apply the cooling sizing factor.
+  // The group contains SPACE1-1 and SPACE2-1. Its latent load is the sum of both zones' latent loads at the peak of
+  // their combined sensible load, not the independently calculated peak of their combined latent load.
+  CHECK(group_sensible_cooling_load == Approx(6311.0).margin(5.0));
+  CHECK(group_latent_cooling_load == Approx(6920.0).margin(5.0));
+
+  // The unscaled SPACE2-1 sensible peak is near 2200 W, and its coincident latent load is near 2100 W. Setting the zone
+  // cooling sizing factor to 2.0 should put both Spawn outputs above 4000 W. The zone's independent latent peak occurs
+  // later and is greater than its sensible peak, so the ordering above distinguishes the two definitions.
   CHECK(sensible_cooling_load > 4000.0);
   CHECK(latent_cooling_load > 4000.0);
 

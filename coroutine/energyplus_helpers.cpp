@@ -2,6 +2,7 @@
 
 // C++ standard library headers
 #include <algorithm>
+#include <functional>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -283,15 +284,6 @@ namespace {
     }
   }
 
-  [[nodiscard]] double MaxLoad(const Array1D<Real64> &load_sequence)
-  {
-    if (load_sequence.empty()) {
-      return 0.0;
-    }
-
-    return *std::max_element(load_sequence.begin(), load_sequence.end());
-  }
-
   [[nodiscard]] double CoolingSizingMultiplier(const EnergyPlus::DataSizing::ZoneSizingData &sizing_data)
   {
     // EnergyPlus applies the zone cooling sizing factor directly unless the user entered an explicit cooling design
@@ -455,6 +447,114 @@ ZonesWithSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, std::vect
   return result;
 }
 
+namespace {
+
+  struct PeakLoad
+  {
+    double value;
+    int day_timestep;
+    int design_day_index;
+  };
+
+  // Instances of this function type receive ZoneSizingData and return a sequence of loads for each timestep within a
+  // design day.
+  using GetLoadSeqFunc = std::function<Array1D<Real64>(const EnergyPlus::DataSizing::ZoneSizingData &)>;
+
+  // Find the design day and timestep that has the highest combined load for the given zones. The get_load_seq
+  // function defines which load sequence to use when locating the peak.
+  [[nodiscard]] PeakLoad GetPeakLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                     const std::vector<int> &zone_nums,
+                                     const GetLoadSeqFunc &get_load_seq,
+                                     bool log_missing,
+                                     std::string_view context,
+                                     bool use_calc_zone_sizing = false,
+                                     bool apply_cooling_sizing_multiplier = false)
+  {
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
+
+    if (sizing_zones.empty()) {
+      if (log_missing) {
+        spdlog::warn(
+            "No sizing information available for any requested zones while computing {}; returning default value",
+            context);
+      }
+      return {};
+    }
+
+    const auto &zone_sizing =
+        use_calc_zone_sizing ? energyplus_data.dataSize->CalcZoneSizing : energyplus_data.dataSize->ZoneSizing;
+    const auto first_zone_num = sizing_zones.front();
+    const auto num_design_days = zone_sizing.isize1();
+    std::vector<PeakLoad> peak_loads;
+
+    for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
+      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
+      std::vector<double> combined_load(num_timesteps);
+
+      for (const auto &zone_num : sizing_zones) {
+        const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
+        const auto multiplier =
+            apply_cooling_sizing_multiplier ? CoolingSizingMultiplier(energyplus_data, zone_num) : 1.0;
+        for (int i = 0; i < num_timesteps; ++i) {
+          combined_load[i] += load_seq[i] * multiplier;
+        }
+      }
+
+      const auto peak_value = std::max_element(combined_load.begin(), combined_load.end());
+      const auto timestep_of_peak = static_cast<int>(std::distance(combined_load.begin(), peak_value) + 1);
+      peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
+    }
+
+    const auto global_peak_load = std::max_element(
+        peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
+
+    return *global_peak_load;
+  }
+
+  // Locate a peak using one load sequence, then return the combined value of another load sequence at that exact
+  // design day and timestep. Cooling uses this to report latent load coincident with the sensible cooling peak.
+  [[nodiscard]] double GetLoadAtPeak(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                     const std::vector<int> &zone_nums,
+                                     const GetLoadSeqFunc &get_peak_load_seq,
+                                     const GetLoadSeqFunc &get_coincident_load_seq,
+                                     bool log_missing,
+                                     std::string_view context,
+                                     bool use_calc_zone_sizing = false,
+                                     bool apply_cooling_sizing_multiplier = false)
+  {
+    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
+    if (sizing_zones.empty()) {
+      if (log_missing) {
+        spdlog::warn(
+            "No sizing information available for any requested zones while computing {}; returning default value",
+            context);
+      }
+      return 0.0;
+    }
+
+    const auto peak_load = GetPeakLoad(energyplus_data,
+                                       sizing_zones,
+                                       get_peak_load_seq,
+                                       false,
+                                       context,
+                                       use_calc_zone_sizing,
+                                       apply_cooling_sizing_multiplier);
+    const auto &zone_sizing =
+        use_calc_zone_sizing ? energyplus_data.dataSize->CalcZoneSizing : energyplus_data.dataSize->ZoneSizing;
+
+    double coincident_load = 0.0;
+    for (const auto &zone_num : sizing_zones) {
+      const auto load_seq = get_coincident_load_seq(zone_sizing(peak_load.design_day_index, zone_num));
+      const auto multiplier =
+          apply_cooling_sizing_multiplier ? CoolingSizingMultiplier(energyplus_data, zone_num) : 1.0;
+      coincident_load += load_seq(peak_load.day_timestep) * multiplier;
+    }
+
+    return coincident_load;
+  }
+
+} // namespace
+
 namespace zone_sizing {
 
   [[nodiscard]] double
@@ -464,32 +564,25 @@ namespace zone_sizing {
       return 0.0;
     }
 
-    if (HaveSizingInfo(energyplus_data, zone_num)) {
-      // This backs the Spawn zone-level variable "<zone>_QCooSen_flow".
-      //
-      // Do not use FinalZoneSizing.DesCoolLoad here. In EnergyPlus that field is the cooling design load selected for
-      // equipment sizing, not always the sensible cooling load. For ordinary sensible sizing those two ideas coincide,
-      // but for latent sizing they can diverge. When the calculated latent cooling load is greater than the calculated
-      // sensible cooling load, EnergyPlus copies the latent result into the generic cooling fields so downstream
-      // equipment sizing can keep using DesCoolLoad, DesCoolVolFlow, etc. In that case FinalZoneSizing.DesCoolLoad
-      // contains the latent load, even though its name does not say latent.
-      //
-      // The sensible cooling load is still available as the peak of CoolLoadSeq in CalcFinalZoneSizing. We apply the
-      // cooling sizing multiplier on the Spawn side instead of reading FinalZoneSizing.CoolLoadSeq directly so this
-      // sensible variable follows the same scaling path as the latent variable below. The multiplier mirrors the
-      // EnergyPlus calculation: normally it is the zone cooling sizing factor, but when the Sizing:Zone object uses a
-      // user-entered cooling design airflow rate, EnergyPlus multiplies by the ratio of that entered flow to the
-      // calculated design cooling flow.
-      const auto &calc_final_zone_sizing = energyplus_data.dataSize->CalcFinalZoneSizing;
-      const auto zone_count = static_cast<int>(calc_final_zone_sizing.size());
-      if (zone_num <= zone_count) {
-        const auto &sizing_data = calc_final_zone_sizing(zone_num);
-        return MaxLoad(sizing_data.CoolLoadSeq) * CoolingSizingMultiplier(sizing_data);
-      }
+    if (!HaveSizingInfo(energyplus_data, zone_num)) {
+      LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::SensibleCoolingLoad", true);
+      return 0.0;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::SensibleCoolingLoad", true);
-    return 0.0;
+    const auto get_sensible_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.CoolLoadSeq;
+    };
+
+    // Do not use FinalZoneSizing.DesCoolLoad here. EnergyPlus can replace that field with the latent design load for
+    // equipment sizing. Locate the sensible peak directly from the calculated sensible load sequences instead.
+    return GetPeakLoad(energyplus_data,
+                       {zone_num},
+                       get_sensible_cooling_load_seq,
+                       false,
+                       "zone_sizing::SensibleCoolingLoad",
+                       true,
+                       true)
+        .value;
   }
 
   [[nodiscard]] double
@@ -499,31 +592,29 @@ namespace zone_sizing {
       return 0.0;
     }
 
-    if (HaveSizingInfo(energyplus_data, zone_num)) {
-      // This backs the Spawn zone-level variable "<zone>_QCooLat_flow".
-      //
-      // The latent-specific design fields are calculated in CalcFinalZoneSizing and are written to the EnergyPlus zsz
-      // sizing report from there. EnergyPlus later copies calculated sizing data into FinalZoneSizing, but that copy
-      // path preserves the generic cooling/heating fields used for equipment sizing and does not maintain
-      // DesLatentCoolLoad in FinalZoneSizing. That is why FinalZoneSizing.DesLatentCoolLoad can be zero even when the
-      // zsz report shows a nonzero "Des Latent Cool Load".
-      //
-      // Because Spawn's QCooLat_flow is specifically the latent cooling load, the calculated latent field is the
-      // field that matches the EnergyPlus sizing report. This is intentionally not a fallback from FinalZoneSizing;
-      // using CalcFinalZoneSizing directly avoids implying that both structures carry the same latent-load meaning.
-      // EnergyPlus does not scale DesLatentCoolLoad when it applies the cooling sizing multiplier to the generic final
-      // cooling fields, so Spawn applies that same multiplier here. That keeps QCooLat_flow and QCooSen_flow consistent
-      // when the user provides a zone cooling sizing factor or an explicit cooling design airflow rate.
-      const auto &calc_final_zone_sizing = energyplus_data.dataSize->CalcFinalZoneSizing;
-      const auto zone_count = static_cast<int>(calc_final_zone_sizing.size());
-      if (zone_num <= zone_count) {
-        const auto &sizing_data = calc_final_zone_sizing(zone_num);
-        return sizing_data.DesLatentCoolLoad * CoolingSizingMultiplier(sizing_data);
-      }
+    if (!HaveSizingInfo(energyplus_data, zone_num)) {
+      LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::LatentCoolingLoad", true);
+      return 0.0;
     }
 
-    LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::LatentCoolingLoad", true);
-    return 0.0;
+    const auto get_sensible_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.CoolLoadSeq;
+    };
+    const auto get_latent_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.LatentCoolLoadSeq;
+    };
+
+    // Report the latent cooling load at the zone's sensible cooling peak so all cooling sizing values describe the
+    // same design condition. CalcFinalZoneSizing cannot be used for this because EnergyPlus independently selects the
+    // final sensible and latent design-day sequences.
+    return GetLoadAtPeak(energyplus_data,
+                         {zone_num},
+                         get_sensible_cooling_load_seq,
+                         get_latent_cooling_load_seq,
+                         false,
+                         "zone_sizing::LatentCoolingLoad",
+                         true,
+                         true);
   }
 
   [[nodiscard]] double
@@ -668,72 +759,6 @@ namespace zone_sizing {
 
 namespace zone_group_sizing {
 
-  struct PeakLoad
-  {
-    double value;
-    int day_timestep;
-    int design_day_index;
-  };
-
-  // Instances of this function type will receive ZoneSizingData and return a sequence of loads for each timestep within
-  // a design day.
-  using GetLoadSeqFunc = std::function<Array1D<Real64>(const EnergyPlus::DataSizing::ZoneSizingData &)>;
-
-  // The purpose of this function is to find the design day and timestep that has the highest combined load for the
-  // given zones. This function is generic. The get_load_seq function defines what type of peak load (Sensible Cooling |
-  // Heating) to locate.
-  [[nodiscard]] static PeakLoad GetPeakLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
-                                            const std::vector<int> &zone_nums,
-                                            const GetLoadSeqFunc &get_load_seq,
-                                            bool log_missing,
-                                            std::string_view context,
-                                            bool use_calc_zone_sizing = false,
-                                            bool apply_cooling_sizing_multiplier = false)
-  {
-    const auto sizing_zones = ZonesWithSizingInfo(energyplus_data, zone_nums, log_missing);
-
-    if (sizing_zones.empty()) {
-      if (log_missing) {
-        spdlog::warn(
-            "No sizing information available for any requested zones while computing {}; returning default value",
-            context);
-      }
-      return {};
-    }
-
-    const auto &zone_sizing =
-        use_calc_zone_sizing ? energyplus_data.dataSize->CalcZoneSizing : energyplus_data.dataSize->ZoneSizing;
-    size_t first_zone_num = sizing_zones.front();
-    const auto num_design_days = zone_sizing.isize1();
-    std::vector<PeakLoad> peak_loads;
-
-    for (int design_day_index = 1; design_day_index <= num_design_days; ++design_day_index) {
-      const auto num_timesteps = static_cast<int>(get_load_seq(zone_sizing(design_day_index, first_zone_num)).size());
-      std::vector<double> combined_group_load(num_timesteps);
-
-      for (const auto &zone_num : sizing_zones) {
-        const auto load_seq = get_load_seq(zone_sizing(design_day_index, zone_num));
-        const auto multiplier =
-            apply_cooling_sizing_multiplier ? CoolingSizingMultiplier(energyplus_data, zone_num) : 1.0;
-        for (int i = 0; i < num_timesteps; ++i) {
-          combined_group_load[i] += load_seq[i] * multiplier;
-        }
-      }
-
-      const auto peak_value = std::max_element(combined_group_load.begin(), combined_group_load.end());
-      const auto timestep_of_peak = static_cast<int>(std::distance(combined_group_load.begin(), peak_value) + 1);
-
-      // Store the PeakLoad for this design day
-      peak_loads.push_back(PeakLoad({*peak_value, timestep_of_peak, design_day_index}));
-    }
-
-    // Find the PeakLoad across all design days
-    const auto gloabl_peak_load = std::max_element(
-        peak_loads.begin(), peak_loads.end(), [](const PeakLoad &a, const PeakLoad &b) { return a.value < b.value; });
-
-    return *gloabl_peak_load;
-  }
-
   [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
                                            const std::vector<int> &zone_nums,
                                            bool use_sizing_data)
@@ -773,25 +798,26 @@ namespace zone_group_sizing {
       return 0.0;
     }
 
-    const auto get_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+    const auto get_sensible_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
+      return sizing_data.CoolLoadSeq;
+    };
+    const auto get_latent_cooling_load_seq = [](const EnergyPlus::DataSizing::ZoneSizingData &sizing_data) {
       return sizing_data.LatentCoolLoadSeq;
     };
 
     // This backs the Spawn group-level variable "hvac_sizing_group_<name>_QCooLat_flow".
     //
-    // As with the sensible group load, the rollup is coincident across zones: sum each zone's latent cooling sequence
-    // at the same design-day timestep, with the cooling sizing multiplier applied to each zone before it is added to
-    // the group total, then take the peak combined latent value. This peak is not required to happen at the same
-    // design-day timestep as the sensible peak. Reporting separate sensible and latent design loads means each value
-    // represents its own maximum, not the latent load at the sensible peak or the sensible load at the latent peak.
-    return GetPeakLoad(energyplus_data,
-                       zone_nums,
-                       get_cooling_load_seq,
-                       true,
-                       "zone_group_sizing::LatentCoolingLoad",
-                       true,
-                       true)
-        .value;
+    // Find the peak of the combined sensible load, then sum each zone's latent load at that same design-day timestep.
+    // The per-zone cooling sizing multiplier is applied to both sequences so the peak location and coincident latent
+    // load follow the same scaling rules.
+    return GetLoadAtPeak(energyplus_data,
+                         zone_nums,
+                         get_sensible_cooling_load_seq,
+                         get_latent_cooling_load_seq,
+                         true,
+                         "zone_group_sizing::LatentCoolingLoad",
+                         true,
+                         true);
   }
 
   [[nodiscard]] double OutdoorTempAtPeakCool(const EnergyPlus::EnergyPlusData &energyplus_data,
