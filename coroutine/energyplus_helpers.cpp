@@ -212,7 +212,7 @@ namespace {
       return {};
     }
 
-    if (energyplus_data.dataHeatBal) {
+    if (energyplus_data.dataHeatBal && zone_num <= static_cast<int>(energyplus_data.dataHeatBal->Zone.size())) {
       try {
         const auto name = energyplus_data.dataHeatBal->Zone(zone_num).Name;
         if (!name.empty()) {
