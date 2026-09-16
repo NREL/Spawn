@@ -3,6 +3,9 @@
 #include "../util/config.hpp"
 #include "../util/math.hpp"
 #include "paths.hpp"
+#include <EnergyPlus/DataSizing.hh>
+#include <EnergyPlus/Psychrometrics.hh>
+#include <array>
 #include <catch2/catch.hpp>
 #include <filesystem>
 
@@ -473,4 +476,172 @@ TEST_CASE("Test Multiple Zone Group Sizing Variables")
   CHECK(value > 0.0);
 
   spawn1.Stop();
+}
+
+TEST_CASE("Sizing setpoints are fixed at design conditions", "[spawn][sizing]")
+{
+  const auto test_dir = spawn::test::get_current_test_dir();
+  const auto sizing_idf = test_dir / "design_setpoints.idf";
+  auto idf_json = spawn::idf_to_json(idfpath);
+  const auto schedule = [](const std::string &day_type, double design_value, double operating_value) {
+    return json{{"data",
+                 {{{"field", "Through: 12/31"}},
+                  {{"field", "For: " + day_type}},
+                  {{"field", "Until: 24:00"}},
+                  {{"field", design_value}},
+                  {{"field", "For: AllOtherDays"}},
+                  {{"field", "Until: 24:00"}},
+                  {{"field", operating_value}}}}};
+  };
+  // The annual schedules intentionally disagree with the design days, as in Dave's IDF.
+  idf_json["Schedule:Compact"]["CLGSETP_SCH"] = schedule("SummerDesignDay", 24.0, 80.0);
+  idf_json["Schedule:Compact"]["HTGSETP_SCH"] = schedule("WinterDesignDay", 21.0, 0.0);
+  idf_json["Schedule:Compact"]["Design Humidify"] = schedule("WinterDesignDay", 40.0, 10.0);
+  idf_json["Schedule:Compact"]["Design Dehumidify"] = schedule("SummerDesignDay", 60.0, 90.0);
+  idf_json["ZoneControl:Humidistat"]["South Humidistat"] = {
+      {"zone_name", "Perimeter_ZN_1"},
+      {"humidifying_relative_humidity_setpoint_schedule_name", "Design Humidify"},
+      {"dehumidifying_relative_humidity_setpoint_schedule_name", "Design Dehumidify"}};
+  for (auto &[_, sizing] : idf_json["Sizing:Zone"].items()) {
+    sizing["zone_load_sizing_method"] = "Sensible And Latent Load";
+  }
+  spawn::json_to_idf(idf_json, sizing_idf);
+
+  const json zones = {{{"name", "Perimeter_ZN_1"}}};
+  const json config = {{"version", "0.1"},
+                       {"EnergyPlus", {{"idf", sizing_idf.generic_string()}, {"weather", epwpath.generic_string()}}},
+                       {"model",
+                        {{"zones", zones},
+                         {"hvacZones", {{{"name", "sys1"}, {"zones", zones}}}},
+                         {"hvacSystems", {{{"name", "sys1"}, {"autosize", "true"}}}}}}};
+
+  // Verify FMI metadata as well as values: the importer must initialize these as parameters.
+  const spawn::UserConfig user_config(config.dump());
+  const spawn::variable::Variables variables(user_config);
+  const std::array<std::string, 4> names = {
+      "Perimeter_ZN_1_TSetCoo", "Perimeter_ZN_1_TSetHea", "Perimeter_ZN_1_XSetCoo", "Perimeter_ZN_1_XSetHea"};
+  for (const auto &name : names) {
+    const auto &variable = variables.all_variables().at(variables.VariableIndex(name));
+    const auto metadata = variable->metadata().document_element();
+    CHECK(std::string(metadata.attribute("causality").value()) == "calculatedParameter");
+    CHECK(std::string(metadata.attribute("variability").value()) == "fixed");
+    CHECK(std::string(metadata.attribute("initial").value()) == "calculated");
+  }
+
+  std::array<double, 4> baseline{};
+  double baseline_load = 0.0;
+  for (const auto day : {180, 181, 195}) {
+    CAPTURE(day);
+    const auto work_dir = test_dir / std::to_string(day);
+    spawn_fs::create_directories(work_dir);
+    spawn::Spawn sim("sizing_setpoints", spawn::test::idd_path(), config.dump(), work_dir);
+    const double start_time = day * 86400.0;
+    sim.SetStartTime(start_time);
+    sim.Start();
+    // Ensure a failed REQUIRE still stops the simulation thread.
+    struct StopSimulation
+    {
+      spawn::Spawn &sim;
+      ~StopSimulation()
+      {
+        sim.Stop();
+      }
+    } stop{sim};
+    std::array<double, 4> actual{};
+    for (size_t i = 0; i < names.size(); ++i) {
+      actual[i] = sim.GetValue(names[i]);
+    }
+    CHECK(actual[0] == Approx(spawn::c_to_k(24.0)));
+    CHECK(actual[1] == Approx(spawn::c_to_k(21.0)));
+    // These are mass fractions at design temperature, RH, and pressure, not the annual RH schedule.
+    EnergyPlus::EnergyPlusData psychrometric_state;
+    const auto humidity_fraction = [&](double temperature, double rh, const std::string &day_type) {
+      double pressure = 0.0;
+      for (const auto &[_, design_day] : idf_json["SizingPeriod:DesignDay"].items()) {
+        if (design_day.value("day_type", "") == day_type) {
+          pressure = design_day.at("barometric_pressure").get<double>();
+          break;
+        }
+      }
+      const auto w = EnergyPlus::Psychrometrics::PsyWFnTdbRhPb(psychrometric_state, temperature, rh, pressure);
+      return w / (1.0 + w);
+    };
+    CHECK(actual[2] == Approx(humidity_fraction(24.0, 0.60, "SummerDesignDay")).margin(0.00001));
+    CHECK(actual[3] == Approx(humidity_fraction(21.0, 0.40, "WinterDesignDay")).margin(0.00001));
+    const auto load = sim.GetValue("Perimeter_ZN_1_QCooSen_flow");
+    CHECK(load > 0.0);
+    if (day == 180) {
+      baseline = actual;
+      baseline_load = load;
+    } else {
+      for (size_t i = 0; i < names.size(); ++i) {
+        CHECK(actual[i] == Approx(baseline[i]));
+      }
+      CHECK(load == Approx(baseline_load));
+    }
+    // The same parameters survive exchanges and advancement of the annual simulation.
+    sim.SetValue("Perimeter_ZN_1_T", spawn::c_to_k(30.0));
+    sim.SetTime(start_time + 3600.0);
+    sim.Exchange(true);
+    for (size_t i = 0; i < names.size(); ++i) {
+      CHECK(sim.GetValue(names[i]) == actual[i]);
+    }
+  }
+}
+
+TEST_CASE("Disabled sizing provides setpoint placeholders", "[spawn][sizing]")
+{
+  const json zones = {{{"name", "Core_ZN"}}};
+  const json config = {{"version", "0.1"},
+                       {"EnergyPlus", {{"idf", idfpath.generic_string()}, {"weather", epwpath.generic_string()}}},
+                       {"model",
+                        {{"zones", zones},
+                         {"hvacZones", {{{"name", "sys1"}, {"zones", zones}}}},
+                         {"hvacSystems", {{{"name", "sys1"}, {"autosize", "false"}}}}}}};
+  spawn::Spawn sim("disabled_sizing", spawn::test::idd_path(), config.dump(), spawn::test::get_current_test_dir());
+  sim.Start();
+  CHECK(sim.GetValue("Core_ZN_TSetCoo") == Approx(spawn::c_to_k(0.0)));
+  CHECK(sim.GetValue("Core_ZN_TSetHea") == Approx(spawn::c_to_k(0.0)));
+  CHECK(sim.GetValue("Core_ZN_XSetCoo") == 0.0);
+  CHECK(sim.GetValue("Core_ZN_XSetHea") == 0.0);
+  sim.Stop();
+}
+
+TEST_CASE("Sizing setpoints follow sensible peaks and preserve zero degrees", "[spawn][sizing]")
+{
+  EnergyPlus::EnergyPlusData state;
+  auto &sizing = *state.dataSize;
+  sizing.FinalZoneSizing.allocate(1);
+  sizing.FinalZoneSizing(1).ZoneName = "Test Zone";
+  sizing.ZoneSizing.allocate(2, 1);
+  sizing.CalcZoneSizing.allocate(2, 1);
+  for (int day = 1; day <= 2; ++day) {
+    auto &calc = sizing.CalcZoneSizing(day, 1);
+    calc.CoolLoadSeq.allocate(3);
+    calc.HeatLoadSeq.allocate(3);
+    calc.CoolLoadSeq = 0.0;
+    calc.HeatLoadSeq = 0.0;
+    auto &design = sizing.ZoneSizing(day, 1);
+    design.DesCoolSetPtSeq.allocate(3);
+    design.DesHeatSetPtSeq.allocate(3);
+    design.DesCoolSetPtSeq = 80.0;
+    design.DesHeatSetPtSeq = -10.0;
+  }
+  sizing.CalcZoneSizing(1, 1).CoolLoadSeq(2) = 100.0;
+  sizing.CalcZoneSizing(2, 1).HeatLoadSeq(3) = 200.0;
+  sizing.ZoneSizing(1, 1).DesCoolSetPtSeq(2) = 24.0;
+  sizing.ZoneSizing(2, 1).DesHeatSetPtSeq(3) = 0.0;
+  // Equipment sizing can select a different (latent) peak. Setpoint selection must follow sensible load.
+  sizing.FinalZoneSizing(1).CoolDDNum = 2;
+  sizing.FinalZoneSizing(1).TimeStepNumAtCoolMax = 1;
+  sizing.FinalZoneSizing(1).HeatDDNum = 1;
+  sizing.FinalZoneSizing(1).TimeStepNumAtHeatMax = 1;
+  using namespace spawn::energyplus::zone_sizing;
+  const SetpointSequence humidity = {{{1, 2}, 0.012}, {{2, 3}, 0.002}, {{2, 1}, 0.020}, {{1, 1}, 0.001}};
+  CHECK(TemperatureSetpointAtPeak(state, 1, true, true) == 24.0);
+  CHECK(TemperatureSetpointAtPeak(state, 1, false, true) == 0.0);
+  CHECK(HumiditySetpointAtPeak(state, 1, true, true, humidity) == 0.012);
+  CHECK(HumiditySetpointAtPeak(state, 1, false, true, humidity) == 0.002);
+  CHECK(TemperatureSetpointAtPeak(state, 2, true, true) == 0.0);
+  CHECK(HumiditySetpointAtPeak(state, 2, true, true, {}) == 0.0);
 }

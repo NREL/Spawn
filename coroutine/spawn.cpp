@@ -10,6 +10,7 @@
 #include "../util/conversion.hpp"
 
 #include "../energyplus/src/EnergyPlus/CommandLineInterface.hh"
+#include "../energyplus/src/EnergyPlus/PluginManager.hh"
 #include "../energyplus/src/EnergyPlus/api/EnergyPlusPgm.hh"
 #include "../energyplus/src/EnergyPlus/api/func.h"
 #include "../energyplus/src/EnergyPlus/api/runtime.h"
@@ -56,6 +57,13 @@ void Spawn::Start()
         registerErrorCallback(SimState(),
                               [this](const auto level, const auto &message) { LogMessage(level, message); });
         registerExternalHVACManager(SimState(), [this](EnergyPlusState state) { ExternalHVACManager(state); });
+        // Save humidity setpoints during sizing, before annual-run schedules replace the design conditions.
+        EnergyPlus::PluginManagement::registerNewCallback(
+            sim_state_,
+            EnergyPlus::EMSManager::EMSCallFrom::EndZoneTimestepAfterZoneReporting,
+            [this](EnergyPlusState state) {
+              variables_.RecordSizingStep(*static_cast<EnergyPlus::EnergyPlusData *>(state));
+            });
         sim_state_.dataHeatBal->MaxAllowedDelTemp = user_config_.relativeSurfaceTolerance();
 
         runEnergyPlusAsLibrary(sim_state_, argv);

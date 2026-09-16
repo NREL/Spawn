@@ -2,7 +2,9 @@
 #define SPAWN_COROUTINE_ENERGYPLUS_HELPERS_H_
 
 // C++ standard library headers
+#include <map>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace EnergyPlus {
@@ -52,6 +54,25 @@ private:
 bool HaveSizingInfo(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num);
 
 namespace zone_sizing {
+
+  // Indexed by sizing day and zone timestep within that day (both one-based).
+  using SetpointSequence = std::map<std::pair<int, int>, double>;
+
+  void RecordHumiditySetpoint(const EnergyPlus::EnergyPlusData &energyplus_data,
+                              int zone_num,
+                              bool cooling,
+                              SetpointSequence &setpoints);
+
+  [[nodiscard]] double TemperatureSetpointAtPeak(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                                 int zone_num,
+                                                 bool cooling,
+                                                 bool use_sizing_data);
+
+  [[nodiscard]] double HumiditySetpointAtPeak(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                              int zone_num,
+                                              bool cooling,
+                                              bool use_sizing_data,
+                                              const SetpointSequence &setpoints);
 
   [[nodiscard]] double SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data,
                                            int zone_num,

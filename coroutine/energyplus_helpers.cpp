@@ -557,6 +557,74 @@ namespace {
 
 namespace zone_sizing {
 
+  namespace {
+
+    PeakLoad
+    DesignPeak(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool cooling, bool use_sizing_data)
+    {
+      if (!use_sizing_data) {
+        return {};
+      }
+      if (!HaveSizingInfo(energyplus_data, zone_num)) {
+        LogMissingSizingInfo(energyplus_data, zone_num, "zone_sizing::DesignPeak", true);
+        return {};
+      }
+      // The final sizing peak may be replaced by a latent peak. Use the original sensible load histories.
+      return GetPeakLoad(
+          energyplus_data,
+          {zone_num},
+          [cooling](const auto &sizing) { return cooling ? sizing.CoolLoadSeq : sizing.HeatLoadSeq; },
+          false,
+          "zone_sizing::DesignPeak",
+          true);
+    }
+
+  } // namespace
+
+  void RecordHumiditySetpoint(const EnergyPlus::EnergyPlusData &energyplus_data,
+                              int zone_num,
+                              bool cooling,
+                              SetpointSequence &setpoints)
+  {
+    const auto &global = *energyplus_data.dataGlobal;
+    const auto timestep = (global.HourOfDay - 1) * global.NumOfTimeStepInHour + global.TimeStep;
+    const auto humidity_ratio = cooling ? ZoneHumidistatSetPointHi(energyplus_data, zone_num)
+                                        : ZoneHumidistatSetPointLo(energyplus_data, zone_num);
+    // EnergyPlus uses kg water / kg dry air; the Modelica sizing contract uses kg water / kg total air.
+    setpoints[{energyplus_data.dataSize->CurOverallSimDay, timestep}] = humidity_ratio / (1.0 + humidity_ratio);
+  }
+
+  double TemperatureSetpointAtPeak(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                   int zone_num,
+                                   bool cooling,
+                                   bool use_sizing_data)
+  {
+    const auto peak = DesignPeak(energyplus_data, zone_num, cooling, use_sizing_data);
+    if (peak.value <= 0.0) {
+      return 0.0;
+    }
+    const auto &sizing = energyplus_data.dataSize->ZoneSizing(peak.design_day_index, zone_num);
+    return cooling ? sizing.DesCoolSetPtSeq(peak.day_timestep) : sizing.DesHeatSetPtSeq(peak.day_timestep);
+  }
+
+  double HumiditySetpointAtPeak(const EnergyPlus::EnergyPlusData &energyplus_data,
+                                int zone_num,
+                                bool cooling,
+                                bool use_sizing_data,
+                                const SetpointSequence &setpoints)
+  {
+    const auto peak = DesignPeak(energyplus_data, zone_num, cooling, use_sizing_data);
+    if (peak.value <= 0.0) {
+      return 0.0;
+    }
+    const auto found = setpoints.find({peak.design_day_index, peak.day_timestep});
+    if (found == setpoints.end()) {
+      throw std::runtime_error("Missing humidity setpoint at the sizing peak for zone " +
+                               LookupZoneName(energyplus_data, zone_num));
+    }
+    return found->second;
+  }
+
   [[nodiscard]] double
   SensibleCoolingLoad(const EnergyPlus::EnergyPlusData &energyplus_data, int zone_num, bool use_sizing_data)
   {

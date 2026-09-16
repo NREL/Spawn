@@ -5,6 +5,7 @@
 
 // EnergyPlus headers
 #include "../energyplus/src/EnergyPlus/UtilityRoutines.hh"
+#include <DataGlobals.hh>
 #include <EnergyPlusData.hh>
 
 // Third-party headers
@@ -118,6 +119,16 @@ void Variables::UpdateParameters(EnergyPlus::EnergyPlusData &energyplus_data)
   std::for_each(parameter_variables_.begin(), parameter_variables_.end(), [&energyplus_data](auto var) {
     var.get().Update(energyplus_data);
   });
+}
+
+void Variables::RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data)
+{
+  if (!energyplus_data.dataGlobal->ZoneSizingCalc || energyplus_data.dataGlobal->WarmupFlag) {
+    return;
+  }
+  for (auto var : parameter_variables_) {
+    var.get().RecordSizingStep(energyplus_data);
+  }
 }
 
 int Variables::VariableIndex(const std::string_view variable_name) const
@@ -531,21 +542,22 @@ namespace zone {
       if (!zone.isconnected) {
         continue;
       }
-      Variables::CreateOne<TSetCoo>(variables, zone.idfname);
+      Variables::CreateOne<TSetCoo>(variables, zone.idfname, Variables::ShouldAutosizeZone(user_config, zone.idfname));
     }
   }
 
-  TSetCoo::TSetCoo(Variables &variables, const std::string_view zone_name)
-      : Output(variables, std::string(zone_name) + "_TSetCoo", units::UnitType::C, units::UnitType::K),
+  TSetCoo::TSetCoo(Variables &variables, const std::string_view zone_name, bool use_sizing_data)
+      : Parameter(variables, std::string(zone_name) + "_TSetCoo", units::UnitType::C, units::UnitType::K),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        use_sizing_data_(use_sizing_data)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Zone thermostat cooling setpoint temperature";
-    scalar_variable.append_attribute("causality") = "output";
-    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("description") = "Zone temperature setpoint at the sensible cooling design peak";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";
 
     auto real = scalar_variable.append_child("Real");
@@ -556,8 +568,9 @@ namespace zone {
 
   void TSetCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::ZoneThermostatSetPointHi(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::TemperatureSetpointAtPeak(
+                           energyplus_data, zone_num_.get(energyplus_data), true, use_sizing_data_),
+                       units::UnitSystem::EP);
   }
 
   void TSetHea::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -566,21 +579,22 @@ namespace zone {
       if (!zone.isconnected) {
         continue;
       }
-      Variables::CreateOne<TSetHea>(variables, zone.idfname);
+      Variables::CreateOne<TSetHea>(variables, zone.idfname, Variables::ShouldAutosizeZone(user_config, zone.idfname));
     }
   }
 
-  TSetHea::TSetHea(Variables &variables, const std::string_view zone_name)
-      : Output(variables, std::string(zone_name) + "_TSetHea", units::UnitType::C, units::UnitType::K),
+  TSetHea::TSetHea(Variables &variables, const std::string_view zone_name, bool use_sizing_data)
+      : Parameter(variables, std::string(zone_name) + "_TSetHea", units::UnitType::C, units::UnitType::K),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        use_sizing_data_(use_sizing_data)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Zone thermostat heating setpoint temperature";
-    scalar_variable.append_attribute("causality") = "output";
-    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("description") = "Zone temperature setpoint at the heating design peak";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";
 
     auto real = scalar_variable.append_child("Real");
@@ -591,8 +605,9 @@ namespace zone {
 
   void TSetHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::ZoneThermostatSetPointLo(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::TemperatureSetpointAtPeak(
+                           energyplus_data, zone_num_.get(energyplus_data), false, use_sizing_data_),
+                       units::UnitSystem::EP);
   }
 
   void XSetCoo::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -601,21 +616,23 @@ namespace zone {
       if (!zone.isconnected) {
         continue;
       }
-      Variables::CreateOne<XSetCoo>(variables, zone.idfname);
+      Variables::CreateOne<XSetCoo>(variables, zone.idfname, Variables::ShouldAutosizeZone(user_config, zone.idfname));
     }
   }
 
-  XSetCoo::XSetCoo(Variables &variables, const std::string_view zone_name)
-      : Output(variables, std::string(zone_name) + "_XSetCoo", units::UnitType::one, units::UnitType::one),
+  XSetCoo::XSetCoo(Variables &variables, const std::string_view zone_name, bool use_sizing_data)
+      : Parameter(variables, std::string(zone_name) + "_XSetCoo", units::UnitType::one, units::UnitType::one),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        use_sizing_data_(use_sizing_data)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Zone humidistat dehumidifying setpoint humidity ratio";
-    scalar_variable.append_attribute("causality") = "output";
-    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("description") =
+        "Zone humidity setpoint per total air mass at the sensible cooling design peak";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";
 
     auto real = scalar_variable.append_child("Real");
@@ -625,8 +642,18 @@ namespace zone {
 
   void XSetCoo::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::ZoneHumidistatSetPointHi(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::HumiditySetpointAtPeak(
+                           energyplus_data, zone_num_.get(energyplus_data), true, use_sizing_data_, sizing_setpoints_),
+                       units::UnitSystem::EP);
+    sizing_setpoints_.clear();
+  }
+
+  void XSetCoo::RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    if (use_sizing_data_) {
+      energyplus::zone_sizing::RecordHumiditySetpoint(
+          energyplus_data, zone_num_.get(energyplus_data), true, sizing_setpoints_);
+    }
   }
 
   void XSetHea::CreateAll(const UserConfig &user_config, Variables &variables)
@@ -635,21 +662,23 @@ namespace zone {
       if (!zone.isconnected) {
         continue;
       }
-      Variables::CreateOne<XSetHea>(variables, zone.idfname);
+      Variables::CreateOne<XSetHea>(variables, zone.idfname, Variables::ShouldAutosizeZone(user_config, zone.idfname));
     }
   }
 
-  XSetHea::XSetHea(Variables &variables, const std::string_view zone_name)
-      : Output(variables, std::string(zone_name) + "_XSetHea", units::UnitType::one, units::UnitType::one),
+  XSetHea::XSetHea(Variables &variables, const std::string_view zone_name, bool use_sizing_data)
+      : Parameter(variables, std::string(zone_name) + "_XSetHea", units::UnitType::one, units::UnitType::one),
         zone_name_(zone_name),
-        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); })
+        zone_num_([this](EnergyPlus::EnergyPlusData &data) { return energyplus::ZoneNum(data, zone_name_); }),
+        use_sizing_data_(use_sizing_data)
   {
     auto scalar_variable = metadata_.append_child("ScalarVariable");
     scalar_variable.append_attribute("name") = name_.c_str();
     scalar_variable.append_attribute("valueReference") = std::to_string(index_).c_str();
-    scalar_variable.append_attribute("description") = "Zone humidistat humidifying setpoint humidity ratio";
-    scalar_variable.append_attribute("causality") = "output";
-    scalar_variable.append_attribute("variability") = "continuous";
+    scalar_variable.append_attribute("description") =
+        "Zone humidity setpoint per total air mass at the heating design peak";
+    scalar_variable.append_attribute("causality") = "calculatedParameter";
+    scalar_variable.append_attribute("variability") = "fixed";
     scalar_variable.append_attribute("initial") = "calculated";
 
     auto real = scalar_variable.append_child("Real");
@@ -659,8 +688,18 @@ namespace zone {
 
   void XSetHea::Update(EnergyPlus::EnergyPlusData &energyplus_data)
   {
-    Variable::SetValue(
-        energyplus::ZoneHumidistatSetPointLo(energyplus_data, zone_num_.get(energyplus_data)), units::UnitSystem::EP);
+    Variable::SetValue(energyplus::zone_sizing::HumiditySetpointAtPeak(
+                           energyplus_data, zone_num_.get(energyplus_data), false, use_sizing_data_, sizing_setpoints_),
+                       units::UnitSystem::EP);
+    sizing_setpoints_.clear();
+  }
+
+  void XSetHea::RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data)
+  {
+    if (use_sizing_data_) {
+      energyplus::zone_sizing::RecordHumiditySetpoint(
+          energyplus_data, zone_num_.get(energyplus_data), false, sizing_setpoints_);
+    }
   }
 
   void MInletsFlow::CreateAll(const UserConfig &user_config, Variables &variables)

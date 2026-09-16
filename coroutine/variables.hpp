@@ -3,6 +3,7 @@
 
 // C++ standard library headers
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,6 +13,7 @@
 #include <pugixml.hpp>
 
 // Spawn project headers
+#include "energyplus_helpers.hpp"
 #include "units.hpp"
 
 namespace EnergyPlus {
@@ -63,6 +65,11 @@ public:
   virtual void ResetValue();
 
   virtual void Update(EnergyPlus::EnergyPlusData &energyplus_data) = 0;
+
+  // Some design conditions are only available while EnergyPlus is doing sizing.
+  virtual void RecordSizingStep(EnergyPlus::EnergyPlusData &)
+  {
+  }
 
 protected:
   Variable(Variables &variables, std::string_view name, units::UnitType ep_unit, units::UnitType mo_unit);
@@ -178,6 +185,7 @@ public:
   void UpdateInputs(EnergyPlus::EnergyPlusData &energyplus_data);
   void UpdateOutputs(EnergyPlus::EnergyPlusData &energyplus_data);
   void UpdateParameters(EnergyPlus::EnergyPlusData &energyplus_data);
+  void RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data);
 
   // Given a Variable's name, return its index into the all_variables container
   // Will throw on an invalid name
@@ -315,56 +323,66 @@ namespace zone {
     CachedValue<int> zone_num_;
   };
 
-  class TSetCoo : public Output
+  class TSetCoo : public Parameter
   {
     friend class variable::Variables;
 
   private:
-    explicit TSetCoo(Variables &variables, const std::string_view zone_name);
+    explicit TSetCoo(Variables &variables, const std::string_view zone_name, bool use_sizing_data);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool use_sizing_data_;
   };
 
-  class TSetHea : public Output
+  class TSetHea : public Parameter
   {
     friend class variable::Variables;
 
   private:
-    explicit TSetHea(Variables &variables, const std::string_view zone_name);
+    explicit TSetHea(Variables &variables, const std::string_view zone_name, bool use_sizing_data);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool use_sizing_data_;
   };
 
-  class XSetCoo : public Output
+  class XSetCoo : public Parameter
   {
     friend class variable::Variables;
 
   private:
-    explicit XSetCoo(Variables &variables, const std::string_view zone_name);
+    explicit XSetCoo(Variables &variables, const std::string_view zone_name, bool use_sizing_data);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
+    void RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool use_sizing_data_;
+    energyplus::zone_sizing::SetpointSequence sizing_setpoints_;
   };
 
-  class XSetHea : public Output
+  class XSetHea : public Parameter
   {
     friend class variable::Variables;
 
   private:
-    explicit XSetHea(Variables &variables, const std::string_view zone_name);
+    explicit XSetHea(Variables &variables, const std::string_view zone_name, bool use_sizing_data);
     static void CreateAll(const UserConfig &user_config, Variables &variables);
     void Update(EnergyPlus::EnergyPlusData &energyplus_data) final;
 
+    void RecordSizingStep(EnergyPlus::EnergyPlusData &energyplus_data) final;
+
     std::string zone_name_;
     CachedValue<int> zone_num_;
+    bool use_sizing_data_;
+    energyplus::zone_sizing::SetpointSequence sizing_setpoints_;
   };
 
   class MInletsFlow : public Input
@@ -946,4 +964,4 @@ namespace construction {
 
 } // namespace spawn::variable
 
-#endif  // SPAWN_COROUTINE_VARIABLES_H_
+#endif // SPAWN_COROUTINE_VARIABLES_H_
