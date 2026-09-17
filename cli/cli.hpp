@@ -5,7 +5,10 @@
 #include "coroutine/create_fmu.hpp"
 #include "coroutine/output_types.hpp"
 #include "fmu/simulate.hpp"
-#include <CLI/CLI.hpp>
+// Avoid colliding with this header on case-insensitive filesystems.
+#include <CLI/App.hpp>
+#include <CLI/Config.hpp>
+#include <CLI/Formatter.hpp>
 
 namespace spawn::cli {
 

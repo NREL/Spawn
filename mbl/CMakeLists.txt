@@ -50,7 +50,12 @@ if(ENABLE_BUILDINGS_LIBRARY)
   install(
     DIRECTORY "${mbl_dir}"
     DESTINATION etc/
-    PATTERN ${fmilib_project_build_dir} EXCLUDE)
+    PATTERN ".git" EXCLUDE
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "CMakeCache.txt" EXCLUDE
+    PATTERN "*.ninja" EXCLUDE
+    PATTERN ".ninja_*" EXCLUDE
+    REGEX "/Buildings/Resources/src/fmi-library/build(/|$)" EXCLUDE)
 
   ExternalProject_Add(
     FMILIB

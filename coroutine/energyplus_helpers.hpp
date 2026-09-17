@@ -3,6 +3,7 @@
 
 // C++ standard library headers
 #include <map>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>

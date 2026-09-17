@@ -39,10 +39,12 @@ target_link_libraries(
   spawn_utils
   PUBLIC Boost::date_time libzip::zip fmt::fmt spdlog::spdlog compile_options)
 
-include(CheckLinkerFlag)
-check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
-if(HAS_FS_FLAG)
-  target_link_libraries(spawn_utils PUBLIC stdc++fs)
+if(NOT MSVC)
+  include(CheckLinkerFlag)
+  check_linker_flag(CXX -lstdc++fs HAS_FS_FLAG)
+  if(HAS_FS_FLAG)
+    target_link_libraries(spawn_utils PUBLIC stdc++fs)
+  endif()
 endif()
 
 add_executable(
